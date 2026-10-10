@@ -2,6 +2,14 @@
 
 namespace App\Services\Support;
 
+use App\Models\Expense;
+use App\Models\Network;
+use App\Models\Pos;
+use App\Models\Request;
+use App\Models\SaleInvoice;
+use App\Models\SubscriptionPlan;
+use App\Models\SubscriptionPlanRequest;
+use App\Models\SupportTicket;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -212,7 +220,9 @@ class BusinessIdentifierGenerator
                 '{YEAR}' => date('Y'),
                 '{YY}' => date('y'),
                 '{MONTH}' => date('m'),
+                '{MM}' => date('m'),
                 '{DAY}' => date('d'),
+                '{DD}' => date('d'),
                 '{DATE}' => $this->dateFormat ? date($this->dateFormat) : date('Ymd'),
             ];
 
@@ -298,38 +308,189 @@ class BusinessIdentifierGenerator
     // ========================================================
 
     /**
-     * Generate a Center Code following NetSales architectural rule:
-     * Format: CTR-00{id}-random (e.g. CTR-001-A7KPM)
+     * Generate a Network Business UUID following NetSales architectural rule:
+     * Format: NET-{YY}{MM}-{SEQUENCE}-{RANDOM} (e.g. NET-2601-00001-8F3A)
      */
-    public static function forCenter(int $centerId, ?string $centerModelClass = null): string
+    public static function forNetwork(?int $networkId): string
     {
         $generator = self::make()
-            ->prefix('CTR')
-            ->id($centerId, 3, '0')
-            ->random(5)
-            ->separator('-');
+            ->pattern('{PREFIX}-{YY}{MM}-{SEQUENCE}-{RANDOM}')
+            ->prefix('NET')
+            ->random(4)
+            ->uniqueIn(Network::class, 'network_uuid', true);
 
-        if ($centerModelClass !== null) {
-            $generator->uniqueIn($centerModelClass, 'center_code', true);
+        if ($networkId != null) {
+            $generator->id($networkId, 5, '0');
+        } else {
+            $generator->nextIdFrom(Network::class, 'network_id', 5);
         }
 
         return $generator->generate();
     }
 
     /**
-     * Generate an elegant, unique Result Business Identifier.
-     * Format: RES-00{center_id}-{random} (e.g. RES-001-K9X2M)
+     * Generate a POS Business UUID following NetSales architectural rule:
+     * Format: POS-{YY}{MM}-{SEQUENCE}-{RANDOM} (e.g. POS-2601-00001-8F3A)
      */
-    public static function forResult(int $centerId, ?string $resultModelClass = null): string
+    public static function forPOS(?int $posId): string
     {
         $generator = self::make()
-            ->prefix('RES')
-            ->id($centerId, 3, '0')
-            ->random(6)
-            ->separator('-');
+            ->pattern('{PREFIX}-{YY}{MM}-{SEQUENCE}-{RANDOM}')
+            ->prefix('POS')
+            ->random(4)
+            ->uniqueIn(Pos::class, 'pos_uuid', true);
 
-        if ($resultModelClass !== null) {
-            $generator->uniqueIn($resultModelClass, 'result_uuid', true);
+        if ($posId != null) {
+            $generator->id($posId, 5, '0');
+        } else {
+            $generator->nextIdFrom(Pos::class, 'pos_id', 5);
+        }
+
+        return $generator->generate();
+    }
+
+    /**
+     * Generate a Sale Invoice Business UUID following NetSales architectural rule:
+     * Format: INV-{YY}{MM}-{SEQUENCE}-{RANDOM} (e.g. INV-2601-00001-8F3A)
+     */
+    public static function forSaleInvoice(?int $invoiceId): string
+    {
+        $generator = self::make()
+            ->pattern('{PREFIX}-{YY}{MM}-{SEQUENCE}-{RANDOM}')
+            ->prefix('INV')
+            ->random(4)
+            ->uniqueIn(SaleInvoice::class, 'invoice_uuid', true);
+
+        if ($invoiceId != null) {
+            $generator->id($invoiceId, 5, '0');
+        } else {
+            $generator->nextIdFrom(SaleInvoice::class, 'invoice_id', 5);
+        }
+
+        return $generator->generate();
+    }
+
+    /**
+     * Generate a Expense Business UUID following NetSales architectural rule:
+     * Format: EXP-{YY}{MM}-{SEQUENCE}-{RANDOM} (e.g. EXP-2601-00001-8F3A)
+     */
+    public static function forExpense(?int $expenseId): string
+    {
+        $generator = self::make()
+            ->pattern('{PREFIX}-{YY}{MM}-{SEQUENCE}-{RANDOM}')
+            ->prefix('EXP')
+            ->random(4)
+            ->uniqueIn(Expense::class, 'expense_uuid', true);
+
+        if ($expenseId != null) {
+            $generator->id($expenseId, 5, '0');
+        } else {
+            $generator->nextIdFrom(Expense::class, 'expense_id', 5);
+        }
+
+        return $generator->generate();
+    }
+
+    /**
+     * Generate a Request Business UUID following NetSales architectural rule:
+     * Format: REQ-{YY}{MM}-{SEQUENCE}-{RANDOM} (e.g. REQ-2601-00001-8F3A)
+     */
+    public static function forRequest(?int $requestId): string
+    {
+        $generator = self::make()
+            ->pattern('{PREFIX}-{YY}{MM}-{SEQUENCE}-{RANDOM}')
+            ->prefix('REQ')
+            ->random(4)
+            ->uniqueIn(Request::class, 'request_uuid', true);
+
+        if ($requestId != null) {
+            $generator->id($requestId, 5, '0');
+        } else {
+            $generator->nextIdFrom(Request::class, 'request_id', 5);
+        }
+
+        return $generator->generate();
+    }
+
+    /**
+     * Generate a Wallet Business UUID following NetSales architectural rule:
+     * Format: WAL-{YY}{MM}-{SEQUENCE}-{RANDOM} (e.g. WAL-2601-00001-8F3A)
+     */
+    public static function forWallet(string $model, ?int $walletId): string
+    {
+        $generator = self::make()
+            ->pattern('{PREFIX}-{YY}{MM}-{SEQUENCE}-{RANDOM}')
+            ->prefix('WAL')
+            ->random(4)
+            ->uniqueIn($model, 'wallet_uuid', true);
+
+        if ($walletId != null) {
+            $generator->id($walletId, 5, '0');
+        } else {
+            $generator->nextIdFrom($model, 'wallet_id', 5);
+        }
+
+        return $generator->generate();
+    }
+
+    /**
+     * Generate a Subscription Business UUID following NetSales architectural rule:
+     * Format: SUB-{YY}{MM}-{SEQUENCE}-{RANDOM} (e.g. SUB-2601-00001-8F3A)
+     */
+    public static function forSubscriptionPlan(?int $planId): string
+    {
+        $generator = self::make()
+            ->pattern('{PREFIX}-{YY}{MM}-{SEQUENCE}-{RANDOM}')
+            ->prefix('SUB')
+            ->random(4)
+            ->uniqueIn(SubscriptionPlan::class, 'plan_uuid', true);
+
+        if ($planId != null) {
+            $generator->id($planId, 5, '0');
+        } else {
+            $generator->nextIdFrom(SubscriptionPlan::class, 'plan_id', 5);
+        }
+
+        return $generator->generate();
+    }
+
+    /**
+     * Generate a SubscriptionPlanRequest Business UUID following NetSales architectural rule:
+     * Format: SPR-{YY}{MM}-{SEQUENCE}-{RANDOM} (e.g. SPR-2601-00001-8F3A)
+     */
+    public static function forSubscriptionPlanRequest(?int $requestId): string
+    {
+        $generator = self::make()
+            ->pattern('{PREFIX}-{YY}{MM}-{SEQUENCE}-{RANDOM}')
+            ->prefix('SPR')
+            ->random(4)
+            ->uniqueIn(SubscriptionPlanRequest::class, 'request_uuid', true);
+
+        if ($requestId != null) {
+            $generator->id($requestId, 5, '0');
+        } else {
+            $generator->nextIdFrom(SubscriptionPlanRequest::class, 'request_id', 5);
+        }
+
+        return $generator->generate();
+    }
+
+    /**
+     * Generate a Ticket Business UUID following NetSales architectural rule:
+     * Format: TKT-{YY}{MM}-{SEQUENCE}-{RANDOM} (e.g. TKT-2601-00001-8F3A)
+     */
+    public static function forTicket(?int $ticketId): string
+    {
+        $generator = self::make()
+            ->pattern('{PREFIX}-{YY}{MM}-{SEQUENCE}-{RANDOM}')
+            ->prefix('TKT')
+            ->random(4)
+            ->uniqueIn(SupportTicket::class, 'ticket_uuid', true);
+
+        if ($ticketId != null) {
+            $generator->id($ticketId, 5, '0');
+        } else {
+            $generator->nextIdFrom(SupportTicket::class, 'ticket_id', 5);
         }
 
         return $generator->generate();
