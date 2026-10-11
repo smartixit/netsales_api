@@ -21,7 +21,7 @@ return new class extends Migration
 
             $table->string('notification_type', 50)->default('SYSTEM')->index('idx_notifications_notification_type');
             $table->string('notification_title', 255);
-            $table->text('notification_details');
+            $table->text('notification_message');
             $table->text('notification_image')->nullable();
             $table->boolean('is_read')->default(false)->index('idx_notifications_is_read');
             $table->timestamp('read_at')->nullable();

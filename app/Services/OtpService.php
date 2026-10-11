@@ -97,7 +97,7 @@ class OtpService
             $this->notificationRepository->create([
                 'user_id' => $user->user_id,
                 'notification_title' => 'رمز التحقق (OTP)',
-                'notification_details' => "رمز التحقق الخاص بك في نظام مبيعات الشبكة هو: {$plainCode}",
+                'notification_message' => "رمز التحقق الخاص بك في نظام مبيعات الشبكة هو: {$plainCode}",
                 'notification_type' => NotificationType::INFO->value,
                 'is_read' => false,
             ]);

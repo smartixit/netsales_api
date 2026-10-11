@@ -23,7 +23,7 @@ return new class extends Migration
                 ->cascadeOnUpdate()
                 ->restrictOnDelete();
 
-            $table->string('feature_value', 50);
+            $table->string('plan_feature_value', 50);
             $table->boolean('status')->default(true)->index('idx_subscription_plan_features_status');
 
             $table->foreignId('created_by')

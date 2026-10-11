@@ -19,8 +19,8 @@ return new class extends Migration
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
 
-            $table->decimal('expense_amount', 15, 2)->default(0.00);
-            $table->string('expense_statement', 150);
+            $table->decimal('item_amount', 15, 2)->default(0.00);
+            $table->string('item_statement', 150);
 
             $table->timestamps();
             $table->softDeletes()->index('idx_expense_items_deleted_at');

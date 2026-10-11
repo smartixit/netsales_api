@@ -409,7 +409,7 @@ return [
         'ids.*' => 'المعرف',
         'seat_number' => 'رقم الجلوس',
         'notification_title' => 'عنوان الإشعار',
-        'notification_details' => 'تفاصيل الإشعار',
+        'notification_message' => 'تفاصيل الإشعار',
         'qr_token' => 'رمز التحقق الرقمي',
     ],
 

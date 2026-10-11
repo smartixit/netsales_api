@@ -364,7 +364,7 @@ namespace App\Models{
  * @property int $user_id
  * @property string $notification_type
  * @property string $notification_title
- * @property string $notification_details
+ * @property string $notification_message
  * @property string|null $notification_image
  * @property int $is_read
  * @property string|null $read_at
@@ -454,18 +454,18 @@ namespace App\Models{
  * @property string|null $last_consumption_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @method static \Illuminate\Database\Eloquent\Builder<static>|PlanSubscriptionFeatureConsumption newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|PlanSubscriptionFeatureConsumption newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|PlanSubscriptionFeatureConsumption query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|PlanSubscriptionFeatureConsumption whereConsumptionId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|PlanSubscriptionFeatureConsumption whereConsumptionValue($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|PlanSubscriptionFeatureConsumption whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|PlanSubscriptionFeatureConsumption whereFeatureId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|PlanSubscriptionFeatureConsumption whereLastConsumptionAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|PlanSubscriptionFeatureConsumption whereSubscriptionId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|PlanSubscriptionFeatureConsumption whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereConsumptionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereConsumptionValue($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereFeatureId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereLastConsumptionAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereSubscriptionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereUpdatedAt($value)
  */
-	class PlanSubscriptionFeatureConsumption extends \Eloquent {}
+	class SubscriptionPlanFeatureConsumption extends \Eloquent {}
 }
 
 namespace App\Models{

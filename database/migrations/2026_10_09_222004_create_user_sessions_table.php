@@ -19,7 +19,7 @@ return new class extends Migration
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
 
-            $table->string('ip_address', 20)->nullable();
+            $table->ipAddress('ip_address')->nullable();
             $table->text('user_agent')->nullable();
             $table->timestamp('logged_at')->useCurrent();
             $table->timestamp('last_activity_at')->useCurrent();

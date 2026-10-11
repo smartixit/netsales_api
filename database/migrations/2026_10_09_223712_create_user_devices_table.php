@@ -29,8 +29,8 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes()->index('idx_user_devices_deleted_at');
 
-            $table->index('user_id', 'idx_user_devices_user_id');
             $table->unique(['user_id', 'device_uuid'], 'uq_user_devices_user_device');
+            $table->index('user_id', 'idx_user_devices_user_id');
         });
     }
 

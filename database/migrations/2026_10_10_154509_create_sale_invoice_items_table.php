@@ -26,7 +26,7 @@ return new class extends Migration
             $table->decimal('voucher_price', 8, 2)->default(0.00);
             $table->integer('voucher_count')->default(0);
             $table->decimal('item_discount', 5, 2)->default(0.00);
-            $table->decimal('item_amount', 15, 2)->default(0.00);
+            $table->decimal('item_total_amount', 15, 2)->default(0.00);
 
             $table->timestamps();
             $table->softDeletes()->index('idx_sale_invoice_items_deleted_at');

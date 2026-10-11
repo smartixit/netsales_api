@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('plan_subscription_feature_consumptions', function (Blueprint $table) {
+        Schema::create('subscription_plan_feature_consumptions', function (Blueprint $table) {
             $table->id('consumption_id');
 
             $table->foreignId('subscription_id')
@@ -24,12 +24,12 @@ return new class extends Migration
                 ->restrictOnDelete();
 
             $table->integer('consumption_value')->default(0);
-            $table->timestamp('last_consumption_at')->nullable()->index('idx_plan_subscription_feature_consumptions_last_consumption_at');
+            $table->timestamp('last_consumption_at')->nullable()->index('idx_subscription_plan_feature_consumptions_last_consumption_at');
 
             $table->timestamps();
 
-            $table->index('subscription_id', 'idx_plan_subscription_feature_consumptions_subscription_id');
-            $table->index('feature_id', 'idx_plan_subscription_feature_consumptions_feature_id');
+            $table->index('subscription_id', 'idx_subscription_plan_feature_consumptions_subscription_id');
+            $table->index('feature_id', 'idx_subscription_plan_feature_consumptions_feature_id');
         });
     }
 
@@ -38,6 +38,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('plan_subscription_feature_consumptions');
+        Schema::dropIfExists('subscription_plan_feature_consumptions');
     }
 };

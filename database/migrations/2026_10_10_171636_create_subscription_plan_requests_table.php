@@ -39,7 +39,7 @@ return new class extends Migration
 
             $table->string('transaction_reference', 50)->nullable();
             $table->text('transaction_receipt')->nullable();
-            $table->string('status', 20)->default('PENDING')->index('idx_subscription_plan_requests_status');
+            $table->string('status', 20)->default('REVIEWING')->index('idx_subscription_plan_requests_status');
             $table->string('rejection_reason', 150)->nullable();
 
             $table->foreignId('reviewed_by')

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OtpType;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -15,9 +16,9 @@ class Otp extends Model
 
     protected $primaryKey = 'otp_id';
 
-    protected $incrementing = true;
-
     protected $keyType = 'int';
+
+    protected $incrementing = true;
 
     public $timestamps = true;
 
@@ -26,19 +27,22 @@ class Otp extends Model
         'otp_code',
         'otp_type',
         'otp_failure_attempts',
+        'is_used',
+        'expires_at',
     ];
 
     protected function casts(): array
     {
         return [
+            'otp_type' => OtpType::class,
             'otp_failure_attempts' => 'integer',
-            'expires_at' => 'boolean',
-            'is_user' => 'boolean',
+            'expires_at' => 'datetime',
+            'is_used' => 'boolean',
         ];
     }
 
     // Relations
-    public function users(): BelongsTo
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
@@ -58,10 +62,5 @@ class Otp extends Model
     public function scopeForUser(Builder $query, int $userId): Builder
     {
         return $query->where('user_id', $userId);
-    }
-
-    public function isValid(): bool
-    {
-        return ! $this->is_used && $this->expires_at > now('Asia/Aden');
     }
 }

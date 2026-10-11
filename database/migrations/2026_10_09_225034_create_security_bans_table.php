@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('security_security_bans', function (Blueprint $table) {
+        Schema::create('security_bans', function (Blueprint $table) {
             $table->id('ban_id');
 
             $table->foreignId('user_id')
@@ -49,6 +49,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('security_security_bans');
+        Schema::dropIfExists('security_bans');
     }
 };
