@@ -80,7 +80,7 @@ class SecurityBan extends Model
     // Checkers
     public function isCurrentlyActive(): bool
     {
-        return is_null($this->end_at) || $this->end_at->isFuture();
+        return is_null($this->end_at) || now('Asia/Aden')->lt($this->end_at);
     }
 
     public function isPermanent(): bool
