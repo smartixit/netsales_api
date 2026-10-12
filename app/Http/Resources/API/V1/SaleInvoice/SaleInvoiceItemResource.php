@@ -25,11 +25,12 @@ class SaleInvoiceItemResource extends JsonResource
             'invoice_id' => $this->invoice_id,
             'package_id' => $this->package_id,
             'voucher_price' => (float) $this->voucher_price,
-            'voucher_count' => $this->voucher_count,
+            'voucher_count' => (int) $this->voucher_count,
             'item_discount' => (float) $this->item_discount,
             'item_total_amount' => (float) $this->item_total_amount,
-            'created_at' => $this->created_at? Carbon::parse($this->created_at)->toDateTimeString() : null,
-            'updated_at' => $this->updated_at? Carbon::parse($this->updated_at)->toDateTimeString() : null,
+            'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
+            'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
+            'deleted_at' => $this->deleted_at ? Carbon::parse($this->deleted_at)->toDateTimeString() : null,
 
             // Eager Loaded Relationships
             'package' => $this->whenLoaded('voucherPackage', fn () => new VoucherPackageResource($this->voucherPackage)),

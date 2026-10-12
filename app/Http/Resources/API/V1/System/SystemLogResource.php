@@ -23,14 +23,15 @@ class SystemLogResource extends JsonResource
         return [
             'log_id' => $this->log_id,
             'user_id' => $this->user_id,
-            'log_level' => $this->log_level,
-            'log_action' => $this->log_action,
-            'log_message' => $this->log_message,
-            'log_context' => $this->log_context,
+            'module' => $this->module,
+            'action' => $this->action,
+            'entity_type' => $this->entity_type,
+            'entity_id' => $this->entity_id,
+            'old_values' => $this->old_values,
+            'new_values' => $this->new_values,
             'ip_address' => $this->ip_address,
             'user_agent' => $this->user_agent,
-            'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
-            'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
+            'log_date' => $this->log_date ? Carbon::parse($this->log_date)->toDateTimeString() : null,
 
             // Eager Loaded Relationships
             'user' => $this->whenLoaded('user', fn () => new UserResource($this->user)),

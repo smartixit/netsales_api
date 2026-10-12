@@ -24,14 +24,14 @@ class OtpResource extends JsonResource
         return [
             'otp_id' => $this->otp_id,
             'user_id' => $this->user_id,
-            'phone_number' => $this->phone_number,
+            'otp_code' => $this->otp_code,
             'otp_type' => $this->otp_type instanceof OtpType ? $this->otp_type->value : $this->otp_type,
             'otp_type_label' => $this->otp_type instanceof OtpType
                 ? $this->otp_type->label()
                 : (OtpType::tryFrom((string) $this->otp_type)?->label()),
+            'otp_failure_attempts' => (int) $this->otp_failure_attempts,
             'is_used' => (bool) $this->is_used,
             'expires_at' => $this->expires_at ? Carbon::parse($this->expires_at)->toDateTimeString() : null,
-            'used_at' => $this->used_at ? Carbon::parse($this->used_at)->toDateTimeString() : null,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
 

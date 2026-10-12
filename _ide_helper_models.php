@@ -285,7 +285,7 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * @property int $pos_network_id
+ * @property int $network_pos_id
  * @property int $network_id
  * @property int $pos_id
  * @property int $status

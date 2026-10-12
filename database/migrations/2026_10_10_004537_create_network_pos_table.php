@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('network_pos', function (Blueprint $table) {
-            $table->id('pos_network_id');
+            $table->id('network_pos_id');
 
             $table->foreignId('network_id')
                 ->constrained('networks', 'network_id')
@@ -28,7 +28,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['network_id', 'pos_id'], 'uq_network_pos_network_pos');
-            $table->index('network_id', 'idx_network_pos_network_id');
+            $table->index('network_id', 'idx_network_network_pos_id');
             $table->index('pos_id', 'idx_network_pos_id');
         });
     }

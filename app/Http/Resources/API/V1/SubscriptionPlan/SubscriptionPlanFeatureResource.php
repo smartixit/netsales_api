@@ -29,6 +29,7 @@ class SubscriptionPlanFeatureResource extends JsonResource
             'created_by' => $this->created_by,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
+            'deleted_at' => $this->deleted_at ? Carbon::parse($this->deleted_at)->toDateTimeString() : null,
 
             // Eager Loaded Relationships
             'plan' => $this->whenLoaded('plan', fn () => new SubscriptionPlanResource($this->plan)),

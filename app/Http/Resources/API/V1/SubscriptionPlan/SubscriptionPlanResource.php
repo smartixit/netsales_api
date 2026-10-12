@@ -3,9 +3,9 @@
 namespace App\Http\Resources\API\V1\SubscriptionPlan;
 
 use App\Models\SubscriptionPlan;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Carbon;
 
 /**
  * @mixin SubscriptionPlan
@@ -21,17 +21,16 @@ class SubscriptionPlanResource extends JsonResource
     {
         return [
             'plan_id' => $this->plan_id,
+            'plan_uuid' => $this->plan_uuid,
             'plan_name' => $this->plan_name,
             'plan_price' => (float) $this->plan_price,
             'plan_discount' => (float) $this->plan_discount,
-            'plan_duration_days' => $this->plan_duration_days,
+            'plan_validity' => (int) $this->plan_validity,
             'plan_desc' => $this->plan_desc,
-            'is_free' => (bool) $this->is_free,
-            'is_popular' => (bool) $this->is_popular,
-            'is_custom' => (bool) $this->is_custom,
             'status' => (bool) $this->status,
-            'created_at' => $this->created_at? Carbon::parse($this->created_at)->toDateTimeString() : null,
-            'updated_at' => $this->updated_at? Carbon::parse($this->updated_at)->toDateTimeString() : null,
+            'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
+            'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
+            'deleted_at' => $this->deleted_at ? Carbon::parse($this->deleted_at)->toDateTimeString() : null,
 
             // Eager Loaded Relationships
             'features' => $this->whenLoaded('features', fn () => FeatureResource::collection($this->features)),

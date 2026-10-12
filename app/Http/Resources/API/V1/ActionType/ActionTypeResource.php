@@ -24,10 +24,10 @@ class ActionTypeResource extends JsonResource
             'action_type_id' => $this->action_type_id,
             'action_type_key' => $this->action_type_key,
             'action_type_name' => $this->action_type_name,
-            'action_type_desc' => $this->action_type_desc,
             'status' => (bool) $this->status,
-            'created_at' => $this->created_at? Carbon::parse($this->created_at)->toDateTimeString() : null,
-            'updated_at' => $this->updated_at? Carbon::parse($this->updated_at)->toDateTimeString() : null,
+            'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
+            'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
+            'deleted_at' => $this->deleted_at ? Carbon::parse($this->deleted_at)->toDateTimeString() : null,
 
             // Eager Loaded Relationships
             'permissions' => $this->whenLoaded('permissions', fn () => PermissionResource::collection($this->permissions)),
