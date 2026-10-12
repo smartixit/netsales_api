@@ -19,7 +19,7 @@ class VoucherPackageDiscount extends Model
 
     protected $keyType = 'int';
 
-    protected $incrementing = true;
+    public $incrementing = true;
 
     public $timestamps = true;
 
