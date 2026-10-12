@@ -53,7 +53,7 @@ class NetworkResource extends JsonResource
             'approved_by_user' => $this->whenLoaded('approvedBy', fn () => new UserResource($this->approvedBy)),
             'rejected_by_user' => $this->whenLoaded('rejectedBy', fn () => new UserResource($this->rejectedBy)),
             'wallet' => $this->whenLoaded('wallet', fn () => new NetworkWalletResource($this->wallet)),
-            'packages' => $this->whenLoaded('packages', fn () => VoucherPackageResource::collection($this->packages)),
+            'voucher_packages' => $this->whenLoaded('voucherPackages', fn () => VoucherPackageResource::collection($this->voucherPackages)),
         ];
     }
 }

@@ -55,7 +55,7 @@ class SubscriptionPlanRequestResource extends JsonResource
             'plan' => $this->whenLoaded('plan', fn () => new SubscriptionPlanResource($this->plan)),
             'requested_by_user' => $this->whenLoaded('requestedBy', fn () => new UserResource($this->requestedBy)),
             'reviewed_by_user' => $this->whenLoaded('reviewedBy', fn () => new UserResource($this->reviewedBy)),
-            'account' => $this->whenLoaded('account', fn () => new BankAccountResource($this->account)),
+            'bank_account' => $this->whenLoaded('bankAccount', fn () => new BankAccountResource($this->bankAccount)),
         ];
     }
 }

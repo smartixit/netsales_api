@@ -37,7 +37,7 @@ class VoucherPackageDiscountResource extends JsonResource
             // Eager Loaded Relationships
             'network' => $this->whenLoaded('network', fn () => new NetworkResource($this->network)),
             'pos' => $this->whenLoaded('pos', fn () => new PosResource($this->pos)),
-            'package' => $this->whenLoaded('package', fn () => new VoucherPackageResource($this->package)),
+            'voucher_package' => $this->whenLoaded('voucherPackage', fn () => new VoucherPackageResource($this->voucherPackage)),
             'created_by_user' => $this->whenLoaded('createdBy', fn () => new UserResource($this->createdBy)),
         ];
     }

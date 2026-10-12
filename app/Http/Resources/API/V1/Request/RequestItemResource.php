@@ -30,7 +30,7 @@ class RequestItemResource extends JsonResource
             'deleted_at' => $this->deleted_at ? Carbon::parse($this->deleted_at)->toDateTimeString() : null,
 
             // Eager Loaded Relationships
-            'package' => $this->whenLoaded('package', fn () => new VoucherPackageResource($this->package)),
+            'voucher_package' => $this->whenLoaded('voucherPackage', fn () => new VoucherPackageResource($this->voucherPackage)),
         ];
     }
 }
