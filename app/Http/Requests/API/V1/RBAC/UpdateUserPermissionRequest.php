@@ -1,29 +1,45 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\API\V1\RBAC;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateUserPermissionRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    use LoadsCustomValidationMessages;
+
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
+        $userPermissionId = $this->route('user_permission')?->user_permission_id
+            ?? $this->route('user_permission')
+            ?? $this->route('id');
+
         return [
-            //
+            'user_id' => [
+                'sometimes',
+                'required',
+                'integer',
+                Rule::exists('users', 'user_id')->whereNull('deleted_at'),
+            ],
+            'permission_id' => [
+                'sometimes',
+                'required',
+                'integer',
+                Rule::exists('permissions', 'permission_id')->whereNull('deleted_at'),
+                Rule::unique('user_permissions', 'permission_id')
+                    ->where('user_id', $this->user_id ?? $this->route('user_permission')?->user_id)
+                    ->ignore($userPermissionId, 'user_permission_id'),
+            ],
         ];
     }
 }

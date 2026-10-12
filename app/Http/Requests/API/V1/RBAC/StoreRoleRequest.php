@@ -1,29 +1,60 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\API\V1\RBAC;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreRoleRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    use LoadsCustomValidationMessages;
+
     public function authorize(): bool
     {
-        return false;
+        return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'role_key' => is_string($this->role_key) ? trim(strtolower($this->role_key)) : $this->role_key,
+            'role_name' => is_string($this->role_name) ? trim($this->role_name) : $this->role_name,
+            'role_desc' => is_string($this->role_desc) ? trim($this->role_desc) : $this->role_desc,
+        ]);
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
         return [
-            //
+            'role_key' => [
+                'required',
+                'string',
+                'max:50',
+                'regex:/^[a-z0-9_]+$/',
+                Rule::unique('roles', 'role_key')->whereNull('deleted_at'),
+            ],
+            'role_name' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+            'role_desc' => [
+                'nullable',
+                'string',
+                'max:500',
+            ],
+            'is_system' => [
+                'nullable',
+                'boolean',
+            ],
+            'status' => [
+                'nullable',
+                'boolean',
+            ],
         ];
     }
 }

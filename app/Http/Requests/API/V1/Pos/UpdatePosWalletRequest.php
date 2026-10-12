@@ -1,29 +1,26 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\API\V1\Pos;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdatePosWalletRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    use LoadsCustomValidationMessages;
+
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            //
+            'status' => [
+                'required',
+                'boolean',
+            ],
         ];
     }
 }

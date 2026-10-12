@@ -1,29 +1,56 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\API\V1\Network;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreVoucherPackageDiscountRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    use LoadsCustomValidationMessages;
+
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            //
+            'network_id' => [
+                'required',
+                'integer',
+                Rule::exists('networks', 'network_id')->whereNull('deleted_at'),
+            ],
+            'package_id' => [
+                'required',
+                'integer',
+                Rule::exists('voucher_packages', 'package_id')->whereNull('deleted_at'),
+            ],
+            'pos_id' => [
+                'required',
+                'integer',
+                Rule::exists('pos', 'pos_id')->whereNull('deleted_at'),
+                Rule::unique('voucher_package_discounts', 'pos_id')
+                    ->where('network_id', $this->network_id)
+                    ->where('package_id', $this->package_id)
+                    ->whereNull('deleted_at'),
+            ],
+            'discount_cash' => [
+                'required',
+                'numeric',
+                'between:0,100',
+            ],
+            'discount_credit' => [
+                'required',
+                'numeric',
+                'between:0,100',
+            ],
+            'status' => [
+                'nullable',
+                'boolean',
+            ],
         ];
     }
 }

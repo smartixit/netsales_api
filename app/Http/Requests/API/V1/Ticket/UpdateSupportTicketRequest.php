@@ -1,29 +1,50 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\API\V1\Ticket;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateSupportTicketRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    use LoadsCustomValidationMessages;
+
     public function authorize(): bool
     {
-        return false;
+        return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'ticket_subject' => is_string($this->ticket_subject) ? trim($this->ticket_subject) : $this->ticket_subject,
+        ]);
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
         return [
-            //
+            'network_id' => [
+                'sometimes',
+                'required',
+                'integer',
+                Rule::exists('networks', 'network_id')->whereNull('deleted_at'),
+            ],
+            'pos_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('pos', 'pos_id')->whereNull('deleted_at'),
+            ],
+            'ticket_subject' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:255',
+            ],
         ];
     }
 }

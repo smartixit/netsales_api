@@ -1,29 +1,43 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\API\V1\Geography;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreDirectorateRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    use LoadsCustomValidationMessages;
+
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'directorate_name' => is_string($this->directorate_name) ? trim($this->directorate_name) : $this->directorate_name,
+        ]);
+    }
+
     public function rules(): array
     {
         return [
-            //
+            'governorate_id' => [
+                'required',
+                'integer',
+                Rule::exists('governorates', 'governorate_id')->whereNull('deleted_at'),
+            ],
+            'directorate_name' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('directorates', 'directorate_name')
+                    ->where('governorate_id', $this->governorate_id)
+                    ->whereNull('deleted_at'),
+            ],
         ];
     }
 }

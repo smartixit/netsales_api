@@ -1,29 +1,56 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\API\V1\ActionType;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreActionTypeRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    use LoadsCustomValidationMessages;
+
     public function authorize(): bool
     {
-        return false;
+        return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'action_type_key' => is_string($this->action_type_key) ? trim(strtolower($this->action_type_key)) : $this->action_type_key,
+            'action_type_name' => is_string($this->action_type_name) ? trim($this->action_type_name) : $this->action_type_name,
+            'action_type_desc' => is_string($this->action_type_desc) ? trim($this->action_type_desc) : $this->action_type_desc,
+        ]);
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
         return [
-            //
+            'action_type_key' => [
+                'required',
+                'string',
+                'max:50',
+                'regex:/^[a-z0-9_.-]+$/',
+                Rule::unique('action_types', 'action_type_key')->whereNull('deleted_at'),
+            ],
+            'action_type_name' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+            'action_type_desc' => [
+                'nullable',
+                'string',
+                'max:500',
+            ],
+            'status' => [
+                'nullable',
+                'boolean',
+            ],
         ];
     }
 }
