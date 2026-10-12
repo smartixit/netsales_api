@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\SettingCategory;
 use App\Enums\ValueType;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -33,9 +36,46 @@ class SystemSetting extends Model
     protected function casts(): array
     {
         return [
+            'setting_category' => SettingCategory::class,
             'setting_value_type' => ValueType::class,
         ];
     }
 
-    // Relationships
+    // Scopes
+    public function scopeCategory(Builder $query, SettingCategory|string $category): Builder
+    {
+        return $query->where('setting_category', $category instanceof SettingCategory ? $category->value : $category);
+    }
+
+    public function scopeByKey(Builder $query, string $key): Builder
+    {
+        return $query->where('setting_key', $key);
+    }
+
+    // Accessors
+    protected function typedValue(): Attribute
+    {
+        return Attribute::make(
+            get: function (): mixed {
+                $value = $this->setting_value;
+                if ($value === null) {
+                    return null;
+                }
+
+                return match ($this->setting_value_type) {
+                    ValueType::INTEGER => (int) $value,
+                    ValueType::BOOLEAN => filter_var($value, FILTER_VALIDATE_BOOLEAN),
+                    default => (string) $value,
+                };
+            }
+        );
+    }
+
+    // Static Helpers
+    public static function getValue(string $key, mixed $default = null): mixed
+    {
+        $setting = static::query()->where('setting_key', $key)->first();
+
+        return $setting ? $setting->typed_value : $default;
+    }
 }

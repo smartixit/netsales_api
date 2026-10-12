@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -48,5 +49,26 @@ class SystemLog extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
+
+    // Scopes
+    public function scopeForUser(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    public function scopeForModule(Builder $query, string $module): Builder
+    {
+        return $query->where('module', $module);
+    }
+
+    public function scopeForEntity(Builder $query, string $entityType, int|string $entityId): Builder
+    {
+        return $query->where('entity_type', $entityType)->where('entity_id', $entityId);
+    }
+
+    public function scopeRecent(Builder $query, int $limit = 50): Builder
+    {
+        return $query->latest('log_date')->limit($limit);
     }
 }

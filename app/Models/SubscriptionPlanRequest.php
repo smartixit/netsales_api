@@ -6,6 +6,7 @@ use App\Enums\PaymentType;
 use App\Enums\RequestStatus;
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -87,5 +88,42 @@ class SubscriptionPlanRequest extends Model
     public function bankAccount(): BelongsTo
     {
         return $this->belongsTo(BankAccount::class, 'account_id', 'account_id');
+    }
+
+    // Scopes
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', RequestStatus::PENDING);
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('status', RequestStatus::APPROVED);
+    }
+
+    public function scopeRejected(Builder $query): Builder
+    {
+        return $query->where('status', RequestStatus::REJECTED);
+    }
+
+    public function scopeForNetwork(Builder $query, int $networkId): Builder
+    {
+        return $query->where('network_id', $networkId);
+    }
+
+    // Checkers
+    public function isPending(): bool
+    {
+        return $this->status === RequestStatus::PENDING;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === RequestStatus::APPROVED;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === RequestStatus::REJECTED;
     }
 }

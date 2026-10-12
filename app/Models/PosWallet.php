@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Enums\WalletOperationType;
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class PosWallet extends Model
 {
@@ -64,5 +67,58 @@ class PosWallet extends Model
     public function logs(): HasMany
     {
         return $this->hasMany(PosWalletLog::class, 'wallet_id', 'wallet_id');
+    }
+
+    // Scopes
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', true);
+    }
+
+    public function scopeForNetworkAndPos(Builder $query, int $networkId, int $posId): Builder
+    {
+        return $query->where('network_id', $networkId)->where('pos_id', $posId);
+    }
+
+    // Checkers
+    public function isActive(): bool
+    {
+        return (bool) $this->status;
+    }
+
+    public function hasSufficientBalance(float $amount): bool
+    {
+        return (float) $this->wallet_balance >= $amount;
+    }
+
+    // Operations
+    public function deposit(float $amount, string $statement, int $userId): PosWalletLog
+    {
+        return DB::transaction(function () use ($amount, $statement, $userId): PosWalletLog {
+            $this->increment('wallet_balance', $amount);
+
+            return $this->logs()->create([
+                'log_operation_type' => WalletOperationType::DEPOSIT,
+                'log_amount' => $amount,
+                'log_statement' => $statement,
+                'log_date' => now('Asia/Aden'),
+                'created_by' => $userId,
+            ]);
+        });
+    }
+
+    public function withdraw(float $amount, string $statement, int $userId): PosWalletLog
+    {
+        return DB::transaction(function () use ($amount, $statement, $userId): PosWalletLog {
+            $this->decrement('wallet_balance', $amount);
+
+            return $this->logs()->create([
+                'log_operation_type' => WalletOperationType::WITHDRAW,
+                'log_amount' => $amount,
+                'log_statement' => $statement,
+                'log_date' => now('Asia/Aden'),
+                'created_by' => $userId,
+            ]);
+        });
     }
 }

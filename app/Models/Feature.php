@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ValueType;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -54,5 +55,17 @@ class Feature extends Model
             'feature_id',
             'plan_id'
         )->withTimestamps();
+    }
+
+    // Scopes
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', true);
+    }
+
+    // Checkers
+    public function isActive(): bool
+    {
+        return (bool) $this->status;
     }
 }

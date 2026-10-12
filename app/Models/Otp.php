@@ -63,4 +63,33 @@ class Otp extends Model
     {
         return $query->where('user_id', $userId);
     }
+
+    // Checkers & Helpers
+    public function isValid(): bool
+    {
+        if ($this->is_used) {
+            return false;
+        }
+
+        if ($this->expires_at === null || now('Asia/Aden')->gt($this->expires_at)) {
+            return false;
+        }
+
+        return $this->otp_failure_attempts < 5;
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->expires_at !== null && now('Asia/Aden')->gt($this->expires_at);
+    }
+
+    public function markAsUsed(): void
+    {
+        $this->update(['is_used' => true]);
+    }
+
+    public function incrementFailureAttempts(): void
+    {
+        $this->increment('otp_failure_attempts');
+    }
 }

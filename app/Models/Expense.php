@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -69,5 +70,18 @@ class Expense extends Model
     public function attachments(): HasMany
     {
         return $this->hasMany(ExpenseAttachment::class, 'expense_id', 'expense_id');
+    }
+
+    // Scopes
+    public function scopeForNetwork(Builder $query, int $networkId): Builder
+    {
+        return $query->where('network_id', $networkId);
+    }
+
+    // Calculations
+    public function recalculateTotal(): void
+    {
+        $total = (float) $this->items()->sum('item_amount');
+        $this->update(['expense_total_amount' => $total]);
     }
 }

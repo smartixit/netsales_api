@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\RoleKey;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -58,5 +60,43 @@ class Role extends Model
             'role_id',
             'permission_id'
         )->withTimestamps();
+    }
+
+    // Scopes
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', true);
+    }
+
+    public function scopeByKey(Builder $query, RoleKey|string $roleKey): Builder
+    {
+        $key = $roleKey instanceof RoleKey ? $roleKey->value : $roleKey;
+
+        return $query->where('role_key', $key);
+    }
+
+    public function scopeSystem(Builder $query): Builder
+    {
+        return $query->where('is_system', true);
+    }
+
+    // Checkers
+    public function isActive(): bool
+    {
+        return (bool) $this->status;
+    }
+
+    public function isSystem(): bool
+    {
+        return (bool) $this->is_system;
+    }
+
+    public function hasPermission(string $permissionKey): bool
+    {
+        if ($this->relationLoaded('permissions')) {
+            return $this->permissions->contains('permission_key', $permissionKey);
+        }
+
+        return $this->permissions()->where('permission_key', $permissionKey)->exists();
     }
 }

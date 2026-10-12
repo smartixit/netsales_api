@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -79,5 +80,27 @@ class Permission extends Model
             'permission_id',
             'user_id'
         )->withTimestamps();
+    }
+
+    // Scopes
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', true);
+    }
+
+    public function scopeByModule(Builder $query, int $moduleId): Builder
+    {
+        return $query->where('module_id', $moduleId);
+    }
+
+    public function scopeByKey(Builder $query, string $key): Builder
+    {
+        return $query->where('permission_key', $key);
+    }
+
+    // Checkers
+    public function isActive(): bool
+    {
+        return (bool) $this->status;
     }
 }

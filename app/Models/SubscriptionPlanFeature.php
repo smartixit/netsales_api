@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -61,5 +62,27 @@ class SubscriptionPlanFeature extends Model
             'feature_id',
             'subscription_plan_feature_id'
         );
+    }
+
+    // Scopes
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', true);
+    }
+
+    public function scopeForPlan(Builder $query, int $planId): Builder
+    {
+        return $query->where('plan_id', $planId);
+    }
+
+    // Checkers
+    public function isActive(): bool
+    {
+        return (bool) $this->status;
+    }
+
+    public function isUnlimited(): bool
+    {
+        return (int) $this->plan_feature_value === -1;
     }
 }

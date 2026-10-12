@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -78,5 +79,32 @@ class SubscriptionPlan extends Model
     public function subscriptionRequests(): HasMany
     {
         return $this->hasMany(SubscriptionPlanRequest::class, 'plan_id', 'plan_id');
+    }
+
+    // Scopes
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', true);
+    }
+
+    // Checkers & Calculations
+    public function isActive(): bool
+    {
+        return (bool) $this->status;
+    }
+
+    public function discountAmount(): float
+    {
+        $price = (float) $this->plan_price;
+        $discountPercent = (float) ($this->plan_discount ?? 0.0);
+
+        return round($price * ($discountPercent / 100), 2);
+    }
+
+    public function finalPrice(): float
+    {
+        $price = (float) $this->plan_price;
+
+        return max(0.0, round($price - $this->discountAmount(), 2));
     }
 }

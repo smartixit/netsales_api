@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\RoleKey;
 use App\Enums\UserStatus;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -176,5 +179,81 @@ class User extends Model
     public function supportTicketMessages(): HasMany
     {
         return $this->hasMany(SupportTicketMessage::class, 'sent_by', 'user_id');
+    }
+
+    // Scopes
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', UserStatus::ACTIVE);
+    }
+
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', UserStatus::PENDING);
+    }
+
+    public function scopeBanned(Builder $query): Builder
+    {
+        return $query->where('status', UserStatus::BANNED);
+    }
+
+    public function scopeWithRole(Builder $query, string|RoleKey $roleKey): Builder
+    {
+        $key = $roleKey instanceof RoleKey ? $roleKey->value : $roleKey;
+        return $query->whereHas('role', fn (Builder $q): Builder => $q->where('role_key', $key));
+    }
+
+    // Business Checkers
+    public function isActive(): bool
+    {
+        return $this->status === UserStatus::ACTIVE;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === UserStatus::PENDING;
+    }
+
+    public function isBanned(): bool
+    {
+        return $this->status === UserStatus::BANNED || $this->securityBans()->where(function (Builder $query): void {
+            $query->whereNull('end_at')->orWhere('end_at', '>', now('Asia/Aden'));
+        })->exists();
+    }
+
+    public function hasRole(string|RoleKey $roleKey): bool
+    {
+        $key = $roleKey instanceof RoleKey ? $roleKey->value : $roleKey;
+        return $this->role?->role_key === $key;
+    }
+
+    public function hasPermission(string $permissionKey): bool
+    {
+        if ($this->hasRole(RoleKey::SUPER_ADMIN)) {
+            return true;
+        }
+
+        if ($this->permissions()->where('permission_key', $permissionKey)->exists()) {
+            return true;
+        }
+
+        return $this->role?->permissions()->where('permission_key', $permissionKey)->exists() ?? false;
+    }
+
+    // Accessors
+    // protected function profileLogoUrl(): Attribute
+    // {
+    //     return Attribute::make(
+    //         get: fn (): string => $this->user_profile_logo
+    //             ? Storage::url($this->user_profile_logo)
+    //             : asset('assets/images/default-avatar.png')
+    //     );
+    // }
+
+    protected function displayName(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => $this->user_full_name ?: ($this->user_phone_number ?: 'مستخدم #' . $this->user_id)
+        );
     }
 }

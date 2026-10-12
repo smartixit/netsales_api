@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Enums\NetworkStatus;
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -149,4 +151,63 @@ class Network extends Model
     {
         return $this->hasMany(SupportTicket::class, 'network_id', 'network_id');
     }
+
+    // Scopes
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('status', NetworkStatus::ACTIVE);
+    }
+
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', NetworkStatus::PENDING);
+    }
+
+    public function scopeRejected(Builder $query): Builder
+    {
+        return $query->where('status', NetworkStatus::REJECTED);
+    }
+
+    public function scopeInGovernorate(Builder $query, int $governorateId): Builder
+    {
+        return $query->where('governorate_id', $governorateId);
+    }
+
+    public function scopeInDirectorate(Builder $query, int $directorateId): Builder
+    {
+        return $query->where('directorate_id', $directorateId);
+    }
+
+    // Checkers
+    public function isApproved(): bool
+    {
+        return $this->status === NetworkStatus::ACTIVE;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === NetworkStatus::PENDING;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === NetworkStatus::REJECTED;
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        return $this->subscriptions()->where(function (Builder $query): void {
+            $query->whereNull('subscription_end_date')->orWhere('subscription_end_date', '>', now('Asia/Aden'));
+        })->exists();
+    }
+
+    // Accessors
+    // protected function logoUrl(): Attribute
+    // {
+    //     return Attribute::make(
+    //         get: fn (): string => $this->network_profile_logo
+    //             ? asset('storage/' . $this->network_profile_logo)
+    //             : asset('assets/images/default-network.png')
+    //     );
+    // }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -41,5 +42,16 @@ class RolePermission extends Model
     public function permission(): BelongsTo
     {
         return $this->belongsTo(Permission::class, 'permission_id', 'permission_id');
+    }
+
+    // Scopes
+    public function scopeForRole(Builder $query, int $roleId): Builder
+    {
+        return $query->where('role_id', $roleId);
+    }
+
+    public function scopeForPermission(Builder $query, int $permissionId): Builder
+    {
+        return $query->where('permission_id', $permissionId);
     }
 }

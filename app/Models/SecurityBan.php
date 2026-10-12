@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\BanType;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -58,4 +59,32 @@ class SecurityBan extends Model
         return $this->belongsTo(User::class, 'banned_by', 'user_id');
     }
 
+    // Scopes
+    public function scopeActiveBans(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q): void {
+            $q->whereNull('end_at')->orWhere('end_at', '>', now('Asia/Aden'));
+        });
+    }
+
+    public function scopeForDevice(Builder $query, int $deviceId): Builder
+    {
+        return $query->where('device_id', $deviceId);
+    }
+
+    public function scopeForUser(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    // Checkers
+    public function isCurrentlyActive(): bool
+    {
+        return is_null($this->end_at) || $this->end_at->isFuture();
+    }
+
+    public function isPermanent(): bool
+    {
+        return is_null($this->end_at);
+    }
 }

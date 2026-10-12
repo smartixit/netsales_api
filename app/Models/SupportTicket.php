@@ -69,4 +69,10 @@ class SupportTicket extends Model
     {
         return $this->hasOne(SupportTicketMessage::class, 'ticket_id', 'ticket_id')->latestOfMany('sent_at');
     }
+
+    // Helpers
+    public function unreadCount(): int
+    {
+        return $this->messages()->where('is_read', false)->count();
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -71,5 +72,23 @@ class SaleInvoice extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SaleInvoiceItem::class, 'invoice_id', 'invoice_id');
+    }
+
+    // Scopes
+    public function scopeForPos(Builder $query, int $posId): Builder
+    {
+        return $query->where('pos_id', $posId);
+    }
+
+    public function scopeForNetwork(Builder $query, int $networkId): Builder
+    {
+        return $query->where('network_id', $networkId);
+    }
+
+    // Calculations
+    public function recalculateTotal(): void
+    {
+        $total = (float) $this->items()->sum('item_total_amount');
+        $this->update(['invoice_total_amount' => $total]);
     }
 }

@@ -45,4 +45,12 @@ class RequestItem extends Model
     {
         return $this->belongsTo(VoucherPackage::class, 'package_id', 'package_id');
     }
+
+    // Calculations
+    public function calculateSubtotal(?float $unitPrice = null): float
+    {
+        $price = $unitPrice ?? (float) ($this->voucherPackage?->package_voucher_price ?? 0);
+
+        return (float) ($this->item_voucher_count * $price);
+    }
 }

@@ -51,4 +51,22 @@ class SaleInvoiceItem extends Model
     {
         return $this->belongsTo(VoucherPackage::class, 'package_id', 'package_id');
     }
+
+    // Calculations
+    public function grossAmount(): float
+    {
+        return round((float) $this->voucher_price * (int) $this->voucher_count, 2);
+    }
+
+    public function calculateDiscountAmount(): float
+    {
+        $discountPercent = (float) ($this->item_discount ?? 0.0);
+
+        return round($this->grossAmount() * ($discountPercent / 100), 2);
+    }
+
+    public function calculateLineTotal(): float
+    {
+        return max(0.0, round($this->grossAmount() - $this->calculateDiscountAmount(), 2));
+    }
 }

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -75,4 +77,58 @@ class VoucherPackage extends Model
     {
         return $this->hasMany(SaleInvoiceItem::class, 'package_id', 'package_id');
     }
+
+    // Scopes
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', true);
+    }
+
+    public function scopeForNetwork(Builder $query, int $networkId): Builder
+    {
+        return $query->where('network_id', $networkId);
+    }
+
+    // Checkers
+    public function isActive(): bool
+    {
+        return (bool) $this->status;
+    }
+
+    // Calculations
+    public function defaultDiscount(bool $isCash = true): float
+    {
+        return (float) ($isCash ? $this->package_default_cash_discount : $this->package_default_credit_discount);
+    }
+
+    public function calculateDefaultDiscountAmount(bool $isCash = true): float
+    {
+        $price = (float) $this->package_voucher_price;
+        $discountPercent = $this->defaultDiscount($isCash);
+
+        return round($price * ($discountPercent / 100), 2);
+    }
+
+    public function calculatePriceWithDefaultDiscount(bool $isCash = true): float
+    {
+        $price = (float) $this->package_voucher_price;
+        $discountAmount = $this->calculateDefaultDiscountAmount($isCash);
+
+        return max(0.0, round($price - $discountAmount, 2));
+    }
+
+    // Accessors
+    // protected function formattedUptime(): Attribute
+    // {
+    //     return Attribute::make(
+    //         get: fn (): string => $this->package_uptime ? "{$this->package_uptime} دقيقة" : 'غير محدد'
+    //     );
+    // }
+
+    // protected function formattedValidity(): Attribute
+    // {
+    //     return Attribute::make(
+    //         get: fn (): string => $this->package_validity ? "{$this->package_validity} يوم" : 'غير محدد'
+    //     );
+    // }
 }

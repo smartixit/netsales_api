@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Enums\PosStatus;
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -123,4 +125,66 @@ class Pos extends Model
     {
         return $this->hasMany(SupportTicket::class, 'pos_id', 'pos_id');
     }
+
+    // Scopes
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('status', PosStatus::ACTIVE);
+    }
+
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', PosStatus::PENDING);
+    }
+
+    public function scopeRejected(Builder $query): Builder
+    {
+        return $query->where('status', PosStatus::REJECTED);
+    }
+
+    public function scopeInGovernorate(Builder $query, int $governorateId): Builder
+    {
+        return $query->where('governorate_id', $governorateId);
+    }
+
+    public function scopeInDirectorate(Builder $query, int $directorateId): Builder
+    {
+        return $query->where('directorate_id', $directorateId);
+    }
+
+    public function scopeLinkedToNetwork(Builder $query, int $networkId): Builder
+    {
+        return $query->whereHas('networkPos', fn (Builder $q): Builder => $q->where('network_id', $networkId)->where('status', true));
+    }
+
+    // Checkers
+    public function isApproved(): bool
+    {
+        return $this->status === PosStatus::ACTIVE;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === PosStatus::PENDING;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === PosStatus::REJECTED;
+    }
+
+    public function isLinkedToNetwork(int $networkId): bool
+    {
+        return $this->networkPos()->where('network_id', $networkId)->where('status', true)->exists();
+    }
+
+    // Accessors
+    // protected function logoUrl(): Attribute
+    // {
+    //     return Attribute::make(
+    //         get: fn (): string => $this->pos_profile_logo
+    //             ? asset('storage/' . $this->pos_profile_logo)
+    //             : asset('assets/images/default-pos.png')
+    //     );
+    // }
 }

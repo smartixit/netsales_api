@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\BankAccountType;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -48,4 +50,39 @@ class BankAccount extends Model
     {
         return $this->hasMany(SubscriptionPlanRequest::class, 'account_id', 'account_id');
     }
+
+    // Scopes
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', true);
+    }
+
+    public function scopeByType(Builder $query, BankAccountType $type): Builder
+    {
+        return $query->where('account_type', $type);
+    }
+
+    public function scopeByCurrency(Builder $query, string $currency): Builder
+    {
+        return $query->where('account_currency', $currency);
+    }
+
+    // Checkers
+    public function isActive(): bool
+    {
+        return (bool) $this->status;
+    }
+
+    public function hasSufficientBalance(float $amount): bool
+    {
+        return (float) $this->account_balance >= $amount;
+    }
+
+    // Accessors
+    // protected function bankLogoUrl(): Attribute
+    // {
+    //     return Attribute::make(
+    //         get: fn (): ?string => $this->bank_logo ? asset("storage/{$this->bank_logo}") : null
+    //     );
+    // }
 }

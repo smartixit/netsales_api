@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\NotificationType;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -46,5 +47,25 @@ class Notification extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
+
+    // Scopes
+    public function scopeUnread(Builder $query): Builder
+    {
+        return $query->where('is_read', false);
+    }
+
+    public function scopeRead(Builder $query): Builder
+    {
+        return $query->where('is_read', true);
+    }
+
+    // Helpers
+    public function markAsRead(): void
+    {
+        $this->update([
+            'is_read' => true,
+            'read_at' => now('Asia/Aden'),
+        ]);
     }
 }

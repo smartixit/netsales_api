@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\RequestStatus;
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -82,5 +83,57 @@ class Request extends Model
     public function items(): HasMany
     {
         return $this->hasMany(RequestItem::class, 'request_id', 'request_id');
+    }
+
+    // Scopes
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', RequestStatus::PENDING);
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('status', RequestStatus::APPROVED);
+    }
+
+    public function scopeRejected(Builder $query): Builder
+    {
+        return $query->where('status', RequestStatus::REJECTED);
+    }
+
+    public function scopeForNetwork(Builder $query, int $networkId): Builder
+    {
+        return $query->where('network_id', $networkId);
+    }
+
+    public function scopeForPos(Builder $query, int $posId): Builder
+    {
+        return $query->where('pos_id', $posId);
+    }
+
+    // Checkers
+    public function isPending(): bool
+    {
+        return $this->status === RequestStatus::PENDING;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === RequestStatus::APPROVED;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === RequestStatus::REJECTED;
+    }
+
+    // Calculations
+    public function recalculateTotal(): void
+    {
+        $total = $this->items()->with('voucherPackage')->get()->sum(function (RequestItem $item): float {
+            return (float) ($item->item_voucher_count * ($item->voucherPackage?->package_voucher_price ?? 0));
+        });
+
+        $this->update(['request_total_amount' => $total]);
     }
 }

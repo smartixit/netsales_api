@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\WalletOperationType;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -50,5 +51,32 @@ class NetworkWalletLog extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by', 'user_id');
+    }
+
+    // Scopes
+    public function scopeDeposits(Builder $query): Builder
+    {
+        return $query->where('log_operation', WalletOperationType::DEPOSIT);
+    }
+
+    public function scopeWithdrawals(Builder $query): Builder
+    {
+        return $query->where('log_operation', WalletOperationType::WITHDRAW);
+    }
+
+    public function scopeForWallet(Builder $query, int $walletId): Builder
+    {
+        return $query->where('wallet_id', $walletId);
+    }
+
+    // Checkers
+    public function isDeposit(): bool
+    {
+        return $this->log_operation === WalletOperationType::DEPOSIT;
+    }
+
+    public function isWithdrawal(): bool
+    {
+        return $this->log_operation === WalletOperationType::WITHDRAW;
     }
 }

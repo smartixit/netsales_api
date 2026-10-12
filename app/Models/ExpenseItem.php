@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -39,5 +40,11 @@ class ExpenseItem extends Model
     public function expense(): BelongsTo
     {
         return $this->belongsTo(Expense::class, 'expense_id', 'expense_id');
+    }
+
+    // Scopes
+    public function scopeForExpense(Builder $query, int $expenseId): Builder
+    {
+        return $query->where('expense_id', $expenseId);
     }
 }
