@@ -60,6 +60,11 @@ class SecurityBan extends Model
     }
 
     // Scopes
+    public function scopeActive(Builder $query): Builder
+    {
+        return $this->scopeActiveBans($query);
+    }
+
     public function scopeActiveBans(Builder $query): Builder
     {
         return $query->where(function (Builder $q): void {

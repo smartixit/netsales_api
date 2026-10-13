@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
+use App\Http\Requests\Api\V1\Auth\RegisterPosRequest;
 use App\Http\Requests\Api\V1\Auth\RegisterRequest;
 use App\Http\Requests\Api\V1\Auth\RequestPasswordResetRequest;
 use App\Http\Requests\Api\V1\Auth\ResetPasswordRequest;
@@ -10,124 +11,139 @@ use App\Http\Requests\Api\V1\Auth\ToggleTwoFactorRequest;
 use App\Http\Requests\Api\V1\Auth\UpdatePasswordRequest;
 use App\Http\Requests\Api\V1\Auth\VerifyResetOtpRequest;
 use App\Http\Requests\Api\V1\Auth\VerifyTwoFactorRequest;
-use App\Http\Resources\Api\V1\CenterResource;
-use App\Http\Resources\Api\V1\UserResource;
+use App\Http\Resources\API\V1\Network\NetworkResource;
+use App\Http\Resources\API\V1\Pos\PosResource;
+use App\Http\Resources\API\V1\User\UserDeviceResource;
+use App\Http\Resources\API\V1\User\UserResource;
 use App\Services\AuthService;
 use Exception;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
-#[OA\Tag(name: 'Auth', description: 'إدارة المصادقة والجلسات وأجهزة المستخدمين وكلمات المرور')]
+/**
+ * متحكم المصادقة والجلسات وإدارة الحسابات (Enterprise Authentication Controller).
+ *
+ * يوفر دورة حياة متكاملة للمصادقة تعتمد حصرياً على ترويسة X-Session-Id وجدول user_sessions.
+ */
+#[OA\Tag(name: 'Auth', description: 'إدارة المصادقة والجلسات وأمان الحسابات والتسجيل وكلمات المرور')]
 class AuthController extends BaseController
 {
     public function __construct(
         protected AuthService $authService,
     ) {}
 
+    /**
+     * تسجيل مزود شبكة جديد بحالة PENDING.
+     */
     #[OA\Post(
-        path: '/api/v1/auth/register',
-        summary: 'تقديم طلب تسجيل مركز ومسؤول مركز جديد',
-        description: 'تسجيل مركز خدمة جديد وإنشاء حساب المسؤول عنه بحالة قيد المراجعة (PENDING) بانتظار موافقة إدارة النظام',
+        path: '/api/v1/auth/register-network',
+        summary: 'تقديم طلب تسجيل مزود شبكة جديد',
+        description: 'إنشاء شبكة جديدة وحساب مسؤول الشبكة وجهازه بحالة معلقة (PENDING) في انتظار اعتماد الإدارة.',
         tags: ['Auth'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: 'multipart/form-data',
-                schema: new OA\Schema(
-                    required: ['center_name', 'governorate_id', 'directorate_id', 'user_phone_number', 'user_password', 'device_uuid'],
-                    properties: [
-                        new OA\Property(property: 'center_name', type: 'string', example: 'مركز الأمل للخدمات الطلابية'),
-                        new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
-                        new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
-                        new OA\Property(property: 'center_phone_number', type: 'string', example: '777112233', nullable: true),
-                        new OA\Property(property: 'center_address', type: 'string', example: 'صنعاء - شارع حدة', nullable: true),
-                        new OA\Property(property: 'center_description', type: 'string', example: 'مركز خدمات وطباعة', nullable: true),
-                        new OA\Property(property: 'center_profile_picture', type: 'string', format: 'binary', nullable: true),
-                        new OA\Property(property: 'user_phone_number', type: 'string', example: '777000005'),
-                        new OA\Property(property: 'user_password', type: 'string', example: 'Secret123!'),
-                        new OA\Property(property: 'user_email', type: 'string', example: 'owner@alamal.ye', nullable: true),
-                        new OA\Property(property: 'user_profile_picture', type: 'string', format: 'binary', nullable: true),
-                        new OA\Property(property: 'device_uuid', type: 'string', example: 'uuid-reg-123'),
-                        new OA\Property(property: 'device_name', type: 'string', example: 'Chrome Desktop', nullable: true),
-                        new OA\Property(property: 'device_type', type: 'string', example: 'WINDOWS', nullable: true),
-                    ]
-                )
-            )
-        ),
         responses: [
-            new OA\Response(response: 201, description: 'تم تقديم طلب التسجيل بنجاح وهو قيد المراجعة والاعتماد'),
-            new OA\Response(response: 422, description: 'بيانات غير صالحة أو رقم الهاتف/اسم المركز مسجل مسبقاً'),
-            new OA\Response(response: 500, description: 'خطأ في الخادم'),
+            new OA\Response(response: 201, description: 'تم استلام طلب التسجيل بنجاح وهو قيد المراجعة والاعتماد'),
+            new OA\Response(response: 422, description: 'خطأ في صحة البيانات المدخلة'),
+            new OA\Response(response: 500, description: 'خطأ في الخادم الداخلي'),
         ]
     )]
-    public function register(RegisterRequest $request): JsonResponse
+    public function registerNetwork(RegisterRequest $request): JsonResponse
     {
         try {
-            $userPic = $request->file('user_profile_picture') ?? $request->file('profile_picture');
+            $result = $this->authService->registerNetwork($request);
 
-            $result = $this->authService->register(
-                $request->validated(),
-                $request->file('center_profile_picture'),
-                $userPic
+            return $this->successResponse(
+                $result['message'],
+                [
+                    'network' => new NetworkResource($result['network']),
+                    'user' => new UserResource($result['user']),
+                ],
+                201
             );
-
-            return $this->successResponse('تم تقديم طلب تسجيل المركز والحساب بنجاح، وطلبك حالياً قيد المراجعة والاعتماد من قِبل إدارة النظام.', [
-                'center' => new CenterResource($result['center']),
-                'user' => new UserResource($result['user']),
-            ], 201);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
-            return $this->errorResponse('عذراً، فشل تقديم طلب التسجيل: '.$e->getMessage(), [], 422);
+            return $this->errorResponse('عذراً، تعذر تقديم طلب تسجيل الشبكة: '.$e->getMessage(), [], 422);
         }
     }
 
+    /**
+     * اسم بديل متوافق مع المسار العام register.
+     */
+    public function register(RegisterRequest $request): JsonResponse
+    {
+        return $this->registerNetwork($request);
+    }
+
+    /**
+     * تسجيل نقطة بيع جديدة بحالة PENDING.
+     */
+    #[OA\Post(
+        path: '/api/v1/auth/register-pos',
+        summary: 'تقديم طلب تسجيل وكيل / نقطة بيع جديدة',
+        description: 'إنشاء نقطة بيع جديدة وحساب الوكيل وجهازه بحالة معلقة (PENDING) في انتظار اعتماد الإدارة.',
+        tags: ['Auth'],
+        responses: [
+            new OA\Response(response: 201, description: 'تم استلام طلب التسجيل بنجاح وهو قيد المراجعة والاعتماد'),
+            new OA\Response(response: 422, description: 'خطأ في صحة البيانات المدخلة'),
+            new OA\Response(response: 500, description: 'خطأ في الخادم الداخلي'),
+        ]
+    )]
+    public function registerPos(RegisterPosRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->authService->registerPos($request);
+
+            return $this->successResponse(
+                $result['message'],
+                [
+                    'pos' => new PosResource($result['pos']),
+                    'user' => new UserResource($result['user']),
+                ],
+                201
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('عذراً، تعذر تقديم طلب تسجيل نقطة البيع: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * تسجيل الدخول للنظام والتحقق من المستخدم والأجهزة والجلسات.
+     */
     #[OA\Post(
         path: '/api/v1/auth/login',
-        summary: 'تسجيل الدخول للنظام',
-        description: 'التحقق من بيانات المستخدم وإنشاء الجلسة النشطة في قاعدة البيانات وفحص الجهاز والمصادقة الثنائية',
+        summary: 'تسجيل الدخول للنظام وإنشاء الجلسة',
+        description: 'التحقق من بيانات الاعتماد وحالة الحساب والشبكة/نقطة البيع والاشتراك والأجهزة، وإنشاء الجلسة في user_sessions.',
         tags: ['Auth'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ['user_phone_number', 'user_password'],
-                properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '777000001'),
-                    new OA\Property(property: 'user_password', type: 'string', example: 'Password123!'),
-                    new OA\Property(property: 'device_uuid', type: 'string', example: 'uuid-123-abc', nullable: true),
-                    new OA\Property(property: 'device_name', type: 'string', example: 'Chrome Windows', nullable: true),
-                    new OA\Property(property: 'device_type', type: 'string', example: 'WINDOWS', nullable: true),
-                ]
-            )
-        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تسجيل الدخول بنجاح أو طلب كود 2FA'),
-            new OA\Response(response: 422, description: 'بيانات الاعتماد غير صحيحة أو الحساب معطل'),
-            new OA\Response(response: 500, description: 'خطأ في الخادم'),
+            new OA\Response(response: 422, description: 'بيانات الاعتماد غير صحيحة أو الحساب معلق/محظور'),
+            new OA\Response(response: 500, description: 'خطأ في الخادم الداخلي'),
         ]
     )]
     public function login(LoginRequest $request): JsonResponse
     {
         try {
-            $result = $this->authService->login($request->validated());
+            $result = $this->authService->login($request);
 
-            if ($result['require_2fa']) {
+            if (! empty($result['require_2fa'])) {
                 return $this->successResponse($result['message'], [
                     'require_2fa' => true,
+                    'is_new_device' => $result['is_new_device'] ?? false,
+                    'is_first_device' => $result['is_first_device'] ?? false,
                     'user_phone_number' => $result['user_phone_number'],
+                    'device_uuid' => $result['device_uuid'] ?? $request->input('device_uuid'),
                 ]);
             }
 
             $user = $result['user'];
             $session = $result['session'];
 
-            return $this->successResponse('تم تسجيل الدخول بنجاح', [
-                'token' => (string) $session->session_id,
-                'token_type' => 'Bearer',
-                'session_id' => $session->session_id,
+            return $this->successResponse('تم تسجيل الدخول بنجاح.', [
+                'session_id' => (string) $session->session_id,
                 'user' => new UserResource($user),
                 'permissions' => $result['permissions'],
             ]);
@@ -138,261 +154,197 @@ class AuthController extends BaseController
         }
     }
 
+    /**
+     * إتمام التحقق الثنائي أو تأكيد ربط الجهاز الجديد وإنشاء الجلسة.
+     */
     #[OA\Post(
         path: '/api/v1/auth/2fa/verify',
-        summary: 'التحقق من كود المصادقة الثنائية (2FA)',
-        description: 'إتمام تسجيل الدخول من جهاز جديد بعد مطابقة رمز التحقق',
+        summary: 'التحقق من كود OTP وإتمام الدخول للأجهزة الجديدة',
         tags: ['Auth'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ['user_phone_number', 'otp', 'device_uuid'],
-                properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '777000001'),
-                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
-                    new OA\Property(property: 'device_uuid', type: 'string', example: 'uuid-123-abc'),
-                    new OA\Property(property: 'device_name', type: 'string', example: 'Chrome Windows', nullable: true),
-                    new OA\Property(property: 'device_type', type: 'string', example: 'WINDOWS', nullable: true),
-                ]
-            )
-        ),
         responses: [
-            new OA\Response(response: 200, description: 'تم التحقق وتسجيل الدخول بنجاح'),
-            new OA\Response(response: 422, description: 'رمز التحقق غير صحيح أو منتهي'),
+            new OA\Response(response: 200, description: 'تم التحقق بنجاح وإنشاء الجلسة'),
+            new OA\Response(response: 422, description: 'كود التحقق غير صحيح أو منتهي'),
         ]
     )]
     public function verifyTwoFactor(VerifyTwoFactorRequest $request): JsonResponse
     {
         try {
-            $result = $this->authService->verifyTwoFactor($request->validated());
-            $user = $result['user'];
-            $session = $result['session'];
+            $result = $this->authService->verifyTwoFactor($request);
 
-            return $this->successResponse('تم التحقق وتسجيل الدخول بنجاح', [
-                'token' => (string) $session->session_id,
-                'token_type' => 'Bearer',
-                'session_id' => $session->session_id,
-                'user' => new UserResource($user),
+            return $this->successResponse('تم التحقق بنجاح وإنشاء جلسة الدخول.', [
+                'session_id' => (string) $result['session']->session_id,
+                'user' => new UserResource($result['user']),
                 'permissions' => $result['permissions'],
             ]);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
-            return $this->errorResponse('حدث خطأ أثناء التحقق: '.$e->getMessage(), [], 422);
+            return $this->errorResponse('فشل التحقق من كود الـ OTP: '.$e->getMessage(), [], 422);
         }
     }
 
+    /**
+     * جلب بيانات الحساب الحالي والصلاحيات.
+     */
     #[OA\Get(
         path: '/api/v1/auth/me',
-        summary: 'الملف الشخصي للمستخدم الحالي',
-        description: 'استرجاع بيانات المستخدم الحالي مع الدور والمركز وقائمة الصلاحيات',
-        security: [['bearerAuth' => []]],
+        summary: 'جلب بيانات الملف الشخصي للمستخدم الحالي',
+        security: [['sessionAuth' => []]],
         tags: ['Auth'],
         responses: [
-            new OA\Response(response: 200, description: 'بيانات الملف الشخصي'),
-            new OA\Response(response: 401, description: 'غير مصرح'),
+            new OA\Response(response: 200, description: 'بيانات الحساب الحالي والصلاحيات'),
+            new OA\Response(response: 401, description: 'غير مصادق عليه'),
         ]
     )]
-    public function me(): JsonResponse
+    public function me(Request $request): JsonResponse
     {
-        try {
-            $user = $this->currentUser();
-            if (! $user) {
-                return $this->errorResponse('يجب تسجيل الدخول أولاً.', [], 401);
-            }
-
-            $profile = $this->authService->me($user);
-
-            return $this->successResponse('بيانات الملف الشخصي.', [
-                'user' => new UserResource($profile['user']),
-                'is_super_admin' => $profile['is_super_admin'],
-                'is_center_user' => $profile['is_center_user'],
-                'permissions' => $profile['permissions'],
-            ]);
-        } catch (Exception $e) {
-            return $this->errorResponse('حدث خطأ أثناء جلب الملف الشخصي.', [], 500);
+        $user = $this->currentUser();
+        if (! $user) {
+            return $this->errorResponse('غير مصادق عليه.', [], 401);
         }
+
+        $result = $this->authService->me($user);
+
+        return $this->successResponse('تم جلب بيانات الملف الشخصي بنجاح.', [
+            'user' => new UserResource($result['user']),
+            'is_super_admin' => $result['is_super_admin'],
+            'role_key' => $result['role_key'],
+            'permissions' => $result['permissions'],
+        ]);
     }
 
+    /**
+     * تسجيل الخروج وإنهاء الجلسة الحالية.
+     */
     #[OA\Post(
         path: '/api/v1/auth/logout',
-        summary: 'تسجيل الخروج',
-        description: 'إنهاء الجلسة النشطة الحالية للمستخدم',
-        security: [['bearerAuth' => []]],
+        summary: 'تسجيل الخروج وإنهاء الجلسة الحالية',
+        security: [['sessionAuth' => []]],
         tags: ['Auth'],
         responses: [
             new OA\Response(response: 200, description: 'تم تسجيل الخروج بنجاح'),
-            new OA\Response(response: 401, description: 'غير مصرح'),
         ]
     )]
     public function logout(Request $request): JsonResponse
     {
-        try {
-            $user = $this->currentUser();
-            if (! $user) {
-                return $this->errorResponse('يجب تسجيل الدخول أولاً.', [], 401);
-            }
+        $user = $this->currentUser();
+        $sessionId = (int) $request->attributes->get('session_id');
 
-            $sessionId = $request->header('X-Session-Id') ? (int) $request->header('X-Session-Id') : null;
+        if ($user) {
             $this->authService->logout($user, $sessionId);
-
-            return $this->successResponse('تم تسجيل الخروج بنجاح.');
-        } catch (Exception $e) {
-            return $this->errorResponse('حدث خطأ أثناء تسجيل الخروج.', [], 500);
         }
+
+        return $this->successResponse('تم تسجيل الخروج بنجاح وإلغاء الجلسة.');
     }
 
+    /**
+     * تسجيل الخروج من كافة الأجهزة الأخرى.
+     */
     #[OA\Post(
         path: '/api/v1/auth/logout-other-devices',
-        summary: 'إنهاء الجلسات على الأجهزة الأخرى',
-        security: [['bearerAuth' => []]],
+        summary: 'تسجيل الخروج من كافة الأجهزة الأخرى',
+        security: [['sessionAuth' => []]],
         tags: ['Auth'],
         responses: [
-            new OA\Response(response: 200, description: 'تم إنهاء الجلسات الأخرى بنجاح'),
-            new OA\Response(response: 401, description: 'غير مصرح'),
+            new OA\Response(response: 200, description: 'تم إنهاء كافة الجلسات الأخرى'),
         ]
     )]
     public function logoutOtherDevices(Request $request): JsonResponse
     {
-        try {
-            $user = $this->currentUser();
-            if (! $user) {
-                return $this->errorResponse('يجب تسجيل الدخول أولاً.', [], 401);
-            }
+        $user = $this->currentUser();
+        $currentSessionId = (int) $request->attributes->get('session_id');
 
-            $sessionId = $request->header('X-Session-Id') ? (int) $request->header('X-Session-Id') : 0;
-            $count = $this->authService->logoutOtherDevices($user, $sessionId);
-
-            return $this->successResponse("تم إنهاء {$count} من الجلسات النشطة على الأجهزة الأخرى بنجاح.");
-        } catch (Exception $e) {
-            return $this->errorResponse('حدث خطأ أثناء إنهاء الجلسات الأخرى.', [], 500);
+        if (! $user || ! $currentSessionId) {
+            return $this->errorResponse('غير مصادق عليه.', [], 401);
         }
+
+        $count = $this->authService->logoutOtherDevices($user, $currentSessionId);
+
+        return $this->successResponse("تم تسجيل الخروج من {$count} جلسة نشطة أخرى بنجاح.");
     }
 
+    /**
+     * طلب استعادة كلمة المرور عبر الرمز المؤقت.
+     */
     #[OA\Post(
         path: '/api/v1/auth/password/request-reset',
-        summary: 'طلب استعادة كلمة المرور',
-        description: 'إرسال رمز OTP عبر رسالة قصيرة SMS لرقم هاتف المستخدم المسجل',
+        summary: 'طلب إرسال رمز استعادة كلمة المرور عبر الهاتف',
         tags: ['Auth'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ['user_phone_number'],
-                properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '777000001'),
-                ]
-            )
-        ),
         responses: [
-            new OA\Response(response: 200, description: 'تم إرسال كود التحقق بنجاح'),
-            new OA\Response(response: 422, description: 'رقم الهاتف غير مسجل أو الحساب معطل'),
+            new OA\Response(response: 200, description: 'تم إرسال رمز التحقق بنجاح'),
         ]
     )]
     public function requestPasswordReset(RequestPasswordResetRequest $request): JsonResponse
     {
         try {
-            $this->authService->requestPasswordReset($request->validated()['user_phone_number']);
+            $this->authService->requestPasswordReset($request);
 
             return $this->successResponse('تم إرسال رمز التحقق إلى رقم هاتفك بنجاح.');
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
-            return $this->errorResponse('حدث خطأ أثناء طلب استعادة كلمة المرور: '.$e->getMessage(), [], 422);
+            return $this->errorResponse('فشل إرسال كود الاستعادة: '.$e->getMessage(), [], 422);
         }
     }
 
+    /**
+     * التحقق من رمز استعادة كلمة المرور.
+     */
     #[OA\Post(
         path: '/api/v1/auth/password/verify-otp',
-        summary: 'التحقق من كود استعادة كلمة المرور',
+        summary: 'التحقق من صحة كود استعادة كلمة المرور',
         tags: ['Auth'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ['user_phone_number', 'otp'],
-                properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '777000001'),
-                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
-                ]
-            )
-        ),
         responses: [
             new OA\Response(response: 200, description: 'كود التحقق صحيح'),
-            new OA\Response(response: 422, description: 'كود التحقق غير صحيح أو منتهي'),
         ]
     )]
     public function verifyResetOtp(VerifyResetOtpRequest $request): JsonResponse
     {
         try {
-            $validated = $request->validated();
-            $this->authService->verifyResetOtp($validated['user_phone_number'], $validated['otp']);
+            $this->authService->verifyResetOtp($request);
 
-            return $this->successResponse('رمز التحقق صحيح، يمكنك الآن تعيين كلمة المرور الجديدة.');
+            return $this->successResponse('رمز التحقق صحيح. يمكنك الآن تعيين كلمة المرور الجديدة.');
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
-            return $this->errorResponse('حدث خطأ أثناء التحقق من الرمز: '.$e->getMessage(), [], 422);
+            return $this->errorResponse('كود التحقق غير صالح: '.$e->getMessage(), [], 422);
         }
     }
 
+    /**
+     * اعتماد كلمة المرور الجديدة بعد التحقق.
+     */
     #[OA\Post(
         path: '/api/v1/auth/password/reset',
-        summary: 'اعتماد كلمة المرور الجديدة',
-        description: 'إعادة تعيين كلمة المرور وإنهاء كافة الجلسات النشطة لحماية الحساب',
+        summary: 'إعادة تعيين كلمة المرور بعد التحقق',
         tags: ['Auth'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ['user_phone_number', 'otp', 'password', 'password_confirmation'],
-                properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '777000001'),
-                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
-                    new OA\Property(property: 'password', type: 'string', example: 'NewSecret123!'),
-                    new OA\Property(property: 'password_confirmation', type: 'string', example: 'NewSecret123!'),
-                ]
-            )
-        ),
         responses: [
-            new OA\Response(response: 200, description: 'تم تعيين كلمة المرور بنجاح'),
-            new OA\Response(response: 422, description: 'بيانات غير صالحة'),
+            new OA\Response(response: 200, description: 'تم تحديث كلمة المرور بنجاح'),
         ]
     )]
     public function resetPassword(ResetPasswordRequest $request): JsonResponse
     {
         try {
-            $validated = $request->validated();
-            $this->authService->resetPassword(
-                $validated['user_phone_number'],
-                $validated['otp'],
-                $validated['password']
-            );
+            $this->authService->resetPassword($request);
 
-            return $this->successResponse('تمت إعادة تعيين كلمة المرور بنجاح، يرجى تسجيل الدخول بكلمة المرور الجديدة.');
+            return $this->successResponse('تم إعادة تعيين كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول.');
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
-            return $this->errorResponse('حدث خطأ أثناء إعادة تعيين كلمة المرور: '.$e->getMessage(), [], 422);
+            return $this->errorResponse('فشل إعادة تعيين كلمة المرور: '.$e->getMessage(), [], 422);
         }
     }
 
+    /**
+     * تحديث كلمة المرور للحساب الحالي.
+     */
     #[OA\Post(
         path: '/api/v1/auth/update-password',
-        summary: 'تحديث كلمة المرور للمستخدم الحالي',
-        security: [['bearerAuth' => []]],
+        summary: 'تحديث كلمة المرور للمستخدم المصادق عليه',
+        security: [['sessionAuth' => []]],
         tags: ['Auth'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ['current_password', 'new_password', 'new_password_confirmation'],
-                properties: [
-                    new OA\Property(property: 'current_password', type: 'string', example: 'OldPassword123!'),
-                    new OA\Property(property: 'new_password', type: 'string', example: 'NewPassword123!'),
-                    new OA\Property(property: 'new_password_confirmation', type: 'string', example: 'NewPassword123!'),
-                ]
-            )
-        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث كلمة المرور بنجاح'),
-            new OA\Response(response: 422, description: 'كلمة المرور الحالية غير صحيحة'),
         ]
     )]
     public function updatePassword(UpdatePasswordRequest $request): JsonResponse
@@ -400,38 +352,29 @@ class AuthController extends BaseController
         try {
             $user = $this->currentUser();
             if (! $user) {
-                return $this->errorResponse('يجب تسجيل الدخول أولاً.', [], 401);
+                return $this->errorResponse('غير مصادق عليه.', [], 401);
             }
 
-            $validated = $request->validated();
-            $this->authService->updatePassword($user, $validated['current_password'], $validated['new_password']);
+            $this->authService->updatePassword($user, $request);
 
             return $this->successResponse('تم تحديث كلمة المرور بنجاح.');
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
-            return $this->errorResponse('حدث خطأ أثناء تحديث كلمة المرور: '.$e->getMessage(), [], 422);
+            return $this->errorResponse('فشل تحديث كلمة المرور: '.$e->getMessage(), [], 422);
         }
     }
 
+    /**
+     * تفعيل أو تعطيل المصادقة الثنائية (2FA).
+     */
     #[OA\Post(
         path: '/api/v1/auth/toggle-2fa',
-        summary: 'تفعيل أو تعطيل المصادقة الثنائية (2FA)',
-        security: [['bearerAuth' => []]],
+        summary: 'تفعيل أو تعطيل المصادقة الثنائية 2FA',
+        security: [['sessionAuth' => []]],
         tags: ['Auth'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ['enable'],
-                properties: [
-                    new OA\Property(property: 'enable', type: 'boolean', example: true),
-                    new OA\Property(property: 'otp', type: 'string', example: '123456', nullable: true),
-                ]
-            )
-        ),
         responses: [
-            new OA\Response(response: 200, description: 'تم تعديل حالة المصادقة الثنائية بنجاح'),
-            new OA\Response(response: 422, description: 'خطأ في التحقق من البيانات'),
+            new OA\Response(response: 200, description: 'تم تحديث حالة المصادقة الثنائية بنجاح'),
         ]
     )]
     public function toggleTwoFactor(ToggleTwoFactorRequest $request): JsonResponse
@@ -439,77 +382,70 @@ class AuthController extends BaseController
         try {
             $user = $this->currentUser();
             if (! $user) {
-                return $this->errorResponse('يجب تسجيل الدخول أولاً.', [], 401);
+                return $this->errorResponse('غير مصادق عليه.', [], 401);
             }
 
-            $validated = $request->validated();
-            $this->authService->toggleTwoFactor($user, (bool) $validated['enable'], $validated['otp'] ?? null);
+            $this->authService->toggleTwoFactor($user, $request);
 
-            $statusText = $validated['enable'] ? 'تفعيل' : 'تعطيل';
+            $msg = $request->enable ? 'تم تفعيل المصادقة الثنائية بنجاح.' : 'تم تعطيل المصادقة الثنائية بنجاح.';
 
-            return $this->successResponse("تم {$statusText} المصادقة الثنائية بنجاح.");
+            return $this->successResponse($msg);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
-            return $this->errorResponse('حدث خطأ أثناء تعديل المصادقة الثنائية: '.$e->getMessage(), [], 422);
+            return $this->errorResponse('فشل تعديل المصادقة الثنائية: '.$e->getMessage(), [], 422);
         }
     }
 
+    /**
+     * جلب أجهزة المستخدم المقترنة بالحساب.
+     */
     #[OA\Get(
         path: '/api/v1/auth/devices',
-        summary: 'قائمة الأجهزة المقترنة بحساب المستخدم',
-        security: [['bearerAuth' => []]],
+        summary: 'جلب قائمة أجهزة المستخدم المقترنة',
+        security: [['sessionAuth' => []]],
         tags: ['Auth'],
         responses: [
-            new OA\Response(response: 200, description: 'تم جلب قائمة الأجهزة بنجاح'),
-            new OA\Response(response: 401, description: 'غير مصرح'),
+            new OA\Response(response: 200, description: 'قائمة الأجهزة المقترنة'),
         ]
     )]
-    public function getDevices(): JsonResponse
+    public function getDevices(Request $request): JsonResponse
     {
-        try {
-            $user = $this->currentUser();
-            if (! $user) {
-                return $this->errorResponse('يجب تسجيل الدخول أولاً.', [], 401);
-            }
-
-            $devices = $this->authService->getUserDevices($user);
-
-            return $this->successResponse('تم جلب قائمة الأجهزة بنجاح.', $devices);
-        } catch (Exception $e) {
-            return $this->errorResponse('حدث خطأ أثناء جلب قائمة الأجهزة.', [], 500);
+        $user = $this->currentUser();
+        if (! $user) {
+            return $this->errorResponse('غير مصادق عليه.', [], 401);
         }
+
+        $devices = $this->authService->getUserDevices($user);
+
+        return $this->successResponse('تم جلب قائمة الأجهزة المقترنة بنجاح.', UserDeviceResource::collection($devices));
     }
 
+    /**
+     * إلغاء إقران وفصل جهاز محدد.
+     */
     #[OA\Delete(
         path: '/api/v1/auth/devices/{id}',
-        summary: 'إلغاء إقران جهاز محدد',
-        security: [['bearerAuth' => []]],
+        summary: 'إلغاء إقران جهاز محدد للمستخدم',
+        security: [['sessionAuth' => []]],
         tags: ['Auth'],
-        parameters: [
-            new OA\Parameter(name: 'id', description: 'معرف الجهاز', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
-        ],
         responses: [
-            new OA\Response(response: 200, description: 'تم إلغاء إقران الجهاز بنجاح'),
-            new OA\Response(response: 404, description: 'الجهاز غير موجود'),
+            new OA\Response(response: 200, description: 'تم فصل الجهاز بنجاح'),
         ]
     )]
-    public function disconnectDevice(int $id): JsonResponse
+    public function disconnectDevice(Request $request, int $id): JsonResponse
     {
-        try {
-            $user = $this->currentUser();
-            if (! $user) {
-                return $this->errorResponse('يجب تسجيل الدخول أولاً.', [], 401);
-            }
-
-            $success = $this->authService->disconnectDevice($user, $id);
-            if (! $success) {
-                return $this->errorResponse('الجهاز غير موجود أو لا يتبع حسابك.', [], 404);
-            }
-
-            return $this->successResponse('تم إلغاء إقران الجهاز بنجاح.');
-        } catch (Exception $e) {
-            return $this->errorResponse('حدث خطأ أثناء محاولة إلغاء إقران الجهاز.', [], 500);
+        $user = $this->currentUser();
+        if (! $user) {
+            return $this->errorResponse('غير مصادق عليه.', [], 401);
         }
+
+        $disconnected = $this->authService->disconnectDevice($user, $id);
+
+        if (! $disconnected) {
+            return $this->errorResponse('لم يتم العثور على الجهاز أو أنه مفصول مسبقاً.', [], 404);
+        }
+
+        return $this->successResponse('تم فصل الجهاز وإلغاء إقرانه بنجاح.');
     }
 }

@@ -6,6 +6,7 @@ enum RoleKey: string
 {
     case SUPER_ADMIN = 'super_admin';
     case NETWORK_ADMIN = 'network_admin';
+    case NETWORK_OWNER = 'network_owner';
     case POS_AGENT = 'pos_agent';
     case SUPPORT_AGENT = 'support_agent';
     case ACCOUNTANT = 'accountant';
@@ -20,6 +21,7 @@ enum RoleKey: string
         return match ($this) {
             self::SUPER_ADMIN => 'مدير النظام العام',
             self::NETWORK_ADMIN => 'مدير الشبكة',
+            self::NETWORK_OWNER => 'مالك / مزود شبكة',
             self::POS_AGENT => 'وكيل نقطة البيع',
             self::SUPPORT_AGENT => 'الدعم الفني',
             self::ACCOUNTANT => 'المحاسب',
@@ -31,6 +33,7 @@ enum RoleKey: string
         return [
             self::SUPER_ADMIN->value => self::SUPER_ADMIN->label(),
             self::NETWORK_ADMIN->value => self::NETWORK_ADMIN->label(),
+            self::NETWORK_OWNER->value => self::NETWORK_OWNER->label(),
             self::POS_AGENT->value => self::POS_AGENT->label(),
             self::SUPPORT_AGENT->value => self::SUPPORT_AGENT->label(),
             self::ACCOUNTANT->value => self::ACCOUNTANT->label(),

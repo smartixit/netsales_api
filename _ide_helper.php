@@ -3879,10 +3879,10 @@ namespace Illuminate\Support\Facades {
          * @return \Illuminate\Bus\PendingBatch
          * @static
          */
-        public static function batch($jobs)
+        public static function bulk($jobs)
         {
             /** @var \Illuminate\Bus\Dispatcher $instance */
-            return $instance->batch($jobs);
+            return $instance->bulk($jobs);
         }
 
         /**
@@ -4315,10 +4315,10 @@ namespace Illuminate\Support\Facades {
          * @return \Illuminate\Support\Collection<int, \Illuminate\Bus\PendingBatch>
          * @static
          */
-        public static function batched($callback)
+        public static function bulked($callback)
         {
             /** @var \Illuminate\Support\Testing\Fakes\BusFake $instance */
-            return $instance->batched($callback);
+            return $instance->bulked($callback);
         }
 
         /**

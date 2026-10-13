@@ -4,6 +4,7 @@ namespace App\Services\Support;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -188,7 +189,7 @@ class FileUploadService
         $cleanPath = ltrim($filePath, '/');
         $effectiveMinutes = $expirationMinutes ?? (int) systemSetting('signed_url_lifetime_minutes', 30);
 
-        return \Illuminate\Support\Facades\URL::temporarySignedRoute(
+        return URL::temporarySignedRoute(
             'api.v1.files.signed',
             now('Asia/Aden')->addMinutes($effectiveMinutes),
             ['path' => $cleanPath]

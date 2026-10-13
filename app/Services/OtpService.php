@@ -3,27 +3,29 @@
 namespace App\Services;
 
 use App\Enums\NotificationType;
+use App\Enums\OtpType;
 use App\Enums\UserStatus;
-use App\Interfaces\NotificationRepositoryInterface;
+use App\Http\Requests\API\V1\System\GenerateOtpRequest;
+use App\Http\Requests\API\V1\System\VerifyOtpRequest;
 use App\Interfaces\OtpRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
+use App\Models\Otp;
 use App\Models\User;
 use App\Services\Support\SMSGateService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 /**
  * خدمة التحقق بالرمز المؤقت لمرة واحدة (Centralized OTP Service).
  *
- * صُممت وفق أفضل الممارسات المعمارية لمشروع مبيعات الشبكة:
+ * صُممت وفق أفضل الممارسات المعمارية لمشروع مبيعات الشبكة NetSales:
  * 1. عزل تام عن طبقة الـ HTTP واستجابات JsonResponse.
  * 2. الاعتماد الكامل على مستودع OtpRepositoryInterface مع حظر الاستعلامات المباشرة.
- * 3. توليد أكواد مشفرة آمنة (Cryptographically Secure Pseudo-Random).
+ * 3. توليد أكواد مشفرة آمنة (Cryptographically Secure Random).
  * 4. حماية ضد هجمات التخمين والقوة الغاشمة (Brute-Force Lockout) وفترات التهدئة (Cooldown).
  * 5. التكامل مع SMSGateService لإرسال الرسائل للأرقام اليمنية والدولية.
- * 6. توثيق إشعارات النظام وسجلات التدقيق عبر SystemLoggerService.
+ * 6. توثيق أمني وسجلات التدقيق عبر SystemLoggerService.
  */
 class OtpService
 {
@@ -33,16 +35,10 @@ class OtpService
     public const DEFAULT_COOLDOWN_SECONDS = 60;
 
     public function __construct(
-        protected ?OtpRepositoryInterface $otpRepository = null,
-        protected ?SMSGateService $smsGateService = null,
-        protected ?UserRepositoryInterface $userRepository = null,
-        protected ?NotificationRepositoryInterface $notificationRepository = null,
-    ) {
-        $this->otpRepository ??= app(OtpRepositoryInterface::class);
-        $this->smsGateService ??= app(SMSGateService::class);
-        $this->userRepository ??= app(UserRepositoryInterface::class);
-        $this->notificationRepository ??= app(NotificationRepositoryInterface::class);
-    }
+        protected OtpRepositoryInterface $otpRepository,
+        protected SMSGateService $smsGateService,
+        protected UserRepositoryInterface $userRepository,
+    ) {}
 
     /**
      * توليد رمز OTP جديد لمستخدم محدد وإرساله عبر SMS.
@@ -51,64 +47,70 @@ class OtpService
      */
     public function generateOtpForUser(
         User $user,
+        OtpType|string $type = OtpType::OTP_2FA,
         int $expirationMinutes = self::DEFAULT_EXPIRATION_MINUTES,
         int $length = self::DEFAULT_LENGTH
     ): array {
-        // فحص فترة التهدئة ديناميكياً من منظومة الإعدادات
-        $dynamicCooldown = (int) systemSetting('otp_cooldown_seconds', self::DEFAULT_COOLDOWN_SECONDS, $user->center_id);
-        $remainingCooldown = $this->otpRepository->getCooldownRemainingSeconds($user->user_id, $dynamicCooldown);
+        $otpType = $type instanceof OtpType ? $type : (OtpType::tryFrom((string) $type) ?? OtpType::OTP_2FA);
+
+        // فحص فترة التهدئة
+        $remainingCooldown = $this->otpRepository->getCooldownRemainingSeconds(
+            $user->user_id,
+            $otpType,
+            self::DEFAULT_COOLDOWN_SECONDS
+        );
+
         if ($remainingCooldown > 0) {
             throw ValidationException::withMessages([
                 'otp' => ["يرجى الانتظار {$remainingCooldown} ثانية قبل طلب رمز جديد."],
             ]);
         }
 
-        // احتساب مدة الصلاحية ديناميكياً من منظومة الإعدادات
-        $effectiveMinutes = $expirationMinutes === self::DEFAULT_EXPIRATION_MINUTES
-            ? (int) systemSetting('otp_expiration_minutes', self::DEFAULT_EXPIRATION_MINUTES, $user->center_id)
-            : $expirationMinutes;
+        return DB::transaction(function () use ($user, $otpType, $expirationMinutes, $length) {
+            // 1. إبطال الرموز السابقة لنفس الغرض
+            $this->otpRepository->invalidateUserOtps($user->user_id, $otpType);
 
-        return DB::transaction(function () use ($user, $effectiveMinutes, $length) {
-            // 1. إبطال الرموز السابقة
-            $this->otpRepository->invalidateUserOtps($user->user_id);
-
-            // 2. توليد رمز عشوائي آمن تشفيرياً
-            $min = (int) ('1'.str_repeat('0', $length - 1));
+            // 2. توليد رمز عشوائي رقمي
+            $min = (int) ('1' . str_repeat('0', $length - 1));
             $max = (int) str_repeat('9', $length);
             $plainCode = (string) random_int($min, $max);
 
-            $expiresAt = Carbon::now('Asia/Aden')->addMinutes($effectiveMinutes);
+            $expiresAt = Carbon::now('Asia/Aden')->addMinutes($expirationMinutes);
 
-            // 3. حفظ الرمز مشفراً عبر المستودع
+            // 3. حفظ الرمز عبر المستودع
             $this->otpRepository->createOtp(
                 userId: $user->user_id,
-                codeHash: Hash::make($plainCode),
-                expiresAt: $expiresAt
+                code: $plainCode,
+                type: $otpType,
+                expiresInMinutes: $expirationMinutes
             );
 
             // 4. إرسال رسالة SMS عبر البوابة
             $this->smsGateService->sendOtp(
                 phoneNumber: $user->user_phone_number,
-                code: $plainCode,
-                centerId: $user->center_id
+                code: $plainCode
             );
 
-            // 5. تسجيل إشعار في جدول الإشعارات
-            $this->notificationRepository->create([
-                'user_id' => $user->user_id,
-                'notification_title' => 'رمز التحقق (OTP)',
-                'notification_message' => "رمز التحقق الخاص بك في نظام مبيعات الشبكة هو: {$plainCode}",
-                'notification_type' => NotificationType::INFO->value,
-                'is_read' => false,
-            ]);
+            // 5. تسجيل إشعار للمستخدم إذا كان جدول الإشعارات متاحاً
+            try {
+                $user->notifications()->create([
+                    'notification_title' => 'رمز التحقق (OTP)',
+                    'notification_message' => "رمز التحقق الخاص بك في نظام مبيعات الشبكة هو: {$plainCode}",
+                    'notification_type' => NotificationType::INFO->value ?? 'INFO',
+                    'is_read' => false,
+                ]);
+            } catch (\Throwable $e) {
+                // تجاهل إذا كانت الإشعارات غير مهيأة
+            }
 
-            // 6. تسجيل في سجل النظام
+            // 6. توثيق أمني
             SystemLoggerService::log(
                 module: 'auth',
                 action: 'otp_generated',
                 entityType: 'User',
                 entityId: $user->user_id,
                 newData: [
+                    'type' => $otpType->value,
                     'length' => $length,
                     'expires_at' => $expiresAt->toDateTimeString(),
                 ],
@@ -123,12 +125,14 @@ class OtpService
     }
 
     /**
-     * توليد رمز OTP عبر رقم الهاتف (لعمليات ما قبل تسجيل الدخول أو استعادة كلمة المرور).
+     * توليد رمز OTP عبر رقم الهاتف (لاستعادة كلمة المرور أو تفعيل الحساب).
      *
      * @return array{code: string, expires_at: Carbon, user: User}
      */
-    public function generateOtpForPhone(string $phone): array
-    {
+    public function generateOtpForPhone(
+        string $phone,
+        OtpType|string $type = OtpType::RESET_PASSWORD
+    ): array {
         $user = $this->userRepository->findByPhone($phone);
 
         if (! $user) {
@@ -143,33 +147,35 @@ class OtpService
             ]);
         }
 
-        $result = $this->generateOtpForUser($user);
+        $result = $this->generateOtpForUser($user, $type);
         $result['user'] = $user;
 
         return $result;
     }
 
     /**
-     * التحقق من صحة رمز الـ OTP المدخل من قبل المستخدم.
+     * التحقق من صحة رمز OTP المدخل.
      */
-    public function verifyOtp(int $userId, string $code, int $maxAttempts = self::DEFAULT_MAX_ATTEMPTS): bool
-    {
-        $effectiveMaxAttempts = $maxAttempts === self::DEFAULT_MAX_ATTEMPTS
-            ? (int) systemSetting('otp_max_attempts', self::DEFAULT_MAX_ATTEMPTS)
-            : $maxAttempts;
+    public function verifyOtp(
+        int $userId,
+        string $code,
+        OtpType|string $type = OtpType::OTP_2FA,
+        int $maxAttempts = self::DEFAULT_MAX_ATTEMPTS
+    ): bool {
+        $otpType = $type instanceof OtpType ? $type : (OtpType::tryFrom((string) $type) ?? OtpType::OTP_2FA);
 
-        $otp = $this->otpRepository->getLatestActiveOtp($userId);
+        $otp = $this->otpRepository->getLatestValidOtp($userId, $otpType);
 
         if (! $otp) {
-            SystemLoggerService::warning('otp_not_found', ['user_id' => $userId], $userId);
+            SystemLoggerService::warning('otp_not_found', ['user_id' => $userId, 'type' => $otpType->value], $userId);
 
             throw ValidationException::withMessages([
                 'otp' => ['لم يتم العثور على رمز تحقق صالح، يرجى طلب رمز جديد.'],
             ]);
         }
 
-        // فحص انتهاء الصلاحية
-        if ($otp->expires_at->isPast()) {
+        // فحص الصلاحية وانتهاء المدة
+        if ($otp->isExpired() || ! $otp->isValid()) {
             $this->otpRepository->markAsUsed($otp->otp_id);
 
             SystemLoggerService::warning('otp_expired', ['otp_id' => $otp->otp_id], $userId);
@@ -179,13 +185,13 @@ class OtpService
             ]);
         }
 
-        // فحص الحد الأقصى للمحاولات ديناميكياً
-        if ($otp->attempts >= $effectiveMaxAttempts) {
+        // فحص عدد المحاولات الفاشلة
+        if ($otp->otp_failure_attempts >= $maxAttempts) {
             $this->otpRepository->markAsUsed($otp->otp_id);
 
             SystemLoggerService::warning('otp_max_attempts_exceeded', [
                 'otp_id' => $otp->otp_id,
-                'attempts' => $otp->attempts,
+                'attempts' => $otp->otp_failure_attempts,
             ], $userId);
 
             throw ValidationException::withMessages([
@@ -193,19 +199,20 @@ class OtpService
             ]);
         }
 
-        // مطابقة الرمز
-        if (Hash::check($code, $otp->code_hash)) {
+        // مطابقة الكود
+        if ($code === $otp->otp_code) {
             $this->otpRepository->markAsUsed($otp->otp_id);
 
             SystemLoggerService::logAuth('otp_verified_successfully', $userId, [
                 'otp_id' => $otp->otp_id,
+                'type' => $otpType->value,
             ]);
 
             return true;
         }
 
-        // احتساب المحاولة الخاطئة
-        $newAttempts = $this->otpRepository->incrementAttempts($otp->otp_id);
+        // تسجيل المحاولة الخاطئة
+        $newAttempts = $this->otpRepository->incrementFailureAttempts($otp->otp_id);
         $remaining = max(0, $maxAttempts - $newAttempts);
 
         if ($newAttempts >= $maxAttempts) {
@@ -222,18 +229,14 @@ class OtpService
     }
 
     /**
-     * فحص الثواني المتبقية لإعادة الإرسال.
-     */
-    public function getRemainingCooldown(int $userId): int
-    {
-        return $this->otpRepository->getCooldownRemainingSeconds($userId, self::DEFAULT_COOLDOWN_SECONDS);
-    }
-
-    /**
      * التحقق من صحة رمز OTP عبر رقم الهاتف مباشرة.
      */
-    public function verifyOtpForPhone(string $phone, string $code, int $maxAttempts = self::DEFAULT_MAX_ATTEMPTS): bool
-    {
+    public function verifyOtpForPhone(
+        string $phone,
+        string $code,
+        OtpType|string $type = OtpType::RESET_PASSWORD,
+        int $maxAttempts = self::DEFAULT_MAX_ATTEMPTS
+    ): bool {
         $user = $this->userRepository->findByPhone($phone);
 
         if (! $user) {
@@ -242,30 +245,71 @@ class OtpService
             ]);
         }
 
-        return $this->verifyOtp($user->user_id, $code, $maxAttempts);
+        return $this->verifyOtp($user->user_id, $code, $type, $maxAttempts);
     }
 
     /**
-     * التحقق من إمكانية إعادة إرسال رمز جديد دون مخالفة فترة التهدئة.
+     * فحص إمكانية إعادة الإرسال.
      */
-    public function canResend(int $userId, int $cooldownSeconds = self::DEFAULT_COOLDOWN_SECONDS): bool
-    {
-        return $this->getCooldownRemainingSeconds($userId, $cooldownSeconds) === 0;
+    public function canResend(
+        int $userId,
+        OtpType|string $type = OtpType::OTP_2FA,
+        int $cooldownSeconds = self::DEFAULT_COOLDOWN_SECONDS
+    ): bool {
+        return $this->getCooldownRemainingSeconds($userId, $type, $cooldownSeconds) === 0;
     }
 
     /**
-     * عدد الثواني المتبقية قبل السماح بإعادة الإرسال.
+     * معرفة عدد الثواني المتبقية قبل إمكانية إعادة الإرسال.
      */
-    public function getCooldownRemainingSeconds(int $userId, int $cooldownSeconds = self::DEFAULT_COOLDOWN_SECONDS): int
-    {
-        return $this->otpRepository->getCooldownRemainingSeconds($userId, $cooldownSeconds);
+    public function getCooldownRemainingSeconds(
+        int $userId,
+        OtpType|string $type = OtpType::OTP_2FA,
+        int $cooldownSeconds = self::DEFAULT_COOLDOWN_SECONDS
+    ): int {
+        return $this->otpRepository->getCooldownRemainingSeconds($userId, $type, $cooldownSeconds);
     }
 
     /**
-     * إبطال جميع الرموز النشطة للمستخدم فورياً.
+     * معالجة طلب توليد OTP الممرر ككائن FormRequest.
+     *
+     * @return array{code: string, expires_at: Carbon, user: User}
      */
-    public function invalidateActiveOtps(int $userId): int
+    public function generateOtp(GenerateOtpRequest $request): array
     {
-        return $this->otpRepository->invalidateUserOtps($userId);
+        $phone = (string) $request->user_phone_number;
+        $type = (string) ($request->otp_type ?? OtpType::RESET_PASSWORD->value);
+
+        return $this->generateOtpForPhone($phone, $type);
+    }
+
+    /**
+     * معالجة طلب التحقق من OTP الممرر ككائن FormRequest.
+     */
+    public function verifyOtpRequest(VerifyOtpRequest $request): bool
+    {
+        $phone = (string) $request->user_phone_number;
+        $code = (string) $request->otp;
+        $type = (string) ($request->type ?? $request->otp_type ?? OtpType::RESET_PASSWORD->value);
+
+        return $this->verifyOtpForPhone($phone, $code, $type);
+    }
+
+    /**
+     * معالجة طلب إعادة إرسال OTP الممرر ككائن FormRequest.
+     *
+     * @return array{code: string, expires_at: Carbon, user: User}
+     */
+    public function resendOtp(GenerateOtpRequest $request): array
+    {
+        return $this->generateOtp($request);
+    }
+
+    /**
+     * إبطال جميع الرموز للمستخدم ولنوع محدد.
+     */
+    public function invalidateActiveOtps(int $userId, OtpType|string $type = OtpType::OTP_2FA): int
+    {
+        return $this->otpRepository->invalidateUserOtps($userId, $type);
     }
 }

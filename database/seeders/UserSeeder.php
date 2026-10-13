@@ -18,7 +18,7 @@ class UserSeeder extends Seeder
         $users = [
             [
                 'role_key' => 'super_admin',
-                'user_full_name' => 'مدير النظام الرئيسي',
+                'user_full_name' => 'حسام خالد سعيد علي الزريقي',
                 'user_phone_number' => '772957881',
                 'user_password' => 'Hh$2002Hh',
                 'user_email' => 'alzuraikyhussam@gmail.com',

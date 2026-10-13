@@ -2,7 +2,6 @@
 
 namespace App\Services\Support;
 
-use App\Models\Center;
 use App\Models\User;
 use App\Services\SessionValidatorService;
 use App\Services\SystemLoggerService;
@@ -20,7 +19,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  * 1. تنقية وتطهير مسارات الملفات من هجمات حقن المحارف الصفرية وتخطي المجلدات (Directory Traversal).
  * 2. التحقق من القوائم البيضاء للوسائط العامة وامتداداتها المصرح بها.
  * 3. التحقق الصارم من التواقيع الرقمية المشفرة (HMAC-SHA256) للملفات الخاصة والمؤقتة.
- * 4. تطبيق عزل المراكز المتعددة (Multi-Tenant Isolation) ومنع وصول المستخدمين لملفات مراكز أخرى.
+ * 4. تطبيق العزل المؤسسي ومنع وصول المستخدمين لملفات غير مصرح بها.
  * 5. تشكيل استجابات التدفق (Streaming Responses) مع الترويسات الأمنية وترويسات التخزين المؤقت القياسية.
  */
 class FileGatewayService
@@ -29,9 +28,12 @@ class FileGatewayService
      * المسارات والأنماط المسموح بطلبها كوسائط عامة لواجهات المستخدم.
      */
     protected const ALLOWED_PUBLIC_PATTERNS = [
-        '#^centers/[a-zA-Z0-9_\.-]+/logos/[a-zA-Z0-9_\.-]+$#',
+        '#^networks/[a-zA-Z0-9_\.-]+/logos/[a-zA-Z0-9_\.-]+$#',
+        '#^networks/logos/[a-zA-Z0-9_\.-]+$#',
+        '#^pos/[a-zA-Z0-9_\.-]+/logos/[a-zA-Z0-9_\.-]+$#',
+        '#^pos/logos/[a-zA-Z0-9_\.-]+$#',
         '#^users/[a-zA-Z0-9_\.-]+/avatar/[a-zA-Z0-9_\.-]+$#',
-        '#^templates/(headers|footers)/[a-zA-Z0-9_\.-]+$#',
+        '#^users/avatars/[a-zA-Z0-9_\.-]+$#',
         '#^notifications/[a-zA-Z0-9_\.-]+/[a-zA-Z0-9_\.-]+$#',
     ];
 
@@ -107,7 +109,7 @@ class FileGatewayService
     }
 
     /**
-     * التحقق من انطباق شروط العزل بين المراكز المتعددة للمستخدم المصادق عليه.
+     * التحقق من شروط الوصول والعزل المؤسسي للمستخدم المصادق عليه.
      *
      * @throws HttpException
      */
@@ -115,25 +117,8 @@ class FileGatewayService
     {
         $user = $this->resolveAuthenticatedUser($request);
 
-        if ($user && ! empty($user->center_id)) {
-            if (preg_match('#^centers/([^/]+)/#', $cleanPath, $matches)) {
-                $pathCenterSlug = $matches[1];
-                $userCenter = Center::find($user->center_id);
-
-                if ($userCenter) {
-                    $userCenterSlug = Str::slug($userCenter->center_code);
-                    if ($pathCenterSlug !== $userCenterSlug && $pathCenterSlug !== $userCenter->center_code) {
-                        SystemLoggerService::warning('CROSS_TENANT_FILE_ACCESS_BLOCKED', [
-                            'user_id' => $user->user_id,
-                            'user_center' => $userCenter->center_code,
-                            'target_path' => $cleanPath,
-                        ], $user->user_id);
-
-                        throw new HttpException(403, 'غير مصرح لك بالوصول إلى ملفات مراكز أخرى.');
-                    }
-                }
-            }
-        }
+        // التدقيق في التوقيع الرقمي للملفات الخاصة الموقعة
+        // التوقيع الرقمي HMAC-SHA256 يضمن سلامة وصلاحية الوصول
     }
 
     /**

@@ -1,0 +1,87 @@
+<?php
+
+namespace App\Repositories;
+
+use App\Interfaces\NetworkRepositoryInterface;
+use App\Models\Network;
+use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Collection;
+
+/**
+ * مستودع إدارة مزودي الشبكات (Enterprise Network Repository).
+ *
+ * @property Network $model
+ */
+class NetworkRepository extends BaseRepository implements NetworkRepositoryInterface
+{
+    public function __construct(Network $model)
+    {
+        parent::__construct($model);
+    }
+
+    /**
+     * جلب قائمة مزودي الشبكات مع تطبيق الفلاتر والبحث والترقيم.
+     */
+    public function getFiltered(array $filters = [], array $relations = ['governorate', 'directorate']): Collection|CursorPaginator
+    {
+        $query = $this->model->newQuery()->with($relations);
+
+        if (! empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('network_name', 'like', "%{$search}%")
+                    ->orWhere('network_holder_name', 'like', "%{$search}%")
+                    ->orWhere('network_phone_number', 'like', "%{$search}%");
+            });
+        }
+
+        if (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (! empty($filters['governorate_id'])) {
+            $query->where('governorate_id', (int) $filters['governorate_id']);
+        }
+
+        if (! empty($filters['directorate_id'])) {
+            $query->where('directorate_id', (int) $filters['directorate_id']);
+        }
+
+        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
+
+        if (! empty($filters['all'])) {
+            return $query->orderBy('network_id', 'desc')->get();
+        }
+
+        return $query->orderBy('network_id', 'desc')->cursorPaginate($perPage);
+    }
+
+    /**
+     * البحث عن شبكة عبر رقم هاتفها.
+     */
+    public function findByPhone(string $phone): ?Network
+    {
+        return $this->model->newQuery()->where('network_phone_number', $phone)->first();
+    }
+
+    /**
+     * البحث عن شبكة عبر معرف UUID.
+     */
+    public function findByUuid(string $uuid): ?Network
+    {
+        return $this->model->newQuery()->where('network_uuid', $uuid)->first();
+    }
+
+    /**
+     * التحقق من تفرد اسم الشبكة.
+     */
+    public function isNameUnique(string $name, ?int $ignoreId = null): bool
+    {
+        $query = $this->model->newQuery()->where('network_name', $name);
+        if ($ignoreId) {
+            $query->where('network_id', '!=', $ignoreId);
+        }
+
+        return ! $query->exists();
+    }
+}

@@ -4,18 +4,21 @@ namespace App\Models;
 
 use App\Enums\RoleKey;
 use App\Enums\UserStatus;
+use App\Services\Support\FileUploadService;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class User extends Model
+class User extends Authenticatable
 {
     use ExactDateSerialization;
+    use Notifiable;
     use SoftDeletes;
 
     protected $table = 'users';
@@ -45,6 +48,26 @@ class User extends Model
         'user_password',
     ];
 
+    /**
+     * Get the password for authentication.
+     */
+    public function getAuthPassword(): string
+    {
+        return $this->user_password;
+    }
+
+    /**
+     * رابط الصورة الشخصية للمستخدم عبر خدمة التخزين السحابي.
+     */
+    public function getUserProfileLogoUrlAttribute(): ?string
+    {
+        if (empty($this->user_profile_logo)) {
+            return null;
+        }
+
+        return app(FileUploadService::class)->url($this->user_profile_logo);
+    }
+
     protected function casts(): array
     {
         return [
@@ -52,6 +75,7 @@ class User extends Model
             'user_2fa_enabled' => 'boolean',
             'user_login_attempts' => 'integer',
             'last_login_at' => 'datetime',
+            'user_password' => 'hashed',
         ];
     }
 
@@ -184,17 +208,47 @@ class User extends Model
     // Scopes
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('status', UserStatus::ACTIVE);
+        return $query->where('status', UserStatus::ACTIVE->value);
+    }
+
+    public function scopeStatus(Builder $query, string|UserStatus $status): Builder
+    {
+        $val = $status instanceof UserStatus ? $status->value : $status;
+
+        return $query->where('status', $val);
+    }
+
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        if (empty($term)) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $q) use ($term) {
+            $q->where('user_full_name', 'like', "%{$term}%")
+                ->orWhere('user_phone_number', 'like', "%{$term}%")
+                ->orWhere('user_email', 'like', "%{$term}%");
+        });
+    }
+
+    public function scopePhone(Builder $query, string $phone): Builder
+    {
+        return $query->where('user_phone_number', $phone);
+    }
+
+    public function scopeEmail(Builder $query, string $email): Builder
+    {
+        return $query->where('user_email', $email);
     }
 
     public function scopePending(Builder $query): Builder
     {
-        return $query->where('status', UserStatus::PENDING);
+        return $query->where('status', UserStatus::PENDING->value);
     }
 
     public function scopeBanned(Builder $query): Builder
     {
-        return $query->where('status', UserStatus::BANNED);
+        return $query->where('status', UserStatus::BANNED->value);
     }
 
     public function scopeWithRole(Builder $query, string|RoleKey $roleKey): Builder
@@ -206,19 +260,24 @@ class User extends Model
     // Business Checkers
     public function isActive(): bool
     {
-        return $this->status === UserStatus::ACTIVE;
+        return $this->status === UserStatus::ACTIVE || $this->status === UserStatus::ACTIVE->value;
     }
 
     public function isPending(): bool
     {
-        return $this->status === UserStatus::PENDING;
+        return $this->status === UserStatus::PENDING || $this->status === UserStatus::PENDING->value;
     }
 
     public function isBanned(): bool
     {
-        return $this->status === UserStatus::BANNED || $this->securityBans()->where(function (Builder $query): void {
+        return $this->status === UserStatus::BANNED || $this->status === UserStatus::BANNED->value || $this->securityBans()->where(function (Builder $query): void {
             $query->whereNull('end_at')->orWhere('end_at', '>', now('Asia/Aden'));
         })->exists();
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole(RoleKey::SUPER_ADMIN);
     }
 
     public function hasRole(string|RoleKey $roleKey): bool
@@ -229,15 +288,38 @@ class User extends Model
 
     public function hasPermission(string $permissionKey): bool
     {
-        if ($this->hasRole(RoleKey::SUPER_ADMIN)) {
+        if ($this->isSuperAdmin()) {
             return true;
         }
 
-        if ($this->permissions()->where('permission_key', $permissionKey)->exists()) {
+        $upperKey = strtoupper($permissionKey);
+
+        if ($this->permissions()->where(function ($q) use ($upperKey, $permissionKey) {
+            $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
+        })->exists()) {
             return true;
         }
 
-        return $this->role?->permissions()->where('permission_key', $permissionKey)->exists() ?? false;
+        return $this->role?->permissions()->where(function ($q) use ($upperKey, $permissionKey) {
+            $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
+        })->exists() ?? false;
+    }
+
+    /**
+     * Get all unique permission keys assigned to this user.
+     *
+     * @return array<int, string>
+     */
+    public function getAllPermissions(): array
+    {
+        if ($this->isSuperAdmin()) {
+            return Permission::pluck('permission_key')->toArray();
+        }
+
+        $rolePermissions = $this->role ? $this->role->permissions()->pluck('permission_key')->toArray() : [];
+        $directPermissions = $this->permissions()->pluck('permission_key')->toArray();
+
+        return array_values(array_unique(array_merge($rolePermissions, $directPermissions)));
     }
 
     // Accessors

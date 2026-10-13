@@ -17,12 +17,18 @@ use OpenApi\Attributes as OA;
     description: 'خادم واجهة البرمجة الأساسي (Primary API Server)'
 )]
 #[OA\SecurityScheme(
-    securityScheme: 'bearerAuth',
-    type: 'http',
-    name: 'bearerAuth',
+    securityScheme: 'sessionAuth',
+    type: 'apiKey',
+    name: 'X-Session-Id',
     in: 'header',
-    scheme: 'bearer',
-    bearerFormat: 'JWT'
+    description: 'معرف الجلسة النشطة (Session ID) المسجلة في جدول user_sessions'
+)]
+#[OA\SecurityScheme(
+    securityScheme: 'deviceAuth',
+    type: 'apiKey',
+    name: 'X-Device-Uuid',
+    in: 'header',
+    description: 'معرف الجهاز الفريد (Device UUID) الخاص بجهاز المستخدم'
 )]
 #[OA\SecurityScheme(
     securityScheme: 'bypassEncryption',

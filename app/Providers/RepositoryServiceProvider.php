@@ -2,39 +2,45 @@
 
 namespace App\Providers;
 
+use App\Interfaces\NetworkRepositoryInterface;
+use App\Interfaces\OtpRepositoryInterface;
+use App\Interfaces\PosRepositoryInterface;
+use App\Interfaces\SecurityBanRepositoryInterface;
+use App\Interfaces\UserDeviceRepositoryInterface;
+use App\Interfaces\UserRepositoryInterface;
+use App\Interfaces\UserSessionRepositoryInterface;
+use App\Repositories\NetworkRepository;
+use App\Repositories\OtpRepository;
+use App\Repositories\PosRepository;
+use App\Repositories\SecurityBanRepository;
+use App\Repositories\UserDeviceRepository;
+use App\Repositories\UserRepository;
+use App\Repositories\UserSessionRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
+    /**
+     * All of the container bindings that should be registered.
+     *
+     * @var array<string, string>
+     */
+    public array $bindings = [
+        // Phase 1: Auth & Security Core
+        UserRepositoryInterface::class => UserRepository::class,
+        UserDeviceRepositoryInterface::class => UserDeviceRepository::class,
+        UserSessionRepositoryInterface::class => UserSessionRepository::class,
+        SecurityBanRepositoryInterface::class => SecurityBanRepository::class,
+        OtpRepositoryInterface::class => OtpRepository::class,
+        NetworkRepositoryInterface::class => NetworkRepository::class,
+        PosRepositoryInterface::class => PosRepository::class,
+    ];
+
     public function register(): void
     {
-        // $this->app->bind(ModuleRepositoryInterface::class, ModuleRepository::class);
-        // $this->app->bind(ActionTypeRepositoryInterface::class, ActionTypeRepository::class);
-        // $this->app->bind(PermissionRepositoryInterface::class, PermissionRepository::class);
-        // $this->app->bind(GovernorateRepositoryInterface::class, GovernorateRepository::class);
-        // $this->app->bind(DirectorateRepositoryInterface::class, DirectorateRepository::class);
-        // $this->app->bind(CenterRepositoryInterface::class, CenterRepository::class);
-        // $this->app->bind(AcademicClassRepositoryInterface::class, AcademicClassRepository::class);
-        // $this->app->bind(SectionRepositoryInterface::class, SectionRepository::class);
-        // $this->app->bind(SubjectRepositoryInterface::class, SubjectRepository::class);
-        // $this->app->bind(ClassSubjectRepositoryInterface::class, ClassSubjectRepository::class);
-        // $this->app->bind(RoleRepositoryInterface::class, RoleRepository::class);
-        // $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
-        // $this->app->bind(UserDeviceRepositoryInterface::class, UserDeviceRepository::class);
-        // $this->app->bind(SecurityBanRepositoryInterface::class, SecurityBanRepository::class);
-        // $this->app->bind(UserSessionRepositoryInterface::class, UserSessionRepository::class);
-        // $this->app->bind(OtpRepositoryInterface::class, OtpRepository::class);
-        // $this->app->bind(GradingScaleRepositoryInterface::class, GradingScaleRepository::class);
-        // $this->app->bind(GradingScaleItemRepositoryInterface::class, GradingScaleItemRepository::class);
-        // $this->app->bind(ResultRuleRepositoryInterface::class, ResultRuleRepository::class);
-        // $this->app->bind(ResultTemplateRepositoryInterface::class, ResultTemplateRepository::class);
-        // $this->app->bind(ResultRepositoryInterface::class, ResultRepository::class);
-        // $this->app->bind(ResultSubjectRepositoryInterface::class, ResultSubjectRepository::class);
-        // $this->app->bind(NotificationRepositoryInterface::class, NotificationRepository::class);
-        // $this->app->bind(SettingCategoryRepositoryInterface::class, SettingCategoryRepository::class);
-        // $this->app->bind(SettingRepositoryInterface::class, SettingRepository::class);
-        // $this->app->bind(SettingValueRepositoryInterface::class, SettingValueRepository::class);
-        // $this->app->bind(CenterSettingValueRepositoryInterface::class, CenterSettingValueRepository::class);
+        foreach ($this->bindings as $abstract => $concrete) {
+            $this->app->bind($abstract, $concrete);
+        }
     }
 
     public function boot(): void {}

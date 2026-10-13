@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('setting_category', 50)->default('GENERAL')->index('idx_system_settings_setting_category');
             $table->string('setting_key', 50)->unique('uq_system_settings_setting_key');
             $table->string('setting_value_type', 20)->default('TEXT')->index('idx_system_settings_setting_value_type');
-            $table->string('setting_value', 150);
+            $table->text('setting_value');
             $table->string('setting_desc', 150)->nullable();
 
             $table->timestamps();

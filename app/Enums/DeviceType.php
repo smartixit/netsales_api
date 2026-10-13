@@ -10,6 +10,7 @@ enum DeviceType: string
     case WINDOWS = 'WINDOWS';
     case LINUX = 'LINUX';
     case MAC = 'MAC';
+    case UNKNOWN = 'UNKNOWN';
 
     public static function values(): array
     {
@@ -25,6 +26,7 @@ enum DeviceType: string
             self::WINDOWS => 'ويندوز',
             self::LINUX => 'لينكس',
             self::MAC => 'ماك',
+            self::UNKNOWN => 'غير معروف',
         };
     }
 
@@ -37,6 +39,7 @@ enum DeviceType: string
             self::WINDOWS->value => self::WINDOWS->label(),
             self::LINUX->value => self::LINUX->label(),
             self::MAC->value => self::MAC->label(),
+            self::UNKNOWN->value => self::UNKNOWN->label(),
         ];
     }
 }

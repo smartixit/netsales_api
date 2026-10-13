@@ -21,12 +21,17 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Center info
-            'center_name' => [
+            // Network info
+            'network_name' => [
                 'required',
                 'string',
                 'max:50',
-                'unique:centers,center_name',
+                'unique:networks,network_name',
+            ],
+            'network_holder_name' => [
+                'required',
+                'string',
+                'max:50',
             ],
             'governorate_id' => [
                 'required',
@@ -42,30 +47,35 @@ class RegisterRequest extends FormRequest
                     }
                 }),
             ],
-            'center_phone_number' => [
-                'nullable',
+            'network_phone_number' => [
+                'required',
                 'string',
                 'min:9',
                 'max:9',
                 'regex:/^7[0-9]{8}$/',
             ],
-            'center_address' => [
+            'network_email' => [
                 'nullable',
-                'string',
+                'email',
                 'max:50',
             ],
-            'center_description' => [
+            'network_address' => [
                 'nullable',
                 'string',
-                'max:50',
+                'max:150',
             ],
-            'center_profile_picture' => [
+            'network_profile_logo' => [
                 'nullable',
                 'image',
                 'max:2048',
             ],
 
-            // User info
+            // User (Network Admin) info
+            'user_full_name' => [
+                'required',
+                'string',
+                'max:50',
+            ],
             'user_phone_number' => [
                 'required',
                 'string',
@@ -85,7 +95,7 @@ class RegisterRequest extends FormRequest
                 'email',
                 'max:50',
             ],
-            'user_profile_picture' => [
+            'user_profile_logo' => [
                 'nullable',
                 'image',
                 'max:2048',
