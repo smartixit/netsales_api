@@ -11,7 +11,7 @@ use App\Http\Requests\API\V1\Network\UpdateNetworkRequest;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
-use App\Jobs\SendEmailJob;
+use App\Jobs\SendEmailNotificationJob;
 use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
 use App\Services\Support\FileUploadService;
@@ -268,7 +268,7 @@ class NetworkService
                 );
 
                 if (! empty($user->user_email)) {
-                    SendEmailJob::dispatch(
+                    SendEmailNotificationJob::dispatch(
                         $user->user_email,
                         'الموافقة على طلب مزود الشبكة - NetSales',
                         "تهانينا! تمت مراجعة واعتماد طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح.",

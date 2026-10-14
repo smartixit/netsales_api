@@ -1,7 +1,7 @@
 <?php
 
-use App\Services\SettingService;
 use App\Services\Support\AsymmetricCryptoService;
+use App\Services\SystemSettingService;
 
 if (! function_exists('encryptData')) {
     /**
@@ -43,6 +43,6 @@ if (! function_exists('systemSetting')) {
      */
     function systemSetting(string $key, mixed $default = null, ?int $centerId = null): mixed
     {
-        return app(SettingService::class)->get($key, $default, $centerId);
+        return app(SystemSettingService::class)->get($key, $default, $centerId);
     }
 }

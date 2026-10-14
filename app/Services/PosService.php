@@ -11,7 +11,7 @@ use App\Http\Requests\API\V1\Pos\UpdatePosRequest;
 use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
-use App\Jobs\SendEmailJob;
+use App\Jobs\SendEmailNotificationJob;
 use App\Jobs\SendSmsNotificationJob;
 use App\Models\NetworkPos;
 use App\Models\Pos;
@@ -272,7 +272,7 @@ class PosService
                 );
 
                 if (! empty($user->user_email)) {
-                    SendEmailJob::dispatch(
+                    SendEmailNotificationJob::dispatch(
                         $user->user_email,
                         'الموافقة على طلب نقطة البيع - NetSales',
                         "تهانينا! تمت مراجعة واعتماد طلب تسجيل نقطة البيع {$pos->pos_name} وتفعيل حسابكم بنجاح.",

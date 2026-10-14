@@ -6,12 +6,10 @@ use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SystemLog extends Model
 {
     use ExactDateSerialization;
-    use SoftDeletes;
 
     protected $table = 'system_logs';
 
@@ -21,7 +19,7 @@ class SystemLog extends Model
 
     public $incrementing = true;
 
-    public $timestamps = true;
+    public $timestamps = false;
 
     protected $fillable = [
         'user_id',

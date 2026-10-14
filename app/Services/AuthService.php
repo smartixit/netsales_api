@@ -26,7 +26,7 @@ use App\Interfaces\SecurityBanRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
-use App\Jobs\SendEmailJob;
+use App\Jobs\SendEmailNotificationJob;
 use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
 use App\Models\NetworkPos;
@@ -627,7 +627,7 @@ class AuthService
 
                 // إرسال بريد إلكتروني إذا وُجد
                 if (! empty($user->user_email)) {
-                    SendEmailJob::dispatch(
+                    SendEmailNotificationJob::dispatch(
                         $user->user_email,
                         'الموافقة على طلب تسجيل الشبكة - NetSales',
                         "تهانينا! تمت مراجعة واعتماد طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح في نظام NetSales.",
@@ -719,7 +719,7 @@ class AuthService
                 );
 
                 if (! empty($user->user_email)) {
-                    SendEmailJob::dispatch(
+                    SendEmailNotificationJob::dispatch(
                         $user->user_email,
                         'الموافقة على طلب نقطة البيع - NetSales',
                         "تهانينا! تمت مراجعة واعتماد طلب تسجيل نقطة البيع {$pos->pos_name} وتفعيل حسابكم بنجاح.",

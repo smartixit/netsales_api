@@ -28,6 +28,8 @@ use App\Interfaces\SubscriptionPlanRepositoryInterface;
 use App\Interfaces\SubscriptionPlanRequestRepositoryInterface;
 use App\Interfaces\SupportTicketMessageRepositoryInterface;
 use App\Interfaces\SupportTicketRepositoryInterface;
+use App\Interfaces\SystemLogRepositoryInterface;
+use App\Interfaces\SystemSettingRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
@@ -59,6 +61,8 @@ use App\Repositories\SubscriptionPlanRepository;
 use App\Repositories\SubscriptionPlanRequestRepository;
 use App\Repositories\SupportTicketMessageRepository;
 use App\Repositories\SupportTicketRepository;
+use App\Repositories\SystemLogRepository;
+use App\Repositories\SystemSettingRepository;
 use App\Repositories\UserDeviceRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\UserSessionRepository;
@@ -120,6 +124,12 @@ class RepositoryServiceProvider extends ServiceProvider
 
         // Phase 8: Notifications Engine
         NotificationRepositoryInterface::class => NotificationRepository::class,
+
+        // Phase 9: System Settings & Configurations Engine
+        SystemSettingRepositoryInterface::class => SystemSettingRepository::class,
+
+        // Phase 10: System Audit Logs Engine
+        SystemLogRepositoryInterface::class => SystemLogRepository::class,
     ];
 
     public function register(): void

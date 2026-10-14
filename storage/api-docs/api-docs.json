@@ -5447,6 +5447,413 @@
                 ]
             }
         },
+        "/api/v1/system-settings": {
+            "get": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "عرض قائمة إعدادات النظام",
+                "description": "عرض قائمة إعدادات النظام مع الفلترة والترقيم بالمؤشر.",
+                "operationId": "ac8c396ffb229d55f7b9998c34980c21",
+                "parameters": [
+                    {
+                        "name": "setting_category",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "setting_value_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "all",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة الإعدادات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "إنشاء إعداد نظام جديد",
+                "description": "إنشاء إعداد نظام جديد.",
+                "operationId": "10c134e971ef1574158e3c5d226ab9bb",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء إعداد النظام بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-settings/category/{category}": {
+            "get": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "عرض إعدادات تصنيف محدد",
+                "description": "عرض إعدادات تصنيف محدد.",
+                "operationId": "2f4557e3a2d5ac5bce890dbcead2d083",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع إعدادات التصنيف بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-settings/key/{key}": {
+            "get": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "عرض إعداد محدد عبر المفتاح",
+                "description": "عرض إعداد محدد عبر المفتاح الفريد.",
+                "operationId": "4e52f0e84bcd9a1efde1bc0960375608",
+                "parameters": [
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الإعداد بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-settings/{id}": {
+            "get": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "عرض تفاصيل إعداد محدد",
+                "description": "عرض تفاصيل إعداد محدد عبر المعرف الرقمي.",
+                "operationId": "1a05859d91c3924ca77b587cf4bbd844",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل الإعداد بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "تحديث بيانات إعداد نظام",
+                "description": "تحديث بيانات إعداد نظام قائم.",
+                "operationId": "3b3d8b2eb5220dd5164ab41fc41e84c6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث إعداد النظام بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "حذف إعداد نظام ناعماً",
+                "description": "حذف إعداد نظام ناعماً.",
+                "operationId": "1d07542247f587ee74ca1af78c1f4c93",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف إعداد النظام بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-settings/batch-update": {
+            "post": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "تحديث مجمع لقيم إعدادات النظام",
+                "description": "تحديث مجمع لقيم إعدادات النظام.",
+                "operationId": "a0ad6691f1a5d0a1c858bb6c5f6dc960",
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث الإعدادات المحددة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-settings/trashed": {
+            "get": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "عرض الإعدادات المحذوفة ناعماً",
+                "description": "عرض قائمة الإعدادات المحذوفة ناعماً.",
+                "operationId": "d98031ec6a5d67cc829f2228cabdf8a7",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الإعدادات المحذوفة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-settings/{id}/restore": {
+            "post": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "استعادة إعداد نظام محذوف ناعماً",
+                "description": "استعادة إعداد نظام محذوف ناعماً.",
+                "operationId": "fd4c7089f44d4b846d8323409a51021c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة إعداد النظام بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-settings/{id}/force-delete": {
+            "delete": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "الحذف النهائي لإعداد نظام",
+                "description": "الحذف النهائي لإعداد نظام.",
+                "operationId": "b28a8542a66fe54efeef6bddc0c15a79",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الإعداد نهائياً بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-settings/batch-delete": {
+            "post": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "الحذف المجمع للإعدادات ناعماً",
+                "description": "الحذف المجمع للإعدادات ناعماً.",
+                "operationId": "1bbdfc4da6751894d9f205aa87bc174d",
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الإعدادات المحددة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-settings/batch-restore": {
+            "post": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "الاستعادة المجمعة للإعدادات",
+                "description": "الاستعادة المجمعة للإعدادات المحذوفة ناعماً.",
+                "operationId": "6667662ed6e6edd06ab53f2ba2fb9822",
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة الإعدادات المحددة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-settings/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "الحذف النهائي المجمع للإعدادات",
+                "description": "الحذف النهائي المجمع للإعدادات.",
+                "operationId": "1b2a069852d0fdbe89173c0bc9ef9274",
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الإعدادات نهائياً بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-settings/clear-cache": {
+            "post": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "تفريغ كاش إعدادات النظام",
+                "description": "تفريغ الذاكرة المؤقتة للإعدادات يدوياً.",
+                "operationId": "22a89de7c49ae1abaf43117d852d9673",
+                "responses": {
+                    "200": {
+                        "description": "تم تفريغ كاش إعدادات النظام بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/users": {
             "get": {
                 "tags": [
@@ -6731,6 +7138,10 @@
         {
             "name": "Support Tickets",
             "description": "إدارة تذاكر الدعم الفني والمراسلات التفاعلية"
+        },
+        {
+            "name": "SystemSettings",
+            "description": "إدارة وتخصيص إعدادات النظام والتكوين التشغيلي الموحد"
         },
         {
             "name": "Users",

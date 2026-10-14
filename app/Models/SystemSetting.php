@@ -64,7 +64,9 @@ class SystemSetting extends Model
 
                 return match ($this->setting_value_type) {
                     ValueType::INTEGER => (int) $value,
+                    ValueType::FLOAT => (float) $value,
                     ValueType::BOOLEAN => filter_var($value, FILTER_VALIDATE_BOOLEAN),
+                    ValueType::JSON => json_decode((string) $value, true) ?? $value,
                     default => (string) $value,
                 };
             }

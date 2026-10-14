@@ -33,6 +33,7 @@ class SystemSettingResource extends JsonResource
                 ? $this->setting_value_type->label()
                 : (ValueType::tryFrom((string) $this->setting_value_type)?->label()),
             'setting_value' => $this->setting_value,
+            'typed_value' => $this->typed_value,
             'setting_desc' => $this->setting_desc,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,

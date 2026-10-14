@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\EmailService;
+use App\Services\Support\EmailNotificationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -19,18 +19,21 @@ class SendEmailNotificationJob implements ShouldQueue
 
     protected $body;
 
-    protected $data;
+    protected $userName;
 
-    public function __construct(string $toEmail, string $subject, string $body, array $data = [])
+    protected $ctaLink;
+
+    public function __construct(string $toEmail, string $subject, string $userName, string $ctaLink, string $body)
     {
         $this->toEmail = $toEmail;
         $this->subject = $subject;
+        $this->userName = $userName;
+        $this->ctaLink = $ctaLink;
         $this->body = $body;
-        $this->data = $data;
     }
 
-    public function handle(EmailService $emailService): void
+    public function handle(EmailNotificationService $emailService): void
     {
-        $emailService->sendImmediateEmail($this->toEmail, $this->subject, $this->body, $this->data);
+        $emailService->sendEmail($this->toEmail, $this->subject, $this->userName, $this->ctaLink, $this->body);
     }
 }

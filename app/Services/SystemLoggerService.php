@@ -83,11 +83,11 @@ class SystemLoggerService
                 'action' => substr($action, 0, 50),
                 'entity_type' => $entityType ? substr($entityType, 0, 50) : null,
                 'entity_id' => $entityId,
-                'old_data' => $sanitizedOld,
-                'new_data' => $sanitizedNew,
+                'old_values' => $sanitizedOld,
+                'new_values' => $sanitizedNew,
                 'ip_address' => $resolvedIp,
                 'user_agent' => $resolvedUserAgent,
-                'created_at' => now('Asia/Aden'),
+                'log_date' => now('Asia/Aden'),
             ]);
         } catch (Exception $e) {
             // ضمان عدم توقف النظام الأساسي في حال تعثر السجل، مع توثيق الخطأ في Laravel Log

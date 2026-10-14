@@ -19,6 +19,8 @@ use App\Http\Controllers\Api\V1\SecurityController;
 use App\Http\Controllers\Api\V1\SubscriptionPlanController;
 use App\Http\Controllers\Api\V1\SubscriptionPlanRequestController;
 use App\Http\Controllers\Api\V1\SupportTicketController;
+use App\Http\Controllers\Api\V1\SystemLogController;
+use App\Http\Controllers\Api\V1\SystemSettingController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VoucherPackageController;
 use App\Http\Controllers\Api\V1\VoucherPackageDiscountController;
@@ -514,6 +516,44 @@ Route::prefix('v1')->group(function () {
             Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead'])->whereNumber('id')->name('api.v1.notifications.mark_as_read');
             Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('api.v1.notifications.mark_all_read');
             Route::apiResource('notifications', NotificationController::class)->parameters(['notifications' => 'id'])->except(['index', 'show']);
+        });
+
+        // ==========================================
+        // 20. إعدادات النظام وتهيئة البيئة (System Settings & Engine Configuration)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('system-settings', [SystemSettingController::class, 'index'])->name('api.v1.system_settings.index');
+            Route::get('system-settings/trashed', [SystemSettingController::class, 'trashed'])->name('api.v1.system_settings.trashed');
+            Route::get('system-settings/category/{category}', [SystemSettingController::class, 'byCategory'])->name('api.v1.system_settings.by_category');
+            Route::get('system-settings/key/{key}', [SystemSettingController::class, 'byKey'])->name('api.v1.system_settings.by_key');
+            Route::get('system-settings/{id}', [SystemSettingController::class, 'show'])->whereNumber('id')->name('api.v1.system_settings.show');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('system-settings', [SystemSettingController::class, 'store'])->name('api.v1.system_settings.store');
+            Route::post('system-settings/batch-update', [SystemSettingController::class, 'batchUpdate'])->name('api.v1.system_settings.batch_update');
+            Route::post('system-settings/clear-cache', [SystemSettingController::class, 'clearCache'])->name('api.v1.system_settings.clear_cache');
+            Route::put('system-settings/{id}', [SystemSettingController::class, 'update'])->whereNumber('id')->name('api.v1.system_settings.update');
+            Route::delete('system-settings/{id}', [SystemSettingController::class, 'destroy'])->whereNumber('id')->name('api.v1.system_settings.destroy');
+            Route::post('system-settings/{id}/restore', [SystemSettingController::class, 'restore'])->whereNumber('id')->name('api.v1.system_settings.restore');
+            Route::delete('system-settings/{id}/force', [SystemSettingController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.system_settings.force_delete');
+            Route::post('system-settings/batch-delete', [SystemSettingController::class, 'batchDelete'])->name('api.v1.system_settings.batch_delete');
+            Route::post('system-settings/batch-restore', [SystemSettingController::class, 'batchRestore'])->name('api.v1.system_settings.batch_restore');
+            Route::post('system-settings/batch-force-delete', [SystemSettingController::class, 'batchForceDelete'])->name('api.v1.system_settings.batch_force_delete');
+            Route::apiResource('system-settings', SystemSettingController::class)->parameters(['system-settings' => 'id'])->except(['index', 'show']);
+        });
+
+        // ==========================================
+        // 21. سجلات تدقيق النظام والتتبع الأمني (System Audit Logs & Activity Trails)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('system-logs', [SystemLogController::class, 'index'])->name('api.v1.system_logs.index');
+            Route::get('system-logs/stats', [SystemLogController::class, 'stats'])->name('api.v1.system_logs.stats');
+            Route::get('system-logs/modules', [SystemLogController::class, 'modules'])->name('api.v1.system_logs.modules');
+            Route::get('system-logs/actions', [SystemLogController::class, 'actions'])->name('api.v1.system_logs.actions');
+            Route::get('system-logs/entity/{entityType}/{entityId}', [SystemLogController::class, 'byEntity'])->whereNumber('entityId')->name('api.v1.system_logs.by_entity');
+            Route::get('system-logs/user/{userId}', [SystemLogController::class, 'byUser'])->whereNumber('userId')->name('api.v1.system_logs.by_user');
+            Route::get('system-logs/{id}', [SystemLogController::class, 'show'])->whereNumber('id')->name('api.v1.system_logs.show');
         });
 
     });

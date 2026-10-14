@@ -19,10 +19,16 @@ class UpdateSystemSettingRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge([
-            'setting_key' => is_string($this->setting_key) ? trim(strtolower($this->setting_key)) : $this->setting_key,
-            'setting_desc' => is_string($this->setting_desc) ? trim($this->setting_desc) : $this->setting_desc,
-        ]);
+        $data = [];
+        if ($this->has('setting_key') && is_string($this->setting_key)) {
+            $data['setting_key'] = trim(strtolower($this->setting_key));
+        }
+        if ($this->has('setting_desc') && is_string($this->setting_desc)) {
+            $data['setting_desc'] = trim($this->setting_desc);
+        }
+        if (! empty($data)) {
+            $this->merge($data);
+        }
     }
 
     /**
@@ -67,5 +73,42 @@ class UpdateSystemSettingRequest extends FormRequest
                 'max:500',
             ],
         ];
+    }
+
+    public function getSettingCategory(): ?SettingCategory
+    {
+        if (! $this->has('setting_category')) {
+            return null;
+        }
+
+        return $this->setting_category instanceof SettingCategory
+            ? $this->setting_category
+            : SettingCategory::from((string) $this->setting_category);
+    }
+
+    public function getSettingKey(): ?string
+    {
+        return $this->has('setting_key') ? (string) $this->setting_key : null;
+    }
+
+    public function getSettingValueType(): ?ValueType
+    {
+        if (! $this->has('setting_value_type')) {
+            return null;
+        }
+
+        return $this->setting_value_type instanceof ValueType
+            ? $this->setting_value_type
+            : ValueType::from((string) $this->setting_value_type);
+    }
+
+    public function getSettingValue(): ?string
+    {
+        return $this->has('setting_value') ? ($this->setting_value !== null ? (string) $this->setting_value : null) : null;
+    }
+
+    public function getSettingDesc(): ?string
+    {
+        return $this->has('setting_desc') ? ($this->setting_desc ? (string) $this->setting_desc : null) : null;
     }
 }
