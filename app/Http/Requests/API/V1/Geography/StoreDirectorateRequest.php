@@ -40,4 +40,14 @@ class StoreDirectorateRequest extends FormRequest
             ],
         ];
     }
+
+    public function getGovernorateId(): int
+    {
+        return (int) $this->governorate_id;
+    }
+
+    public function getDirectorateName(): string
+    {
+        return (string) $this->directorate_name;
+    }
 }

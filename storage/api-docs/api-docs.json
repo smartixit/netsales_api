@@ -638,6 +638,335 @@
                 ]
             }
         },
+        "/api/v1/directorates": {
+            "get": {
+                "tags": [
+                    "Directorates"
+                ],
+                "summary": "عرض قائمة المديريات",
+                "description": "عرض قائمة المديريات مع الفلترة والترقيم بالمؤشر.",
+                "operationId": "b948bc7812c9275248151dd4178fbad1",
+                "parameters": [
+                    {
+                        "name": "governorate_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "all",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة المديريات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Directorates"
+                ],
+                "summary": "إنشاء مديرية جديدة",
+                "description": "إنشاء مديرية جديدة.",
+                "operationId": "5d9dc20cd05e3fed2aaa1c93134c414d",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء المديرية بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/directorates/governorate/{governorateId}": {
+            "get": {
+                "tags": [
+                    "Directorates"
+                ],
+                "summary": "مديريات محافظة محددة",
+                "description": "عرض مديريات محافظة محددة.",
+                "operationId": "3b09c8100eaf30fecb48372d573897be",
+                "parameters": [
+                    {
+                        "name": "governorateId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع مديريات المحافظة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/directorates/{id}": {
+            "get": {
+                "tags": [
+                    "Directorates"
+                ],
+                "summary": "عرض تفاصيل مديرية محددة",
+                "description": "عرض تفاصيل مديرية محددة عبر المعرف الرقمي.",
+                "operationId": "de7ccd727ce6a76e537cb84540049ac5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل المديرية بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Directorates"
+                ],
+                "summary": "تحديث بيانات مديرية",
+                "description": "تحديث بيانات مديرية قائمة.",
+                "operationId": "0468e6756c00e73d28ca8710c3f4e0bb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث بيانات المديرية بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Directorates"
+                ],
+                "summary": "حذف مديرية ناعماً",
+                "description": "حذف مديرية ناعماً.",
+                "operationId": "a95806804bfcf70ce760a4a016799d9d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المديرية بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/directorates/trashed": {
+            "get": {
+                "tags": [
+                    "Directorates"
+                ],
+                "summary": "عرض المديريات المحذوفة ناعماً",
+                "description": "عرض قائمة المديريات المحذوفة ناعماً.",
+                "operationId": "1c9c84ee55834c3145b90767cc06e360",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع المديريات المحذوفة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/directorates/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Directorates"
+                ],
+                "summary": "استعادة مديرية محذوفة ناعماً",
+                "description": "استعادة مديرية محذوفة ناعماً.",
+                "operationId": "95a368955c84c0396f45576e04806186",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة المديرية بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/directorates/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Directorates"
+                ],
+                "summary": "الحذف النهائي لمديرية",
+                "description": "الحذف النهائي لمديرية.",
+                "operationId": "2e9f1226adc7318ce34101c92af0f3b4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المديرية نهائياً بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/directorates/batch-delete": {
+            "post": {
+                "tags": [
+                    "Directorates"
+                ],
+                "summary": "الحذف المجمع للمديريات ناعماً",
+                "description": "الحذف المجمع للمديريات ناعماً.",
+                "operationId": "302abe643e22d0d4045bb0e21912bddd",
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المديريات المحددة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/directorates/batch-restore": {
+            "post": {
+                "tags": [
+                    "Directorates"
+                ],
+                "summary": "الاستعادة المجمعة للمديريات",
+                "description": "الاستعادة المجمعة للمديريات.",
+                "operationId": "46fbebb042b721b368e73a01d9b7a806",
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة المديريات المحددة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/directorates/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Directorates"
+                ],
+                "summary": "الحذف النهائي المجمع للمديريات",
+                "description": "الحذف النهائي المجمع للمديريات.",
+                "operationId": "cf9fb4ccc709909b3d4f3094c7b5130a",
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المديريات نهائياً بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/expenses": {
             "get": {
                 "tags": [
@@ -1385,6 +1714,317 @@
                 "responses": {
                     "200": {
                         "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/governorates": {
+            "get": {
+                "tags": [
+                    "Governorates"
+                ],
+                "summary": "عرض قائمة المحافظات",
+                "description": "عرض قائمة المحافظات مع الفلترة والترقيم بالمؤشر.",
+                "operationId": "a3f352ba2cefaca2e9c6866ae4a30347",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "all",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة المحافظات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Governorates"
+                ],
+                "summary": "إنشاء محافظة جديدة",
+                "description": "إنشاء محافظة جديدة.",
+                "operationId": "bd422e3ce0d69d514f8ff26277d916ca",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء المحافظة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/governorates/counts": {
+            "get": {
+                "tags": [
+                    "Governorates"
+                ],
+                "summary": "المحافظات مع أعداد المديريات والشبكات",
+                "description": "جلب كافة المحافظات مع إحصائيات المديريات والشبكات ونقاط البيع.",
+                "operationId": "10ae25f96cfb54ea9fee6c7539ae5574",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع إحصائيات المحافظات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/governorates/{id}": {
+            "get": {
+                "tags": [
+                    "Governorates"
+                ],
+                "summary": "عرض تفاصيل محافظة محددة",
+                "description": "عرض تفاصيل محافظة محددة عبر المعرف الرقمي.",
+                "operationId": "6149f7e53b2dae5f1652ea5c2ce0d648",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل المحافظة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Governorates"
+                ],
+                "summary": "تحديث بيانات محافظة",
+                "description": "تحديث بيانات محافظة قائمة.",
+                "operationId": "8528c71c2f82422e431db43f59e94b7e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث بيانات المحافظة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Governorates"
+                ],
+                "summary": "حذف محافظة ناعماً",
+                "description": "حذف محافظة ناعماً.",
+                "operationId": "783c02a86a8328886cc22a8ca346da34",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المحافظة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/governorates/trashed": {
+            "get": {
+                "tags": [
+                    "Governorates"
+                ],
+                "summary": "عرض المحافظات المحذوفة ناعماً",
+                "description": "عرض قائمة المحافظات المحذوفة ناعماً.",
+                "operationId": "01a0c9dc915a05465a7d3103d6be4ba6",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع المحافظات المحذوفة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/governorates/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Governorates"
+                ],
+                "summary": "استعادة محافظة محذوفة ناعماً",
+                "description": "استعادة محافظة محذوفة ناعماً.",
+                "operationId": "0a584b5f139274c4d060df8931d43470",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة المحافظة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/governorates/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Governorates"
+                ],
+                "summary": "الحذف النهائي لمحافظة",
+                "description": "الحذف النهائي لمحافظة.",
+                "operationId": "f493fa1045e7acc8ecca776951d6a3ff",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المحافظة نهائياً بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/governorates/batch-delete": {
+            "post": {
+                "tags": [
+                    "Governorates"
+                ],
+                "summary": "الحذف المجمع للمحافظات ناعماً",
+                "description": "الحذف المجمع للمحافظات ناعماً.",
+                "operationId": "2f92f928e2f5bb22370d3ed0e22b0962",
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المحافظات المحددة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/governorates/batch-restore": {
+            "post": {
+                "tags": [
+                    "Governorates"
+                ],
+                "summary": "الاستعادة المجمعة للمحافظات",
+                "description": "الاستعادة المجمعة للمحافظات.",
+                "operationId": "1babea9c4eddeeea799bdd5fdf2a4cc2",
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة المحافظات المحددة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/governorates/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Governorates"
+                ],
+                "summary": "الحذف النهائي المجمع للمحافظات",
+                "description": "الحذف النهائي المجمع للمحافظات.",
+                "operationId": "89a695738ae9fb15dd9e4231404de426",
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المحافظات نهائياً بنجاح"
                     }
                 },
                 "security": [
@@ -5447,6 +6087,290 @@
                 ]
             }
         },
+        "/api/v1/system-logs": {
+            "get": {
+                "tags": [
+                    "SystemLogs"
+                ],
+                "summary": "عرض قائمة سجلات تدقيق النظام",
+                "description": "عرض قائمة سجلات تدقيق النظام مع الفلترة والترقيم بالمؤشر.",
+                "operationId": "3103acefdaebe12c52a9d845ec9e4df0",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "module",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "entity_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "entity_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة سجلات التدقيق بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-logs/stats": {
+            "get": {
+                "tags": [
+                    "SystemLogs"
+                ],
+                "summary": "إحصائيات ومؤشرات سجلات التدقيق",
+                "description": "إحصائيات النشاط العام ومؤشرات سجلات التدقيق.",
+                "operationId": "3571f7713e4dd2a4e6c39f59a91af14c",
+                "parameters": [
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع إحصائيات السجلات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-logs/modules": {
+            "get": {
+                "tags": [
+                    "SystemLogs"
+                ],
+                "summary": "قائمة الوحدات البرمجية المسجلة",
+                "description": "جلب قائمة الوحدات البرمجية المسجلة في السجلات.",
+                "operationId": "bbbbfeb966872eb1db9a60f94252049c",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة الوحدات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-logs/actions": {
+            "get": {
+                "tags": [
+                    "SystemLogs"
+                ],
+                "summary": "قائمة الإجراءات المسجلة",
+                "description": "جلب قائمة الإجراءات المسجلة في السجلات.",
+                "operationId": "0e19ed0f8af9ecc5b219d26def81a04a",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة الإجراءات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-logs/entity/{entityType}/{entityId}": {
+            "get": {
+                "tags": [
+                    "SystemLogs"
+                ],
+                "summary": "عرض سجلات كيان محدد",
+                "description": "عرض سجلات كيان محدد.",
+                "operationId": "a062a572ac5abf54e0b168f833cd054f",
+                "parameters": [
+                    {
+                        "name": "entityType",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "entityId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع سجلات الكيان بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-logs/user/{userId}": {
+            "get": {
+                "tags": [
+                    "SystemLogs"
+                ],
+                "summary": "عرض سجلات مستخدم محدد",
+                "description": "عرض سجلات تدقيق مستخدم محدد.",
+                "operationId": "2ec17e965576dc72e97b1a43979ec9da",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع سجلات المستخدم بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-logs/{id}": {
+            "get": {
+                "tags": [
+                    "SystemLogs"
+                ],
+                "summary": "عرض تفاصيل سجل تدقيق محدد",
+                "description": "عرض تفاصيل سجل تدقيق محدد.",
+                "operationId": "d58f954f02c91473b9d5e23d3afacacf",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل السجل بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/system-settings": {
             "get": {
                 "tags": [
@@ -7076,12 +8000,20 @@
             "description": "إدارة الحسابات البنكية والمحافظ المعتمدة للنظام"
         },
         {
+            "name": "Directorates",
+            "description": "إدارة المديريات والمناطق التابعة للمحافظات"
+        },
+        {
             "name": "Expenses",
             "description": "إدارة المصروفات التشغيلية للشبكات، البنود والمرفقات، والخصم الإلزامي من المحفظة المالية"
         },
         {
             "name": "Features",
             "description": "إدارة كتالوج ميزات النظام وأنواع قيمها"
+        },
+        {
+            "name": "Governorates",
+            "description": "إدارة المحافظات والتقسيمات الجغرافية الرئيسية"
         },
         {
             "name": "Networks",
@@ -7138,6 +8070,10 @@
         {
             "name": "Support Tickets",
             "description": "إدارة تذاكر الدعم الفني والمراسلات التفاعلية"
+        },
+        {
+            "name": "SystemLogs",
+            "description": "استعلامات سجلات تدقيق النظام والتتبع الأمني ومسار العمليات"
         },
         {
             "name": "SystemSettings",

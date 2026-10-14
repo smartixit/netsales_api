@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BankAccountController;
+use App\Http\Controllers\Api\V1\DirectorateController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FeatureController;
 use App\Http\Controllers\Api\V1\FileController;
+use App\Http\Controllers\Api\V1\GovernorateController;
 use App\Http\Controllers\Api\V1\NetworkController;
 use App\Http\Controllers\Api\V1\NetworkPosController;
 use App\Http\Controllers\Api\V1\NetworkWalletController;
@@ -554,6 +556,43 @@ Route::prefix('v1')->group(function () {
             Route::get('system-logs/entity/{entityType}/{entityId}', [SystemLogController::class, 'byEntity'])->whereNumber('entityId')->name('api.v1.system_logs.by_entity');
             Route::get('system-logs/user/{userId}', [SystemLogController::class, 'byUser'])->whereNumber('userId')->name('api.v1.system_logs.by_user');
             Route::get('system-logs/{id}', [SystemLogController::class, 'show'])->whereNumber('id')->name('api.v1.system_logs.show');
+        });
+
+        // ==========================================
+        // 22. المحرك الجغرافي: المحافظات والمديريات (Geography Engine)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('governorates', [GovernorateController::class, 'index'])->name('api.v1.governorates.index');
+            Route::get('governorates/counts', [GovernorateController::class, 'counts'])->name('api.v1.governorates.counts');
+            Route::get('governorates/trashed', [GovernorateController::class, 'trashed'])->name('api.v1.governorates.trashed');
+            Route::get('governorates/{id}', [GovernorateController::class, 'show'])->whereNumber('id')->name('api.v1.governorates.show');
+
+            Route::get('directorates', [DirectorateController::class, 'index'])->name('api.v1.directorates.index');
+            Route::get('directorates/trashed', [DirectorateController::class, 'trashed'])->name('api.v1.directorates.trashed');
+            Route::get('directorates/governorate/{governorateId}', [DirectorateController::class, 'byGovernorate'])->whereNumber('governorateId')->name('api.v1.directorates.by_governorate');
+            Route::get('directorates/{id}', [DirectorateController::class, 'show'])->whereNumber('id')->name('api.v1.directorates.show');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('governorates', [GovernorateController::class, 'store'])->name('api.v1.governorates.store');
+            Route::put('governorates/{id}', [GovernorateController::class, 'update'])->whereNumber('id')->name('api.v1.governorates.update');
+            Route::delete('governorates/{id}', [GovernorateController::class, 'destroy'])->whereNumber('id')->name('api.v1.governorates.destroy');
+            Route::post('governorates/{id}/restore', [GovernorateController::class, 'restore'])->whereNumber('id')->name('api.v1.governorates.restore');
+            Route::delete('governorates/{id}/force', [GovernorateController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.governorates.force_delete');
+            Route::post('governorates/batch-delete', [GovernorateController::class, 'batchDelete'])->name('api.v1.governorates.batch_delete');
+            Route::post('governorates/batch-restore', [GovernorateController::class, 'batchRestore'])->name('api.v1.governorates.batch_restore');
+            Route::post('governorates/batch-force-delete', [GovernorateController::class, 'batchForceDelete'])->name('api.v1.governorates.batch_force_delete');
+            Route::apiResource('governorates', GovernorateController::class)->parameters(['governorates' => 'id'])->except(['index', 'show']);
+
+            Route::post('directorates', [DirectorateController::class, 'store'])->name('api.v1.directorates.store');
+            Route::put('directorates/{id}', [DirectorateController::class, 'update'])->whereNumber('id')->name('api.v1.directorates.update');
+            Route::delete('directorates/{id}', [DirectorateController::class, 'destroy'])->whereNumber('id')->name('api.v1.directorates.destroy');
+            Route::post('directorates/{id}/restore', [DirectorateController::class, 'restore'])->whereNumber('id')->name('api.v1.directorates.restore');
+            Route::delete('directorates/{id}/force', [DirectorateController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.directorates.force_delete');
+            Route::post('directorates/batch-delete', [DirectorateController::class, 'batchDelete'])->name('api.v1.directorates.batch_delete');
+            Route::post('directorates/batch-restore', [DirectorateController::class, 'batchRestore'])->name('api.v1.directorates.batch_restore');
+            Route::post('directorates/batch-force-delete', [DirectorateController::class, 'batchForceDelete'])->name('api.v1.directorates.batch_force_delete');
+            Route::apiResource('directorates', DirectorateController::class)->parameters(['directorates' => 'id'])->except(['index', 'show']);
         });
 
     });

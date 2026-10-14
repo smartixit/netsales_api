@@ -33,4 +33,9 @@ class StoreGovernorateRequest extends FormRequest
             ],
         ];
     }
+
+    public function getGovernorateName(): string
+    {
+        return (string) $this->governorate_name;
+    }
 }

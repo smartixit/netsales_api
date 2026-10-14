@@ -3,10 +3,12 @@
 namespace App\Providers;
 
 use App\Interfaces\BankAccountRepositoryInterface;
+use App\Interfaces\DirectorateRepositoryInterface;
 use App\Interfaces\ExpenseAttachmentRepositoryInterface;
 use App\Interfaces\ExpenseItemRepositoryInterface;
 use App\Interfaces\ExpenseRepositoryInterface;
 use App\Interfaces\FeatureRepositoryInterface;
+use App\Interfaces\GovernorateRepositoryInterface;
 use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
@@ -36,10 +38,12 @@ use App\Interfaces\UserSessionRepositoryInterface;
 use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Repositories\BankAccountRepository;
+use App\Repositories\DirectorateRepository;
 use App\Repositories\ExpenseAttachmentRepository;
 use App\Repositories\ExpenseItemRepository;
 use App\Repositories\ExpenseRepository;
 use App\Repositories\FeatureRepository;
+use App\Repositories\GovernorateRepository;
 use App\Repositories\NetworkPosRepository;
 use App\Repositories\NetworkRepository;
 use App\Repositories\NetworkWalletLogRepository;
@@ -130,6 +134,10 @@ class RepositoryServiceProvider extends ServiceProvider
 
         // Phase 10: System Audit Logs Engine
         SystemLogRepositoryInterface::class => SystemLogRepository::class,
+
+        // Phase 11: Geography Engine (Governorates & Directorates)
+        GovernorateRepositoryInterface::class => GovernorateRepository::class,
+        DirectorateRepositoryInterface::class => DirectorateRepository::class,
     ];
 
     public function register(): void

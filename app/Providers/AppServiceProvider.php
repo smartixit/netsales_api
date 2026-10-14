@@ -17,9 +17,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // if (! class_exists('App\Services\FileUploadService', false)) {
-        //     class_alias(FileUploadService::class, 'App\Services\FileUploadService');
-        // }
+        if (! class_exists('App\Services\FileUploadService', false)) {
+            class_alias(FileUploadService::class, 'App\Services\FileUploadService');
+        }
     }
 
     /**

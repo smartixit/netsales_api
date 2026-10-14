@@ -43,7 +43,7 @@ class EmailNotificationService
             'MessageBody' => $body,
             'UserName' => $userName ?? 'عميلنا العزيز',
             'CTA_Link' => $ctaLink,
-            'CompanyName' => config('app.name', 'مبيعات الشبكة'),
+            'CompanyName' => config('app.name', 'نظام مبيعات الشبكة'),
             'AppName' => 'مبيعات الشبكة | NetSales',
         ], $extraData);
 
@@ -62,43 +62,5 @@ class EmailNotificationService
 
             return false;
         }
-    }
-
-    /**
-     * إرسال إشعار استلام طلب تسجيل مركز وحساب جديد.
-     */
-    public function sendRegistrationReceived(mixed $center, mixed $user): bool
-    {
-        $centerName = is_object($center) ? ($center->center_name ?? '') : ($center['center_name'] ?? '');
-        $email = is_object($user) ? ($user->user_email ?? '') : ($user['user_email'] ?? '');
-        $phone = is_object($user) ? ($user->user_phone_number ?? '') : ($user['user_phone_number'] ?? '');
-
-        if (empty($email)) {
-            return false;
-        }
-
-        $subject = 'استلام طلب تسجيل مركز خدمة جديد';
-        $body = "مرحباً بك،\nتم استلام طلب تسجيل مركز الخدمة ({$centerName}) بنجاح.\nطلبك حالياً قيد المراجعة والتدقيق من قِبل إدارة النظام وسنوافيك بإشعار فور اعتماد الحساب وتفعيله.\nشكراً لانضمامك لمنصة مبيعات الشبكة.";
-
-        return $this->sendEmail($email, $subject, $body, $phone);
-    }
-
-    /**
-     * إرسال إشعار اعتماد وتفعيل مركز خدمة.
-     */
-    public function sendCenterApproved(mixed $center, mixed $user): bool
-    {
-        $centerName = is_object($center) ? ($center->center_name ?? '') : ($center['center_name'] ?? '');
-        $email = is_object($user) ? ($user->user_email ?? '') : ($user['user_email'] ?? '');
-        $phone = is_object($user) ? ($user->user_phone_number ?? '') : ($user['user_phone_number'] ?? '');
-
-        if (empty($email)) {
-            return false;
-        }
-
-        $subject = 'اعتماد وتفعيل حساب مركز الخدمة';
-        $body = "تهانينا!\nتمت مراجعة واعتماد حساب مركز الخدمة ({$centerName}) بنجاح.\nحسابك الآن مفعل ويمكنك تسجيل الدخول واستخدام كافة ميزات النظام.\nنتمنى لك عملاً موفقاً.";
-
-        return $this->sendEmail($email, $subject, $body, $phone);
     }
 }

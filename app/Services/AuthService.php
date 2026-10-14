@@ -491,14 +491,6 @@ class AuthService
     }
 
     /**
-     * اسم بديل متوافق لطلب تسجيل الشبكة.
-     */
-    public function register(RegisterRequest $request): array
-    {
-        return $this->registerNetwork($request);
-    }
-
-    /**
      * تقديم طلب تسجيل نقطة بيع جديدة بحالة PENDING.
      *
      * @return array<string, mixed>

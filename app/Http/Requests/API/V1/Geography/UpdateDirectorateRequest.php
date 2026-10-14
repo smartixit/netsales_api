@@ -24,7 +24,9 @@ class UpdateDirectorateRequest extends FormRequest
 
     public function rules(): array
     {
-        $directorateId = $this->route('directorate')?->directorate_id ?? $this->route('directorate');
+        $directorateId = $this->route('directorate')?->directorate_id
+            ?? $this->route('directorate')
+            ?? $this->route('id');
 
         return [
             'governorate_id' => [
@@ -41,7 +43,8 @@ class UpdateDirectorateRequest extends FormRequest
                 Rule::unique('directorates', 'directorate_name')
                     ->ignore($directorateId, 'directorate_id')
                     ->where(function ($query) {
-                        $govId = $this->governorate_id ?? $this->route('directorate')?->governorate_id;
+                        $govId = $this->governorate_id
+                            ?? $this->route('directorate')?->governorate_id;
                         if ($govId) {
                             $query->where('governorate_id', $govId);
                         }
@@ -49,5 +52,15 @@ class UpdateDirectorateRequest extends FormRequest
                     ->whereNull('deleted_at'),
             ],
         ];
+    }
+
+    public function getGovernorateId(): ?int
+    {
+        return $this->has('governorate_id') ? (int) $this->governorate_id : null;
+    }
+
+    public function getDirectorateName(): ?string
+    {
+        return $this->has('directorate_name') ? (string) $this->directorate_name : null;
     }
 }

@@ -24,7 +24,9 @@ class UpdateGovernorateRequest extends FormRequest
 
     public function rules(): array
     {
-        $governorateId = $this->route('governorate')?->governorate_id ?? $this->route('governorate');
+        $governorateId = $this->route('governorate')?->governorate_id
+            ?? $this->route('governorate')
+            ?? $this->route('id');
 
         return [
             'governorate_name' => [
@@ -37,5 +39,10 @@ class UpdateGovernorateRequest extends FormRequest
                     ->whereNull('deleted_at'),
             ],
         ];
+    }
+
+    public function getGovernorateName(): ?string
+    {
+        return $this->has('governorate_name') ? (string) $this->governorate_name : null;
     }
 }
