@@ -16,9 +16,11 @@ $_ENV['TMPDIR'] = $appTempDir;
 $_ENV['TEMP'] = $appTempDir;
 $_ENV['TMP'] = $appTempDir;
 
+use App\Http\Middleware\CheckSubscriptionFeatureQuota;
 use App\Http\Middleware\EncryptDecryptPayload;
 use App\Http\Middleware\EnsureAppAdmin;
 use App\Http\Middleware\EnsurePermissionMiddleware;
+use App\Http\Middleware\IdempotencyMiddleware;
 use App\Http\Middleware\InputSanitization;
 use App\Http\Middleware\SessionAuthMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -49,20 +51,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [
             EncryptDecryptPayload::class,
             InputSanitization::class,
+            IdempotencyMiddleware::class,
         ]);
 
         $middleware->alias([
             'session.auth' => SessionAuthMiddleware::class,
             'permission' => EnsurePermissionMiddleware::class,
             'app.admin' => EnsureAppAdmin::class,
+            'subscription.quota' => CheckSubscriptionFeatureQuota::class,
+            'subscription.active' => CheckSubscriptionFeatureQuota::class,
+            'idempotency' => IdempotencyMiddleware::class,
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {
-            if ($request->is('api/*')) {
-                return null;
-            }
-
-            return route('login');
+            return null;
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {

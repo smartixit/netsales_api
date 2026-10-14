@@ -327,7 +327,7 @@ class AsymmetricCryptoService
                     'public_key' => bin2hex($this->getBoxPublicKey()),
                 ],
             ],
-            'server_time' => now('Asia/Aden')->toIso8601String(),
+            'server_time' => now('Asia/Aden')->toDateTimeString(),
         ];
     }
 
