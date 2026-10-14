@@ -23,4 +23,9 @@ class UpdateNetworkPosRequest extends FormRequest
             ],
         ];
     }
+
+    public function getStatus(): bool
+    {
+        return (bool) $this->status;
+    }
 }

@@ -6,12 +6,10 @@ use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class NetworkPos extends Model
 {
     use ExactDateSerialization;
-    use SoftDeletes;
 
     protected $table = 'network_pos';
 

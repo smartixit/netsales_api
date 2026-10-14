@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\OtpRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
@@ -9,6 +10,7 @@ use App\Interfaces\SecurityBanRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
+use App\Repositories\NetworkPosRepository;
 use App\Repositories\NetworkRepository;
 use App\Repositories\OtpRepository;
 use App\Repositories\PosRepository;
@@ -34,6 +36,7 @@ class RepositoryServiceProvider extends ServiceProvider
         OtpRepositoryInterface::class => OtpRepository::class,
         NetworkRepositoryInterface::class => NetworkRepository::class,
         PosRepositoryInterface::class => PosRepository::class,
+        NetworkPosRepositoryInterface::class => NetworkPosRepository::class,
     ];
 
     public function register(): void

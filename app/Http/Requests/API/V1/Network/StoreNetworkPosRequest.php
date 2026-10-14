@@ -28,13 +28,27 @@ class StoreNetworkPosRequest extends FormRequest
                 'integer',
                 Rule::exists('pos', 'pos_id')->whereNull('deleted_at'),
                 Rule::unique('network_pos', 'pos_id')
-                    ->where('network_id', $this->network_id)
-                    ->whereNull('deleted_at'),
+                    ->where('network_id', $this->network_id),
             ],
             'status' => [
                 'nullable',
                 'boolean',
             ],
         ];
+    }
+
+    public function getNetworkId(): int
+    {
+        return (int) $this->network_id;
+    }
+
+    public function getPosId(): int
+    {
+        return (int) $this->pos_id;
+    }
+
+    public function getStatus(): bool
+    {
+        return $this->has('status') ? (bool) $this->status : true;
     }
 }
