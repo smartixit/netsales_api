@@ -45,4 +45,9 @@ interface OtpRepositoryInterface extends BaseRepositoryInterface
         OtpType|string $type = OtpType::OTP_2FA,
         int $cooldownSeconds = 60
     ): int;
+
+    /**
+     * Get count of OTPs requested by a user today for a given type.
+     */
+    public function getTodayRequestsCount(int $userId, OtpType|string $type): int;
 }

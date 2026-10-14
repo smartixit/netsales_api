@@ -42,7 +42,6 @@ class OtpRepository extends BaseRepository implements OtpRepositoryInterface
             ->where('otp_type', $typeValue)
             ->where('is_used', false)
             ->where('expires_at', '>', Carbon::now('Asia/Aden'))
-            ->where('otp_failure_attempts', '<', 5)
             ->latest('otp_id')
             ->first();
     }
@@ -96,5 +95,16 @@ class OtpRepository extends BaseRepository implements OtpRepositoryInterface
         $elapsedSeconds = Carbon::now('Asia/Aden')->diffInSeconds($latestOtp->created_at);
 
         return $elapsedSeconds < $cooldownSeconds ? ($cooldownSeconds - $elapsedSeconds) : 0;
+    }
+
+    public function getTodayRequestsCount(int $userId, OtpType|string $type): int
+    {
+        $typeValue = $type instanceof OtpType ? $type->value : $type;
+
+        return (int) $this->model->newQuery()
+            ->where('user_id', $userId)
+            ->where('otp_type', $typeValue)
+            ->whereDate('created_at', Carbon::today('Asia/Aden'))
+            ->count();
     }
 }

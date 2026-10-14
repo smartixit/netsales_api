@@ -301,9 +301,9 @@ class AuthController extends BaseController
     public function verifyResetOtp(VerifyResetOtpRequest $request): JsonResponse
     {
         try {
-            $this->authService->verifyResetOtp($request);
+            $result = $this->authService->verifyResetOtp($request);
 
-            return $this->successResponse('رمز التحقق صحيح. يمكنك الآن تعيين كلمة المرور الجديدة.');
+            return $this->successResponse($result['message'] ?? 'تم التحقق بنجاح وإرسال كلمة المرور المؤقتة الجديدة إلى هاتفك عبر رسالة SMS.');
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {

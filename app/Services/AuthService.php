@@ -41,6 +41,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
@@ -836,9 +837,11 @@ class AuthService
     }
 
     /**
-     * التحقق من كود استعادة كلمة المرور.
+     * التحقق من كود استعادة كلمة المرور وتوليد كلمة مرور عشوائية وإرسالها عبر SMS وإلغاء الجلسات.
+     *
+     * @return array{user: User, message: string}
      */
-    public function verifyResetOtp(VerifyResetOtpRequest|string $request, ?string $otp = null): bool
+    public function verifyResetOtp(VerifyResetOtpRequest|string $request, ?string $otp = null): array
     {
         if ($request instanceof VerifyResetOtpRequest) {
             $phone = (string) $request->user_phone_number;
@@ -848,18 +851,51 @@ class AuthService
             $otp = (string) $otp;
         }
 
-        return $this->otpService->verifyOtpForPhone($phone, $otp, OtpType::RESET_PASSWORD);
+        $user = $this->userRepository->findByPhone($phone);
+        if (! $user) {
+            throw ValidationException::withMessages([
+                'user_phone_number' => ['رقم الهاتف غير مسجل في النظام.'],
+            ]);
+        }
+
+        // 1. التحقق من كود الـ OTP وفحص محاولات الإدخال الخاطئة
+        $this->otpService->verifyOtp($user->user_id, $otp, OtpType::RESET_PASSWORD);
+
+        return DB::transaction(function () use ($user) {
+            // 2. توليد كلمة مرور عشوائية مؤقتة
+            $randomPassword = Str::password(10, letters: true, numbers: true, symbols: false, spaces: false);
+
+            // 3. تحديث كلمة المرور المشفرة للمستخدم عبر المستودع
+            $this->userRepository->updatePassword($user->user_id, Hash::make($randomPassword));
+
+            // 4. إلغاء كافة الجلسات النشطة للمستخدم لحماية الحساب
+            $this->userSessionRepository->revokeAllUserSessions($user->user_id);
+
+            // 5. إرسال كلمة المرور العشوائية وإشعار التغيير للمستخدم عبر رسالة SMS مدمجة
+            $smsMessage = "تمت استعادة كلمة المرور لحسابكم في NetSales بنجاح. كلمة المرور المؤقتة الجديدة هي: {$randomPassword} - يرجى تسجيل الدخول وتغييرها فوراً.";
+            SendSmsNotificationJob::dispatch(
+                $user->user_phone_number,
+                $smsMessage
+            );
+
+            SystemLoggerService::logAuth('password_reset_random_dispatched', $user->user_id);
+
+            return [
+                'user' => $user,
+                'message' => 'تم التحقق من الرمز وتوليد كلمة مرور جديدة وإرسالها إلى هاتفك عبر رسالة SMS بنجاح.',
+            ];
+        });
     }
 
     /**
-     * اعتماد كلمة المرور الجديدة بعد استيفاء كود التحقق.
+     * اعتماد كلمة المرور الجديدة بعد استيفاء كود التحقق وإلغاء الجلسات وإشعار المستخدم.
      */
     public function resetPassword(ResetPasswordRequest|string $request, ?string $otp = null, ?string $newPassword = null): bool
     {
         if ($request instanceof ResetPasswordRequest) {
             $phone = (string) $request->user_phone_number;
             $otp = (string) $request->otp;
-            $newPassword = (string) $request->user_password;
+            $newPassword = (string) ($request->password ?? $request->user_password);
         } else {
             $phone = (string) $request;
             $otp = (string) $otp;
@@ -878,10 +914,24 @@ class AuthService
         $this->otpService->verifyOtp($user->user_id, $otp, OtpType::RESET_PASSWORD);
 
         return DB::transaction(function () use ($user, $newPassword) {
-            $this->userRepository->updatePassword($user->user_id, Hash::make($newPassword));
+            $finalPassword = ! empty($newPassword)
+                ? $newPassword
+                : Str::password(10, letters: true, numbers: true, symbols: false, spaces: false);
+
+            $this->userRepository->updatePassword($user->user_id, Hash::make($finalPassword));
 
             // إنهاء كافة الجلسات النشطة للمستخدم لحماية الحساب بعد تغيير كلمة المرور
             $this->userSessionRepository->revokeAllUserSessions($user->user_id);
+
+            // إشعار المستخدم بأن كلمة المرور تم تغييرها عبر SMS
+            $smsMessage = ! empty($newPassword)
+                ? "إشعار أمني: تم تغيير كلمة المرور لحسابكم في NetSales بنجاح. إذا لم تكن أنت من قام بهذا الإجراء يرجى التواصل فوراً مع الدعم."
+                : "تمت استعادة كلمة المرور لحسابكم في NetSales بنجاح. كلمة المرور المؤقتة الجديدة هي: {$finalPassword} - يرجى تسجيل الدخول وتغييرها فوراً.";
+
+            SendSmsNotificationJob::dispatch(
+                $user->user_phone_number,
+                $smsMessage
+            );
 
             SystemLoggerService::logAuth('password_reset_completed', $user->user_id);
 

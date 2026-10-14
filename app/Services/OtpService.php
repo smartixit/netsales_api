@@ -31,8 +31,10 @@ class OtpService
 {
     public const DEFAULT_LENGTH = 6;
     public const DEFAULT_EXPIRATION_MINUTES = 5;
-    public const DEFAULT_MAX_ATTEMPTS = 5;
+    public const DEFAULT_MAX_ATTEMPTS = 3;
     public const DEFAULT_COOLDOWN_SECONDS = 60;
+    public const MAX_DAILY_RESET_PASSWORD_REQUESTS = 1;
+    public const MAX_DAILY_2FA_REQUESTS = 3;
 
     public function __construct(
         protected OtpRepositoryInterface $otpRepository,
@@ -53,7 +55,24 @@ class OtpService
     ): array {
         $otpType = $type instanceof OtpType ? $type : (OtpType::tryFrom((string) $type) ?? OtpType::OTP_2FA);
 
-        // فحص فترة التهدئة
+        // 1. فحص الحد الأقصى اليومي لطلبات الرمز حسب الغرض
+        if ($otpType === OtpType::RESET_PASSWORD) {
+            $todayCount = $this->otpRepository->getTodayRequestsCount($user->user_id, $otpType);
+            if ($todayCount >= self::MAX_DAILY_RESET_PASSWORD_REQUESTS) {
+                throw ValidationException::withMessages([
+                    'otp' => ['تم استنفاد الحد الأقصى لطلب استعادة كلمة المرور لهذا اليوم (مرة واحدة يومياً). يرجى المحاولة بعد 24 ساعة أو التواصل مع الدعم الفني.'],
+                ]);
+            }
+        } elseif ($otpType === OtpType::OTP_2FA) {
+            $todayCount = $this->otpRepository->getTodayRequestsCount($user->user_id, $otpType);
+            if ($todayCount >= self::MAX_DAILY_2FA_REQUESTS) {
+                throw ValidationException::withMessages([
+                    'otp' => ['تم تجاوز الحد الأقصى المسموح به لطلب كود المصادقة الثنائية لهذا اليوم (3 مرات يومياً).'],
+                ]);
+            }
+        }
+
+        // 2. فحص فترة التهدئة
         $remainingCooldown = $this->otpRepository->getCooldownRemainingSeconds(
             $user->user_id,
             $otpType,
