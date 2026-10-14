@@ -11,6 +11,7 @@ use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
 use App\Interfaces\NetworkWalletRepositoryInterface;
+use App\Interfaces\NotificationRepositoryInterface;
 use App\Interfaces\OtpRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\PosWalletLogRepositoryInterface;
@@ -41,6 +42,7 @@ use App\Repositories\NetworkPosRepository;
 use App\Repositories\NetworkRepository;
 use App\Repositories\NetworkWalletLogRepository;
 use App\Repositories\NetworkWalletRepository;
+use App\Repositories\NotificationRepository;
 use App\Repositories\OtpRepository;
 use App\Repositories\PosRepository;
 use App\Repositories\PosWalletLogRepository;
@@ -115,6 +117,9 @@ class RepositoryServiceProvider extends ServiceProvider
         // Phase 7: Support Tickets & Interactive Messaging Engine
         SupportTicketRepositoryInterface::class => SupportTicketRepository::class,
         SupportTicketMessageRepositoryInterface::class => SupportTicketMessageRepository::class,
+
+        // Phase 8: Notifications Engine
+        NotificationRepositoryInterface::class => NotificationRepository::class,
     ];
 
     public function register(): void

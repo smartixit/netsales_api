@@ -70,4 +70,45 @@ class UpdateNotificationRequest extends FormRequest
             ],
         ];
     }
+
+    public function getUserId(): ?int
+    {
+        return $this->has('user_id') ? (int) $this->user_id : null;
+    }
+
+    public function getNotificationType(): ?NotificationType
+    {
+        if (! $this->has('notification_type')) {
+            return null;
+        }
+
+        return $this->notification_type instanceof NotificationType
+            ? $this->notification_type
+            : NotificationType::from((string) $this->notification_type);
+    }
+
+    public function getNotificationTitle(): ?string
+    {
+        return $this->has('notification_title') ? (string) $this->notification_title : null;
+    }
+
+    public function getNotificationMessage(): ?string
+    {
+        return $this->has('notification_message') ? (string) $this->notification_message : null;
+    }
+
+    public function getNotificationImage(): ?string
+    {
+        return $this->has('notification_image') ? ($this->notification_image ? (string) $this->notification_image : null) : null;
+    }
+
+    public function getIsRead(): ?bool
+    {
+        return $this->has('is_read') ? (bool) $this->is_read : null;
+    }
+
+    public function getReadAt(): ?string
+    {
+        return $this->has('read_at') ? ($this->read_at ? (string) $this->read_at : null) : null;
+    }
 }

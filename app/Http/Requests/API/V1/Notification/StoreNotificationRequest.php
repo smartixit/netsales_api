@@ -65,4 +65,41 @@ class StoreNotificationRequest extends FormRequest
             ],
         ];
     }
+
+    public function getUserId(): int
+    {
+        return (int) $this->user_id;
+    }
+
+    public function getNotificationType(): NotificationType
+    {
+        return $this->notification_type instanceof NotificationType
+            ? $this->notification_type
+            : NotificationType::from((string) $this->notification_type);
+    }
+
+    public function getNotificationTitle(): string
+    {
+        return (string) $this->notification_title;
+    }
+
+    public function getNotificationMessage(): string
+    {
+        return (string) $this->notification_message;
+    }
+
+    public function getNotificationImage(): ?string
+    {
+        return $this->notification_image ? (string) $this->notification_image : null;
+    }
+
+    public function getIsRead(): bool
+    {
+        return $this->has('is_read') ? (bool) $this->is_read : false;
+    }
+
+    public function getReadAt(): ?string
+    {
+        return $this->read_at ? (string) $this->read_at : null;
+    }
 }

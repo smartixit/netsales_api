@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\NotificationType;
 use App\Enums\PosStatus;
 use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
@@ -13,7 +14,6 @@ use App\Interfaces\UserRepositoryInterface;
 use App\Jobs\SendEmailJob;
 use App\Jobs\SendSmsNotificationJob;
 use App\Models\NetworkPos;
-use App\Models\Notification;
 use App\Models\Pos;
 use App\Services\Support\FileUploadService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -40,6 +40,7 @@ class PosService
         protected UserRepositoryInterface $userRepository,
         protected UserDeviceRepositoryInterface $userDeviceRepository,
         protected FileUploadService $fileUploadService,
+        protected NotificationService $notificationService,
     ) {}
 
     /**
@@ -258,12 +259,12 @@ class PosService
                     $this->userDeviceRepository->setDeviceStatus($device->device_id, UserDeviceStatus::ACTIVE);
                 }
 
-                Notification::create([
-                    'user_id' => $user->user_id,
-                    'notification_type' => 'ACCOUNT_APPROVAL',
-                    'notification_title' => 'تمت الموافقة على طلب تسجيل نقطة البيع',
-                    'notification_message' => "تهانينا! تمت الموافقة على طلب تسجيل نقطة البيع {$pos->pos_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام.",
-                ]);
+                $this->notificationService->sendDirect(
+                    (int) $user->user_id,
+                    NotificationType::ACCOUNT_APPROVAL,
+                    'تمت الموافقة على طلب تسجيل نقطة البيع',
+                    "تهانينا! تمت الموافقة على طلب تسجيل نقطة البيع {$pos->pos_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام."
+                );
 
                 SendSmsNotificationJob::dispatch(
                     $user->user_phone_number,
@@ -309,12 +310,12 @@ class PosService
 
             $user = $this->userRepository->findByPhone($pos->pos_phone_number);
             if ($user) {
-                Notification::create([
-                    'user_id' => $user->user_id,
-                    'notification_type' => 'ACCOUNT_REJECTION',
-                    'notification_title' => 'تم رفض طلب تسجيل نقطة البيع',
-                    'notification_message' => "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل نقطة البيع {$pos->pos_name}. السبب: {$reason}",
-                ]);
+                $this->notificationService->sendDirect(
+                    (int) $user->user_id,
+                    NotificationType::ACCOUNT_REJECTION,
+                    'تم رفض طلب تسجيل نقطة البيع',
+                    "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل نقطة البيع {$pos->pos_name}. السبب: {$reason}"
+                );
 
                 SendSmsNotificationJob::dispatch(
                     $user->user_phone_number,

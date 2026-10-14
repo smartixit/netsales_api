@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\FileController;
 use App\Http\Controllers\Api\V1\NetworkController;
 use App\Http\Controllers\Api\V1\NetworkPosController;
 use App\Http\Controllers\Api\V1\NetworkWalletController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OtpController;
 use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\PosWalletController;
@@ -488,6 +489,31 @@ Route::prefix('v1')->group(function () {
             Route::post('support-tickets/{id}/messages', [SupportTicketController::class, 'addMessage'])->whereNumber('id')->name('api.v1.support_tickets.add_message');
             Route::post('support-tickets/{id}/read', [SupportTicketController::class, 'markAsRead'])->whereNumber('id')->name('api.v1.support_tickets.mark_as_read');
             Route::apiResource('support-tickets', SupportTicketController::class)->parameters(['support-tickets' => 'id'])->except(['index', 'show']);
+        });
+
+        // ==========================================
+        // 19. الإشعارات والتنبيهات الموجهة (Notifications Engine)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('notifications', [NotificationController::class, 'index'])->name('api.v1.notifications.index');
+            Route::get('notifications/my', [NotificationController::class, 'myNotifications'])->name('api.v1.notifications.my');
+            Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('api.v1.notifications.unread_count');
+            Route::get('notifications/trashed', [NotificationController::class, 'trashed'])->name('api.v1.notifications.trashed');
+            Route::get('notifications/{id}', [NotificationController::class, 'show'])->whereNumber('id')->name('api.v1.notifications.show');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('notifications', [NotificationController::class, 'store'])->name('api.v1.notifications.store');
+            Route::put('notifications/{id}', [NotificationController::class, 'update'])->whereNumber('id')->name('api.v1.notifications.update');
+            Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])->whereNumber('id')->name('api.v1.notifications.destroy');
+            Route::post('notifications/{id}/restore', [NotificationController::class, 'restore'])->whereNumber('id')->name('api.v1.notifications.restore');
+            Route::delete('notifications/{id}/force', [NotificationController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.notifications.force_delete');
+            Route::post('notifications/batch-delete', [NotificationController::class, 'batchDelete'])->name('api.v1.notifications.batch_delete');
+            Route::post('notifications/batch-restore', [NotificationController::class, 'batchRestore'])->name('api.v1.notifications.batch_restore');
+            Route::post('notifications/batch-force-delete', [NotificationController::class, 'batchForceDelete'])->name('api.v1.notifications.batch_force_delete');
+            Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead'])->whereNumber('id')->name('api.v1.notifications.mark_as_read');
+            Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('api.v1.notifications.mark_all_read');
+            Route::apiResource('notifications', NotificationController::class)->parameters(['notifications' => 'id'])->except(['index', 'show']);
         });
 
     });

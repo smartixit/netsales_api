@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\NetworkStatus;
+use App\Enums\NotificationType;
 use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
 use App\Http\Requests\API\V1\Network\StoreNetworkRequest;
@@ -13,9 +14,6 @@ use App\Interfaces\UserRepositoryInterface;
 use App\Jobs\SendEmailJob;
 use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
-use App\Models\Notification;
-use App\Models\User;
-use App\Models\UserDevice;
 use App\Services\Support\FileUploadService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -41,6 +39,7 @@ class NetworkService
         protected UserRepositoryInterface $userRepository,
         protected UserDeviceRepositoryInterface $userDeviceRepository,
         protected FileUploadService $fileUploadService,
+        protected NotificationService $notificationService,
     ) {}
 
     /**
@@ -248,17 +247,20 @@ class NetworkService
             $network->refresh();
 
             // تفعيل المستخدم والجهاز المرتبط برقم هاتف الشبكة
-            $user = User::where('user_phone_number', $network->network_phone_number)->first();
+            $user = $this->userRepository->findByPhone($network->network_phone_number);
             if ($user) {
-                $user->update(['status' => UserStatus::ACTIVE]);
-                UserDevice::where('user_id', $user->user_id)->update(['status' => UserDeviceStatus::ACTIVE]);
+                $this->userRepository->update($user->user_id, ['status' => UserStatus::ACTIVE]);
+                $devices = $this->userDeviceRepository->getDevicesForUser($user->user_id);
+                foreach ($devices as $device) {
+                    $this->userDeviceRepository->setDeviceStatus($device->device_id, UserDeviceStatus::ACTIVE);
+                }
 
-                Notification::create([
-                    'user_id' => $user->user_id,
-                    'notification_type' => 'ACCOUNT_APPROVAL',
-                    'notification_title' => 'تمت الموافقة على طلب تسجيل الشبكة',
-                    'notification_message' => "تهانينا! تمت الموافقة على طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام.",
-                ]);
+                $this->notificationService->sendDirect(
+                    (int) $user->user_id,
+                    NotificationType::ACCOUNT_APPROVAL,
+                    'تمت الموافقة على طلب تسجيل الشبكة',
+                    "تهانينا! تمت الموافقة على طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام."
+                );
 
                 SendSmsNotificationJob::dispatch(
                     $user->user_phone_number,
@@ -302,14 +304,14 @@ class NetworkService
 
             $network->refresh();
 
-            $user = User::where('user_phone_number', $network->network_phone_number)->first();
+            $user = $this->userRepository->findByPhone($network->network_phone_number);
             if ($user) {
-                Notification::create([
-                    'user_id' => $user->user_id,
-                    'notification_type' => 'ACCOUNT_REJECTION',
-                    'notification_title' => 'تم رفض طلب تسجيل شبكتكم',
-                    'notification_message' => "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل شبكة {$network->network_name}. السبب: {$reason}",
-                ]);
+                $this->notificationService->sendDirect(
+                    (int) $user->user_id,
+                    NotificationType::ACCOUNT_REJECTION,
+                    'تم رفض طلب تسجيل شبكتكم',
+                    "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل شبكة {$network->network_name}. السبب: {$reason}"
+                );
 
                 SendSmsNotificationJob::dispatch(
                     $user->user_phone_number,

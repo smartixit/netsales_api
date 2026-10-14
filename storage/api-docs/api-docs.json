@@ -2267,6 +2267,422 @@
                 }
             }
         },
+        "/api/v1/notifications": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "عرض قائمة الإشعارات العامة",
+                "description": "عرض قائمة الإشعارات العامة مع الفلترة والترقيم بالمؤشر (إداري).",
+                "operationId": "cac3bdde44f0be0512f7d05c0a6064e4",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "notification_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_read",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة الإشعارات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "إنشاء وإرسال إشعار جديد",
+                "description": "إنشاء إشعار وتوجيهه لمستخدم محدد (إداري).",
+                "operationId": "1fd84d2c66035574da4902f416cbd96a",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء وإرسال الإشعار بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notifications/my": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "عرض إشعارات المستخدم الحالي",
+                "description": "عرض إشعارات المستخدم الحالي المسجل دخوله.",
+                "operationId": "e93a3dc022ba0a5c50ebcf3e49750637",
+                "parameters": [
+                    {
+                        "name": "is_read",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع إشعارات المستخدم بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notifications/unread-count": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "عدد الإشعارات غير المقروءة",
+                "description": "جلب عدد الإشعارات غير المقروءة للمستخدم الحالي.",
+                "operationId": "9fd717daa9c0cfd209252ee25d0715ea",
+                "responses": {
+                    "200": {
+                        "description": "تم جلب عدد الإشعارات غير المقروءة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notifications/trashed": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "عرض الإشعارات المحذوفة",
+                "description": "عرض قائمة الإشعارات المحذوفة ناعماً.",
+                "operationId": "2257d201653828612d60bdb60157587f",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الإشعارات المحذوفة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notifications/{id}": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "عرض تفاصيل إشعار",
+                "description": "عرض تفاصيل إشعار محدد.",
+                "operationId": "22581e4d73af25a9036c6610c7e8fc72",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل الإشعار بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "تحديث بيانات إشعار",
+                "description": "تحديث بيانات إشعار قائم (إداري).",
+                "operationId": "b4f86f6c4f52e080b246d560038cdc9b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث الإشعار بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "حذف إشعار ناعماً",
+                "description": "حذف إشعار ناعماً.",
+                "operationId": "3f8fe68ea04e79015d8aad5912cadbc1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الإشعار بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notifications/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "استعادة إشعار محذوف",
+                "description": "استعادة إشعار محذوف ناعماً.",
+                "operationId": "90b6355c485dfeac76f6b16e78272b06",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة الإشعار بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notifications/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "الحذف النهائي لإشعار",
+                "description": "الحذف النهائي لإشعار من قاعدة البيانات.",
+                "operationId": "c22ead39be21b2d944fd413947968044",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي للإشعار بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notifications/batch-delete": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "الحذف المجمع للإشعارات",
+                "description": "الحذف المجمع للإشعارات ناعماً.",
+                "operationId": "cbd5aea8054149b54ada66689ebf1261",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع للإشعارات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notifications/batch-restore": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "الاستعادة المجمعة للإشعارات",
+                "description": "الاستعادة المجمعة للإشعارات المحذوفة ناعماً.",
+                "operationId": "55f16722cef63f21461b98a3e11b3d2d",
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة الإشعارات المحددة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notifications/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "الحذف النهائي المجمع للإشعارات",
+                "description": "الحذف النهائي المجمع للإشعارات من قاعدة البيانات.",
+                "operationId": "846b91a7e9336ce40022cd60f6c6959e",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي للإشعارات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notifications/{id}/read": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "تمييز إشعار كمقروء",
+                "description": "تمييز إشعار محدد كمقروء للمستخدم الحالي.",
+                "operationId": "fc1834c084071515133aef066568ee30",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تمييز الإشعار كمقروء بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notifications/mark-all-read": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "تمييز كافة الإشعارات كمقروءة",
+                "description": "تمييز كافة إشعارات المستخدم الحالي كمقروءة دفعة واحدة.",
+                "operationId": "617206fbe9a29f0eb57768eb7d32e64f",
+                "responses": {
+                    "200": {
+                        "description": "تم تمييز جميع الإشعارات كمقروءة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/otp/generate": {
             "post": {
                 "tags": [
@@ -6271,6 +6687,10 @@
         {
             "name": "Network Wallets",
             "description": "إدارة محافظ مزودي الشبكات، الإيداع والسحب المالي، كشف الحساب ودفتر الأستاذ، والعمليات الإدارية والمجمعة"
+        },
+        {
+            "name": "Notifications",
+            "description": "إدارة الإشعارات والتنبيهات الموجهة والتفاعلية"
         },
         {
             "name": "OTP",

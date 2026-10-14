@@ -45,6 +45,7 @@ class OtpService
         protected OtpRepositoryInterface $otpRepository,
         protected SMSGateService $smsGateService,
         protected UserRepositoryInterface $userRepository,
+        protected NotificationService $notificationService,
     ) {}
 
     /**
@@ -115,17 +116,13 @@ class OtpService
                 code: $plainCode
             );
 
-            // 5. تسجيل إشعار للمستخدم إذا كان جدول الإشعارات متاحاً
-            try {
-                $user->notifications()->create([
-                    'notification_title' => 'رمز التحقق (OTP)',
-                    'notification_message' => "رمز التحقق الخاص بك في نظام مبيعات الشبكة هو: {$plainCode}",
-                    'notification_type' => NotificationType::INFO->value ?? 'INFO',
-                    'is_read' => false,
-                ]);
-            } catch (\Throwable $e) {
-                // تجاهل إذا كانت الإشعارات غير مهيأة
-            }
+            // 5. تسجيل إشعار موجه للمستخدم عبر خدمة الإشعارات المركزية
+            $this->notificationService->sendDirect(
+                userId: (int) $user->user_id,
+                type: NotificationType::INFO,
+                title: 'رمز التحقق (OTP)',
+                message: "رمز التحقق الخاص بك في نظام مبيعات الشبكة هو: {$plainCode}"
+            );
 
             // 6. توثيق أمني
             SystemLoggerService::log(

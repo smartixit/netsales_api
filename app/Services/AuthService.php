@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\DeviceType;
 use App\Enums\NetworkStatus;
+use App\Enums\NotificationType;
 use App\Enums\OtpType;
 use App\Enums\PosStatus;
 use App\Enums\ProviderSubscriptionStatus;
@@ -29,7 +30,6 @@ use App\Jobs\SendEmailJob;
 use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
 use App\Models\NetworkPos;
-use App\Models\Notification;
 use App\Models\Pos;
 use App\Models\ProviderSubscription;
 use App\Models\Role;
@@ -69,6 +69,7 @@ class AuthService
         protected EmailNotificationService $emailNotificationService,
         protected NetworkRepositoryInterface $networkRepository,
         protected PosRepositoryInterface $posRepository,
+        protected NotificationService $notificationService,
     ) {}
 
     /**
@@ -610,13 +611,13 @@ class AuthService
                 $user->update(['status' => UserStatus::ACTIVE]);
                 UserDevice::where('user_id', $user->user_id)->update(['status' => UserDeviceStatus::ACTIVE]);
 
-                // تسجيل إشعار في قاعدة البيانات
-                Notification::create([
-                    'user_id' => $user->user_id,
-                    'notification_type' => 'ACCOUNT_APPROVAL',
-                    'notification_title' => 'تمت الموافقة على طلب تسجيل شبكتكم',
-                    'notification_message' => "تهانينا! تمت الموافقة على طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام.",
-                ]);
+                // تسجيل إشعار موجه عبر خدمة الإشعارات
+                $this->notificationService->sendDirect(
+                    (int) $user->user_id,
+                    NotificationType::ACCOUNT_APPROVAL,
+                    'تمت الموافقة على طلب تسجيل شبكتكم',
+                    "تهانينا! تمت الموافقة على طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام."
+                );
 
                 // إرسال رسالة نصية SMS
                 SendSmsNotificationJob::dispatch(
@@ -659,12 +660,12 @@ class AuthService
 
             $user = User::where('user_phone_number', $network->network_phone_number)->first();
             if ($user) {
-                Notification::create([
-                    'user_id' => $user->user_id,
-                    'notification_type' => 'ACCOUNT_REJECTION',
-                    'notification_title' => 'تم رفض طلب تسجيل شبكتكم',
-                    'notification_message' => "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل شبكة {$network->network_name}. السبب: {$reason}",
-                ]);
+                $this->notificationService->sendDirect(
+                    (int) $user->user_id,
+                    NotificationType::ACCOUNT_REJECTION,
+                    'تم رفض طلب تسجيل شبكتكم',
+                    "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل شبكة {$network->network_name}. السبب: {$reason}"
+                );
 
                 SendSmsNotificationJob::dispatch(
                     $user->user_phone_number,
@@ -704,12 +705,13 @@ class AuthService
                 $user->update(['status' => UserStatus::ACTIVE]);
                 UserDevice::where('user_id', $user->user_id)->update(['status' => UserDeviceStatus::ACTIVE]);
 
-                Notification::create([
-                    'user_id' => $user->user_id,
-                    'notification_type' => 'ACCOUNT_APPROVAL',
-                    'notification_title' => 'تمت الموافقة على طلب تسجيل نقطة البيع',
-                    'notification_message' => "تهانينا! تمت الموافقة على طلب تسجيل نقطة البيع {$pos->pos_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام.",
-                ]);
+                // تسجيل إشعار موجه عبر خدمة الإشعارات
+                $this->notificationService->sendDirect(
+                    (int) $user->user_id,
+                    NotificationType::ACCOUNT_APPROVAL,
+                    'تمت الموافقة على طلب تسجيل نقطة البيع',
+                    "تهانينا! تمت الموافقة على طلب تسجيل نقطة البيع {$pos->pos_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام."
+                );
 
                 SendSmsNotificationJob::dispatch(
                     $user->user_phone_number,
@@ -750,12 +752,12 @@ class AuthService
 
             $user = User::where('user_phone_number', $pos->pos_phone_number)->first();
             if ($user) {
-                Notification::create([
-                    'user_id' => $user->user_id,
-                    'notification_type' => 'ACCOUNT_REJECTION',
-                    'notification_title' => 'تم رفض طلب تسجيل نقطة البيع',
-                    'notification_message' => "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل نقطة البيع {$pos->pos_name}. السبب: {$reason}",
-                ]);
+                $this->notificationService->sendDirect(
+                    (int) $user->user_id,
+                    NotificationType::ACCOUNT_REJECTION,
+                    'تم رفض طلب تسجيل نقطة البيع',
+                    "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل نقطة البيع {$pos->pos_name}. السبب: {$reason}"
+                );
 
                 SendSmsNotificationJob::dispatch(
                     $user->user_phone_number,
