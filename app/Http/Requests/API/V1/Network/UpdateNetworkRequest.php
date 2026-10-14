@@ -32,7 +32,7 @@ class UpdateNetworkRequest extends FormRequest
 
     public function rules(): array
     {
-        $networkId = $this->route('network')?->network_id ?? $this->route('network');
+        $networkId = $this->route('id') ?? ($this->route('network')?->network_id ?? $this->route('network'));
 
         return [
             'network_name' => [

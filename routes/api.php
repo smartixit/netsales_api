@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\FileController;
 use App\Http\Controllers\Api\V1\NetworkController;
 use App\Http\Controllers\Api\V1\OtpController;
+use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\SecurityController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
@@ -92,7 +93,7 @@ Route::prefix('v1')->group(function () {
             Route::post('users/batch-force-delete', [UserController::class, 'batchForceDelete'])->name('api.v1.users.batch_force_delete');
             Route::post('users/{id}/restore', [UserController::class, 'restore'])->name('api.v1.users.restore');
             Route::delete('users/{id}/force', [UserController::class, 'forceDelete'])->name('api.v1.users.force_delete');
-            Route::apiResource('users', UserController::class)->except(['index', 'show']);
+            Route::apiResource('users', UserController::class)->parameters(['users' => 'id'])->except(['index', 'show']);
         });
 
         Route::post('users/{id}/profile-picture', [UserController::class, 'updateProfilePicture'])
@@ -145,7 +146,27 @@ Route::prefix('v1')->group(function () {
             Route::delete('networks/{id}/force', [NetworkController::class, 'forceDelete'])->name('api.v1.networks.force_delete');
             Route::post('networks/{id}/approve', [NetworkController::class, 'approve'])->whereNumber('id')->name('api.v1.networks.approve');
             Route::post('networks/{id}/reject', [NetworkController::class, 'reject'])->whereNumber('id')->name('api.v1.networks.reject');
-            Route::apiResource('networks', NetworkController::class)->except(['index', 'show']);
+            Route::apiResource('networks', NetworkController::class)->parameters(['networks' => 'id'])->except(['index', 'show']);
+        });
+
+        // ==========================================
+        // 4. إدارة نقاط البيع والوكلاء (POS Management)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('pos', [PosController::class, 'index'])->name('api.v1.pos.index');
+            Route::get('pos/trashed', [PosController::class, 'trashed'])->name('api.v1.pos.trashed');
+            Route::get('pos/{id}', [PosController::class, 'show'])->whereNumber('id')->name('api.v1.pos.show');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('pos/batch-delete', [PosController::class, 'batchDelete'])->name('api.v1.pos.batch_delete');
+            Route::post('pos/batch-restore', [PosController::class, 'batchRestore'])->name('api.v1.pos.batch_restore');
+            Route::post('pos/batch-force-delete', [PosController::class, 'batchForceDelete'])->name('api.v1.pos.batch_force_delete');
+            Route::post('pos/{id}/restore', [PosController::class, 'restore'])->name('api.v1.pos.restore');
+            Route::delete('pos/{id}/force', [PosController::class, 'forceDelete'])->name('api.v1.pos.force_delete');
+            Route::post('pos/{id}/approve', [PosController::class, 'approve'])->whereNumber('id')->name('api.v1.pos.approve');
+            Route::post('pos/{id}/reject', [PosController::class, 'reject'])->whereNumber('id')->name('api.v1.pos.reject');
+            Route::apiResource('pos', PosController::class)->parameters(['pos' => 'id'])->except(['index', 'show']);
         });
 
     });

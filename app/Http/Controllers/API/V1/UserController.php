@@ -49,10 +49,16 @@ class UserController extends BaseController
     )]
     public function index(Request $request): JsonResponse
     {
-        $filters = $request->only(['search', 'role_id', 'status', 'per_page', 'all']);
-        $users = $this->userService->getFiltered($filters);
+        try {
+            $filters = $request->only(['search', 'role_id', 'status', 'per_page', 'all']);
+            $users = $this->userService->getFiltered($filters);
 
-        return $this->successResponse('تم استرجاع قائمة المستخدمين بنجاح.', UserResource::collection($users));
+            return $this->successResponse('تم استرجاع قائمة المستخدمين بنجاح.', UserResource::collection($users));
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر جلب قائمة المستخدمين: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -74,12 +80,18 @@ class UserController extends BaseController
     )]
     public function show(int $id): JsonResponse
     {
-        $user = $this->userService->findById($id);
-        if (! $user) {
-            return $this->errorResponse('المستخدم غير موجود في النظام.', [], 404);
-        }
+        try {
+            $user = $this->userService->findById($id);
+            if (! $user) {
+                return $this->errorResponse('المستخدم غير موجود في النظام.', [], 404);
+            }
 
-        return $this->successResponse('تم جلب بيانات المستخدم بنجاح.', new UserResource($user));
+            return $this->successResponse('تم جلب بيانات المستخدم بنجاح.', new UserResource($user));
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر جلب بيانات المستخدم: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -175,12 +187,18 @@ class UserController extends BaseController
     )]
     public function destroy(int $id): JsonResponse
     {
-        $deleted = $this->userService->delete($id);
-        if (! $deleted) {
-            return $this->errorResponse('المستخدم غير موجود أو تعذر حذفه.', [], 404);
-        }
+        try {
+            $deleted = $this->userService->delete($id);
+            if (! $deleted) {
+                return $this->errorResponse('المستخدم غير موجود أو تعذر حذفه.', [], 404);
+            }
 
-        return $this->successResponse('تم حذف حساب المستخدم بنجاح.');
+            return $this->successResponse('تم حذف حساب المستخدم بنجاح.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل حذف حساب المستخدم: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -197,10 +215,16 @@ class UserController extends BaseController
     )]
     public function trashed(Request $request): JsonResponse
     {
-        $perPage = (int) ($request->query('per_page', 15));
-        $trashed = $this->userService->getTrashed($perPage);
+        try {
+            $perPage = (int) ($request->query('per_page', 15));
+            $trashed = $this->userService->getTrashed($perPage);
 
-        return $this->successResponse('تم استرجاع المحذوفات بنجاح.', UserResource::collection($trashed));
+            return $this->successResponse('تم استرجاع المحذوفات بنجاح.', UserResource::collection($trashed));
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر جلب سلة المحذوفات: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -221,12 +245,18 @@ class UserController extends BaseController
     )]
     public function restore(int $id): JsonResponse
     {
-        $restored = $this->userService->restore($id);
-        if (! $restored) {
-            return $this->errorResponse('تعذر استعادة المستخدم، قد لا يكون في سلة المحذوفات.', [], 404);
-        }
+        try {
+            $restored = $this->userService->restore($id);
+            if (! $restored) {
+                return $this->errorResponse('تعذر استعادة المستخدم، قد لا يكون في سلة المحذوفات.', [], 404);
+            }
 
-        return $this->successResponse('تمت استعادة حساب المستخدم بنجاح.');
+            return $this->successResponse('تمت استعادة حساب المستخدم بنجاح.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل استعادة حساب المستخدم: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -247,12 +277,18 @@ class UserController extends BaseController
     )]
     public function forceDelete(int $id): JsonResponse
     {
-        $deleted = $this->userService->forceDelete($id);
-        if (! $deleted) {
-            return $this->errorResponse('تعذر الحذف النهائي، المستخدم غير موجود.', [], 404);
-        }
+        try {
+            $deleted = $this->userService->forceDelete($id);
+            if (! $deleted) {
+                return $this->errorResponse('تعذر الحذف النهائي، المستخدم غير موجود.', [], 404);
+            }
 
-        return $this->successResponse('تم حذف حساب المستخدم نهائياً من النظام.');
+            return $this->successResponse('تم حذف حساب المستخدم نهائياً من النظام.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل الحذف النهائي للمستخدم: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -279,9 +315,15 @@ class UserController extends BaseController
     )]
     public function bulkDelete(BatchIdsRequest $request): JsonResponse
     {
-        $count = $this->userService->bulkDelete($request->getIds());
+        try {
+            $count = $this->userService->bulkDelete($request->getIds());
 
-        return $this->successResponse("تم حذف {$count} من المستخدمين بنجاح.");
+            return $this->successResponse("تم حذف {$count} من المستخدمين بنجاح.");
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل الحذف المجمع للمستخدمين: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -308,9 +350,15 @@ class UserController extends BaseController
     )]
     public function bulkRestore(BatchIdsRequest $request): JsonResponse
     {
-        $count = $this->userService->bulkRestore($request->getIds());
+        try {
+            $count = $this->userService->bulkRestore($request->getIds());
 
-        return $this->successResponse("تمت استعادة {$count} من المستخدمين بنجاح.");
+            return $this->successResponse("تمت استعادة {$count} من المستخدمين بنجاح.");
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل الاستعادة المجمعة للمستخدمين: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -337,9 +385,15 @@ class UserController extends BaseController
     )]
     public function bulkForceDelete(BatchIdsRequest $request): JsonResponse
     {
-        $count = $this->userService->bulkForceDelete($request->getIds());
+        try {
+            $count = $this->userService->bulkForceDelete($request->getIds());
 
-        return $this->successResponse("تم الحذف النهائي لعدد {$count} من المستخدمين بنجاح.");
+            return $this->successResponse("تم الحذف النهائي لعدد {$count} من المستخدمين بنجاح.");
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل الحذف النهائي المجمع للمستخدمين: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**

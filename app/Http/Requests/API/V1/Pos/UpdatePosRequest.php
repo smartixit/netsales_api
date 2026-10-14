@@ -38,7 +38,7 @@ class UpdatePosRequest extends FormRequest
 
     public function rules(): array
     {
-        $posId = $this->route('pos')?->pos_id ?? $this->route('pos');
+        $posId = $this->route('id') ?? ($this->route('pos')?->pos_id ?? $this->route('pos'));
 
         return [
             'pos_name' => [

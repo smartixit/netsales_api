@@ -49,10 +49,16 @@ class NetworkController extends BaseController
     )]
     public function index(Request $request): JsonResponse
     {
-        $filters = $request->only(['search', 'status', 'governorate_id', 'per_page']);
-        $networks = $this->networkService->getFiltered($filters);
+        try {
+            $filters = $request->only(['search', 'status', 'governorate_id', 'per_page']);
+            $networks = $this->networkService->getFiltered($filters);
 
-        return $this->successResponse('تم استرجاع قائمة الشبكات بنجاح.', NetworkResource::collection($networks));
+            return $this->successResponse('تم استرجاع قائمة الشبكات بنجاح.', NetworkResource::collection($networks));
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر جلب قائمة الشبكات: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -73,12 +79,18 @@ class NetworkController extends BaseController
     )]
     public function show(int $id): JsonResponse
     {
-        $network = $this->networkService->findById($id);
-        if (! $network) {
-            return $this->errorResponse('الشبكة غير موجودة في النظام.', [], 404);
-        }
+        try {
+            $network = $this->networkService->findById($id);
+            if (! $network) {
+                return $this->errorResponse('الشبكة غير موجودة في النظام.', [], 404);
+            }
 
-        return $this->successResponse('تم جلب بيانات الشبكة بنجاح.', new NetworkResource($network));
+            return $this->successResponse('تم جلب بيانات الشبكة بنجاح.', new NetworkResource($network));
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر جلب بيانات الشبكة: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -152,12 +164,18 @@ class NetworkController extends BaseController
     )]
     public function destroy(int $id): JsonResponse
     {
-        $deleted = $this->networkService->delete($id);
-        if (! $deleted) {
-            return $this->errorResponse('الشبكة غير موجودة أو تعذر حذفها.', [], 404);
-        }
+        try {
+            $deleted = $this->networkService->delete($id);
+            if (! $deleted) {
+                return $this->errorResponse('الشبكة غير موجودة أو تعذر حذفها.', [], 404);
+            }
 
-        return $this->successResponse('تم حذف الشبكة بنجاح.');
+            return $this->successResponse('تم حذف الشبكة بنجاح.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل حذف الشبكة: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -173,10 +191,16 @@ class NetworkController extends BaseController
     )]
     public function trashed(Request $request): JsonResponse
     {
-        $perPage = (int) $request->input('per_page', 15);
-        $trashed = $this->networkService->getTrashed($perPage);
+        try {
+            $perPage = (int) $request->input('per_page', 15);
+            $trashed = $this->networkService->getTrashed($perPage);
 
-        return $this->successResponse('تم استرجاع المحذوفات بنجاح.', NetworkResource::collection($trashed));
+            return $this->successResponse('تم استرجاع المحذوفات بنجاح.', NetworkResource::collection($trashed));
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر جلب سلة المحذوفات: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -196,12 +220,18 @@ class NetworkController extends BaseController
     )]
     public function restore(int $id): JsonResponse
     {
-        $restored = $this->networkService->restore($id);
-        if (! $restored) {
-            return $this->errorResponse('تعذر استعادة الشبكة، قد لا تكون في سلة المحذوفات.', [], 404);
-        }
+        try {
+            $restored = $this->networkService->restore($id);
+            if (! $restored) {
+                return $this->errorResponse('تعذر استعادة الشبكة، قد لا تكون في سلة المحذوفات.', [], 404);
+            }
 
-        return $this->successResponse('تمت استعادة الشبكة بنجاح.');
+            return $this->successResponse('تمت استعادة الشبكة بنجاح.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل استعادة الشبكة: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -221,12 +251,18 @@ class NetworkController extends BaseController
     )]
     public function forceDelete(int $id): JsonResponse
     {
-        $deleted = $this->networkService->forceDelete($id);
-        if (! $deleted) {
-            return $this->errorResponse('تعذر الحذف النهائي، الشبكة غير موجودة.', [], 404);
-        }
+        try {
+            $deleted = $this->networkService->forceDelete($id);
+            if (! $deleted) {
+                return $this->errorResponse('تعذر الحذف النهائي، الشبكة غير موجودة.', [], 404);
+            }
 
-        return $this->successResponse('تم حذف الشبكة نهائياً من النظام.');
+            return $this->successResponse('تم حذف الشبكة نهائياً من النظام.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل الحذف النهائي للشبكة: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -243,9 +279,15 @@ class NetworkController extends BaseController
     )]
     public function bulkDelete(BatchIdsRequest $request): JsonResponse
     {
-        $count = $this->networkService->bulkDelete($request->getIds());
+        try {
+            $count = $this->networkService->bulkDelete($request->getIds());
 
-        return $this->successResponse("تم حذف {$count} من مزودي الشبكات بنجاح.");
+            return $this->successResponse("تم حذف {$count} من مزودي الشبكات بنجاح.");
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل الحذف المجمع للشبكات: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -262,9 +304,15 @@ class NetworkController extends BaseController
     )]
     public function bulkRestore(BatchIdsRequest $request): JsonResponse
     {
-        $count = $this->networkService->bulkRestore($request->getIds());
+        try {
+            $count = $this->networkService->bulkRestore($request->getIds());
 
-        return $this->successResponse("تمت استعادة {$count} من مزودي الشبكات بنجاح.");
+            return $this->successResponse("تمت استعادة {$count} من مزودي الشبكات بنجاح.");
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل الاستعادة المجمعة للشبكات: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
@@ -281,9 +329,15 @@ class NetworkController extends BaseController
     )]
     public function bulkForceDelete(BatchIdsRequest $request): JsonResponse
     {
-        $count = $this->networkService->bulkForceDelete($request->getIds());
+        try {
+            $count = $this->networkService->bulkForceDelete($request->getIds());
 
-        return $this->successResponse("تم الحذف النهائي لعدد {$count} من مزودي الشبكات بنجاح.");
+            return $this->successResponse("تم الحذف النهائي لعدد {$count} من مزودي الشبكات بنجاح.");
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل الحذف النهائي المجمع للشبكات: '.$e->getMessage(), [], 422);
+        }
     }
 
     /**
