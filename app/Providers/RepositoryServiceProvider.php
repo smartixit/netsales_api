@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Interfaces\BackupJobRepositoryInterface;
 use App\Interfaces\BankAccountRepositoryInterface;
 use App\Interfaces\DirectorateRepositoryInterface;
 use App\Interfaces\ExpenseAttachmentRepositoryInterface;
@@ -11,6 +12,7 @@ use App\Interfaces\FeatureRepositoryInterface;
 use App\Interfaces\GovernorateRepositoryInterface;
 use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
+use App\Interfaces\NetworkSmsSettingRepositoryInterface;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
 use App\Interfaces\NetworkWalletRepositoryInterface;
 use App\Interfaces\NotificationRepositoryInterface;
@@ -18,6 +20,7 @@ use App\Interfaces\OtpRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\PosWalletLogRepositoryInterface;
 use App\Interfaces\PosWalletRepositoryInterface;
+use App\Interfaces\ScheduledTaskRunRepositoryInterface;
 use App\Interfaces\ProviderSubscriptionRepositoryInterface;
 use App\Interfaces\RequestItemRepositoryInterface;
 use App\Interfaces\RequestRepositoryInterface;
@@ -37,6 +40,7 @@ use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
 use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
+use App\Repositories\BackupJobRepository;
 use App\Repositories\BankAccountRepository;
 use App\Repositories\DirectorateRepository;
 use App\Repositories\ExpenseAttachmentRepository;
@@ -46,6 +50,7 @@ use App\Repositories\FeatureRepository;
 use App\Repositories\GovernorateRepository;
 use App\Repositories\NetworkPosRepository;
 use App\Repositories\NetworkRepository;
+use App\Repositories\NetworkSmsSettingRepository;
 use App\Repositories\NetworkWalletLogRepository;
 use App\Repositories\NetworkWalletRepository;
 use App\Repositories\NotificationRepository;
@@ -58,6 +63,7 @@ use App\Repositories\RequestItemRepository;
 use App\Repositories\RequestRepository;
 use App\Repositories\SaleInvoiceItemRepository;
 use App\Repositories\SaleInvoiceRepository;
+use App\Repositories\ScheduledTaskRunRepository;
 use App\Repositories\SecurityBanRepository;
 use App\Repositories\SubscriptionPlanFeatureConsumptionRepository;
 use App\Repositories\SubscriptionPlanFeatureRepository;
@@ -138,6 +144,11 @@ class RepositoryServiceProvider extends ServiceProvider
         // Phase 11: Geography Engine (Governorates & Directorates)
         GovernorateRepositoryInterface::class => GovernorateRepository::class,
         DirectorateRepositoryInterface::class => DirectorateRepository::class,
+
+        // Phase 12: Network SMS Settings, Cloud Backup & Smart Scheduler Catchup
+        NetworkSmsSettingRepositoryInterface::class => NetworkSmsSettingRepository::class,
+        BackupJobRepositoryInterface::class => BackupJobRepository::class,
+        ScheduledTaskRunRepositoryInterface::class => ScheduledTaskRunRepository::class,
     ];
 
     public function register(): void

@@ -34,7 +34,7 @@ class FeatureController extends BaseController
     #[OA\Get(
         path: '/api/v1/features',
         summary: 'عرض قائمة ميزات النظام',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
@@ -66,7 +66,7 @@ class FeatureController extends BaseController
     #[OA\Get(
         path: '/api/v1/features/{id}',
         summary: 'عرض تفاصيل ميزة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -94,7 +94,7 @@ class FeatureController extends BaseController
     #[OA\Post(
         path: '/api/v1/features',
         summary: 'إضافة ميزة جديدة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Features'],
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء الميزة بنجاح'),
@@ -119,7 +119,7 @@ class FeatureController extends BaseController
     #[OA\Put(
         path: '/api/v1/features/{id}',
         summary: 'تحديث بيانات ميزة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -147,7 +147,7 @@ class FeatureController extends BaseController
     #[OA\Post(
         path: '/api/v1/features/{id}/toggle-status',
         summary: 'تبديل حالة تفعيل الميزة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -175,7 +175,7 @@ class FeatureController extends BaseController
     #[OA\Delete(
         path: '/api/v1/features/{id}',
         summary: 'حذف ميزة ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -203,7 +203,7 @@ class FeatureController extends BaseController
     #[OA\Get(
         path: '/api/v1/features/trashed',
         summary: 'عرض الميزات المحذوفة ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Features'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الميزات المحذوفة بنجاح'),
@@ -229,7 +229,7 @@ class FeatureController extends BaseController
     #[OA\Post(
         path: '/api/v1/features/{id}/restore',
         summary: 'استعادة ميزة محذوفة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -257,7 +257,7 @@ class FeatureController extends BaseController
     #[OA\Delete(
         path: '/api/v1/features/{id}/force',
         summary: 'حذف نهائي للميزة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -285,7 +285,7 @@ class FeatureController extends BaseController
     #[OA\Post(
         path: '/api/v1/features/batch-delete',
         summary: 'حذف مجمع للميزات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Features'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
@@ -310,7 +310,7 @@ class FeatureController extends BaseController
     #[OA\Post(
         path: '/api/v1/features/batch-restore',
         summary: 'استعادة مجمعة للميزات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Features'],
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
@@ -335,7 +335,7 @@ class FeatureController extends BaseController
     #[OA\Post(
         path: '/api/v1/features/batch-force-delete',
         summary: 'حذف نهائي مجمع للميزات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Features'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),

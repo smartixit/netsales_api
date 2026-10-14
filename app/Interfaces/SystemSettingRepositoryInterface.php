@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Collection;
 
 /**
  * واجهة مستودع إعدادات النظام (System Setting Repository Interface).
+ *
+ * @method \App\Models\SystemSetting updateOrCreateByKey(string $key, array $data)
  */
 interface SystemSettingRepositoryInterface extends BaseRepositoryInterface
 {
@@ -41,4 +43,9 @@ interface SystemSettingRepositoryInterface extends BaseRepositoryInterface
      * تفريغ الذاكرة المؤقتة للإعدادات.
      */
     public function clearCache(): void;
+
+    /**
+     * تحديث أو إنشاء إعداد عبر المفتاح الفريد.
+     */
+    public function updateOrCreateByKey(string $key, array $data): SystemSetting;
 }

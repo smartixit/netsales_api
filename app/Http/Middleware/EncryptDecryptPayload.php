@@ -17,8 +17,12 @@ class EncryptDecryptPayload
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Allow Bypass for Swagger UI, Debugging via Header, or Public Key / Healthcheck Endpoints
-        $bypassHeader = $request->header('X-Bypass-Encryption');
+        // Allow Bypass for Swagger UI, Debugging via Header/Query/Body, or Public Key / Healthcheck Endpoints
+        $bypassHeader = $request->header('X-Bypass-Encryption')
+            ?? $request->header('bypass-encryption')
+            ?? $request->input('bypass_encryption')
+            ?? $request->query('bypass_encryption');
+
         $bypassEncryption = in_array(strtolower((string) $bypassHeader), ['true', '1', 'yes', 'on'])
             || $request->is('api/v1/security/public-keys')
             || $request->is('up');

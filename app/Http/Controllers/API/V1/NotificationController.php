@@ -34,7 +34,7 @@ class NotificationController extends BaseController
     #[OA\Get(
         path: '/api/v1/notifications',
         summary: 'عرض قائمة الإشعارات العامة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'user_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -67,7 +67,7 @@ class NotificationController extends BaseController
     #[OA\Get(
         path: '/api/v1/notifications/my',
         summary: 'عرض إشعارات المستخدم الحالي',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'is_read', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
@@ -98,7 +98,7 @@ class NotificationController extends BaseController
     #[OA\Get(
         path: '/api/v1/notifications/unread-count',
         summary: 'عدد الإشعارات غير المقروءة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         responses: [
             new OA\Response(response: 200, description: 'تم جلب عدد الإشعارات غير المقروءة بنجاح'),
@@ -124,7 +124,7 @@ class NotificationController extends BaseController
     #[OA\Get(
         path: '/api/v1/notifications/trashed',
         summary: 'عرض الإشعارات المحذوفة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الإشعارات المحذوفة بنجاح'),
@@ -150,7 +150,7 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications',
         summary: 'إنشاء وإرسال إشعار جديد',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء وإرسال الإشعار بنجاح'),
@@ -175,7 +175,7 @@ class NotificationController extends BaseController
     #[OA\Get(
         path: '/api/v1/notifications/{id}',
         summary: 'عرض تفاصيل إشعار',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -203,7 +203,7 @@ class NotificationController extends BaseController
     #[OA\Put(
         path: '/api/v1/notifications/{id}',
         summary: 'تحديث بيانات إشعار',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -231,7 +231,7 @@ class NotificationController extends BaseController
     #[OA\Delete(
         path: '/api/v1/notifications/{id}',
         summary: 'حذف إشعار ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -259,7 +259,7 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications/{id}/restore',
         summary: 'استعادة إشعار محذوف',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -287,7 +287,7 @@ class NotificationController extends BaseController
     #[OA\Delete(
         path: '/api/v1/notifications/{id}/force',
         summary: 'الحذف النهائي لإشعار',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -315,7 +315,7 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications/batch-delete',
         summary: 'الحذف المجمع للإشعارات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع للإشعارات بنجاح'),
@@ -340,7 +340,7 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications/batch-restore',
         summary: 'الاستعادة المجمعة للإشعارات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة الإشعارات المحددة بنجاح'),
@@ -365,7 +365,7 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications/batch-force-delete',
         summary: 'الحذف النهائي المجمع للإشعارات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي للإشعارات بنجاح'),
@@ -390,7 +390,7 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications/{id}/read',
         summary: 'تمييز إشعار كمقروء',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -419,7 +419,7 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications/mark-all-read',
         summary: 'تمييز كافة الإشعارات كمقروءة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Notifications'],
         responses: [
             new OA\Response(response: 200, description: 'تم تمييز جميع الإشعارات كمقروءة بنجاح'),

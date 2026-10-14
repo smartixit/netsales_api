@@ -31,7 +31,7 @@ class SystemLogController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-logs',
         summary: 'عرض قائمة سجلات تدقيق النظام',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemLogs'],
         parameters: [
             new OA\Parameter(name: 'user_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -81,7 +81,7 @@ class SystemLogController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-logs/stats',
         summary: 'إحصائيات ومؤشرات سجلات التدقيق',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemLogs'],
         parameters: [
             new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
@@ -111,7 +111,7 @@ class SystemLogController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-logs/modules',
         summary: 'قائمة الوحدات البرمجية المسجلة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemLogs'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع قائمة الوحدات بنجاح'),
@@ -134,7 +134,7 @@ class SystemLogController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-logs/actions',
         summary: 'قائمة الإجراءات المسجلة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemLogs'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع قائمة الإجراءات بنجاح'),
@@ -157,7 +157,7 @@ class SystemLogController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-logs/entity/{entityType}/{entityId}',
         summary: 'عرض سجلات كيان محدد',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemLogs'],
         parameters: [
             new OA\Parameter(name: 'entityType', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
@@ -186,7 +186,7 @@ class SystemLogController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-logs/user/{userId}',
         summary: 'عرض سجلات مستخدم محدد',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemLogs'],
         parameters: [
             new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -216,7 +216,7 @@ class SystemLogController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-logs/{id}',
         summary: 'عرض تفاصيل سجل تدقيق محدد',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemLogs'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),

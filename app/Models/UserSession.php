@@ -22,9 +22,11 @@ class UserSession extends Model
     public $timestamps = true;
 
     protected $fillable = [
+        'session_token',
         'user_id',
         'ip_address',
         'user_agent',
+        'device_uuid',
         'logged_at',
         'last_activity_at',
         'expires_at',

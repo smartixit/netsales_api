@@ -169,7 +169,7 @@ class AuthService
 
             return [
                 'require_2fa' => true,
-                'is_first_device' => true,
+                'is_primary' => true,
                 'message' => 'يرجى إدخال رمز التحقق المرسل إلى هاتفك لربط هذا الجهاز بحسابك لأول مرة.',
                 'user_phone_number' => $user->user_phone_number,
                 'device_uuid' => $incomingDeviceId,
@@ -397,7 +397,7 @@ class AuthService
             SystemLoggerService::logAuth('user_logged_in_verified', $user->user_id, [
                 'session_id' => $session->session_id,
                 'device_id' => $device->device_id,
-                'is_first_device' => $isFirstDevice,
+                'is_primary' => $isFirstDevice,
             ]);
 
             return [

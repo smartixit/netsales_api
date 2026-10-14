@@ -36,7 +36,7 @@ class ExpenseController extends BaseController
     #[OA\Get(
         path: '/api/v1/expenses',
         summary: 'عرض قائمة المصروفات التشغيلية',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -70,7 +70,7 @@ class ExpenseController extends BaseController
     #[OA\Get(
         path: '/api/v1/expenses/{id}',
         summary: 'عرض تفاصيل مصروف محدد',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -99,7 +99,7 @@ class ExpenseController extends BaseController
     #[OA\Post(
         path: '/api/v1/expenses',
         summary: 'تسجيل مصروف تشغيلي جديد',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         responses: [
             new OA\Response(response: 201, description: 'تم تسجيل المصروف والخصم من المحفظة بنجاح'),
@@ -126,7 +126,7 @@ class ExpenseController extends BaseController
     #[OA\Put(
         path: '/api/v1/expenses/{id}',
         summary: 'تحديث بيانات مصروف قائم',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -156,7 +156,7 @@ class ExpenseController extends BaseController
     #[OA\Delete(
         path: '/api/v1/expenses/{id}',
         summary: 'حذف مصروف ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -184,7 +184,7 @@ class ExpenseController extends BaseController
     #[OA\Get(
         path: '/api/v1/expenses/trashed',
         summary: 'عرض المصروفات المحذوفة ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع المصروفات المحذوفة بنجاح'),
@@ -210,7 +210,7 @@ class ExpenseController extends BaseController
     #[OA\Post(
         path: '/api/v1/expenses/{id}/restore',
         summary: 'استعادة مصروف محذوف',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -238,7 +238,7 @@ class ExpenseController extends BaseController
     #[OA\Delete(
         path: '/api/v1/expenses/{id}/force',
         summary: 'حذف نهائي للمصروف',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -266,7 +266,7 @@ class ExpenseController extends BaseController
     #[OA\Post(
         path: '/api/v1/expenses/batch-delete',
         summary: 'حذف مجمع للمصروفات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
@@ -291,7 +291,7 @@ class ExpenseController extends BaseController
     #[OA\Post(
         path: '/api/v1/expenses/batch-restore',
         summary: 'استعادة مجمعة للمصروفات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
@@ -316,7 +316,7 @@ class ExpenseController extends BaseController
     #[OA\Post(
         path: '/api/v1/expenses/batch-force-delete',
         summary: 'حذف نهائي مجمع للمصروفات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
@@ -341,7 +341,7 @@ class ExpenseController extends BaseController
     #[OA\Post(
         path: '/api/v1/expenses/{id}/items',
         summary: 'إضافة بند منفرد للمصروف',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -370,7 +370,7 @@ class ExpenseController extends BaseController
     #[OA\Delete(
         path: '/api/v1/expenses/{id}/items/{itemId}',
         summary: 'حذف بند منفرد من المصروف',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -400,7 +400,7 @@ class ExpenseController extends BaseController
     #[OA\Delete(
         path: '/api/v1/expenses/{id}/attachments/{attachmentId}',
         summary: 'حذف مرفق منفرد من المصروف',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),

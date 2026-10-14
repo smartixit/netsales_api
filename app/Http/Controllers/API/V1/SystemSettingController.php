@@ -35,7 +35,7 @@ class SystemSettingController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-settings',
         summary: 'عرض قائمة إعدادات النظام',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'setting_category', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
@@ -68,7 +68,7 @@ class SystemSettingController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-settings/category/{category}',
         summary: 'عرض إعدادات تصنيف محدد',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'category', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
@@ -96,7 +96,7 @@ class SystemSettingController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-settings/key/{key}',
         summary: 'عرض إعداد محدد عبر المفتاح',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'key', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
@@ -124,7 +124,7 @@ class SystemSettingController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-settings/{id}',
         summary: 'عرض تفاصيل إعداد محدد',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -152,7 +152,7 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings',
         summary: 'إنشاء إعداد نظام جديد',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء إعداد النظام بنجاح'),
@@ -177,7 +177,7 @@ class SystemSettingController extends BaseController
     #[OA\Put(
         path: '/api/v1/system-settings/{id}',
         summary: 'تحديث بيانات إعداد نظام',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -205,7 +205,7 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings/batch-update',
         summary: 'تحديث مجمع لقيم إعدادات النظام',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث الإعدادات المحددة بنجاح'),
@@ -230,7 +230,7 @@ class SystemSettingController extends BaseController
     #[OA\Delete(
         path: '/api/v1/system-settings/{id}',
         summary: 'حذف إعداد نظام ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -258,7 +258,7 @@ class SystemSettingController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-settings/trashed',
         summary: 'عرض الإعدادات المحذوفة ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الإعدادات المحذوفة بنجاح'),
@@ -284,7 +284,7 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings/{id}/restore',
         summary: 'استعادة إعداد نظام محذوف ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -312,7 +312,7 @@ class SystemSettingController extends BaseController
     #[OA\Delete(
         path: '/api/v1/system-settings/{id}/force-delete',
         summary: 'الحذف النهائي لإعداد نظام',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -340,7 +340,7 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings/batch-delete',
         summary: 'الحذف المجمع للإعدادات ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         responses: [
             new OA\Response(response: 200, description: 'تم حذف الإعدادات المحددة بنجاح'),
@@ -365,7 +365,7 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings/batch-restore',
         summary: 'الاستعادة المجمعة للإعدادات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة الإعدادات المحددة بنجاح'),
@@ -390,7 +390,7 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings/batch-force-delete',
         summary: 'الحذف النهائي المجمع للإعدادات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         responses: [
             new OA\Response(response: 200, description: 'تم حذف الإعدادات نهائياً بنجاح'),
@@ -415,7 +415,7 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings/clear-cache',
         summary: 'تفريغ كاش إعدادات النظام',
-        security: [['SessionAuth' => []]],
+        
         tags: ['SystemSettings'],
         responses: [
             new OA\Response(response: 200, description: 'تم تفريغ كاش إعدادات النظام بنجاح'),

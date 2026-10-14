@@ -34,7 +34,7 @@ class GovernorateController extends BaseController
     #[OA\Get(
         path: '/api/v1/governorates',
         summary: 'عرض قائمة المحافظات',
-        security: [['SessionAuth' => []]],
+
         tags: ['Governorates'],
         parameters: [
             new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
@@ -65,7 +65,7 @@ class GovernorateController extends BaseController
     #[OA\Get(
         path: '/api/v1/governorates/counts',
         summary: 'المحافظات مع أعداد المديريات والشبكات',
-        security: [['SessionAuth' => []]],
+
         tags: ['Governorates'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع إحصائيات المحافظات بنجاح'),
@@ -88,7 +88,7 @@ class GovernorateController extends BaseController
     #[OA\Get(
         path: '/api/v1/governorates/{id}',
         summary: 'عرض تفاصيل محافظة محددة',
-        security: [['SessionAuth' => []]],
+
         tags: ['Governorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -116,7 +116,7 @@ class GovernorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/governorates',
         summary: 'إنشاء محافظة جديدة',
-        security: [['SessionAuth' => []]],
+
         tags: ['Governorates'],
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء المحافظة بنجاح'),
@@ -141,7 +141,7 @@ class GovernorateController extends BaseController
     #[OA\Put(
         path: '/api/v1/governorates/{id}',
         summary: 'تحديث بيانات محافظة',
-        security: [['SessionAuth' => []]],
+
         tags: ['Governorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -169,7 +169,7 @@ class GovernorateController extends BaseController
     #[OA\Delete(
         path: '/api/v1/governorates/{id}',
         summary: 'حذف محافظة ناعماً',
-        security: [['SessionAuth' => []]],
+
         tags: ['Governorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -197,7 +197,7 @@ class GovernorateController extends BaseController
     #[OA\Get(
         path: '/api/v1/governorates/trashed',
         summary: 'عرض المحافظات المحذوفة ناعماً',
-        security: [['SessionAuth' => []]],
+
         tags: ['Governorates'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع المحافظات المحذوفة بنجاح'),
@@ -223,7 +223,7 @@ class GovernorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/governorates/{id}/restore',
         summary: 'استعادة محافظة محذوفة ناعماً',
-        security: [['SessionAuth' => []]],
+
         tags: ['Governorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -251,7 +251,7 @@ class GovernorateController extends BaseController
     #[OA\Delete(
         path: '/api/v1/governorates/{id}/force',
         summary: 'الحذف النهائي لمحافظة',
-        security: [['SessionAuth' => []]],
+
         tags: ['Governorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -279,7 +279,7 @@ class GovernorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/governorates/batch-delete',
         summary: 'الحذف المجمع للمحافظات ناعماً',
-        security: [['SessionAuth' => []]],
+
         tags: ['Governorates'],
         responses: [
             new OA\Response(response: 200, description: 'تم حذف المحافظات المحددة بنجاح'),
@@ -304,7 +304,7 @@ class GovernorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/governorates/batch-restore',
         summary: 'الاستعادة المجمعة للمحافظات',
-        security: [['SessionAuth' => []]],
+
         tags: ['Governorates'],
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة المحافظات المحددة بنجاح'),
@@ -329,7 +329,7 @@ class GovernorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/governorates/batch-force-delete',
         summary: 'الحذف النهائي المجمع للمحافظات',
-        security: [['SessionAuth' => []]],
+
         tags: ['Governorates'],
         responses: [
             new OA\Response(response: 200, description: 'تم حذف المحافظات نهائياً بنجاح'),

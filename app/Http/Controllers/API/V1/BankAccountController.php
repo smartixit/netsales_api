@@ -34,7 +34,7 @@ class BankAccountController extends BaseController
     #[OA\Get(
         path: '/api/v1/bank-accounts',
         summary: 'عرض قائمة الحسابات البنكية',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
@@ -67,7 +67,7 @@ class BankAccountController extends BaseController
     #[OA\Get(
         path: '/api/v1/bank-accounts/active',
         summary: 'عرض الحسابات البنكية النشطة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Bank Accounts'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الحسابات النشطة بنجاح'),
@@ -93,7 +93,7 @@ class BankAccountController extends BaseController
     #[OA\Get(
         path: '/api/v1/bank-accounts/{id}',
         summary: 'عرض تفاصيل حساب بنكي',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -121,7 +121,7 @@ class BankAccountController extends BaseController
     #[OA\Post(
         path: '/api/v1/bank-accounts',
         summary: 'إنشاء حساب بنكي جديد',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Bank Accounts'],
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء الحساب بنجاح'),
@@ -146,7 +146,7 @@ class BankAccountController extends BaseController
     #[OA\Put(
         path: '/api/v1/bank-accounts/{id}',
         summary: 'تحديث بيانات حساب بنكي',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -174,7 +174,7 @@ class BankAccountController extends BaseController
     #[OA\Post(
         path: '/api/v1/bank-accounts/{id}/toggle-status',
         summary: 'تبديل حالة تفعيل الحساب البنكي',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -202,7 +202,7 @@ class BankAccountController extends BaseController
     #[OA\Delete(
         path: '/api/v1/bank-accounts/{id}',
         summary: 'حذف حساب بنكي ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -230,7 +230,7 @@ class BankAccountController extends BaseController
     #[OA\Get(
         path: '/api/v1/bank-accounts/trashed',
         summary: 'عرض الحسابات البنكية المحذوفة ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Bank Accounts'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الحسابات المحذوفة بنجاح'),
@@ -256,7 +256,7 @@ class BankAccountController extends BaseController
     #[OA\Post(
         path: '/api/v1/bank-accounts/{id}/restore',
         summary: 'استعادة حساب بنكي محذوف',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -284,7 +284,7 @@ class BankAccountController extends BaseController
     #[OA\Delete(
         path: '/api/v1/bank-accounts/{id}/force',
         summary: 'حذف نهائي للحساب البنكي',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -312,7 +312,7 @@ class BankAccountController extends BaseController
     #[OA\Post(
         path: '/api/v1/bank-accounts/batch-delete',
         summary: 'حذف مجمع للحسابات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Bank Accounts'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
@@ -337,7 +337,7 @@ class BankAccountController extends BaseController
     #[OA\Post(
         path: '/api/v1/bank-accounts/batch-restore',
         summary: 'استعادة مجمعة للحسابات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Bank Accounts'],
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
@@ -362,7 +362,7 @@ class BankAccountController extends BaseController
     #[OA\Post(
         path: '/api/v1/bank-accounts/batch-force-delete',
         summary: 'حذف نهائي مجمع للحسابات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Bank Accounts'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),

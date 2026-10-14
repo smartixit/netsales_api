@@ -164,8 +164,10 @@ class SupportTicketSystemTest extends TestCase
 
         $messageId = (int) $addResponse->json('data.message_id');
 
-        // إنشاء مستخدم آخر لمحاكاة قراءة الرسائل الواردة
-        $otherUser = User::where('user_id', '!=', $this->user->user_id)->first();
+        // إنشاء مستخدم آخر نشط لمحاكاة قراءة الرسائل الواردة
+        $otherUser = User::where('user_id', '!=', $this->user->user_id)
+            ->where('status', 'ACTIVE')
+            ->first();
         if ($otherUser) {
             $otherSession = UserSession::create([
                 'user_id' => $otherUser->user_id,

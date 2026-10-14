@@ -14,13 +14,14 @@ interface UserSessionRepositoryInterface extends BaseRepositoryInterface
         int $userId,
         ?string $ipAddress = null,
         ?string $userAgent = null,
-        int $durationHours = 24
+        int $durationHours = 24,
+        ?string $deviceUuid = null
     ): UserSession;
 
     /**
-     * Find an active session by ID.
+     * Find an active session by token or ID.
      */
-    public function findActiveSession(int $sessionId): ?UserSession;
+    public function findActiveSession(string|int $sessionId): ?UserSession;
 
     /**
      * Revoke a specific session.

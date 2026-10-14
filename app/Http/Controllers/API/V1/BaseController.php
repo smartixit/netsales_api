@@ -6,6 +6,28 @@ use App\Models\User;
 use App\Traits\ApiResponseTrait;
 use OpenApi\Attributes as OA;
 
+#[OA\OpenApi(
+    security: [
+        [
+            'sessionAuth' => [],
+            'deviceAuth' => [],
+            'clientPublicKey' => [],
+            'bypassEncryption' => [],
+        ],
+        [
+            'sessionAuth' => [],
+            'clientPublicKey' => [],
+            'bypassEncryption' => [],
+        ],
+        [
+            'clientPublicKey' => [],
+            'bypassEncryption' => [],
+        ],
+        [
+            'bypassEncryption' => [],
+        ],
+    ]
+)]
 #[OA\Info(
     version: '1.0.0',
     description: 'توثيق واجهة البرمجة (API) لنظام مبيعات الشبكة NetSales',
@@ -28,6 +50,13 @@ use OpenApi\Attributes as OA;
     name: 'X-Device-Uuid',
     in: 'header',
     description: 'معرف الجهاز الفريد (Device UUID) الخاص بجهاز المستخدم'
+)]
+#[OA\SecurityScheme(
+    securityScheme: 'clientPublicKey',
+    type: 'apiKey',
+    name: 'X-Client-Public-Key',
+    in: 'header',
+    description: 'المفتاح العام للعميل (Client Public Key بصيغة Hex أو Base64 X25519) لتشفير الرد الصادر'
 )]
 #[OA\SecurityScheme(
     securityScheme: 'bypassEncryption',

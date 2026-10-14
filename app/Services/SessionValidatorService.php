@@ -19,18 +19,28 @@ class SessionValidatorService
      * @param  string|int|null  $sessionId  معرف الجلسة المرسل في الترويسة X-Session-Id
      * @return UserSession|null سجل الجلسة الصالحة أو null إذا كانت منتهية أو ملغاة
      */
-    public function validateSession(string|int|null $sessionId): ?UserSession
+    public function validateSession(string|int|null $sessionId, ?string $deviceUuid = null): ?UserSession
     {
         if (empty($sessionId)) {
             return null;
         }
 
-        $session = UserSession::where('session_id', $sessionId)
+        $session = UserSession::where(function ($q) use ($sessionId) {
+                $q->where('session_token', (string) $sessionId);
+                if (is_numeric($sessionId)) {
+                    $q->orWhere('session_id', (int) $sessionId);
+                }
+            })
             ->whereNull('revoked_at')
             ->where('expires_at', '>', Carbon::now('Asia/Aden'))
             ->first();
 
         if ($session) {
+            // التحقق من مطابقة الجهاز المسجل في الجلسة
+            if (! empty($session->device_uuid) && ! empty($deviceUuid) && $session->device_uuid !== $deviceUuid) {
+                return null;
+            }
+
             // تمديد وقت آخر نشاط بصمت
             $session->update([
                 'last_activity_at' => Carbon::now('Asia/Aden'),
@@ -45,11 +55,17 @@ class SessionValidatorService
     /**
      * إنهاء وإلغاء جلسة محددة فوراً.
      *
-     * @param  string|int  $sessionId  معرف الجلسة المراد إنهاؤها
+     * @param  string|int  $sessionId  معرف أو رمز الجلسة المراد إنهاؤها
      */
     public function invalidateSession(string|int $sessionId): bool
     {
-        $session = UserSession::where('session_id', $sessionId)->first();
+        $session = UserSession::where(function ($q) use ($sessionId) {
+            $q->where('session_token', (string) $sessionId);
+            if (is_numeric($sessionId)) {
+                $q->orWhere('session_id', (int) $sessionId);
+            }
+        })->first();
+
         if ($session) {
             return (bool) $session->update([
                 'revoked_at' => Carbon::now('Asia/Aden'),

@@ -199,7 +199,7 @@ class AuthController extends BaseController
                 return $this->successResponse($result['message'], [
                     'require_2fa' => true,
                     'is_new_device' => $result['is_new_device'] ?? false,
-                    'is_first_device' => $result['is_first_device'] ?? false,
+                    'is_primary' => $result['is_primary'] ?? false,
                     'user_phone_number' => $result['user_phone_number'],
                     'device_uuid' => $result['device_uuid'] ?? $request->input('device_uuid'),
                 ]);

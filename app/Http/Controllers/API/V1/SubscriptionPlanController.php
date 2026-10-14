@@ -36,7 +36,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Get(
         path: '/api/v1/subscription-plans',
         summary: 'عرض قائمة باقات الاشتراك',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
@@ -68,7 +68,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Get(
         path: '/api/v1/subscription-plans/{id}',
         summary: 'عرض تفاصيل باقة اشتراك',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -97,7 +97,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans',
         summary: 'إنشاء باقة اشتراك جديدة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء باقة الاشتراك بنجاح'),
@@ -124,7 +124,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Put(
         path: '/api/v1/subscription-plans/{id}',
         summary: 'تحديث بيانات باقة اشتراك',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -154,7 +154,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans/{id}/toggle-status',
         summary: 'تبديل حالة تفعيل باقة الاشتراك',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -182,7 +182,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans/{id}/features',
         summary: 'ربط أو تحديث ميزة بالباقة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -211,7 +211,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Delete(
         path: '/api/v1/subscription-plans/{id}/features/{featureId}',
         summary: 'إزالة ميزة من الباقة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -240,7 +240,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Delete(
         path: '/api/v1/subscription-plans/{id}',
         summary: 'حذف باقة اشتراك ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -268,7 +268,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Get(
         path: '/api/v1/subscription-plans/trashed',
         summary: 'عرض باقات الاشتراك المحذوفة ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الباقات المحذوفة بنجاح'),
@@ -294,7 +294,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans/{id}/restore',
         summary: 'استعادة باقة اشتراك محذوفة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -322,7 +322,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Delete(
         path: '/api/v1/subscription-plans/{id}/force',
         summary: 'حذف نهائي لباقة الاشتراك',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -350,7 +350,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans/batch-delete',
         summary: 'حذف مجمع للباقات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
@@ -375,7 +375,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans/batch-restore',
         summary: 'استعادة مجمعة للباقات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
@@ -400,7 +400,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans/batch-force-delete',
         summary: 'حذف نهائي مجمع للباقات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plans'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),

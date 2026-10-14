@@ -34,7 +34,7 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Get(
         path: '/api/v1/provider-subscriptions',
         summary: 'عرض قائمة اشتراكات المزودين',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -67,7 +67,7 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Get(
         path: '/api/v1/provider-subscriptions/{id}',
         summary: 'عرض تفاصيل اشتراك مزود',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -95,7 +95,7 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Get(
         path: '/api/v1/provider-subscriptions/network/{networkId}/active',
         summary: 'عرض الاشتراك النشط للشبكة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -126,7 +126,7 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Post(
         path: '/api/v1/provider-subscriptions/{id}/extend',
         summary: 'تمديد فترة صلاحية الاشتراك',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -154,7 +154,7 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Get(
         path: '/api/v1/provider-subscriptions/{id}/consumptions',
         summary: 'عرض استهلاك ميزات الاشتراك',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -182,7 +182,7 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Post(
         path: '/api/v1/provider-subscriptions/network/{networkId}/consume',
         summary: 'تسجيل استهلاك ميزة للشبكة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -214,7 +214,7 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Post(
         path: '/api/v1/provider-subscriptions/network/{networkId}/activate-early',
         summary: 'تفعيل الاشتراك المجدول مبكراً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),

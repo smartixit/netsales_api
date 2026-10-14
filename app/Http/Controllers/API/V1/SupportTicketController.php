@@ -36,7 +36,7 @@ class SupportTicketController extends BaseController
     #[OA\Get(
         path: '/api/v1/support-tickets',
         summary: 'عرض قائمة التذاكر',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -68,7 +68,7 @@ class SupportTicketController extends BaseController
     #[OA\Get(
         path: '/api/v1/support-tickets/trashed',
         summary: 'عرض التذاكر المحذوفة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع التذاكر المحذوفة بنجاح'),
@@ -94,7 +94,7 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets',
         summary: 'إنشاء تذكرة دعم فني جديدة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء التذكرة بنجاح'),
@@ -120,7 +120,7 @@ class SupportTicketController extends BaseController
     #[OA\Get(
         path: '/api/v1/support-tickets/{id}',
         summary: 'عرض تفاصيل تذكرة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -148,7 +148,7 @@ class SupportTicketController extends BaseController
     #[OA\Put(
         path: '/api/v1/support-tickets/{id}',
         summary: 'تحديث بيانات تذكرة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -176,7 +176,7 @@ class SupportTicketController extends BaseController
     #[OA\Delete(
         path: '/api/v1/support-tickets/{id}',
         summary: 'حذف تذكرة ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -204,7 +204,7 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets/{id}/restore',
         summary: 'استعادة تذكرة محذوفة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -232,7 +232,7 @@ class SupportTicketController extends BaseController
     #[OA\Delete(
         path: '/api/v1/support-tickets/{id}/force',
         summary: 'الحذف النهائي لتذكرة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -260,7 +260,7 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets/batch-delete',
         summary: 'الحذف المجمع للتذاكر',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع للتذاكر بنجاح'),
@@ -285,7 +285,7 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets/batch-restore',
         summary: 'الاستعادة المجمعة للتذاكر',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة التذاكر المحددة بنجاح'),
@@ -310,7 +310,7 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets/batch-force-delete',
         summary: 'الحذف النهائي المجمع للتذاكر',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي للتذاكر بنجاح'),
@@ -335,7 +335,7 @@ class SupportTicketController extends BaseController
     #[OA\Get(
         path: '/api/v1/support-tickets/{id}/messages',
         summary: 'عرض رسائل التذكرة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -363,7 +363,7 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets/{id}/messages',
         summary: 'إرسال رسالة في التذكرة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -392,7 +392,7 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets/{id}/read',
         summary: 'تمييز رسائل التذكرة كمقروءة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),

@@ -240,4 +240,20 @@ class SystemSettingRepository extends BaseRepository implements SystemSettingRep
 
         return $count;
     }
+
+    /**
+     * تحديث أو إنشاء إعداد عبر المفتاح الفريد مع مسح الكاش.
+     */
+    public function updateOrCreateByKey(string $key, array $data): SystemSetting
+    {
+        /** @var SystemSetting $setting */
+        $setting = $this->model->newQuery()->updateOrCreate(
+            ['setting_key' => $key],
+            $data
+        );
+
+        $this->clearCache();
+
+        return $setting;
+    }
 }

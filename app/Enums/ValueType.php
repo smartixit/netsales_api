@@ -7,7 +7,7 @@ enum ValueType: string
     case TEXT = 'TEXT';
     case INTEGER = 'INTEGER';
     case BOOLEAN = 'BOOLEAN';
-    case FLOAT = 'FLOAT';
+    case DECIMAL = 'DECIMAL';
     case JSON = 'JSON';
     case DATETIME = 'DATETIME';
 
@@ -27,7 +27,7 @@ enum ValueType: string
             self::TEXT => 'نص',
             self::INTEGER => 'رقم صحيح',
             self::BOOLEAN => 'قيمة منطقية',
-            self::FLOAT => 'رقم عشري',
+            self::DECIMAL => 'رقم عشري',
             self::JSON => 'بيانات JSON',
             self::DATETIME => 'تاريخ ووقت',
         };
@@ -39,7 +39,7 @@ enum ValueType: string
             self::TEXT->value => self::TEXT->label(),
             self::INTEGER->value => self::INTEGER->label(),
             self::BOOLEAN->value => self::BOOLEAN->label(),
-            self::FLOAT->value => self::FLOAT->label(),
+            self::DECIMAL->value => self::DECIMAL->label(),
             self::JSON->value => self::JSON->label(),
             self::DATETIME->value => self::DATETIME->label(),
         ];

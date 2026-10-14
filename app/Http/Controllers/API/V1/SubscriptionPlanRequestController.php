@@ -36,7 +36,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Get(
         path: '/api/v1/subscription-plan-requests',
         summary: 'عرض قائمة طلبات الاشتراك',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -70,7 +70,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Get(
         path: '/api/v1/subscription-plan-requests/{id}',
         summary: 'عرض تفاصيل طلب اشتراك',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -98,7 +98,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests',
         summary: 'تقديم طلب اشتراك جديد',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plan Requests'],
         responses: [
             new OA\Response(response: 201, description: 'تم تقديم طلب الاشتراك بنجاح'),
@@ -124,7 +124,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/{id}/approve',
         summary: 'اعتماد طلب الاشتراك',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -156,7 +156,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/{id}/reject',
         summary: 'رفض طلب الاشتراك',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -185,7 +185,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/{id}/cancel',
         summary: 'إلغاء طلب اشتراك معلق',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -214,7 +214,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Delete(
         path: '/api/v1/subscription-plan-requests/{id}',
         summary: 'حذف طلب اشتراك ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -242,7 +242,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Get(
         path: '/api/v1/subscription-plan-requests/trashed',
         summary: 'عرض طلبات الاشتراك المحذوفة ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plan Requests'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الطلبات المحذوفة بنجاح'),
@@ -268,7 +268,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/{id}/restore',
         summary: 'استعادة طلب اشتراك محذوف',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -296,7 +296,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Delete(
         path: '/api/v1/subscription-plan-requests/{id}/force',
         summary: 'حذف نهائي لطلب الاشتراك',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -324,7 +324,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/batch-delete',
         summary: 'حذف مجمع للطلبات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plan Requests'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
@@ -349,7 +349,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/batch-restore',
         summary: 'استعادة مجمعة للطلبات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plan Requests'],
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
@@ -374,7 +374,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/batch-force-delete',
         summary: 'حذف نهائي مجمع للطلبات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Subscription Plan Requests'],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),

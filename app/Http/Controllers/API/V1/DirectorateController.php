@@ -34,7 +34,7 @@ class DirectorateController extends BaseController
     #[OA\Get(
         path: '/api/v1/directorates',
         summary: 'عرض قائمة المديريات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'governorate_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -66,7 +66,7 @@ class DirectorateController extends BaseController
     #[OA\Get(
         path: '/api/v1/directorates/governorate/{governorateId}',
         summary: 'مديريات محافظة محددة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'governorateId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -94,7 +94,7 @@ class DirectorateController extends BaseController
     #[OA\Get(
         path: '/api/v1/directorates/{id}',
         summary: 'عرض تفاصيل مديرية محددة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -122,7 +122,7 @@ class DirectorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/directorates',
         summary: 'إنشاء مديرية جديدة',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Directorates'],
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء المديرية بنجاح'),
@@ -147,7 +147,7 @@ class DirectorateController extends BaseController
     #[OA\Put(
         path: '/api/v1/directorates/{id}',
         summary: 'تحديث بيانات مديرية',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -175,7 +175,7 @@ class DirectorateController extends BaseController
     #[OA\Delete(
         path: '/api/v1/directorates/{id}',
         summary: 'حذف مديرية ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -203,7 +203,7 @@ class DirectorateController extends BaseController
     #[OA\Get(
         path: '/api/v1/directorates/trashed',
         summary: 'عرض المديريات المحذوفة ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Directorates'],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع المديريات المحذوفة بنجاح'),
@@ -229,7 +229,7 @@ class DirectorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/directorates/{id}/restore',
         summary: 'استعادة مديرية محذوفة ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -257,7 +257,7 @@ class DirectorateController extends BaseController
     #[OA\Delete(
         path: '/api/v1/directorates/{id}/force',
         summary: 'الحذف النهائي لمديرية',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -285,7 +285,7 @@ class DirectorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/directorates/batch-delete',
         summary: 'الحذف المجمع للمديريات ناعماً',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Directorates'],
         responses: [
             new OA\Response(response: 200, description: 'تم حذف المديريات المحددة بنجاح'),
@@ -310,7 +310,7 @@ class DirectorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/directorates/batch-restore',
         summary: 'الاستعادة المجمعة للمديريات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Directorates'],
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة المديريات المحددة بنجاح'),
@@ -335,7 +335,7 @@ class DirectorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/directorates/batch-force-delete',
         summary: 'الحذف النهائي المجمع للمديريات',
-        security: [['SessionAuth' => []]],
+        
         tags: ['Directorates'],
         responses: [
             new OA\Response(response: 200, description: 'تم حذف المديريات نهائياً بنجاح'),

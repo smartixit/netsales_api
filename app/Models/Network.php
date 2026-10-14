@@ -201,13 +201,8 @@ class Network extends Model
         })->exists();
     }
 
-    // Accessors
-    // protected function logoUrl(): Attribute
-    // {
-    //     return Attribute::make(
-    //         get: fn (): string => $this->network_profile_logo
-    //             ? asset('storage/' . $this->network_profile_logo)
-    //             : asset('assets/images/default-network.png')
-    //     );
-    // }
+    public function smsSetting(): HasOne
+    {
+        return $this->hasOne(NetworkSmsSetting::class, 'network_id', 'network_id');
+    }
 }

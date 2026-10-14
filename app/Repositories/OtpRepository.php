@@ -92,9 +92,11 @@ class OtpRepository extends BaseRepository implements OtpRepositoryInterface
             return 0;
         }
 
-        $elapsedSeconds = Carbon::now('Asia/Aden')->diffInSeconds($latestOtp->created_at);
+        $nowTimestamp = Carbon::now('Asia/Aden')->timestamp;
+        $createdTimestamp = $latestOtp->created_at->timestamp;
+        $elapsedSeconds = max(0, $nowTimestamp - $createdTimestamp);
 
-        return $elapsedSeconds < $cooldownSeconds ? ($cooldownSeconds - $elapsedSeconds) : 0;
+        return $elapsedSeconds < $cooldownSeconds ? (int) ($cooldownSeconds - $elapsedSeconds) : 0;
     }
 
     public function getTodayRequestsCount(int $userId, OtpType|string $type): int

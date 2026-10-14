@@ -29,15 +29,19 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
         int $userId,
         ?string $ipAddress = null,
         ?string $userAgent = null,
-        int $durationHours = 24
+        int $durationHours = 24,
+        ?string $deviceUuid = null
     ): UserSession {
         $now = Carbon::now('Asia/Aden');
         $expiresAt = $now->copy()->addHours($durationHours);
+        $sessionToken = bin2hex(random_bytes(32)); // 64-hex char cryptographic random token (256-bit entropy)
 
         return $this->create([
+            'session_token' => $sessionToken,
             'user_id' => $userId,
             'ip_address' => $ipAddress,
             'user_agent' => $userAgent,
+            'device_uuid' => $deviceUuid,
             'logged_at' => $now,
             'last_activity_at' => $now,
             'expires_at' => $expiresAt,
@@ -46,12 +50,17 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
     }
 
     /**
-     * البحث عن الجلسة النشطة الصالحة وغير المنتهية.
+     * البحث عن الجلسة النشطة الصالحة وغير المنتهية بالرمز العشوائي أو المعرف.
      */
-    public function findActiveSession(int $sessionId): ?UserSession
+    public function findActiveSession(string|int $sessionId): ?UserSession
     {
         return $this->model->newQuery()
-            ->where('session_id', $sessionId)
+            ->where(function ($q) use ($sessionId) {
+                $q->where('session_token', $sessionId);
+                if (is_numeric($sessionId)) {
+                    $q->orWhere('session_id', (int) $sessionId);
+                }
+            })
             ->active()
             ->first();
     }
@@ -59,7 +68,7 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
     /**
      * اسم بديل متطابق مع نتيجتي للبحث عن الجلسة النشطة.
      */
-    public function findActive(int $sessionId): ?UserSession
+    public function findActive(string|int $sessionId): ?UserSession
     {
         return $this->findActiveSession($sessionId);
     }
