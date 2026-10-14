@@ -15,10 +15,12 @@ use App\Interfaces\NetworkWalletRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\PosWalletLogRepositoryInterface;
 use App\Interfaces\PosWalletRepositoryInterface;
+use App\Jobs\SendSmsNotificationJob;
 use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
 use App\Models\PosWallet;
 use App\Models\PosWalletLog;
+use App\Support\AmountFormatter;
 use Exception;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -178,6 +180,8 @@ class PosWalletService
 
             $wallet->refresh()->load(['network', 'pos']);
 
+            $this->sendWalletSms($wallet, 'receipt', (float) $amount);
+
             return [
                 'wallet' => $wallet,
                 'log' => $log,
@@ -225,6 +229,8 @@ class PosWalletService
             );
 
             $wallet->refresh()->load(['network', 'pos']);
+
+            $this->sendWalletSms($wallet, 'payment', (float) $amount);
 
             return [
                 'wallet' => $wallet,
@@ -304,9 +310,13 @@ class PosWalletService
                 $userId
             );
 
+            $posWallet->refresh()->load(['network', 'pos']);
+
+            $this->sendWalletSms($posWallet, 'receipt', (float) $amount);
+
             return [
                 'network_wallet' => $networkWallet->refresh()->load('network'),
-                'pos_wallet' => $posWallet->refresh()->load(['network', 'pos']),
+                'pos_wallet' => $posWallet,
                 'network_log' => $networkLog,
                 'pos_log' => $posLog,
             ];
@@ -384,8 +394,12 @@ class PosWalletService
                 $userId
             );
 
+            $posWallet->refresh()->load(['network', 'pos']);
+
+            $this->sendWalletSms($posWallet, 'payment', (float) $amount);
+
             return [
-                'pos_wallet' => $posWallet->refresh()->load(['network', 'pos']),
+                'pos_wallet' => $posWallet,
                 'network_wallet' => $networkWallet->refresh()->load('network'),
                 'pos_log' => $posLog,
                 'network_log' => $networkLog,
@@ -479,5 +493,48 @@ class PosWalletService
         return DB::transaction(function () use ($ids): int {
             return $this->posWalletRepository->bulkForceDelete($ids);
         });
+    }
+
+    /**
+     * إرسال إشعار SMS لمدير نقطة البيع عند حركات القبض أو الدفع على المحفظة.
+     *
+     * صيغة حركة القبض (تغذية / إيداع):
+     * "نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: لكم سند قبض بمبلغ {المبلغ}YER رصيدكم {الرصيد}YER"
+     *
+     * صيغة حركة الدفع (سحب / استرجاع / قيد فاتورة):
+     * "نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: عليكم سند دفع بمبلغ {المبلغ}YER رصيدكم {الرصيد}YER"
+     *
+     * @param  PosWallet  $wallet  كائن محفظة نقطة البيع
+     * @param  string  $action  نوع الحركة ('receipt' للقبض والإيداع، 'payment' للدفع والسحب والقيد)
+     * @param  float  $amount  مبلغ الحركة
+     * @param  float|null  $currentBalance  الرصيد الفعلي بعد الحركة (إن لم يحدد يُؤخذ من المحفظة)
+     */
+    public function sendWalletSms(PosWallet $wallet, string $action, float $amount, ?float $currentBalance = null): void
+    {
+        $wallet->loadMissing(['pos', 'network']);
+
+        $phoneNumber = $wallet->pos?->pos_phone_number;
+        if (empty($phoneNumber)) {
+            return;
+        }
+
+        $posName = $wallet->pos?->pos_name ?? $wallet->pos?->pos_holder_name ?? "نقطة #{$wallet->pos_id}";
+        $networkName = $wallet->network?->network_name ?? "شبكة #{$wallet->network_id}";
+
+        $balance = $currentBalance ?? (float) $wallet->wallet_balance;
+
+        $formattedAmount = AmountFormatter::formatWithCurrency($amount, 'YER');
+        $formattedBalance = AmountFormatter::formatWithCurrency($balance, 'YER');
+
+        $actionText = ($action === 'receipt') ? 'لكم سند قبض' : 'عليكم سند دفع';
+
+        $message = "نقطة {$posName} - شبكة {$networkName}: {$actionText} بمبلغ {$formattedAmount} رصيدكم {$formattedBalance}";
+
+        SendSmsNotificationJob::dispatch(
+            phoneNumbers: $phoneNumber,
+            message: $message,
+            recipientId: $wallet->pos_id,
+            messageType: 'pos_wallet_transaction'
+        );
     }
 }

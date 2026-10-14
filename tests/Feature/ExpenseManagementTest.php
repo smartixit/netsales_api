@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
 use App\Enums\WalletOperationType;
+use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
 use App\Models\NetworkWallet;
 use App\Models\User;
@@ -11,6 +12,7 @@ use App\Models\UserSession;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -264,5 +266,44 @@ class ExpenseManagementTest extends TestCase
         $batchForceRes->assertStatus(200)->assertJsonPath('success', true);
 
         $this->assertDatabaseMissing('expenses', ['expense_id' => $expenseId]);
+    }
+
+    public function test_sms_notification_is_sent_to_network_manager_on_expense_creation_and_adjustment(): void
+    {
+        Queue::fake([SendSmsNotificationJob::class]);
+
+        $payload = [
+            'network_id' => $this->network->network_id,
+            'items' => [
+                ['item_statement' => 'إيجار موقع', 'item_amount' => 15000.00],
+            ],
+        ];
+
+        // 1. إنشاء مصروف
+        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/expenses', $payload);
+        $createRes->assertStatus(201);
+
+        $expectedCreateMsg = "شبكة {$this->network->network_name}: عليكم سند صرف (مصروف تشغيلي) بمبلغ 15,000.00YER رصيدكم 85,000.00YER";
+
+        Queue::assertPushed(SendSmsNotificationJob::class, function ($job) use ($expectedCreateMsg) {
+            return $job->phoneNumbers === $this->network->network_phone_number && $job->message === $expectedCreateMsg;
+        });
+
+        $expenseId = $createRes->json('data.expense_id');
+
+        // 2. تعديل المصروف بالزيادة (من 15,000 إلى 20,000 -> فرق 5,000 خصم إضافي)
+        $updateRes = $this->withHeaders($this->headers)->putJson("/api/v1/expenses/{$expenseId}", [
+            'network_id' => $this->network->network_id,
+            'items' => [
+                ['item_statement' => 'إيجار موقع وصيانة', 'item_amount' => 20000.00],
+            ],
+        ]);
+        $updateRes->assertStatus(200);
+
+        $expectedUpdateMsg = "شبكة {$this->network->network_name}: عليكم سند صرف (تسوية زيادة مصروف) بمبلغ 5,000.00YER رصيدكم 80,000.00YER";
+
+        Queue::assertPushed(SendSmsNotificationJob::class, function ($job) use ($expectedUpdateMsg) {
+            return $job->phoneNumbers === $this->network->network_phone_number && $job->message === $expectedUpdateMsg;
+        });
     }
 }

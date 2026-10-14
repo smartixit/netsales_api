@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
 use App\Models\NetworkWallet;
 use App\Models\Pos;
@@ -12,6 +13,7 @@ use App\Models\User;
 use App\Models\UserSession;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class WalletSystemTest extends TestCase
@@ -158,5 +160,51 @@ class WalletSystemTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.pos_wallet.wallet_balance', 20000)
             ->assertJsonPath('data.network_wallet.wallet_balance', 80000);
+    }
+
+    public function test_sms_notification_is_sent_with_exact_templates_on_deposit_and_withdrawal(): void
+    {
+        Queue::fake([SendSmsNotificationJob::class]);
+
+        $posWallet = PosWallet::create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'wallet_balance' => 2000.00,
+            'status' => true,
+        ]);
+
+        // 1. Deposit 1,000 -> balance becomes 3,000
+        $depositResponse = $this->withHeaders($this->headers)
+            ->postJson("/api/v1/pos-wallets/{$posWallet->wallet_id}/deposit", [
+                'amount' => 1000.00,
+                'statement' => 'إيداع نقدي',
+            ]);
+
+        $depositResponse->assertStatus(200);
+
+        // Credit SMS template:
+        // نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: لكم سند قبض بمبلغ 1,000.00YER رصيدكم 3,000.00YER
+        $expectedReceiptMsg = "نقطة {$this->pos->pos_name} - شبكة {$this->network->network_name}: لكم سند قبض بمبلغ 1,000.00YER رصيدكم 3,000.00YER";
+
+        Queue::assertPushed(SendSmsNotificationJob::class, function ($job) use ($expectedReceiptMsg) {
+            return $job->phoneNumbers === $this->pos->pos_phone_number && $job->message === $expectedReceiptMsg;
+        });
+
+        // 2. Withdraw 1,000 -> balance becomes 2,000
+        $withdrawResponse = $this->withHeaders($this->headers)
+            ->postJson("/api/v1/pos-wallets/{$posWallet->wallet_id}/withdraw", [
+                'amount' => 1000.00,
+                'statement' => 'سحب نقدي',
+            ]);
+
+        $withdrawResponse->assertStatus(200);
+
+        // Debit SMS template:
+        // نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: عليكم سند دفع بمبلغ 1,000.00YER رصيدكم 2,000.00YER
+        $expectedPaymentMsg = "نقطة {$this->pos->pos_name} - شبكة {$this->network->network_name}: عليكم سند دفع بمبلغ 1,000.00YER رصيدكم 2,000.00YER";
+
+        Queue::assertPushed(SendSmsNotificationJob::class, function ($job) use ($expectedPaymentMsg) {
+            return $job->phoneNumbers === $this->pos->pos_phone_number && $job->message === $expectedPaymentMsg;
+        });
     }
 }

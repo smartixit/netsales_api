@@ -2,6 +2,7 @@
 
 use App\Services\Support\AsymmetricCryptoService;
 use App\Services\SystemSettingService;
+use App\Support\AmountFormatter;
 
 if (! function_exists('encryptData')) {
     /**
@@ -44,5 +45,35 @@ if (! function_exists('systemSetting')) {
     function systemSetting(string $key, mixed $default = null, ?int $centerId = null): mixed
     {
         return app(SystemSettingService::class)->get($key, $default, $centerId);
+    }
+}
+
+if (! function_exists('formatAmount')) {
+    /**
+     * تنسيق المبلغ المالي بفاصلة الآلاف والتحكم بالمنازل العشرية مع تجريد الأصفار الزائدة.
+     */
+    function formatAmount(
+        float|int|string|null $amount,
+        int $maxDecimals = 2,
+        bool $trimZeroDecimals = false,
+        string $decPoint = '.',
+        string $thousandsSep = ','
+    ): string {
+        return AmountFormatter::format($amount, $maxDecimals, $trimZeroDecimals, $decPoint, $thousandsSep);
+    }
+}
+
+if (! function_exists('formatWithCurrency')) {
+    /**
+     * تنسيق المبلغ المالي وإلحاق رمز أو اسم العملة (مثل 1,000YER).
+     */
+    function formatWithCurrency(
+        float|int|string|null $amount,
+        string $currency = 'YER',
+        int $maxDecimals = 2,
+        bool $space = false,
+        bool $trimZeroDecimals = false
+    ): string {
+        return AmountFormatter::formatWithCurrency($amount, $currency, $maxDecimals, $space, $trimZeroDecimals);
     }
 }

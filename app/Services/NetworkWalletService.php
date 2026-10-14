@@ -10,8 +10,10 @@ use App\Http\Requests\API\V1\Network\WithdrawNetworkWalletRequest;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
 use App\Interfaces\NetworkWalletRepositoryInterface;
+use App\Jobs\SendSmsNotificationJob;
 use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
+use App\Support\AmountFormatter;
 use Exception;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -165,6 +167,8 @@ class NetworkWalletService
 
             $wallet->refresh()->load('network');
 
+            $this->sendWalletSms($wallet, 'receipt', (float) $amount);
+
             return [
                 'wallet' => $wallet,
                 'log' => $log,
@@ -212,6 +216,8 @@ class NetworkWalletService
             );
 
             $wallet->refresh()->load('network');
+
+            $this->sendWalletSms($wallet, 'payment', (float) $amount);
 
             return [
                 'wallet' => $wallet,
@@ -307,5 +313,47 @@ class NetworkWalletService
         return DB::transaction(function () use ($ids): int {
             return $this->networkWalletRepository->bulkForceDelete($ids);
         });
+    }
+
+    /**
+     * إرسال إشعار SMS لمدير الشبكة عند حركات المحفظة أو تسويات المصروفات.
+     *
+     * @param  NetworkWallet  $wallet  كائن محفظة الشبكة
+     * @param  string  $action  نوع الحركة ('receipt' للقبض والتغذية والاسترداد، 'payment' للصرف والدفع والخصم)
+     * @param  float  $amount  المبلغ
+     * @param  float|null  $currentBalance  الرصيد بعد الحركة (إن لم يحدد يُؤخذ من المحفظة)
+     * @param  string|null  $reason  بيان أو تفصيل إضافي للحركة (مثلاً 'مصروف تشغيلي' أو 'تسوية مصروف')
+     */
+    public function sendWalletSms(
+        NetworkWallet $wallet,
+        string $action,
+        float $amount,
+        ?float $currentBalance = null,
+        ?string $reason = null
+    ): void {
+        $wallet->loadMissing('network');
+
+        $phoneNumber = $wallet->network?->network_phone_number;
+        if (empty($phoneNumber)) {
+            return;
+        }
+
+        $networkName = $wallet->network?->network_name ?? "شبكة #{$wallet->network_id}";
+        $balance = $currentBalance ?? (float) $wallet->wallet_balance;
+
+        $formattedAmount = AmountFormatter::formatWithCurrency($amount, 'YER');
+        $formattedBalance = AmountFormatter::formatWithCurrency($balance, 'YER');
+
+        $actionText = ($action === 'receipt') ? 'لكم سند قبض' : 'عليكم سند صرف';
+        $reasonText = $reason ? " ({$reason})" : '';
+
+        $message = "شبكة {$networkName}: {$actionText}{$reasonText} بمبلغ {$formattedAmount} رصيدكم {$formattedBalance}";
+
+        SendSmsNotificationJob::dispatch(
+            phoneNumbers: $phoneNumber,
+            message: $message,
+            recipientId: $wallet->network_id,
+            messageType: 'network_wallet_transaction'
+        );
     }
 }

@@ -38,7 +38,8 @@ class SaleInvoiceService
         protected PosWalletLogRepositoryInterface $posWalletLogRepository,
         protected NetworkWalletLogRepositoryInterface $networkWalletLogRepository,
         protected NetworkRepositoryInterface $networkRepository,
-        protected PosRepositoryInterface $posRepository
+        protected PosRepositoryInterface $posRepository,
+        protected PosWalletService $posWalletService
     ) {}
 
     /**
@@ -205,6 +206,9 @@ class SaleInvoiceService
                 $userId
             );
 
+            $posWallet->refresh();
+            $this->posWalletService->sendWalletSms($posWallet, 'payment', (float) $totalInvoiceAmount, $posBalanceAfter);
+
             $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $totalInvoiceAmount);
 
             $networkStatement = $isCashSale
@@ -294,6 +298,9 @@ class SaleInvoiceService
                     $posStatement,
                     $userId
                 );
+
+                $posWallet->refresh();
+                $this->posWalletService->sendWalletSms($posWallet, 'payment', (float) $totalInvoiceAmount, $posBalanceAfter);
 
                 // إيداع المبلغ في محفظة الشبكة كاستحقاق مبيعات
                 $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $totalInvoiceAmount);

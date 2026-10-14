@@ -80,7 +80,7 @@ class SMSGateService
      * @param  string  $message  نص الرسالة
      * @param  int  $priority  الأولوية (0 عادي، 1 عالي)
      * @param  int  $ttl  فترة بقاء الرسالة بالثواني
-     * @param  int|null  $centerId  معرف المركز (لأغراض التتبع والفوترة)
+     * @param  int|null  $recipientId  معرف المركز (لأغراض التتبع والفوترة)
      * @param  bool  $bypassPolicy  تجاوز القيود (لرموز OTP العاجلة)
      * @param  string|null  $messageType  نوع الرسالة (otp, alert, notification, announcement)
      */
@@ -89,7 +89,7 @@ class SMSGateService
         string $message,
         int $priority = 0,
         int $ttl = 604800,
-        ?int $centerId = null,
+        ?int $recipientId = null,
         bool $bypassPolicy = false,
         ?string $messageType = null
     ): bool {
@@ -97,7 +97,7 @@ class SMSGateService
         if (app()->runningUnitTests()) {
             Log::info('SMSGate [Mocked]: Message dispatched to recipient(s).', [
                 'type' => $messageType,
-                'center_id' => $centerId,
+                'center_id' => $recipientId,
             ]);
 
             return true;
@@ -162,7 +162,7 @@ class SMSGateService
                 Log::info('SMSGate SMS Dispatch Successful', [
                     'recipients_count' => count($formattedRecipients),
                     'message_type' => $messageType,
-                    'center_id' => $centerId,
+                    'center_id' => $recipientId,
                 ]);
 
                 return true;
@@ -186,7 +186,7 @@ class SMSGateService
     /**
      * إرسال رمز التحقق (OTP) العاجل بأولوية قصوى.
      */
-    public function sendOtp(string $phoneNumber, string $code, ?int $centerId = null): bool
+    public function sendOtp(string $phoneNumber, string $code, ?int $recipientId = null): bool
     {
         $message = "رمز التحقق الخاص بك في نظام مبيعات الشبكة هو: {$code}\nلا تشارك هذا الرمز مع أي شخص حفاظاً على أمان حسابك.";
 
@@ -195,7 +195,7 @@ class SMSGateService
             message: $message,
             priority: 1,
             ttl: 300,
-            centerId: $centerId,
+            recipientId: $recipientId,
             bypassPolicy: true,
             messageType: 'otp'
         );

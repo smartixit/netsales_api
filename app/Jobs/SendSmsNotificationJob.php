@@ -16,14 +16,14 @@ class SendSmsNotificationJob implements ShouldQueue
     /**
      * Create a new job instance.
      *
-     * @param  int|null  $storeId  متجر صاحب الرسالة لتطبيق سياسة تفعيل الرسائل الخاصة به.
+     * @param  int|null  $recipientId  متجر صاحب الرسالة لتطبيق سياسة تفعيل الرسائل الخاصة به.
      */
     public function __construct(
         public string|array $phoneNumbers,
         public string $message,
         public int $priority = 0,
         public int $ttl = 604800,
-        public ?int $storeId = null,
+        public ?int $recipientId = null,
         public ?string $messageType = null,
     ) {}
 
@@ -37,7 +37,7 @@ class SendSmsNotificationJob implements ShouldQueue
             $this->message,
             $this->priority,
             $this->ttl,
-            centerId: $this->storeId,
+            recipientId: $this->recipientId,
             messageType: $this->messageType,
         );
     }
