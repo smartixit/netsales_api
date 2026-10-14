@@ -10,6 +10,8 @@ use App\Interfaces\SecurityBanRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
+use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
+use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Repositories\NetworkPosRepository;
 use App\Repositories\NetworkRepository;
 use App\Repositories\OtpRepository;
@@ -18,6 +20,8 @@ use App\Repositories\SecurityBanRepository;
 use App\Repositories\UserDeviceRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\UserSessionRepository;
+use App\Repositories\VoucherPackageDiscountRepository;
+use App\Repositories\VoucherPackageRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -37,6 +41,10 @@ class RepositoryServiceProvider extends ServiceProvider
         NetworkRepositoryInterface::class => NetworkRepository::class,
         PosRepositoryInterface::class => PosRepository::class,
         NetworkPosRepositoryInterface::class => NetworkPosRepository::class,
+
+        // Phase 2: Packages & Discounts
+        VoucherPackageRepositoryInterface::class => VoucherPackageRepository::class,
+        VoucherPackageDiscountRepositoryInterface::class => VoucherPackageDiscountRepository::class,
     ];
 
     public function register(): void

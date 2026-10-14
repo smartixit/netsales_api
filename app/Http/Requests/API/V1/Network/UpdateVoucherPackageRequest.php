@@ -4,6 +4,7 @@ namespace App\Http\Requests\API\V1\Network;
 
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateVoucherPackageRequest extends FormRequest
 {
@@ -19,16 +20,24 @@ class UpdateVoucherPackageRequest extends FormRequest
         if (is_string($this->package_name)) {
             $this->merge(['package_name' => trim($this->package_name)]);
         }
+        if (is_string($this->package_color)) {
+            $this->merge(['package_color' => trim($this->package_color)]);
+        }
     }
 
     public function rules(): array
     {
+        $packageId = $this->route('id') ?? ($this->route('voucher_package')?->package_id ?? $this->route('voucher_package'));
+
         return [
             'package_name' => [
                 'sometimes',
                 'required',
                 'string',
-                'max:100',
+                'max:50',
+                Rule::unique('voucher_packages', 'package_name')
+                    ->ignore($packageId, 'package_id')
+                    ->whereNull('deleted_at'),
             ],
             'package_color' => [
                 'nullable',
@@ -36,25 +45,24 @@ class UpdateVoucherPackageRequest extends FormRequest
                 'max:20',
             ],
             'package_balance' => [
-                'sometimes',
-                'required',
-                'numeric',
-                'min:0',
+                'nullable',
+                'string',
+                'max:20',
             ],
             'package_uptime' => [
                 'nullable',
-                'integer',
-                'min:0',
+                'string',
+                'max:20',
             ],
             'package_validity' => [
                 'nullable',
-                'integer',
-                'min:0',
+                'string',
+                'max:20',
             ],
             'package_voucher_count' => [
                 'nullable',
                 'integer',
-                'min:0',
+                'min:1',
             ],
             'package_voucher_price' => [
                 'sometimes',

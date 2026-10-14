@@ -53,4 +53,34 @@ class StoreVoucherPackageDiscountRequest extends FormRequest
             ],
         ];
     }
+
+    public function getNetworkId(): int
+    {
+        return (int) $this->network_id;
+    }
+
+    public function getPackageId(): int
+    {
+        return (int) $this->package_id;
+    }
+
+    public function getPosId(): int
+    {
+        return (int) $this->pos_id;
+    }
+
+    public function getDiscountCash(): float
+    {
+        return (float) $this->discount_cash;
+    }
+
+    public function getDiscountCredit(): float
+    {
+        return (float) $this->discount_credit;
+    }
+
+    public function getStatus(): bool
+    {
+        return $this->has('status') ? (bool) $this->status : true;
+    }
 }

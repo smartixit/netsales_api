@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\V1\OtpController;
 use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\SecurityController;
 use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\VoucherPackageController;
+use App\Http\Controllers\Api\V1\VoucherPackageDiscountController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -187,6 +189,46 @@ Route::prefix('v1')->group(function () {
             Route::post('network-pos/{id}/toggle-status', [NetworkPosController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.network_pos.toggle_status');
             Route::post('network-pos/batch-delete', [NetworkPosController::class, 'batchDelete'])->name('api.v1.network_pos.batch_delete');
             Route::post('network-pos/batch-status', [NetworkPosController::class, 'batchStatus'])->name('api.v1.network_pos.batch_status');
+        });
+
+        // ==========================================
+        // 6. باقات كروت الإنترنت (Voucher Packages)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('voucher-packages', [VoucherPackageController::class, 'index'])->name('api.v1.voucher_packages.index');
+            Route::get('voucher-packages/trashed', [VoucherPackageController::class, 'trashed'])->name('api.v1.voucher_packages.trashed');
+            Route::get('voucher-packages/{id}', [VoucherPackageController::class, 'show'])->whereNumber('id')->name('api.v1.voucher_packages.show');
+            Route::get('networks/{id}/voucher-packages', [VoucherPackageController::class, 'networkPackages'])->whereNumber('id')->name('api.v1.networks.voucher_packages');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('voucher-packages/batch-delete', [VoucherPackageController::class, 'batchDelete'])->name('api.v1.voucher_packages.batch_delete');
+            Route::post('voucher-packages/batch-restore', [VoucherPackageController::class, 'batchRestore'])->name('api.v1.voucher_packages.batch_restore');
+            Route::post('voucher-packages/batch-force-delete', [VoucherPackageController::class, 'batchForceDelete'])->name('api.v1.voucher_packages.batch_force_delete');
+            Route::post('voucher-packages/{id}/restore', [VoucherPackageController::class, 'restore'])->whereNumber('id')->name('api.v1.voucher_packages.restore');
+            Route::delete('voucher-packages/{id}/force', [VoucherPackageController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.voucher_packages.force_delete');
+            Route::post('voucher-packages/{id}/toggle-status', [VoucherPackageController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.voucher_packages.toggle_status');
+            Route::apiResource('voucher-packages', VoucherPackageController::class)->parameters(['voucher-packages' => 'id'])->except(['index', 'show']);
+        });
+
+        // ==========================================
+        // 7. خصومات وعمولات باقات الكروت المخصصة (Voucher Package Discounts)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('voucher-package-discounts', [VoucherPackageDiscountController::class, 'index'])->name('api.v1.voucher_package_discounts.index');
+            Route::get('voucher-package-discounts/trashed', [VoucherPackageDiscountController::class, 'trashed'])->name('api.v1.voucher_package_discounts.trashed');
+            Route::get('voucher-package-discounts/effective', [VoucherPackageDiscountController::class, 'effectiveDiscount'])->name('api.v1.voucher_package_discounts.effective');
+            Route::get('voucher-package-discounts/{id}', [VoucherPackageDiscountController::class, 'show'])->whereNumber('id')->name('api.v1.voucher_package_discounts.show');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('voucher-package-discounts/batch-delete', [VoucherPackageDiscountController::class, 'batchDelete'])->name('api.v1.voucher_package_discounts.batch_delete');
+            Route::post('voucher-package-discounts/batch-restore', [VoucherPackageDiscountController::class, 'batchRestore'])->name('api.v1.voucher_package_discounts.batch_restore');
+            Route::post('voucher-package-discounts/batch-force-delete', [VoucherPackageDiscountController::class, 'batchForceDelete'])->name('api.v1.voucher_package_discounts.batch_force_delete');
+            Route::post('voucher-package-discounts/{id}/restore', [VoucherPackageDiscountController::class, 'restore'])->whereNumber('id')->name('api.v1.voucher_package_discounts.restore');
+            Route::delete('voucher-package-discounts/{id}/force', [VoucherPackageDiscountController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.voucher_package_discounts.force_delete');
+            Route::post('voucher-package-discounts/{id}/toggle-status', [VoucherPackageDiscountController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.voucher_package_discounts.toggle_status');
+            Route::apiResource('voucher-package-discounts', VoucherPackageDiscountController::class)->parameters(['voucher-package-discounts' => 'id'])->except(['index', 'show']);
         });
 
     });

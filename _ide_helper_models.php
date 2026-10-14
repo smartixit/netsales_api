@@ -405,7 +405,6 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos forPos(int $posId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos whereNetworkId($value)
@@ -413,8 +412,6 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos wherePosId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos withTrashed(bool $withTrashed = true)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos withoutTrashed()
  */
 	class NetworkPos extends \Eloquent {}
 }
@@ -1383,6 +1380,7 @@ namespace App\Models{
  * @property-read string $display_name
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Expense> $expenses
  * @property-read int|null $expenses_count
+ * @property-read string|null $user_profile_logo_url
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Notification> $notifications
  * @property-read int|null $notifications_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Otp> $otps
@@ -1416,11 +1414,15 @@ namespace App\Models{
  * @property-read int|null $user_permissions_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User banned()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User email(string $email)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User pending()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User phone(string $phone)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User search(?string $term)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User status(\App\Enums\UserStatus|string $status)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereLastLoginAt($value)

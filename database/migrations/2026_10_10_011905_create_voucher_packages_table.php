@@ -20,7 +20,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->string('package_name', 50);
-            $table->string('package_color', 20)->default('0xFF4A263F');
+            $table->string('package_color', 20)->default('0xFF0D7A5F');
             $table->string('package_balance', 20)->nullable();
             $table->string('package_uptime', 20)->nullable();
             $table->string('package_validity', 20)->nullable();
