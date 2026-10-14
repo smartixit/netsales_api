@@ -23,11 +23,11 @@ class EnsureAppAdmin
             || $user->role?->role_key === 'super_admin'
         );
 
-        if (!$isSuperAdmin) {
+        if (! $isSuperAdmin) {
             return response()->json([
                 'success' => false,
                 'message' => 'هذه العملية متاحة لمدير التطبيق فقط.',
-                'data' => (object)[],
+                'data' => (object) [],
                 'errors' => [],
             ], 403);
         }

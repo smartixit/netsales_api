@@ -29,7 +29,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // إبقاء تسلسل التواريخ بصيغة Y-m-d H:i:s بالتوقيت المحلي الفعلي دون تحويلها إلى UTC أو إزاحتها زمنياً
         Carbon::serializeUsing(fn ($date) => $date->format('Y-m-d H:i:s'));
-        
+
         // Force HTTPS for all links when the request already came over HTTPS or in production.
         // Otherwise keep the scheme as requested (e.g. http on a local/LAN dev server).
         if (app()->isProduction() || request()->isSecure() || request()->headers->get('X-Forwarded-Proto') === 'https') {

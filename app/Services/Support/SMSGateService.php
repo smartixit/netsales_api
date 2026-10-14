@@ -95,7 +95,7 @@ class SMSGateService
     ): bool {
         // في بيئة الاختبارات: محاكاة النجاح لتفادي استهلاك الرسائل والاتصال الخارجي
         if (app()->runningUnitTests()) {
-            Log::info("SMSGate [Mocked]: Message dispatched to recipient(s).", [
+            Log::info('SMSGate [Mocked]: Message dispatched to recipient(s).', [
                 'type' => $messageType,
                 'center_id' => $centerId,
             ]);

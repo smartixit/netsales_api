@@ -4,11 +4,8 @@ namespace App\Repositories;
 
 use App\Interfaces\BaseRepositoryInterface;
 use App\Services\SystemLoggerService;
-use Illuminate\Contracts\Pagination\CursorPaginator;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\DB;
 
 class BaseRepository implements BaseRepositoryInterface
 {

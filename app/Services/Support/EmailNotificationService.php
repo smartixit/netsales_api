@@ -11,14 +11,6 @@ class EmailNotificationService
 {
     /**
      * إرسال بريد إلكتروني باستخدام قالب notification.blade.php
-     *
-     * @param string|array $recipients
-     * @param string $subject
-     * @param string $body
-     * @param string|null $userName
-     * @param string|null $ctaLink
-     * @param array $extraData
-     * @return bool
      */
     public function sendEmail(
         string|array $recipients,
@@ -29,7 +21,7 @@ class EmailNotificationService
         array $extraData = []
     ): bool {
         if (app()->runningUnitTests()) {
-            Log::info("EmailNotification [Mocked]: Email sent to recipient(s).", [
+            Log::info('EmailNotification [Mocked]: Email sent to recipient(s).', [
                 'subject' => $subject,
                 'recipients' => $recipients,
             ]);
@@ -38,10 +30,11 @@ class EmailNotificationService
         }
 
         $toList = is_array($recipients) ? $recipients : [$recipients];
-        $validEmails = array_filter(array_map('trim', $toList), fn($email) => filter_var($email, FILTER_VALIDATE_EMAIL));
+        $validEmails = array_filter(array_map('trim', $toList), fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL));
 
         if (empty($validEmails)) {
             Log::warning('EmailNotificationService: No valid recipient email addresses provided.');
+
             return false;
         }
 
@@ -60,11 +53,13 @@ class EmailNotificationService
                 'subject' => $subject,
                 'recipients_count' => count($validEmails),
             ]);
+
             return true;
         } catch (Exception $e) {
-            Log::error('EmailNotificationService Exception: ' . $e->getMessage(), [
+            Log::error('EmailNotificationService Exception: '.$e->getMessage(), [
                 'subject' => $subject,
             ]);
+
             return false;
         }
     }
@@ -107,4 +102,3 @@ class EmailNotificationService
         return $this->sendEmail($email, $subject, $body, $phone);
     }
 }
-

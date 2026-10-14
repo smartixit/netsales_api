@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\V1\NetworkWalletController;
 use App\Http\Controllers\Api\V1\OtpController;
 use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\PosWalletController;
+use App\Http\Controllers\Api\V1\RequestController;
+use App\Http\Controllers\Api\V1\SaleInvoiceController;
 use App\Http\Controllers\Api\V1\SecurityController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VoucherPackageController;
@@ -281,6 +283,48 @@ Route::prefix('v1')->group(function () {
             Route::post('pos-wallets/batch-delete', [PosWalletController::class, 'batchDelete'])->name('api.v1.pos_wallets.batch_delete');
             Route::post('pos-wallets/batch-restore', [PosWalletController::class, 'batchRestore'])->name('api.v1.pos_wallets.batch_restore');
             Route::post('pos-wallets/batch-force-delete', [PosWalletController::class, 'batchForceDelete'])->name('api.v1.pos_wallets.batch_force_delete');
+        });
+
+        // ==========================================
+        // 10. طلبات شراء كروت الإنترنت (Voucher Requests)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('requests', [RequestController::class, 'index'])->name('api.v1.requests.index');
+            Route::get('requests/trashed', [RequestController::class, 'trashed'])->name('api.v1.requests.trashed');
+            Route::get('requests/{id}', [RequestController::class, 'show'])->whereNumber('id')->name('api.v1.requests.show');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('requests', [RequestController::class, 'store'])->name('api.v1.requests.store');
+            Route::post('requests/{id}/approve', [RequestController::class, 'approve'])->whereNumber('id')->name('api.v1.requests.approve');
+            Route::post('requests/{id}/reject', [RequestController::class, 'reject'])->whereNumber('id')->name('api.v1.requests.reject');
+            Route::post('requests/{id}/cancel', [RequestController::class, 'cancel'])->whereNumber('id')->name('api.v1.requests.cancel');
+            Route::delete('requests/{id}', [RequestController::class, 'destroy'])->whereNumber('id')->name('api.v1.requests.destroy');
+            Route::post('requests/{id}/restore', [RequestController::class, 'restore'])->whereNumber('id')->name('api.v1.requests.restore');
+            Route::delete('requests/{id}/force', [RequestController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.requests.force_delete');
+            Route::post('requests/batch-delete', [RequestController::class, 'batchDelete'])->name('api.v1.requests.batch_delete');
+            Route::post('requests/batch-restore', [RequestController::class, 'batchRestore'])->name('api.v1.requests.batch_restore');
+            Route::post('requests/batch-force-delete', [RequestController::class, 'batchForceDelete'])->name('api.v1.requests.batch_force_delete');
+        });
+
+        // ==========================================
+        // 11. فواتير مبيعات الكروت (Sale Invoices)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('sale-invoices', [SaleInvoiceController::class, 'index'])->name('api.v1.sale_invoices.index');
+            Route::get('sale-invoices/trashed', [SaleInvoiceController::class, 'trashed'])->name('api.v1.sale_invoices.trashed');
+            Route::get('sale-invoices/{id}', [SaleInvoiceController::class, 'show'])->whereNumber('id')->name('api.v1.sale_invoices.show');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('sale-invoices', [SaleInvoiceController::class, 'store'])->name('api.v1.sale_invoices.store');
+            Route::put('sale-invoices/{id}', [SaleInvoiceController::class, 'update'])->whereNumber('id')->name('api.v1.sale_invoices.update');
+            Route::delete('sale-invoices/{id}', [SaleInvoiceController::class, 'destroy'])->whereNumber('id')->name('api.v1.sale_invoices.destroy');
+            Route::post('sale-invoices/{id}/restore', [SaleInvoiceController::class, 'restore'])->whereNumber('id')->name('api.v1.sale_invoices.restore');
+            Route::delete('sale-invoices/{id}/force', [SaleInvoiceController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.sale_invoices.force_delete');
+            Route::post('sale-invoices/batch-delete', [SaleInvoiceController::class, 'batchDelete'])->name('api.v1.sale_invoices.batch_delete');
+            Route::post('sale-invoices/batch-restore', [SaleInvoiceController::class, 'batchRestore'])->name('api.v1.sale_invoices.batch_restore');
+            Route::post('sale-invoices/batch-force-delete', [SaleInvoiceController::class, 'batchForceDelete'])->name('api.v1.sale_invoices.batch_force_delete');
         });
 
     });

@@ -254,6 +254,7 @@ class User extends Authenticatable
     public function scopeWithRole(Builder $query, string|RoleKey $roleKey): Builder
     {
         $key = $roleKey instanceof RoleKey ? $roleKey->value : $roleKey;
+
         return $query->whereHas('role', fn (Builder $q): Builder => $q->where('role_key', $key));
     }
 
@@ -283,6 +284,7 @@ class User extends Authenticatable
     public function hasRole(string|RoleKey $roleKey): bool
     {
         $key = $roleKey instanceof RoleKey ? $roleKey->value : $roleKey;
+
         return $this->role?->role_key === $key;
     }
 
@@ -335,7 +337,7 @@ class User extends Authenticatable
     protected function displayName(): Attribute
     {
         return Attribute::make(
-            get: fn (): string => $this->user_full_name ?: ($this->user_phone_number ?: 'مستخدم #' . $this->user_id)
+            get: fn (): string => $this->user_full_name ?: ($this->user_phone_number ?: 'مستخدم #'.$this->user_id)
         );
     }
 }

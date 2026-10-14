@@ -24,8 +24,8 @@ class UserPermissionResource extends JsonResource
             'user_permission_id' => $this->user_permission_id,
             'user_id' => $this->user_id,
             'permission_id' => $this->permission_id,
-            'created_at' => $this->created_at? Carbon::parse($this->created_at)->toDateTimeString() : null,
-            'updated_at' => $this->updated_at? Carbon::parse($this->updated_at)->toDateTimeString() : null,
+            'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
+            'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
 
             // Eager Loaded Relationships
             'user' => $this->whenLoaded('user', fn () => new UserResource($this->user)),

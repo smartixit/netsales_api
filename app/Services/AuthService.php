@@ -206,7 +206,7 @@ class AuthService
         }
 
         // 6. تسجيل الدخول المباشر وإنشاء الجلسة داخل معاملة قاعدة بيانات
-        return DB::transaction(function () use ($user, $request, $incomingDeviceId, $existingDevice) {
+        return DB::transaction(function () use ($user, $request, $existingDevice) {
             $deviceName = (string) ($request->device_name ?? $existingDevice->device_name);
 
             // تحديث وقت آخر استخدام للجهاز
@@ -925,7 +925,7 @@ class AuthService
 
             // إشعار المستخدم بأن كلمة المرور تم تغييرها عبر SMS
             $smsMessage = ! empty($newPassword)
-                ? "إشعار أمني: تم تغيير كلمة المرور لحسابكم في NetSales بنجاح. إذا لم تكن أنت من قام بهذا الإجراء يرجى التواصل فوراً مع الدعم."
+                ? 'إشعار أمني: تم تغيير كلمة المرور لحسابكم في NetSales بنجاح. إذا لم تكن أنت من قام بهذا الإجراء يرجى التواصل فوراً مع الدعم.'
                 : "تمت استعادة كلمة المرور لحسابكم في NetSales بنجاح. كلمة المرور المؤقتة الجديدة هي: {$finalPassword} - يرجى تسجيل الدخول وتغييرها فوراً.";
 
             SendSmsNotificationJob::dispatch(

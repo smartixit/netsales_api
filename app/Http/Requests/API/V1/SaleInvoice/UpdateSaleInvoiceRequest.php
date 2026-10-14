@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\API\V1\SaleInvoice;
 
+use App\Enums\PaymentType;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateSaleInvoiceRequest extends FormRequest
 {
@@ -18,10 +20,14 @@ class UpdateSaleInvoiceRequest extends FormRequest
     {
         return [
             'invoice_sale_type' => [
-                'nullable',
-                'string',
-                'max:50',
+                'required',
+                Rule::enum(PaymentType::class),
             ],
         ];
+    }
+
+    public function getSaleType(): PaymentType
+    {
+        return PaymentType::from((string) $this->input('invoice_sale_type'));
     }
 }

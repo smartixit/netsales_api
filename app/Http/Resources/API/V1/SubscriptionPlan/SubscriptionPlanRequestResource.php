@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources\API\V1\SubscriptionPlan;
 
-use App\Enums\PaymentType;
+use App\Enums\RequestPaymentType;
 use App\Enums\RequestStatus;
 use App\Http\Resources\API\V1\BankAccount\BankAccountResource;
 use App\Http\Resources\API\V1\Network\NetworkResource;
@@ -31,10 +31,10 @@ class SubscriptionPlanRequestResource extends JsonResource
             'requested_by' => $this->requested_by,
             'request_uuid' => $this->request_uuid,
             'request_total_amount' => (float) $this->request_total_amount,
-            'request_payment_type' => $this->request_payment_type instanceof PaymentType ? $this->request_payment_type->value : $this->request_payment_type,
-            'request_payment_type_label' => $this->request_payment_type instanceof PaymentType
+            'request_payment_type' => $this->request_payment_type instanceof RequestPaymentType ? $this->request_payment_type->value : $this->request_payment_type,
+            'request_payment_type_label' => $this->request_payment_type instanceof RequestPaymentType
                 ? $this->request_payment_type->label()
-                : (PaymentType::tryFrom((string) $this->request_payment_type)?->label()),
+                : (RequestPaymentType::tryFrom((string) $this->request_payment_type)?->label()),
             'account_id' => $this->account_id,
             'transaction_reference' => $this->transaction_reference,
             'transaction_receipt' => $this->transaction_receipt,

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\PaymentType;
+use App\Enums\RequestPaymentType;
 use App\Enums\RequestStatus;
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
@@ -47,7 +47,7 @@ class SubscriptionPlanRequest extends Model
     {
         return [
             'request_total_amount' => 'decimal:2',
-            'request_payment_type' => PaymentType::class,
+            'request_payment_type' => RequestPaymentType::class,
             'review_date' => 'datetime',
             'status' => RequestStatus::class,
 

@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Enums\WalletOperationType;
 use App\Interfaces\PosWalletLogRepositoryInterface;
 use App\Models\PosWalletLog;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -78,11 +79,11 @@ class PosWalletLogRepository extends BaseRepository implements PosWalletLogRepos
     /**
      * إنشاء قيد مالي جديد في دفتر أستاذ محفظة نقطة البيع.
      */
-    public function createLog(int $walletId, string $operationType, float $amount, string $statement, ?int $createdBy = null, ?string $date = null): PosWalletLog
+    public function createLog(int $walletId, WalletOperationType|string $operationType, float $amount, string $statement, ?int $createdBy = null, ?string $date = null): PosWalletLog
     {
         return $this->create([
             'wallet_id' => $walletId,
-            'log_operation_type' => $operationType,
+            'log_operation_type' => $operationType instanceof WalletOperationType ? $operationType->value : $operationType,
             'log_amount' => $amount,
             'log_statement' => $statement,
             'log_date' => $date ?? now('Asia/Aden'),

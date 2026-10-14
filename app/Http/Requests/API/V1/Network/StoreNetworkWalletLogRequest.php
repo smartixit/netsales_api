@@ -50,9 +50,9 @@ class StoreNetworkWalletLogRequest extends FormRequest
         return (int) $this->input('wallet_id');
     }
 
-    public function getLogOperation(): string
+    public function getLogOperation(): WalletOperationType
     {
-        return (string) $this->input('log_operation');
+        return WalletOperationType::from((string) $this->input('log_operation'));
     }
 
     public function getLogAmount(): float

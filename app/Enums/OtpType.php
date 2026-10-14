@@ -9,10 +9,14 @@ enum OtpType: string
     case VERIFY_EMAIL = 'VERIFY_EMAIL';
     case VERIFY_PHONE = 'VERIFY_PHONE';
 
-    public static function value(): array
+    public static function values(): array
     {
         return array_column(self::cases(), 'value');
+    }
 
+    public static function value(): array
+    {
+        return self::values();
     }
 
     public function label(): string

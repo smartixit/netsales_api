@@ -30,10 +30,15 @@ use Illuminate\Validation\ValidationException;
 class OtpService
 {
     public const DEFAULT_LENGTH = 6;
+
     public const DEFAULT_EXPIRATION_MINUTES = 5;
+
     public const DEFAULT_MAX_ATTEMPTS = 3;
+
     public const DEFAULT_COOLDOWN_SECONDS = 60;
+
     public const MAX_DAILY_RESET_PASSWORD_REQUESTS = 1;
+
     public const MAX_DAILY_2FA_REQUESTS = 3;
 
     public function __construct(
@@ -90,7 +95,7 @@ class OtpService
             $this->otpRepository->invalidateUserOtps($user->user_id, $otpType);
 
             // 2. توليد رمز عشوائي رقمي
-            $min = (int) ('1' . str_repeat('0', $length - 1));
+            $min = (int) ('1'.str_repeat('0', $length - 1));
             $max = (int) str_repeat('9', $length);
             $plainCode = (string) random_int($min, $max);
 

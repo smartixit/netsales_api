@@ -75,6 +75,7 @@ class SessionAuthMiddleware
 
         if (! $isActive) {
             SystemLoggerService::warning('ACCOUNT_INACTIVE', ['status' => $user->status?->value ?? $user->status], $user->user_id);
+
             return $this->errorResponse('حسابك غير مفعّل، يرجى التواصل مع الإدارة.', [], 403);
         }
 
@@ -87,7 +88,8 @@ class SessionAuthMiddleware
         if ($activeBan) {
             $reason = $activeBan->ban_reason ?: 'تم حظر الحساب من قِبل الإدارة.';
             SystemLoggerService::warning('ACCOUNT_BANNED', ['reason' => $reason], $user->user_id);
-            return $this->errorResponse('حسابك محظور. السبب: ' . $reason, [], 403);
+
+            return $this->errorResponse('حسابك محظور. السبب: '.$reason, [], 403);
         }
 
         // 3.3 التحقق من حالة الشبكة التابع لها الحساب (إن وُجد ارتباط شبكة)
@@ -97,6 +99,7 @@ class SessionAuthMiddleware
 
             if (! $network) {
                 SystemLoggerService::warning('NETWORK_NOT_FOUND', ['network_id' => $networkId], $user->user_id);
+
                 return $this->errorResponse('لم يتم العثور على مزود الشبكة التابع له الحساب أو تم حذفه.', [], 403);
             }
 
@@ -157,7 +160,8 @@ class SessionAuthMiddleware
                 if ($activeDeviceBan) {
                     $reason = $activeDeviceBan->ban_reason ?: 'تم حظر هذا الجهاز من قِبل الإدارة.';
                     SystemLoggerService::warning('DEVICE_BANNED', ['device_id' => $device->device_id, 'reason' => $reason], $user->user_id);
-                    return $this->errorResponse('هذا الجهاز محظور. السبب: ' . $reason, [], 403);
+
+                    return $this->errorResponse('هذا الجهاز محظور. السبب: '.$reason, [], 403);
                 }
 
                 $request->attributes->set('device_id', $device->device_id);

@@ -17,6 +17,11 @@ enum DeviceType: string
         return array_column(self::cases(), 'value');
     }
 
+    public static function value(): array
+    {
+        return self::values();
+    }
+
     public function label(): string
     {
         return match ($this) {

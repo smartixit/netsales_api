@@ -397,16 +397,16 @@ class DirectorateSeeder extends Seeder
         $records = [];
         foreach ($directorates as $govName => $dirList) {
             $govId = $govMap[$govName] ?? null;
-            if (!$govId) {
+            if (! $govId) {
                 continue;
             }
 
             foreach ($dirList as $dirName) {
                 $records[] = [
-                    'governorate_id'   => $govId,
+                    'governorate_id' => $govId,
                     'directorate_name' => $dirName,
-                    'created_at'       => $now,
-                    'updated_at'       => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ];
             }
         }

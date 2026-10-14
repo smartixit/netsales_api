@@ -1,0 +1,3779 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "مبيعات الشبكة | NetSales API",
+        "description": "توثيق واجهة البرمجة (API) لنظام مبيعات الشبكة NetSales",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://127.0.0.1:8000",
+            "description": "خادم واجهة البرمجة الأساسي (Primary API Server)"
+        }
+    ],
+    "paths": {
+        "/api/v1/auth/register-network": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "تقديم طلب تسجيل مزود شبكة جديد",
+                "description": "إنشاء شبكة جديدة وحساب مسؤول الشبكة وجهازه بحالة معلقة (PENDING) في انتظار اعتماد الإدارة.",
+                "operationId": "5eb1e7eb22417646fbd5ce5af40b4d7b",
+                "responses": {
+                    "201": {
+                        "description": "تم استلام طلب التسجيل بنجاح وهو قيد المراجعة والاعتماد"
+                    },
+                    "422": {
+                        "description": "خطأ في صحة البيانات المدخلة"
+                    },
+                    "500": {
+                        "description": "خطأ في الخادم الداخلي"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/register-pos": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "تقديم طلب تسجيل وكيل / نقطة بيع جديدة",
+                "description": "إنشاء نقطة بيع جديدة وحساب الوكيل وجهازه بحالة معلقة (PENDING) في انتظار اعتماد الإدارة.",
+                "operationId": "e314fc0185c3990cedbeac42ad7dfc19",
+                "responses": {
+                    "201": {
+                        "description": "تم استلام طلب التسجيل بنجاح وهو قيد المراجعة والاعتماد"
+                    },
+                    "422": {
+                        "description": "خطأ في صحة البيانات المدخلة"
+                    },
+                    "500": {
+                        "description": "خطأ في الخادم الداخلي"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "تسجيل الدخول للنظام وإنشاء الجلسة",
+                "description": "التحقق من بيانات الاعتماد وحالة الحساب والشبكة/نقطة البيع والاشتراك والأجهزة، وإنشاء الجلسة في user_sessions.",
+                "operationId": "a7997e7c1e3bfed64d4e56de82415931",
+                "responses": {
+                    "200": {
+                        "description": "تم تسجيل الدخول بنجاح أو طلب كود 2FA"
+                    },
+                    "422": {
+                        "description": "بيانات الاعتماد غير صحيحة أو الحساب معلق/محظور"
+                    },
+                    "500": {
+                        "description": "خطأ في الخادم الداخلي"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/2fa/verify": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "التحقق من كود OTP وإتمام الدخول للأجهزة الجديدة",
+                "description": "إتمام التحقق الثنائي أو تأكيد ربط الجهاز الجديد وإنشاء الجلسة.",
+                "operationId": "0496f8a10b5f847f10ea6cc8faeb449b",
+                "responses": {
+                    "200": {
+                        "description": "تم التحقق بنجاح وإنشاء الجلسة"
+                    },
+                    "422": {
+                        "description": "كود التحقق غير صحيح أو منتهي"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/me": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "جلب بيانات الملف الشخصي للمستخدم الحالي",
+                "description": "جلب بيانات الحساب الحالي والصلاحيات.",
+                "operationId": "37d33f0281f67d31d05b4c45eea0143b",
+                "responses": {
+                    "200": {
+                        "description": "بيانات الحساب الحالي والصلاحيات"
+                    },
+                    "401": {
+                        "description": "غير مصادق عليه"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/logout": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "تسجيل الخروج وإنهاء الجلسة الحالية",
+                "description": "تسجيل الخروج وإنهاء الجلسة الحالية.",
+                "operationId": "f6b8957b4c0b25636613a9f0512a8ba9",
+                "responses": {
+                    "200": {
+                        "description": "تم تسجيل الخروج بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/logout-other-devices": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "تسجيل الخروج من كافة الأجهزة الأخرى",
+                "description": "تسجيل الخروج من كافة الأجهزة الأخرى.",
+                "operationId": "788064b5ca5f2b93d159646c155e1d4d",
+                "responses": {
+                    "200": {
+                        "description": "تم إنهاء كافة الجلسات الأخرى"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/password/request-reset": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "طلب إرسال رمز استعادة كلمة المرور عبر الهاتف",
+                "description": "طلب استعادة كلمة المرور عبر الرمز المؤقت.",
+                "operationId": "41d4fe28160550cb9cadd5f9fe0f91ef",
+                "responses": {
+                    "200": {
+                        "description": "تم إرسال رمز التحقق بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/password/verify-otp": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "التحقق من صحة كود استعادة كلمة المرور",
+                "description": "التحقق من رمز استعادة كلمة المرور.",
+                "operationId": "1da39df139226442647321a227e8b0c7",
+                "responses": {
+                    "200": {
+                        "description": "كود التحقق صحيح"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/password/reset": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "إعادة تعيين كلمة المرور بعد التحقق",
+                "description": "اعتماد كلمة المرور الجديدة بعد التحقق.",
+                "operationId": "6cf249fbb00db4400f2499319b39eda3",
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث كلمة المرور بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/update-password": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "تحديث كلمة المرور للمستخدم المصادق عليه",
+                "description": "تحديث كلمة المرور للحساب الحالي.",
+                "operationId": "c035ae30f9e4e5358cc69d5504d9bc76",
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث كلمة المرور بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/toggle-2fa": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "تفعيل أو تعطيل المصادقة الثنائية 2FA",
+                "description": "تفعيل أو تعطيل المصادقة الثنائية (2FA).",
+                "operationId": "df1751a3270c0dd8a9c25c1fa522afa9",
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث حالة المصادقة الثنائية بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/devices": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "جلب قائمة أجهزة المستخدم المقترنة",
+                "description": "جلب أجهزة المستخدم المقترنة بالحساب.",
+                "operationId": "034ff43b918e6a69ead8d5141900e4a3",
+                "responses": {
+                    "200": {
+                        "description": "قائمة الأجهزة المقترنة"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/devices/{id}": {
+            "delete": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "إلغاء إقران جهاز محدد للمستخدم",
+                "description": "إلغاء إقران وفصل جهاز محدد.",
+                "operationId": "d08003dc91b49ad17586c2cce19a5b4a",
+                "responses": {
+                    "200": {
+                        "description": "تم فصل الجهاز بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/networks": {
+            "get": {
+                "tags": [
+                    "Networks"
+                ],
+                "summary": "عرض قائمة مزودي الشبكات",
+                "description": "استرجاع قائمة الشبكات مع دعم الفلترة حسب الحالة، المحافظة، البحث، والترقيم.",
+                "operationId": "de5bf8f68936cbb38eb6e840916a5eb6",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ACTIVE",
+                                "PENDING",
+                                "SUSPENDED",
+                                "REJECTED"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "governorate_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة الشبكات بنجاح"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Networks"
+                ],
+                "summary": "إضافة شبكة جديدة إدارياً",
+                "description": "إنشاء شبكة جديدة إدارياً.",
+                "operationId": "2fc0609de4a408da0d4162464e8e53b4",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء الشبكة بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/networks/{id}": {
+            "get": {
+                "tags": [
+                    "Networks"
+                ],
+                "summary": "عرض تفاصيل شبكة",
+                "description": "جلب بيانات مزود الشبكة الكاملة مع المحافظة والمديرية والمحفظة.",
+                "operationId": "d348263ba24e14580ab3e5a9f02c9e78",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع بيانات الشبكة بنجاح"
+                    },
+                    "404": {
+                        "description": "الشبكة غير موجودة"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Networks"
+                ],
+                "summary": "تعديل بيانات شبكة",
+                "description": "تحديث بيانات شبكة قائمة.",
+                "operationId": "c41d9348819458273509803c7f3a479f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث الشبكة بنجاح"
+                    },
+                    "404": {
+                        "description": "الشبكة غير موجودة"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Networks"
+                ],
+                "summary": "حذف شبكة (Soft Delete)",
+                "description": "الحذف المؤقت لشبكة.",
+                "operationId": "6cd4a48f6e981fe890fbd2ed1608b53e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الشبكة بنجاح"
+                    },
+                    "404": {
+                        "description": "الشبكة غير موجودة"
+                    }
+                }
+            }
+        },
+        "/api/v1/networks/trashed": {
+            "get": {
+                "tags": [
+                    "Networks"
+                ],
+                "summary": "سلة محذوفات الشبكات",
+                "description": "عرض سلة محذوفات الشبكات.",
+                "operationId": "70d049638077b7d50a43ead7560bca03",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع المحذوفات بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/networks/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Networks"
+                ],
+                "summary": "استعادة شبكة محذوفة",
+                "description": "استعادة شبكة محذوفة مؤقتاً.",
+                "operationId": "4a0a311fa60f131111b3a5a9648222a7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة بنجاح"
+                    },
+                    "404": {
+                        "description": "الشبكة غير موجودة في المحذوفات"
+                    }
+                }
+            }
+        },
+        "/api/v1/networks/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Networks"
+                ],
+                "summary": "حذف نهائي لشبكة",
+                "description": "الحذف النهائي لشبكة من قاعدة البيانات.",
+                "operationId": "805cbb1a357dc4e8cbe725386ed6ac48",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي بنجاح"
+                    },
+                    "404": {
+                        "description": "الشبكة غير موجودة"
+                    }
+                }
+            }
+        },
+        "/api/v1/networks/batch-delete": {
+            "post": {
+                "tags": [
+                    "Networks"
+                ],
+                "summary": "حذف مجمع للشبكات (Batch Delete)",
+                "description": "حذف مجمع لعدة شبكات.",
+                "operationId": "eef870ff42608d845ca33fc3d40cc6be",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/networks/batch-restore": {
+            "post": {
+                "tags": [
+                    "Networks"
+                ],
+                "summary": "استعادة مجمعة للشبكات (Batch Restore)",
+                "description": "استعادة مجمعة لعدة شبكات من سلة المحذوفات.",
+                "operationId": "861a2cce40dca2d4557aa9d5f7b40d81",
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/networks/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Networks"
+                ],
+                "summary": "حذف نهائي مجمع للشبكات (Batch Force Delete)",
+                "description": "حذف نهائي مجمع لعدة شبكات.",
+                "operationId": "1c87c69b2f00b256965f076bb926208f",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/networks/{id}/approve": {
+            "post": {
+                "tags": [
+                    "Networks"
+                ],
+                "summary": "الموافقة على طلب شبكة وتفعيل حسابها",
+                "description": "اعتماد والموافقة على طلب مزود شبكة.",
+                "operationId": "66bdf646e4f73ee59e33324130b611bb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم اعتماد الشبكة وتفعيل حسابها بنجاح"
+                    },
+                    "404": {
+                        "description": "الشبكة غير موجودة"
+                    },
+                    "422": {
+                        "description": "تعذر الاعتماد"
+                    }
+                }
+            }
+        },
+        "/api/v1/networks/{id}/reject": {
+            "post": {
+                "tags": [
+                    "Networks"
+                ],
+                "summary": "رفض طلب مزود شبكة مع السبب",
+                "description": "رفض طلب مزود شبكة مع توثيق السبب وإشعار صاحبه.",
+                "operationId": "5555cd72b09f78f23ce5b5f12d7465ba",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم رفض طلب الشبكة بنجاح"
+                    },
+                    "404": {
+                        "description": "الشبكة غير موجودة"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-pos": {
+            "get": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "عرض ارتباطات نقاط البيع بالشبكات",
+                "description": "استرجاع قائمة ارتباطات نقاط البيع بمزودي الشبكات مع دعم الفلترة حسب الشبكة، نقطة البيع، الحالة، والبحث.",
+                "operationId": "7a405bf838da8d4d6d6bfdbc3f40f8da",
+                "parameters": [
+                    {
+                        "name": "network_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "pos_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة الارتباطات بنجاح"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "ربط نقطة بيع بمزود شبكة",
+                "description": "إنشاء ارتباط جديد بين نقطة بيع وشبكة.",
+                "operationId": "f5020020c91a79b44cb549bc53dda323",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "network_id",
+                                    "pos_id"
+                                ],
+                                "properties": {
+                                    "network_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "pos_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "status": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء الارتباط بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة أو الارتباط موجود مسبقاً"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-pos/{id}": {
+            "get": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "عرض تفاصيل ارتباط نقطة بيع بشبكة",
+                "description": "عرض تفاصيل ارتباط محدد.",
+                "operationId": "c0a9ebdc645969f39af0b905320af995",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل الارتباط بنجاح"
+                    },
+                    "404": {
+                        "description": "سجل الارتباط غير موجود"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "تعديل حالة ارتباط نقطة بيع بشبكة",
+                "description": "تحديث حالة ارتباط نقطة بيع بشبكة.",
+                "operationId": "61642f81ca17ceaf93caa71bbb2d8d27",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث حالة الارتباط بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "فك ارتباط نقطة بيع بشبكة",
+                "description": "حذف أو فك ارتباط نقطة بيع بشبكة.",
+                "operationId": "eb4c56b3b76e8a9357093a1b3c3a7fa9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم فك الارتباط بنجاح"
+                    },
+                    "404": {
+                        "description": "سجل الارتباط غير موجود"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-pos/{id}/toggle-status": {
+            "post": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "تبديل حالة ارتباط نقطة بيع بشبكة",
+                "description": "تبديل حالة الارتباط (تفعيل / إلغاء تفعيل).",
+                "operationId": "3283d38a76cdc143d84ebdf063b834ab",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تبديل حالة الارتباط بنجاح"
+                    },
+                    "422": {
+                        "description": "سجل الارتباط غير موجود"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-pos/batch-delete": {
+            "post": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "فك ارتباط مجمع لنقاط البيع بالشبكات",
+                "description": "حذف مجمع لسجلات الارتباط بين الشبكات ونقاط البيع.",
+                "operationId": "a331ce544be4490be505296db95f639a",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-pos/batch-status": {
+            "post": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "تغيير حالة مجمعة لارتباطات نقاط البيع بالشبكات",
+                "description": "تغيير حالة مجموعة ارتباطات مجمعة (تفعيل أو إلغاء تفعيل مجمع).",
+                "operationId": "27e1c4d752a84fd8d50850756c965a75",
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث الحالة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/networks/{id}/pos": {
+            "get": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "عرض نقاط البيع المرتبطة بشبكة محددة",
+                "description": "عرض نقاط البيع المرتبطة بشبكة محددة.",
+                "operationId": "0a6221c137ab6062b3b1e7232a5f4dd3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة نقاط البيع المرتبطة بالشبكة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos/{id}/networks": {
+            "get": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "عرض الشبكات المرتبطة بنقطة بيع محددة",
+                "description": "عرض الشبكات المرتبطة بنقطة بيع محددة.",
+                "operationId": "d1cba80ae9cffdd935f5fa43bdf69c75",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة الشبكات المرتبطة بنقطة البيع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-wallets": {
+            "get": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "عرض قائمة محافظ مزودي الشبكات",
+                "description": "عرض قائمة محافظ الشبكات مع الفلترة والبحث والترقيم.",
+                "operationId": "bf373c43b1c3a5b18681fda95bd2da5a",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة المحافظ بنجاح"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "إنشاء محفظة جديدة لمزود شبكة",
+                "description": "إنشاء وتدشين محفظة جديدة لمزود الشبكة.",
+                "operationId": "5a9afeb1715e69b254f0801a051809bc",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء وتدشين المحفظة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-wallets/{id}": {
+            "get": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "عرض تفاصيل محفظة شبكة عبر المعرف",
+                "description": "عرض تفاصيل محفظة شبكة محددة.",
+                "operationId": "2d6fe11583ae2eebc3d3905c8ed18db5",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع بيانات المحفظة بنجاح"
+                    },
+                    "404": {
+                        "description": "المحفظة غير موجودة"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "تحديث حالة محفظة شبكة",
+                "description": "تحديث حالة محفظة شبكة (تفعيل / تجميد).",
+                "operationId": "9857e4c97168d7cce09adb177e8023d2",
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث حالة المحفظة بنجاح"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "حذف محفظة شبكة مؤقتاً",
+                "description": "حذف محفظة شبكة (حذف مؤقت).",
+                "operationId": "ff77d1e35d3f2bb718145b81c6fc083a",
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المحفظة مؤقتاً بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-wallets/network/{networkId}": {
+            "get": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "عرض محفظة شبكة عبر معرف الشبكة",
+                "description": "عرض محفظة شبكة محددة عبر معرف الشبكة.",
+                "operationId": "8d9b43e68517008aa8f3484e5eb5bb84",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع محفظة الشبكة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-wallets/{id}/deposit": {
+            "post": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "إيداع رصيد في محفظة الشبكة",
+                "description": "إيداع رصيد مالي في محفظة الشبكة مع تسجيل القيد بدفتر الأستاذ.",
+                "operationId": "e0b4fa2263a813d1775bd82230ac58e9",
+                "responses": {
+                    "200": {
+                        "description": "تم إيداع الرصيد بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-wallets/{id}/withdraw": {
+            "post": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "سحب رصيد من محفظة الشبكة",
+                "description": "سحب رصيد مالي من محفظة الشبكة مع تسجيل القيد بدفتر الأستاذ.",
+                "operationId": "16904d5667a4d2c482cde12ce89ec070",
+                "responses": {
+                    "200": {
+                        "description": "تم سحب الرصيد بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-wallets/{id}/logs": {
+            "get": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "عرض كشف حساب وسجلات محفظة الشبكة",
+                "description": "استعراض قيود ودفتر أستاذ محفظة الشبكة.",
+                "operationId": "13e6803a54b85f8ab174b55ef362df93",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قيود دفتر الأستاذ بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-wallets/trashed": {
+            "get": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "عرض المحافظ المحذوفة مؤقتاً",
+                "description": "عرض قائمة المحافظ المحذوفة مؤقتاً.",
+                "operationId": "f725a23b3a9b626a4d41f36b3ec30192",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع المحافظ المحذوفة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-wallets/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "استعادة محفظة محذوفة مؤقتاً",
+                "description": "استعادة محفظة محذوفة مؤقتاً.",
+                "operationId": "8bc2784203a96c53526a4bfa5777259d",
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة المحفظة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-wallets/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "الحذف النهائي لمحفظة شبكة",
+                "description": "الحذف النهائي لمحفظة شبكة من قاعدة البيانات.",
+                "operationId": "3cce5c73206507fe8aa16daee1be38a1",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي للمحفظة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-wallets/batch-delete": {
+            "post": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "حذف مجمع لمحافظ الشبكات",
+                "description": "الحذف المجمع لمحافظ الشبكات.",
+                "operationId": "2992fe5725aaea5e0081d73fdbc29e38",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-wallets/batch-restore": {
+            "post": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "استعادة مجمعة لمحافظ الشبكات",
+                "description": "الاستعادة المجمعة لمحافظ الشبكات.",
+                "operationId": "d7b82e3808486b3e8c8bc94cba35038a",
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة المجمعة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-wallets/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Network Wallets"
+                ],
+                "summary": "حذف نهائي مجمع لمحافظ الشبكات",
+                "description": "الحذف النهائي المجمع لمحافظ الشبكات.",
+                "operationId": "30561eee1abcf1e5c7fcc809b479955a",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/otp/generate": {
+            "post": {
+                "tags": [
+                    "OTP"
+                ],
+                "summary": "توليد وإرسال رمز تحقق جديد (OTP)",
+                "description": "يولد رمز تحقق مؤقت معتمد ويرسله عبر رسالة نصية SMS إلى رقم الهاتف المسجل مع مراعاة فترات التهدئة.",
+                "operationId": "ba58c9bebe207e3086bbc552bd0fc4a6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_phone_number",
+                                    "otp_type"
+                                ],
+                                "properties": {
+                                    "user_phone_number": {
+                                        "type": "string",
+                                        "example": "771234567"
+                                    },
+                                    "otp_type": {
+                                        "type": "string",
+                                        "example": "RESET_PASSWORD",
+                                        "enum": [
+                                            "OTP_2FA",
+                                            "RESET_PASSWORD",
+                                            "VERIFY_PHONE",
+                                            "CONFIRM_TRANSACTION"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم إرسال رمز التحقق بنجاح"
+                    },
+                    "422": {
+                        "description": "خطأ في صحة البيانات أو فترة التهدئة ما زالت سارية"
+                    },
+                    "500": {
+                        "description": "خطأ داخلي في الخادم"
+                    }
+                }
+            }
+        },
+        "/api/v1/otp/verify": {
+            "post": {
+                "tags": [
+                    "OTP"
+                ],
+                "summary": "التحقق من صحة رمز OTP",
+                "description": "يتحقق من مطابقة الرمز المدخل مع الرمز الصادر والمخزن في النظام وعدم انتهاء صلاحيته أو تجاوز المحاولات.",
+                "operationId": "92035b2a5758b7fcd2a6a4ec94336689",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_phone_number",
+                                    "otp"
+                                ],
+                                "properties": {
+                                    "user_phone_number": {
+                                        "type": "string",
+                                        "example": "771234567"
+                                    },
+                                    "otp": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "RESET_PASSWORD",
+                                        "enum": [
+                                            "OTP_2FA",
+                                            "RESET_PASSWORD",
+                                            "VERIFY_PHONE",
+                                            "CONFIRM_TRANSACTION"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم تأكيد صحة الرمز بنجاح"
+                    },
+                    "422": {
+                        "description": "رمز التحقق غير صحيح أو منتهي الصلاحية"
+                    },
+                    "500": {
+                        "description": "خطأ داخلي في الخادم"
+                    }
+                }
+            }
+        },
+        "/api/v1/otp/resend": {
+            "post": {
+                "tags": [
+                    "OTP"
+                ],
+                "summary": "إعادة إرسال رمز التحقق (Resend OTP)",
+                "description": "إعادة توليد وإرسال رمز تحقق جديد بعد فحص انقضاء فترة التهدئة المحددة.",
+                "operationId": "62ef73f50c2d15a146407a1e6cd8ef17",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_phone_number",
+                                    "otp_type"
+                                ],
+                                "properties": {
+                                    "user_phone_number": {
+                                        "type": "string",
+                                        "example": "771234567"
+                                    },
+                                    "otp_type": {
+                                        "type": "string",
+                                        "example": "RESET_PASSWORD",
+                                        "enum": [
+                                            "OTP_2FA",
+                                            "RESET_PASSWORD",
+                                            "VERIFY_PHONE",
+                                            "CONFIRM_TRANSACTION"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تمت إعادة إرسال رمز التحقق بنجاح"
+                    },
+                    "422": {
+                        "description": "يرجى الانتظار لانقضاء فترة التهدئة"
+                    },
+                    "500": {
+                        "description": "خطأ داخلي في الخادم"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos": {
+            "get": {
+                "tags": [
+                    "POS"
+                ],
+                "summary": "عرض قائمة نقاط البيع",
+                "description": "استرجاع قائمة نقاط البيع والوكلاء مع دعم الفلترة حسب الحالة، المحافظة، المديرية، البحث، والترقيم.",
+                "operationId": "8f74ce693aac15c2f3d0359638a0ccde",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ACTIVE",
+                                "PENDING",
+                                "SUSPENDED",
+                                "REJECTED"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "governorate_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "directorate_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة نقاط البيع بنجاح"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "POS"
+                ],
+                "summary": "إضافة نقطة بيع جديدة إدارياً",
+                "description": "إنشاء نقطة بيع جديدة إدارياً.",
+                "operationId": "8d673852cc8555f9ca10a32fc90068ef",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء نقطة البيع بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos/{id}": {
+            "get": {
+                "tags": [
+                    "POS"
+                ],
+                "summary": "عرض تفاصيل نقطة بيع",
+                "description": "جلب بيانات نقطة البيع الكاملة مع المحافظة والمديرية والمحافظ.",
+                "operationId": "9b822195a90db07a7d3ea4baf7240248",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع بيانات نقطة البيع بنجاح"
+                    },
+                    "404": {
+                        "description": "نقطة البيع غير موجودة"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "POS"
+                ],
+                "summary": "تحديث بيانات نقطة بيع",
+                "description": "تحديث بيانات نقطة بيع قائمة.",
+                "operationId": "b551a1bba02200914d36bb36a9ec4306",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث بيانات نقطة البيع بنجاح"
+                    },
+                    "404": {
+                        "description": "نقطة البيع غير موجودة"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "POS"
+                ],
+                "summary": "حذف نقطة بيع (مؤقت)",
+                "description": "الحذف المؤقت لنقطة بيع (Soft Delete).",
+                "operationId": "a43fb96a2ce07f7dd44048c6d08e725b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم نقل نقطة البيع لسلة المحذوفات بنجاح"
+                    },
+                    "404": {
+                        "description": "نقطة البيع غير موجودة"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos/trashed": {
+            "get": {
+                "tags": [
+                    "POS"
+                ],
+                "summary": "عرض نقاط البيع في سلة المحذوفات",
+                "description": "استرجاع قائمة نقاط البيع المحذوفة مؤقتاً.",
+                "operationId": "f0b4f24be0471f791f67619ce4809130",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع المحذوفات بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos/{id}/restore": {
+            "post": {
+                "tags": [
+                    "POS"
+                ],
+                "summary": "استعادة نقطة بيع محذوفة",
+                "description": "استعادة نقطة بيع محذوفة مؤقتاً.",
+                "operationId": "1982355af0c908e931489a24082eaad7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تمت استعادة نقطة البيع بنجاح"
+                    },
+                    "404": {
+                        "description": "السجل غير موجود في سلة المحذوفات"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos/{id}/force": {
+            "delete": {
+                "tags": [
+                    "POS"
+                ],
+                "summary": "الحذف النهائي لنقطة بيع",
+                "description": "الحذف النهائي لنقطة بيع من قاعدة البيانات.",
+                "operationId": "da7053ccb5abb3a6ccc9c20f867d9824",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي لنقطة البيع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos/batch-delete": {
+            "post": {
+                "tags": [
+                    "POS"
+                ],
+                "summary": "حذف مجمع لنقاط البيع (Batch Delete)",
+                "description": "حذف مجمع لعدة نقاط بيع مؤقتاً.",
+                "operationId": "75070ad47069de7185cceb29864e2ef0",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos/batch-restore": {
+            "post": {
+                "tags": [
+                    "POS"
+                ],
+                "summary": "استعادة مجمعة لنقاط البيع (Batch Restore)",
+                "description": "استعادة مجمعة لعدة نقاط بيع من سلة المحذوفات.",
+                "operationId": "71d227ae33db0bb3819e2788715874fe",
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة المجمعة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "POS"
+                ],
+                "summary": "حذف نهائي مجمع لنقاط البيع (Batch Force Delete)",
+                "description": "حذف نهائي مجمع لعدة نقاط بيع.",
+                "operationId": "1815b3809791332e320508b92de083da",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos/{id}/approve": {
+            "post": {
+                "tags": [
+                    "POS"
+                ],
+                "summary": "اعتماد والموافقة على نقطة بيع",
+                "description": "الموافقة على طلب تسجيل نقطة بيع وتفعيل الحساب.",
+                "operationId": "4df5dce01ec1dae5f8441d5344e52df8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تمت الموافقة وتفعيل الحساب بنجاح"
+                    },
+                    "422": {
+                        "description": "نقطة البيع غير موجودة"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos/{id}/reject": {
+            "post": {
+                "tags": [
+                    "POS"
+                ],
+                "summary": "رفض طلب نقطة بيع",
+                "description": "رفض طلب تسجيل نقطة بيع مع توثيق السبب.",
+                "operationId": "f793f7370864ec5fb3474adca63b6989",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم رفض طلب نقطة البيع بنجاح"
+                    },
+                    "422": {
+                        "description": "نقطة البيع غير موجودة"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets": {
+            "get": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "عرض قائمة محافظ نقاط البيع",
+                "description": "عرض قائمة محافظ نقاط البيع مع الفلترة والبحث والترقيم.",
+                "operationId": "54dcb4bff52e2bd594e6be8b7124ced2",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة المحافظ بنجاح"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "إنشاء محفظة جديدة لنقطة بيع",
+                "description": "إنشاء محفظة جديدة لنقطة بيع.",
+                "operationId": "e8f1a5a1705ce01cec02f37eecd33aef",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء وتدشين محفظة نقطة البيع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets/{id}": {
+            "get": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "عرض تفاصيل محفظة نقطة بيع عبر المعرف",
+                "description": "عرض تفاصيل محفظة نقطة بيع محددة.",
+                "operationId": "b0301acbf529680f4dbc5b34de5b5d00",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع بيانات المحفظة بنجاح"
+                    },
+                    "404": {
+                        "description": "المحفظة غير موجودة"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "تحديث حالة محفظة نقطة بيع",
+                "description": "تحديث حالة محفظة نقطة بيع (تفعيل / تجميد).",
+                "operationId": "b924673c3c8cebc80d1d83baed565c09",
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث حالة المحفظة بنجاح"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "حذف محفظة نقطة بيع مؤقتاً",
+                "description": "حذف محفظة نقطة بيع (حذف مؤقت).",
+                "operationId": "feee8ba0ee68937ea2e72ae433457fb3",
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المحفظة مؤقتاً بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets/network/{networkId}/pos/{posId}": {
+            "get": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "عرض محفظة نقطة بيع عبر معرف الشبكة ومعرف نقطة البيع",
+                "description": "عرض محفظة نقطة بيع محددة لشبكة معينة.",
+                "operationId": "b4a6185da44a0015cb72a9b478e41fac",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع المحفظة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets/{id}/deposit": {
+            "post": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "إيداع رصيد مباشر في محفظة نقطة البيع",
+                "description": "إيداع رصيد مالي مباشر في محفظة نقطة البيع.",
+                "operationId": "18c98c7302f67633131338230cebed9f",
+                "responses": {
+                    "200": {
+                        "description": "تم إيداع الرصيد بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets/{id}/withdraw": {
+            "post": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "سحب رصيد مباشر من محفظة نقطة البيع",
+                "description": "سحب رصيد مالي مباشر من محفظة نقطة البيع.",
+                "operationId": "c763dcf87e60622558d91d165ee9f303",
+                "responses": {
+                    "200": {
+                        "description": "تم سحب الرصيد بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets/transfer-from-network": {
+            "post": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "تحويل وتغذية رصيد من محفظة الشبكة إلى محفظة نقطة البيع",
+                "description": "تحويل وتغذية رصيد من محفظة الشبكة إلى محفظة نقطة البيع (عملية ذرية مشتركة).",
+                "operationId": "255c2aa2a24a2407b5f7fc4f82339c33",
+                "responses": {
+                    "200": {
+                        "description": "تم تحويل وتغذية الرصيد بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets/transfer-to-network": {
+            "post": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "استرجاع أو تحويل رصيد من محفظة نقطة البيع إلى محفظة الشبكة",
+                "description": "استرجاع أو تحويل رصيد من محفظة نقطة البيع إلى محفظة الشبكة (عملية ذرية مشتركة).",
+                "operationId": "dbf7d094374f4ed90161c85ee3fb2a78",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الرصيد بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets/{id}/logs": {
+            "get": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "عرض كشف حساب وسجلات محفظة نقطة البيع",
+                "description": "استعراض قيود ودفتر أستاذ محفظة نقطة البيع.",
+                "operationId": "dc3e05846921de45b3ffdecfc4cf6d86",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قيود دفتر الأستاذ بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets/trashed": {
+            "get": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "عرض محافظ نقاط البيع المحذوفة مؤقتاً",
+                "description": "عرض قائمة المحافظ المحذوفة مؤقتاً لنقاط البيع.",
+                "operationId": "57d2b3b638f6cf2cd5234651bc5229fd",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع المحافظ المحذوفة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets/{id}/restore": {
+            "post": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "استعادة محفظة نقطة بيع محذوفة مؤقتاً",
+                "description": "استعادة محفظة نقطة بيع محذوفة مؤقتاً.",
+                "operationId": "90839f60d119a484a0872dd540548857",
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة المحفظة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets/{id}/force": {
+            "delete": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "الحذف النهائي لمحفظة نقطة بيع",
+                "description": "الحذف النهائي لمحفظة نقطة بيع.",
+                "operationId": "3c5fddb5e2b1e2a06f024df770322baf",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي للمحفظة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets/batch-delete": {
+            "post": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "حذف مجمع لمحافظ نقاط البيع",
+                "description": "الحذف المجمع لمحافظ نقاط البيع.",
+                "operationId": "7a3c05acfb3157dc3e3184334e7db84f",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets/batch-restore": {
+            "post": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "استعادة مجمعة لمحافظ نقاط البيع",
+                "description": "الاستعادة المجمعة لمحافظ نقاط البيع.",
+                "operationId": "a2e788c44d7df53d596b82cf5a5a0d4c",
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة المجمعة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/pos-wallets/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "حذف نهائي مجمع لمحافظ نقاط البيع",
+                "description": "الحذف النهائي المجمع لمحافظ نقاط البيع.",
+                "operationId": "046d90b6adf5448a0c7735e1fdd74d88",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/requests": {
+            "get": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "عرض قائمة طلبات كروت الإنترنت",
+                "description": "عرض قائمة طلبات الكروت مع الفلترة والبحث والترقيم.",
+                "operationId": "e8ba1b0f112480d4aad0b1360cb1a20a",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة الطلبات بنجاح"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "تقديم طلب كروت جديد",
+                "description": "إنشاء وتقديم طلب كروت جديد من نقطة البيع.",
+                "operationId": "927dd34168a9440882d2d9d4aea3091e",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء الطلب بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/requests/{id}": {
+            "get": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "عرض تفاصيل طلب محدد",
+                "description": "عرض تفاصيل طلب محدد.",
+                "operationId": "ccb3309007cab7ed5d86ecc7c17cb037",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل الطلب بنجاح"
+                    },
+                    "404": {
+                        "description": "الطلب غير موجود"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "حذف طلب كروت مؤقتاً",
+                "description": "حذف طلب مؤقتاً (Soft Delete).",
+                "operationId": "43c0f1596e3306070bad8ecc641774f8",
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الطلب مؤقتاً بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/requests/{id}/approve": {
+            "post": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "اعتماد طلب الكروت وتوليد فاتورة المبيعات آلياً",
+                "description": "مراجعة واعتماد طلب الكروت وتوليد الفاتورة والتسوية المالية اللحظية.",
+                "operationId": "cb97be9a61df16e09d0ce51b0f783239",
+                "responses": {
+                    "200": {
+                        "description": "تم اعتماد الطلب وتوليد الفاتورة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/requests/{id}/reject": {
+            "post": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "رفض طلب الكروت",
+                "description": "رفض طلب الكروت مع توثيق السبب.",
+                "operationId": "276204c2aa810aa828aad310ee338cfc",
+                "responses": {
+                    "200": {
+                        "description": "تم رفض الطلب بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/requests/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "إلغاء طلب الكروت",
+                "description": "إلغاء طلب الكروت من قبل صاحبه.",
+                "operationId": "8e0fd0ab3d0d9798e65ca31181f6340f",
+                "responses": {
+                    "200": {
+                        "description": "تم إلغاء الطلب بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/requests/trashed": {
+            "get": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "عرض الطلبات المحذوفة مؤقتاً",
+                "description": "عرض قائمة الطلبات المحذوفة مؤقتاً.",
+                "operationId": "e65927a9e8292c44e50687d6fe634754",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الطلبات المحذوفة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/requests/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "استعادة طلب كروت محذوف مؤقتاً",
+                "description": "استعادة طلب محذوف مؤقتاً.",
+                "operationId": "94e5c57d4a612e745f10804e2cfc89cb",
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة الطلب بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/requests/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "الحذف النهائي لطلب كروت",
+                "description": "الحذف النهائي لطلب كروت.",
+                "operationId": "c1b2ed2774f4292dc15a309eaedd935a",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي للطلب بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/requests/batch-delete": {
+            "post": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "حذف مجمع لطلبات الكروت",
+                "description": "الحذف المجمع لطلبات الكروت.",
+                "operationId": "62082315dd6ec0643c5908fe031d1ea7",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/requests/batch-restore": {
+            "post": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "استعادة مجمعة لطلبات الكروت",
+                "description": "الاستعادة المجمعة لطلبات الكروت.",
+                "operationId": "96bd12bb0d332d46a24659db7dc1742f",
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة المجمعة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/requests/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "حذف نهائي مجمع لطلبات الكروت",
+                "description": "الحذف النهائي المجمع لطلبات الكروت.",
+                "operationId": "c2aaca573a8b43bf94cd78ab4b5a0374",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/sale-invoices": {
+            "get": {
+                "tags": [
+                    "Sale Invoices"
+                ],
+                "summary": "عرض قائمة فواتير مبيعات الكروت",
+                "description": "عرض قائمة فواتير المبيعات مع الفلترة والبحث والترقيم.",
+                "operationId": "4b2f9e73a8862d8b90b3789bba232821",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة الفواتير بنجاح"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Sale Invoices"
+                ],
+                "summary": "إنشاء فاتورة مبيعات مباشرة",
+                "description": "إنشاء فاتورة مبيعات مباشرة.",
+                "operationId": "c3437077176cc76198820b63408cbebd",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء الفاتورة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/sale-invoices/{id}": {
+            "get": {
+                "tags": [
+                    "Sale Invoices"
+                ],
+                "summary": "عرض تفاصيل فاتورة مبيعات محددة",
+                "description": "عرض تفاصيل فاتورة مبيعات محددة.",
+                "operationId": "62be4857617ed95947b0fb950d95f1fb",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل الفاتورة بنجاح"
+                    },
+                    "404": {
+                        "description": "الفاتورة غير موجودة"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Sale Invoices"
+                ],
+                "summary": "تحديث نوع الفاتورة",
+                "description": "تحديث نوع الفاتورة (كاش أو آجل).",
+                "operationId": "bbd8d60d7f437a1e34422791f6507e60",
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث نوع الفاتورة بنجاح"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Sale Invoices"
+                ],
+                "summary": "حذف فاتورة مبيعات مؤقتاً",
+                "description": "حذف فاتورة مبيعات مؤقتاً (Soft Delete).",
+                "operationId": "56b919f3633cd5df3cb2acdab40257bd",
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الفاتورة مؤقتاً بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/sale-invoices/trashed": {
+            "get": {
+                "tags": [
+                    "Sale Invoices"
+                ],
+                "summary": "عرض فواتير المبيعات المحذوفة مؤقتاً",
+                "description": "عرض قائمة فواتير المبيعات المحذوفة مؤقتاً.",
+                "operationId": "fe84c419b518d8c4627e10dc5e023917",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الفواتير المحذوفة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/sale-invoices/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Sale Invoices"
+                ],
+                "summary": "استعادة فاتورة مبيعات محذوفة مؤقتاً",
+                "description": "استعادة فاتورة مبيعات محذوفة مؤقتاً.",
+                "operationId": "2816a8414d9711c691cd71fcb8967f63",
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة الفاتورة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/sale-invoices/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Sale Invoices"
+                ],
+                "summary": "الحذف النهائي لفاتورة مبيعات",
+                "description": "الحذف النهائي لفاتورة مبيعات.",
+                "operationId": "7b4fce3c3d818d93130058f843d639aa",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي للفاتورة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/sale-invoices/batch-delete": {
+            "post": {
+                "tags": [
+                    "Sale Invoices"
+                ],
+                "summary": "حذف مجمع لفواتير المبيعات",
+                "description": "الحذف المجمع لفواتير المبيعات.",
+                "operationId": "f55e4f6c783a52ea6691f42ecd619c4b",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/sale-invoices/batch-restore": {
+            "post": {
+                "tags": [
+                    "Sale Invoices"
+                ],
+                "summary": "استعادة مجمعة لفواتير المبيعات",
+                "description": "الاستعادة المجمعة لفواتير المبيعات.",
+                "operationId": "beace5bc04b5baa3687e56ef5ed7207d",
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة المجمعة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/sale-invoices/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Sale Invoices"
+                ],
+                "summary": "حذف نهائي مجمع لفواتير المبيعات",
+                "description": "الحذف النهائي المجمع لفواتير المبيعات.",
+                "operationId": "b9e8696854db35fec5846e20f53255da",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/security/public-keys": {
+            "get": {
+                "tags": [
+                    "Security"
+                ],
+                "summary": "جلب المفاتيح العامة للتشفير والتوقيع الرقمي",
+                "description": "يعيد المفاتيح العامة السيادية للخادم بصيغة JWKS/Metadata للتحقق من التوقيعات وتشفير الرسائل من جانب العميل.",
+                "operationId": "5569411cafcddc83da7ea7a684651cde",
+                "responses": {
+                    "200": {
+                        "description": "تم جلب المفاتيح العامة بنجاح"
+                    },
+                    "500": {
+                        "description": "خطأ داخلي في الخادم"
+                    }
+                }
+            }
+        },
+        "/api/v1/security/users/{id}/sessions": {
+            "get": {
+                "tags": [
+                    "Security"
+                ],
+                "summary": "عرض الجلسات النشطة للمستخدم",
+                "description": "استرجاع جميع الجلسات النشطة وغير المنتهية المرتبطة بحساب المستخدم المحدد.",
+                "operationId": "9f354cb98761c278499d54c028758160",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف المستخدم",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الجلسات بنجاح"
+                    },
+                    "422": {
+                        "description": "المستخدم غير موجود"
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    }
+                }
+            }
+        },
+        "/api/v1/security/users/{id}/devices": {
+            "get": {
+                "tags": [
+                    "Security"
+                ],
+                "summary": "عرض الأجهزة المرتبطة بحساب المستخدم",
+                "description": "استرجاع قائمة بكافة الأجهزة المسجلة للمستخدم (الأساسية والثانوية) وحالتها وتاريخ آخر استخدام.",
+                "operationId": "fc452f85da5d2ea43a0b3d1500c9c56c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف المستخدم",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الأجهزة بنجاح"
+                    },
+                    "422": {
+                        "description": "المستخدم غير موجود"
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    }
+                }
+            }
+        },
+        "/api/v1/security/ban-user": {
+            "post": {
+                "tags": [
+                    "Security"
+                ],
+                "summary": "تطبيق حظر أمني على مستخدم",
+                "description": "يفرض حظراً أمنياً دائماً أو مؤقتاً على المستخدم مع إبطال كافة جلساته المفتوحة وتحديث حالته إلى BANNED.",
+                "operationId": "9bc69290a1cdb144605544e289dd1339",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_id",
+                                    "ban_type"
+                                ],
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "ban_type": {
+                                        "type": "string",
+                                        "example": "PERMANENT",
+                                        "enum": [
+                                            "PERMANENT",
+                                            "TEMPORARY"
+                                        ]
+                                    },
+                                    "ban_reason": {
+                                        "type": "string",
+                                        "example": "مخالفة سياسات الاستخدام والأمان"
+                                    },
+                                    "start_at": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "end_at": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم حظر المستخدم بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    },
+                    "403": {
+                        "description": "غير مصرح"
+                    }
+                }
+            }
+        },
+        "/api/v1/security/ban-device": {
+            "post": {
+                "tags": [
+                    "Security"
+                ],
+                "summary": "تطبيق حظر أمني على جهاز",
+                "description": "يفرض حظراً أمنياً على معرف جهاز محدد ويغير حالته إلى BANNED لمنع أي محاولة دخول لاحقة عبره.",
+                "operationId": "3c6ab6aa98e4f24aea08d68ffd1377b2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "device_id",
+                                    "ban_type"
+                                ],
+                                "properties": {
+                                    "device_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "ban_type": {
+                                        "type": "string",
+                                        "example": "PERMANENT",
+                                        "enum": [
+                                            "PERMANENT",
+                                            "TEMPORARY"
+                                        ]
+                                    },
+                                    "ban_reason": {
+                                        "type": "string",
+                                        "example": "جهاز مشبوه / محاولات اختراق متكررة"
+                                    },
+                                    "start_at": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "end_at": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم حظر الجهاز بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/security/bans/{id}": {
+            "delete": {
+                "tags": [
+                    "Security"
+                ],
+                "summary": "رفع الحظر الأمني (Unban)",
+                "description": "إلغاء ورفع الحظر الأمني واستعادة الحالة الطبيعية للمستخدم أو الجهاز.",
+                "operationId": "78c109ac7daee1ed401fb71d57694af2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الحظر (ban_id)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم رفع الحظر بنجاح"
+                    },
+                    "422": {
+                        "description": "سجل الحظر غير موجود"
+                    }
+                }
+            }
+        },
+        "/api/v1/security/sessions/{id}/terminate": {
+            "post": {
+                "tags": [
+                    "Security"
+                ],
+                "summary": "إنهاء جلسة مستخدم محددة فوراً",
+                "description": "إبطال صلاحية جلسة مستخدم محددة عبر معرف الجلسة لمنع أي طلبات إضافية من خلالها.",
+                "operationId": "af09d77efec336c3131fffad7512bbd2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الجلسة",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم إنهاء الجلسة بنجاح"
+                    },
+                    "422": {
+                        "description": "الجلسة غير موجودة"
+                    }
+                }
+            }
+        },
+        "/api/v1/users": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "عرض قائمة المستخدمين",
+                "description": "استرجاع قائمة المستخدمين مع دعم الفلترة حسب الحالة، الدور، البحث النصي، والترقيم بالمؤشر (Cursor).",
+                "operationId": "12e989554c281d650dff75443acabf54",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث بالاسم، رقم الهاتف أو البريد",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "role_id",
+                        "in": "query",
+                        "description": "تصفية حسب الدور",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "تصفية حسب الحالة",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ACTIVE",
+                                "INACTIVE",
+                                "PENDING",
+                                "BANNED"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد السجلات بالصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة المستخدمين بنجاح"
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "إنشاء مستخدم جديد",
+                "description": "إضافة حساب مستخدم جديد في النظام وربطه بالدور المحدد وتشفير كلمة المرور ورفع صورته إن وجدت.",
+                "operationId": "64da9b5a20fa4f20e947ed61b2bbb6da",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "user_full_name",
+                                    "user_phone_number",
+                                    "user_password",
+                                    "role_id"
+                                ],
+                                "properties": {
+                                    "role_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "user_full_name": {
+                                        "type": "string",
+                                        "example": "محمد أحمد"
+                                    },
+                                    "user_phone_number": {
+                                        "type": "string",
+                                        "example": "771234567"
+                                    },
+                                    "user_password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "Secret@123"
+                                    },
+                                    "user_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "user_profile_logo": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "user_2fa_enabled": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "ACTIVE",
+                                        "enum": [
+                                            "ACTIVE",
+                                            "INACTIVE",
+                                            "PENDING"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء المستخدم بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{id}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "عرض تفاصيل مستخدم",
+                "description": "جلب بيانات مستخدم محدد مع الدور والأجهزة والصلاحيات المرتبطة به.",
+                "operationId": "a9d321d5dc6bc2613c6cf5ba92b76c89",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف المستخدم",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع بيانات المستخدم بنجاح"
+                    },
+                    "404": {
+                        "description": "المستخدم غير موجود"
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "تحديث بيانات المستخدم",
+                "description": "تعديل البيانات الأساسية أو الدور أو كلمة المرور للمستخدم المحدد.",
+                "operationId": "5bcda8371b3cb9f863a47620e636be9b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف المستخدم",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث بيانات المستخدم بنجاح"
+                    },
+                    "404": {
+                        "description": "المستخدم غير موجود"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "حذف مستخدم (Soft Delete)",
+                "description": "نقل المستخدم إلى سلة المحذوفات وإبطال كافة جلساته المفتوحة دون حذفه نهائياً.",
+                "operationId": "0446b3779430bbd9ca0f106d9fd0a2ed",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف المستخدم",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المستخدم بنجاح"
+                    },
+                    "404": {
+                        "description": "المستخدم غير موجود"
+                    }
+                }
+            }
+        },
+        "/api/v1/users/trashed": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "سلة محذوفات المستخدمين",
+                "description": "استرجاع قائمة المستخدمين المحذوفين مؤقتاً في النظام.",
+                "operationId": "783fddc04930d51f16933940f1ef0ccf",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع المحذوفات بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "استعادة مستخدم محذوف",
+                "description": "إعادة تفعيل واسترجاع حساب المستخدم من سلة المحذوفات.",
+                "operationId": "afbe86f998587aa8860476bdca8e260a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف المستخدم",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تمت استعادة المستخدم بنجاح"
+                    },
+                    "404": {
+                        "description": "المستخدم غير موجود في المحذوفات"
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "حذف نهائي لمستخدم (Force Delete)",
+                "description": "حذف حساب المستخدم وصورته نهائياً وبلا رجعة من قاعدة البيانات.",
+                "operationId": "159bff6a2d2fc5dfd9f3351cacf358a5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف المستخدم",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المستخدم نهائياً"
+                    },
+                    "404": {
+                        "description": "المستخدم غير موجود"
+                    }
+                }
+            }
+        },
+        "/api/v1/users/batch-delete": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "حذف مجمع للمستخدمين (Batch Delete)",
+                "description": "حذف مؤقت لمجموعة من المستخدمين عبر إرسال مصفوفة من المعرفات (ids).",
+                "operationId": "0dea26c074c86ce76d3a3afc8b40110c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "ids"
+                                ],
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/users/batch-restore": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "استعادة مجمعة للمستخدمين (Batch Restore)",
+                "description": "استعادة مجموعة من المستخدمين المحذوفين مؤقتاً دفعة واحدة.",
+                "operationId": "9e28b259eb496a5e7acb0d2b6338a9c5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "ids"
+                                ],
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/users/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "حذف نهائي مجمع للمستخدمين (Batch Force Delete)",
+                "description": "الحذف النهائي الدائم لمجموعة مستخدمين دفعة واحدة.",
+                "operationId": "8390f84bfb3de854460842f043dbaecb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "ids"
+                                ],
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{id}/permissions": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "مزامنة الصلاحيات المباشرة للمستخدم",
+                "description": "تخصيص صلاحيات استثنائية مباشرة لحساب المستخدم المحدد.",
+                "operationId": "7a7b9f1085224549c2b37429f4ef346b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف المستخدم",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "permissions"
+                                ],
+                                "properties": {
+                                    "permissions": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            5
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تمت مزامنة الصلاحيات بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{id}/profile-picture": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "تحديث الصورة الشخصية للمستخدم",
+                "description": "رفع واستبدال الصورة الشخصية للمستخدم المحدد.",
+                "operationId": "76f22a76527f25315ea9a616901d7dd1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف المستخدم",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "profile_picture"
+                                ],
+                                "properties": {
+                                    "profile_picture": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث الصورة بنجاح"
+                    },
+                    "422": {
+                        "description": "الملف غير صالح"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-packages": {
+            "get": {
+                "tags": [
+                    "Voucher Packages"
+                ],
+                "summary": "عرض قائمة باقات كروت الإنترنت",
+                "description": "عرض قائمة باقات الكروت مع الفلترة والبحث والترقيم.",
+                "operationId": "523d3dbc7f4b9489e6fd6679793624a8",
+                "parameters": [
+                    {
+                        "name": "network_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة الباقات بنجاح"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Voucher Packages"
+                ],
+                "summary": "إنشاء باقة كروت جديدة",
+                "description": "إنشاء باقة كروت جديدة.",
+                "operationId": "6ddcd28d3fdaa0082d0f6330d6ab03b0",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء الباقة بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-packages/{id}": {
+            "get": {
+                "tags": [
+                    "Voucher Packages"
+                ],
+                "summary": "عرض تفاصيل باقة كروت محددة",
+                "description": "عرض تفاصيل باقة كروت محددة.",
+                "operationId": "2e05dd9c390d95cbd88160eef4f627ae",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع بيانات الباقة بنجاح"
+                    },
+                    "404": {
+                        "description": "الباقة غير موجودة"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Voucher Packages"
+                ],
+                "summary": "تحديث بيانات باقة كروت",
+                "description": "تحديث بيانات باقة كروت قائمة.",
+                "operationId": "7bd2675abc8414b0fde065e133abf1c6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث بيانات الباقة بنجاح"
+                    },
+                    "404": {
+                        "description": "الباقة غير موجودة"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Voucher Packages"
+                ],
+                "summary": "حذف باقة كروت (مؤقت)",
+                "description": "الحذف المؤقت لباقة كروت (Soft Delete).",
+                "operationId": "62548f18e85f38728002986e0d248839",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم نقل الباقة لسلة المحذوفات بنجاح"
+                    },
+                    "404": {
+                        "description": "الباقة غير موجودة"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-packages/trashed": {
+            "get": {
+                "tags": [
+                    "Voucher Packages"
+                ],
+                "summary": "عرض سلة محذوفات باقات الكروت",
+                "description": "عرض سلة محذوفات باقات الكروت.",
+                "operationId": "b001bd7d6e4a256275384baa96d1576c",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع المحذوفات بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-packages/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Voucher Packages"
+                ],
+                "summary": "استعادة باقة كروت محذوفة",
+                "description": "استعادة باقة كروت محذوفة مؤقتاً.",
+                "operationId": "9e18846ea25c3d367fd50e94c57f3096",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تمت استعادة الباقة بنجاح"
+                    },
+                    "404": {
+                        "description": "الباقة غير موجودة في المحذوفات"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-packages/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Voucher Packages"
+                ],
+                "summary": "الحذف النهائي لباقة كروت",
+                "description": "الحذف النهائي لباقة كروت من قاعدة البيانات.",
+                "operationId": "e9db3efb74c54cc45f6ea54af9122878",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-packages/batch-delete": {
+            "post": {
+                "tags": [
+                    "Voucher Packages"
+                ],
+                "summary": "حذف مجمع لباقات الكروت",
+                "description": "حذف مجمع لعدة باقات كروت.",
+                "operationId": "9c03a841fd42aaf4def74fd1111506bc",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-packages/batch-restore": {
+            "post": {
+                "tags": [
+                    "Voucher Packages"
+                ],
+                "summary": "استعادة مجمعة لباقات الكروت",
+                "description": "استعادة مجمعة لعدة باقات من سلة المحذوفات.",
+                "operationId": "3fa923453f1687c5d30cfcbcdf560617",
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة المجمعة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-packages/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Voucher Packages"
+                ],
+                "summary": "حذف نهائي مجمع لباقات الكروت",
+                "description": "حذف نهائي مجمع لعدة باقات كروت.",
+                "operationId": "5ec61ed10165d4ed8b5bacff53f22fd5",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-packages/{id}/toggle-status": {
+            "post": {
+                "tags": [
+                    "Voucher Packages"
+                ],
+                "summary": "تبديل حالة تفعيل باقة الكروت",
+                "description": "تبديل حالة تفعيل الباقة.",
+                "operationId": "3a7506bb33fa4620b65ca5ee8cfcb47c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تبديل الحالة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/networks/{id}/voucher-packages": {
+            "get": {
+                "tags": [
+                    "Voucher Packages"
+                ],
+                "summary": "عرض باقات شبكة معينة",
+                "description": "عرض باقات شبكة معينة.",
+                "operationId": "49063e25bdd834665a40afd89ae5c1b0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع باقات الشبكة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-package-discounts": {
+            "get": {
+                "tags": [
+                    "Package Discounts"
+                ],
+                "summary": "عرض قائمة الخصومات المخصصة للباقات",
+                "description": "عرض قائمة الخصومات المخصصة مع الفلترة والترقيم.",
+                "operationId": "549c806d57df402d5759b09dc557d4ef",
+                "parameters": [
+                    {
+                        "name": "network_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "pos_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "package_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة الخصومات بنجاح"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Package Discounts"
+                ],
+                "summary": "تخصيص خصم جديد لنقطة بيع",
+                "description": "إنشاء خصم مخصص جديد لنقطة بيع على باقة معينة.",
+                "operationId": "f9533f55d1779842ca25ff9abe88fc85",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء الخصم بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-package-discounts/{id}": {
+            "get": {
+                "tags": [
+                    "Package Discounts"
+                ],
+                "summary": "عرض تفاصيل خصم محدد",
+                "description": "عرض تفاصيل خصم محدد.",
+                "operationId": "8e09ca45732f2e0649f29c5f8074cd80",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع بيانات الخصم بنجاح"
+                    },
+                    "404": {
+                        "description": "الخصم غير موجود"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Package Discounts"
+                ],
+                "summary": "تحديث بيانات خصم مخصص",
+                "description": "تحديث بيانات خصم مخصص قائم.",
+                "operationId": "f1493b33ac805c9707915245e1940634",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث بيانات الخصم بنجاح"
+                    },
+                    "404": {
+                        "description": "الخصم غير موجود"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Package Discounts"
+                ],
+                "summary": "حذف خصم مخصص (مؤقت)",
+                "description": "الحذف المؤقت لخصم (Soft Delete).",
+                "operationId": "1930d89e0a522434ebb6a7a8aee75dcc",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم نقل الخصم لسلة المحذوفات بنجاح"
+                    },
+                    "404": {
+                        "description": "الخصم غير موجود"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-package-discounts/trashed": {
+            "get": {
+                "tags": [
+                    "Package Discounts"
+                ],
+                "summary": "عرض سلة محذوفات الخصومات",
+                "description": "عرض سلة محذوفات الخصومات المخصصة.",
+                "operationId": "fc8063c42517bf1a8d1926e0e1c207dc",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع المحذوفات بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-package-discounts/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Package Discounts"
+                ],
+                "summary": "استعادة خصم محذوف",
+                "description": "استعادة خصم محذوف مؤقتاً.",
+                "operationId": "1d32eb9451bb03beb297029661b2aab6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تمت استعادة الخصم بنجاح"
+                    },
+                    "404": {
+                        "description": "الخصم غير موجود في المحذوفات"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-package-discounts/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Package Discounts"
+                ],
+                "summary": "الحذف النهائي لخصم مخصص",
+                "description": "الحذف النهائي لخصم من قاعدة البيانات.",
+                "operationId": "d8133344d76ca1048c3f6a37667e18ab",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-package-discounts/batch-delete": {
+            "post": {
+                "tags": [
+                    "Package Discounts"
+                ],
+                "summary": "حذف مجمع للخصومات",
+                "description": "حذف مجمع لعدة خصومات.",
+                "operationId": "3f25970ac3a435eca0b79377cfc9b153",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-package-discounts/batch-restore": {
+            "post": {
+                "tags": [
+                    "Package Discounts"
+                ],
+                "summary": "استعادة مجمعة للخصومات",
+                "description": "استعادة مجمعة لعدة خصومات من سلة المحذوفات.",
+                "operationId": "a0f73f8d097648d58246ac4c7c96d25a",
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة المجمعة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-package-discounts/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Package Discounts"
+                ],
+                "summary": "حذف نهائي مجمع للخصومات",
+                "description": "حذف نهائي مجمع لعدة خصومات.",
+                "operationId": "5f94362cf36ecc171ac7beee54ba68f2",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-package-discounts/{id}/toggle-status": {
+            "post": {
+                "tags": [
+                    "Package Discounts"
+                ],
+                "summary": "تبديل حالة تفعيل الخصم",
+                "description": "تبديل حالة تفعيل الخصم.",
+                "operationId": "7869d3c436d4d3db721f154bf54e9f15",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تبديل الحالة بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/voucher-package-discounts/effective": {
+            "get": {
+                "tags": [
+                    "Package Discounts"
+                ],
+                "summary": "احتساب الخصم الفعلي المطبق لنقطة بيع على باقة",
+                "description": "احتساب الخصم الفعلي المطبق لنقطة بيع على باقة معينة.",
+                "operationId": "5677467082c5e1db9d9d10af7a15ec8a",
+                "parameters": [
+                    {
+                        "name": "network_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "pos_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "package_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم احتساب الخصم الفعلي بنجاح"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "sessionAuth": {
+                "type": "apiKey",
+                "description": "معرف الجلسة النشطة (Session ID) المسجلة في جدول user_sessions",
+                "name": "X-Session-Id",
+                "in": "header"
+            },
+            "deviceAuth": {
+                "type": "apiKey",
+                "description": "معرف الجهاز الفريد (Device UUID) الخاص بجهاز المستخدم",
+                "name": "X-Device-Uuid",
+                "in": "header"
+            },
+            "bypassEncryption": {
+                "type": "apiKey",
+                "description": "رأس مخصص (Header) لتجاوز التشفير أثناء الاختبار والبرمجة",
+                "name": "X-Bypass-Encryption",
+                "in": "header"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "إدارة المصادقة والجلسات وأمان الحسابات والتسجيل وكلمات المرور"
+        },
+        {
+            "name": "Networks",
+            "description": "إدارة مزودي الشبكات، مراجعة واعتماد الطلبات، والعمليات الإدارية"
+        },
+        {
+            "name": "Network POS",
+            "description": "إدارة وتتبع ارتباط نقاط البيع بمزودي الشبكات، تفعيلها والعمليات المجمعة"
+        },
+        {
+            "name": "Network Wallets",
+            "description": "إدارة محافظ مزودي الشبكات، الإيداع والسحب المالي، كشف الحساب ودفتر الأستاذ، والعمليات الإدارية والمجمعة"
+        },
+        {
+            "name": "OTP",
+            "description": "خدمات التحقق الآمن عبر الرمز المؤقت لمرة واحدة (OTP)"
+        },
+        {
+            "name": "POS",
+            "description": "إدارة نقاط البيع، مراجعة واعتماد طلبات الوكلاء، والعمليات الإدارية المجمعة"
+        },
+        {
+            "name": "POS Wallets",
+            "description": "إدارة محافظ نقاط البيع، التغذية والتحويل المالي بين الشبكات ونقاط البيع، كشف الحساب ودفتر الأستاذ، والعمليات المجمعة"
+        },
+        {
+            "name": "Voucher Requests",
+            "description": "إدارة طلبات شراء كروت الإنترنت، اعتماد ورفض الطلبات، التسوية التلقائية، والعمليات المجمعة"
+        },
+        {
+            "name": "Sale Invoices",
+            "description": "إدارة فواتير مبيعات كروت الإنترنت، السداد والتحصيل المالي، والعمليات الإدارية والمجمعة"
+        },
+        {
+            "name": "Security",
+            "description": "إدارة الأمان، الحظر الأمني، الجلسات النشطة، والمفاتيح العامة للتشفير"
+        },
+        {
+            "name": "Users",
+            "description": "إدارة حسابات المستخدمين، الملفات الشخصية، والعمليات الإدارية"
+        },
+        {
+            "name": "Voucher Packages",
+            "description": "إدارة باقات كروت الإنترنت، الأسعار، نسب الخصم الافتراضية، والعمليات الإدارية والمجمعة"
+        },
+        {
+            "name": "Package Discounts",
+            "description": "إدارة وتخصيص نسب الخصم الاستثنائية لنقاط البيع على باقات الكروت والعمليات المجمعة"
+        }
+    ]
+}

@@ -80,7 +80,7 @@ class PosWallet extends Model
         return $query->where('network_id', $networkId)->where('pos_id', $posId);
     }
 
-    // Checkers
+    // Checkers & Accounting
     public function isActive(): bool
     {
         return (bool) $this->status;
@@ -89,6 +89,61 @@ class PosWallet extends Model
     public function hasSufficientBalance(float $amount): bool
     {
         return (float) $this->wallet_balance >= $amount;
+    }
+
+    /**
+     * هل المحفظة مكشوفة برصيد سالب (مدين على الوكيل لصالح الشبكة).
+     */
+    public function isOverdrawn(): bool
+    {
+        return (float) $this->wallet_balance < 0;
+    }
+
+    /**
+     * تحديد المركز المحاسبي لرصيد المحفظة وفق الأصول المحاسبية (مدين / دائن / متزن).
+     *
+     * @return 'DEBIT'|'CREDIT'|'ZERO'
+     */
+    public function getAccountingStatus(): string
+    {
+        $balance = (float) $this->wallet_balance;
+        if ($balance < 0) {
+            return 'DEBIT';
+        }
+
+        return $balance > 0 ? 'CREDIT' : 'ZERO';
+    }
+
+    /**
+     * البيان المحاسبي لحالة المحفظة.
+     */
+    public function getAccountingStatusLabel(): string
+    {
+        return match ($this->getAccountingStatus()) {
+            'DEBIT' => 'مدين (عليه مديونية للشبكة)',
+            'CREDIT' => 'دائن (له رصيد متاح)',
+            'ZERO' => 'متزن (لا يوجد رصيد أو مديونية)',
+        };
+    }
+
+    /**
+     * إجمالي مبلغ المديونية إن كانت المحفظة بالسالب (رصيد مدين).
+     */
+    public function getDebitAmount(): float
+    {
+        $balance = (float) $this->wallet_balance;
+
+        return $balance < 0 ? abs($balance) : 0.0;
+    }
+
+    /**
+     * إجمالي الرصيد الدائن المتاح (رصيد دائن).
+     */
+    public function getCreditAmount(): float
+    {
+        $balance = (float) $this->wallet_balance;
+
+        return $balance > 0 ? $balance : 0.0;
     }
 
     // Operations

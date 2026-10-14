@@ -27,8 +27,8 @@ class ExpenseAttachmentResource extends JsonResource
             'attachment_size' => $this->attachment_size,
             'attachment_mime' => $this->attachment_mime,
             'file_url' => $this->file_url,
-            'created_at' => $this->created_at? Carbon::parse($this->created_at)->toDateTimeString() : null,
-            'updated_at' => $this->updated_at? Carbon::parse($this->updated_at)->toDateTimeString() : null,
+            'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
+            'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
         ];
     }
 }

@@ -9,9 +9,34 @@ enum RequestStatus: string
     case REJECTED = 'REJECTED';
     case CANCELLED = 'CANCELLED';
 
-    public static function value(): array
+    public static function values(): array
     {
         return array_column(self::cases(), 'value');
+    }
+
+    public static function value(): array
+    {
+        return self::values();
+    }
+
+    public function isPending(): bool
+    {
+        return $this === self::PENDING;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this === self::APPROVED;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this === self::REJECTED;
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this === self::CANCELLED;
     }
 
     public function label(): string

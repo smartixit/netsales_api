@@ -139,14 +139,14 @@ class RolePermissionSeeder extends Seeder
 
         foreach ($roleAssignments as $roleKey => $permissionIds) {
             $roleId = $roles[$roleKey] ?? null;
-            if (!$roleId) {
+            if (! $roleId) {
                 continue;
             }
 
             foreach ($permissionIds as $permId) {
                 DB::table('role_permissions')->updateOrInsert(
                     [
-                        'role_id'       => $roleId,
+                        'role_id' => $roleId,
                         'permission_id' => $permId,
                     ],
                     [

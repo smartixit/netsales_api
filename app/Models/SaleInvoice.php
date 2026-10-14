@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentType;
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
@@ -38,6 +39,7 @@ class SaleInvoice extends Model
     protected function casts(): array
     {
         return [
+            'invoice_sale_type' => PaymentType::class,
             'invoice_total_amount' => 'decimal:2',
             'invoice_date' => 'datetime',
         ];

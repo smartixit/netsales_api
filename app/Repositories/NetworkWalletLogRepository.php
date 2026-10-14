@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Enums\WalletOperationType;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
 use App\Models\NetworkWalletLog;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -78,11 +79,11 @@ class NetworkWalletLogRepository extends BaseRepository implements NetworkWallet
     /**
      * إنشاء قيد مالي جديد في دفتر أستاذ محفظة الشبكة.
      */
-    public function createLog(int $walletId, string $operation, float $amount, string $statement, ?int $createdBy = null, ?string $date = null): NetworkWalletLog
+    public function createLog(int $walletId, WalletOperationType|string $operation, float $amount, string $statement, ?int $createdBy = null, ?string $date = null): NetworkWalletLog
     {
         return $this->create([
             'wallet_id' => $walletId,
-            'log_operation' => $operation,
+            'log_operation' => $operation instanceof WalletOperationType ? $operation->value : $operation,
             'log_amount' => $amount,
             'log_statement' => $statement,
             'log_date' => $date ?? now('Asia/Aden'),

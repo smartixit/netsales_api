@@ -16,7 +16,7 @@ class SendSmsNotificationJob implements ShouldQueue
     /**
      * Create a new job instance.
      *
-     * @param int|null $storeId متجر صاحب الرسالة لتطبيق سياسة تفعيل الرسائل الخاصة به.
+     * @param  int|null  $storeId  متجر صاحب الرسالة لتطبيق سياسة تفعيل الرسائل الخاصة به.
      */
     public function __construct(
         public string|array $phoneNumbers,

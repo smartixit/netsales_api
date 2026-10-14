@@ -932,7 +932,7 @@ namespace App\Models{
  * @property int $network_id
  * @property int $pos_id
  * @property string $invoice_uuid
- * @property string $invoice_sale_type
+ * @property \App\Enums\PaymentType $invoice_sale_type
  * @property numeric $invoice_total_amount
  * @property \Illuminate\Support\Carbon $invoice_date
  * @property int $created_by
@@ -1157,7 +1157,7 @@ namespace App\Models{
  * @property int $requested_by
  * @property string $request_uuid
  * @property numeric $request_total_amount
- * @property \App\Enums\PaymentType $request_payment_type
+ * @property \App\Enums\RequestPaymentType $request_payment_type
  * @property int|null $account_id
  * @property string|null $transaction_reference
  * @property string|null $transaction_receipt

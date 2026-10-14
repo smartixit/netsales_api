@@ -12,7 +12,7 @@ trait LoadsCustomValidationMessages
      */
     public function messages(): array
     {
-        $custom = __('validation.custom.' . class_basename($this));
+        $custom = __('validation.custom.'.class_basename($this));
 
         return is_array($custom) ? Arr::dot($custom) : [];
     }

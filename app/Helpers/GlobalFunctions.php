@@ -1,10 +1,9 @@
 <?php
 
 use App\Services\SettingService;
-
 use App\Services\Support\AsymmetricCryptoService;
 
-if (!function_exists('encryptData')) {
+if (! function_exists('encryptData')) {
     /**
      * تشفير البيانات المتبادلة بين الخادم والعميل باستخدام معمارية التشفير اللامتناظرة.
      * يدعم التشفير بمفتاح العميل العام (X-Client-Public-Key) أو التشفير الآمن للخادم.
@@ -19,7 +18,7 @@ if (!function_exists('encryptData')) {
     }
 }
 
-if (!function_exists('decryptData')) {
+if (! function_exists('decryptData')) {
     /**
      * فك تشفير حمولة الطلبات القادمة من العميل باستخدام المفتاح الخاص للخادم حصراً.
      *
@@ -32,13 +31,13 @@ if (!function_exists('decryptData')) {
 
         try {
             return $crypto->decryptFromServer($data);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return false;
         }
     }
 }
 
-if (!function_exists('systemSetting')) {
+if (! function_exists('systemSetting')) {
     /**
      * جلب قيمة إعداد من محرك الإعدادات المؤسسي مع التخزين المؤقت اللحظي.
      */

@@ -16,7 +16,9 @@ use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\PosWalletLogRepositoryInterface;
 use App\Interfaces\PosWalletRepositoryInterface;
 use App\Models\NetworkWallet;
+use App\Models\NetworkWalletLog;
 use App\Models\PosWallet;
+use App\Models\PosWalletLog;
 use Exception;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -145,7 +147,7 @@ class PosWalletService
     /**
      * إيداع رصيد مالي مباشر في محفظة نقطة البيع.
      *
-     * @return array{wallet: PosWallet, log: \App\Models\PosWalletLog}
+     * @return array{wallet: PosWallet, log: PosWalletLog}
      */
     public function deposit(int $walletId, DepositPosWalletRequest $request, int $userId): array
     {
@@ -186,7 +188,7 @@ class PosWalletService
     /**
      * سحب رصيد مالي مباشر من محفظة نقطة البيع.
      *
-     * @return array{wallet: PosWallet, log: \App\Models\PosWalletLog}
+     * @return array{wallet: PosWallet, log: PosWalletLog}
      */
     public function withdraw(int $walletId, WithdrawPosWalletRequest $request, int $userId): array
     {
@@ -234,7 +236,7 @@ class PosWalletService
     /**
      * تحويل رصيد مالي من محفظة الشبكة إلى محفظة نقطة البيع (عملية ذرية مشتركة).
      *
-     * @return array{network_wallet: NetworkWallet, pos_wallet: PosWallet, network_log: \App\Models\NetworkWalletLog, pos_log: \App\Models\PosWalletLog}
+     * @return array{network_wallet: NetworkWallet, pos_wallet: PosWallet, network_log: NetworkWalletLog, pos_log: PosWalletLog}
      */
     public function transferFromNetwork(TransferNetworkToPosWalletRequest $request, int $userId): array
     {
@@ -314,7 +316,7 @@ class PosWalletService
     /**
      * استرجاع أو تحويل رصيد من محفظة نقطة البيع إلى محفظة الشبكة (عملية ذرية مشتركة).
      *
-     * @return array{pos_wallet: PosWallet, network_wallet: NetworkWallet, pos_log: \App\Models\PosWalletLog, network_log: \App\Models\NetworkWalletLog}
+     * @return array{pos_wallet: PosWallet, network_wallet: NetworkWallet, pos_log: PosWalletLog, network_log: NetworkWalletLog}
      */
     public function transferToNetwork(TransferPosToNetworkWalletRequest $request, int $userId): array
     {

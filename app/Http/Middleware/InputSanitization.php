@@ -16,7 +16,7 @@ class InputSanitization
         $input = $request->all();
 
         array_walk_recursive($input, function (&$value, $key) {
-            if (is_string($value) && !in_array($key, ['password', 'password_confirmation', 'payload'])) {
+            if (is_string($value) && ! in_array($key, ['password', 'password_confirmation', 'payload'])) {
                 // Strip HTML tags globally array recursively ensuring payload XSS protection
                 $value = strip_tags($value);
 

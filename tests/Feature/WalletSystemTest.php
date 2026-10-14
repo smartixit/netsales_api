@@ -19,9 +19,13 @@ class WalletSystemTest extends TestCase
     use DatabaseTransactions;
 
     protected User $user;
+
     protected UserSession $session;
+
     protected Network $network;
+
     protected Pos $pos;
+
     protected array $headers;
 
     protected function setUp(): void

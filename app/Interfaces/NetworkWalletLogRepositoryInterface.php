@@ -2,6 +2,7 @@
 
 namespace App\Interfaces;
 
+use App\Enums\WalletOperationType;
 use App\Models\NetworkWalletLog;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -32,5 +33,5 @@ interface NetworkWalletLogRepositoryInterface extends BaseRepositoryInterface
     /**
      * إنشاء قيد مالي جديد في دفتر أستاذ محفظة الشبكة.
      */
-    public function createLog(int $walletId, string $operation, float $amount, string $statement, ?int $createdBy = null, ?string $date = null): NetworkWalletLog;
+    public function createLog(int $walletId, WalletOperationType|string $operation, float $amount, string $statement, ?int $createdBy = null, ?string $date = null): NetworkWalletLog;
 }

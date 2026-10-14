@@ -4,12 +4,16 @@ namespace App\Providers;
 
 use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
-use App\Interfaces\OtpRepositoryInterface;
-use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
 use App\Interfaces\NetworkWalletRepositoryInterface;
+use App\Interfaces\OtpRepositoryInterface;
+use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\PosWalletLogRepositoryInterface;
 use App\Interfaces\PosWalletRepositoryInterface;
+use App\Interfaces\RequestItemRepositoryInterface;
+use App\Interfaces\RequestRepositoryInterface;
+use App\Interfaces\SaleInvoiceItemRepositoryInterface;
+use App\Interfaces\SaleInvoiceRepositoryInterface;
 use App\Interfaces\SecurityBanRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
@@ -24,6 +28,10 @@ use App\Repositories\OtpRepository;
 use App\Repositories\PosRepository;
 use App\Repositories\PosWalletLogRepository;
 use App\Repositories\PosWalletRepository;
+use App\Repositories\RequestItemRepository;
+use App\Repositories\RequestRepository;
+use App\Repositories\SaleInvoiceItemRepository;
+use App\Repositories\SaleInvoiceRepository;
 use App\Repositories\SecurityBanRepository;
 use App\Repositories\UserDeviceRepository;
 use App\Repositories\UserRepository;
@@ -59,6 +67,12 @@ class RepositoryServiceProvider extends ServiceProvider
         NetworkWalletLogRepositoryInterface::class => NetworkWalletLogRepository::class,
         PosWalletRepositoryInterface::class => PosWalletRepository::class,
         PosWalletLogRepositoryInterface::class => PosWalletLogRepository::class,
+
+        // Phase 4: Voucher Requests & Sales Invoicing Engine
+        RequestRepositoryInterface::class => RequestRepository::class,
+        RequestItemRepositoryInterface::class => RequestItemRepository::class,
+        SaleInvoiceRepositoryInterface::class => SaleInvoiceRepository::class,
+        SaleInvoiceItemRepositoryInterface::class => SaleInvoiceItemRepository::class,
     ];
 
     public function register(): void

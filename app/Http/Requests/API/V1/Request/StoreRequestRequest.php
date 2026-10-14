@@ -54,4 +54,34 @@ class StoreRequestRequest extends FormRequest
             ],
         ];
     }
+
+    public function getNetworkId(): int
+    {
+        return (int) $this->input('network_id');
+    }
+
+    public function getPosId(): int
+    {
+        return (int) $this->input('pos_id');
+    }
+
+    public function getRequestNote(): ?string
+    {
+        return $this->input('request_note');
+    }
+
+    public function getStatus(): ?RequestStatus
+    {
+        $status = $this->input('status');
+
+        return $status ? RequestStatus::tryFrom((string) $status) : null;
+    }
+
+    /**
+     * @return array<int, array{package_id: int, item_voucher_count: int}>
+     */
+    public function getItems(): array
+    {
+        return (array) $this->input('items', []);
+    }
 }

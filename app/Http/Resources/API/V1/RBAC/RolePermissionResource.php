@@ -23,8 +23,8 @@ class RolePermissionResource extends JsonResource
             'role_permission_id' => $this->role_permission_id,
             'role_id' => $this->role_id,
             'permission_id' => $this->permission_id,
-            'created_at' => $this->created_at? Carbon::parse($this->created_at)->toDateTimeString() : null,
-            'updated_at' => $this->updated_at? Carbon::parse($this->updated_at)->toDateTimeString() : null,
+            'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
+            'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
 
             // Eager Loaded Relationships
             'role' => $this->whenLoaded('role', fn () => new RoleResource($this->role)),

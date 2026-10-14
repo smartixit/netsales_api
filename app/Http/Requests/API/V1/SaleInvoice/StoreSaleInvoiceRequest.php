@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\API\V1\SaleInvoice;
 
+use App\Enums\PaymentType;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -30,25 +31,25 @@ class StoreSaleInvoiceRequest extends FormRequest
             ],
             'invoice_sale_type' => [
                 'nullable',
-                'string',
-                'max:50',
+                Rule::enum(PaymentType::class),
             ],
             'items' => [
-                'nullable',
+                'required',
                 'array',
+                'min:1',
             ],
             'items.*.package_id' => [
-                'required_with:items',
+                'required',
                 'integer',
                 Rule::exists('voucher_packages', 'package_id')->whereNull('deleted_at'),
             ],
             'items.*.voucher_price' => [
-                'required_with:items',
+                'required',
                 'numeric',
                 'min:0',
             ],
             'items.*.voucher_count' => [
-                'required_with:items',
+                'required',
                 'integer',
                 'min:1',
             ],
@@ -58,5 +59,30 @@ class StoreSaleInvoiceRequest extends FormRequest
                 'between:0,100',
             ],
         ];
+    }
+
+    public function getNetworkId(): int
+    {
+        return (int) $this->input('network_id');
+    }
+
+    public function getPosId(): int
+    {
+        return (int) $this->input('pos_id');
+    }
+
+    public function getSaleType(): PaymentType
+    {
+        $type = $this->input('invoice_sale_type');
+
+        return $type ? PaymentType::tryFrom(strtoupper((string) $type)) ?? PaymentType::CASH : PaymentType::CASH;
+    }
+
+    /**
+     * @return array<int, array{package_id: int, voucher_price: float, voucher_count: int, item_discount?: float}>
+     */
+    public function getItems(): array
+    {
+        return (array) $this->input('items', []);
     }
 }

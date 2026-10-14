@@ -165,7 +165,7 @@ class FileUploadService
         $diskName = $disk ?? $this->defaultDisk;
 
         if ($diskName === 'protected') {
-            return url('/api/v1/files/' . ltrim($filePath, '/'));
+            return url('/api/v1/files/'.ltrim($filePath, '/'));
         }
 
         return Storage::disk($diskName)->url($filePath);

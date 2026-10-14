@@ -31,4 +31,16 @@ class UpdateRequestRequest extends FormRequest
             ],
         ];
     }
+
+    public function getStatus(): ?RequestStatus
+    {
+        $status = $this->input('status');
+
+        return $status ? RequestStatus::tryFrom((string) $status) : null;
+    }
+
+    public function getRequestNote(): ?string
+    {
+        return $this->input('request_note');
+    }
 }

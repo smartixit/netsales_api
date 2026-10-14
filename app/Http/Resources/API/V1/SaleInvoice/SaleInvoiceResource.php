@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\API\V1\SaleInvoice;
 
+use App\Enums\PaymentType;
 use App\Http\Resources\API\V1\Network\NetworkResource;
 use App\Http\Resources\API\V1\Pos\PosResource;
 use App\Http\Resources\API\V1\User\UserResource;
@@ -27,7 +28,11 @@ class SaleInvoiceResource extends JsonResource
             'network_id' => $this->network_id,
             'pos_id' => $this->pos_id,
             'invoice_uuid' => $this->invoice_uuid,
-            'invoice_sale_type' => $this->invoice_sale_type,
+            'invoice_sale_type' => $this->invoice_sale_type instanceof PaymentType ? $this->invoice_sale_type->value : $this->invoice_sale_type,
+            'invoice_sale_type_label' => $this->invoice_sale_type instanceof PaymentType
+                ? $this->invoice_sale_type->label()
+                : (PaymentType::tryFrom((string) $this->invoice_sale_type)?->label()),
+            'is_credit_sale' => $this->invoice_sale_type === PaymentType::CREDIT || (is_string($this->invoice_sale_type) && $this->invoice_sale_type === PaymentType::CREDIT->value),
             'invoice_total_amount' => (float) $this->invoice_total_amount,
             'invoice_date' => $this->invoice_date ? Carbon::parse($this->invoice_date)->toDateTimeString() : null,
             'created_by' => $this->created_by,

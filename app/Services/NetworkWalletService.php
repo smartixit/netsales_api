@@ -11,6 +11,7 @@ use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
 use App\Interfaces\NetworkWalletRepositoryInterface;
 use App\Models\NetworkWallet;
+use App\Models\NetworkWalletLog;
 use Exception;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -133,7 +134,7 @@ class NetworkWalletService
     /**
      * إيداع رصيد مالي في محفظة الشبكة.
      *
-     * @return array{wallet: NetworkWallet, log: \App\Models\NetworkWalletLog}
+     * @return array{wallet: NetworkWallet, log: NetworkWalletLog}
      */
     public function deposit(int $walletId, DepositNetworkWalletRequest $request, int $userId): array
     {
@@ -174,7 +175,7 @@ class NetworkWalletService
     /**
      * سحب رصيد مالي من محفظة الشبكة.
      *
-     * @return array{wallet: NetworkWallet, log: \App\Models\NetworkWalletLog}
+     * @return array{wallet: NetworkWallet, log: NetworkWalletLog}
      */
     public function withdraw(int $walletId, WithdrawNetworkWalletRequest $request, int $userId): array
     {
