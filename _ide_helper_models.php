@@ -43,6 +43,61 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property int $backup_job_id
+ * @property string $job_uuid
+ * @property string $backup_type
+ * @property string $status
+ * @property string|null $stage
+ * @property string|null $file_name
+ * @property int|null $file_size_bytes
+ * @property string|null $archive_sha256
+ * @property string|null $drive_file_id
+ * @property string|null $drive_web_view_link
+ * @property string|null $drive_folder_id
+ * @property array<array-key, mixed>|null $manifest_summary
+ * @property array<array-key, mixed>|null $extra
+ * @property string|null $error_message
+ * @property \Illuminate\Support\Carbon|null $started_at
+ * @property \Illuminate\Support\Carbon|null $finished_at
+ * @property int|null $duration_ms
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read \App\Models\User|null $creator
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereArchiveSha256($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereBackupJobId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereBackupType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereDriveFileId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereDriveFolderId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereDriveWebViewLink($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereDurationMs($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereErrorMessage($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereExtra($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereFileName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereFileSizeBytes($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereFinishedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereJobUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereManifestSummary($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereStage($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereStartedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob withoutTrashed()
+ */
+	class BackupJob extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
  * @property int $account_id
  * @property string $bank_name
  * @property string|null $bank_logo
@@ -59,7 +114,7 @@ namespace App\Models{
  * @property-read int|null $subscription_plan_requests_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount byCurrency(string $currency)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount byType(\App\Enums\BankAccountType $type)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount byType(\App\Enums\BankAccountType|string $type)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount onlyTrashed()
@@ -345,6 +400,7 @@ namespace App\Models{
  * @property-read int|null $requests_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SaleInvoice> $saleInvoices
  * @property-read int|null $sale_invoices_count
+ * @property-read \App\Models\NetworkSmsSetting|null $smsSetting
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubscriptionPlanRequest> $subscriptionRequests
  * @property-read int|null $subscription_requests_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProviderSubscription> $subscriptions
@@ -418,6 +474,72 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property int $id
+ * @property int $network_id
+ * @property bool $is_enabled
+ * @property bool $notify_receipt
+ * @property bool $notify_payment
+ * @property bool $notify_pos_withdraw
+ * @property bool $notify_expense
+ * @property bool $notify_sale_invoice
+ * @property bool $notify_voucher_request
+ * @property bool $notify_low_balance
+ * @property bool $notify_daily_summary
+ * @property bool $notify_monthly_summary
+ * @property bool $notify_subscription_expiry
+ * @property bool $use_custom_gateway
+ * @property string $server_type
+ * @property string $base_url
+ * @property string $auth_type
+ * @property string|null $api_token
+ * @property string|null $refresh_token
+ * @property \Carbon\Carbon|null $token_expires_at
+ * @property string|null $username
+ * @property string|null $password
+ * @property string|null $device_id
+ * @property int $sim_number
+ * @property bool $skip_phone_validation
+ * @property int $device_active_within
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Network|null $network
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereApiToken($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereAuthType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereBaseUrl($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereDeviceActiveWithin($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereDeviceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereIsEnabled($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifyDailySummary($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifyExpense($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifyLowBalance($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifyMonthlySummary($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifyPayment($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifyPosWithdraw($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifyReceipt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifySaleInvoice($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifySubscriptionExpiry($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifyVoucherRequest($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting wherePassword($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereRefreshToken($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereServerType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereSimNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereSkipPhoneValidation($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereTokenExpiresAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereUseCustomGateway($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereUsername($value)
+ */
+	class NetworkSmsSetting extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
  * @property int $wallet_id
  * @property int $network_id
  * @property string $wallet_uuid
@@ -430,6 +552,7 @@ namespace App\Models{
  * @property-read int|null $logs_count
  * @property-read \App\Models\Network|null $network
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet forNetwork(int $networkId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet onlyTrashed()
@@ -688,7 +811,9 @@ namespace App\Models{
  * @property-read \App\Models\Network|null $network
  * @property-read \App\Models\Pos|null $pos
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet forNetwork(int $networkId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet forNetworkAndPos(int $networkId, int $posId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet forPos(int $posId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet onlyTrashed()
@@ -1003,6 +1128,34 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property int $id
+ * @property string $task_type
+ * @property int|null $network_id
+ * @property \Illuminate\Support\Carbon $target_date
+ * @property string $status
+ * @property array<array-key, mixed>|null $extra
+ * @property \Illuminate\Support\Carbon|null $sent_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Network|null $network
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereExtra($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereSentAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereTargetDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereTaskType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereUpdatedAt($value)
+ */
+	class ScheduledTaskRun extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
  * @property int $ban_id
  * @property int|null $user_id
  * @property int|null $device_id
@@ -1221,6 +1374,8 @@ namespace App\Models{
  * @property-read int|null $messages_count
  * @property-read \App\Models\Network|null $network
  * @property-read \App\Models\Pos|null $pos
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SupportTicket forNetwork(int $networkId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SupportTicket forPos(int $posId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SupportTicket newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SupportTicket newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SupportTicket onlyTrashed()
@@ -1294,7 +1449,6 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SystemLog forUser(int $userId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SystemLog newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SystemLog newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SystemLog onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SystemLog query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SystemLog recent(int $limit = 50)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SystemLog whereAction($value)
@@ -1308,8 +1462,6 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SystemLog whereOldValues($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SystemLog whereUserAgent($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SystemLog whereUserId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SystemLog withTrashed(bool $withTrashed = true)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SystemLog withoutTrashed()
  */
 	class SystemLog extends \Eloquent {}
 }
@@ -1511,9 +1663,11 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property int $session_id
+ * @property string|null $session_token
  * @property int $user_id
  * @property string|null $ip_address
  * @property string|null $user_agent
+ * @property string|null $device_uuid
  * @property \Illuminate\Support\Carbon $logged_at
  * @property \Illuminate\Support\Carbon $last_activity_at
  * @property \Illuminate\Support\Carbon $expires_at
@@ -1527,12 +1681,14 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession whereDeviceUuid($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession whereExpiresAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession whereIpAddress($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession whereLastActivityAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession whereLoggedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession whereRevokedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession whereSessionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession whereSessionToken($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession whereUserAgent($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSession whereUserId($value)

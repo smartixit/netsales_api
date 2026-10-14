@@ -67,6 +67,7 @@ class GovernorateController extends BaseController
         summary: 'المحافظات مع أعداد المديريات والشبكات',
 
         tags: ['Governorates'],
+        
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع إحصائيات المحافظات بنجاح'),
         ]

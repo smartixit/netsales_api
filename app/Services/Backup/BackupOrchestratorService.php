@@ -230,8 +230,12 @@ class BackupOrchestratorService
         }
 
         if ($e instanceof GoogleServiceException) {
-            $decoded = json_decode((string) $e->getBody(), true);
-            $reason = $decoded['error']['message'] ?? 'خطأ في خدمة جوجل درايف';
+            $errors = $e->getErrors();
+            $reason = null;
+            if (is_array($errors) && ! empty($errors)) {
+                $reason = $errors[0]['message'] ?? null;
+            }
+            $reason = $reason ?: $e->getMessage();
 
             return 'خطأ من جوجل درايف: '.$reason;
         }

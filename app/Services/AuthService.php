@@ -218,7 +218,8 @@ class AuthService
                 userId: $user->user_id,
                 ipAddress: request()->ip(),
                 userAgent: request()->userAgent(),
-                durationHours: 24
+                durationHours: 24,
+                deviceUuid: (string) ($request->device_uuid ?? $existingDevice->device_uuid)
             );
 
             // تصفير عداد المحاولات وتحديث تاريخ الدخول
@@ -380,7 +381,8 @@ class AuthService
                 userId: $user->user_id,
                 ipAddress: request()->ip(),
                 userAgent: request()->userAgent(),
-                durationHours: 24
+                durationHours: 24,
+                deviceUuid: (string) $incomingDeviceId
             );
 
             // تصفير المحاولات وتحديث تاريخ الدخول

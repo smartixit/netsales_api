@@ -16,6 +16,17 @@ return [
                  * Route for accessing api documentation interface
                  */
                 'api' => 'api/documentation',
+
+                'middleware' => [
+                    'api' => [
+                        \App\Http\Middleware\EnsureSwaggerAllowed::class,
+                    ],
+                    'asset' => [],
+                    'docs' => [
+                        \App\Http\Middleware\EnsureSwaggerAllowed::class,
+                    ],
+                    'oauth2_callback' => [],
+                ],
             ],
             'paths' => [
                 /*
@@ -68,9 +79,13 @@ return [
              * Middleware allows to prevent unexpected access to API documentation
              */
             'middleware' => [
-                'api' => [],
+                'api' => [
+                    \App\Http\Middleware\EnsureSwaggerAllowed::class,
+                ],
                 'asset' => [],
-                'docs' => [],
+                'docs' => [
+                    \App\Http\Middleware\EnsureSwaggerAllowed::class,
+                ],
                 'oauth2_callback' => [],
             ],
 

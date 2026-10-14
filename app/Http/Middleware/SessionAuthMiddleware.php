@@ -15,6 +15,7 @@ use App\Traits\ApiResponseTrait;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * وسيط المصادقة المؤسسية عبر الجلسات النشطة (Enterprise Session Authentication Middleware).
@@ -43,23 +44,45 @@ class SessionAuthMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        // 1. استخراج معرف الجلسة حصرياً من الترويسة X-Session-Id
-        $sessionId = $request->header('X-Session-Id') ?? $request->header('session-id');
+        // 1. حماية ضد هجمات القوة الغاشمة وتخمين الجلسات (Session Brute Force Rate Limiting)
+        $rateLimitKey = 'session_fail:'.$request->ip();
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 20)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+
+            return $this->errorResponse(
+                "تم حظر المحاولات مؤقتاً لتكرار محاولات جلسات غير صالحة. يرجى المحاولة بعد {$seconds} ثانية.",
+                [],
+                429
+            );
+        }
+
+        // 2. استخراج معرف أو رمز الجلسة حصرياً من الترويسة X-Session-Id
+        $sessionId = $request->header('X-Session-Id')
+            ?? $request->header('session-id')
+            ?? $request->bearerToken()
+            ?? $request->input('session_id')
+            ?? $request->query('session_id');
 
         if (! $sessionId) {
             return $this->errorResponse('غير مصادق عليه. رمز الجلسة مفقود.', [], 401);
         }
 
-        // 2. التحقق من صلاحية وسريان الجلسة في جدول user_sessions
-        $session = $this->sessionValidator->validateSession($sessionId);
+        $deviceUuid = $request->header('X-Device-Uuid') ?? $request->header('X-Device-Id');
+
+        // 3. التحقق من صلاحية وسريان الجلسة ومطابقة الجهاز في جدول user_sessions
+        $session = $this->sessionValidator->validateSession($sessionId, $deviceUuid);
 
         if (! $session) {
+            RateLimiter::hit($rateLimitKey, 60);
+
             return $this->errorResponse(
                 'انتهت صلاحية الجلسة أو أنها غير صالحة.',
                 ['session' => ['الجلسة غير صالحة أو تم إبطالها أو انتهت مدتها.']],
                 401
             );
         }
+
+        RateLimiter::clear($rateLimitKey);
 
         // 3. جلب المستخدم والتحقق من حالته
         $user = User::find($session->user_id);

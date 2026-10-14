@@ -99,7 +99,7 @@ class SystemSettingSystemTest extends TestCase
         SystemSetting::create([
             'setting_category' => SettingCategory::FINANCIAL->value,
             'setting_key' => 'test_tax_rate',
-            'setting_value_type' => ValueType::FLOAT->value,
+            'setting_value_type' => ValueType::DECIMAL->value,
             'setting_value' => '15.5',
             'setting_desc' => 'نسبة الضريبة المضافة',
         ]);

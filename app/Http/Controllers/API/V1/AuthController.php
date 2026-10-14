@@ -209,7 +209,7 @@ class AuthController extends BaseController
             $session = $result['session'];
 
             return $this->successResponse('تم تسجيل الدخول بنجاح.', [
-                'session_id' => (string) $session->session_id,
+                'session_id' => (string) ($session->session_token ?: $session->session_id),
                 'user' => new UserResource($user),
                 'permissions' => $result['permissions'],
             ]);
@@ -255,7 +255,7 @@ class AuthController extends BaseController
             $result = $this->authService->verifyTwoFactor($request);
 
             return $this->successResponse('تم التحقق بنجاح وإنشاء جلسة الدخول.', [
-                'session_id' => (string) $result['session']->session_id,
+                'session_id' => (string) ($result['session']->session_token ?: $result['session']->session_id),
                 'user' => new UserResource($result['user']),
                 'permissions' => $result['permissions'],
             ]);

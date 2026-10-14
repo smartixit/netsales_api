@@ -36,9 +36,11 @@ class SessionValidatorService
             ->first();
 
         if ($session) {
-            // التحقق من مطابقة الجهاز المسجل في الجلسة
-            if (! empty($session->device_uuid) && ! empty($deviceUuid) && $session->device_uuid !== $deviceUuid) {
-                return null;
+            // إذا كانت الجلسة مقترنة بجهاز محدد، فيلزم تقديم نفس معرف الجهاز ومطابقته بدقة
+            if (! empty($session->device_uuid)) {
+                if (empty($deviceUuid) || $session->device_uuid !== $deviceUuid) {
+                    return null;
+                }
             }
 
             // تمديد وقت آخر نشاط بصمت
