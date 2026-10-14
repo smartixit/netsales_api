@@ -6,6 +6,10 @@ use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\OtpRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
+use App\Interfaces\NetworkWalletLogRepositoryInterface;
+use App\Interfaces\NetworkWalletRepositoryInterface;
+use App\Interfaces\PosWalletLogRepositoryInterface;
+use App\Interfaces\PosWalletRepositoryInterface;
 use App\Interfaces\SecurityBanRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
@@ -14,8 +18,12 @@ use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Repositories\NetworkPosRepository;
 use App\Repositories\NetworkRepository;
+use App\Repositories\NetworkWalletLogRepository;
+use App\Repositories\NetworkWalletRepository;
 use App\Repositories\OtpRepository;
 use App\Repositories\PosRepository;
+use App\Repositories\PosWalletLogRepository;
+use App\Repositories\PosWalletRepository;
 use App\Repositories\SecurityBanRepository;
 use App\Repositories\UserDeviceRepository;
 use App\Repositories\UserRepository;
@@ -45,6 +53,12 @@ class RepositoryServiceProvider extends ServiceProvider
         // Phase 2: Packages & Discounts
         VoucherPackageRepositoryInterface::class => VoucherPackageRepository::class,
         VoucherPackageDiscountRepositoryInterface::class => VoucherPackageDiscountRepository::class,
+
+        // Phase 3: Digital Wallets & Financial Ledger System
+        NetworkWalletRepositoryInterface::class => NetworkWalletRepository::class,
+        NetworkWalletLogRepositoryInterface::class => NetworkWalletLogRepository::class,
+        PosWalletRepositoryInterface::class => PosWalletRepository::class,
+        PosWalletLogRepositoryInterface::class => PosWalletLogRepository::class,
     ];
 
     public function register(): void

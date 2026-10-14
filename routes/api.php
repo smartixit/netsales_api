@@ -4,8 +4,10 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\FileController;
 use App\Http\Controllers\Api\V1\NetworkController;
 use App\Http\Controllers\Api\V1\NetworkPosController;
+use App\Http\Controllers\Api\V1\NetworkWalletController;
 use App\Http\Controllers\Api\V1\OtpController;
 use App\Http\Controllers\Api\V1\PosController;
+use App\Http\Controllers\Api\V1\PosWalletController;
 use App\Http\Controllers\Api\V1\SecurityController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VoucherPackageController;
@@ -229,6 +231,56 @@ Route::prefix('v1')->group(function () {
             Route::delete('voucher-package-discounts/{id}/force', [VoucherPackageDiscountController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.voucher_package_discounts.force_delete');
             Route::post('voucher-package-discounts/{id}/toggle-status', [VoucherPackageDiscountController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.voucher_package_discounts.toggle_status');
             Route::apiResource('voucher-package-discounts', VoucherPackageDiscountController::class)->parameters(['voucher-package-discounts' => 'id'])->except(['index', 'show']);
+        });
+
+        // ==========================================
+        // 8. محافظ مزودي الشبكات ودفتر الأستاذ (Network Wallets & Ledger)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('network-wallets', [NetworkWalletController::class, 'index'])->name('api.v1.network_wallets.index');
+            Route::get('network-wallets/trashed', [NetworkWalletController::class, 'trashed'])->name('api.v1.network_wallets.trashed');
+            Route::get('network-wallets/{id}', [NetworkWalletController::class, 'show'])->whereNumber('id')->name('api.v1.network_wallets.show');
+            Route::get('network-wallets/{id}/logs', [NetworkWalletController::class, 'logs'])->whereNumber('id')->name('api.v1.network_wallets.logs');
+            Route::get('network-wallets/network/{networkId}', [NetworkWalletController::class, 'showByNetwork'])->whereNumber('networkId')->name('api.v1.network_wallets.show_by_network');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('network-wallets', [NetworkWalletController::class, 'store'])->name('api.v1.network_wallets.store');
+            Route::put('network-wallets/{id}', [NetworkWalletController::class, 'update'])->whereNumber('id')->name('api.v1.network_wallets.update');
+            Route::delete('network-wallets/{id}', [NetworkWalletController::class, 'destroy'])->whereNumber('id')->name('api.v1.network_wallets.destroy');
+            Route::post('network-wallets/{id}/deposit', [NetworkWalletController::class, 'deposit'])->whereNumber('id')->name('api.v1.network_wallets.deposit');
+            Route::post('network-wallets/{id}/withdraw', [NetworkWalletController::class, 'withdraw'])->whereNumber('id')->name('api.v1.network_wallets.withdraw');
+            Route::post('network-wallets/{id}/restore', [NetworkWalletController::class, 'restore'])->whereNumber('id')->name('api.v1.network_wallets.restore');
+            Route::delete('network-wallets/{id}/force', [NetworkWalletController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.network_wallets.force_delete');
+            Route::post('network-wallets/batch-delete', [NetworkWalletController::class, 'batchDelete'])->name('api.v1.network_wallets.batch_delete');
+            Route::post('network-wallets/batch-restore', [NetworkWalletController::class, 'batchRestore'])->name('api.v1.network_wallets.batch_restore');
+            Route::post('network-wallets/batch-force-delete', [NetworkWalletController::class, 'batchForceDelete'])->name('api.v1.network_wallets.batch_force_delete');
+        });
+
+        // ==========================================
+        // 9. محافظ نقاط البيع والتحويلات المالية (POS Wallets & Transfers)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('pos-wallets', [PosWalletController::class, 'index'])->name('api.v1.pos_wallets.index');
+            Route::get('pos-wallets/trashed', [PosWalletController::class, 'trashed'])->name('api.v1.pos_wallets.trashed');
+            Route::get('pos-wallets/{id}', [PosWalletController::class, 'show'])->whereNumber('id')->name('api.v1.pos_wallets.show');
+            Route::get('pos-wallets/{id}/logs', [PosWalletController::class, 'logs'])->whereNumber('id')->name('api.v1.pos_wallets.logs');
+            Route::get('pos-wallets/network/{networkId}/pos/{posId}', [PosWalletController::class, 'showByNetworkAndPos'])->whereNumber('networkId')->whereNumber('posId')->name('api.v1.pos_wallets.show_by_network_pos');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('pos-wallets', [PosWalletController::class, 'store'])->name('api.v1.pos_wallets.store');
+            Route::put('pos-wallets/{id}', [PosWalletController::class, 'update'])->whereNumber('id')->name('api.v1.pos_wallets.update');
+            Route::delete('pos-wallets/{id}', [PosWalletController::class, 'destroy'])->whereNumber('id')->name('api.v1.pos_wallets.destroy');
+            Route::post('pos-wallets/{id}/deposit', [PosWalletController::class, 'deposit'])->whereNumber('id')->name('api.v1.pos_wallets.deposit');
+            Route::post('pos-wallets/{id}/withdraw', [PosWalletController::class, 'withdraw'])->whereNumber('id')->name('api.v1.pos_wallets.withdraw');
+            Route::post('pos-wallets/transfer-from-network', [PosWalletController::class, 'transferFromNetwork'])->name('api.v1.pos_wallets.transfer_from_network');
+            Route::post('pos-wallets/transfer-to-network', [PosWalletController::class, 'transferToNetwork'])->name('api.v1.pos_wallets.transfer_to_network');
+            Route::post('pos-wallets/{id}/restore', [PosWalletController::class, 'restore'])->whereNumber('id')->name('api.v1.pos_wallets.restore');
+            Route::delete('pos-wallets/{id}/force', [PosWalletController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.pos_wallets.force_delete');
+            Route::post('pos-wallets/batch-delete', [PosWalletController::class, 'batchDelete'])->name('api.v1.pos_wallets.batch_delete');
+            Route::post('pos-wallets/batch-restore', [PosWalletController::class, 'batchRestore'])->name('api.v1.pos_wallets.batch_restore');
+            Route::post('pos-wallets/batch-force-delete', [PosWalletController::class, 'batchForceDelete'])->name('api.v1.pos_wallets.batch_force_delete');
         });
 
     });

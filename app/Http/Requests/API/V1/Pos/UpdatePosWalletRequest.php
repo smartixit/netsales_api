@@ -23,4 +23,9 @@ class UpdatePosWalletRequest extends FormRequest
             ],
         ];
     }
+
+    public function getStatus(): bool
+    {
+        return (bool) $this->boolean('status');
+    }
 }

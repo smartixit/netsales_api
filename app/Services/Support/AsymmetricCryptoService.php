@@ -23,7 +23,7 @@ class AsymmetricCryptoService
 {
     public const KEY_ID = 'netsales-key-2026-v1';
 
-    public const TOKEN_PREFIX = 'NTJ_';
+    public const TOKEN_PREFIX = 'NTS_';
 
     protected string $keysPath;
 

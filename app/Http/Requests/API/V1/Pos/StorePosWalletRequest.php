@@ -42,4 +42,24 @@ class StorePosWalletRequest extends FormRequest
             ],
         ];
     }
+
+    public function getNetworkId(): int
+    {
+        return (int) $this->input('network_id');
+    }
+
+    public function getPosId(): int
+    {
+        return (int) $this->input('pos_id');
+    }
+
+    public function getWalletBalance(): float
+    {
+        return (float) $this->input('wallet_balance', 0.00);
+    }
+
+    public function getStatus(): bool
+    {
+        return $this->has('status') ? (bool) $this->boolean('status') : true;
+    }
 }

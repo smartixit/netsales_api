@@ -44,4 +44,29 @@ class StoreNetworkWalletLogRequest extends FormRequest
             ],
         ];
     }
+
+    public function getWalletId(): int
+    {
+        return (int) $this->input('wallet_id');
+    }
+
+    public function getLogOperation(): string
+    {
+        return (string) $this->input('log_operation');
+    }
+
+    public function getLogAmount(): float
+    {
+        return (float) $this->input('log_amount');
+    }
+
+    public function getLogStatement(): string
+    {
+        return (string) $this->input('log_statement');
+    }
+
+    public function getLogDate(): ?string
+    {
+        return $this->input('log_date');
+    }
 }
