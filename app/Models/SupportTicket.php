@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -70,9 +71,20 @@ class SupportTicket extends Model
         return $this->hasOne(SupportTicketMessage::class, 'ticket_id', 'ticket_id')->latestOfMany('sent_at');
     }
 
+    // Scopes
+    public function scopeForNetwork(Builder $query, int $networkId): Builder
+    {
+        return $query->where('network_id', $networkId);
+    }
+
+    public function scopeForPos(Builder $query, int $posId): Builder
+    {
+        return $query->where('pos_id', $posId);
+    }
+
     // Helpers
     public function unreadCount(): int
     {
-        return $this->messages()->where('is_read', false)->count();
+        return $this->messages()->unread()->count();
     }
 }

@@ -38,18 +38,15 @@ class SupportTicketMessageRepository extends BaseRepository implements SupportTi
     {
         $unreadMessages = $this->model->newQuery()
             ->where('ticket_id', $ticketId)
-            ->where('is_read', false)
+            ->unread()
             ->where('sent_by', '!=', $readerUserId)
             ->lockForUpdate()
             ->get();
 
         $count = 0;
-        $now = now('Asia/Aden');
 
         foreach ($unreadMessages as $message) {
-            $message->is_read = true;
-            $message->read_at = $now;
-            $message->save();
+            $message->markAsRead();
 
             $this->recordModification($message, ['is_read' => false]);
             $count++;
@@ -65,7 +62,7 @@ class SupportTicketMessageRepository extends BaseRepository implements SupportTi
     {
         return $this->model->newQuery()
             ->where('ticket_id', $ticketId)
-            ->where('is_read', false)
+            ->unread()
             ->count();
     }
 }

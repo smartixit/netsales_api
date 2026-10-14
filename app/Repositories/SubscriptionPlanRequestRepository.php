@@ -31,7 +31,7 @@ class SubscriptionPlanRequestRepository extends BaseRepository implements Subscr
         $query = $this->model->newQuery()->with($relations);
 
         if (! empty($filters['network_id'])) {
-            $query->where('network_id', (int) $filters['network_id']);
+            $query->forNetwork((int) $filters['network_id']);
         }
 
         if (! empty($filters['plan_id'])) {
@@ -94,8 +94,8 @@ class SubscriptionPlanRequestRepository extends BaseRepository implements Subscr
     public function hasPendingRequest(int $networkId): bool
     {
         return $this->model->newQuery()
-            ->where('network_id', $networkId)
-            ->where('status', RequestStatus::PENDING)
+            ->forNetwork($networkId)
+            ->pending()
             ->exists();
     }
 

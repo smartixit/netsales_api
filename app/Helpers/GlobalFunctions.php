@@ -6,8 +6,10 @@ use App\Support\AmountFormatter;
 
 if (! function_exists('encryptData')) {
     /**
-     * تشفير البيانات المتبادلة بين الخادم والعميل باستخدام معمارية التشفير اللامتناظرة.
-     * يدعم التشفير بمفتاح العميل العام (X-Client-Public-Key) أو التشفير الآمن للخادم.
+     * تشفير البيانات المتبادلة بين الخادم والعميل باستخدام معمارية التشفير اللامتناظرة الصارمة.
+     * يشترط تزويد المفتاح العام للعميل عبر المعامل أو الترويسة [X-Client-Public-Key].
+     *
+     * @throws InvalidArgumentException
      */
     function encryptData(string $data, ?string $clientPublicKey = null): string
     {

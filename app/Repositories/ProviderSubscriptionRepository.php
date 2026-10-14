@@ -32,7 +32,7 @@ class ProviderSubscriptionRepository extends BaseRepository implements ProviderS
         $query = $this->model->newQuery()->with($relations);
 
         if (! empty($filters['network_id'])) {
-            $query->where('network_id', (int) $filters['network_id']);
+            $query->forNetwork((int) $filters['network_id']);
         }
 
         if (! empty($filters['plan_id'])) {
@@ -44,11 +44,7 @@ class ProviderSubscriptionRepository extends BaseRepository implements ProviderS
         }
 
         if (! empty($filters['active_only'])) {
-            $query->where('status', ProviderSubscriptionStatus::ACTIVE)
-                ->where(function ($q) {
-                    $q->whereNull('subscription_end_date')
-                        ->orWhere('subscription_end_date', '>', now('Asia/Aden'));
-                });
+            $query->active();
         }
 
         $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
@@ -67,12 +63,8 @@ class ProviderSubscriptionRepository extends BaseRepository implements ProviderS
     {
         return $this->model->newQuery()
             ->with(['plan.planFeatures.feature', 'consumptions.planFeature.feature'])
-            ->where('network_id', $networkId)
-            ->where('status', ProviderSubscriptionStatus::ACTIVE)
-            ->where(function ($q) {
-                $q->whereNull('subscription_end_date')
-                    ->orWhere('subscription_end_date', '>', now('Asia/Aden'));
-            })
+            ->forNetwork($networkId)
+            ->active()
             ->orderBy('subscription_id', 'desc')
             ->first();
     }
@@ -83,7 +75,7 @@ class ProviderSubscriptionRepository extends BaseRepository implements ProviderS
     public function expireExistingForNetwork(int $networkId): int
     {
         $existing = $this->model->newQuery()
-            ->where('network_id', $networkId)
+            ->forNetwork($networkId)
             ->where('status', ProviderSubscriptionStatus::ACTIVE)
             ->lockForUpdate()
             ->get();
@@ -134,7 +126,7 @@ class ProviderSubscriptionRepository extends BaseRepository implements ProviderS
     {
         return $this->model->newQuery()
             ->with(['plan.planFeatures.feature', 'consumptions.planFeature.feature'])
-            ->where('network_id', $networkId)
+            ->forNetwork($networkId)
             ->where('status', ProviderSubscriptionStatus::QUEUED)
             ->orderBy('subscription_id', 'asc')
             ->first();

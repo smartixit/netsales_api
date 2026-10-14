@@ -47,7 +47,7 @@ class SessionAuthMiddleware
         $sessionId = $request->header('X-Session-Id') ?? $request->header('session-id');
 
         if (! $sessionId) {
-            return $this->errorResponse('غير مصادق عليه. رمز الجلسة (X-Session-Id) مفقود.', [], 401);
+            return $this->errorResponse('غير مصادق عليه. رمز الجلسة مفقود.', [], 401);
         }
 
         // 2. التحقق من صلاحية وسريان الجلسة في جدول user_sessions

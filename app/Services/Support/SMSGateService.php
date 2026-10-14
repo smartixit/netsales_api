@@ -97,7 +97,7 @@ class SMSGateService
         if (app()->runningUnitTests()) {
             Log::info('SMSGate [Mocked]: Message dispatched to recipient(s).', [
                 'type' => $messageType,
-                'center_id' => $recipientId,
+                'recipient_id' => $recipientId,
             ]);
 
             return true;
@@ -162,7 +162,7 @@ class SMSGateService
                 Log::info('SMSGate SMS Dispatch Successful', [
                     'recipients_count' => count($formattedRecipients),
                     'message_type' => $messageType,
-                    'center_id' => $recipientId,
+                    'recipient_id' => $recipientId,
                 ]);
 
                 return true;

@@ -28,11 +28,18 @@ class NetworkWalletLogRepository extends BaseRepository implements NetworkWallet
         $query = $this->model->newQuery()->with($relations);
 
         if (! empty($filters['wallet_id'])) {
-            $query->where('wallet_id', (int) $filters['wallet_id']);
+            $query->forWallet((int) $filters['wallet_id']);
         }
 
         if (! empty($filters['log_operation'])) {
-            $query->where('log_operation', $filters['log_operation']);
+            $op = $filters['log_operation'] instanceof WalletOperationType ? $filters['log_operation'] : WalletOperationType::tryFrom($filters['log_operation']);
+            if ($op === WalletOperationType::DEPOSIT) {
+                $query->deposits();
+            } elseif ($op === WalletOperationType::WITHDRAW) {
+                $query->withdrawals();
+            } else {
+                $query->where('log_operation', $filters['log_operation']);
+            }
         }
 
         if (! empty($filters['created_by'])) {

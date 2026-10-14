@@ -40,11 +40,11 @@ class NetworkRepository extends BaseRepository implements NetworkRepositoryInter
         }
 
         if (! empty($filters['governorate_id'])) {
-            $query->where('governorate_id', (int) $filters['governorate_id']);
+            $query->inGovernorate((int) $filters['governorate_id']);
         }
 
         if (! empty($filters['directorate_id'])) {
-            $query->where('directorate_id', (int) $filters['directorate_id']);
+            $query->inDirectorate((int) $filters['directorate_id']);
         }
 
         $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);

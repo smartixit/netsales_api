@@ -27,7 +27,8 @@ class SubscriptionPlanRepository extends BaseRepository implements SubscriptionP
         $query = $this->model->newQuery()->with($relations);
 
         if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
-            $query->where('status', filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN));
+            $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
+            $status ? $query->active() : $query->where('status', false);
         }
 
         if (! empty($filters['search'])) {
@@ -87,7 +88,7 @@ class SubscriptionPlanRepository extends BaseRepository implements SubscriptionP
     {
         return $this->model->newQuery()
             ->with($relations)
-            ->where('status', true)
+            ->active()
             ->orderBy('plan_price', 'asc')
             ->get();
     }

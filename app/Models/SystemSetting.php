@@ -76,7 +76,7 @@ class SystemSetting extends Model
     // Static Helpers
     public static function getValue(string $key, mixed $default = null): mixed
     {
-        $setting = static::query()->where('setting_key', $key)->first();
+        $setting = static::query()->byKey($key)->first();
 
         return $setting ? $setting->typed_value : $default;
     }

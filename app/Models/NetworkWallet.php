@@ -69,6 +69,11 @@ class NetworkWallet extends Model
         return $query->where('status', true);
     }
 
+    public function scopeForNetwork(Builder $query, int $networkId): Builder
+    {
+        return $query->where('network_id', $networkId);
+    }
+
     // Checkers
     public function isActive(): bool
     {

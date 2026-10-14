@@ -26,16 +26,21 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
     {
         $query = $this->model->newQuery()->with($relations);
 
-        if (! empty($filters['network_id'])) {
-            $query->where('network_id', (int) $filters['network_id']);
-        }
+        if (! empty($filters['network_id']) && ! empty($filters['pos_id'])) {
+            $query->forNetworkAndPos((int) $filters['network_id'], (int) $filters['pos_id']);
+        } else {
+            if (! empty($filters['network_id'])) {
+                $query->forNetwork((int) $filters['network_id']);
+            }
 
-        if (! empty($filters['pos_id'])) {
-            $query->where('pos_id', (int) $filters['pos_id']);
+            if (! empty($filters['pos_id'])) {
+                $query->forPos((int) $filters['pos_id']);
+            }
         }
 
         if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
-            $query->where('status', filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN));
+            $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
+            $status ? $query->active() : $query->where('status', false);
         }
 
         if (isset($filters['min_balance']) && is_numeric($filters['min_balance'])) {
@@ -76,12 +81,16 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
     {
         $query = $this->model->newQuery()->onlyTrashed()->with($relations);
 
-        if (! empty($filters['network_id'])) {
-            $query->where('network_id', (int) $filters['network_id']);
-        }
+        if (! empty($filters['network_id']) && ! empty($filters['pos_id'])) {
+            $query->forNetworkAndPos((int) $filters['network_id'], (int) $filters['pos_id']);
+        } else {
+            if (! empty($filters['network_id'])) {
+                $query->forNetwork((int) $filters['network_id']);
+            }
 
-        if (! empty($filters['pos_id'])) {
-            $query->where('pos_id', (int) $filters['pos_id']);
+            if (! empty($filters['pos_id'])) {
+                $query->forPos((int) $filters['pos_id']);
+            }
         }
 
         if (! empty($filters['search'])) {
@@ -112,7 +121,7 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
      */
     public function findByNetworkAndPos(int $networkId, int $posId, bool $lock = false): ?PosWallet
     {
-        $query = $this->model->newQuery()->where('network_id', $networkId)->where('pos_id', $posId);
+        $query = $this->model->newQuery()->forNetworkAndPos($networkId, $posId);
 
         if ($lock) {
             $query->lockForUpdate();

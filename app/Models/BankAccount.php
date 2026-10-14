@@ -57,9 +57,11 @@ class BankAccount extends Model
         return $query->where('status', true);
     }
 
-    public function scopeByType(Builder $query, BankAccountType $type): Builder
+    public function scopeByType(Builder $query, BankAccountType|string $type): Builder
     {
-        return $query->where('account_type', $type);
+        $val = $type instanceof BankAccountType ? $type->value : $type;
+
+        return $query->where('account_type', $val);
     }
 
     public function scopeByCurrency(Builder $query, string $currency): Builder

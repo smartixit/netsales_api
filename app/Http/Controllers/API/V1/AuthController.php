@@ -42,6 +42,34 @@ class AuthController extends BaseController
         summary: 'تقديم طلب تسجيل مزود شبكة جديد',
         description: 'إنشاء شبكة جديدة وحساب مسؤول الشبكة وجهازه بحالة معلقة (PENDING) في انتظار اعتماد الإدارة.',
         tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات تسجيل مزود الشبكة وحساب المدير والجهاز بصيغة النموذج (Form Data)',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['network_name', 'network_holder_name', 'governorate_id', 'directorate_id', 'network_phone_number', 'user_full_name', 'user_phone_number', 'user_password', 'device_uuid'],
+                    properties: [
+                        new OA\Property(property: 'network_name', type: 'string', example: 'شبكة الأمل'),
+                        new OA\Property(property: 'network_holder_name', type: 'string', example: 'أحمد محمد'),
+                        new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'network_phone_number', type: 'string', example: '772957881'),
+                        new OA\Property(property: 'network_email', type: 'string', format: 'email', example: 'network@example.com'),
+                        new OA\Property(property: 'network_address', type: 'string', example: 'شارع حدة، صنعاء'),
+                        new OA\Property(property: 'network_profile_logo', type: 'string', format: 'binary', description: 'شعار الشبكة'),
+                        new OA\Property(property: 'user_full_name', type: 'string', example: 'حسام خالد سعيد علي'),
+                        new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                        new OA\Property(property: 'user_password', type: 'string', format: 'password', example: 'Secret@123'),
+                        new OA\Property(property: 'user_email', type: 'string', format: 'email', example: 'admin@example.com'),
+                        new OA\Property(property: 'user_profile_logo', type: 'string', format: 'binary', description: 'صورة المستخدم الشخصية'),
+                        new OA\Property(property: 'device_uuid', type: 'string', example: 'SPA-251DHS'),
+                        new OA\Property(property: 'device_name', type: 'string', example: 'Samsung S22'),
+                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'POS', 'WEB', 'DESKTOP'], example: 'ANDROID'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم استلام طلب التسجيل بنجاح وهو قيد المراجعة والاعتماد'),
             new OA\Response(response: 422, description: 'خطأ في صحة البيانات المدخلة'),
@@ -69,14 +97,6 @@ class AuthController extends BaseController
     }
 
     /**
-     * اسم بديل متوافق مع المسار العام register.
-     */
-    public function register(RegisterRequest $request): JsonResponse
-    {
-        return $this->registerNetwork($request);
-    }
-
-    /**
      * تسجيل نقطة بيع جديدة بحالة PENDING.
      */
     #[OA\Post(
@@ -84,6 +104,30 @@ class AuthController extends BaseController
         summary: 'تقديم طلب تسجيل وكيل / نقطة بيع جديدة',
         description: 'إنشاء نقطة بيع جديدة وحساب الوكيل وجهازه بحالة معلقة (PENDING) في انتظار اعتماد الإدارة.',
         tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات تسجيل نقطة البيع وحساب الوكيل والجهاز',
+            content: new OA\JsonContent(
+                required: ['pos_name', 'pos_holder_name', 'governorate_id', 'directorate_id', 'pos_phone_number', 'user_full_name', 'user_phone_number', 'user_password', 'device_uuid'],
+                properties: [
+                    new OA\Property(property: 'pos_name', type: 'string', example: 'نقطة بيع النور'),
+                    new OA\Property(property: 'pos_holder_name', type: 'string', example: 'خالد عبد الله'),
+                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'pos_phone_number', type: 'string', example: '771234567'),
+                    new OA\Property(property: 'pos_email', type: 'string', format: 'email', example: 'pos@example.com'),
+                    new OA\Property(property: 'pos_address', type: 'string', example: 'حي الصافية، صنعاء'),
+                    new OA\Property(property: 'network_id', type: 'integer', nullable: true, example: 1),
+                    new OA\Property(property: 'user_full_name', type: 'string', example: 'خالد عبد الله صالح'),
+                    new OA\Property(property: 'user_phone_number', type: 'string', example: '771234567'),
+                    new OA\Property(property: 'user_password', type: 'string', format: 'password', example: 'Secret@123'),
+                    new OA\Property(property: 'user_email', type: 'string', format: 'email', example: 'pos.admin@example.com'),
+                    new OA\Property(property: 'device_uuid', type: 'string', example: 'e5c18495-e224-57e5-b10c-7c7f95e302f1'),
+                    new OA\Property(property: 'device_name', type: 'string', example: 'Sunmi V2 POS'),
+                    new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'POS', 'WEB', 'DESKTOP'], example: 'POS'),
+                ]
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم استلام طلب التسجيل بنجاح وهو قيد المراجعة والاعتماد'),
             new OA\Response(response: 422, description: 'خطأ في صحة البيانات المدخلة'),
@@ -118,6 +162,20 @@ class AuthController extends BaseController
         summary: 'تسجيل الدخول للنظام وإنشاء الجلسة',
         description: 'التحقق من بيانات الاعتماد وحالة الحساب والشبكة/نقطة البيع والاشتراك والأجهزة، وإنشاء الجلسة في user_sessions.',
         tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات تسجيل الدخول ومعلومات الجهاز',
+            content: new OA\JsonContent(
+                required: ['user_phone_number', 'user_password'],
+                properties: [
+                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                    new OA\Property(property: 'user_password', type: 'string', format: 'password', example: 'Admin@123456'),
+                    new OA\Property(property: 'device_uuid', type: 'string', nullable: true, example: 'SPA-251DHS'),
+                    new OA\Property(property: 'device_name', type: 'string', nullable: true, example: 'Chrome Browser Windows'),
+                    new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'POS', 'WEB', 'DESKTOP'], nullable: true, example: 'WEB'),
+                ]
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تسجيل الدخول بنجاح أو طلب كود 2FA'),
             new OA\Response(response: 422, description: 'بيانات الاعتماد غير صحيحة أو الحساب معلق/محظور'),
@@ -161,6 +219,20 @@ class AuthController extends BaseController
         path: '/api/v1/auth/2fa/verify',
         summary: 'التحقق من كود OTP وإتمام الدخول للأجهزة الجديدة',
         tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات التحقق الثنائي OTP وتأكيد الجهاز',
+            content: new OA\JsonContent(
+                required: ['user_phone_number', 'otp', 'device_uuid'],
+                properties: [
+                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
+                    new OA\Property(property: 'device_uuid', type: 'string', example: 'SPA-251DHS'),
+                    new OA\Property(property: 'device_name', type: 'string', nullable: true, example: 'Samsung S22'),
+                    new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'POS', 'WEB', 'DESKTOP'], nullable: true, example: 'ANDROID'),
+                ]
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم التحقق بنجاح وإنشاء الجلسة'),
             new OA\Response(response: 422, description: 'كود التحقق غير صحيح أو منتهي'),
@@ -270,6 +342,16 @@ class AuthController extends BaseController
         path: '/api/v1/auth/password/request-reset',
         summary: 'طلب إرسال رمز استعادة كلمة المرور عبر الهاتف',
         tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'رقم هاتف المستخدم لطلب استعادة كلمة المرور',
+            content: new OA\JsonContent(
+                required: ['user_phone_number'],
+                properties: [
+                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                ]
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم إرسال رمز التحقق بنجاح'),
         ]
@@ -294,6 +376,17 @@ class AuthController extends BaseController
         path: '/api/v1/auth/password/verify-otp',
         summary: 'التحقق من صحة كود استعادة كلمة المرور',
         tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'التحقق من رمز OTP لاستعادة كلمة المرور',
+            content: new OA\JsonContent(
+                required: ['user_phone_number', 'otp'],
+                properties: [
+                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
+                ]
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'كود التحقق صحيح'),
         ]
@@ -318,6 +411,19 @@ class AuthController extends BaseController
         path: '/api/v1/auth/password/reset',
         summary: 'إعادة تعيين كلمة المرور بعد التحقق',
         tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'إعادة تعيين كلمة المرور الجديدة مع رمز التحقق',
+            content: new OA\JsonContent(
+                required: ['user_phone_number', 'otp', 'password', 'password_confirmation'],
+                properties: [
+                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
+                    new OA\Property(property: 'password', type: 'string', format: 'password', example: 'NewSecret@123'),
+                    new OA\Property(property: 'password_confirmation', type: 'string', format: 'password', example: 'NewSecret@123'),
+                ]
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث كلمة المرور بنجاح'),
         ]
@@ -343,6 +449,18 @@ class AuthController extends BaseController
         summary: 'تحديث كلمة المرور للمستخدم المصادق عليه',
         security: [['sessionAuth' => []]],
         tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'تحديث كلمة المرور الحالية بكلمة مرور جديدة',
+            content: new OA\JsonContent(
+                required: ['current_password', 'new_password', 'new_password_confirmation'],
+                properties: [
+                    new OA\Property(property: 'current_password', type: 'string', format: 'password', example: 'OldSecret@123'),
+                    new OA\Property(property: 'new_password', type: 'string', format: 'password', example: 'NewSecret@123'),
+                    new OA\Property(property: 'new_password_confirmation', type: 'string', format: 'password', example: 'NewSecret@123'),
+                ]
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث كلمة المرور بنجاح'),
         ]
@@ -373,6 +491,17 @@ class AuthController extends BaseController
         summary: 'تفعيل أو تعطيل المصادقة الثنائية 2FA',
         security: [['sessionAuth' => []]],
         tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'تفعيل أو تعطيل ميزة التحقق الثنائي',
+            content: new OA\JsonContent(
+                required: ['enable'],
+                properties: [
+                    new OA\Property(property: 'enable', type: 'boolean', example: true),
+                    new OA\Property(property: 'otp', type: 'string', nullable: true, example: '123456'),
+                ]
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث حالة المصادقة الثنائية بنجاح'),
         ]
@@ -429,6 +558,15 @@ class AuthController extends BaseController
         summary: 'إلغاء إقران جهاز محدد للمستخدم',
         security: [['sessionAuth' => []]],
         tags: ['Auth'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'معرف الجهاز المراد فصله وإلغاء اقترانه',
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم فصل الجهاز بنجاح'),
         ]

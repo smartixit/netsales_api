@@ -52,8 +52,7 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
     {
         return $this->model->newQuery()
             ->where('session_id', $sessionId)
-            ->whereNull('revoked_at')
-            ->where('expires_at', '>', Carbon::now('Asia/Aden'))
+            ->active()
             ->first();
     }
 
@@ -76,10 +75,9 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
             return false;
         }
 
-        return (bool) $session->update([
-            'revoked_at' => Carbon::now('Asia/Aden'),
-            'expires_at' => Carbon::now('Asia/Aden'),
-        ]);
+        $session->revoke();
+
+        return true;
     }
 
     /**
@@ -96,7 +94,7 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
     public function revokeAllUserSessions(int $userId, ?int $exceptSessionId = null): int
     {
         $query = $this->model->newQuery()
-            ->where('user_id', $userId)
+            ->forUser($userId)
             ->whereNull('revoked_at');
 
         if ($exceptSessionId !== null) {
@@ -122,9 +120,11 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
      */
     public function touchActivity(int $sessionId): void
     {
-        $this->model->newQuery()
-            ->where('session_id', $sessionId)
-            ->update(['last_activity_at' => Carbon::now('Asia/Aden')]);
+        /** @var UserSession|null $session */
+        $session = $this->model->find($sessionId);
+        if ($session) {
+            $session->touchActivity();
+        }
     }
 
     /**
@@ -133,9 +133,8 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
     public function getActiveSessionsForUser(int $userId): Collection
     {
         return $this->model->newQuery()
-            ->where('user_id', $userId)
-            ->whereNull('revoked_at')
-            ->where('expires_at', '>', Carbon::now('Asia/Aden'))
+            ->forUser($userId)
+            ->active()
             ->orderByDesc('last_activity_at')
             ->get();
     }

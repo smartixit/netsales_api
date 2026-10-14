@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response;
 
 class EncryptDecryptPayload
@@ -16,9 +17,11 @@ class EncryptDecryptPayload
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Allow Bypass for Swagger UI or Debugging via Header
+        // Allow Bypass for Swagger UI, Debugging via Header, or Public Key / Healthcheck Endpoints
         $bypassHeader = $request->header('X-Bypass-Encryption');
-        $bypassEncryption = in_array(strtolower((string) $bypassHeader), ['true', '1', 'yes', 'on']);
+        $bypassEncryption = in_array(strtolower((string) $bypassHeader), ['true', '1', 'yes', 'on'])
+            || $request->is('api/v1/security/public-keys')
+            || $request->is('up');
 
         // 1. INBOUND DECRYPTION
         if (! $bypassEncryption && in_array($request->method(), ['POST', 'PUT', 'PATCH'])) {
@@ -37,6 +40,11 @@ class EncryptDecryptPayload
                         // Dynamically merge the decrypted payload variables into the Request object's lifecycle
                         $request->replace($decoded);
                     }
+                }
+
+                // إلزام العميل بتمرير مفتاحه العام في كل طلب مشفر يتطلب استجابة مشفرة (Strict Asymmetric Flow)
+                if (! $request->header('X-Client-Public-Key')) {
+                    throw new InvalidArgumentException('خطأ في التشفير.');
                 }
             }
         }

@@ -30,16 +30,21 @@ class VoucherPackageDiscountRepository extends BaseRepository implements Voucher
             $query->where('network_id', (int) $filters['network_id']);
         }
 
-        if (! empty($filters['pos_id'])) {
-            $query->where('pos_id', (int) $filters['pos_id']);
-        }
+        if (! empty($filters['package_id']) && ! empty($filters['pos_id'])) {
+            $query->forPackageAndPos((int) $filters['package_id'], (int) $filters['pos_id']);
+        } else {
+            if (! empty($filters['pos_id'])) {
+                $query->where('pos_id', (int) $filters['pos_id']);
+            }
 
-        if (! empty($filters['package_id'])) {
-            $query->where('package_id', (int) $filters['package_id']);
+            if (! empty($filters['package_id'])) {
+                $query->where('package_id', (int) $filters['package_id']);
+            }
         }
 
         if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
-            $query->where('status', filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN));
+            $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
+            $status ? $query->active() : $query->where('status', false);
         }
 
         if (! empty($filters['search'])) {
@@ -71,8 +76,7 @@ class VoucherPackageDiscountRepository extends BaseRepository implements Voucher
     {
         return $this->model->newQuery()
             ->where('network_id', $networkId)
-            ->where('pos_id', $posId)
-            ->where('package_id', $packageId)
+            ->forPackageAndPos($packageId, $posId)
             ->first();
     }
 

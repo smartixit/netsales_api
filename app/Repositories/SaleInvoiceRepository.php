@@ -27,11 +27,11 @@ class SaleInvoiceRepository extends BaseRepository implements SaleInvoiceReposit
         $query = $this->model->newQuery()->with($relations);
 
         if (! empty($filters['network_id'])) {
-            $query->where('network_id', (int) $filters['network_id']);
+            $query->forNetwork((int) $filters['network_id']);
         }
 
         if (! empty($filters['pos_id'])) {
-            $query->where('pos_id', (int) $filters['pos_id']);
+            $query->forPos((int) $filters['pos_id']);
         }
 
         if (! empty($filters['invoice_sale_type'])) {
@@ -81,11 +81,11 @@ class SaleInvoiceRepository extends BaseRepository implements SaleInvoiceReposit
         $query = $this->model->newQuery()->onlyTrashed()->with($relations);
 
         if (! empty($filters['network_id'])) {
-            $query->where('network_id', (int) $filters['network_id']);
+            $query->forNetwork((int) $filters['network_id']);
         }
 
         if (! empty($filters['pos_id'])) {
-            $query->where('pos_id', (int) $filters['pos_id']);
+            $query->forPos((int) $filters['pos_id']);
         }
 
         if (! empty($filters['search'])) {

@@ -111,7 +111,7 @@ class UserController extends BaseController
                     properties: [
                         new OA\Property(property: 'role_id', type: 'integer', example: 2),
                         new OA\Property(property: 'user_full_name', type: 'string', example: 'محمد أحمد'),
-                        new OA\Property(property: 'user_phone_number', type: 'string', example: '771234567'),
+                        new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
                         new OA\Property(property: 'user_password', type: 'string', format: 'password', example: 'Secret@123'),
                         new OA\Property(property: 'user_email', type: 'string', format: 'email', example: 'user@example.com'),
                         new OA\Property(property: 'user_profile_logo', type: 'string', format: 'binary'),

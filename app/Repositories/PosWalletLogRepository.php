@@ -28,11 +28,18 @@ class PosWalletLogRepository extends BaseRepository implements PosWalletLogRepos
         $query = $this->model->newQuery()->with($relations);
 
         if (! empty($filters['wallet_id'])) {
-            $query->where('wallet_id', (int) $filters['wallet_id']);
+            $query->forWallet((int) $filters['wallet_id']);
         }
 
         if (! empty($filters['log_operation_type'])) {
-            $query->where('log_operation_type', $filters['log_operation_type']);
+            $op = $filters['log_operation_type'] instanceof WalletOperationType ? $filters['log_operation_type'] : WalletOperationType::tryFrom($filters['log_operation_type']);
+            if ($op === WalletOperationType::DEPOSIT) {
+                $query->deposits();
+            } elseif ($op === WalletOperationType::WITHDRAW) {
+                $query->withdrawals();
+            } else {
+                $query->where('log_operation_type', $filters['log_operation_type']);
+            }
         }
 
         if (! empty($filters['created_by'])) {

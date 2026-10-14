@@ -19,7 +19,7 @@ class UserDeviceRepository extends BaseRepository implements UserDeviceRepositor
     public function findByUuid(int $userId, string $deviceUuid): ?UserDevice
     {
         return $this->model->newQuery()
-            ->where('user_id', $userId)
+            ->forUser($userId)
             ->where('device_uuid', $deviceUuid)
             ->first();
     }
@@ -27,7 +27,7 @@ class UserDeviceRepository extends BaseRepository implements UserDeviceRepositor
     public function getDevicesForUser(int $userId): Collection
     {
         return $this->model->newQuery()
-            ->where('user_id', $userId)
+            ->forUser($userId)
             ->orderByDesc('last_used_at')
             ->get();
     }
@@ -69,8 +69,8 @@ class UserDeviceRepository extends BaseRepository implements UserDeviceRepositor
     public function getPrimaryDevice(int $userId): ?UserDevice
     {
         return $this->model->newQuery()
-            ->where('user_id', $userId)
-            ->where('is_primary', true)
+            ->forUser($userId)
+            ->primary()
             ->first();
     }
 
@@ -93,8 +93,8 @@ class UserDeviceRepository extends BaseRepository implements UserDeviceRepositor
     public function disconnectDevice(int $deviceId, int $userId): bool
     {
         return (bool) $this->model->newQuery()
+            ->forUser($userId)
             ->where('device_id', $deviceId)
-            ->where('user_id', $userId)
             ->delete();
     }
 }

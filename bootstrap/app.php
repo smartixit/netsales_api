@@ -84,6 +84,17 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        $exceptions->render(function (InvalidArgumentException $e, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                    'data' => (object) [],
+                    'errors' => ['client_public_key' => [$e->getMessage()]],
+                ], 422);
+            }
+        });
+
         $exceptions->render(function (TooManyRequestsHttpException $e, Request $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 $retryAfter = $e->getHeaders()['Retry-After'] ?? 60;

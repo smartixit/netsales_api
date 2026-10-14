@@ -35,23 +35,27 @@ class SystemLogRepository extends BaseRepository implements SystemLogRepositoryI
         }
 
         if (! empty($filters['user_id'])) {
-            $query->where('user_id', (int) $filters['user_id']);
+            $query->forUser((int) $filters['user_id']);
         }
 
         if (! empty($filters['module'])) {
-            $query->where('module', (string) $filters['module']);
+            $query->forModule((string) $filters['module']);
         }
 
         if (! empty($filters['action'])) {
             $query->where('action', (string) $filters['action']);
         }
 
-        if (! empty($filters['entity_type'])) {
-            $query->where('entity_type', (string) $filters['entity_type']);
-        }
+        if (! empty($filters['entity_type']) && ! empty($filters['entity_id'])) {
+            $query->forEntity((string) $filters['entity_type'], (int) $filters['entity_id']);
+        } else {
+            if (! empty($filters['entity_type'])) {
+                $query->where('entity_type', (string) $filters['entity_type']);
+            }
 
-        if (! empty($filters['entity_id'])) {
-            $query->where('entity_id', (int) $filters['entity_id']);
+            if (! empty($filters['entity_id'])) {
+                $query->where('entity_id', (int) $filters['entity_id']);
+            }
         }
 
         if (! empty($filters['ip_address'])) {
@@ -92,8 +96,7 @@ class SystemLogRepository extends BaseRepository implements SystemLogRepositoryI
     public function getByEntity(string $entityType, int $entityId, array $relations = ['user']): Collection
     {
         $query = $this->model->newQuery()
-            ->where('entity_type', $entityType)
-            ->where('entity_id', $entityId)
+            ->forEntity($entityType, $entityId)
             ->orderBy('log_id', 'desc');
 
         if (! empty($relations)) {

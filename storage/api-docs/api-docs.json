@@ -20,6 +20,95 @@
                 "summary": "تقديم طلب تسجيل مزود شبكة جديد",
                 "description": "إنشاء شبكة جديدة وحساب مسؤول الشبكة وجهازه بحالة معلقة (PENDING) في انتظار اعتماد الإدارة.",
                 "operationId": "5eb1e7eb22417646fbd5ce5af40b4d7b",
+                "requestBody": {
+                    "description": "بيانات تسجيل مزود الشبكة وحساب المدير والجهاز",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "network_name",
+                                    "network_holder_name",
+                                    "governorate_id",
+                                    "directorate_id",
+                                    "network_phone_number",
+                                    "user_full_name",
+                                    "user_phone_number",
+                                    "user_password",
+                                    "device_uuid"
+                                ],
+                                "properties": {
+                                    "network_name": {
+                                        "type": "string",
+                                        "example": "شبكة الأمل"
+                                    },
+                                    "network_holder_name": {
+                                        "type": "string",
+                                        "example": "أحمد محمد"
+                                    },
+                                    "governorate_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "directorate_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "network_phone_number": {
+                                        "type": "string",
+                                        "example": "772957881"
+                                    },
+                                    "network_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "network@example.com"
+                                    },
+                                    "network_address": {
+                                        "type": "string",
+                                        "example": "شارع حدة، صنعاء"
+                                    },
+                                    "user_full_name": {
+                                        "type": "string",
+                                        "example": "حسام خالد سعيد علي"
+                                    },
+                                    "user_phone_number": {
+                                        "type": "string",
+                                        "example": "772957881"
+                                    },
+                                    "user_password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "Secret@123"
+                                    },
+                                    "user_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "admin@example.com"
+                                    },
+                                    "device_uuid": {
+                                        "type": "string",
+                                        "example": "SPA-251DHS"
+                                    },
+                                    "device_name": {
+                                        "type": "string",
+                                        "example": "Samsung S22"
+                                    },
+                                    "device_type": {
+                                        "type": "string",
+                                        "example": "ANDROID",
+                                        "enum": [
+                                            "ANDROID",
+                                            "POS",
+                                            "WEB",
+                                            "DESKTOP"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
                         "description": "تم استلام طلب التسجيل بنجاح وهو قيد المراجعة والاعتماد"
@@ -41,6 +130,100 @@
                 "summary": "تقديم طلب تسجيل وكيل / نقطة بيع جديدة",
                 "description": "إنشاء نقطة بيع جديدة وحساب الوكيل وجهازه بحالة معلقة (PENDING) في انتظار اعتماد الإدارة.",
                 "operationId": "e314fc0185c3990cedbeac42ad7dfc19",
+                "requestBody": {
+                    "description": "بيانات تسجيل نقطة البيع وحساب الوكيل والجهاز",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "pos_name",
+                                    "pos_holder_name",
+                                    "governorate_id",
+                                    "directorate_id",
+                                    "pos_phone_number",
+                                    "user_full_name",
+                                    "user_phone_number",
+                                    "user_password",
+                                    "device_uuid"
+                                ],
+                                "properties": {
+                                    "pos_name": {
+                                        "type": "string",
+                                        "example": "نقطة بيع النور"
+                                    },
+                                    "pos_holder_name": {
+                                        "type": "string",
+                                        "example": "خالد عبد الله"
+                                    },
+                                    "governorate_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "directorate_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "pos_phone_number": {
+                                        "type": "string",
+                                        "example": "771234567"
+                                    },
+                                    "pos_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "pos@example.com"
+                                    },
+                                    "pos_address": {
+                                        "type": "string",
+                                        "example": "حي الصافية، صنعاء"
+                                    },
+                                    "network_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "user_full_name": {
+                                        "type": "string",
+                                        "example": "خالد عبد الله صالح"
+                                    },
+                                    "user_phone_number": {
+                                        "type": "string",
+                                        "example": "771234567"
+                                    },
+                                    "user_password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "Secret@123"
+                                    },
+                                    "user_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "pos.admin@example.com"
+                                    },
+                                    "device_uuid": {
+                                        "type": "string",
+                                        "example": "e5c18495-e224-57e5-b10c-7c7f95e302f1"
+                                    },
+                                    "device_name": {
+                                        "type": "string",
+                                        "example": "Sunmi V2 POS"
+                                    },
+                                    "device_type": {
+                                        "type": "string",
+                                        "example": "POS",
+                                        "enum": [
+                                            "ANDROID",
+                                            "POS",
+                                            "WEB",
+                                            "DESKTOP"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
                         "description": "تم استلام طلب التسجيل بنجاح وهو قيد المراجعة والاعتماد"
@@ -62,6 +245,53 @@
                 "summary": "تسجيل الدخول للنظام وإنشاء الجلسة",
                 "description": "التحقق من بيانات الاعتماد وحالة الحساب والشبكة/نقطة البيع والاشتراك والأجهزة، وإنشاء الجلسة في user_sessions.",
                 "operationId": "a7997e7c1e3bfed64d4e56de82415931",
+                "requestBody": {
+                    "description": "بيانات تسجيل الدخول ومعلومات الجهاز",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_phone_number",
+                                    "user_password"
+                                ],
+                                "properties": {
+                                    "user_phone_number": {
+                                        "type": "string",
+                                        "example": "772957881"
+                                    },
+                                    "user_password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "Admin@123456"
+                                    },
+                                    "device_uuid": {
+                                        "type": "string",
+                                        "example": "SPA-251DHS",
+                                        "nullable": true
+                                    },
+                                    "device_name": {
+                                        "type": "string",
+                                        "example": "Chrome Browser Windows",
+                                        "nullable": true
+                                    },
+                                    "device_type": {
+                                        "type": "string",
+                                        "example": "WEB",
+                                        "nullable": true,
+                                        "enum": [
+                                            "ANDROID",
+                                            "POS",
+                                            "WEB",
+                                            "DESKTOP"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "تم تسجيل الدخول بنجاح أو طلب كود 2FA"
@@ -83,6 +313,52 @@
                 "summary": "التحقق من كود OTP وإتمام الدخول للأجهزة الجديدة",
                 "description": "إتمام التحقق الثنائي أو تأكيد ربط الجهاز الجديد وإنشاء الجلسة.",
                 "operationId": "0496f8a10b5f847f10ea6cc8faeb449b",
+                "requestBody": {
+                    "description": "بيانات التحقق الثنائي OTP وتأكيد الجهاز",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_phone_number",
+                                    "otp",
+                                    "device_uuid"
+                                ],
+                                "properties": {
+                                    "user_phone_number": {
+                                        "type": "string",
+                                        "example": "772957881"
+                                    },
+                                    "otp": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    },
+                                    "device_uuid": {
+                                        "type": "string",
+                                        "example": "SPA-251DHS"
+                                    },
+                                    "device_name": {
+                                        "type": "string",
+                                        "example": "Samsung S22",
+                                        "nullable": true
+                                    },
+                                    "device_type": {
+                                        "type": "string",
+                                        "example": "ANDROID",
+                                        "nullable": true,
+                                        "enum": [
+                                            "ANDROID",
+                                            "POS",
+                                            "WEB",
+                                            "DESKTOP"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "تم التحقق بنجاح وإنشاء الجلسة"
@@ -164,6 +440,26 @@
                 "summary": "طلب إرسال رمز استعادة كلمة المرور عبر الهاتف",
                 "description": "طلب استعادة كلمة المرور عبر الرمز المؤقت.",
                 "operationId": "41d4fe28160550cb9cadd5f9fe0f91ef",
+                "requestBody": {
+                    "description": "رقم هاتف المستخدم لطلب استعادة كلمة المرور",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_phone_number"
+                                ],
+                                "properties": {
+                                    "user_phone_number": {
+                                        "type": "string",
+                                        "example": "772957881"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "تم إرسال رمز التحقق بنجاح"
@@ -179,6 +475,31 @@
                 "summary": "التحقق من صحة كود استعادة كلمة المرور",
                 "description": "التحقق من رمز استعادة كلمة المرور.",
                 "operationId": "1da39df139226442647321a227e8b0c7",
+                "requestBody": {
+                    "description": "التحقق من رمز OTP لاستعادة كلمة المرور",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_phone_number",
+                                    "otp"
+                                ],
+                                "properties": {
+                                    "user_phone_number": {
+                                        "type": "string",
+                                        "example": "772957881"
+                                    },
+                                    "otp": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "كود التحقق صحيح"
@@ -194,6 +515,43 @@
                 "summary": "إعادة تعيين كلمة المرور بعد التحقق",
                 "description": "اعتماد كلمة المرور الجديدة بعد التحقق.",
                 "operationId": "6cf249fbb00db4400f2499319b39eda3",
+                "requestBody": {
+                    "description": "إعادة تعيين كلمة المرور الجديدة مع رمز التحقق",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_phone_number",
+                                    "otp",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "user_phone_number": {
+                                        "type": "string",
+                                        "example": "772957881"
+                                    },
+                                    "otp": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "NewSecret@123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "NewSecret@123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "تم تحديث كلمة المرور بنجاح"
@@ -209,6 +567,39 @@
                 "summary": "تحديث كلمة المرور للمستخدم المصادق عليه",
                 "description": "تحديث كلمة المرور للحساب الحالي.",
                 "operationId": "c035ae30f9e4e5358cc69d5504d9bc76",
+                "requestBody": {
+                    "description": "تحديث كلمة المرور الحالية بكلمة مرور جديدة",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "current_password",
+                                    "new_password",
+                                    "new_password_confirmation"
+                                ],
+                                "properties": {
+                                    "current_password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "OldSecret@123"
+                                    },
+                                    "new_password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "NewSecret@123"
+                                    },
+                                    "new_password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "NewSecret@123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "تم تحديث كلمة المرور بنجاح"
@@ -229,6 +620,31 @@
                 "summary": "تفعيل أو تعطيل المصادقة الثنائية 2FA",
                 "description": "تفعيل أو تعطيل المصادقة الثنائية (2FA).",
                 "operationId": "df1751a3270c0dd8a9c25c1fa522afa9",
+                "requestBody": {
+                    "description": "تفعيل أو تعطيل ميزة التحقق الثنائي",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "enable"
+                                ],
+                                "properties": {
+                                    "enable": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "otp": {
+                                        "type": "string",
+                                        "example": "123456",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "تم تحديث حالة المصادقة الثنائية بنجاح"
@@ -269,6 +685,17 @@
                 "summary": "إلغاء إقران جهاز محدد للمستخدم",
                 "description": "إلغاء إقران وفصل جهاز محدد.",
                 "operationId": "d08003dc91b49ad17586c2cce19a5b4a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الجهاز المراد فصله وإلغاء اقترانه",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "تم فصل الجهاز بنجاح"
@@ -3343,7 +3770,7 @@
                                 "properties": {
                                     "user_phone_number": {
                                         "type": "string",
-                                        "example": "771234567"
+                                        "example": "772957881"
                                     },
                                     "otp_type": {
                                         "type": "string",
@@ -3394,7 +3821,7 @@
                                 "properties": {
                                     "user_phone_number": {
                                         "type": "string",
-                                        "example": "771234567"
+                                        "example": "772957881"
                                     },
                                     "otp": {
                                         "type": "string",
@@ -3449,7 +3876,7 @@
                                 "properties": {
                                     "user_phone_number": {
                                         "type": "string",
-                                        "example": "771234567"
+                                        "example": "772957881"
                                     },
                                     "otp_type": {
                                         "type": "string",
@@ -6869,7 +7296,7 @@
                                     },
                                     "user_phone_number": {
                                         "type": "string",
-                                        "example": "771234567"
+                                        "example": "772957881"
                                     },
                                     "user_password": {
                                         "type": "string",

@@ -36,7 +36,7 @@ class OtpController extends BaseController
             content: new OA\JsonContent(
                 required: ['user_phone_number', 'otp_type'],
                 properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '771234567'),
+                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
                     new OA\Property(property: 'otp_type', type: 'string', enum: ['OTP_2FA', 'RESET_PASSWORD', 'VERIFY_PHONE', 'CONFIRM_TRANSACTION'], example: 'RESET_PASSWORD'),
                 ]
             )
@@ -85,7 +85,7 @@ class OtpController extends BaseController
             content: new OA\JsonContent(
                 required: ['user_phone_number', 'otp'],
                 properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '771234567'),
+                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
                     new OA\Property(property: 'otp', type: 'string', example: '123456'),
                     new OA\Property(property: 'type', type: 'string', enum: ['OTP_2FA', 'RESET_PASSWORD', 'VERIFY_PHONE', 'CONFIRM_TRANSACTION'], example: 'RESET_PASSWORD'),
                 ]
@@ -123,7 +123,7 @@ class OtpController extends BaseController
             content: new OA\JsonContent(
                 required: ['user_phone_number', 'otp_type'],
                 properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '771234567'),
+                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
                     new OA\Property(property: 'otp_type', type: 'string', enum: ['OTP_2FA', 'RESET_PASSWORD', 'VERIFY_PHONE', 'CONFIRM_TRANSACTION'], example: 'RESET_PASSWORD'),
                 ]
             )

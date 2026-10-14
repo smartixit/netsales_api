@@ -27,7 +27,7 @@ class ExpenseRepository extends BaseRepository implements ExpenseRepositoryInter
         $query = $this->model->newQuery()->with($relations);
 
         if (! empty($filters['network_id'])) {
-            $query->where('network_id', (int) $filters['network_id']);
+            $query->forNetwork((int) $filters['network_id']);
         }
 
         if (! empty($filters['created_by'])) {
@@ -72,7 +72,7 @@ class ExpenseRepository extends BaseRepository implements ExpenseRepositoryInter
         $query = $this->model->newQuery()->onlyTrashed()->with($relations);
 
         if (! empty($filters['network_id'])) {
-            $query->where('network_id', (int) $filters['network_id']);
+            $query->forNetwork((int) $filters['network_id']);
         }
 
         if (! empty($filters['created_by'])) {

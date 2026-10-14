@@ -2,11 +2,11 @@
 
 namespace App\Services\Support;
 
-use App\Models\Result;
 use App\Services\SystemLoggerService;
 use Exception;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 
 /**
  * خدمة التشفير غير المتماثل والتوثيق الرقمي السيادي (Enterprise Asymmetric Cryptography Service).
@@ -112,126 +112,126 @@ class AsymmetricCryptoService
         return hex2bin(trim(File::get($this->boxPublicKeyFile)));
     }
 
-    /**
-     * توليد رمز QR مشفر وموقع رقمياً للفواتير والتقارير (Encrypted Verifiable Result Token).
-     *
-     * لا يحتوي على أي نصوص واضحة أو أسماء أو درجات مكشوفة؛ بل كتلة مشفرة مصمتة 100%.
-     */
-    public function generateResultQrToken($data): string
-    {
-        $finalStatus = $data->final_status instanceof \BackedEnum
-            ? $data->final_status->value
-            : (string) $data->final_status;
+    // /**
+    //  * توليد رمز QR مشفر وموقع رقمياً للفواتير والتقارير (Encrypted Verifiable Result Token).
+    //  *
+    //  * لا يحتوي على أي نصوص واضحة أو أسماء أو درجات مكشوفة؛ بل كتلة مشفرة مصمتة 100%.
+    //  */
+    // public function generateResultQrToken($data): string
+    // {
+    //     $finalStatus = $data->final_status instanceof \BackedEnum
+    //         ? $data->final_status->value
+    //         : (string) $data->final_status;
 
-        $canonicalData = json_encode([
-            'uuid' => (string) ($data->result_uuid ?? ''),
-            'sn' => (string) ($data->student_seat_number ?? ''),
-            'ay' => (string) $data->academic_year,
-            'cid' => (int) $data->center_id,
-            'sc' => (float) $data->total_score,
-            'mx' => (float) ($data->total_max_score ?? $data->max_score ?? 0),
-            'pct' => (float) $data->percentage,
-            'st' => (string) $finalStatus,
-            'iat' => now('Asia/Aden')->timestamp,
-            'nonce' => bin2hex(random_bytes(8)),
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    //     $canonicalData = json_encode([
+    //         'uuid' => (string) ($data->result_uuid ?? ''),
+    //         'sn' => (string) ($data->student_seat_number ?? ''),
+    //         'ay' => (string) $data->academic_year,
+    //         'cid' => (int) $data->center_id,
+    //         'sc' => (float) $data->total_score,
+    //         'mx' => (float) ($data->total_max_score ?? $data->max_score ?? 0),
+    //         'pct' => (float) $data->percentage,
+    //         'st' => (string) $finalStatus,
+    //         'iat' => now('Asia/Aden')->timestamp,
+    //         'nonce' => bin2hex(random_bytes(8)),
+    //     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
-        // خطوة 1: توقيع البيانات رقمياً بالمفتاح الخاص (Ed25519 Detached Signature)
-        $signature = sodium_crypto_sign_detached($canonicalData, $this->getSignSecretKey());
+    //     // خطوة 1: توقيع البيانات رقمياً بالمفتاح الخاص (Ed25519 Detached Signature)
+    //     $signature = sodium_crypto_sign_detached($canonicalData, $this->getSignSecretKey());
 
-        // خطوة 2: حزم البيانات والتوقيع معاً
-        $envelope = json_encode([
-            'p' => $canonicalData,
-            's' => bin2hex($signature),
-            'kid' => self::KEY_ID,
-        ], JSON_UNESCAPED_UNICODE);
+    //     // خطوة 2: حزم البيانات والتوقيع معاً
+    //     $envelope = json_encode([
+    //         'p' => $canonicalData,
+    //         's' => bin2hex($signature),
+    //         'kid' => self::KEY_ID,
+    //     ], JSON_UNESCAPED_UNICODE);
 
-        // خطوة 3: التشفير غير المتماثل التام (Anonymous Public-Key Encryption via crypto_box_seal)
-        $ciphertext = sodium_crypto_box_seal($envelope, $this->getBoxPublicKey());
+    //     // خطوة 3: التشفير غير المتماثل التام (Anonymous Public-Key Encryption via crypto_box_seal)
+    //     $ciphertext = sodium_crypto_box_seal($envelope, $this->getBoxPublicKey());
 
-        // خطوة 4: التشفير في صيغة URL-Safe Base64
-        return self::TOKEN_PREFIX.$this->base64UrlEncode($ciphertext);
-    }
+    //     // خطوة 4: التشفير في صيغة URL-Safe Base64
+    //     return self::TOKEN_PREFIX.$this->base64UrlEncode($ciphertext);
+    // }
 
-    /**
-     * فك التشفير والتحقق الصارم من صحة توكن الـ QR بالمفتاح الخاص للخادم.
-     *
-     * @throws ValidationException
-     */
-    public function decryptAndVerifyQrToken(string $rawToken): array
-    {
-        $token = trim($rawToken);
+    // /**
+    //  * فك التشفير والتحقق الصارم من صحة توكن الـ QR بالمفتاح الخاص للخادم.
+    //  *
+    //  * @throws ValidationException
+    //  */
+    // public function decryptAndVerifyQrToken(string $rawToken): array
+    // {
+    //     $token = trim($rawToken);
 
-        if (! str_starts_with($token, self::TOKEN_PREFIX)) {
-            SystemLoggerService::warning('QR_VERIFICATION_FAILED_INVALID_FORMAT', ['token_prefix' => substr($token, 0, 10)]);
-            throw ValidationException::withMessages([
-                'qr_token' => ['رمز التحقق غير صالح أو غير معتمد من منصة مبيعات الشبكة.'],
-            ]);
-        }
+    //     if (! str_starts_with($token, self::TOKEN_PREFIX)) {
+    //         SystemLoggerService::warning('QR_VERIFICATION_FAILED_INVALID_FORMAT', ['token_prefix' => substr($token, 0, 10)]);
+    //         throw ValidationException::withMessages([
+    //             'qr_token' => ['رمز التحقق غير صالح أو غير معتمد من منصة مبيعات الشبكة.'],
+    //         ]);
+    //     }
 
-        $base64Cipher = substr($token, strlen(self::TOKEN_PREFIX));
-        $ciphertext = $this->base64UrlDecode($base64Cipher);
+    //     $base64Cipher = substr($token, strlen(self::TOKEN_PREFIX));
+    //     $ciphertext = $this->base64UrlDecode($base64Cipher);
 
-        if ($ciphertext === false || empty($ciphertext)) {
-            throw ValidationException::withMessages([
-                'qr_token' => ['بنية تشفير الرمز تالفة أو غير صالحة.'],
-            ]);
-        }
+    //     if ($ciphertext === false || empty($ciphertext)) {
+    //         throw ValidationException::withMessages([
+    //             'qr_token' => ['بنية تشفير الرمز تالفة أو غير صالحة.'],
+    //         ]);
+    //     }
 
-        // خطوة 1: فك التشفير غير المتماثل بالمفتاح الخاص للخادم
-        try {
-            $boxKeypair = sodium_crypto_box_keypair_from_secretkey_and_publickey(
-                $this->getBoxSecretKey(),
-                $this->getBoxPublicKey()
-            );
+    //     // خطوة 1: فك التشفير غير المتماثل بالمفتاح الخاص للخادم
+    //     try {
+    //         $boxKeypair = sodium_crypto_box_keypair_from_secretkey_and_publickey(
+    //             $this->getBoxSecretKey(),
+    //             $this->getBoxPublicKey()
+    //         );
 
-            $decryptedJson = sodium_crypto_box_seal_open($ciphertext, $boxKeypair);
-            if ($decryptedJson === false) {
-                throw new Exception('Decryption failed.');
-            }
-        } catch (Exception $e) {
-            SystemLoggerService::warning('QR_DECRYPTION_FAILED', ['error' => $e->getMessage()]);
-            throw ValidationException::withMessages([
-                'qr_token' => ['فشل فك تشفير الرمز؛ الرمز مزور أو لم يصدر عن خادم مبيعات الشبكة المعتمد.'],
-            ]);
-        }
+    //         $decryptedJson = sodium_crypto_box_seal_open($ciphertext, $boxKeypair);
+    //         if ($decryptedJson === false) {
+    //             throw new Exception('Decryption failed.');
+    //         }
+    //     } catch (Exception $e) {
+    //         SystemLoggerService::warning('QR_DECRYPTION_FAILED', ['error' => $e->getMessage()]);
+    //         throw ValidationException::withMessages([
+    //             'qr_token' => ['فشل فك تشفير الرمز؛ الرمز مزور أو لم يصدر عن خادم مبيعات الشبكة المعتمد.'],
+    //         ]);
+    //     }
 
-        $envelope = json_decode($decryptedJson, true);
-        if (! is_array($envelope) || empty($envelope['p']) || empty($envelope['s'])) {
-            throw ValidationException::withMessages([
-                'qr_token' => ['محتوى رمز التحقق مشوه أو ناقص.'],
-            ]);
-        }
+    //     $envelope = json_decode($decryptedJson, true);
+    //     if (! is_array($envelope) || empty($envelope['p']) || empty($envelope['s'])) {
+    //         throw ValidationException::withMessages([
+    //             'qr_token' => ['محتوى رمز التحقق مشوه أو ناقص.'],
+    //         ]);
+    //     }
 
-        $canonicalData = $envelope['p'];
-        $signature = hex2bin($envelope['s']);
+    //     $canonicalData = $envelope['p'];
+    //     $signature = hex2bin($envelope['s']);
 
-        // خطوة 2: التحقق الرياضي الصارم من التوقيع الرقمي بالمفتاح العام للتوقيع
-        $isValidSignature = sodium_crypto_sign_verify_detached(
-            $signature,
-            $canonicalData,
-            $this->getSignPublicKey()
-        );
+    //     // خطوة 2: التحقق الرياضي الصارم من التوقيع الرقمي بالمفتاح العام للتوقيع
+    //     $isValidSignature = sodium_crypto_sign_verify_detached(
+    //         $signature,
+    //         $canonicalData,
+    //         $this->getSignPublicKey()
+    //     );
 
-        if (! $isValidSignature) {
-            SystemLoggerService::error('QR_SIGNATURE_TAMPERING_DETECTED', [
-                'data' => $canonicalData,
-            ]);
+    //     if (! $isValidSignature) {
+    //         SystemLoggerService::error('QR_SIGNATURE_TAMPERING_DETECTED', [
+    //             'data' => $canonicalData,
+    //         ]);
 
-            throw ValidationException::withMessages([
-                'qr_token' => ['تحذير أمني عالي الخطورة: تم التلاعب ببيانات النتيجة والتوقيع الرقمي غير مطابق!'],
-            ]);
-        }
+    //         throw ValidationException::withMessages([
+    //             'qr_token' => ['تحذير أمني عالي الخطورة: تم التلاعب ببيانات النتيجة والتوقيع الرقمي غير مطابق!'],
+    //         ]);
+    //     }
 
-        $payload = json_decode($canonicalData, true);
-        if (! is_array($payload) || empty($payload['uuid']) || empty($payload['sn'])) {
-            throw ValidationException::withMessages([
-                'qr_token' => ['بيانات النتيجة المستخرجة غير صالحة.'],
-            ]);
-        }
+    //     $payload = json_decode($canonicalData, true);
+    //     if (! is_array($payload) || empty($payload['uuid']) || empty($payload['sn'])) {
+    //         throw ValidationException::withMessages([
+    //             'qr_token' => ['بيانات النتيجة المستخرجة غير صالحة.'],
+    //         ]);
+    //     }
 
-        return $payload;
-    }
+    //     return $payload;
+    // }
 
     /**
      * تشفير رسالة أو بيانات حساسة موجهة للخادم بواسطة المفتاح العام (Client -> Server).
@@ -249,7 +249,7 @@ class AsymmetricCryptoService
     public function decryptFromServer(string $base64Cipher): string
     {
         $cipher = trim($base64Cipher);
-        if (str_starts_with($cipher, 'NTJ_ENC_')) {
+        if (str_starts_with($cipher, 'NTS_ENC_')) {
             $cipher = substr($cipher, 8);
         }
 
@@ -276,31 +276,29 @@ class AsymmetricCryptoService
     }
 
     /**
-     * تشفير بيانات مرسلة للعميل (Server -> Client).
-     * إذا وفر العميل مفتاحه العام (عبر الهيدر X-Client-Public-Key) يتم التشفير به ليفكه العميل بمفتاحه الخاص.
+     * تشفير بيانات مرسلة للعميل (Server -> Client) بالمعمارية اللامتناظرة الصارمة (Strict Asymmetric Flow).
+     * يشترط تزويد المفتاح العام للعميل (X25519) عبر الهيدر [X-Client-Public-Key] ليتمكن العميل وحده من فك التشفير بمفتاحه الخاص.
+     *
+     * @throws InvalidArgumentException إذا لم يتم تزويد مفتاح العميل العام أو كان غير صالح
      */
     public function encryptForClient(string $plaintext, ?string $clientPublicKey = null): string
     {
-        // 1. إذا مرر العميل مفتاحه العام (X25519)
-        if (! empty($clientPublicKey)) {
-            $clientKeyTrimmed = trim($clientPublicKey);
-            $pubKeyBin = ctype_xdigit($clientKeyTrimmed) && strlen($clientKeyTrimmed) === 64
-                ? hex2bin($clientKeyTrimmed)
-                : base64_decode($clientKeyTrimmed);
-
-            if ($pubKeyBin !== false && strlen($pubKeyBin) === SODIUM_CRYPTO_BOX_PUBLICKEYBYTES) {
-                $sealed = sodium_crypto_box_seal($plaintext, $pubKeyBin);
-
-                return 'NTJ_ENC_'.$this->base64UrlEncode($sealed);
-            }
+        if (empty($clientPublicKey)) {
+            throw new InvalidArgumentException('خطأ في التشفير.');
         }
 
-        // 2. إذا لم يتوفر مفتاح العميل، تشفير آمن عبر مفتاح مشتق من المفتاح الخاص للخادم
-        $key = hash('sha256', $this->getBoxSecretKey(), true);
-        $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
-        $cipher = sodium_crypto_secretbox($plaintext, $nonce, $key);
+        $clientKeyTrimmed = trim($clientPublicKey);
+        $pubKeyBin = ctype_xdigit($clientKeyTrimmed) && strlen($clientKeyTrimmed) === 64
+            ? hex2bin($clientKeyTrimmed)
+            : base64_decode($clientKeyTrimmed);
 
-        return 'NTJ_SEC_'.$this->base64UrlEncode($nonce.$cipher);
+        if ($pubKeyBin === false || strlen($pubKeyBin) !== SODIUM_CRYPTO_BOX_PUBLICKEYBYTES) {
+            throw new InvalidArgumentException('المفتاح العام للعميل غير صالح.');
+        }
+
+        $sealed = sodium_crypto_box_seal($plaintext, $pubKeyBin);
+
+        return 'NTS_ENC_'.$this->base64UrlEncode($sealed);
     }
 
     /**

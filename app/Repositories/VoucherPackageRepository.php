@@ -27,11 +27,12 @@ class VoucherPackageRepository extends BaseRepository implements VoucherPackageR
         $query = $this->model->newQuery()->with($relations);
 
         if (! empty($filters['network_id'])) {
-            $query->where('network_id', (int) $filters['network_id']);
+            $query->forNetwork((int) $filters['network_id']);
         }
 
         if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
-            $query->where('status', filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN));
+            $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
+            $status ? $query->active() : $query->where('status', false);
         }
 
         if (! empty($filters['search'])) {
@@ -59,7 +60,7 @@ class VoucherPackageRepository extends BaseRepository implements VoucherPackageR
     public function findByNetworkAndName(int $networkId, string $packageName): ?VoucherPackage
     {
         return $this->model->newQuery()
-            ->where('network_id', $networkId)
+            ->forNetwork($networkId)
             ->where('package_name', $packageName)
             ->first();
     }

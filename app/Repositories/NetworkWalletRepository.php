@@ -27,11 +27,12 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
         $query = $this->model->newQuery()->with($relations);
 
         if (! empty($filters['network_id'])) {
-            $query->where('network_id', (int) $filters['network_id']);
+            $query->forNetwork((int) $filters['network_id']);
         }
 
         if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
-            $query->where('status', filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN));
+            $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
+            $status ? $query->active() : $query->where('status', false);
         }
 
         if (isset($filters['min_balance']) && is_numeric($filters['min_balance'])) {
@@ -70,7 +71,7 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
         $query = $this->model->newQuery()->onlyTrashed()->with($relations);
 
         if (! empty($filters['network_id'])) {
-            $query->where('network_id', (int) $filters['network_id']);
+            $query->forNetwork((int) $filters['network_id']);
         }
 
         if (! empty($filters['search'])) {
@@ -97,7 +98,7 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
      */
     public function findByNetworkId(int $networkId, bool $lock = false): ?NetworkWallet
     {
-        $query = $this->model->newQuery()->where('network_id', $networkId);
+        $query = $this->model->newQuery()->forNetwork($networkId);
 
         if ($lock) {
             $query->lockForUpdate();

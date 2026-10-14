@@ -164,8 +164,7 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
         }
 
         return $user->sessions()
-            ->whereNull('revoked_at')
-            ->where('expires_at', '>', Carbon::now('Asia/Aden'))
+            ->active()
             ->orderByDesc('last_activity_at')
             ->get();
     }

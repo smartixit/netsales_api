@@ -94,7 +94,7 @@ class DirectorateRepository extends BaseRepository implements DirectorateReposit
     public function findByNameAndGovernorate(string $name, int $governorateId): ?Directorate
     {
         return $this->model->newQuery()
-            ->where('governorate_id', $governorateId)
+            ->inGovernorate($governorateId)
             ->where('directorate_name', $name)
             ->first();
     }

@@ -28,15 +28,16 @@ class BankAccountRepository extends BaseRepository implements BankAccountReposit
         $query = $this->model->newQuery()->with($relations);
 
         if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
-            $query->where('status', filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN));
+            $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
+            $status ? $query->active() : $query->where('status', false);
         }
 
         if (! empty($filters['account_type'])) {
-            $query->where('account_type', $filters['account_type']);
+            $query->byType($filters['account_type']);
         }
 
         if (! empty($filters['account_currency'])) {
-            $query->where('account_currency', $filters['account_currency']);
+            $query->byCurrency($filters['account_currency']);
         }
 
         if (! empty($filters['search'])) {
@@ -62,14 +63,14 @@ class BankAccountRepository extends BaseRepository implements BankAccountReposit
      */
     public function getActiveAccounts(array $filters = []): Collection
     {
-        $query = $this->model->newQuery()->where('status', true);
+        $query = $this->model->newQuery()->active();
 
         if (! empty($filters['account_currency'])) {
-            $query->where('account_currency', $filters['account_currency']);
+            $query->byCurrency($filters['account_currency']);
         }
 
         if (! empty($filters['account_type'])) {
-            $query->where('account_type', $filters['account_type']);
+            $query->byType($filters['account_type']);
         }
 
         return $query->orderBy('bank_name', 'asc')->get();
@@ -82,8 +83,8 @@ class BankAccountRepository extends BaseRepository implements BankAccountReposit
     {
         return $this->model->newQuery()
             ->where('account_number', $accountNumber)
-            ->where('account_currency', $currency)
-            ->where('account_type', $type)
+            ->byCurrency($currency)
+            ->byType($type)
             ->first();
     }
 

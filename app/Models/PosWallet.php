@@ -75,6 +75,16 @@ class PosWallet extends Model
         return $query->where('status', true);
     }
 
+    public function scopeForNetwork(Builder $query, int $networkId): Builder
+    {
+        return $query->where('network_id', $networkId);
+    }
+
+    public function scopeForPos(Builder $query, int $posId): Builder
+    {
+        return $query->where('pos_id', $posId);
+    }
+
     public function scopeForNetworkAndPos(Builder $query, int $networkId, int $posId): Builder
     {
         return $query->where('network_id', $networkId)->where('pos_id', $posId);

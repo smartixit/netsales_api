@@ -35,8 +35,7 @@ class SystemSettingRepository extends BaseRepository implements SystemSettingRep
         }
 
         if (! empty($filters['setting_category'])) {
-            $cat = $filters['setting_category'];
-            $query->where('setting_category', $cat instanceof SettingCategory ? $cat->value : (string) $cat);
+            $query->category($filters['setting_category']);
         }
 
         if (! empty($filters['setting_value_type'])) {
@@ -73,8 +72,7 @@ class SystemSettingRepository extends BaseRepository implements SystemSettingRep
         }
 
         if (! empty($filters['setting_category'])) {
-            $cat = $filters['setting_category'];
-            $query->where('setting_category', $cat instanceof SettingCategory ? $cat->value : (string) $cat);
+            $query->category($filters['setting_category']);
         }
 
         if (! empty($filters['search'])) {
@@ -100,7 +98,7 @@ class SystemSettingRepository extends BaseRepository implements SystemSettingRep
     public function findByKey(string $key): ?SystemSetting
     {
         return $this->model->newQuery()
-            ->where('setting_key', $key)
+            ->byKey($key)
             ->first();
     }
 
@@ -109,10 +107,8 @@ class SystemSettingRepository extends BaseRepository implements SystemSettingRep
      */
     public function getByCategory(SettingCategory|string $category): Collection
     {
-        $cat = $category instanceof SettingCategory ? $category->value : (string) $category;
-
         return $this->model->newQuery()
-            ->where('setting_category', $cat)
+            ->category($category)
             ->orderBy('setting_key')
             ->get();
     }

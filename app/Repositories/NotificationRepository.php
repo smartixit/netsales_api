@@ -37,7 +37,8 @@ class NotificationRepository extends BaseRepository implements NotificationRepos
         }
 
         if (isset($filters['is_read'])) {
-            $query->where('is_read', filter_var($filters['is_read'], FILTER_VALIDATE_BOOLEAN));
+            $isRead = filter_var($filters['is_read'], FILTER_VALIDATE_BOOLEAN);
+            $isRead ? $query->read() : $query->unread();
         }
 
         if (! empty($filters['search'])) {
@@ -116,7 +117,7 @@ class NotificationRepository extends BaseRepository implements NotificationRepos
     {
         return $this->model->newQuery()
             ->where('user_id', $userId)
-            ->where('is_read', false)
+            ->unread()
             ->count();
     }
 
@@ -127,7 +128,7 @@ class NotificationRepository extends BaseRepository implements NotificationRepos
     {
         return $this->model->newQuery()
             ->where('user_id', $userId)
-            ->where('is_read', false)
+            ->unread()
             ->update([
                 'is_read' => true,
                 'read_at' => now('Asia/Aden'),
@@ -145,11 +146,9 @@ class NotificationRepository extends BaseRepository implements NotificationRepos
             return false;
         }
 
-        return $notification->update([
-            'is_read' => true,
-            'read_at' => now('Asia/Aden'),
-            'updated_at' => now('Asia/Aden'),
-        ]);
+        $notification->markAsRead();
+
+        return true;
     }
 
     /**

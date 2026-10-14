@@ -271,16 +271,16 @@ class BaseRepository implements BaseRepositoryInterface
             $query->status($filters['status']);
         }
 
-        if (! empty($filters['center_id']) && method_exists($this->model, 'scopeForCenter')) {
-            $query->forCenter((int) $filters['center_id']);
+        if (! empty($filters['network_id']) && method_exists($this->model, 'scopeForNetwork')) {
+            $query->forNetwork((int) $filters['network_id']);
         }
 
         if (! empty($filters['user_id']) && method_exists($this->model, 'scopeForUser')) {
             $query->forUser((int) $filters['user_id']);
         }
 
-        if (! empty($filters['academic_year']) && method_exists($this->model, 'scopeAcademicYear')) {
-            $query->academicYear($filters['academic_year']);
+        if (! empty($filters['pos_id']) && method_exists($this->model, 'scopeForPos')) {
+            $query->forPos((int) $filters['pos_id']);
         }
 
         if (! empty($filters['all'])) {
