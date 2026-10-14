@@ -17,18 +17,36 @@ class UpdateExpenseItemRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'item_statement' => [
+                'nullable',
+                'string',
+                'max:150',
+            ],
             'item_amount' => [
-                'sometimes',
-                'required',
+                'nullable',
                 'numeric',
                 'min:0.01',
             ],
-            'item_statement' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:255',
-            ],
         ];
+    }
+
+    public function getItemStatement(): ?string
+    {
+        return $this->input('item_statement');
+    }
+
+    public function hasItemStatement(): bool
+    {
+        return $this->has('item_statement');
+    }
+
+    public function getItemAmount(): ?float
+    {
+        return $this->has('item_amount') ? (float) $this->input('item_amount') : null;
+    }
+
+    public function hasItemAmount(): bool
+    {
+        return $this->has('item_amount');
     }
 }

@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Interfaces\ExpenseAttachmentRepositoryInterface;
+use App\Interfaces\ExpenseItemRepositoryInterface;
+use App\Interfaces\ExpenseRepositoryInterface;
 use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
@@ -20,6 +23,9 @@ use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
 use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
+use App\Repositories\ExpenseAttachmentRepository;
+use App\Repositories\ExpenseItemRepository;
+use App\Repositories\ExpenseRepository;
 use App\Repositories\NetworkPosRepository;
 use App\Repositories\NetworkRepository;
 use App\Repositories\NetworkWalletLogRepository;
@@ -73,6 +79,11 @@ class RepositoryServiceProvider extends ServiceProvider
         RequestItemRepositoryInterface::class => RequestItemRepository::class,
         SaleInvoiceRepositoryInterface::class => SaleInvoiceRepository::class,
         SaleInvoiceItemRepositoryInterface::class => SaleInvoiceItemRepository::class,
+
+        // Phase 5: Expenses & Operational Disbursals
+        ExpenseRepositoryInterface::class => ExpenseRepository::class,
+        ExpenseItemRepositoryInterface::class => ExpenseItemRepository::class,
+        ExpenseAttachmentRepositoryInterface::class => ExpenseAttachmentRepository::class,
     ];
 
     public function register(): void

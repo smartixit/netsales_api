@@ -4,7 +4,6 @@ namespace App\Http\Requests\API\V1\Expense;
 
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreExpenseItemRequest extends FormRequest
 {
@@ -18,21 +17,26 @@ class StoreExpenseItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'expense_id' => [
+            'item_statement' => [
                 'required',
-                'integer',
-                Rule::exists('expenses', 'expense_id')->whereNull('deleted_at'),
+                'string',
+                'max:150',
             ],
             'item_amount' => [
                 'required',
                 'numeric',
                 'min:0.01',
             ],
-            'item_statement' => [
-                'required',
-                'string',
-                'max:255',
-            ],
         ];
+    }
+
+    public function getItemStatement(): string
+    {
+        return (string) $this->input('item_statement');
+    }
+
+    public function getItemAmount(): float
+    {
+        return (float) $this->input('item_amount');
     }
 }
