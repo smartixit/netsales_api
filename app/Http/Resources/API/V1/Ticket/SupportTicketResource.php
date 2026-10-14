@@ -35,6 +35,7 @@ class SupportTicketResource extends JsonResource
             'network' => $this->whenLoaded('network', fn () => new NetworkResource($this->network)),
             'pos' => $this->whenLoaded('pos', fn () => new PosResource($this->pos)),
             'messages' => $this->whenLoaded('messages', fn () => SupportTicketMessageResource::collection($this->messages)),
+            'latest_message' => $this->whenLoaded('latestMessage', fn () => new SupportTicketMessageResource($this->latestMessage)),
         ];
     }
 }

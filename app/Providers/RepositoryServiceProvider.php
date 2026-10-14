@@ -25,6 +25,8 @@ use App\Interfaces\SubscriptionPlanFeatureConsumptionRepositoryInterface;
 use App\Interfaces\SubscriptionPlanFeatureRepositoryInterface;
 use App\Interfaces\SubscriptionPlanRepositoryInterface;
 use App\Interfaces\SubscriptionPlanRequestRepositoryInterface;
+use App\Interfaces\SupportTicketMessageRepositoryInterface;
+use App\Interfaces\SupportTicketRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
@@ -53,6 +55,8 @@ use App\Repositories\SubscriptionPlanFeatureConsumptionRepository;
 use App\Repositories\SubscriptionPlanFeatureRepository;
 use App\Repositories\SubscriptionPlanRepository;
 use App\Repositories\SubscriptionPlanRequestRepository;
+use App\Repositories\SupportTicketMessageRepository;
+use App\Repositories\SupportTicketRepository;
 use App\Repositories\UserDeviceRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\UserSessionRepository;
@@ -107,6 +111,10 @@ class RepositoryServiceProvider extends ServiceProvider
         SubscriptionPlanRequestRepositoryInterface::class => SubscriptionPlanRequestRepository::class,
         ProviderSubscriptionRepositoryInterface::class => ProviderSubscriptionRepository::class,
         SubscriptionPlanFeatureConsumptionRepositoryInterface::class => SubscriptionPlanFeatureConsumptionRepository::class,
+
+        // Phase 7: Support Tickets & Interactive Messaging Engine
+        SupportTicketRepositoryInterface::class => SupportTicketRepository::class,
+        SupportTicketMessageRepositoryInterface::class => SupportTicketMessageRepository::class,
     ];
 
     public function register(): void

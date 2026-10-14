@@ -29,6 +29,7 @@ class StoreSupportTicketMessageRequest extends FormRequest
     {
         return [
             'ticket_id' => [
+                'sometimes',
                 'required',
                 'integer',
                 Rule::exists('support_tickets', 'ticket_id')->whereNull('deleted_at'),
@@ -56,5 +57,15 @@ class StoreSupportTicketMessageRequest extends FormRequest
                 'date',
             ],
         ];
+    }
+
+    public function getTicketId(): ?int
+    {
+        return $this->filled('ticket_id') ? (int) $this->input('ticket_id') : null;
+    }
+
+    public function getMessageBody(): string
+    {
+        return (string) $this->input('message_body');
     }
 }

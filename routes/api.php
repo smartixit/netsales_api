@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\SaleInvoiceController;
 use App\Http\Controllers\Api\V1\SecurityController;
 use App\Http\Controllers\Api\V1\SubscriptionPlanController;
 use App\Http\Controllers\Api\V1\SubscriptionPlanRequestController;
+use App\Http\Controllers\Api\V1\SupportTicketController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VoucherPackageController;
 use App\Http\Controllers\Api\V1\VoucherPackageDiscountController;
@@ -463,6 +464,30 @@ Route::prefix('v1')->group(function () {
             Route::post('provider-subscriptions/{id}/extend', [ProviderSubscriptionController::class, 'extend'])->whereNumber('id')->name('api.v1.provider_subscriptions.extend');
             Route::post('provider-subscriptions/network/{networkId}/consume', [ProviderSubscriptionController::class, 'consume'])->whereNumber('networkId')->name('api.v1.provider_subscriptions.consume');
             Route::post('provider-subscriptions/network/{networkId}/activate-early', [ProviderSubscriptionController::class, 'activateEarly'])->whereNumber('networkId')->name('api.v1.provider_subscriptions.activate_early');
+        });
+
+        // ==========================================
+        // 18. تذاكر الدعم الفني والمراسلات (Support Tickets & Communications Engine)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('support-tickets', [SupportTicketController::class, 'index'])->name('api.v1.support_tickets.index');
+            Route::get('support-tickets/trashed', [SupportTicketController::class, 'trashed'])->name('api.v1.support_tickets.trashed');
+            Route::get('support-tickets/{id}', [SupportTicketController::class, 'show'])->whereNumber('id')->name('api.v1.support_tickets.show');
+            Route::get('support-tickets/{id}/messages', [SupportTicketController::class, 'messages'])->whereNumber('id')->name('api.v1.support_tickets.messages');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('support-tickets', [SupportTicketController::class, 'store'])->name('api.v1.support_tickets.store');
+            Route::put('support-tickets/{id}', [SupportTicketController::class, 'update'])->whereNumber('id')->name('api.v1.support_tickets.update');
+            Route::delete('support-tickets/{id}', [SupportTicketController::class, 'destroy'])->whereNumber('id')->name('api.v1.support_tickets.destroy');
+            Route::post('support-tickets/{id}/restore', [SupportTicketController::class, 'restore'])->whereNumber('id')->name('api.v1.support_tickets.restore');
+            Route::delete('support-tickets/{id}/force', [SupportTicketController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.support_tickets.force_delete');
+            Route::post('support-tickets/batch-delete', [SupportTicketController::class, 'batchDelete'])->name('api.v1.support_tickets.batch_delete');
+            Route::post('support-tickets/batch-restore', [SupportTicketController::class, 'batchRestore'])->name('api.v1.support_tickets.batch_restore');
+            Route::post('support-tickets/batch-force-delete', [SupportTicketController::class, 'batchForceDelete'])->name('api.v1.support_tickets.batch_force_delete');
+            Route::post('support-tickets/{id}/messages', [SupportTicketController::class, 'addMessage'])->whereNumber('id')->name('api.v1.support_tickets.add_message');
+            Route::post('support-tickets/{id}/read', [SupportTicketController::class, 'markAsRead'])->whereNumber('id')->name('api.v1.support_tickets.mark_as_read');
+            Route::apiResource('support-tickets', SupportTicketController::class)->parameters(['support-tickets' => 'id'])->except(['index', 'show']);
         });
 
     });

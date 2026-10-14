@@ -47,4 +47,19 @@ class UpdateSupportTicketRequest extends FormRequest
             ],
         ];
     }
+
+    public function getNetworkId(): ?int
+    {
+        return $this->filled('network_id') ? (int) $this->input('network_id') : null;
+    }
+
+    public function getPosId(): ?int
+    {
+        return $this->filled('pos_id') ? (int) $this->input('pos_id') : null;
+    }
+
+    public function getTicketSubject(): ?string
+    {
+        return $this->filled('ticket_subject') ? (string) $this->input('ticket_subject') : null;
+    }
 }

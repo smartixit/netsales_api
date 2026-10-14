@@ -281,6 +281,1119 @@
                 ]
             }
         },
+        "/api/v1/bank-accounts": {
+            "get": {
+                "tags": [
+                    "Bank Accounts"
+                ],
+                "summary": "عرض قائمة الحسابات البنكية",
+                "description": "عرض قائمة الحسابات البنكية مع الفلترة والترقيم بالمؤشر.",
+                "operationId": "7007cb04659f60dad0d33bd222e4cdf9",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "account_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "account_currency",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الحسابات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Bank Accounts"
+                ],
+                "summary": "إنشاء حساب بنكي جديد",
+                "description": "إنشاء حساب بنكي جديد مع رفع الشعار.",
+                "operationId": "522a6c8a4273005919a52cad87bc7c26",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء الحساب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bank-accounts/active": {
+            "get": {
+                "tags": [
+                    "Bank Accounts"
+                ],
+                "summary": "عرض الحسابات البنكية النشطة",
+                "description": "عرض الحسابات البنكية النشطة المتاحة للسداد والتحويل.",
+                "operationId": "8a924dbec71ce916693ffbdd27458ee5",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الحسابات النشطة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bank-accounts/{id}": {
+            "get": {
+                "tags": [
+                    "Bank Accounts"
+                ],
+                "summary": "عرض تفاصيل حساب بنكي",
+                "description": "عرض تفاصيل حساب بنكي محدد.",
+                "operationId": "15c90e91460d1d74591b312259d21ca0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل الحساب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Bank Accounts"
+                ],
+                "summary": "تحديث بيانات حساب بنكي",
+                "description": "تحديث بيانات حساب بنكي قائم واستبدال الشعار.",
+                "operationId": "21ca6153e0b3b116d506f231b1d4421c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث الحساب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Bank Accounts"
+                ],
+                "summary": "حذف حساب بنكي ناعماً",
+                "description": "حذف حساب بنكي ناعماً.",
+                "operationId": "8c09dfa675a5c564b6fa96cf6b2dc91d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الحساب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bank-accounts/{id}/toggle-status": {
+            "post": {
+                "tags": [
+                    "Bank Accounts"
+                ],
+                "summary": "تبديل حالة تفعيل الحساب البنكي",
+                "description": "تبديل حالة تفعيل الحساب البنكي (نشط / معطل).",
+                "operationId": "09b1f595c6dde4cd0b9d5ae554d100cf",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تبديل حالة الحساب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bank-accounts/trashed": {
+            "get": {
+                "tags": [
+                    "Bank Accounts"
+                ],
+                "summary": "عرض الحسابات البنكية المحذوفة ناعماً",
+                "description": "عرض قائمة الحسابات البنكية المحذوفة ناعماً.",
+                "operationId": "70fa3316322bd8285af819a0b85fd70c",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الحسابات المحذوفة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bank-accounts/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Bank Accounts"
+                ],
+                "summary": "استعادة حساب بنكي محذوف",
+                "description": "استعادة حساب بنكي محذوف ناعماً.",
+                "operationId": "a2c6eb19578afa9ffbb72803eab22dfe",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة الحساب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bank-accounts/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Bank Accounts"
+                ],
+                "summary": "حذف نهائي للحساب البنكي",
+                "description": "حذف نهائي للحساب البنكي مع تنظيف الشعار.",
+                "operationId": "c1aef4826d91c68363a8d35397e7ca0e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الحساب نهائياً بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bank-accounts/batch-delete": {
+            "post": {
+                "tags": [
+                    "Bank Accounts"
+                ],
+                "summary": "حذف مجمع للحسابات",
+                "description": "حذف مجمع ناعم للحسابات.",
+                "operationId": "09b3b510160c2788a18be571097ed921",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bank-accounts/batch-restore": {
+            "post": {
+                "tags": [
+                    "Bank Accounts"
+                ],
+                "summary": "استعادة مجمعة للحسابات",
+                "description": "استعادة مجمعة للحسابات.",
+                "operationId": "2015e29c1bf1fae12d8f874c91c24756",
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة المجمعة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bank-accounts/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Bank Accounts"
+                ],
+                "summary": "حذف نهائي مجمع للحسابات",
+                "description": "حذف نهائي مجمع للحسابات.",
+                "operationId": "5dc5068c9573e87241a500997f82ef49",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/expenses": {
+            "get": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "عرض قائمة المصروفات التشغيلية",
+                "description": "عرض قائمة المصروفات مع الفلترة والترقيم بالمؤشر.",
+                "operationId": "b1b77dc505b7fd85a1ae7f1b3880f8af",
+                "parameters": [
+                    {
+                        "name": "network_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم جلب المصروفات بنجاح"
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "تسجيل مصروف تشغيلي جديد",
+                "description": "تسجيل مصروف تشغيلي جديد مع البنود والمرفقات وخصم إلزامي من محفظة الشبكة.",
+                "operationId": "7eca81a4560f60faba9c02b3071397ab",
+                "responses": {
+                    "201": {
+                        "description": "تم تسجيل المصروف والخصم من المحفظة بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/expenses/{id}": {
+            "get": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "عرض تفاصيل مصروف محدد",
+                "description": "عرض تفاصيل مصروف تشغيلي محدد مع بنوده ومرفقاته.",
+                "operationId": "c0caaad2f7dc79419123743597023413",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل المصروف بنجاح"
+                    },
+                    "404": {
+                        "description": "المصروف غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "تحديث بيانات مصروف قائم",
+                "description": "تحديث بيانات المصروف وبنوده ومرفقاته.",
+                "operationId": "2c85f04b86f024df4c3e1103e50e8b01",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث المصروف وتسوية المحفظة بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "حذف مصروف ناعماً",
+                "description": "حذف مصروف تشغيلي ناعماً.",
+                "operationId": "5ce6215b38e6452bda795185454fe930",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المصروف بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/expenses/trashed": {
+            "get": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "عرض المصروفات المحذوفة ناعماً",
+                "description": "عرض قائمة المصروفات المحذوفة ناعماً.",
+                "operationId": "d7efc2451f2a97c861c15e640b95557f",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع المصروفات المحذوفة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/expenses/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "استعادة مصروف محذوف",
+                "description": "استعادة مصروف محذوف ناعماً.",
+                "operationId": "6c6128306baf2d1d16f721cee83f4992",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة المصروف بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/expenses/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "حذف نهائي للمصروف",
+                "description": "حذف نهائي للمصروف مع تنظيف المرفقات.",
+                "operationId": "8a5bac41275fbce20bad98a200f8e937",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المصروف نهائياً بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/expenses/batch-delete": {
+            "post": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "حذف مجمع للمصروفات",
+                "description": "حذف مجمع ناعم للمصروفات.",
+                "operationId": "1ecc277fe161225cc8cd43b6f96031a9",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/expenses/batch-restore": {
+            "post": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "استعادة مجمعة للمصروفات",
+                "description": "استعادة مجمعة للمصروفات المحذوفة.",
+                "operationId": "6a84871d2192adacd09505a363665f73",
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة المجمعة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/expenses/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "حذف نهائي مجمع للمصروفات",
+                "description": "حذف مجمع نهائي للمصروفات.",
+                "operationId": "4f80624b59edbf680ad9eebc94d4c5da",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/expenses/{id}/items": {
+            "post": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "إضافة بند منفرد للمصروف",
+                "description": "إضافة بند منفرد لمصروف قائم مع خصم المبلغ من المحفظة.",
+                "operationId": "393edab0db34b450f272c63cacc67f24",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "تمت إضافة البند وتسوية المحفظة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/expenses/{id}/items/{itemId}": {
+            "delete": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "حذف بند منفرد من المصروف",
+                "description": "حذف بند منفرد من مصروف قائم مع استرداد المبلغ للمحفظة.",
+                "operationId": "d6272b59df6d974063b24565fcb6d4f7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف البند واسترداد مبلغه للمحفظة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/expenses/{id}/attachments/{attachmentId}": {
+            "delete": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "حذف مرفق منفرد من المصروف",
+                "description": "حذف مرفق منفرد من المصروف.",
+                "operationId": "e2ba5cd000097e59b7f8f6a2112423f8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "attachmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف المرفق بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/features": {
+            "get": {
+                "tags": [
+                    "Features"
+                ],
+                "summary": "عرض قائمة ميزات النظام",
+                "description": "عرض قائمة ميزات النظام مع الفلترة والترقيم بالمؤشر.",
+                "operationId": "39b5478beb9474b263cba5add2ef5978",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "feature_value_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الميزات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Features"
+                ],
+                "summary": "إضافة ميزة جديدة",
+                "description": "إضافة ميزة جديدة في كتالوج النظام.",
+                "operationId": "176fc32d0f9bc59cd8b3e15e00485c0d",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء الميزة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/features/{id}": {
+            "get": {
+                "tags": [
+                    "Features"
+                ],
+                "summary": "عرض تفاصيل ميزة",
+                "description": "عرض تفاصيل ميزة محددة عبر معرفها.",
+                "operationId": "997285c1697a8fb2cd3e597fbb7b4be3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل الميزة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Features"
+                ],
+                "summary": "تحديث بيانات ميزة",
+                "description": "تحديث بيانات ميزة في النظام.",
+                "operationId": "8baa484fc7850ecb57d2f85f369a1d5b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث الميزة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Features"
+                ],
+                "summary": "حذف ميزة ناعماً",
+                "description": "حذف ميزة ناعماً.",
+                "operationId": "0ef40e6ee831e3a736d43682a1518d43",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الميزة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/features/{id}/toggle-status": {
+            "post": {
+                "tags": [
+                    "Features"
+                ],
+                "summary": "تبديل حالة تفعيل الميزة",
+                "description": "تبديل حالة تفعيل الميزة (نشط / معطل).",
+                "operationId": "b72c83f3f5976411f07b983e94a7f448",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تبديل حالة الميزة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/features/trashed": {
+            "get": {
+                "tags": [
+                    "Features"
+                ],
+                "summary": "عرض الميزات المحذوفة ناعماً",
+                "description": "عرض قائمة الميزات المحذوفة ناعماً.",
+                "operationId": "bbe88a96ba7440e65dbe2c856b4b3782",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الميزات المحذوفة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/features/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Features"
+                ],
+                "summary": "استعادة ميزة محذوفة",
+                "description": "استعادة ميزة محذوفة ناعماً.",
+                "operationId": "dfda515767baf731d3d4646c1eee3e29",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة الميزة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/features/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Features"
+                ],
+                "summary": "حذف نهائي للميزة",
+                "description": "حذف نهائي للميزة.",
+                "operationId": "91bedf6c1982350c77107f080f3d00b3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الميزة نهائياً بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/features/batch-delete": {
+            "post": {
+                "tags": [
+                    "Features"
+                ],
+                "summary": "حذف مجمع للميزات",
+                "description": "حذف مجمع ناعم للميزات.",
+                "operationId": "b501a90bc4435ec9a20775a5a855a033",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/features/batch-restore": {
+            "post": {
+                "tags": [
+                    "Features"
+                ],
+                "summary": "استعادة مجمعة للميزات",
+                "description": "استعادة مجمعة للميزات.",
+                "operationId": "7aa935a2b9dba14b34002d0b647cb8a5",
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة المجمعة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/features/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Features"
+                ],
+                "summary": "حذف نهائي مجمع للميزات",
+                "description": "حذف نهائي مجمع للميزات.",
+                "operationId": "6f25314e64039f5315627b45de3da6c1",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/networks": {
             "get": {
                 "tags": [
@@ -1895,6 +3008,249 @@
                 }
             }
         },
+        "/api/v1/provider-subscriptions": {
+            "get": {
+                "tags": [
+                    "Provider Subscriptions"
+                ],
+                "summary": "عرض قائمة اشتراكات المزودين",
+                "description": "عرض قائمة اشتراكات مزودي الشبكات مع الفلترة والترقيم بالمؤشر.",
+                "operationId": "850e393861f4c338f58fbb461ecf2ccc",
+                "parameters": [
+                    {
+                        "name": "network_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "plan_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "active_only",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الاشتراكات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/provider-subscriptions/{id}": {
+            "get": {
+                "tags": [
+                    "Provider Subscriptions"
+                ],
+                "summary": "عرض تفاصيل اشتراك مزود",
+                "description": "عرض تفاصيل اشتراك محدد عبر معرفه.",
+                "operationId": "85e53360262018ff1190d4c3eda34602",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل الاشتراك بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/provider-subscriptions/network/{networkId}/active": {
+            "get": {
+                "tags": [
+                    "Provider Subscriptions"
+                ],
+                "summary": "عرض الاشتراك النشط للشبكة",
+                "description": "جلب الاشتراك الساري والنشط حالياً لشبكة مزود معينة.",
+                "operationId": "286fe3db928c324578bb2ce33cf8ccb1",
+                "parameters": [
+                    {
+                        "name": "networkId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الاشتراك النشط بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/provider-subscriptions/{id}/extend": {
+            "post": {
+                "tags": [
+                    "Provider Subscriptions"
+                ],
+                "summary": "تمديد فترة صلاحية الاشتراك",
+                "description": "تمديد فترة صلاحية اشتراك قائم لشبكة معينة.",
+                "operationId": "6f009b22a4d7bdf2fb1e658eccd9d9fe",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تمديد الاشتراك بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/provider-subscriptions/{id}/consumptions": {
+            "get": {
+                "tags": [
+                    "Provider Subscriptions"
+                ],
+                "summary": "عرض استهلاك ميزات الاشتراك",
+                "description": "عرض سجلات استهلاك الميزات لاشتراك محدد.",
+                "operationId": "3d41e10f7ac4cbef4a4462f44353f5b6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع سجلات الاستهلاك بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/provider-subscriptions/network/{networkId}/consume": {
+            "post": {
+                "tags": [
+                    "Provider Subscriptions"
+                ],
+                "summary": "تسجيل استهلاك ميزة للشبكة",
+                "description": "استهلاك حصة من ميزة للشبكة والتحقق من عدم تجاوز الحد الأقصى.",
+                "operationId": "bd85b206db0a47ce669baea55ea60ece",
+                "parameters": [
+                    {
+                        "name": "networkId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تسجيل الاستهلاك بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/provider-subscriptions/network/{networkId}/activate-early": {
+            "post": {
+                "tags": [
+                    "Provider Subscriptions"
+                ],
+                "summary": "تفعيل الاشتراك المجدول مبكراً",
+                "description": "تفعيل الاشتراك المجدول مبكراً للشبكة بطلب مباشر.",
+                "operationId": "3f3919bf62b46bcca4452afa6a49f80f",
+                "parameters": [
+                    {
+                        "name": "networkId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تفعيل الاشتراك المجدول مبكراً بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/requests": {
             "get": {
                 "tags": [
@@ -2508,6 +3864,1171 @@
                         "description": "الجلسة غير موجودة"
                     }
                 }
+            }
+        },
+        "/api/v1/subscription-plans": {
+            "get": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "عرض قائمة باقات الاشتراك",
+                "description": "عرض قائمة باقات الاشتراك مع الفلترة والترقيم بالمؤشر.",
+                "operationId": "2a1de88cf32fdbbfc9eab54243494b1a",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع باقات الاشتراك بنجاح"
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "إنشاء باقة اشتراك جديدة",
+                "description": "إنشاء باقة اشتراك جديدة.",
+                "operationId": "35b1e5fac8831c72567ce140a9237e67",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء باقة الاشتراك بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plans/{id}": {
+            "get": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "عرض تفاصيل باقة اشتراك",
+                "description": "عرض تفاصيل باقة اشتراك محددة مع ميزاتها.",
+                "operationId": "b0a6fe3c7db746bd947f668aa0d360fa",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل الباقة بنجاح"
+                    },
+                    "404": {
+                        "description": "الباقة غير موجودة"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "تحديث بيانات باقة اشتراك",
+                "description": "تحديث بيانات باقة اشتراك قائمة وميزاتها.",
+                "operationId": "076e3793dc8498916181d3e95aef4fa3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث باقة الاشتراك بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "حذف باقة اشتراك ناعماً",
+                "description": "حذف باقة اشتراك ناعماً.",
+                "operationId": "4d0fd2081a81fa4db1505fee86b6376b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الباقة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plans/{id}/toggle-status": {
+            "post": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "تبديل حالة تفعيل باقة الاشتراك",
+                "description": "تبديل حالة تفعيل الباقة (نشط / معطل).",
+                "operationId": "4f1bd409bb295e50edced220d076ba61",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تبديل حالة الباقة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plans/{id}/features": {
+            "post": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "ربط أو تحديث ميزة بالباقة",
+                "description": "ربط أو تحديث ميزة في باقة معينة.",
+                "operationId": "7b2386ced48a6b6bea7101172ea6598f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم ربط الميزة بالباقة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plans/{id}/features/{featureId}": {
+            "delete": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "إزالة ميزة من الباقة",
+                "description": "إزالة ميزة من باقة معينة.",
+                "operationId": "e2c926b320b7636f753ce7644172b4fa",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "featureId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تمت إزالة الميزة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plans/trashed": {
+            "get": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "عرض باقات الاشتراك المحذوفة ناعماً",
+                "description": "عرض قائمة باقات الاشتراك المحذوفة ناعماً.",
+                "operationId": "6037dadf8f229d4a9d213345023bef2a",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الباقات المحذوفة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plans/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "استعادة باقة اشتراك محذوفة",
+                "description": "استعادة باقة اشتراك محذوفة ناعماً.",
+                "operationId": "36b3643b52786a913490e29b940a63ea",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة الباقة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plans/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "حذف نهائي لباقة الاشتراك",
+                "description": "حذف نهائي لباقة الاشتراك مع تنظيف ميزاتها.",
+                "operationId": "574ceaa045dc8bcfd4c36eca4704648a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الباقة نهائياً بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plans/batch-delete": {
+            "post": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "حذف مجمع للباقات",
+                "description": "حذف مجمع ناعم للباقات.",
+                "operationId": "8627a1ad430c8c771138e207c809f775",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plans/batch-restore": {
+            "post": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "استعادة مجمعة للباقات",
+                "description": "استعادة مجمعة للباقات المحذوفة.",
+                "operationId": "991806428b1f7df03e92bc3c89f69ef9",
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة المجمعة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plans/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "حذف نهائي مجمع للباقات",
+                "description": "حذف نهائي مجمع للباقات.",
+                "operationId": "bc70be64c700aa73d637e02cff0c0ca9",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plan-requests": {
+            "get": {
+                "tags": [
+                    "Subscription Plan Requests"
+                ],
+                "summary": "عرض قائمة طلبات الاشتراك",
+                "description": "عرض قائمة طلبات الاشتراك مع الفلترة والترقيم بالمؤشر.",
+                "operationId": "70116d3b01bb17e124b36bfe6167488e",
+                "parameters": [
+                    {
+                        "name": "network_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "plan_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "request_payment_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع طلبات الاشتراك بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Subscription Plan Requests"
+                ],
+                "summary": "تقديم طلب اشتراك جديد",
+                "description": "تقديم طلب اشتراك جديد لباقة محددة.",
+                "operationId": "172ad2fe583cd93df5aebfc52f2c58d1",
+                "responses": {
+                    "201": {
+                        "description": "تم تقديم طلب الاشتراك بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plan-requests/{id}": {
+            "get": {
+                "tags": [
+                    "Subscription Plan Requests"
+                ],
+                "summary": "عرض تفاصيل طلب اشتراك",
+                "description": "عرض تفاصيل طلب اشتراك محدد.",
+                "operationId": "5813df00a8f3640482d0ad4139d593e4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل الطلب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Subscription Plan Requests"
+                ],
+                "summary": "حذف طلب اشتراك ناعماً",
+                "description": "حذف طلب اشتراك ناعماً.",
+                "operationId": "89b9b2f9916918cf61dbfb834f29ec74",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الطلب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plan-requests/{id}/approve": {
+            "post": {
+                "tags": [
+                    "Subscription Plan Requests"
+                ],
+                "summary": "اعتماد طلب الاشتراك",
+                "description": "اعتماد طلب الاشتراك وتوليد الاشتراك النشط للمزود وتهيئة الحصص.",
+                "operationId": "8ad1f4450682feed22481d39b2f05e49",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم اعتماد الطلب وتفعيل الاشتراك بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plan-requests/{id}/reject": {
+            "post": {
+                "tags": [
+                    "Subscription Plan Requests"
+                ],
+                "summary": "رفض طلب الاشتراك",
+                "description": "رفض طلب الاشتراك مع توثيق السبب.",
+                "operationId": "e603edd6e854552053aede83b3131495",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم رفض الطلب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plan-requests/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Subscription Plan Requests"
+                ],
+                "summary": "إلغاء طلب اشتراك معلق",
+                "description": "إلغاء طلب اشتراك معلق من قبل المستخدم.",
+                "operationId": "edde7ce92378e8ffb4b7535173e7f979",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم إلغاء الطلب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plan-requests/trashed": {
+            "get": {
+                "tags": [
+                    "Subscription Plan Requests"
+                ],
+                "summary": "عرض طلبات الاشتراك المحذوفة ناعماً",
+                "description": "عرض قائمة طلبات الاشتراك المحذوفة ناعماً.",
+                "operationId": "df071e08dae0e6143eacaf3ed4f35c84",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع الطلبات المحذوفة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plan-requests/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Subscription Plan Requests"
+                ],
+                "summary": "استعادة طلب اشتراك محذوف",
+                "description": "استعادة طلب اشتراك محذوف ناعماً.",
+                "operationId": "7a54a8b8c66b755bc01dac25b426d4fc",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة الطلب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plan-requests/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Subscription Plan Requests"
+                ],
+                "summary": "حذف نهائي لطلب الاشتراك",
+                "description": "حذف نهائي لطلب الاشتراك مع تنظيف الإيصال.",
+                "operationId": "ac7a47950a78b0ccf7fbb8da3e664b1d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الطلب نهائياً بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plan-requests/batch-delete": {
+            "post": {
+                "tags": [
+                    "Subscription Plan Requests"
+                ],
+                "summary": "حذف مجمع للطلبات",
+                "description": "حذف مجمع ناعم للطلبات.",
+                "operationId": "4bf4d075d204684131a9b1b2266f26d8",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plan-requests/batch-restore": {
+            "post": {
+                "tags": [
+                    "Subscription Plan Requests"
+                ],
+                "summary": "استعادة مجمعة للطلبات",
+                "description": "استعادة مجمعة للطلبات المحذوفة.",
+                "operationId": "88f585d330304c2765869847f1d5794f",
+                "responses": {
+                    "200": {
+                        "description": "تمت الاستعادة المجمعة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscription-plan-requests/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Subscription Plan Requests"
+                ],
+                "summary": "حذف نهائي مجمع للطلبات",
+                "description": "حذف نهائي مجمع للطلبات.",
+                "operationId": "23fd90f3a40611ede569ab1f77c0e0aa",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/support-tickets": {
+            "get": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "عرض قائمة التذاكر",
+                "description": "عرض قائمة تذاكر الدعم الفني مع الفلترة والترقيم بالمؤشر.",
+                "operationId": "0922cf7dccbb78c34f74268e060ed0d3",
+                "parameters": [
+                    {
+                        "name": "network_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "pos_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع قائمة التذاكر بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "إنشاء تذكرة دعم فني جديدة",
+                "description": "إنشاء تذكرة دعم فني جديدة.",
+                "operationId": "ba153e1f841c9463d414a495d58d6880",
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء التذكرة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/support-tickets/trashed": {
+            "get": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "عرض التذاكر المحذوفة",
+                "description": "عرض قائمة التذاكر المحذوفة ناعماً.",
+                "operationId": "f4b9f343a24604984153eec66fa5f978",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع التذاكر المحذوفة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/support-tickets/{id}": {
+            "get": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "عرض تفاصيل تذكرة",
+                "description": "عرض تفاصيل تذكرة محددة عبر معرفها الرقمي.",
+                "operationId": "f6baecdc99aaecaee629f02a9ad9f189",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع تفاصيل التذكرة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "تحديث بيانات تذكرة",
+                "description": "تحديث بيانات تذكرة قائمة.",
+                "operationId": "26869b65368d2d832242bfc8b6b75e5c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث التذكرة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "حذف تذكرة ناعماً",
+                "description": "حذف تذكرة ناعماً.",
+                "operationId": "c1918d55cc9c867083c5a271a62bc174",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف التذكرة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/support-tickets/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "استعادة تذكرة محذوفة",
+                "description": "استعادة تذكرة محذوفة ناعماً.",
+                "operationId": "7359b26ddea0c45e5f7e5bbeed9f2026",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة التذكرة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/support-tickets/{id}/force": {
+            "delete": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "الحذف النهائي لتذكرة",
+                "description": "الحذف النهائي لتذكرة من قاعدة البيانات.",
+                "operationId": "116acd69c6ee98886912ba6c84c3b72b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي للتذكرة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/support-tickets/batch-delete": {
+            "post": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "الحذف المجمع للتذاكر",
+                "description": "الحذف المجمع للتذاكر ناعماً.",
+                "operationId": "782572afcba4272c4663803f4694a0cd",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف المجمع للتذاكر بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/support-tickets/batch-restore": {
+            "post": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "الاستعادة المجمعة للتذاكر",
+                "description": "الاستعادة المجمعة للتذاكر المحذوفة ناعماً.",
+                "operationId": "91babc0a34592e74b46df883a579ca21",
+                "responses": {
+                    "200": {
+                        "description": "تم استعادة التذاكر المحددة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/support-tickets/batch-force-delete": {
+            "post": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "الحذف النهائي المجمع للتذاكر",
+                "description": "الحذف النهائي المجمع للتذاكر.",
+                "operationId": "88b01852b9ca54cffe3a8a21de783bbe",
+                "responses": {
+                    "200": {
+                        "description": "تم الحذف النهائي للتذاكر بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/support-tickets/{id}/messages": {
+            "get": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "عرض رسائل التذكرة",
+                "description": "عرض قائمة رسائل تذكرة معينة مرتبة زمنياً.",
+                "operationId": "39900a146b69d84d81814bef44cc47fc",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع رسائل التذكرة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "إرسال رسالة في التذكرة",
+                "description": "إضافة رد / رسالة جديدة إلى تذكرة قائمة.",
+                "operationId": "0476bbc027e60c89a2b6c36e0d2095bb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "تم إرسال الرسالة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/support-tickets/{id}/read": {
+            "post": {
+                "tags": [
+                    "Support Tickets"
+                ],
+                "summary": "تمييز رسائل التذكرة كمقروءة",
+                "description": "تمييز رسائل التذكرة كمقروءة للمستخدم الحالي.",
+                "operationId": "6d808bd64bb97465b6b13cfcb2657629",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تمييز الرسائل كمقروءة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ]
             }
         },
         "/api/v1/users": {
@@ -3728,6 +6249,18 @@
             "description": "إدارة المصادقة والجلسات وأمان الحسابات والتسجيل وكلمات المرور"
         },
         {
+            "name": "Bank Accounts",
+            "description": "إدارة الحسابات البنكية والمحافظ المعتمدة للنظام"
+        },
+        {
+            "name": "Expenses",
+            "description": "إدارة المصروفات التشغيلية للشبكات، البنود والمرفقات، والخصم الإلزامي من المحفظة المالية"
+        },
+        {
+            "name": "Features",
+            "description": "إدارة كتالوج ميزات النظام وأنواع قيمها"
+        },
+        {
             "name": "Networks",
             "description": "إدارة مزودي الشبكات، مراجعة واعتماد الطلبات، والعمليات الإدارية"
         },
@@ -3752,6 +6285,10 @@
             "description": "إدارة محافظ نقاط البيع، التغذية والتحويل المالي بين الشبكات ونقاط البيع، كشف الحساب ودفتر الأستاذ، والعمليات المجمعة"
         },
         {
+            "name": "Provider Subscriptions",
+            "description": "إدارة اشتراكات مزودي الشبكات وتتبع استهلاك الحصص والميزات"
+        },
+        {
             "name": "Voucher Requests",
             "description": "إدارة طلبات شراء كروت الإنترنت، اعتماد ورفض الطلبات، التسوية التلقائية، والعمليات المجمعة"
         },
@@ -3762,6 +6299,18 @@
         {
             "name": "Security",
             "description": "إدارة الأمان، الحظر الأمني، الجلسات النشطة، والمفاتيح العامة للتشفير"
+        },
+        {
+            "name": "Subscription Plans",
+            "description": "إدارة باقات الاشتراك السحابية لمزودي الشبكات وميزاتها وحصصها"
+        },
+        {
+            "name": "Subscription Plan Requests",
+            "description": "تقديم طلبات الاشتراك وترقية الباقات والتدقيق والاعتماد"
+        },
+        {
+            "name": "Support Tickets",
+            "description": "إدارة تذاكر الدعم الفني والمراسلات التفاعلية"
         },
         {
             "name": "Users",

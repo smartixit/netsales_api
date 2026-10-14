@@ -60,4 +60,14 @@ class UpdateSupportTicketMessageRequest extends FormRequest
             ],
         ];
     }
+
+    public function getMessageBody(): ?string
+    {
+        return $this->filled('message_body') ? (string) $this->input('message_body') : null;
+    }
+
+    public function getIsRead(): ?bool
+    {
+        return $this->has('is_read') ? (bool) $this->input('is_read') : null;
+    }
 }

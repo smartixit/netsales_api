@@ -43,6 +43,31 @@ class StoreSupportTicketRequest extends FormRequest
                 'string',
                 'max:255',
             ],
+            'message_body' => [
+                'nullable',
+                'string',
+                'max:5000',
+            ],
         ];
+    }
+
+    public function getNetworkId(): int
+    {
+        return (int) $this->input('network_id');
+    }
+
+    public function getPosId(): ?int
+    {
+        return $this->filled('pos_id') ? (int) $this->input('pos_id') : null;
+    }
+
+    public function getTicketSubject(): string
+    {
+        return (string) $this->input('ticket_subject');
+    }
+
+    public function getMessageBody(): ?string
+    {
+        return $this->filled('message_body') ? (string) $this->input('message_body') : null;
     }
 }
