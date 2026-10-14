@@ -50,8 +50,8 @@ class AuthController extends BaseController
                 schema: new OA\Schema(
                     required: ['network_name', 'network_holder_name', 'governorate_id', 'directorate_id', 'network_phone_number', 'user_full_name', 'user_phone_number', 'user_password', 'device_uuid'],
                     properties: [
-                        new OA\Property(property: 'network_name', type: 'string', example: 'شبكة الأمل'),
-                        new OA\Property(property: 'network_holder_name', type: 'string', example: 'أحمد محمد'),
+                        new OA\Property(property: 'network_name', type: 'string', example: 'شبكة سمارتكس'),
+                        new OA\Property(property: 'network_holder_name', type: 'string', example: 'حسام خالد سعيد علي'),
                         new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
                         new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
                         new OA\Property(property: 'network_phone_number', type: 'string', example: '772957881'),
@@ -65,7 +65,7 @@ class AuthController extends BaseController
                         new OA\Property(property: 'user_profile_logo', type: 'string', format: 'binary', description: 'صورة المستخدم الشخصية'),
                         new OA\Property(property: 'device_uuid', type: 'string', example: 'SPA-251DHS'),
                         new OA\Property(property: 'device_name', type: 'string', example: 'Samsung S22'),
-                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'POS', 'WEB', 'DESKTOP'], example: 'ANDROID'),
+                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS','MAC'], example: 'ANDROID'),
                     ]
                 )
             )
@@ -106,26 +106,31 @@ class AuthController extends BaseController
         tags: ['Auth'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'بيانات تسجيل نقطة البيع وحساب الوكيل والجهاز',
-            content: new OA\JsonContent(
-                required: ['pos_name', 'pos_holder_name', 'governorate_id', 'directorate_id', 'pos_phone_number', 'user_full_name', 'user_phone_number', 'user_password', 'device_uuid'],
-                properties: [
-                    new OA\Property(property: 'pos_name', type: 'string', example: 'نقطة بيع النور'),
-                    new OA\Property(property: 'pos_holder_name', type: 'string', example: 'خالد عبد الله'),
-                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_phone_number', type: 'string', example: '771234567'),
-                    new OA\Property(property: 'pos_email', type: 'string', format: 'email', example: 'pos@example.com'),
-                    new OA\Property(property: 'pos_address', type: 'string', example: 'حي الصافية، صنعاء'),
-                    new OA\Property(property: 'network_id', type: 'integer', nullable: true, example: 1),
-                    new OA\Property(property: 'user_full_name', type: 'string', example: 'خالد عبد الله صالح'),
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '771234567'),
-                    new OA\Property(property: 'user_password', type: 'string', format: 'password', example: 'Secret@123'),
-                    new OA\Property(property: 'user_email', type: 'string', format: 'email', example: 'pos.admin@example.com'),
-                    new OA\Property(property: 'device_uuid', type: 'string', example: 'e5c18495-e224-57e5-b10c-7c7f95e302f1'),
-                    new OA\Property(property: 'device_name', type: 'string', example: 'Sunmi V2 POS'),
-                    new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'POS', 'WEB', 'DESKTOP'], example: 'POS'),
-                ]
+            description: 'بيانات تسجيل نقطة البيع وحساب الوكيل والجهاز بصيغة النموذج (Form Data)',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['pos_name', 'pos_holder_name', 'governorate_id', 'directorate_id', 'pos_phone_number', 'user_full_name', 'user_phone_number', 'user_password', 'device_uuid'],
+                    properties: [
+                        new OA\Property(property: 'pos_name', type: 'string', example: 'نقطة بيع النور'),
+                        new OA\Property(property: 'pos_holder_name', type: 'string', example: 'خالد عبد الله'),
+                        new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'pos_phone_number', type: 'string', example: '771234567'),
+                        new OA\Property(property: 'pos_email', type: 'string', format: 'email', example: 'pos@example.com'),
+                        new OA\Property(property: 'pos_address', type: 'string', example: 'حي الصافية، صنعاء'),
+                        new OA\Property(property: 'pos_profile_logo', type: 'string', format: 'binary', description: 'شعار نقطة البيع'),
+                        new OA\Property(property: 'network_id', type: 'integer', nullable: true, example: 1),
+                        new OA\Property(property: 'user_full_name', type: 'string', example: 'خالد عبد الله صالح'),
+                        new OA\Property(property: 'user_phone_number', type: 'string', example: '771234567'),
+                        new OA\Property(property: 'user_password', type: 'string', format: 'password', example: 'Secret@123'),
+                        new OA\Property(property: 'user_email', type: 'string', format: 'email', example: 'pos.admin@example.com'),
+                        new OA\Property(property: 'user_profile_logo', type: 'string', format: 'binary', description: 'صورة المستخدم الشخصية'),
+                        new OA\Property(property: 'device_uuid', type: 'string', example: 'e5c18495-e224-57e5-b10c-7c7f95e302f1'),
+                        new OA\Property(property: 'device_name', type: 'string', example: 'Sunmi V2 POS'),
+                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS','MAC'], example: 'ANDROID'),
+                    ]
+                )
             )
         ),
         responses: [
@@ -164,16 +169,19 @@ class AuthController extends BaseController
         tags: ['Auth'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'بيانات تسجيل الدخول ومعلومات الجهاز',
-            content: new OA\JsonContent(
-                required: ['user_phone_number', 'user_password'],
-                properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
-                    new OA\Property(property: 'user_password', type: 'string', format: 'password', example: 'Admin@123456'),
-                    new OA\Property(property: 'device_uuid', type: 'string', nullable: true, example: 'SPA-251DHS'),
-                    new OA\Property(property: 'device_name', type: 'string', nullable: true, example: 'Chrome Browser Windows'),
-                    new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'POS', 'WEB', 'DESKTOP'], nullable: true, example: 'WEB'),
-                ]
+            description: 'بيانات تسجيل الدخول ومعلومات الجهاز بصيغة النموذج (Form Data)',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['user_phone_number', 'user_password'],
+                    properties: [
+                        new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                        new OA\Property(property: 'user_password', type: 'string', format: 'password', example: 'Admin@123456'),
+                        new OA\Property(property: 'device_uuid', type: 'string', nullable: true, example: 'SPA-251DHS'),
+                        new OA\Property(property: 'device_name', type: 'string', nullable: true, example: 'Chrome Browser Windows'),
+                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS','MAC'], example: 'ANDROID'),
+                    ]
+                )
             )
         ),
         responses: [
@@ -221,16 +229,19 @@ class AuthController extends BaseController
         tags: ['Auth'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'بيانات التحقق الثنائي OTP وتأكيد الجهاز',
-            content: new OA\JsonContent(
-                required: ['user_phone_number', 'otp', 'device_uuid'],
-                properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
-                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
-                    new OA\Property(property: 'device_uuid', type: 'string', example: 'SPA-251DHS'),
-                    new OA\Property(property: 'device_name', type: 'string', nullable: true, example: 'Samsung S22'),
-                    new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'POS', 'WEB', 'DESKTOP'], nullable: true, example: 'ANDROID'),
-                ]
+            description: 'بيانات التحقق الثنائي OTP وتأكيد الجهاز بصيغة النموذج (Form Data)',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['user_phone_number', 'otp', 'device_uuid'],
+                    properties: [
+                        new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                        new OA\Property(property: 'otp', type: 'string', example: '123456'),
+                        new OA\Property(property: 'device_uuid', type: 'string', example: 'SPA-251DHS'),
+                        new OA\Property(property: 'device_name', type: 'string', nullable: true, example: 'Samsung S22'),
+                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS','MAC'], example: 'ANDROID'),
+                    ]
+                )
             )
         ),
         responses: [
@@ -344,12 +355,15 @@ class AuthController extends BaseController
         tags: ['Auth'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'رقم هاتف المستخدم لطلب استعادة كلمة المرور',
-            content: new OA\JsonContent(
-                required: ['user_phone_number'],
-                properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
-                ]
+            description: 'رقم هاتف المستخدم لطلب استعادة كلمة المرور بصيغة النموذج (Form Data)',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['user_phone_number'],
+                    properties: [
+                        new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                    ]
+                )
             )
         ),
         responses: [
@@ -378,13 +392,16 @@ class AuthController extends BaseController
         tags: ['Auth'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'التحقق من رمز OTP لاستعادة كلمة المرور',
-            content: new OA\JsonContent(
-                required: ['user_phone_number', 'otp'],
-                properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
-                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
-                ]
+            description: 'التحقق من رمز OTP لاستعادة كلمة المرور بصيغة النموذج (Form Data)',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['user_phone_number', 'otp'],
+                    properties: [
+                        new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                        new OA\Property(property: 'otp', type: 'string', example: '123456'),
+                    ]
+                )
             )
         ),
         responses: [
@@ -413,15 +430,18 @@ class AuthController extends BaseController
         tags: ['Auth'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'إعادة تعيين كلمة المرور الجديدة مع رمز التحقق',
-            content: new OA\JsonContent(
-                required: ['user_phone_number', 'otp', 'password', 'password_confirmation'],
-                properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
-                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
-                    new OA\Property(property: 'password', type: 'string', format: 'password', example: 'NewSecret@123'),
-                    new OA\Property(property: 'password_confirmation', type: 'string', format: 'password', example: 'NewSecret@123'),
-                ]
+            description: 'إعادة تعيين كلمة المرور الجديدة مع رمز التحقق بصيغة النموذج (Form Data)',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['user_phone_number', 'otp', 'password', 'password_confirmation'],
+                    properties: [
+                        new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                        new OA\Property(property: 'otp', type: 'string', example: '123456'),
+                        new OA\Property(property: 'password', type: 'string', format: 'password', example: 'NewSecret@123'),
+                        new OA\Property(property: 'password_confirmation', type: 'string', format: 'password', example: 'NewSecret@123'),
+                    ]
+                )
             )
         ),
         responses: [
@@ -451,14 +471,17 @@ class AuthController extends BaseController
         tags: ['Auth'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'تحديث كلمة المرور الحالية بكلمة مرور جديدة',
-            content: new OA\JsonContent(
-                required: ['current_password', 'new_password', 'new_password_confirmation'],
-                properties: [
-                    new OA\Property(property: 'current_password', type: 'string', format: 'password', example: 'OldSecret@123'),
-                    new OA\Property(property: 'new_password', type: 'string', format: 'password', example: 'NewSecret@123'),
-                    new OA\Property(property: 'new_password_confirmation', type: 'string', format: 'password', example: 'NewSecret@123'),
-                ]
+            description: 'تحديث كلمة المرور الحالية بكلمة مرور جديدة بصيغة النموذج (Form Data)',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['current_password', 'new_password', 'new_password_confirmation'],
+                    properties: [
+                        new OA\Property(property: 'current_password', type: 'string', format: 'password', example: 'OldSecret@123'),
+                        new OA\Property(property: 'new_password', type: 'string', format: 'password', example: 'NewSecret@123'),
+                        new OA\Property(property: 'new_password_confirmation', type: 'string', format: 'password', example: 'NewSecret@123'),
+                    ]
+                )
             )
         ),
         responses: [
@@ -493,13 +516,16 @@ class AuthController extends BaseController
         tags: ['Auth'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'تفعيل أو تعطيل ميزة التحقق الثنائي',
-            content: new OA\JsonContent(
-                required: ['enable'],
-                properties: [
-                    new OA\Property(property: 'enable', type: 'boolean', example: true),
-                    new OA\Property(property: 'otp', type: 'string', nullable: true, example: '123456'),
-                ]
+            description: 'تفعيل أو تعطيل ميزة التحقق الثنائي بصيغة النموذج (Form Data)',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['enable'],
+                    properties: [
+                        new OA\Property(property: 'enable', type: 'boolean', example: true),
+                        new OA\Property(property: 'otp', type: 'string', nullable: true, example: '123456'),
+                    ]
+                )
             )
         ),
         responses: [

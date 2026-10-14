@@ -274,14 +274,15 @@ return [
         'network_name' => 'اسم الشبكة',
         'network_phone_number' => 'هاتف الشبكة',
         'network_address' => 'عنوان الشبكة',
-        'network_logo' => 'شعار الشبكة',
+        'network_profile_logo' => 'شعار الشبكة',
         'network_currency' => 'عملة الشبكة',
-
+        
         'pos_id' => 'نقطة البيع',
         'pos_name' => 'اسم نقطة البيع',
         'pos_holder_name' => 'اسم مدير النقطة',
         'pos_phone_number' => 'هاتف نقطة البيع',
         'pos_address' => 'عنوان نقطة البيع',
+        'pos_profile_logo' => 'شعار النقطة',
         'pos_lat' => 'خط العرض',
         'pos_lng' => 'خط الطول',
 

@@ -21,10 +21,10 @@
                 "description": "إنشاء شبكة جديدة وحساب مسؤول الشبكة وجهازه بحالة معلقة (PENDING) في انتظار اعتماد الإدارة.",
                 "operationId": "5eb1e7eb22417646fbd5ce5af40b4d7b",
                 "requestBody": {
-                    "description": "بيانات تسجيل مزود الشبكة وحساب المدير والجهاز",
+                    "description": "بيانات تسجيل مزود الشبكة وحساب المدير والجهاز بصيغة النموذج (Form Data)",
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "network_name",
@@ -40,11 +40,11 @@
                                 "properties": {
                                     "network_name": {
                                         "type": "string",
-                                        "example": "شبكة الأمل"
+                                        "example": "شبكة سمارتكس"
                                     },
                                     "network_holder_name": {
                                         "type": "string",
-                                        "example": "أحمد محمد"
+                                        "example": "حسام خالد سعيد علي"
                                     },
                                     "governorate_id": {
                                         "type": "integer",
@@ -67,6 +67,11 @@
                                         "type": "string",
                                         "example": "شارع حدة، صنعاء"
                                     },
+                                    "network_profile_logo": {
+                                        "description": "شعار الشبكة",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
                                     "user_full_name": {
                                         "type": "string",
                                         "example": "حسام خالد سعيد علي"
@@ -85,6 +90,11 @@
                                         "format": "email",
                                         "example": "admin@example.com"
                                     },
+                                    "user_profile_logo": {
+                                        "description": "صورة المستخدم الشخصية",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
                                     "device_uuid": {
                                         "type": "string",
                                         "example": "SPA-251DHS"
@@ -98,9 +108,10 @@
                                         "example": "ANDROID",
                                         "enum": [
                                             "ANDROID",
-                                            "POS",
-                                            "WEB",
-                                            "DESKTOP"
+                                            "LINUX",
+                                            "IOS",
+                                            "WINDOWS",
+                                            "MAC"
                                         ]
                                     }
                                 },
@@ -131,10 +142,10 @@
                 "description": "إنشاء نقطة بيع جديدة وحساب الوكيل وجهازه بحالة معلقة (PENDING) في انتظار اعتماد الإدارة.",
                 "operationId": "e314fc0185c3990cedbeac42ad7dfc19",
                 "requestBody": {
-                    "description": "بيانات تسجيل نقطة البيع وحساب الوكيل والجهاز",
+                    "description": "بيانات تسجيل نقطة البيع وحساب الوكيل والجهاز بصيغة النموذج (Form Data)",
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "pos_name",
@@ -177,6 +188,11 @@
                                         "type": "string",
                                         "example": "حي الصافية، صنعاء"
                                     },
+                                    "pos_profile_logo": {
+                                        "description": "شعار نقطة البيع",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
                                     "network_id": {
                                         "type": "integer",
                                         "example": 1,
@@ -200,6 +216,11 @@
                                         "format": "email",
                                         "example": "pos.admin@example.com"
                                     },
+                                    "user_profile_logo": {
+                                        "description": "صورة المستخدم الشخصية",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
                                     "device_uuid": {
                                         "type": "string",
                                         "example": "e5c18495-e224-57e5-b10c-7c7f95e302f1"
@@ -210,12 +231,13 @@
                                     },
                                     "device_type": {
                                         "type": "string",
-                                        "example": "POS",
+                                        "example": "ANDROID",
                                         "enum": [
                                             "ANDROID",
-                                            "POS",
-                                            "WEB",
-                                            "DESKTOP"
+                                            "LINUX",
+                                            "IOS",
+                                            "WINDOWS",
+                                            "MAC"
                                         ]
                                     }
                                 },
@@ -246,10 +268,10 @@
                 "description": "التحقق من بيانات الاعتماد وحالة الحساب والشبكة/نقطة البيع والاشتراك والأجهزة، وإنشاء الجلسة في user_sessions.",
                 "operationId": "a7997e7c1e3bfed64d4e56de82415931",
                 "requestBody": {
-                    "description": "بيانات تسجيل الدخول ومعلومات الجهاز",
+                    "description": "بيانات تسجيل الدخول ومعلومات الجهاز بصيغة النموذج (Form Data)",
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "user_phone_number",
@@ -277,13 +299,13 @@
                                     },
                                     "device_type": {
                                         "type": "string",
-                                        "example": "WEB",
-                                        "nullable": true,
+                                        "example": "ANDROID",
                                         "enum": [
                                             "ANDROID",
-                                            "POS",
-                                            "WEB",
-                                            "DESKTOP"
+                                            "LINUX",
+                                            "IOS",
+                                            "WINDOWS",
+                                            "MAC"
                                         ]
                                     }
                                 },
@@ -314,10 +336,10 @@
                 "description": "إتمام التحقق الثنائي أو تأكيد ربط الجهاز الجديد وإنشاء الجلسة.",
                 "operationId": "0496f8a10b5f847f10ea6cc8faeb449b",
                 "requestBody": {
-                    "description": "بيانات التحقق الثنائي OTP وتأكيد الجهاز",
+                    "description": "بيانات التحقق الثنائي OTP وتأكيد الجهاز بصيغة النموذج (Form Data)",
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "user_phone_number",
@@ -345,12 +367,12 @@
                                     "device_type": {
                                         "type": "string",
                                         "example": "ANDROID",
-                                        "nullable": true,
                                         "enum": [
                                             "ANDROID",
-                                            "POS",
-                                            "WEB",
-                                            "DESKTOP"
+                                            "LINUX",
+                                            "IOS",
+                                            "WINDOWS",
+                                            "MAC"
                                         ]
                                     }
                                 },
@@ -441,10 +463,10 @@
                 "description": "طلب استعادة كلمة المرور عبر الرمز المؤقت.",
                 "operationId": "41d4fe28160550cb9cadd5f9fe0f91ef",
                 "requestBody": {
-                    "description": "رقم هاتف المستخدم لطلب استعادة كلمة المرور",
+                    "description": "رقم هاتف المستخدم لطلب استعادة كلمة المرور بصيغة النموذج (Form Data)",
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "user_phone_number"
@@ -476,10 +498,10 @@
                 "description": "التحقق من رمز استعادة كلمة المرور.",
                 "operationId": "1da39df139226442647321a227e8b0c7",
                 "requestBody": {
-                    "description": "التحقق من رمز OTP لاستعادة كلمة المرور",
+                    "description": "التحقق من رمز OTP لاستعادة كلمة المرور بصيغة النموذج (Form Data)",
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "user_phone_number",
@@ -516,10 +538,10 @@
                 "description": "اعتماد كلمة المرور الجديدة بعد التحقق.",
                 "operationId": "6cf249fbb00db4400f2499319b39eda3",
                 "requestBody": {
-                    "description": "إعادة تعيين كلمة المرور الجديدة مع رمز التحقق",
+                    "description": "إعادة تعيين كلمة المرور الجديدة مع رمز التحقق بصيغة النموذج (Form Data)",
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "user_phone_number",
@@ -568,10 +590,10 @@
                 "description": "تحديث كلمة المرور للحساب الحالي.",
                 "operationId": "c035ae30f9e4e5358cc69d5504d9bc76",
                 "requestBody": {
-                    "description": "تحديث كلمة المرور الحالية بكلمة مرور جديدة",
+                    "description": "تحديث كلمة المرور الحالية بكلمة مرور جديدة بصيغة النموذج (Form Data)",
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "current_password",
@@ -621,10 +643,10 @@
                 "description": "تفعيل أو تعطيل المصادقة الثنائية (2FA).",
                 "operationId": "df1751a3270c0dd8a9c25c1fa522afa9",
                 "requestBody": {
-                    "description": "تفعيل أو تعطيل ميزة التحقق الثنائي",
+                    "description": "تفعيل أو تعطيل ميزة التحقق الثنائي بصيغة النموذج (Form Data)",
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "enable"
