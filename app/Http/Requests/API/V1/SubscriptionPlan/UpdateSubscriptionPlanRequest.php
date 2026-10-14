@@ -28,7 +28,7 @@ class UpdateSubscriptionPlanRequest extends FormRequest
                 'sometimes',
                 'required',
                 'string',
-                'max:100',
+                'max:50',
             ],
             'plan_price' => [
                 'sometimes',
@@ -56,6 +56,59 @@ class UpdateSubscriptionPlanRequest extends FormRequest
                 'sometimes',
                 'boolean',
             ],
+            'features' => [
+                'nullable',
+                'array',
+            ],
+            'features.*.feature_id' => [
+                'required_with:features',
+                'integer',
+                'exists:features,feature_id',
+            ],
+            'features.*.plan_feature_value' => [
+                'required_with:features',
+                'string',
+                'max:50',
+            ],
+            'features.*.status' => [
+                'nullable',
+                'boolean',
+            ],
         ];
+    }
+
+    public function getPlanName(): string
+    {
+        return (string) $this->input('plan_name');
+    }
+
+    public function getPlanPrice(): float
+    {
+        return (float) $this->input('plan_price');
+    }
+
+    public function getPlanDiscount(): ?float
+    {
+        return $this->filled('plan_discount') ? (float) $this->input('plan_discount') : null;
+    }
+
+    public function getPlanValidity(): int
+    {
+        return (int) $this->input('plan_validity', 30);
+    }
+
+    public function getPlanDesc(): ?string
+    {
+        return $this->filled('plan_desc') ? (string) $this->input('plan_desc') : null;
+    }
+
+    public function getStatus(): ?bool
+    {
+        return $this->has('status') ? filter_var($this->input('status'), FILTER_VALIDATE_BOOLEAN) : null;
+    }
+
+    public function getFeatures(): ?array
+    {
+        return $this->input('features');
     }
 }

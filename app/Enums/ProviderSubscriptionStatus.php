@@ -5,6 +5,7 @@ namespace App\Enums;
 enum ProviderSubscriptionStatus: string
 {
     case ACTIVE = 'ACTIVE';
+    case QUEUED = 'QUEUED';
     case EXPIRED = 'EXPIRED';
     case CANCELLED = 'CANCELLED';
     case SUSPENDED = 'SUSPENDED';
@@ -22,6 +23,11 @@ enum ProviderSubscriptionStatus: string
     public function isActive(): bool
     {
         return $this === self::ACTIVE;
+    }
+
+    public function isQueued(): bool
+    {
+        return $this === self::QUEUED;
     }
 
     public function isExpired(): bool
@@ -43,6 +49,7 @@ enum ProviderSubscriptionStatus: string
     {
         return match ($this) {
             self::ACTIVE => 'مفعل',
+            self::QUEUED => 'في الانتظار',
             self::EXPIRED => 'منتهي',
             self::CANCELLED => 'ملغي',
             self::SUSPENDED => 'متوقف',
@@ -53,6 +60,7 @@ enum ProviderSubscriptionStatus: string
     {
         return [
             self::ACTIVE->value => self::ACTIVE->label(),
+            self::QUEUED->value => self::QUEUED->label(),
             self::EXPIRED->value => self::EXPIRED->label(),
             self::CANCELLED->value => self::CANCELLED->label(),
             self::SUSPENDED->value => self::SUSPENDED->label(),

@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BankAccountController;
 use App\Http\Controllers\Api\V1\ExpenseController;
+use App\Http\Controllers\Api\V1\FeatureController;
 use App\Http\Controllers\Api\V1\FileController;
 use App\Http\Controllers\Api\V1\NetworkController;
 use App\Http\Controllers\Api\V1\NetworkPosController;
@@ -9,9 +11,12 @@ use App\Http\Controllers\Api\V1\NetworkWalletController;
 use App\Http\Controllers\Api\V1\OtpController;
 use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\PosWalletController;
+use App\Http\Controllers\Api\V1\ProviderSubscriptionController;
 use App\Http\Controllers\Api\V1\RequestController;
 use App\Http\Controllers\Api\V1\SaleInvoiceController;
 use App\Http\Controllers\Api\V1\SecurityController;
+use App\Http\Controllers\Api\V1\SubscriptionPlanController;
+use App\Http\Controllers\Api\V1\SubscriptionPlanRequestController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VoucherPackageController;
 use App\Http\Controllers\Api\V1\VoucherPackageDiscountController;
@@ -350,6 +355,114 @@ Route::prefix('v1')->group(function () {
             Route::delete('expenses/{id}/items/{itemId}', [ExpenseController::class, 'deleteItem'])->whereNumber('id')->whereNumber('itemId')->name('api.v1.expenses.delete_item');
             Route::delete('expenses/{id}/attachments/{attachmentId}', [ExpenseController::class, 'deleteAttachment'])->whereNumber('id')->whereNumber('attachmentId')->name('api.v1.expenses.delete_attachment');
             Route::apiResource('expenses', ExpenseController::class)->parameters(['expenses' => 'id'])->except(['index', 'show']);
+        });
+
+        // ==========================================
+        // 13. باقات الاشتراك السحابية لمزودي الشبكات (Subscription Plans)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('subscription-plans', [SubscriptionPlanController::class, 'index'])->name('api.v1.subscription_plans.index');
+            Route::get('subscription-plans/trashed', [SubscriptionPlanController::class, 'trashed'])->name('api.v1.subscription_plans.trashed');
+            Route::get('subscription-plans/{id}', [SubscriptionPlanController::class, 'show'])->whereNumber('id')->name('api.v1.subscription_plans.show');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('subscription-plans', [SubscriptionPlanController::class, 'store'])->name('api.v1.subscription_plans.store');
+            Route::put('subscription-plans/{id}', [SubscriptionPlanController::class, 'update'])->whereNumber('id')->name('api.v1.subscription_plans.update');
+            Route::delete('subscription-plans/{id}', [SubscriptionPlanController::class, 'destroy'])->whereNumber('id')->name('api.v1.subscription_plans.destroy');
+            Route::post('subscription-plans/{id}/restore', [SubscriptionPlanController::class, 'restore'])->whereNumber('id')->name('api.v1.subscription_plans.restore');
+            Route::delete('subscription-plans/{id}/force', [SubscriptionPlanController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.subscription_plans.force_delete');
+            Route::post('subscription-plans/{id}/toggle-status', [SubscriptionPlanController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.subscription_plans.toggle_status');
+            Route::post('subscription-plans/{id}/features', [SubscriptionPlanController::class, 'attachFeature'])->whereNumber('id')->name('api.v1.subscription_plans.attach_feature');
+            Route::delete('subscription-plans/{id}/features/{featureId}', [SubscriptionPlanController::class, 'detachFeature'])->whereNumber('id')->whereNumber('featureId')->name('api.v1.subscription_plans.detach_feature');
+            Route::post('subscription-plans/batch-delete', [SubscriptionPlanController::class, 'batchDelete'])->name('api.v1.subscription_plans.batch_delete');
+            Route::post('subscription-plans/batch-restore', [SubscriptionPlanController::class, 'batchRestore'])->name('api.v1.subscription_plans.batch_restore');
+            Route::post('subscription-plans/batch-force-delete', [SubscriptionPlanController::class, 'batchForceDelete'])->name('api.v1.subscription_plans.batch_force_delete');
+            Route::apiResource('subscription-plans', SubscriptionPlanController::class)->parameters(['subscription-plans' => 'id'])->except(['index', 'show']);
+        });
+
+        // ==========================================
+        // 14. كتالوج ميزات النظام (System Features)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('features', [FeatureController::class, 'index'])->name('api.v1.features.index');
+            Route::get('features/trashed', [FeatureController::class, 'trashed'])->name('api.v1.features.trashed');
+            Route::get('features/{id}', [FeatureController::class, 'show'])->whereNumber('id')->name('api.v1.features.show');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('features', [FeatureController::class, 'store'])->name('api.v1.features.store');
+            Route::put('features/{id}', [FeatureController::class, 'update'])->whereNumber('id')->name('api.v1.features.update');
+            Route::delete('features/{id}', [FeatureController::class, 'destroy'])->whereNumber('id')->name('api.v1.features.destroy');
+            Route::post('features/{id}/restore', [FeatureController::class, 'restore'])->whereNumber('id')->name('api.v1.features.restore');
+            Route::delete('features/{id}/force', [FeatureController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.features.force_delete');
+            Route::post('features/{id}/toggle-status', [FeatureController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.features.toggle_status');
+            Route::post('features/batch-delete', [FeatureController::class, 'batchDelete'])->name('api.v1.features.batch_delete');
+            Route::post('features/batch-restore', [FeatureController::class, 'batchRestore'])->name('api.v1.features.batch_restore');
+            Route::post('features/batch-force-delete', [FeatureController::class, 'batchForceDelete'])->name('api.v1.features.batch_force_delete');
+            Route::apiResource('features', FeatureController::class)->parameters(['features' => 'id'])->except(['index', 'show']);
+        });
+
+        // ==========================================
+        // 15. الحسابات البنكية والمحافظ (Bank Accounts)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('bank-accounts', [BankAccountController::class, 'index'])->name('api.v1.bank_accounts.index');
+            Route::get('bank-accounts/active', [BankAccountController::class, 'active'])->name('api.v1.bank_accounts.active');
+            Route::get('bank-accounts/trashed', [BankAccountController::class, 'trashed'])->name('api.v1.bank_accounts.trashed');
+            Route::get('bank-accounts/{id}', [BankAccountController::class, 'show'])->whereNumber('id')->name('api.v1.bank_accounts.show');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('bank-accounts', [BankAccountController::class, 'store'])->name('api.v1.bank_accounts.store');
+            Route::put('bank-accounts/{id}', [BankAccountController::class, 'update'])->whereNumber('id')->name('api.v1.bank_accounts.update');
+            Route::delete('bank-accounts/{id}', [BankAccountController::class, 'destroy'])->whereNumber('id')->name('api.v1.bank_accounts.destroy');
+            Route::post('bank-accounts/{id}/restore', [BankAccountController::class, 'restore'])->whereNumber('id')->name('api.v1.bank_accounts.restore');
+            Route::delete('bank-accounts/{id}/force', [BankAccountController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.bank_accounts.force_delete');
+            Route::post('bank-accounts/{id}/toggle-status', [BankAccountController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.bank_accounts.toggle_status');
+            Route::post('bank-accounts/batch-delete', [BankAccountController::class, 'batchDelete'])->name('api.v1.bank_accounts.batch_delete');
+            Route::post('bank-accounts/batch-restore', [BankAccountController::class, 'batchRestore'])->name('api.v1.bank_accounts.batch_restore');
+            Route::post('bank-accounts/batch-force-delete', [BankAccountController::class, 'batchForceDelete'])->name('api.v1.bank_accounts.batch_force_delete');
+            Route::apiResource('bank-accounts', BankAccountController::class)->parameters(['bank-accounts' => 'id'])->except(['index', 'show']);
+        });
+
+        // ==========================================
+        // 16. طلبات الاشتراك والترقية (Subscription Plan Requests)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('subscription-plan-requests', [SubscriptionPlanRequestController::class, 'index'])->name('api.v1.subscription_plan_requests.index');
+            Route::get('subscription-plan-requests/trashed', [SubscriptionPlanRequestController::class, 'trashed'])->name('api.v1.subscription_plan_requests.trashed');
+            Route::get('subscription-plan-requests/{id}', [SubscriptionPlanRequestController::class, 'show'])->whereNumber('id')->name('api.v1.subscription_plan_requests.show');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('subscription-plan-requests', [SubscriptionPlanRequestController::class, 'store'])->name('api.v1.subscription_plan_requests.store');
+            Route::post('subscription-plan-requests/{id}/approve', [SubscriptionPlanRequestController::class, 'approve'])->whereNumber('id')->name('api.v1.subscription_plan_requests.approve');
+            Route::post('subscription-plan-requests/{id}/reject', [SubscriptionPlanRequestController::class, 'reject'])->whereNumber('id')->name('api.v1.subscription_plan_requests.reject');
+            Route::post('subscription-plan-requests/{id}/cancel', [SubscriptionPlanRequestController::class, 'cancel'])->whereNumber('id')->name('api.v1.subscription_plan_requests.cancel');
+            Route::delete('subscription-plan-requests/{id}', [SubscriptionPlanRequestController::class, 'destroy'])->whereNumber('id')->name('api.v1.subscription_plan_requests.destroy');
+            Route::post('subscription-plan-requests/{id}/restore', [SubscriptionPlanRequestController::class, 'restore'])->whereNumber('id')->name('api.v1.subscription_plan_requests.restore');
+            Route::delete('subscription-plan-requests/{id}/force', [SubscriptionPlanRequestController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.subscription_plan_requests.force_delete');
+            Route::post('subscription-plan-requests/batch-delete', [SubscriptionPlanRequestController::class, 'batchDelete'])->name('api.v1.subscription_plan_requests.batch_delete');
+            Route::post('subscription-plan-requests/batch-restore', [SubscriptionPlanRequestController::class, 'batchRestore'])->name('api.v1.subscription_plan_requests.batch_restore');
+            Route::post('subscription-plan-requests/batch-force-delete', [SubscriptionPlanRequestController::class, 'batchForceDelete'])->name('api.v1.subscription_plan_requests.batch_force_delete');
+            Route::apiResource('subscription-plan-requests', SubscriptionPlanRequestController::class)->parameters(['subscription-plan-requests' => 'id'])->except(['index', 'show']);
+        });
+
+        // ==========================================
+        // 17. اشتراكات مزودي الشبكات وتتبع الحصص (Provider Subscriptions & Feature Quotas)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('provider-subscriptions', [ProviderSubscriptionController::class, 'index'])->name('api.v1.provider_subscriptions.index');
+            Route::get('provider-subscriptions/{id}', [ProviderSubscriptionController::class, 'show'])->whereNumber('id')->name('api.v1.provider_subscriptions.show');
+            Route::get('provider-subscriptions/network/{networkId}/active', [ProviderSubscriptionController::class, 'activeForNetwork'])->whereNumber('networkId')->name('api.v1.provider_subscriptions.active_for_network');
+            Route::get('provider-subscriptions/{id}/consumptions', [ProviderSubscriptionController::class, 'consumptions'])->whereNumber('id')->name('api.v1.provider_subscriptions.consumptions');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('provider-subscriptions/{id}/extend', [ProviderSubscriptionController::class, 'extend'])->whereNumber('id')->name('api.v1.provider_subscriptions.extend');
+            Route::post('provider-subscriptions/network/{networkId}/consume', [ProviderSubscriptionController::class, 'consume'])->whereNumber('networkId')->name('api.v1.provider_subscriptions.consume');
+            Route::post('provider-subscriptions/network/{networkId}/activate-early', [ProviderSubscriptionController::class, 'activateEarly'])->whereNumber('networkId')->name('api.v1.provider_subscriptions.activate_early');
         });
 
     });

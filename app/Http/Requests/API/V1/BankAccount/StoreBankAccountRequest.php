@@ -22,6 +22,7 @@ class StoreBankAccountRequest extends FormRequest
             'bank_name' => is_string($this->bank_name) ? trim($this->bank_name) : $this->bank_name,
             'account_holder_name' => is_string($this->account_holder_name) ? trim($this->account_holder_name) : $this->account_holder_name,
             'account_number' => is_string($this->account_number) ? trim($this->account_number) : $this->account_number,
+            'account_currency' => is_string($this->account_currency) ? strtoupper(trim($this->account_currency)) : $this->account_currency,
         ]);
     }
 
@@ -31,18 +32,17 @@ class StoreBankAccountRequest extends FormRequest
             'bank_name' => [
                 'required',
                 'string',
-                'max:100',
+                'max:50',
             ],
             'account_holder_name' => [
                 'required',
                 'string',
-                'max:100',
+                'max:50',
             ],
             'account_number' => [
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('bank_accounts', 'account_number')->whereNull('deleted_at'),
             ],
             'account_type' => [
                 'required',
@@ -51,7 +51,7 @@ class StoreBankAccountRequest extends FormRequest
             'account_currency' => [
                 'required',
                 'string',
-                'max:10',
+                'max:4',
             ],
             'account_balance' => [
                 'nullable',
@@ -60,14 +60,49 @@ class StoreBankAccountRequest extends FormRequest
             ],
             'bank_logo' => [
                 'nullable',
-                'image',
-                'mimes:jpeg,png,jpg,webp',
-                'max:2048',
+                'file',
+                'mimes:jpeg,png,jpg,webp,svg',
+                'max:4096',
             ],
             'status' => [
                 'nullable',
                 'boolean',
             ],
         ];
+    }
+
+    public function getBankName(): string
+    {
+        return (string) $this->input('bank_name');
+    }
+
+    public function getAccountHolderName(): string
+    {
+        return (string) $this->input('account_holder_name');
+    }
+
+    public function getAccountNumber(): string
+    {
+        return (string) $this->input('account_number');
+    }
+
+    public function getAccountType(): string
+    {
+        return (string) $this->input('account_type', BankAccountType::SAVING->value);
+    }
+
+    public function getAccountCurrency(): string
+    {
+        return (string) $this->input('account_currency', 'YER');
+    }
+
+    public function getAccountBalance(): ?float
+    {
+        return $this->filled('account_balance') ? (float) $this->input('account_balance') : null;
+    }
+
+    public function getStatus(): ?bool
+    {
+        return $this->has('status') ? filter_var($this->input('status'), FILTER_VALIDATE_BOOLEAN) : null;
     }
 }
