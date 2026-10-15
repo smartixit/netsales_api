@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\DB;
 class SystemSettingSeeder extends Seeder
 {
     protected const FCM_ENDPOINT_TEMPLATE = 'https://fcm.googleapis.com/v1/projects/%s/messages:send';
+
     protected const FCM_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
+
     protected const TOKEN_CACHE_KEY = 'fcm_v1_access_token';
 
     /**
@@ -26,7 +28,7 @@ class SystemSettingSeeder extends Seeder
                 'setting_category' => 'GENERAL',
                 'setting_key' => 'app_name',
                 'setting_value_type' => 'TEXT',
-                'setting_value' => 'NetSales | مبيعات الشبكة',
+                'setting_value' => 'NetSales | نظام مبيعات الشبكة',
                 'setting_desc' => 'اسم المنظومة المعروض في الواجهات والتقارير',
             ],
             [

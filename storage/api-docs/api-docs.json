@@ -1,7 +1,7 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "مبيعات الشبكة | NetSales API",
+        "title": "نظام مبيعات الشبكة | NetSales API",
         "description": "توثيق واجهة البرمجة (API) لنظام مبيعات الشبكة NetSales",
         "version": "1.0.0"
     },

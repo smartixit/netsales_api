@@ -21,7 +21,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * خدمة التحقق بالرمز المؤقت لمرة واحدة (Centralized OTP Service).
  *
- * صُممت وفق أفضل الممارسات المعمارية لمشروع مبيعات الشبكة NetSales:
+ * صُممت وفق أفضل الممارسات المعمارية لمشروع نظام مبيعات الشبكة NetSales:
  * 1. عزل تام عن طبقة الـ HTTP واستجابات JsonResponse.
  * 2. الاعتماد الكامل على مستودع OtpRepositoryInterface مع حظر الاستعلامات المباشرة.
  * 3. توليد أكواد مشفرة آمنة (Cryptographically Secure Random).

@@ -51,7 +51,7 @@ use RuntimeException;
 /**
  * خدمة المصادقة وإدارة الجلسات والأجهزة (Enterprise Authentication Service).
  *
- * صُممت وفق أفضل الممارسات المعمارية لمشروع مبيعات الشبكة NetSales:
+ * صُممت وفق أفضل الممارسات المعمارية لمشروع نظام مبيعات الشبكة NetSales:
  * 1. عزل تام عن طبقة الـ HTTP واستجابات JsonResponse.
  * 2. الاعتماد الحصري على المستودعات المخصصة لـ User, Session, Device, Ban, OTP, Network, POS.
  * 3. حظر تام لاستخدام التوكنات العشوائية؛ الجلسات تعتمد حصرياً على جدول user_sessions والترويسة X-Session-Id.

@@ -31,7 +31,7 @@ use OpenApi\Attributes as OA;
 #[OA\Info(
     version: '1.0.0',
     description: 'توثيق واجهة البرمجة (API) لنظام مبيعات الشبكة NetSales',
-    title: 'مبيعات الشبكة | NetSales API',
+    title: 'نظام مبيعات الشبكة | NetSales API',
 )]
 #[OA\Server(
     url: 'http://127.0.0.1:8000',

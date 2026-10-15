@@ -165,7 +165,7 @@ class AsymmetricCryptoService
     //     if (! str_starts_with($token, self::TOKEN_PREFIX)) {
     //         SystemLoggerService::warning('QR_VERIFICATION_FAILED_INVALID_FORMAT', ['token_prefix' => substr($token, 0, 10)]);
     //         throw ValidationException::withMessages([
-    //             'qr_token' => ['رمز التحقق غير صالح أو غير معتمد من منصة مبيعات الشبكة.'],
+    //             'qr_token' => ['رمز التحقق غير صالح أو غير معتمد من منصة نظام مبيعات الشبكة.'],
     //         ]);
     //     }
 
@@ -192,7 +192,7 @@ class AsymmetricCryptoService
     //     } catch (Exception $e) {
     //         SystemLoggerService::warning('QR_DECRYPTION_FAILED', ['error' => $e->getMessage()]);
     //         throw ValidationException::withMessages([
-    //             'qr_token' => ['فشل فك تشفير الرمز؛ الرمز مزور أو لم يصدر عن خادم مبيعات الشبكة المعتمد.'],
+    //             'qr_token' => ['فشل فك تشفير الرمز؛ الرمز مزور أو لم يصدر عن خادم نظام مبيعات الشبكة المعتمد.'],
     //         ]);
     //     }
 

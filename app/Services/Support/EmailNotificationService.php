@@ -62,7 +62,7 @@ class EmailNotificationService
             return false;
         }
 
-        $appName = $this->systemSettingService->getString('app_name', config('app.name', 'NetSales | مبيعات الشبكة'));
+        $appName = $this->systemSettingService->getString('app_name', config('app.name', 'NetSales | نظام مبيعات الشبكة'));
         $companyName = $this->systemSettingService->getString('app_company_name', 'Smartix IT Solutions');
 
         $emailData = array_merge([
