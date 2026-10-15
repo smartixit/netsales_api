@@ -38,7 +38,7 @@ class CheckMaintenanceMode
         }
 
         // استثناء مسارات الفحص الصحي ومسارات الوثائق
-        if ($request->is('up') || $request->is('api/v1/health-check') || $request->is('docs*') || $request->is('api/documentation*')) {
+        if ($request->is('up') || $request->is('*health-check*') || $request->is('docs*') || $request->is('api/documentation*')) {
             return $next($request);
         }
 

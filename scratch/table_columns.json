@@ -1,0 +1,480 @@
+{
+    "cache": {
+        "key": "string",
+        "value": "mediumText",
+        "expiration": "integer",
+        "owner": "string"
+    },
+    "jobs": {
+        "queue": "text",
+        "payload": "longText",
+        "attempts": "unsignedTinyInteger",
+        "reserved_at": "unsignedInteger",
+        "available_at": "unsignedInteger",
+        "created_at": "integer",
+        "id": "string",
+        "name": "string",
+        "total_jobs": "integer",
+        "pending_jobs": "integer",
+        "failed_jobs": "integer",
+        "failed_job_ids": "longText",
+        "options": "mediumText",
+        "cancelled_at": "integer",
+        "finished_at": "integer",
+        "uuid": "string",
+        "connection": "text",
+        "exception": "longText",
+        "failed_at": "timestamp"
+    },
+    "personal_access_tokens": {
+        "tokenable": "morphs",
+        "name": "text",
+        "token": "string",
+        "abilities": "text",
+        "last_used_at": "timestamp",
+        "expires_at": "timestamp"
+    },
+    "sessions": {
+        "id": "string",
+        "user_id": "foreignId",
+        "ip_address": "string",
+        "user_agent": "text",
+        "payload": "longText",
+        "last_activity": "integer"
+    },
+    "modules": {
+        "module_id": "id",
+        "module_key": "string",
+        "module_name": "string",
+        "module_icon": "string",
+        "module_desc": "string",
+        "status": "boolean"
+    },
+    "action_types": {
+        "action_type_id": "id",
+        "action_type_key": "string",
+        "action_type_name": "string",
+        "status": "boolean"
+    },
+    "roles": {
+        "role_id": "id",
+        "role_key": "string",
+        "role_name": "string",
+        "role_desc": "string",
+        "is_system": "boolean",
+        "status": "boolean"
+    },
+    "permissions": {
+        "permission_id": "id",
+        "module_id": "foreignId",
+        "action_type_id": "foreignId",
+        "permission_key": "string",
+        "permission_name": "string",
+        "permission_desc": "string",
+        "status": "boolean"
+    },
+    "role_permissions": {
+        "role_permission_id": "id",
+        "role_id": "foreignId",
+        "permission_id": "foreignId"
+    },
+    "governorates": {
+        "governorate_id": "id",
+        "governorate_name": "string"
+    },
+    "directorates": {
+        "directorate_id": "id",
+        "governorate_id": "foreignId",
+        "directorate_name": "string"
+    },
+    "users": {
+        "user_id": "id",
+        "role_id": "foreignId",
+        "user_full_name": "string",
+        "user_profile_logo": "string",
+        "user_phone_number": "string",
+        "user_password": "string",
+        "user_email": "string",
+        "user_2fa_enabled": "boolean",
+        "user_login_attempts": "integer",
+        "last_login_at": "timestamp",
+        "status": "string"
+    },
+    "user_sessions": {
+        "session_id": "id",
+        "user_id": "foreignId",
+        "ip_address": "ipAddress",
+        "user_agent": "text",
+        "logged_at": "timestamp",
+        "last_activity_at": "timestamp",
+        "expires_at": "timestamp",
+        "revoked_at": "timestamp"
+    },
+    "user_devices": {
+        "device_id": "id",
+        "user_id": "foreignId",
+        "device_uuid": "string",
+        "device_name": "string",
+        "device_type": "string",
+        "is_primary": "boolean",
+        "status": "string",
+        "last_used_at": "timestamp"
+    },
+    "security_bans": {
+        "ban_id": "id",
+        "user_id": "foreignId",
+        "device_id": "foreignId",
+        "banned_by": "foreignId",
+        "ban_type": "string",
+        "ban_reason": "string",
+        "start_at": "timestamp",
+        "end_at": "timestamp"
+    },
+    "user_permissions": {
+        "user_permission_id": "id",
+        "user_id": "foreignId",
+        "permission_id": "foreignId"
+    },
+    "otp": {
+        "otp_id": "id",
+        "user_id": "foreignId",
+        "otp_code": "string",
+        "otp_type": "string",
+        "otp_failure_attempts": "integer",
+        "is_used": "boolean",
+        "expires_at": "timestamp"
+    },
+    "networks": {
+        "network_id": "id",
+        "network_uuid": "string",
+        "network_name": "string",
+        "network_profile_logo": "string",
+        "network_holder_name": "string",
+        "network_phone_number": "string",
+        "network_email": "string",
+        "governorate_id": "foreignId",
+        "directorate_id": "foreignId",
+        "network_address": "string",
+        "approved_by": "foreignId",
+        "rejected_by": "foreignId",
+        "approved_at": "timestamp",
+        "rejected_at": "timestamp",
+        "rejection_reason": "string",
+        "status": "string"
+    },
+    "network_wallets": {
+        "wallet_id": "id",
+        "network_id": "foreignId",
+        "wallet_uuid": "string",
+        "wallet_balance": "decimal",
+        "status": "boolean"
+    },
+    "network_wallet_logs": {
+        "log_id": "id",
+        "wallet_id": "foreignId",
+        "log_operation": "string",
+        "log_amount": "decimal",
+        "log_statement": "text",
+        "log_date": "timestamp",
+        "created_by": "foreignId"
+    },
+    "pos": {
+        "pos_id": "id",
+        "pos_uuid": "string",
+        "pos_name": "string",
+        "pos_profile_logo": "string",
+        "pos_holder_name": "string",
+        "pos_phone_number": "string",
+        "pos_email": "string",
+        "governorate_id": "foreignId",
+        "directorate_id": "foreignId",
+        "pos_address": "string",
+        "approved_by": "foreignId",
+        "rejected_by": "foreignId",
+        "approved_at": "timestamp",
+        "rejected_at": "timestamp",
+        "rejection_reason": "string",
+        "status": "string"
+    },
+    "network_pos": {
+        "network_pos_id": "id",
+        "network_id": "foreignId",
+        "pos_id": "foreignId",
+        "status": "boolean"
+    },
+    "pos_wallets": {
+        "wallet_id": "id",
+        "network_id": "foreignId",
+        "pos_id": "foreignId",
+        "wallet_uuid": "string",
+        "wallet_balance": "decimal",
+        "status": "boolean"
+    },
+    "pos_wallet_logs": {
+        "log_id": "id",
+        "wallet_id": "foreignId",
+        "log_operation_type": "string",
+        "log_amount": "decimal",
+        "log_statement": "text",
+        "log_date": "timestamp",
+        "created_by": "foreignId"
+    },
+    "voucher_packages": {
+        "package_id": "id",
+        "network_id": "foreignId",
+        "package_name": "string",
+        "package_color": "string",
+        "package_balance": "string",
+        "package_uptime": "string",
+        "package_validity": "string",
+        "package_voucher_count": "integer",
+        "package_voucher_price": "decimal",
+        "package_default_cash_discount": "decimal",
+        "package_default_credit_discount": "decimal",
+        "status": "boolean",
+        "created_by": "foreignId"
+    },
+    "voucher_package_discounts": {
+        "discount_id": "id",
+        "network_id": "foreignId",
+        "package_id": "foreignId",
+        "pos_id": "foreignId",
+        "discount_cash": "decimal",
+        "discount_credit": "decimal",
+        "status": "boolean",
+        "created_by": "foreignId"
+    },
+    "requests": {
+        "request_id": "id",
+        "network_id": "foreignId",
+        "pos_id": "foreignId",
+        "request_uuid": "string",
+        "request_total_amount": "decimal",
+        "request_date": "timestamp",
+        "status": "string",
+        "created_by": "foreignId",
+        "reviewed_by": "foreignId",
+        "review_date": "timestamp",
+        "request_note": "string"
+    },
+    "request_items": {
+        "item_id": "id",
+        "request_id": "foreignId",
+        "package_id": "foreignId",
+        "item_voucher_count": "integer"
+    },
+    "sale_invoices": {
+        "invoice_id": "id",
+        "network_id": "foreignId",
+        "pos_id": "foreignId",
+        "invoice_uuid": "string",
+        "invoice_sale_type": "string",
+        "invoice_total_amount": "decimal",
+        "invoice_date": "timestamp",
+        "created_by": "foreignId"
+    },
+    "sale_invoice_items": {
+        "item_id": "id",
+        "invoice_id": "foreignId",
+        "package_id": "foreignId",
+        "voucher_price": "decimal",
+        "voucher_count": "integer",
+        "item_discount": "decimal",
+        "item_total_amount": "decimal"
+    },
+    "expenses": {
+        "expense_id": "id",
+        "network_id": "foreignId",
+        "expense_uuid": "string",
+        "expense_total_amount": "decimal",
+        "expense_date": "timestamp",
+        "created_by": "foreignId"
+    },
+    "expense_items": {
+        "item_id": "id",
+        "expense_id": "foreignId",
+        "item_amount": "decimal",
+        "item_statement": "string"
+    },
+    "expense_attachments": {
+        "attachment_id": "id",
+        "expense_id": "foreignId",
+        "attachment_path": "text",
+        "attachment_name": "string",
+        "attachment_mime": "string",
+        "attachment_size": "integer"
+    },
+    "subscription_plans": {
+        "plan_id": "id",
+        "plan_uuid": "string",
+        "plan_name": "string",
+        "plan_price": "decimal",
+        "plan_discount": "decimal",
+        "plan_validity": "integer",
+        "plan_desc": "text",
+        "status": "boolean"
+    },
+    "features": {
+        "feature_id": "id",
+        "feature_name": "string",
+        "feature_value_type": "string",
+        "feature_value": "string",
+        "feature_desc": "string",
+        "status": "boolean"
+    },
+    "subscription_plan_features": {
+        "subscription_plan_feature_id": "id",
+        "plan_id": "foreignId",
+        "feature_id": "foreignId",
+        "plan_feature_value": "string",
+        "status": "boolean",
+        "created_by": "foreignId"
+    },
+    "bank_accounts": {
+        "account_id": "id",
+        "bank_name": "string",
+        "bank_logo": "string",
+        "account_holder_name": "string",
+        "account_number": "string",
+        "account_type": "string",
+        "account_currency": "string",
+        "account_balance": "decimal",
+        "status": "boolean"
+    },
+    "subscription_plan_requests": {
+        "request_id": "id",
+        "network_id": "foreignId",
+        "plan_id": "foreignId",
+        "requested_by": "foreignId",
+        "request_uuid": "string",
+        "request_total_amount": "decimal",
+        "request_payment_type": "string",
+        "account_id": "foreignId",
+        "transaction_reference": "string",
+        "transaction_receipt": "text",
+        "status": "string",
+        "rejection_reason": "string",
+        "reviewed_by": "foreignId",
+        "request_note": "string",
+        "review_date": "timestamp"
+    },
+    "provider_subscriptions": {
+        "subscription_id": "id",
+        "network_id": "foreignId",
+        "plan_id": "foreignId",
+        "subscription_start_date": "timestamp",
+        "subscription_end_date": "timestamp",
+        "status": "string",
+        "created_by": "foreignId"
+    },
+    "subscription_plan_feature_consumptions": {
+        "consumption_id": "id",
+        "subscription_id": "foreignId",
+        "feature_id": "foreignId",
+        "consumption_value": "integer",
+        "last_consumption_at": "timestamp"
+    },
+    "support_tickets": {
+        "ticket_id": "id",
+        "network_id": "foreignId",
+        "pos_id": "foreignId",
+        "ticket_uuid": "string",
+        "ticket_subject": "string"
+    },
+    "support_ticket_messages": {
+        "message_id": "id",
+        "ticket_id": "foreignId",
+        "sent_by": "foreignId",
+        "message_body": "text",
+        "sent_at": "timestamp",
+        "is_read": "boolean",
+        "read_at": "timestamp"
+    },
+    "notifications": {
+        "notification_id": "id",
+        "user_id": "foreignId",
+        "notification_type": "string",
+        "notification_title": "string",
+        "notification_message": "text",
+        "notification_image": "text",
+        "is_read": "boolean",
+        "read_at": "timestamp"
+    },
+    "system_logs": {
+        "log_id": "id",
+        "user_id": "foreignId",
+        "module": "string",
+        "action": "string",
+        "entity_type": "string",
+        "entity_id": "integer",
+        "old_values": "json",
+        "new_values": "json",
+        "ip_address": "ipAddress",
+        "user_agent": "text",
+        "log_date": "timestamp"
+    },
+    "system_settings": {
+        "setting_id": "id",
+        "setting_category": "string",
+        "setting_key": "string",
+        "setting_value_type": "string",
+        "setting_value": "text",
+        "setting_desc": "string"
+    },
+    "network_sms_settings": {
+        "network_id": "unsignedBigInteger",
+        "is_enabled": "boolean",
+        "notify_receipt": "boolean",
+        "notify_payment": "boolean",
+        "notify_pos_withdraw": "boolean",
+        "notify_expense": "boolean",
+        "notify_sale_invoice": "boolean",
+        "notify_voucher_request": "boolean",
+        "notify_low_balance": "boolean",
+        "notify_daily_summary": "boolean",
+        "notify_monthly_summary": "boolean",
+        "notify_subscription_expiry": "boolean",
+        "use_custom_gateway": "boolean",
+        "server_type": "string",
+        "base_url": "string",
+        "auth_type": "string",
+        "api_token": "text",
+        "refresh_token": "text",
+        "token_expires_at": "timestamp",
+        "username": "string",
+        "password": "text",
+        "device_id": "string",
+        "sim_number": "unsignedTinyInteger",
+        "skip_phone_validation": "boolean",
+        "device_active_within": "unsignedInteger"
+    },
+    "backup_jobs": {
+        "backup_job_id": "unsignedBigInteger",
+        "job_uuid": "char",
+        "backup_type": "string",
+        "status": "string",
+        "stage": "string",
+        "file_name": "string",
+        "file_size_bytes": "unsignedBigInteger",
+        "archive_sha256": "char",
+        "drive_file_id": "string",
+        "drive_web_view_link": "string",
+        "drive_folder_id": "string",
+        "manifest_summary": "json",
+        "extra": "json",
+        "error_message": "text",
+        "started_at": "timestamp",
+        "finished_at": "timestamp",
+        "duration_ms": "unsignedBigInteger",
+        "created_by": "unsignedBigInteger"
+    },
+    "scheduled_task_runs": {
+        "id": "unsignedBigInteger",
+        "task_type": "string",
+        "network_id": "unsignedBigInteger",
+        "target_date": "date",
+        "status": "string",
+        "extra": "json",
+        "sent_at": "timestamp"
+    }
+}

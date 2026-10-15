@@ -12,13 +12,14 @@ use Illuminate\Console\Command;
 class PruneSystemLogs extends Command
 {
     protected $signature = 'system:prune-logs 
-                            {--days=60 : Delete logs older than this number of days}';
+                            {--days= : Delete logs older than this number of days (defaults to system setting)}';
 
     protected $description = 'يحذف سجلات النظام القديمة للحفاظ على سرعة ورشاقة قاعدة البيانات';
 
     public function handle(): int
     {
-        $days = (int) $this->option('days');
+        $defaultDays = (int) systemSetting('system_logs_retention_days', 60);
+        $days = (int) ($this->option('days') ?: $defaultDays);
         $cutoff = Carbon::now('Asia/Aden')->subDays($days);
 
         $this->info("🚀 بدء تنظيف سجلات النظام الأقدم من {$days} يوماً (قبل {$cutoff->toDateTimeString()})...");
