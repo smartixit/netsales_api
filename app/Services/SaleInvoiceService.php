@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\InvoicePaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\WalletOperationType;
 use App\Http\Requests\API\V1\SaleInvoice\StoreSaleInvoiceRequest;
@@ -169,10 +170,16 @@ class SaleInvoiceService
             if ($isCashSale) {
                 $saleType = PaymentType::CASH;
                 $totalInvoiceAmount = $cashTotal;
+                $paidAmount = $cashTotal;
+                $remainingAmount = 0.00;
+                $paymentStatus = InvoicePaymentStatus::PAID;
                 $itemsData = $cashItemsData;
             } else {
                 $saleType = PaymentType::CREDIT;
                 $totalInvoiceAmount = $creditTotal;
+                $paidAmount = 0.00;
+                $remainingAmount = $creditTotal;
+                $paymentStatus = InvoicePaymentStatus::UNPAID;
                 $itemsData = $creditItemsData;
             }
 
@@ -183,6 +190,9 @@ class SaleInvoiceService
                 'pos_id' => $posId,
                 'invoice_sale_type' => $saleType,
                 'invoice_total_amount' => $totalInvoiceAmount,
+                'paid_amount' => $paidAmount,
+                'remaining_amount' => $remainingAmount,
+                'payment_status' => $paymentStatus,
                 'invoice_date' => now('Asia/Aden'),
                 'created_by' => $userId,
             ]);
@@ -272,42 +282,54 @@ class SaleInvoiceService
             $posWallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId, true);
             $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId, true);
 
-            // 3. تطبيق المنطق المحاسبي للبرامج الكبرى:
-            // إذا كان البيع كاش والرصيد غير كافٍ، يتحول إلى بيع آجل (CREDIT) برصيد سالب (مدين).
-            $isCash = ($saleType === PaymentType::CASH);
-            $hasSufficient = $posWallet && $posWallet->hasSufficientBalance($totalInvoiceAmount);
-
-            if ($isCash && ! $hasSufficient) {
-                $saleType = PaymentType::CREDIT;
-                $isCash = false;
+            // 3. احتساب المبالغ وحالة السداد:
+            $paidAmountInput = $request->getPaidAmount();
+            if ($paidAmountInput !== null) {
+                $paidAmount = min($totalInvoiceAmount, max(0.0, (float) $paidAmountInput));
+            } else {
+                $paidAmount = ($saleType === PaymentType::CASH) ? $totalInvoiceAmount : 0.00;
             }
 
-            if ($posWallet && $posWallet->isActive() && $networkWallet && $networkWallet->isActive()) {
-                // خصم المبلغ من محفظة الوكيل (مما يسمح بالرصيد السالب كمديونية/ذمم مدينة)
-                $this->posWalletRepository->decrementBalance($posWallet->wallet_id, $totalInvoiceAmount);
-                $posBalanceAfter = round((float) $posWallet->wallet_balance - $totalInvoiceAmount, 2);
+            $remainingAmount = max(0.0, round($totalInvoiceAmount - $paidAmount, 2));
 
-                $posStatement = $isCash
-                    ? 'سداد فاتورة مبيعات مباشرة نقدية'
+            if ($remainingAmount <= 0.001) {
+                $paymentStatus = InvoicePaymentStatus::PAID;
+                $saleType = PaymentType::CASH;
+            } elseif ($paidAmount > 0.001) {
+                $paymentStatus = InvoicePaymentStatus::PARTIALLY_PAID;
+                $saleType = PaymentType::CREDIT;
+            } else {
+                $paymentStatus = InvoicePaymentStatus::UNPAID;
+                $saleType = PaymentType::CREDIT;
+            }
+
+            // 4. التسوية المالية في المحافظ:
+            // يُخصم من محفظة نقطة البيع المبلغ المتبقي فقط كمديونية/ذمم مدينة
+            if ($posWallet && $posWallet->isActive() && $remainingAmount > 0.001) {
+                $this->posWalletRepository->decrementBalance($posWallet->wallet_id, $remainingAmount);
+                $posBalanceAfter = round((float) $posWallet->wallet_balance - $remainingAmount, 2);
+
+                $posStatement = $paidAmount > 0.001
+                    ? "سداد فاتورة مبيعات مباشرة مدفوعة جزئياً - إجمالي: ({$totalInvoiceAmount})، مسدد نقداً: ({$paidAmount})، متبقي آجل على المحفظة: ({$remainingAmount}) (رصيد مدين: {$posBalanceAfter})"
                     : "سداد فاتورة مبيعات مباشرة بالبيع الآجل - ذمم مدينة (رصيد مدين على الوكيل: {$posBalanceAfter})";
 
                 $this->posWalletLogRepository->createLog(
                     $posWallet->wallet_id,
                     WalletOperationType::WITHDRAW,
-                    $totalInvoiceAmount,
+                    $remainingAmount,
                     $posStatement,
                     $userId
                 );
 
                 $posWallet->refresh();
-                $this->posWalletService->sendWalletSms($posWallet, 'payment', (float) $totalInvoiceAmount, $posBalanceAfter);
+                $this->posWalletService->sendWalletSms($posWallet, 'payment', (float) $remainingAmount, $posBalanceAfter);
+            }
 
-                // إيداع المبلغ في محفظة الشبكة كاستحقاق مبيعات
+            if ($networkWallet && $networkWallet->isActive()) {
+                // إيداع إجمالي الفاتورة في محفظة الشبكة كاستحقاق مبيعات
                 $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $totalInvoiceAmount);
 
-                $networkStatement = $isCash
-                    ? "تحصيل فاتورة مبيعات مباشرة نقدية من نقطة البيع (#{$posId})"
-                    : "تحصيل فاتورة مبيعات مباشرة بالبيع الآجل من نقطة البيع (#{$posId})";
+                $networkStatement = "تحصيل فاتورة مبيعات مباشرة من نقطة البيع (#{$posId}) - إجمالي: ({$totalInvoiceAmount})، نقد محصل: ({$paidAmount})، آجل متبقي: ({$remainingAmount})";
 
                 $this->networkWalletLogRepository->createLog(
                     $networkWallet->wallet_id,
@@ -324,6 +346,9 @@ class SaleInvoiceService
                 'pos_id' => $posId,
                 'invoice_sale_type' => $saleType,
                 'invoice_total_amount' => $totalInvoiceAmount,
+                'paid_amount' => $paidAmount,
+                'remaining_amount' => $remainingAmount,
+                'payment_status' => $paymentStatus,
                 'invoice_date' => now('Asia/Aden'),
                 'created_by' => $userId,
             ]);

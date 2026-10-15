@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\API\V1\SaleInvoice;
 
+use App\Enums\InvoicePaymentStatus;
 use App\Enums\PaymentType;
 use App\Http\Resources\API\V1\Network\NetworkResource;
 use App\Http\Resources\API\V1\Pos\PosResource;
@@ -32,8 +33,14 @@ class SaleInvoiceResource extends JsonResource
             'invoice_sale_type_label' => $this->invoice_sale_type instanceof PaymentType
                 ? $this->invoice_sale_type->label()
                 : (PaymentType::tryFrom((string) $this->invoice_sale_type)?->label()),
-            'is_credit_sale' => $this->invoice_sale_type === PaymentType::CREDIT || (is_string($this->invoice_sale_type) && $this->invoice_sale_type === PaymentType::CREDIT->value),
             'invoice_total_amount' => (float) $this->invoice_total_amount,
+            'paid_amount' => (float) ($this->paid_amount ?? 0.0),
+            'remaining_amount' => (float) ($this->remaining_amount ?? 0.0),
+            'payment_status' => $this->payment_status instanceof InvoicePaymentStatus ? $this->payment_status->value : $this->payment_status,
+            'payment_status_label' => $this->payment_status instanceof InvoicePaymentStatus
+                ? $this->payment_status->label()
+                : (InvoicePaymentStatus::tryFrom((string) $this->payment_status)?->label()),
+            'is_fully_paid' => (float) ($this->remaining_amount ?? 0.0) <= 0.001,
             'invoice_date' => $this->invoice_date ? Carbon::parse($this->invoice_date)->toDateTimeString() : null,
             'created_by' => $this->created_by,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,

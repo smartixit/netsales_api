@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\InvoicePaymentStatus;
 use App\Enums\PaymentType;
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
@@ -32,6 +33,9 @@ class SaleInvoice extends Model
         'invoice_uuid',
         'invoice_sale_type',
         'invoice_total_amount',
+        'paid_amount',
+        'remaining_amount',
+        'payment_status',
         'invoice_date',
         'created_by',
     ];
@@ -41,6 +45,9 @@ class SaleInvoice extends Model
         return [
             'invoice_sale_type' => PaymentType::class,
             'invoice_total_amount' => 'decimal:2',
+            'paid_amount' => 'decimal:2',
+            'remaining_amount' => 'decimal:2',
+            'payment_status' => InvoicePaymentStatus::class,
             'invoice_date' => 'datetime',
         ];
     }
@@ -87,10 +94,19 @@ class SaleInvoice extends Model
         return $query->where('network_id', $networkId);
     }
 
-    // Calculations
-    public function recalculateTotal(): void
+    // Helpers
+    public function isFullyPaid(): bool
     {
-        $total = (float) $this->items()->sum('item_total_amount');
-        $this->update(['invoice_total_amount' => $total]);
+        return $this->payment_status === InvoicePaymentStatus::PAID || (float) $this->remaining_amount <= 0.001;
+    }
+
+    public function isPartiallyPaid(): bool
+    {
+        return $this->payment_status === InvoicePaymentStatus::PARTIALLY_PAID;
+    }
+
+    public function isUnpaid(): bool
+    {
+        return $this->payment_status === InvoicePaymentStatus::UNPAID;
     }
 }

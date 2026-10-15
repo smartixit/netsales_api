@@ -29,7 +29,11 @@ class ScheduledTaskRunController extends BaseController
         path: '/api/v1/scheduled-tasks',
         summary: 'قائمة سجلات تشغيل المهام المجدولة',
         security: [['sessionAuth' => [], 'deviceAuth' => []]],
-        tags: ['Scheduled Tasks']
+        tags: ['Scheduled Tasks'],
+        responses: [
+            new OA\Response(response: 200, description: 'تم جلب سجلات المهام المجدولة بنجاح'),
+            new OA\Response(response: 422, description: 'خطأ أثناء جلب سجلات المهام المجدولة'),
+        ]
     )]
     public function index(Request $request): JsonResponse
     {
@@ -62,7 +66,11 @@ class ScheduledTaskRunController extends BaseController
         path: '/api/v1/scheduled-tasks/stats',
         summary: 'إحصائيات المهام المجدولة',
         security: [['sessionAuth' => [], 'deviceAuth' => []]],
-        tags: ['Scheduled Tasks']
+        tags: ['Scheduled Tasks'],
+        responses: [
+            new OA\Response(response: 200, description: 'تم جلب إحصائيات المهام المجدولة بنجاح'),
+            new OA\Response(response: 422, description: 'خطأ أثناء جلب الإحصائيات'),
+        ]
     )]
     public function stats(): JsonResponse
     {
@@ -84,7 +92,11 @@ class ScheduledTaskRunController extends BaseController
         path: '/api/v1/scheduled-tasks/catchup',
         summary: 'تشغيل محرك الاستدراك الذكي للمهام الفائتة',
         security: [['sessionAuth' => [], 'deviceAuth' => []]],
-        tags: ['Scheduled Tasks']
+        tags: ['Scheduled Tasks'],
+        responses: [
+            new OA\Response(response: 200, description: 'تم تشغيل محرك التعويض الذكي بنجاح'),
+            new OA\Response(response: 422, description: 'خطأ أثناء تشغيل محرك التعويض الذكي'),
+        ]
     )]
     public function catchup(Request $request): JsonResponse
     {

@@ -29,10 +29,10 @@ class StoreSaleInvoiceRequest extends FormRequest
                 'integer',
                 Rule::exists('pos', 'pos_id')->whereNull('deleted_at'),
             ],
-            'invoice_sale_type' => [
-                'nullable',
-                Rule::enum(PaymentType::class),
-            ],
+            // 'invoice_sale_type' => [
+            //     'nullable',
+            //     Rule::enum(PaymentType::class),
+            // ],
             'items' => [
                 'required',
                 'array',
@@ -58,6 +58,11 @@ class StoreSaleInvoiceRequest extends FormRequest
                 'numeric',
                 'between:0,100',
             ],
+            'paid_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
         ];
     }
 
@@ -76,6 +81,13 @@ class StoreSaleInvoiceRequest extends FormRequest
         $type = $this->input('invoice_sale_type');
 
         return $type ? PaymentType::tryFrom(strtoupper((string) $type)) ?? PaymentType::CASH : PaymentType::CASH;
+    }
+
+    public function getPaidAmount(): ?float
+    {
+        return $this->has('paid_amount') && $this->input('paid_amount') !== null
+            ? (float) $this->input('paid_amount')
+            : null;
     }
 
     /**

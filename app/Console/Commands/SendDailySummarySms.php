@@ -81,6 +81,14 @@ class SendDailySummarySms extends Command
                 ->whereDate('invoice_date', $targetDate)
                 ->sum('invoice_total_amount');
 
+            $cashCollected = (float) SaleInvoice::where('network_id', $network->network_id)
+                ->whereDate('invoice_date', $targetDate)
+                ->sum('paid_amount');
+
+            $creditRemaining = (float) SaleInvoice::where('network_id', $network->network_id)
+                ->whereDate('invoice_date', $targetDate)
+                ->sum('remaining_amount');
+
             $invoicesCount = SaleInvoice::where('network_id', $network->network_id)
                 ->whereDate('invoice_date', $targetDate)
                 ->count();
@@ -89,19 +97,23 @@ class SendDailySummarySms extends Command
                 ->whereDate('expense_date', $targetDate)
                 ->sum('expense_total_amount');
 
-            $netIncome = $salesTotal - $expensesTotal;
+            $netCash = $cashCollected - $expensesTotal;
 
             $salesFormatted = number_format($salesTotal, 2);
+            $cashFormatted = number_format($cashCollected, 2);
+            $creditFormatted = number_format($creditRemaining, 2);
             $expensesFormatted = number_format($expensesTotal, 2);
-            $netFormatted = number_format($netIncome, 2);
+            $netCashFormatted = number_format($netCash, 2);
             $formattedDate = Carbon::parse($targetDate, 'Asia/Aden')->locale('ar')->translatedFormat('l، j F Y');
 
             $message = "📊 الملخص اليومي لشبكة ({$network->network_name})\n"
                 ."📅 التاريخ: {$formattedDate}\n"
                 ."🧾 عدد الفواتير: {$invoicesCount}\n"
                 ."💰 إجمالي المبيعات: {$salesFormatted} ر.ي\n"
+                ."💵 النقد المحصل: {$cashFormatted} ر.ي\n"
+                ."⏳ الآجل (المتبقي): {$creditFormatted} ر.ي\n"
                 ."💸 إجمالي المصروفات: {$expensesFormatted} ر.ي\n"
-                ."📈 صافي الدخل: {$netFormatted} ر.ي";
+                ."📈 صافي النقد اليومي: {$netCashFormatted} ر.ي";
 
             try {
                 $success = $smsGateService->sendSms(
@@ -121,8 +133,10 @@ class SendDailySummarySms extends Command
                     status: $status,
                     extra: [
                         'sales' => $salesTotal,
+                        'cash_collected' => $cashCollected,
+                        'credit_remaining' => $creditRemaining,
                         'expenses' => $expensesTotal,
-                        'net' => $netIncome,
+                        'net_cash' => $netCash,
                         'invoices_count' => $invoicesCount,
                         'success' => $success,
                     ]

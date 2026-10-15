@@ -27,7 +27,11 @@ class AdminNotificationController extends BaseController
         path: '/api/v1/admin/notifications/send',
         summary: 'إرسال إشعار إداري للجمهور عبر القنوات المحددة',
         security: [['sessionAuth' => [], 'deviceAuth' => []]],
-        tags: ['Admin Notifications']
+        tags: ['Admin Notifications'],
+        responses: [
+            new OA\Response(response: 200, description: 'تم إرسال وتوزيع الإشعار بنجاح'),
+            new OA\Response(response: 422, description: 'فشل في إرسال الإشعار'),
+        ]
     )]
     public function send(SendAdminNotificationRequest $request): JsonResponse
     {
@@ -52,7 +56,11 @@ class AdminNotificationController extends BaseController
         path: '/api/v1/admin/notifications/user',
         summary: 'إرسال رسالة SMS فورية لمستخدم معين',
         security: [['sessionAuth' => [], 'deviceAuth' => []]],
-        tags: ['Admin Notifications']
+        tags: ['Admin Notifications'],
+        responses: [
+            new OA\Response(response: 200, description: 'تم إرسال الرسالة النصية بنجاح'),
+            new OA\Response(response: 422, description: 'فشل في إرسال الرسالة النصية'),
+        ]
     )]
     public function sendToUser(Request $request): JsonResponse
     {

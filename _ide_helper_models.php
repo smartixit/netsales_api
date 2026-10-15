@@ -1059,6 +1059,9 @@ namespace App\Models{
  * @property string $invoice_uuid
  * @property \App\Enums\PaymentType $invoice_sale_type
  * @property numeric $invoice_total_amount
+ * @property numeric $paid_amount
+ * @property numeric $remaining_amount
+ * @property \App\Enums\InvoicePaymentStatus $payment_status
  * @property \Illuminate\Support\Carbon $invoice_date
  * @property int $created_by
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -1084,7 +1087,10 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereInvoiceTotalAmount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereInvoiceUuid($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice wherePaidAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice wherePaymentStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice wherePosId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereRemainingAmount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice withoutTrashed()
@@ -1129,15 +1135,15 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property int $id
- * @property string $task_type
+ * @property ScheduledTaskType|string $task_type
  * @property int|null $network_id
- * @property \Illuminate\Support\Carbon $target_date
- * @property string $status
- * @property array<array-key, mixed>|null $extra
- * @property \Illuminate\Support\Carbon|null $sent_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Network|null $network
+ * @property \Carbon\Carbon $target_date
+ * @property ScheduledTaskStatus|string $status
+ * @property array|null $extra
+ * @property \Carbon\Carbon|null $sent_at
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ * @property Network|null $network
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun query()

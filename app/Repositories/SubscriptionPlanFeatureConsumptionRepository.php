@@ -25,7 +25,7 @@ class SubscriptionPlanFeatureConsumptionRepository extends BaseRepository implem
     {
         return $this->model->newQuery()
             ->with(['planFeature.feature'])
-            ->where('subscription_id', $subscriptionId)
+            ->forSubscription($subscriptionId)
             ->get();
     }
 
@@ -35,7 +35,7 @@ class SubscriptionPlanFeatureConsumptionRepository extends BaseRepository implem
     public function findBySubscriptionAndFeature(int $subscriptionId, int $planFeatureId): ?SubscriptionPlanFeatureConsumption
     {
         return $this->model->newQuery()
-            ->where('subscription_id', $subscriptionId)
+            ->forSubscription($subscriptionId)
             ->where('feature_id', $planFeatureId)
             ->lockForUpdate()
             ->first();

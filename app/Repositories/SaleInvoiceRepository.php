@@ -38,6 +38,13 @@ class SaleInvoiceRepository extends BaseRepository implements SaleInvoiceReposit
             $query->where('invoice_sale_type', $filters['invoice_sale_type']);
         }
 
+        if (! empty($filters['payment_status'])) {
+            $statusVal = $filters['payment_status'] instanceof \App\Enums\InvoicePaymentStatus
+                ? $filters['payment_status']->value
+                : (string) $filters['payment_status'];
+            $query->where('payment_status', $statusVal);
+        }
+
         if (! empty($filters['created_by'])) {
             $query->where('created_by', (int) $filters['created_by']);
         }

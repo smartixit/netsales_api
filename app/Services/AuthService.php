@@ -226,12 +226,42 @@ class AuthService
             $this->userRepository->resetLoginAttempts($user->user_id);
             $this->userRepository->updateLastLogin($user->user_id);
 
+            // Alert for login from "Another" (secondary) device
+            $ip = request()->ip();
+            $time = now()->format('Y-m-d H:i:s');
+
+            $body = "تنبيه أمني: دخول من جهاز موثوق\n".
+            "تم تسجيل الدخول إلى حسابك من جهاز معرّف مسبقاً (جهاز ثانوي).\n".
+                "تفاصيل المحاولة:\n".
+                "• الجهاز: {$deviceName}\n".
+                "• العنوان (IP): {$ip}\n".
+                "• الوقت: {$time}";
+
             // إشعار المستخدم عبر SMS إذا كان جهازاً ثانوياً
+            // if (! $existingDevice->is_primary) {
+            //     SendSmsNotificationJob::dispatch(
+            //         $user->user_phone_number,
+            //         $body,
+            //     );
+            // }
+
             if (! $existingDevice->is_primary) {
-                SendSmsNotificationJob::dispatch(
-                    $user->user_phone_number,
-                    "تنبيه أمني: تم تسجيل الدخول إلى حسابك في NetSales من جهاز ثانوي ({$deviceName})."
+                $this->notificationService->sendDirect(
+                    (int) $user->user_id,
+                    NotificationType::SECURITY,
+                    'تنبيه أمني: دخول من جهاز موثوق',
+                    $body
                 );
+
+                // إرسال بريد إلكتروني إذا وُجد
+                if (! empty($user->user_email)) {
+                    SendEmailNotificationJob::dispatch(
+                        $user->user_email,
+                        'تنبيه أمني: دخول من جهاز موثوق',
+                        $body,
+                        userName: $user->user_full_name
+                    );
+                }
             }
 
             SystemLoggerService::logAuth('user_logged_in', $user->user_id, [
@@ -389,12 +419,36 @@ class AuthService
             $this->userRepository->resetLoginAttempts($user->user_id);
             $this->userRepository->updateLastLogin($user->user_id);
 
+            $ip = request()->ip();
+            $time = now()->format('Y-m-d H:i:s');
+
             // إشعار المستخدم برسالة SMS عند تسجيل الدخول من جهاز جديد
             $smsMessage = $isFirstDevice
                 ? "تنبيه أمني: تم ربط جهازك ({$deviceName}) بحسابك في NetSales بنجاح."
-                : "تنبيه أمني: تم تسجيل الدخول الى حسابك من جهاز جديد ({$deviceName}) بنجاح.";
+                : "تنبيه أمني: تم تسجيل الدخول الى حسابك من جهاز جديد\n".
+                "تفاصيل المحاولة:\n".
+                "• الجهاز: {$deviceName}\n".
+                "• العنوان (IP): {$ip}\n".
+                "• الوقت: {$time}";
+
+            $this->notificationService->sendDirect(
+                (int) $user->user_id,
+                NotificationType::SECURITY,
+                'تنبيه أمني: تسجيل دخول من جهاز جديد',
+                $smsMessage
+            );
 
             SendSmsNotificationJob::dispatch($user->user_phone_number, $smsMessage);
+
+            // إرسال بريد إلكتروني إذا وُجد
+            if (! empty($user->user_email)) {
+                SendEmailNotificationJob::dispatch(
+                    $user->user_email,
+                    'تنبيه أمني: تسجيل دخول من جهاز جديد',
+                    $smsMessage,
+                    userName: $user->user_full_name
+                );
+            }
 
             SystemLoggerService::logAuth('user_logged_in_verified', $user->user_id, [
                 'session_id' => $session->session_id,

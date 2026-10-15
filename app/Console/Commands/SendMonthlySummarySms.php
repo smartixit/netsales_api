@@ -83,6 +83,14 @@ class SendMonthlySummarySms extends Command
                 ->whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
                 ->sum('invoice_total_amount');
 
+            $cashCollected = (float) SaleInvoice::where('network_id', $network->network_id)
+                ->whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
+                ->sum('paid_amount');
+
+            $creditRemaining = (float) SaleInvoice::where('network_id', $network->network_id)
+                ->whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
+                ->sum('remaining_amount');
+
             $invoicesCount = SaleInvoice::where('network_id', $network->network_id)
                 ->whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
                 ->count();
@@ -91,19 +99,23 @@ class SendMonthlySummarySms extends Command
                 ->whereBetween('expense_date', [$startOfMonth, $endOfMonth])
                 ->sum('expense_total_amount');
 
-            $netIncome = $salesTotal - $expensesTotal;
+            $netCash = $cashCollected - $expensesTotal;
 
             $salesFormatted = number_format($salesTotal, 2);
+            $cashFormatted = number_format($cashCollected, 2);
+            $creditFormatted = number_format($creditRemaining, 2);
             $expensesFormatted = number_format($expensesTotal, 2);
-            $netFormatted = number_format($netIncome, 2);
+            $netCashFormatted = number_format($netCash, 2);
             $formattedMonth = $targetMonthDate->locale('ar')->translatedFormat('F Y');
 
             $message = "📊 الملخص الشهري لشبكة ({$network->network_name})\n"
                 ."📅 شهر: {$formattedMonth}\n"
                 ."🧾 إجمالي الفواتير: {$invoicesCount}\n"
                 ."💰 مبيعات الشهر: {$salesFormatted} ر.ي\n"
+                ."💵 النقد المحصل: {$cashFormatted} ر.ي\n"
+                ."⏳ الآجل (المتبقي): {$creditFormatted} ر.ي\n"
                 ."💸 مصروفات الشهر: {$expensesFormatted} ر.ي\n"
-                ."📈 صافي الربح: {$netFormatted} ر.ي";
+                ."📈 صافي النقد الشهري: {$netCashFormatted} ر.ي";
 
             try {
                 $success = $smsGateService->sendSms(
@@ -124,8 +136,10 @@ class SendMonthlySummarySms extends Command
                     extra: [
                         'year_month' => $yearMonth,
                         'sales' => $salesTotal,
+                        'cash_collected' => $cashCollected,
+                        'credit_remaining' => $creditRemaining,
                         'expenses' => $expensesTotal,
-                        'net' => $netIncome,
+                        'net_cash' => $netCash,
                         'invoices_count' => $invoicesCount,
                     ]
                 );

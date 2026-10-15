@@ -12,6 +12,54 @@
         }
     ],
     "paths": {
+        "/api/v1/admin/notifications/send": {
+            "post": {
+                "tags": [
+                    "Admin Notifications"
+                ],
+                "summary": "إرسال إشعار إداري للجمهور عبر القنوات المحددة",
+                "description": "إرسال إشعار لجمهور متعدد عبر قنوات مختارة (داخل التطبيق / SMS / بريد).",
+                "operationId": "41d8a3a8719d4a094684bcfa933e7640",
+                "responses": {
+                    "200": {
+                        "description": "تم إرسال وتوزيع الإشعار بنجاح"
+                    },
+                    "422": {
+                        "description": "فشل في إرسال الإشعار"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": [],
+                        "deviceAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/notifications/user": {
+            "post": {
+                "tags": [
+                    "Admin Notifications"
+                ],
+                "summary": "إرسال رسالة SMS فورية لمستخدم معين",
+                "description": "إرسال رسالة نصية SMS فورية لمستخدم محدد عبر بوابة SMSGate.",
+                "operationId": "18bdfbf65b38b0f851f6ca9022705369",
+                "responses": {
+                    "200": {
+                        "description": "تم إرسال الرسالة النصية بنجاح"
+                    },
+                    "422": {
+                        "description": "فشل في إرسال الرسالة النصية"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": [],
+                        "deviceAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/auth/register-network": {
             "post": {
                 "tags": [
@@ -4687,6 +4735,78 @@
                 }
             }
         },
+        "/api/v1/scheduled-tasks": {
+            "get": {
+                "tags": [
+                    "Scheduled Tasks"
+                ],
+                "summary": "قائمة سجلات تشغيل المهام المجدولة",
+                "description": "عرض سجلات تشغيل المهام المجدولة مع الفلترة والترقيم.",
+                "operationId": "6a6e29db37572218d5a1719be2df69d3",
+                "responses": {
+                    "200": {
+                        "description": "تم جلب سجلات المهام المجدولة بنجاح"
+                    },
+                    "422": {
+                        "description": "خطأ أثناء جلب سجلات المهام المجدولة"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": [],
+                        "deviceAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/scheduled-tasks/stats": {
+            "get": {
+                "tags": [
+                    "Scheduled Tasks"
+                ],
+                "summary": "إحصائيات المهام المجدولة",
+                "description": "إحصائيات سريعة لحالات المهام المجدولة لليوم والتاريخ الإجمالي.",
+                "operationId": "bf2ed22c47976ea06672e72fc1259cfa",
+                "responses": {
+                    "200": {
+                        "description": "تم جلب إحصائيات المهام المجدولة بنجاح"
+                    },
+                    "422": {
+                        "description": "خطأ أثناء جلب الإحصائيات"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": [],
+                        "deviceAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/scheduled-tasks/catchup": {
+            "post": {
+                "tags": [
+                    "Scheduled Tasks"
+                ],
+                "summary": "تشغيل محرك الاستدراك الذكي للمهام الفائتة",
+                "description": "تشغيل يدوي فوري لمحرك الاستدراك والتعويض الذكي للمهام الفائتة.",
+                "operationId": "c0f9f2255111da62c3b186987ba68f04",
+                "responses": {
+                    "200": {
+                        "description": "تم تشغيل محرك التعويض الذكي بنجاح"
+                    },
+                    "422": {
+                        "description": "خطأ أثناء تشغيل محرك التعويض الذكي"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": [],
+                        "deviceAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/security/public-keys": {
             "get": {
                 "tags": [
@@ -7727,6 +7847,10 @@
     ],
     "tags": [
         {
+            "name": "Admin Notifications",
+            "description": "إرسال وتوزيع إشعارات الإدارة المتعددة القنوات (داخل التطبيق، SMS، البريد)"
+        },
+        {
             "name": "Auth",
             "description": "إدارة المصادقة والجلسات وأمان الحسابات والتسجيل وكلمات المرور"
         },
@@ -7789,6 +7913,10 @@
         {
             "name": "Sale Invoices",
             "description": "إدارة فواتير مبيعات كروت الإنترنت، السداد والتحصيل المالي، والعمليات الإدارية والمجمعة"
+        },
+        {
+            "name": "Scheduled Tasks",
+            "description": "إدارة وسجلات المهام المجدولة ومحرك الاستدراك الذكي"
         },
         {
             "name": "Security",
