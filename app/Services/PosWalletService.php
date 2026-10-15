@@ -252,6 +252,19 @@ class PosWalletService
             $amount = $request->getAmount();
             $userStatement = $request->getStatement();
 
+            $minTransfer = (float) systemSetting('min_wallet_transfer_amount', 100);
+            $maxTransfer = (float) systemSetting('max_wallet_transfer_amount', 1000000);
+            if ($amount < $minTransfer) {
+                throw ValidationException::withMessages([
+                    'amount' => ["مبلغ التحويل يقل عن الحد الأدنى المسموح به للنظام ({$minTransfer} ر.ي)."],
+                ]);
+            }
+            if ($amount > $maxTransfer) {
+                throw ValidationException::withMessages([
+                    'amount' => ["مبلغ التحويل يتجاوز الحد الأقصى المسموح به للنظام ({$maxTransfer} ر.ي)."],
+                ]);
+            }
+
             // قفل محفظة الشبكة والتحقق منها
             $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId, true);
             if (! $networkWallet) {

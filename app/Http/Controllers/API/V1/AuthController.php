@@ -65,7 +65,7 @@ class AuthController extends BaseController
                         new OA\Property(property: 'user_profile_logo', type: 'string', format: 'binary', description: 'صورة المستخدم الشخصية'),
                         new OA\Property(property: 'device_uuid', type: 'string', example: 'SPA-251DHS'),
                         new OA\Property(property: 'device_name', type: 'string', example: 'Samsung S22'),
-                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS','MAC'], example: 'ANDROID'),
+                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS', 'MAC'], example: 'ANDROID'),
                     ]
                 )
             )
@@ -128,7 +128,7 @@ class AuthController extends BaseController
                         new OA\Property(property: 'user_profile_logo', type: 'string', format: 'binary', description: 'صورة المستخدم الشخصية'),
                         new OA\Property(property: 'device_uuid', type: 'string', example: 'e5c18495-e224-57e5-b10c-7c7f95e302f1'),
                         new OA\Property(property: 'device_name', type: 'string', example: 'Sunmi V2 POS'),
-                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS','MAC'], example: 'ANDROID'),
+                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS', 'MAC'], example: 'ANDROID'),
                     ]
                 )
             )
@@ -179,7 +179,7 @@ class AuthController extends BaseController
                         new OA\Property(property: 'user_password', type: 'string', format: 'password', example: 'Admin@123456'),
                         new OA\Property(property: 'device_uuid', type: 'string', nullable: true, example: 'SPA-251DHS'),
                         new OA\Property(property: 'device_name', type: 'string', nullable: true, example: 'Chrome Browser Windows'),
-                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS','MAC'], example: 'ANDROID'),
+                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS', 'MAC'], example: 'ANDROID'),
                     ]
                 )
             )
@@ -239,7 +239,7 @@ class AuthController extends BaseController
                         new OA\Property(property: 'otp', type: 'string', example: '123456'),
                         new OA\Property(property: 'device_uuid', type: 'string', example: 'SPA-251DHS'),
                         new OA\Property(property: 'device_name', type: 'string', nullable: true, example: 'Samsung S22'),
-                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS','MAC'], example: 'ANDROID'),
+                        new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS', 'MAC'], example: 'ANDROID'),
                     ]
                 )
             )
@@ -611,5 +611,15 @@ class AuthController extends BaseController
         }
 
         return $this->successResponse('تم فصل الجهاز وإلغاء إقرانه بنجاح.');
+    }
+
+    public function healthCheck(Request $request)
+    {
+        return response()->json([
+            'isAlive' => true,
+            'status' => 'ok',
+            'message' => 'الخادم يعمل بشكل صحيح',
+            'timestamp' => now()->toIso8601String(),
+        ], 200);
     }
 }

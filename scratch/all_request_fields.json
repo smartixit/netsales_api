@@ -1,0 +1,1025 @@
+{
+    "action_type_key": [
+        "StoreActionTypeRequest",
+        "UpdateActionTypeRequest"
+    ],
+    "action_type_name": [
+        "StoreActionTypeRequest",
+        "UpdateActionTypeRequest"
+    ],
+    "action_type_desc": [
+        "StoreActionTypeRequest",
+        "UpdateActionTypeRequest"
+    ],
+    "status": [
+        "StoreActionTypeRequest",
+        "UpdateActionTypeRequest",
+        "StoreBankAccountRequest",
+        "UpdateBankAccountRequest",
+        "BatchStatusRequest",
+        "StoreFeatureRequest",
+        "UpdateFeatureRequest",
+        "StoreModuleRequest",
+        "UpdateModuleRequest",
+        "StoreNetworkPosRequest",
+        "StoreNetworkRequest",
+        "StoreNetworkWalletRequest",
+        "StoreVoucherPackageDiscountRequest",
+        "StoreVoucherPackageRequest",
+        "UpdateNetworkPosRequest",
+        "UpdateNetworkRequest",
+        "UpdateNetworkWalletRequest",
+        "UpdateVoucherPackageDiscountRequest",
+        "UpdateVoucherPackageRequest",
+        "StorePosRequest",
+        "StorePosWalletRequest",
+        "UpdatePosRequest",
+        "UpdatePosWalletRequest",
+        "StorePermissionRequest",
+        "StoreRoleRequest",
+        "UpdatePermissionRequest",
+        "UpdateRoleRequest",
+        "StoreRequestRequest",
+        "UpdateRequestRequest",
+        "AttachPlanFeatureRequest",
+        "StoreFeatureRequest",
+        "StoreProviderSubscriptionRequest",
+        "StoreSubscriptionPlanFeatureRequest",
+        "StoreSubscriptionPlanRequest",
+        "StoreSubscriptionPlanRequestRequest",
+        "UpdateFeatureRequest",
+        "UpdateProviderSubscriptionRequest",
+        "UpdateSubscriptionPlanFeatureRequest",
+        "UpdateSubscriptionPlanRequest",
+        "UpdateSubscriptionPlanRequestRequest",
+        "StoreUserDeviceRequest",
+        "StoreUserRequest",
+        "UpdateUserDeviceRequest",
+        "UpdateUserRequest"
+    ],
+    "user_phone_number": [
+        "LoginRequest",
+        "RegisterPosRequest",
+        "RegisterRequest",
+        "RequestPasswordResetRequest",
+        "ResetPasswordRequest",
+        "VerifyResetOtpRequest",
+        "VerifyTwoFactorRequest",
+        "GenerateOtpRequest",
+        "VerifyOtpRequest",
+        "StoreUserRequest",
+        "UpdateUserRequest"
+    ],
+    "user_password": [
+        "LoginRequest",
+        "RegisterPosRequest",
+        "RegisterRequest",
+        "StoreUserRequest",
+        "UpdateUserRequest"
+    ],
+    "device_uuid": [
+        "LoginRequest",
+        "RegisterPosRequest",
+        "RegisterRequest",
+        "VerifyTwoFactorRequest",
+        "UpdateFcmTokenRequest",
+        "StoreUserDeviceRequest",
+        "UpdateUserDeviceRequest"
+    ],
+    "device_name": [
+        "LoginRequest",
+        "RegisterPosRequest",
+        "RegisterRequest",
+        "VerifyTwoFactorRequest",
+        "UpdateFcmTokenRequest",
+        "StoreUserDeviceRequest",
+        "UpdateUserDeviceRequest"
+    ],
+    "device_type": [
+        "LoginRequest",
+        "RegisterPosRequest",
+        "RegisterRequest",
+        "VerifyTwoFactorRequest",
+        "UpdateFcmTokenRequest",
+        "StoreUserDeviceRequest",
+        "UpdateUserDeviceRequest"
+    ],
+    "pos_name": [
+        "RegisterPosRequest",
+        "StorePosRequest",
+        "UpdatePosRequest"
+    ],
+    "pos_holder_name": [
+        "RegisterPosRequest",
+        "StorePosRequest",
+        "UpdatePosRequest"
+    ],
+    "governorate_id": [
+        "RegisterPosRequest",
+        "RegisterRequest",
+        "StoreDirectorateRequest",
+        "UpdateDirectorateRequest",
+        "StoreNetworkRequest",
+        "UpdateNetworkRequest",
+        "StorePosRequest",
+        "UpdatePosRequest"
+    ],
+    "directorate_id": [
+        "RegisterPosRequest",
+        "RegisterRequest",
+        "StoreNetworkRequest",
+        "UpdateNetworkRequest",
+        "StorePosRequest",
+        "UpdatePosRequest"
+    ],
+    "pos_phone_number": [
+        "RegisterPosRequest",
+        "StorePosRequest",
+        "UpdatePosRequest"
+    ],
+    "pos_email": [
+        "RegisterPosRequest",
+        "StorePosRequest",
+        "UpdatePosRequest"
+    ],
+    "pos_address": [
+        "RegisterPosRequest",
+        "StorePosRequest",
+        "UpdatePosRequest"
+    ],
+    "pos_profile_logo": [
+        "RegisterPosRequest",
+        "StorePosRequest",
+        "UpdatePosRequest"
+    ],
+    "network_id": [
+        "RegisterPosRequest",
+        "StoreExpenseRequest",
+        "StoreNetworkPosRequest",
+        "StoreNetworkWalletRequest",
+        "StoreVoucherPackageDiscountRequest",
+        "StoreVoucherPackageRequest",
+        "StorePosWalletRequest",
+        "TransferNetworkToPosWalletRequest",
+        "TransferPosToNetworkWalletRequest",
+        "StoreRequestRequest",
+        "StoreSaleInvoiceRequest",
+        "StoreProviderSubscriptionRequest",
+        "StoreSubscriptionPlanRequestRequest",
+        "UpdateProviderSubscriptionRequest",
+        "UpdateSubscriptionPlanRequestRequest",
+        "StoreSubscriptionPlanRequestRequest",
+        "StoreSupportTicketRequest",
+        "UpdateSupportTicketRequest"
+    ],
+    "user_full_name": [
+        "RegisterPosRequest",
+        "RegisterRequest",
+        "StoreUserRequest",
+        "UpdateUserRequest"
+    ],
+    "user_email": [
+        "RegisterPosRequest",
+        "RegisterRequest",
+        "StoreUserRequest",
+        "UpdateUserRequest"
+    ],
+    "user_profile_logo": [
+        "RegisterPosRequest",
+        "RegisterRequest",
+        "StoreUserRequest",
+        "UpdateUserRequest"
+    ],
+    "profile_picture": [
+        "RegisterPosRequest",
+        "RegisterRequest",
+        "UpdateProfilePictureRequest"
+    ],
+    "network_name": [
+        "RegisterRequest",
+        "StoreNetworkRequest",
+        "UpdateNetworkRequest"
+    ],
+    "network_holder_name": [
+        "RegisterRequest"
+    ],
+    "network_phone_number": [
+        "RegisterRequest"
+    ],
+    "network_email": [
+        "RegisterRequest"
+    ],
+    "network_address": [
+        "RegisterRequest",
+        "StoreNetworkRequest",
+        "UpdateNetworkRequest"
+    ],
+    "network_profile_logo": [
+        "RegisterRequest"
+    ],
+    "otp": [
+        "ResetPasswordRequest",
+        "ToggleTwoFactorRequest",
+        "VerifyResetOtpRequest",
+        "VerifyTwoFactorRequest",
+        "VerifyOtpRequest"
+    ],
+    "password": [
+        "ResetPasswordRequest",
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "enable": [
+        "ToggleTwoFactorRequest"
+    ],
+    "current_password": [
+        "UpdatePasswordRequest"
+    ],
+    "new_password": [
+        "UpdatePasswordRequest"
+    ],
+    "state": [
+        "DriveTokenRequest"
+    ],
+    "code": [
+        "DriveTokenRequest"
+    ],
+    "enabled": [
+        "UpdateBackupConfigRequest"
+    ],
+    "schedule_time": [
+        "UpdateBackupConfigRequest"
+    ],
+    "retention_count": [
+        "UpdateBackupConfigRequest"
+    ],
+    "include_storage": [
+        "UpdateBackupConfigRequest"
+    ],
+    "failure_sms": [
+        "UpdateBackupConfigRequest"
+    ],
+    "client_id": [
+        "UpdateBackupConfigRequest"
+    ],
+    "client_secret": [
+        "UpdateBackupConfigRequest"
+    ],
+    "folder_name": [
+        "UpdateBackupConfigRequest"
+    ],
+    "bank_name": [
+        "StoreBankAccountRequest",
+        "UpdateBankAccountRequest"
+    ],
+    "account_holder_name": [
+        "StoreBankAccountRequest",
+        "UpdateBankAccountRequest"
+    ],
+    "account_number": [
+        "StoreBankAccountRequest",
+        "UpdateBankAccountRequest"
+    ],
+    "account_type": [
+        "StoreBankAccountRequest",
+        "UpdateBankAccountRequest"
+    ],
+    "account_currency": [
+        "StoreBankAccountRequest",
+        "UpdateBankAccountRequest"
+    ],
+    "account_balance": [
+        "StoreBankAccountRequest",
+        "UpdateBankAccountRequest"
+    ],
+    "bank_logo": [
+        "StoreBankAccountRequest",
+        "UpdateBankAccountRequest"
+    ],
+    "ids": [
+        "BatchIdsRequest",
+        "BatchStatusRequest"
+    ],
+    "ids.*": [
+        "BatchIdsRequest",
+        "BatchStatusRequest"
+    ],
+    "reason": [
+        "RejectRequest",
+        "RejectSubscriptionPlanRequestRequest"
+    ],
+    "expense_id": [
+        "StoreExpenseAttachmentRequest"
+    ],
+    "attachment": [
+        "StoreExpenseAttachmentRequest"
+    ],
+    "attachment_name": [
+        "StoreExpenseAttachmentRequest",
+        "UpdateExpenseAttachmentRequest"
+    ],
+    "item_statement": [
+        "StoreExpenseItemRequest",
+        "UpdateExpenseItemRequest"
+    ],
+    "item_amount": [
+        "StoreExpenseItemRequest",
+        "UpdateExpenseItemRequest"
+    ],
+    "expense_date": [
+        "StoreExpenseRequest",
+        "UpdateExpenseRequest"
+    ],
+    "items": [
+        "StoreExpenseRequest",
+        "UpdateExpenseRequest",
+        "StoreRequestRequest",
+        "StoreSaleInvoiceRequest"
+    ],
+    "items.*.item_statement": [
+        "StoreExpenseRequest",
+        "UpdateExpenseRequest"
+    ],
+    "items.*.item_amount": [
+        "StoreExpenseRequest",
+        "UpdateExpenseRequest"
+    ],
+    "attachments": [
+        "StoreExpenseRequest",
+        "UpdateExpenseRequest"
+    ],
+    "attachments.*": [
+        "StoreExpenseRequest",
+        "UpdateExpenseRequest"
+    ],
+    "feature_name": [
+        "StoreFeatureRequest",
+        "UpdateFeatureRequest",
+        "ConsumeFeatureRequest",
+        "StoreFeatureRequest",
+        "UpdateFeatureRequest"
+    ],
+    "feature_value_type": [
+        "StoreFeatureRequest",
+        "UpdateFeatureRequest",
+        "StoreFeatureRequest",
+        "UpdateFeatureRequest"
+    ],
+    "feature_value": [
+        "StoreFeatureRequest",
+        "UpdateFeatureRequest",
+        "StoreFeatureRequest",
+        "UpdateFeatureRequest"
+    ],
+    "feature_desc": [
+        "StoreFeatureRequest",
+        "UpdateFeatureRequest",
+        "StoreFeatureRequest",
+        "UpdateFeatureRequest"
+    ],
+    "directorate_name": [
+        "StoreDirectorateRequest",
+        "UpdateDirectorateRequest"
+    ],
+    "governorate_name": [
+        "StoreGovernorateRequest",
+        "UpdateGovernorateRequest"
+    ],
+    "module_key": [
+        "StoreModuleRequest",
+        "UpdateModuleRequest"
+    ],
+    "module_name": [
+        "StoreModuleRequest",
+        "UpdateModuleRequest"
+    ],
+    "module_icon": [
+        "StoreModuleRequest",
+        "UpdateModuleRequest"
+    ],
+    "module_desc": [
+        "StoreModuleRequest",
+        "UpdateModuleRequest"
+    ],
+    "amount": [
+        "DepositNetworkWalletRequest",
+        "WithdrawNetworkWalletRequest",
+        "DepositPosWalletRequest",
+        "TransferNetworkToPosWalletRequest",
+        "TransferPosToNetworkWalletRequest",
+        "WithdrawPosWalletRequest",
+        "ConsumeFeatureRequest"
+    ],
+    "statement": [
+        "DepositNetworkWalletRequest",
+        "WithdrawNetworkWalletRequest",
+        "DepositPosWalletRequest",
+        "TransferNetworkToPosWalletRequest",
+        "TransferPosToNetworkWalletRequest",
+        "WithdrawPosWalletRequest"
+    ],
+    "log_date": [
+        "DepositNetworkWalletRequest",
+        "StoreNetworkWalletLogRequest",
+        "WithdrawNetworkWalletRequest",
+        "DepositPosWalletRequest",
+        "StorePosWalletLogRequest",
+        "WithdrawPosWalletRequest"
+    ],
+    "pos_id": [
+        "StoreNetworkPosRequest",
+        "StoreVoucherPackageDiscountRequest",
+        "StorePosWalletRequest",
+        "TransferNetworkToPosWalletRequest",
+        "TransferPosToNetworkWalletRequest",
+        "StoreRequestRequest",
+        "StoreSaleInvoiceRequest",
+        "StoreSupportTicketRequest",
+        "UpdateSupportTicketRequest"
+    ],
+    "network_phone": [
+        "StoreNetworkRequest",
+        "UpdateNetworkRequest"
+    ],
+    "network_logo": [
+        "StoreNetworkRequest",
+        "UpdateNetworkRequest"
+    ],
+    "wallet_id": [
+        "StoreNetworkWalletLogRequest",
+        "StorePosWalletLogRequest"
+    ],
+    "log_operation": [
+        "StoreNetworkWalletLogRequest"
+    ],
+    "log_amount": [
+        "StoreNetworkWalletLogRequest",
+        "StorePosWalletLogRequest"
+    ],
+    "log_statement": [
+        "StoreNetworkWalletLogRequest",
+        "UpdateNetworkWalletLogRequest",
+        "StorePosWalletLogRequest",
+        "UpdatePosWalletLogRequest"
+    ],
+    "wallet_balance": [
+        "StoreNetworkWalletRequest",
+        "StorePosWalletRequest"
+    ],
+    "package_id": [
+        "StoreVoucherPackageDiscountRequest",
+        "StoreRequestItemRequest",
+        "StoreSaleInvoiceItemRequest"
+    ],
+    "discount_cash": [
+        "StoreVoucherPackageDiscountRequest",
+        "UpdateVoucherPackageDiscountRequest"
+    ],
+    "discount_credit": [
+        "StoreVoucherPackageDiscountRequest",
+        "UpdateVoucherPackageDiscountRequest"
+    ],
+    "package_name": [
+        "StoreVoucherPackageRequest",
+        "UpdateVoucherPackageRequest"
+    ],
+    "package_color": [
+        "StoreVoucherPackageRequest",
+        "UpdateVoucherPackageRequest"
+    ],
+    "package_balance": [
+        "StoreVoucherPackageRequest",
+        "UpdateVoucherPackageRequest"
+    ],
+    "package_uptime": [
+        "StoreVoucherPackageRequest",
+        "UpdateVoucherPackageRequest"
+    ],
+    "package_validity": [
+        "StoreVoucherPackageRequest",
+        "UpdateVoucherPackageRequest"
+    ],
+    "package_voucher_count": [
+        "StoreVoucherPackageRequest",
+        "UpdateVoucherPackageRequest"
+    ],
+    "package_voucher_price": [
+        "StoreVoucherPackageRequest",
+        "UpdateVoucherPackageRequest"
+    ],
+    "package_default_cash_discount": [
+        "StoreVoucherPackageRequest",
+        "UpdateVoucherPackageRequest"
+    ],
+    "package_default_credit_discount": [
+        "StoreVoucherPackageRequest",
+        "UpdateVoucherPackageRequest"
+    ],
+    "phone_number": [
+        "TestNetworkSmsRequest"
+    ],
+    "message": [
+        "TestNetworkSmsRequest"
+    ],
+    "is_enabled": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "notify_receipt": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "notify_payment": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "notify_pos_withdraw": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "notify_expense": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "notify_sale_invoice": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "notify_voucher_request": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "notify_low_balance": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "notify_daily_summary": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "notify_monthly_summary": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "notify_subscription_expiry": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "use_custom_gateway": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "server_type": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "base_url": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "auth_type": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "api_token": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "refresh_token": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "username": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "device_id": [
+        "UpdateNetworkSmsSettingRequest",
+        "StoreSecurityBanRequest"
+    ],
+    "sim_number": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "skip_phone_validation": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "device_active_within": [
+        "UpdateNetworkSmsSettingRequest"
+    ],
+    "audience": [
+        "SendAdminNotificationRequest"
+    ],
+    "audience.type": [
+        "SendAdminNotificationRequest"
+    ],
+    "audience.role_id": [
+        "SendAdminNotificationRequest"
+    ],
+    "audience.network_id": [
+        "SendAdminNotificationRequest"
+    ],
+    "audience.user_ids": [
+        "SendAdminNotificationRequest"
+    ],
+    "audience.user_ids.*": [
+        "SendAdminNotificationRequest"
+    ],
+    "channels": [
+        "SendAdminNotificationRequest",
+        "SendUserDirectNotificationRequest"
+    ],
+    "channels.*": [
+        "SendAdminNotificationRequest",
+        "SendUserDirectNotificationRequest"
+    ],
+    "category": [
+        "SendAdminNotificationRequest"
+    ],
+    "title": [
+        "SendAdminNotificationRequest",
+        "SendUserDirectNotificationRequest"
+    ],
+    "body": [
+        "SendAdminNotificationRequest",
+        "SendUserDirectNotificationRequest"
+    ],
+    "image": [
+        "SendAdminNotificationRequest"
+    ],
+    "user_id": [
+        "SendUserDirectNotificationRequest",
+        "StoreNotificationRequest",
+        "UpdateNotificationRequest",
+        "StoreUserPermissionRequest",
+        "UpdateUserPermissionRequest",
+        "StoreSecurityBanRequest",
+        "StoreSystemLogRequest",
+        "StoreUserDeviceRequest",
+        "StoreUserSessionRequest",
+        "UpdateUserDeviceRequest"
+    ],
+    "notification_type": [
+        "StoreNotificationRequest",
+        "UpdateNotificationRequest"
+    ],
+    "notification_title": [
+        "StoreNotificationRequest",
+        "UpdateNotificationRequest"
+    ],
+    "notification_message": [
+        "StoreNotificationRequest",
+        "UpdateNotificationRequest"
+    ],
+    "notification_image": [
+        "StoreNotificationRequest",
+        "UpdateNotificationRequest"
+    ],
+    "is_read": [
+        "StoreNotificationRequest",
+        "UpdateNotificationRequest",
+        "StoreSupportTicketMessageRequest",
+        "UpdateSupportTicketMessageRequest"
+    ],
+    "read_at": [
+        "StoreNotificationRequest",
+        "UpdateNotificationRequest",
+        "StoreSupportTicketMessageRequest",
+        "UpdateSupportTicketMessageRequest"
+    ],
+    "fcm_token": [
+        "UpdateFcmTokenRequest"
+    ],
+    "log_operation_type": [
+        "StorePosWalletLogRequest"
+    ],
+    "module_id": [
+        "StorePermissionRequest",
+        "UpdatePermissionRequest"
+    ],
+    "action_type_id": [
+        "StorePermissionRequest",
+        "UpdatePermissionRequest"
+    ],
+    "permission_key": [
+        "StorePermissionRequest",
+        "UpdatePermissionRequest"
+    ],
+    "permission_name": [
+        "StorePermissionRequest",
+        "UpdatePermissionRequest"
+    ],
+    "permission_desc": [
+        "StorePermissionRequest",
+        "UpdatePermissionRequest"
+    ],
+    "role_id": [
+        "StoreRolePermissionRequest",
+        "UpdateRolePermissionRequest",
+        "StoreUserRequest",
+        "UpdateUserRequest"
+    ],
+    "permission_id": [
+        "StoreRolePermissionRequest",
+        "StoreUserPermissionRequest",
+        "UpdateRolePermissionRequest",
+        "UpdateUserPermissionRequest"
+    ],
+    "role_key": [
+        "StoreRoleRequest",
+        "UpdateRoleRequest"
+    ],
+    "role_name": [
+        "StoreRoleRequest",
+        "UpdateRoleRequest"
+    ],
+    "role_desc": [
+        "StoreRoleRequest",
+        "UpdateRoleRequest"
+    ],
+    "is_system": [
+        "StoreRoleRequest",
+        "UpdateRoleRequest"
+    ],
+    "request_id": [
+        "StoreRequestItemRequest"
+    ],
+    "item_voucher_count": [
+        "StoreRequestItemRequest",
+        "UpdateRequestItemRequest"
+    ],
+    "request_note": [
+        "StoreRequestRequest",
+        "UpdateRequestRequest",
+        "StoreSubscriptionPlanRequestRequest",
+        "UpdateSubscriptionPlanRequestRequest",
+        "StoreSubscriptionPlanRequestRequest"
+    ],
+    "items.*.package_id": [
+        "StoreRequestRequest",
+        "StoreSaleInvoiceRequest"
+    ],
+    "items.*.item_voucher_count": [
+        "StoreRequestRequest"
+    ],
+    "invoice_id": [
+        "StoreSaleInvoiceItemRequest"
+    ],
+    "voucher_price": [
+        "StoreSaleInvoiceItemRequest",
+        "UpdateSaleInvoiceItemRequest"
+    ],
+    "voucher_count": [
+        "StoreSaleInvoiceItemRequest",
+        "UpdateSaleInvoiceItemRequest"
+    ],
+    "item_discount": [
+        "StoreSaleInvoiceItemRequest",
+        "UpdateSaleInvoiceItemRequest"
+    ],
+    "items.*.voucher_price": [
+        "StoreSaleInvoiceRequest"
+    ],
+    "items.*.voucher_count": [
+        "StoreSaleInvoiceRequest"
+    ],
+    "items.*.item_discount": [
+        "StoreSaleInvoiceRequest"
+    ],
+    "paid_amount": [
+        "StoreSaleInvoiceRequest"
+    ],
+    "invoice_sale_type": [
+        "UpdateSaleInvoiceRequest"
+    ],
+    "settings": [
+        "BatchUpdateSystemSettingRequest"
+    ],
+    "settings.*.key": [
+        "BatchUpdateSystemSettingRequest"
+    ],
+    "settings.*.value": [
+        "BatchUpdateSystemSettingRequest"
+    ],
+    "setting_category": [
+        "StoreSystemSettingRequest",
+        "UpdateSystemSettingRequest"
+    ],
+    "setting_key": [
+        "StoreSystemSettingRequest",
+        "UpdateSystemSettingRequest"
+    ],
+    "setting_value_type": [
+        "StoreSystemSettingRequest",
+        "UpdateSystemSettingRequest"
+    ],
+    "setting_value": [
+        "StoreSystemSettingRequest",
+        "UpdateSystemSettingRequest"
+    ],
+    "setting_desc": [
+        "StoreSystemSettingRequest",
+        "UpdateSystemSettingRequest"
+    ],
+    "feature_id": [
+        "AttachPlanFeatureRequest",
+        "StoreSubscriptionPlanFeatureConsumptionRequest",
+        "StoreSubscriptionPlanFeatureRequest",
+        "UpdateSubscriptionPlanFeatureConsumptionRequest",
+        "UpdateSubscriptionPlanFeatureRequest"
+    ],
+    "plan_feature_value": [
+        "AttachPlanFeatureRequest",
+        "StoreSubscriptionPlanFeatureRequest",
+        "UpdateSubscriptionPlanFeatureRequest"
+    ],
+    "additional_days": [
+        "ExtendSubscriptionRequest"
+    ],
+    "plan_id": [
+        "StoreProviderSubscriptionRequest",
+        "StoreSubscriptionPlanFeatureRequest",
+        "StoreSubscriptionPlanRequestRequest",
+        "UpdateProviderSubscriptionRequest",
+        "UpdateSubscriptionPlanFeatureRequest",
+        "UpdateSubscriptionPlanRequestRequest",
+        "StoreSubscriptionPlanRequestRequest"
+    ],
+    "subscription_start_date": [
+        "StoreProviderSubscriptionRequest",
+        "UpdateProviderSubscriptionRequest"
+    ],
+    "subscription_end_date": [
+        "StoreProviderSubscriptionRequest",
+        "UpdateProviderSubscriptionRequest"
+    ],
+    "created_by": [
+        "StoreProviderSubscriptionRequest",
+        "StoreSubscriptionPlanFeatureRequest",
+        "UpdateProviderSubscriptionRequest",
+        "UpdateSubscriptionPlanFeatureRequest"
+    ],
+    "subscription_id": [
+        "StoreSubscriptionPlanFeatureConsumptionRequest",
+        "UpdateSubscriptionPlanFeatureConsumptionRequest"
+    ],
+    "consumption_value": [
+        "StoreSubscriptionPlanFeatureConsumptionRequest",
+        "UpdateSubscriptionPlanFeatureConsumptionRequest"
+    ],
+    "last_consumption_at": [
+        "StoreSubscriptionPlanFeatureConsumptionRequest",
+        "UpdateSubscriptionPlanFeatureConsumptionRequest"
+    ],
+    "plan_name": [
+        "StoreSubscriptionPlanRequest",
+        "UpdateSubscriptionPlanRequest"
+    ],
+    "plan_price": [
+        "StoreSubscriptionPlanRequest",
+        "UpdateSubscriptionPlanRequest"
+    ],
+    "plan_discount": [
+        "StoreSubscriptionPlanRequest",
+        "UpdateSubscriptionPlanRequest"
+    ],
+    "plan_validity": [
+        "StoreSubscriptionPlanRequest",
+        "UpdateSubscriptionPlanRequest"
+    ],
+    "plan_desc": [
+        "StoreSubscriptionPlanRequest",
+        "UpdateSubscriptionPlanRequest"
+    ],
+    "features": [
+        "StoreSubscriptionPlanRequest",
+        "UpdateSubscriptionPlanRequest"
+    ],
+    "features.*.feature_id": [
+        "StoreSubscriptionPlanRequest",
+        "UpdateSubscriptionPlanRequest"
+    ],
+    "features.*.plan_feature_value": [
+        "StoreSubscriptionPlanRequest",
+        "UpdateSubscriptionPlanRequest"
+    ],
+    "features.*.status": [
+        "StoreSubscriptionPlanRequest",
+        "UpdateSubscriptionPlanRequest"
+    ],
+    "requested_by": [
+        "StoreSubscriptionPlanRequestRequest",
+        "UpdateSubscriptionPlanRequestRequest"
+    ],
+    "request_total_amount": [
+        "StoreSubscriptionPlanRequestRequest",
+        "UpdateSubscriptionPlanRequestRequest"
+    ],
+    "request_payment_type": [
+        "StoreSubscriptionPlanRequestRequest",
+        "UpdateSubscriptionPlanRequestRequest",
+        "StoreSubscriptionPlanRequestRequest"
+    ],
+    "account_id": [
+        "StoreSubscriptionPlanRequestRequest",
+        "UpdateSubscriptionPlanRequestRequest",
+        "StoreSubscriptionPlanRequestRequest"
+    ],
+    "transaction_reference": [
+        "StoreSubscriptionPlanRequestRequest",
+        "UpdateSubscriptionPlanRequestRequest",
+        "StoreSubscriptionPlanRequestRequest"
+    ],
+    "transaction_receipt": [
+        "StoreSubscriptionPlanRequestRequest",
+        "UpdateSubscriptionPlanRequestRequest",
+        "StoreSubscriptionPlanRequestRequest"
+    ],
+    "rejection_reason": [
+        "StoreSubscriptionPlanRequestRequest",
+        "UpdateSubscriptionPlanRequestRequest"
+    ],
+    "reviewed_by": [
+        "StoreSubscriptionPlanRequestRequest",
+        "UpdateSubscriptionPlanRequestRequest"
+    ],
+    "review_date": [
+        "StoreSubscriptionPlanRequestRequest",
+        "UpdateSubscriptionPlanRequestRequest"
+    ],
+    "note": [
+        "ApproveSubscriptionPlanRequestRequest",
+        "RejectSubscriptionPlanRequestRequest"
+    ],
+    "otp_type": [
+        "GenerateOtpRequest"
+    ],
+    "ban_type": [
+        "StoreSecurityBanRequest",
+        "UpdateSecurityBanRequest"
+    ],
+    "ban_reason": [
+        "StoreSecurityBanRequest",
+        "UpdateSecurityBanRequest"
+    ],
+    "start_at": [
+        "StoreSecurityBanRequest",
+        "UpdateSecurityBanRequest"
+    ],
+    "end_at": [
+        "StoreSecurityBanRequest",
+        "UpdateSecurityBanRequest"
+    ],
+    "module": [
+        "StoreSystemLogRequest"
+    ],
+    "action": [
+        "StoreSystemLogRequest"
+    ],
+    "entity_type": [
+        "StoreSystemLogRequest"
+    ],
+    "entity_id": [
+        "StoreSystemLogRequest"
+    ],
+    "old_values": [
+        "StoreSystemLogRequest"
+    ],
+    "new_values": [
+        "StoreSystemLogRequest",
+        "UpdateSystemLogRequest"
+    ],
+    "ip_address": [
+        "StoreSystemLogRequest",
+        "StoreUserSessionRequest"
+    ],
+    "user_agent": [
+        "StoreSystemLogRequest",
+        "StoreUserSessionRequest"
+    ],
+    "type": [
+        "VerifyOtpRequest"
+    ],
+    "ticket_id": [
+        "StoreSupportTicketMessageRequest",
+        "UpdateSupportTicketMessageRequest"
+    ],
+    "sent_by": [
+        "StoreSupportTicketMessageRequest",
+        "UpdateSupportTicketMessageRequest"
+    ],
+    "message_body": [
+        "StoreSupportTicketMessageRequest",
+        "StoreSupportTicketRequest",
+        "UpdateSupportTicketMessageRequest"
+    ],
+    "sent_at": [
+        "StoreSupportTicketMessageRequest",
+        "UpdateSupportTicketMessageRequest"
+    ],
+    "ticket_subject": [
+        "StoreSupportTicketRequest",
+        "UpdateSupportTicketRequest"
+    ],
+    "is_primary": [
+        "StoreUserDeviceRequest",
+        "UpdateUserDeviceRequest"
+    ],
+    "user_2fa_enabled": [
+        "StoreUserRequest",
+        "UpdateUserRequest"
+    ],
+    "expires_at": [
+        "StoreUserSessionRequest",
+        "UpdateUserSessionRequest"
+    ],
+    "permissions": [
+        "SyncPermissionsRequest"
+    ],
+    "permissions.*": [
+        "SyncPermissionsRequest"
+    ],
+    "revoked_at": [
+        "UpdateUserSessionRequest"
+    ]
+}

@@ -49,6 +49,8 @@ Route::prefix('v1')->group(function () {
     // ==========================================
     Route::prefix('auth')->group(function () {
 
+        Route::get('health-check', [AuthController::class, 'healthCheck'])->name('api.v1.auth.health_check');
+
         Route::middleware('throttle:auth')->group(function () {
             Route::post('login', [AuthController::class, 'login'])->name('api.v1.auth.login');
             Route::post('register-network', [AuthController::class, 'registerNetwork'])->name('api.v1.auth.register_network');

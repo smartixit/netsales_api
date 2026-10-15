@@ -195,10 +195,9 @@ class FcmService
             $notification['image'] = $image;
         }
 
-        return [
+        $payload = [
             'token' => $token,
             'notification' => $notification,
-            'data' => $stringData,
             'android' => [
                 'priority' => 'HIGH',
                 'notification' => [
@@ -219,6 +218,12 @@ class FcmService
                 ],
             ],
         ];
+
+        if (! empty($stringData)) {
+            $payload['data'] = $stringData;
+        }
+
+        return $payload;
     }
 
     /**

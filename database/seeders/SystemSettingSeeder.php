@@ -100,7 +100,7 @@ class SystemSettingSeeder extends Seeder
                 'setting_category' => 'FINANCIAL',
                 'setting_key' => 'max_wallet_transfer_amount',
                 'setting_value_type' => 'DECIMAL',
-                'setting_value' => '500000.00',
+                'setting_value' => '1000000.00',
                 'setting_desc' => 'الحد الأقصى للعملية الواحدة في تحويل الرصيد',
             ],
 

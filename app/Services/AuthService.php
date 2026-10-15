@@ -374,20 +374,23 @@ class AuthService
                     ]);
                 }
 
-                // فحص صلاحية اشتراك الشبكة في provider_subscriptions
+                // فحص صلاحية اشتراك الشبكة مع احتساب فترة السماح (Grace Period) وتعليق الحساب التلقائي من إعدادات النظام
+                $graceDays = $this->systemSettingService->getInt('grace_period_days', 3);
+                $autoSuspend = $this->systemSettingService->getBool('auto_suspend_expired', true);
+
                 $hasSubscription = ProviderSubscription::where('network_id', $network->network_id)
                     ->where('status', ProviderSubscriptionStatus::ACTIVE)
-                    ->where(function ($q) {
+                    ->where(function ($q) use ($graceDays) {
                         $q->whereNull('subscription_end_date')
-                            ->orWhere('subscription_end_date', '>', now('Asia/Aden'));
+                            ->orWhere('subscription_end_date', '>', now('Asia/Aden')->subDays($graceDays));
                     })
                     ->exists();
 
-                // إذا كان لدى الشبكة اشتراكات مسجلة ولكن جميعها منتهية
+                // إذا كان لدى الشبكة اشتراكات مسجلة ولكن جميعها تجاوزت فترة الصلاحية والسماح
                 $hasAnySubscription = ProviderSubscription::where('network_id', $network->network_id)->exists();
-                if ($hasAnySubscription && ! $hasSubscription) {
+                if ($hasAnySubscription && ! $hasSubscription && $autoSuspend) {
                     throw ValidationException::withMessages([
-                        'user_phone_number' => ['اشتراك الشبكة منتهي الصلاحية، يرجى تجديد الاشتراك للمتابعة.'],
+                        'user_phone_number' => ['انتهت صلاحية اشتراك الشبكة وفترة السماح الممنوحة، يرجى تجديد الاشتراك للمتابعة.'],
                     ]);
                 }
             }

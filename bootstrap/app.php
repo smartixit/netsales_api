@@ -16,6 +16,7 @@ $_ENV['TMPDIR'] = $appTempDir;
 $_ENV['TEMP'] = $appTempDir;
 $_ENV['TMP'] = $appTempDir;
 
+use App\Http\Middleware\CheckMaintenanceMode;
 use App\Http\Middleware\CheckSubscriptionFeatureQuota;
 use App\Http\Middleware\EncryptDecryptPayload;
 use App\Http\Middleware\EnsureAppAdmin;
@@ -49,12 +50,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(append: [
+            CheckMaintenanceMode::class,
             EncryptDecryptPayload::class,
             InputSanitization::class,
             IdempotencyMiddleware::class,
         ]);
 
         $middleware->alias([
+            'maintenance' => CheckMaintenanceMode::class,
             'session.auth' => SessionAuthMiddleware::class,
             'permission' => EnsurePermissionMiddleware::class,
             'app.admin' => EnsureAppAdmin::class,
