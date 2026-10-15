@@ -31,8 +31,8 @@ class NotifyExpiringSubscriptions extends Command
         ScheduledTaskRunRepositoryInterface $taskRunRepository,
         NotificationService $notificationService
     ): int {
-        $now = Carbon::now('Asia/Aden');
-        $days = (int) $this->option('days');
+        $defaultDays = (int) systemSetting('subscription_expiry_alert_days', 3);
+        $days = (int) ($this->option('days') ?: $defaultDays);
         $force = (bool) $this->option('force');
         $targetDate = $now->toDateString();
 

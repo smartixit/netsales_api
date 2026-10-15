@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BackupStatus;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,18 +16,6 @@ class BackupJob extends Model
     protected $table = 'backup_jobs';
 
     protected $primaryKey = 'backup_job_id';
-
-    public const TYPE_MANUAL = 'manual';
-
-    public const TYPE_AUTO = 'auto';
-
-    public const STATUS_QUEUED = 'queued';
-
-    public const STATUS_RUNNING = 'running';
-
-    public const STATUS_SUCCESS = 'success';
-
-    public const STATUS_FAILED = 'failed';
 
     protected $fillable = [
         'job_uuid',
@@ -68,6 +57,6 @@ class BackupJob extends Model
 
     public function isFinalized(): bool
     {
-        return in_array($this->status, [self::STATUS_SUCCESS, self::STATUS_FAILED], true);
+        return in_array($this->status, [BackupStatus::SUCCESS->value, BackupStatus::FAILED->value], true);
     }
 }

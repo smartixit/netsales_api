@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Enums\BackupStatus;
 use App\Interfaces\BackupJobRepositoryInterface;
 use App\Models\BackupJob;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -65,7 +66,7 @@ class BackupJobRepository extends BaseRepository implements BackupJobRepositoryI
      */
     public function getLatestSuccessful(?string $type = null): ?BackupJob
     {
-        $query = $this->model->newQuery()->where('status', BackupJob::STATUS_SUCCESS);
+        $query = $this->model->newQuery()->where('status', BackupStatus::SUCCESS->value);
 
         if ($type) {
             $query->where('backup_type', $type);

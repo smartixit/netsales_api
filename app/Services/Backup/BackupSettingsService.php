@@ -2,6 +2,9 @@
 
 namespace App\Services\Backup;
 
+use App\Enums\BackupStatus;
+use App\Enums\BackupType;
+use App\Enums\SettingCategory;
 use App\Interfaces\SystemSettingRepositoryInterface;
 use App\Models\BackupJob;
 use Carbon\Carbon;
@@ -17,7 +20,7 @@ use Illuminate\Support\Facades\Crypt;
  */
 class BackupSettingsService
 {
-    public const CATEGORY = 'backup';
+    public const CATEGORY = SettingCategory::BACKUP;
 
     public const KEY_ENABLED = 'backup.enabled';
 
@@ -267,8 +270,8 @@ class BackupSettingsService
         }
 
         try {
-            $completed = BackupJob::where('backup_type', BackupJob::TYPE_AUTO)
-                ->where('status', BackupJob::STATUS_SUCCESS)
+            $completed = BackupJob::where('backup_type', BackupType::AUTO->value)
+                ->where('status', BackupStatus::SUCCESS->value)
                 ->where(function ($q) use ($dateStr) {
                     $q->whereDate('finished_at', $dateStr)
                         ->orWhereDate('created_at', $dateStr);

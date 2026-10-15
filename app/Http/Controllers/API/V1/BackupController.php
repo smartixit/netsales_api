@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Enums\BackupStatus;
+use App\Enums\BackupType;
 use App\Exceptions\BackupException;
 use App\Http\Requests\API\V1\Backup\DriveTokenRequest;
 use App\Http\Requests\API\V1\Backup\UpdateBackupConfigRequest;
@@ -245,9 +247,9 @@ class BackupController extends BaseController
     {
         try {
             $userId = (int) ($request->user()?->user_id ?? 1);
-            $job = $this->orchestrator->run(BackupJob::TYPE_MANUAL, $userId);
+            $job = $this->orchestrator->run(BackupType::MANUAL->value, $userId);
 
-            $success = $job->status === BackupJob::STATUS_SUCCESS;
+            $success = $job->status === BackupStatus::SUCCESS->value;
 
             return $this->apiResponse(
                 $success,

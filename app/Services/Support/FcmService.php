@@ -3,6 +3,7 @@
 namespace App\Services\Support;
 
 use App\Interfaces\UserDeviceRepositoryInterface;
+use App\Services\SystemSettingService;
 use Exception;
 use Google\Client;
 use GuzzleHttp\Client as HttpClient;
@@ -24,11 +25,14 @@ class FcmService
     protected const TOKEN_CACHE_KEY = 'fcm_v1_access_token';
 
     protected HttpClient $httpClient;
+    protected SystemSettingService $systemSettingService;
 
     public function __construct(
         protected UserDeviceRepositoryInterface $userDeviceRepository,
+        ?SystemSettingService $systemSettingService = null,
         ?HttpClient $httpClient = null
     ) {
+        $this->systemSettingService = $systemSettingService ?? app(SystemSettingService::class);
         $this->httpClient = $httpClient ?? new HttpClient(['timeout' => 10.0]);
     }
 
@@ -125,7 +129,7 @@ class FcmService
             return false;
         }
 
-        $url = sprintf(self::FCM_ENDPOINT_TEMPLATE, $projectId);
+        $url = sprintf($this->getEndpointTemplate(), $projectId);
         $payload = $this->buildMessagePayload($token, $title, $body, $data, $image);
 
         try {
@@ -218,12 +222,53 @@ class FcmService
     }
 
     /**
+     * الحصول على قالب رابط إرسال رسائل فايربيس
+     */
+    protected function getEndpointTemplate(): string
+    {
+        return $this->systemSettingService->getString('firebase_endpoint_template', self::FCM_ENDPOINT_TEMPLATE);
+    }
+
+    /**
+     * نطاق المصادقة لرسائل فايربيس
+     */
+    protected function getFcmScope(): string
+    {
+        return $this->systemSettingService->getString('firebase_scope', self::FCM_SCOPE);
+    }
+
+    /**
+     * مفتاح تخزين توكن فايربيس في الكاش
+     */
+    protected function getTokenCacheKey(): string
+    {
+        return $this->systemSettingService->getString('firebase_token_cache_key', self::TOKEN_CACHE_KEY);
+    }
+
+    /**
+     * مسار ملف شهادة الخدمة لفايربيس مع دعم القراءة من جدول الإعدادات أو .env
+     */
+    protected function getCredentialsPath(): string
+    {
+        $custom = $this->systemSettingService->getString('firebase_credentials_path');
+        if (! empty($custom)) {
+            return str_starts_with($custom, '/') || preg_match('/^[a-zA-Z]:\\\\/', $custom) ? $custom : base_path($custom);
+        }
+
+        $configPath = (string) config('services.firebase.credentials_path', storage_path('app/firebase-service-account.json'));
+
+        return str_starts_with($configPath, '/') || preg_match('/^[a-zA-Z]:\\\\/', $configPath) ? $configPath : base_path($configPath);
+    }
+
+    /**
      * الحصول على رمز الوصول OAuth2 الصالح مع التخزين المؤقت في الكاش لمدة 50 دقيقة.
      */
     protected function getAccessToken(): ?string
     {
-        return Cache::remember(self::TOKEN_CACHE_KEY, now()->addMinutes(50), function () {
-            $credentialsPath = (string) config('services.firebase.credentials_path');
+        $cacheKey = $this->getTokenCacheKey();
+
+        return Cache::remember($cacheKey, now()->addMinutes(50), function () {
+            $credentialsPath = $this->getCredentialsPath();
 
             if (! file_exists($credentialsPath)) {
                 Log::warning("FcmService: Firebase credentials file not found at: [{$credentialsPath}]");
@@ -234,7 +279,7 @@ class FcmService
             try {
                 $client = new Client();
                 $client->setAuthConfig($credentialsPath);
-                $client->addScope(self::FCM_SCOPE);
+                $client->addScope($this->getFcmScope());
 
                 $tokenArray = $client->fetchAccessTokenWithAssertion();
 
@@ -248,16 +293,21 @@ class FcmService
     }
 
     /**
-     * استخراج معرف المشروع Project ID من ملف الاعتماد أو من ملف الإعدادات.
+     * استخراج معرف المشروع Project ID من جدول الإعدادات أولاً أو من ملف الاعتماد أو .env.
      */
-    protected function getProjectId(): ?string
+    public function getProjectId(): ?string
     {
+        $id = $this->systemSettingService->getString('firebase_project_id');
+        if (! empty($id)) {
+            return $id;
+        }
+
         $configuredId = config('services.firebase.project_id');
         if (! empty($configuredId)) {
             return (string) $configuredId;
         }
 
-        $credentialsPath = (string) config('services.firebase.credentials_path');
+        $credentialsPath = $this->getCredentialsPath();
         if (file_exists($credentialsPath)) {
             $content = json_decode((string) file_get_contents($credentialsPath), true);
             if (is_array($content) && ! empty($content['project_id'])) {
@@ -269,11 +319,11 @@ class FcmService
     }
 
     /**
-     * التحقق من تفعيل خدمة Firebase في النظام.
+     * التحقق من تفعيل خدمة Firebase في النظام عبر جدول الإعدادات أو .env.
      */
-    protected function isEnabled(): bool
+    public function isEnabled(): bool
     {
-        return (bool) config('services.firebase.is_enabled', true);
+        return $this->systemSettingService->getBool('firebase_enabled', (bool) config('services.firebase.is_enabled', true));
     }
 
     /**

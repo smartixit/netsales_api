@@ -40,11 +40,38 @@ class SystemSettingService
             $setting = $this->settingRepository->findByKey($key);
         }
 
-        if (! $setting) {
+        if (! $setting || $setting->setting_value === null || ($setting->setting_value === '' && $default !== null)) {
             return $default;
         }
 
         return $setting->typed_value ?? $default;
+    }
+
+    public function getInt(string $key, int $default = 0): int
+    {
+        return (int) $this->get($key, $default);
+    }
+
+    public function getBool(string $key, bool $default = false): bool
+    {
+        return (bool) $this->get($key, $default);
+    }
+
+    public function getString(string $key, string $default = ''): string
+    {
+        return (string) $this->get($key, $default);
+    }
+
+    public function getFloat(string $key, float $default = 0.0): float
+    {
+        return (float) $this->get($key, $default);
+    }
+
+    public function getArray(string $key, array $default = []): array
+    {
+        $val = $this->get($key, $default);
+
+        return is_array($val) ? $val : $default;
     }
 
     /**

@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\BackupStatus;
+use App\Enums\BackupType;
 use App\Enums\NotificationType;
 use App\Models\BackupJob;
 use App\Models\Role;
@@ -125,9 +127,9 @@ class BackupAuto extends Command
             $this->info("🚀 جاري بدء عملية النسخ الاحتياطي الشاملة لتاريخ: {$targetDate->toDateString()}...");
 
             // التنفيذ الفعلي بأسلوب صامت أثناء المحاولات البينية لمنع هدر الرسائل
-            $job = $orchestrator->run(BackupJob::TYPE_AUTO, null, silentOnFailure: true);
+            $job = $orchestrator->run(BackupType::AUTO->value, null, silentOnFailure: true);
 
-            if ($job->status === BackupJob::STATUS_SUCCESS) {
+            if ($job->status === BackupStatus::SUCCESS->value) {
                 $settings->markBackupCompletedToday($targetDate);
                 $settings->updateRuntime(['next_run_at' => $settings->calculateNextRunAt($now)]);
 

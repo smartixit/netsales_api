@@ -12,6 +12,8 @@ use App\Interfaces\UserRepositoryInterface;
 use App\Models\Otp;
 use App\Models\User;
 use App\Services\Support\SMSGateService;
+use App\Services\SystemLoggerService;
+use App\Services\SystemSettingService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -41,12 +43,67 @@ class OtpService
 
     public const MAX_DAILY_2FA_REQUESTS = 3;
 
+    protected SystemSettingService $systemSettingService;
+
     public function __construct(
         protected OtpRepositoryInterface $otpRepository,
         protected SMSGateService $smsGateService,
         protected UserRepositoryInterface $userRepository,
         protected NotificationService $notificationService,
-    ) {}
+        ?SystemSettingService $systemSettingService = null,
+    ) {
+        $this->systemSettingService = $systemSettingService ?? app(SystemSettingService::class);
+    }
+
+    /**
+     * طول رمز التحقق OTP.
+     */
+    public function getOtpLength(): int
+    {
+        return $this->systemSettingService->getInt('otp_length', self::DEFAULT_LENGTH);
+    }
+
+    /**
+     * مدة صلاحية رمز التحقق بالدقائق.
+     */
+    public function getOtpExpirationMinutes(): int
+    {
+        $seconds = $this->systemSettingService->getInt('otp_expiry_seconds', self::DEFAULT_EXPIRATION_MINUTES * 60);
+
+        return max(1, (int) round($seconds / 60));
+    }
+
+    /**
+     * أقصى عدد للمحاولات الخاطئة للرمز قبل إبطاله.
+     */
+    public function getOtpMaxAttempts(): int
+    {
+        return $this->systemSettingService->getInt('otp_max_attempts', self::DEFAULT_MAX_ATTEMPTS);
+    }
+
+    /**
+     * فترة التهدئة بالثواني قبل السماح بإعادة طلب رمز جديد.
+     */
+    public function getOtpCooldownSeconds(): int
+    {
+        return $this->systemSettingService->getInt('otp_cooldown_seconds', self::DEFAULT_COOLDOWN_SECONDS);
+    }
+
+    /**
+     * الحد الأقصى اليومي لطلبات استعادة كلمة المرور.
+     */
+    public function getMaxDailyResetPasswordRequests(): int
+    {
+        return $this->systemSettingService->getInt('max_daily_reset_password_requests', self::MAX_DAILY_RESET_PASSWORD_REQUESTS);
+    }
+
+    /**
+     * الحد الأقصى اليومي لرموز المصادقة الثنائية 2FA.
+     */
+    public function getMaxDaily2faRequests(): int
+    {
+        return $this->systemSettingService->getInt('max_daily_2fa_requests', self::MAX_DAILY_2FA_REQUESTS);
+    }
 
     /**
      * توليد رمز OTP جديد لمستخدم محدد وإرساله عبر SMS.
@@ -56,33 +113,39 @@ class OtpService
     public function generateOtpForUser(
         User $user,
         OtpType|string $type = OtpType::OTP_2FA,
-        int $expirationMinutes = self::DEFAULT_EXPIRATION_MINUTES,
-        int $length = self::DEFAULT_LENGTH
+        ?int $expirationMinutes = null,
+        ?int $length = null
     ): array {
+        $expirationMinutes = $expirationMinutes ?? $this->getOtpExpirationMinutes();
+        $length = $length ?? $this->getOtpLength();
         $otpType = $type instanceof OtpType ? $type : (OtpType::tryFrom((string) $type) ?? OtpType::OTP_2FA);
 
         // 1. فحص الحد الأقصى اليومي لطلبات الرمز حسب الغرض
+        $maxReset = $this->getMaxDailyResetPasswordRequests();
+        $max2fa = $this->getMaxDaily2faRequests();
+
         if ($otpType === OtpType::RESET_PASSWORD) {
             $todayCount = $this->otpRepository->getTodayRequestsCount($user->user_id, $otpType);
-            if ($todayCount >= self::MAX_DAILY_RESET_PASSWORD_REQUESTS) {
+            if ($todayCount >= $maxReset) {
                 throw ValidationException::withMessages([
-                    'otp' => ['تم استنفاد الحد الأقصى لطلب استعادة كلمة المرور لهذا اليوم (مرة واحدة يومياً). يرجى المحاولة بعد 24 ساعة أو التواصل مع الدعم الفني.'],
+                    'otp' => ["تم استنفاد الحد الأقصى لطلب استعادة كلمة المرور لهذا اليوم ({$maxReset} مرة يومياً). يرجى المحاولة بعد 24 ساعة أو التواصل مع الدعم الفني."],
                 ]);
             }
         } elseif ($otpType === OtpType::OTP_2FA) {
             $todayCount = $this->otpRepository->getTodayRequestsCount($user->user_id, $otpType);
-            if ($todayCount >= self::MAX_DAILY_2FA_REQUESTS) {
+            if ($todayCount >= $max2fa) {
                 throw ValidationException::withMessages([
-                    'otp' => ['تم تجاوز الحد الأقصى المسموح به لطلب كود المصادقة الثنائية لهذا اليوم (3 مرات يومياً).'],
+                    'otp' => ["تم تجاوز الحد الأقصى المسموح به لطلب كود المصادقة الثنائية لهذا اليوم ({$max2fa} مرات يومياً)."],
                 ]);
             }
         }
 
         // 2. فحص فترة التهدئة
+        $cooldown = $this->getOtpCooldownSeconds();
         $remainingCooldown = $this->otpRepository->getCooldownRemainingSeconds(
             $user->user_id,
             $otpType,
-            self::DEFAULT_COOLDOWN_SECONDS
+            $cooldown
         );
 
         if ($remainingCooldown > 0) {
@@ -181,8 +244,9 @@ class OtpService
         int $userId,
         string $code,
         OtpType|string $type = OtpType::OTP_2FA,
-        int $maxAttempts = self::DEFAULT_MAX_ATTEMPTS
+        ?int $maxAttempts = null
     ): bool {
+        $maxAttempts = $maxAttempts ?? $this->getOtpMaxAttempts();
         $otpType = $type instanceof OtpType ? $type : (OtpType::tryFrom((string) $type) ?? OtpType::OTP_2FA);
 
         $otp = $this->otpRepository->getLatestValidOtp($userId, $otpType);
@@ -256,7 +320,7 @@ class OtpService
         string $phone,
         string $code,
         OtpType|string $type = OtpType::RESET_PASSWORD,
-        int $maxAttempts = self::DEFAULT_MAX_ATTEMPTS
+        ?int $maxAttempts = null
     ): bool {
         $user = $this->userRepository->findByPhone($phone);
 
@@ -275,7 +339,7 @@ class OtpService
     public function canResend(
         int $userId,
         OtpType|string $type = OtpType::OTP_2FA,
-        int $cooldownSeconds = self::DEFAULT_COOLDOWN_SECONDS
+        ?int $cooldownSeconds = null
     ): bool {
         return $this->getCooldownRemainingSeconds($userId, $type, $cooldownSeconds) === 0;
     }
@@ -286,9 +350,11 @@ class OtpService
     public function getCooldownRemainingSeconds(
         int $userId,
         OtpType|string $type = OtpType::OTP_2FA,
-        int $cooldownSeconds = self::DEFAULT_COOLDOWN_SECONDS
+        ?int $cooldownSeconds = null
     ): int {
-        return $this->otpRepository->getCooldownRemainingSeconds($userId, $type, $cooldownSeconds);
+        $cooldown = $cooldownSeconds ?? $this->getOtpCooldownSeconds();
+
+        return $this->otpRepository->getCooldownRemainingSeconds($userId, $type, $cooldown);
     }
 
     /**

@@ -10,6 +10,7 @@ enum SettingCategory: string
     case NOTIFICATION = 'NOTIFICATION';
     case SUBSCRIPTION = 'SUBSCRIPTION';
     case SYSTEM = 'SYSTEM';
+    case BACKUP = 'BACKUP';
 
     public static function values(): array
     {
@@ -30,6 +31,7 @@ enum SettingCategory: string
             self::NOTIFICATION => 'إشعارات',
             self::SUBSCRIPTION => 'اشتراكات',
             self::SYSTEM => 'نظام',
+            self::BACKUP => 'نسخ احتياطي',
         };
     }
 
@@ -42,6 +44,7 @@ enum SettingCategory: string
             self::NOTIFICATION->value => self::NOTIFICATION->label(),
             self::SUBSCRIPTION->value => self::SUBSCRIPTION->label(),
             self::SYSTEM->value => self::SYSTEM->label(),
+            self::BACKUP->value => self::BACKUP->label(),
         ];
     }
 }

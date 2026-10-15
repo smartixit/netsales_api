@@ -20,7 +20,7 @@ use Illuminate\Console\Command;
 class CheckLowBalanceAlerts extends Command
 {
     protected $signature = 'alerts:low-balance 
-                            {--threshold=5000 : Minimum balance threshold}
+                            {--threshold= : Minimum balance threshold (defaults to system setting)}
                             {--force : Force sending even if already alerted today}';
 
     protected $description = 'يفحص أرصدة محافظ نقاط البيع وينبه الشبكة ونقطة البيع عند انخفاض الرصيد عن الحد الأدنى';
@@ -31,7 +31,8 @@ class CheckLowBalanceAlerts extends Command
         NotificationService $notificationService
     ): int {
         $now = Carbon::now('Asia/Aden');
-        $threshold = (float) $this->option('threshold');
+        $defaultThreshold = (float) systemSetting('low_balance_alert_threshold', 5000.0);
+        $threshold = $this->option('threshold') !== null ? (float) $this->option('threshold') : $defaultThreshold;
         $force = (bool) $this->option('force');
         $targetDate = $now->toDateString();
 

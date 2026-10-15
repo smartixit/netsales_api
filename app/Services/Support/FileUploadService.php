@@ -2,6 +2,7 @@
 
 namespace App\Services\Support;
 
+use App\Services\SystemSettingService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -37,11 +38,44 @@ class FileUploadService
         'system/',
     ];
 
-    public function __construct(?string $defaultDisk = null)
-    {
+    protected SystemSettingService $systemSettingService;
+
+    public function __construct(
+        ?string $defaultDisk = null,
+        ?SystemSettingService $systemSettingService = null
+    ) {
         if ($defaultDisk) {
             $this->defaultDisk = $defaultDisk;
         }
+        $this->systemSettingService = $systemSettingService ?? app(SystemSettingService::class);
+    }
+
+    /**
+     * الحد الأقصى لحجم الملف المرفوع بالميجابايت.
+     */
+    public function getMaxFileUploadSizeMb(): int
+    {
+        return $this->systemSettingService->getInt('max_file_upload_size_mb', 10);
+    }
+
+    /**
+     * قائمة الامتدادات المسموحة لرفع الصور.
+     *
+     * @return array<string>
+     */
+    public function getAllowedImageExtensions(): array
+    {
+        $extensions = $this->systemSettingService->getString('allowed_image_extensions', 'jpg,jpeg,png,webp');
+
+        return array_values(array_filter(array_map('trim', explode(',', strtolower($extensions)))));
+    }
+
+    /**
+     * مدة صلاحية الروابط المؤقتة الموقعة بالدقائق.
+     */
+    public function getSignedUrlLifetimeMinutes(): int
+    {
+        return $this->systemSettingService->getInt('signed_url_lifetime_minutes', 30);
     }
 
     /**
@@ -187,7 +221,7 @@ class FileUploadService
         }
 
         $cleanPath = ltrim($filePath, '/');
-        $effectiveMinutes = $expirationMinutes ?? (int) systemSetting('signed_url_lifetime_minutes', 30);
+        $effectiveMinutes = $expirationMinutes ?? $this->getSignedUrlLifetimeMinutes();
 
         return URL::temporarySignedRoute(
             'api.v1.files.signed',
@@ -241,11 +275,15 @@ class FileUploadService
     {
         $extension = strtolower($file->getClientOriginalExtension());
 
-        if (! empty($allowedExtensions) && ! in_array($extension, $allowedExtensions, true)) {
+        $allowed = ! empty($allowedExtensions)
+            ? $allowedExtensions
+            : $this->getAllowedImageExtensions();
+
+        if (! empty($allowed) && ! in_array($extension, $allowed, true)) {
             return false;
         }
 
-        $effectiveMaxKb = $maxKilobytes ?? ((int) systemSetting('max_file_size_mb', 5) * 1024);
+        $effectiveMaxKb = $maxKilobytes ?? ($this->getMaxFileUploadSizeMb() * 1024);
 
         if (($file->getSize() / 1024) > $effectiveMaxKb) {
             return false;

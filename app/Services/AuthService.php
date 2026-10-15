@@ -37,6 +37,8 @@ use App\Models\User;
 use App\Models\UserDevice;
 use App\Services\Support\EmailNotificationService;
 use App\Services\Support\FileUploadService;
+use App\Services\SystemLoggerService;
+use App\Services\SystemSettingService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -59,6 +61,8 @@ use RuntimeException;
  */
 class AuthService
 {
+    protected SystemSettingService $systemSettingService;
+
     public function __construct(
         protected UserRepositoryInterface $userRepository,
         protected UserSessionRepositoryInterface $userSessionRepository,
@@ -70,7 +74,36 @@ class AuthService
         protected NetworkRepositoryInterface $networkRepository,
         protected PosRepositoryInterface $posRepository,
         protected NotificationService $notificationService,
-    ) {}
+        ?SystemSettingService $systemSettingService = null,
+    ) {
+        $this->systemSettingService = $systemSettingService ?? app(SystemSettingService::class);
+    }
+
+    /**
+     * أقصى عدد لمحاولات تسجيل الدخول الخاطئة.
+     */
+    public function getMaxLoginAttempts(): int
+    {
+        return $this->systemSettingService->getInt('max_login_attempts', 5);
+    }
+
+    /**
+     * مدة حظر تسجيل الدخول بالدقائق.
+     */
+    public function getLockoutDurationMinutes(): int
+    {
+        return $this->systemSettingService->getInt('lockout_duration_minutes', 15);
+    }
+
+    /**
+     * مدة صلاحية الجلسة بالساعات.
+     */
+    public function getSessionDurationHours(): int
+    {
+        $minutes = $this->systemSettingService->getInt('session_lifetime_minutes', 1440);
+
+        return max(1, (int) round($minutes / 60));
+    }
 
     /**
      * تسجيل الدخول للنظام والتحقق من المستخدم وحالة الحساب والشبكة/نقطة البيع والاشتراك والأجهزة.
@@ -81,9 +114,35 @@ class AuthService
         $password = (string) $request->user_password;
         $user = $this->userRepository->findByPhone($phoneNumber, true);
 
+        if ($user) {
+            $maxAttempts = $this->getMaxLoginAttempts();
+            if ($user->user_login_attempts >= $maxAttempts) {
+                $lockoutMinutes = $this->getLockoutDurationMinutes();
+                SystemLoggerService::warning('login_lockout_exceeded', [
+                    'phone' => $phoneNumber,
+                    'attempts' => $user->user_login_attempts,
+                ], $user->user_id);
+
+                throw ValidationException::withMessages([
+                    'user_phone_number' => ["تم حظر تسجيل الدخول مؤقتاً لتجاوز الحد الأقصى للمحاولات الخاطئة ({$maxAttempts} محاولات). يرجى المحاولة بعد {$lockoutMinutes} دقيقة أو استعادة كلمة المرور."],
+                ]);
+            }
+        }
+
         if (! $user || ! Hash::check($password, $user->user_password)) {
             if ($user) {
                 $this->userRepository->incrementLoginAttempts($user->user_id);
+                $remaining = max(0, $this->getMaxLoginAttempts() - ($user->user_login_attempts + 1));
+                if ($remaining > 0) {
+                    throw ValidationException::withMessages([
+                        'user_phone_number' => ["بيانات الاعتماد غير صحيحة. المحاولات المتبقية: {$remaining}."],
+                    ]);
+                } else {
+                    $lockoutMinutes = $this->getLockoutDurationMinutes();
+                    throw ValidationException::withMessages([
+                        'user_phone_number' => ["تم تجاوز الحد الأقصى للمحاولات الخاطئة. تم قفل الحساب مؤقتاً لمدة {$lockoutMinutes} دقيقة."],
+                    ]);
+                }
             }
 
             throw ValidationException::withMessages([
@@ -213,12 +272,12 @@ class AuthService
             // تحديث وقت آخر استخدام للجهاز
             $this->userDeviceRepository->touchLastUsed($existingDevice->device_id);
 
-            // إنشاء الجلسة في user_sessions بمدة 24 ساعة
+            // إنشاء الجلسة في user_sessions بمدة ديناميكية من إعدادات النظام
             $session = $this->userSessionRepository->createSession(
                 userId: $user->user_id,
                 ipAddress: request()->ip(),
                 userAgent: request()->userAgent(),
-                durationHours: 24,
+                durationHours: $this->getSessionDurationHours(),
                 deviceUuid: (string) ($request->device_uuid ?? $existingDevice->device_uuid)
             );
 
@@ -411,7 +470,7 @@ class AuthService
                 userId: $user->user_id,
                 ipAddress: request()->ip(),
                 userAgent: request()->userAgent(),
-                durationHours: 24,
+                durationHours: $this->getSessionDurationHours(),
                 deviceUuid: (string) $incomingDeviceId
             );
 

@@ -2,6 +2,8 @@
 
 namespace App\Services\Backup;
 
+use App\Enums\BackupStatus;
+use App\Enums\BackupType;
 use App\Enums\NotificationType;
 use App\Enums\RoleKey;
 use App\Exceptions\BackupException;
@@ -47,14 +49,14 @@ class BackupOrchestratorService
     /**
      * تنفيذ نسخة احتياطية كاملة وإرجاع سجل الوظيفة النهائي.
      *
-     * @param  string  $type  BackupJob::TYPE_MANUAL أو TYPE_AUTO
+     * @param  string  $type  BackupJob::MANUAL أو AUTO
      * @param  int|null  $userId  من يطلب النسخة
      * @param  bool  $silentOnFailure  إخفاء الإشعار الفوري
      *
      * @throws BackupException
      */
     public function run(
-        string $type = BackupJob::TYPE_MANUAL,
+        string $type = BackupType::MANUAL,
         ?int $userId = null,
         bool $silentOnFailure = false
     ): BackupJob {
@@ -73,7 +75,7 @@ class BackupOrchestratorService
         $job = $this->backupJobRepository->create([
             'job_uuid' => Str::uuid()->toString(),
             'backup_type' => $type,
-            'status' => BackupJob::STATUS_RUNNING,
+            'status' => BackupStatus::RUNNING->value,
             'stage' => 'dump',
             'created_by' => $userId,
             'started_at' => Carbon::now('Asia/Aden'),
@@ -142,7 +144,7 @@ class BackupOrchestratorService
 
             $finishedAt = Carbon::now('Asia/Aden');
             $this->touch($job, [
-                'status' => BackupJob::STATUS_SUCCESS,
+                'status' => BackupStatus::SUCCESS->value,
                 'stage' => 'finalize',
                 'finished_at' => $finishedAt,
                 'duration_ms' => $this->durationMs($job, $finishedAt),
@@ -151,7 +153,7 @@ class BackupOrchestratorService
 
             $this->settings->markRunSuccess($fileName, $completed['id']);
 
-            if ($type === BackupJob::TYPE_AUTO) {
+            if ($type === BackupType::AUTO->value) {
                 $this->notifyAdminsSuccess($fileName, $archive['archive_bytes'] ?? 0);
             }
 
@@ -160,7 +162,7 @@ class BackupOrchestratorService
             $message = $this->friendlyMessage($e);
 
             $this->touch($job, [
-                'status' => BackupJob::STATUS_FAILED,
+                'status' => BackupStatus::FAILED->value,
                 'finished_at' => $failedAt,
                 'duration_ms' => $this->durationMs($job, $failedAt),
                 'error_message' => mb_substr($message, 0, 4000),
@@ -189,7 +191,7 @@ class BackupOrchestratorService
      */
     public function assertNoActiveJob(): void
     {
-        $active = BackupJob::whereIn('status', [BackupJob::STATUS_QUEUED, BackupJob::STATUS_RUNNING])->exists();
+        $active = BackupJob::whereIn('status', [BackupStatus::QUEUED->value, BackupStatus::RUNNING->value])->exists();
 
         if ($active) {
             throw new BackupException('توجد نسخة احتياطية قيد التنفيذ حالياً — انتظر اكتمالها ثم أعد المحاولة.');
@@ -203,10 +205,10 @@ class BackupOrchestratorService
     {
         $threshold = now('Asia/Aden')->subSeconds($maxAgeSeconds);
 
-        return BackupJob::whereIn('status', [BackupJob::STATUS_QUEUED, BackupJob::STATUS_RUNNING])
+        return BackupJob::whereIn('status', [BackupStatus::QUEUED->value, BackupStatus::RUNNING->value])
             ->where('started_at', '<', $threshold)
             ->update([
-                'status' => BackupJob::STATUS_FAILED,
+                'status' => BackupStatus::FAILED->value,
                 'finished_at' => now('Asia/Aden'),
                 'error_message' => 'انقطع تنفيذ النسخة قبل اكتمالها (تجاوز مهلة التشغيل).',
             ]);
@@ -312,7 +314,7 @@ class BackupOrchestratorService
                 );
             }
 
-            if ($this->settings->failureSmsEnabled() && $type === BackupJob::TYPE_AUTO) {
+            if ($this->settings->failureSmsEnabled() && $type === BackupType::AUTO->value) {
                 $phoneNumbers = $superAdmins->pluck('user_phone_number')->filter()->unique()->values()->all();
                 if (! empty($phoneNumbers)) {
                     $nowStr = Carbon::now('Asia/Aden')->format('Y-m-d h:i A');

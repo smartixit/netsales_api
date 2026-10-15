@@ -37,13 +37,18 @@ use Illuminate\Validation\ValidationException;
  */
 class NotificationService
 {
+    protected SystemSettingService $systemSettingService;
+
     public function __construct(
         protected NotificationRepositoryInterface $notificationRepository,
         protected UserRepositoryInterface $userRepository,
         protected UserDeviceRepositoryInterface $userDeviceRepository,
         protected FileUploadService $fileUploadService,
-        protected SMSGateService $smsGateService
-    ) {}
+        protected SMSGateService $smsGateService,
+        ?SystemSettingService $systemSettingService = null
+    ) {
+        $this->systemSettingService = $systemSettingService ?? app(SystemSettingService::class);
+    }
 
     /**
      * جلب قائمة الإشعارات العامة مع الفلترة والترقيم بالمؤشر.
@@ -149,7 +154,7 @@ class NotificationService
 
         $notification = $this->notificationRepository->create($data);
 
-        if ($sendPush) {
+        if ($sendPush && $this->systemSettingService->getBool('firebase_enabled', true)) {
             SendFcmNotificationJob::dispatch(
                 userId: $userId,
                 title: $title,
@@ -343,7 +348,7 @@ class NotificationService
                 ]);
             }
 
-            if (in_array('sms', $channels, true) && ! empty($user->user_phone_number)) {
+            if (in_array('sms', $channels, true) && ! empty($user->user_phone_number) && $this->systemSettingService->getBool('sms_enabled', true)) {
                 SendSmsNotificationJob::dispatch(
                     phoneNumbers: $user->user_phone_number,
                     message: "{$title}\n{$body}",
@@ -352,7 +357,7 @@ class NotificationService
                 );
             }
 
-            if (in_array('email', $channels, true) && ! empty($user->user_email)) {
+            if (in_array('email', $channels, true) && ! empty($user->user_email) && $this->systemSettingService->getBool('email_enabled', true)) {
                 SendEmailNotificationJob::dispatch(
                     toEmail: $user->user_email,
                     subject: $title,
@@ -362,7 +367,7 @@ class NotificationService
                 );
             }
 
-            if (in_array('fcm', $channels, true) || in_array('push', $channels, true)) {
+            if ((in_array('fcm', $channels, true) || in_array('push', $channels, true)) && $this->systemSettingService->getBool('firebase_enabled', true)) {
                 SendFcmNotificationJob::dispatch(
                     userId: $user->user_id,
                     title: $title,
@@ -503,7 +508,7 @@ class NotificationService
         }
 
         // 2. إشعار الدفع الفوري (FCM Push)
-        if (in_array('fcm', $channels, true) || in_array('push', $channels, true)) {
+        if ((in_array('fcm', $channels, true) || in_array('push', $channels, true)) && $this->systemSettingService->getBool('firebase_enabled', true)) {
             SendFcmNotificationJob::dispatch(
                 userId: $userId,
                 title: $title,
@@ -516,7 +521,7 @@ class NotificationService
         }
 
         // 3. الرسائل النصية القصيرة (SMS)
-        if (in_array('sms', $channels, true) && ! empty($user->user_phone_number)) {
+        if (in_array('sms', $channels, true) && ! empty($user->user_phone_number) && $this->systemSettingService->getBool('sms_enabled', true)) {
             SendSmsNotificationJob::dispatch(
                 phoneNumbers: $user->user_phone_number,
                 message: "{$title}\n{$body}",

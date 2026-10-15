@@ -1609,6 +1609,7 @@ namespace App\Models{
  * @property string $device_uuid
  * @property string $device_name
  * @property \App\Enums\DeviceType $device_type
+ * @property string|null $fcm_token
  * @property bool $is_primary
  * @property \App\Enums\UserDeviceStatus $status
  * @property \Illuminate\Support\Carbon|null $last_used_at
@@ -1632,6 +1633,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice whereDeviceName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice whereDeviceType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice whereDeviceUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice whereFcmToken($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice whereIsPrimary($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice whereLastUsedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice whereStatus($value)

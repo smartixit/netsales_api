@@ -5,8 +5,10 @@ namespace App\Services\Support;
 use App\Models\NetworkSmsSetting;
 use App\Models\SystemSetting;
 use App\Models\User;
+use App\Services\SystemSettingService;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -25,10 +27,39 @@ use Illuminate\Support\Facades\Log;
 class SMSGateService
 {
     protected array $config;
+    protected SystemSettingService $systemSettingService;
 
-    public function __construct(?array $customConfig = null)
+    public function __construct(
+        ?array $customConfig = null,
+        ?SystemSettingService $systemSettingService = null
+    ) {
+        $this->systemSettingService = $systemSettingService ?? app(SystemSettingService::class);
+        $this->config = $customConfig ?? $this->resolveSystemConfig();
+    }
+
+    /**
+     * استخراج إعدادات بوابة الرسائل العامة من كائن SystemSettingService مع السقوط على config/services.php
+     *
+     * @return array<string, mixed>
+     */
+    public function resolveSystemConfig(): array
     {
-        $this->config = $customConfig ?? (array) config('services.smsgate', []);
+        $base = (array) config('services.smsgate', []);
+
+        return [
+            'server_type' => $this->systemSettingService->getString('smsgate_server_type', $base['server_type'] ?? 'cloud'),
+            'base_url' => $this->systemSettingService->getString('smsgate_base_url', $base['base_url'] ?? 'https://api.sms-gate.app'),
+            'auth_type' => $this->systemSettingService->getString('smsgate_auth_type', $base['auth_type'] ?? 'basic'),
+            'api_token' => $this->systemSettingService->getString('smsgate_api_token') ?: ($base['api_token'] ?? null),
+            'refresh_token' => $this->systemSettingService->getString('smsgate_refresh_token') ?: ($base['refresh_token'] ?? null),
+            'token_expires_at' => $this->systemSettingService->getString('smsgate_token_expires_at') ?: ($base['token_expires_at'] ?? null),
+            'username' => $this->systemSettingService->getString('smsgate_username') ?: ($base['username'] ?? null),
+            'password' => $this->systemSettingService->getString('smsgate_password') ?: ($base['password'] ?? null),
+            'device_id' => $this->systemSettingService->getString('smsgate_device_id') ?: ($base['device_id'] ?? null),
+            'sim_number' => $this->systemSettingService->getInt('smsgate_sim_number', (int) ($base['sim_number'] ?? 1)),
+            'skip_phone_validation' => $this->systemSettingService->getBool('smsgate_skip_phone_validation', (bool) ($base['skip_phone_validation'] ?? false)),
+            'device_active_within' => $this->systemSettingService->getInt('smsgate_device_active_within', (int) ($base['device_active_within'] ?? 0)),
+        ];
     }
 
     /**
@@ -367,21 +398,22 @@ class SMSGateService
                 if ($accessToken) {
                     SystemSetting::updateOrCreate(
                         ['setting_key' => 'smsgate_api_token'],
-                        ['setting_value' => $accessToken, 'setting_category' => 'integration']
+                        ['setting_value' => $accessToken, 'setting_category' => 'NOTIFICATION']
                     );
                 }
                 if ($refreshToken) {
                     SystemSetting::updateOrCreate(
                         ['setting_key' => 'smsgate_refresh_token'],
-                        ['setting_value' => $refreshToken, 'setting_category' => 'integration']
+                        ['setting_value' => $refreshToken, 'setting_category' => 'NOTIFICATION']
                     );
                 }
                 if ($formattedExpiresAt) {
                     SystemSetting::updateOrCreate(
                         ['setting_key' => 'smsgate_token_expires_at'],
-                        ['setting_value' => $formattedExpiresAt, 'setting_category' => 'integration']
+                        ['setting_value' => $formattedExpiresAt, 'setting_category' => 'NOTIFICATION']
                     );
                 }
+                Cache::forget('system_settings_cache_all');
             } catch (Exception $e) {
                 Log::error('SMSGate failed to persist system token to DB: '.$e->getMessage());
             }
@@ -437,12 +469,29 @@ class SMSGateService
     }
 
     /**
+     * التحقق من المفتاح السيادي لتفعيل أو تعطيل الرسائل النصية في النظام.
+     */
+    public function isSmsEnabled(): bool
+    {
+        return $this->systemSettingService->getBool('sms_enabled', true);
+    }
+
+    /**
      * التحقق من سياسة تفعيل الإرسال الهرمية للشبكة ونوع الرسالة.
      */
     public function smsAllowedFor(?int $networkId, ?string $messageType = null): bool
     {
-        // رموز OTP ورسائل النظام العامة بدون شبكة محددة تمر مباشرة
-        if ($messageType === 'otp' || $networkId === null) {
+        // رموز OTP تمر دائماً لأسباب أمنية وحرجة
+        if ($messageType === 'otp') {
+            return true;
+        }
+
+        // المفتاح السيادي العام لتفعيل/تعطيل الرسائل النصية في النظام
+        if (! $this->isSmsEnabled()) {
+            return false;
+        }
+
+        if ($networkId === null) {
             return true;
         }
 
