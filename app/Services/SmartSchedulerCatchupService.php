@@ -12,7 +12,9 @@ use App\Services\SystemLoggerService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * محرك التعويض الذكي للمهام المجدولة (Smart Scheduler Catch-up Engine).
@@ -141,11 +143,75 @@ class SmartSchedulerCatchupService
             }
         }
 
+        // فحص وتصريف مهام الطابور المعلقة ذاتياً عند غياب معالج الطوابير الدائم
+        if ($drainResult = $this->drainPendingQueueJobs($now)) {
+            $executedTasks['queue_worker_drain'] = $drainResult;
+        }
+
         return [
             'executed' => $executedTasks,
             'skipped' => $skippedTasks,
             'server_time' => $now->toDateTimeString(),
         ];
+    }
+
+    /**
+     * فحص وتصريف مهام الطابور المعلقة بأمان عند غياب الـ Worker الدائم (Self-Healing Queue Worker)
+     *
+     * @return array<string, mixed>|null
+     */
+    protected function drainPendingQueueJobs(Carbon $now): ?array
+    {
+        if (config('queue.default') === 'sync' || ! Schema::hasTable('jobs')) {
+            return null;
+        }
+
+        if (! DB::table('jobs')->exists()) {
+            return null;
+        }
+
+        $jobLock = Cache::lock('smart_catchup_queue_worker_lock', 60);
+
+        if (! $jobLock->get()) {
+            return null;
+        }
+
+        try {
+            $exitCode = Artisan::call('queue:work', [
+                '--stop-when-empty' => true,
+                '--max-time' => 15,
+                '--tries' => 3,
+            ]);
+
+            $output = trim(Artisan::output());
+
+            SystemLoggerService::log(
+                module: 'scheduler',
+                action: 'queue_worker_drained',
+                newData: [
+                    'command' => 'queue:work --stop-when-empty',
+                    'exit_code' => $exitCode,
+                    'output' => $output,
+                ]
+            );
+
+            return [
+                'name' => 'معالجة وتصريف طوابير المهام المعلقة',
+                'command' => 'queue:work --stop-when-empty',
+                'status' => $exitCode === 0 ? 'success' : 'failed',
+                'exit_code' => $exitCode,
+                'output' => $output,
+                'executed_at' => $now->toDateTimeString(),
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('❌ [SmartSchedulerCatchup] تعذر تصريف الطابور: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return null;
+        } finally {
+            optional($jobLock)->release();
+        }
     }
 
     /**
