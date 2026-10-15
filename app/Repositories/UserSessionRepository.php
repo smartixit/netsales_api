@@ -29,11 +29,12 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
         int $userId,
         ?string $ipAddress = null,
         ?string $userAgent = null,
-        int $durationHours = 24,
+        ?int $durationHours = null,
         ?string $deviceUuid = null
     ): UserSession {
         $now = Carbon::now('Asia/Aden');
-        $expiresAt = $now->copy()->addHours($durationHours);
+        $hours = $durationHours ?? max(1, (int) round((int) systemSetting('session_lifetime_minutes', 1440) / 60));
+        $expiresAt = $now->copy()->addHours($hours);
         $sessionToken = bin2hex(random_bytes(32)); // 64-hex char cryptographic random token (256-bit entropy)
 
         return $this->create([

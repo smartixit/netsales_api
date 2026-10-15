@@ -76,9 +76,10 @@ class UserDeviceRepository extends BaseRepository implements UserDeviceRepositor
 
     public function touchLastUsed(int $deviceId): void
     {
-        $this->model->newQuery()
-            ->where('device_id', $deviceId)
-            ->update(['last_used_at' => Carbon::now('Asia/Aden')]);
+        $device = $this->model->newQuery()->find($deviceId);
+        if ($device) {
+            $device->touchLastUsed();
+        }
     }
 
     public function setDeviceStatus(int $deviceId, UserDeviceStatus|string $status): bool

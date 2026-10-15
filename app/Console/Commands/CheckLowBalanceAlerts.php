@@ -33,10 +33,11 @@ class CheckLowBalanceAlerts extends Command
         $now = Carbon::now('Asia/Aden');
         $defaultThreshold = (float) systemSetting('low_balance_alert_threshold', 5000.0);
         $threshold = $this->option('threshold') !== null ? (float) $this->option('threshold') : $defaultThreshold;
+        $currencySymbol = systemSetting('currency_symbol', 'ر.ي');
         $force = (bool) $this->option('force');
         $targetDate = $now->toDateString();
 
-        $this->info("🚀 فحص أرصدة المحافظ التي تقل عن {$threshold} ر.ي...");
+        $this->info("🚀 فحص أرصدة المحافظ التي تقل عن {$threshold} {$currencySymbol}...");
 
         $lowWallets = PosWallet::with(['network', 'pos'])
             ->where('status', true)
@@ -72,7 +73,7 @@ class CheckLowBalanceAlerts extends Command
                 $posName = $pos?->pos_name ?? "نقطة بيع #{$wallet->pos_id}";
 
                 $message = "⚠️ تنبيه انخفاض الرصيد:\n"
-                    ."رصيد المحفظة لدى ({$posName}) في شبكة ({$network->network_name}) قد انخفض إلى: {$balanceFormatted} ر.ي.\n"
+                    ."رصيد المحفظة لدى ({$posName}) في شبكة ({$network->network_name}) قد انخفض إلى: {$balanceFormatted} {$currencySymbol}.\n"
                     ."يرجى تغذية المحفظة لضمان استمرار مبيعات الكروت.";
 
                 $smsSent = false;

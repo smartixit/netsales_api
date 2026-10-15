@@ -27,6 +27,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        try {
+            if ($timezone = systemSetting('default_timezone')) {
+                date_default_timezone_set($timezone);
+                config(['app.timezone' => $timezone]);
+            }
+            if ($locale = systemSetting('default_locale')) {
+                app()->setLocale($locale);
+                config(['app.locale' => $locale]);
+            }
+        } catch (\Throwable) {
+            // تجاهل أثناء التثبيت والتهجير الأولي قبل إنشاء جدول الإعدادات
+        }
+
         // إبقاء تسلسل التواريخ بصيغة Y-m-d H:i:s بالتوقيت المحلي الفعلي دون تحويلها إلى UTC أو إزاحتها زمنياً
         Carbon::serializeUsing(fn ($date) => $date->format('Y-m-d H:i:s'));
 

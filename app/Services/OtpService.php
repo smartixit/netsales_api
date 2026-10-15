@@ -127,8 +127,10 @@ class OtpService
         if ($otpType === OtpType::RESET_PASSWORD) {
             $todayCount = $this->otpRepository->getTodayRequestsCount($user->user_id, $otpType);
             if ($todayCount >= $maxReset) {
+                $supportPhone = $this->systemSettingService->getString('app_support_phone', '');
+                $supportMsg = $supportPhone ? " أو التواصل مع الدعم الفني ({$supportPhone})." : ' أو التواصل مع الدعم الفني.';
                 throw ValidationException::withMessages([
-                    'otp' => ["تم استنفاد الحد الأقصى لطلب استعادة كلمة المرور لهذا اليوم ({$maxReset} مرة يومياً). يرجى المحاولة بعد 24 ساعة أو التواصل مع الدعم الفني."],
+                    'otp' => ["تم استنفاد الحد الأقصى لطلب استعادة كلمة المرور لهذا اليوم ({$maxReset} مرة يومياً). يرجى المحاولة بعد 24 ساعة{$supportMsg}"],
                 ]);
             }
         } elseif ($otpType === OtpType::OTP_2FA) {

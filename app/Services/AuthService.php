@@ -33,6 +33,7 @@ use App\Models\NetworkPos;
 use App\Models\Pos;
 use App\Models\ProviderSubscription;
 use App\Models\Role;
+use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Models\UserDevice;
 use App\Services\Support\EmailNotificationService;
@@ -714,6 +715,23 @@ class AuthService
                 'rejected_at' => null,
                 'rejection_reason' => null,
             ]);
+
+            // منح فترة تجريبية مجانية للشبكة الجديدة وفق إعدادات النظام إذا لم يكن لديها اشتراك مسبق
+            $trialDays = $this->systemSettingService->getInt('trial_period_days', 14);
+            $hasSub = ProviderSubscription::where('network_id', $network->network_id)->exists();
+            if ($trialDays > 0 && ! $hasSub) {
+                $defaultPlan = SubscriptionPlan::where('status', true)->first();
+                if ($defaultPlan) {
+                    ProviderSubscription::create([
+                        'network_id' => $network->network_id,
+                        'plan_id' => $defaultPlan->plan_id,
+                        'subscription_start_date' => now('Asia/Aden'),
+                        'subscription_end_date' => now('Asia/Aden')->addDays($trialDays),
+                        'status' => ProviderSubscriptionStatus::ACTIVE,
+                        'created_by' => $adminUserId,
+                    ]);
+                }
+            }
 
             // تفعيل حساب المستخدم والجهاز الأساسي
             $user = User::where('user_phone_number', $network->network_phone_number)->first();

@@ -63,9 +63,9 @@ class FileUploadService
      *
      * @return array<string>
      */
-    public function getAllowedImageExtensions(): array
+    public function getAllowedFileExtensions(): array
     {
-        $extensions = $this->systemSettingService->getString('allowed_image_extensions', 'jpg,jpeg,png,webp');
+        $extensions = $this->systemSettingService->getString('allowed_file_extensions', 'jpg,jpeg,png,webp');
 
         return array_values(array_filter(array_map('trim', explode(',', strtolower($extensions)))));
     }
@@ -277,7 +277,7 @@ class FileUploadService
 
         $allowed = ! empty($allowedExtensions)
             ? $allowedExtensions
-            : $this->getAllowedImageExtensions();
+            : $this->getAllowedFileExtensions();
 
         if (! empty($allowed) && ! in_array($extension, $allowed, true)) {
             return false;

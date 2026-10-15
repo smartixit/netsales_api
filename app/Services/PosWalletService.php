@@ -254,14 +254,15 @@ class PosWalletService
 
             $minTransfer = (float) systemSetting('min_wallet_transfer_amount', 100);
             $maxTransfer = (float) systemSetting('max_wallet_transfer_amount', 1000000);
+            $currencySymbol = systemSetting('currency_symbol', 'ر.ي');
             if ($amount < $minTransfer) {
                 throw ValidationException::withMessages([
-                    'amount' => ["مبلغ التحويل يقل عن الحد الأدنى المسموح به للنظام ({$minTransfer} ر.ي)."],
+                    'amount' => ["مبلغ التحويل يقل عن الحد الأدنى المسموح به للنظام ({$minTransfer} {$currencySymbol})."],
                 ]);
             }
             if ($amount > $maxTransfer) {
                 throw ValidationException::withMessages([
-                    'amount' => ["مبلغ التحويل يتجاوز الحد الأقصى المسموح به للنظام ({$maxTransfer} ر.ي)."],
+                    'amount' => ["مبلغ التحويل يتجاوز الحد الأقصى المسموح به للنظام ({$maxTransfer} {$currencySymbol})."],
                 ]);
             }
 

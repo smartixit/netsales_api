@@ -38,10 +38,9 @@ class OtpRepository extends BaseRepository implements OtpRepositoryInterface
         $typeValue = $type instanceof OtpType ? $type->value : $type;
 
         return $this->model->newQuery()
-            ->where('user_id', $userId)
+            ->forUser($userId)
             ->where('otp_type', $typeValue)
-            ->where('is_used', false)
-            ->where('expires_at', '>', Carbon::now('Asia/Aden'))
+            ->active()
             ->latest('otp_id')
             ->first();
     }
@@ -69,7 +68,7 @@ class OtpRepository extends BaseRepository implements OtpRepositoryInterface
         $typeValue = $type instanceof OtpType ? $type->value : $type;
 
         return $this->model->newQuery()
-            ->where('user_id', $userId)
+            ->forUser($userId)
             ->where('otp_type', $typeValue)
             ->where('is_used', false)
             ->update(['is_used' => true]);
@@ -83,7 +82,7 @@ class OtpRepository extends BaseRepository implements OtpRepositoryInterface
         $typeValue = $type instanceof OtpType ? $type->value : $type;
 
         $latestOtp = $this->model->newQuery()
-            ->where('user_id', $userId)
+            ->forUser($userId)
             ->where('otp_type', $typeValue)
             ->latest('otp_id')
             ->first();
@@ -104,7 +103,7 @@ class OtpRepository extends BaseRepository implements OtpRepositoryInterface
         $typeValue = $type instanceof OtpType ? $type->value : $type;
 
         return (int) $this->model->newQuery()
-            ->where('user_id', $userId)
+            ->forUser($userId)
             ->where('otp_type', $typeValue)
             ->whereDate('created_at', Carbon::today('Asia/Aden'))
             ->count();

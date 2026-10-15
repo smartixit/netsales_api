@@ -14,7 +14,7 @@ interface UserSessionRepositoryInterface extends BaseRepositoryInterface
         int $userId,
         ?string $ipAddress = null,
         ?string $userAgent = null,
-        int $durationHours = 24,
+        ?int $durationHours = null,
         ?string $deviceUuid = null
     ): UserSession;
 

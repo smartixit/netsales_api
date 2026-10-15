@@ -492,9 +492,9 @@ class SystemSettingSeeder extends Seeder
             ],
             [
                 'setting_category' => 'SYSTEM',
-                'setting_key' => 'allowed_image_extensions',
+                'setting_key' => 'allowed_file_extensions',
                 'setting_value_type' => 'TEXT',
-                'setting_value' => 'jpg,jpeg,png,webp',
+                'setting_value' => 'jpg,jpeg,png,webp,pdf',
                 'setting_desc' => 'امتدادات الصور المسموح برفعها في النظام (مفصولة بفواصل)',
             ],
             [
