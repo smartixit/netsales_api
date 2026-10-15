@@ -3,10 +3,12 @@
 namespace App\Services;
 
 use App\Enums\ScheduledTaskStatus;
+use App\Enums\ScheduledTaskType;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
 use App\Interfaces\SystemSettingRepositoryInterface;
 use App\Models\ScheduledTaskRun;
 use App\Services\Backup\BackupSettingsService;
+use App\Services\SystemLoggerService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -21,77 +23,32 @@ use Illuminate\Support\Facades\Log;
  */
 class SmartSchedulerCatchupService
 {
-    /**
-     * سجل كل المهام المجدولة في نظام NetSales وقواعد استحقاقها
-     */
-    protected array $tasks = [
-        'subscriptions_expire_outdated' => [
-            'name' => 'فحص وإنهاء اشتراكات الشبكات المنتهية',
-            'command' => 'subscriptions:expire-outdated',
-            'frequency' => 'hourly',
-            'target_hour' => 0,
-        ],
-        'subscriptions_notify_expiring' => [
-            'name' => 'تنبيه باقتراب انتهاء اشتراكات الشبكات',
-            'command' => 'subscriptions:notify-expiring',
-            'frequency' => 'daily',
-            'target_hour' => 10,
-        ],
-        'reports_daily_sms' => [
-            'name' => 'إرسال الملخص المالي اليومي للشبكات (SMS)',
-            'command' => 'reports:daily-summary-sms',
-            'frequency' => 'daily',
-            'target_hour' => 20,
-        ],
-        'reports_monthly_sms' => [
-            'name' => 'إرسال الملخص المالي الشهري للشبكات (SMS)',
-            'command' => 'reports:monthly-summary-sms',
-            'frequency' => 'monthly',
-            'target_hour' => 20,
-        ],
-        'alerts_low_balance' => [
-            'name' => 'فحص وتنبيه انخفاض أرصدة محافظ نقاط البيع',
-            'command' => 'alerts:low-balance',
-            'frequency' => 'daily',
-            'target_hour' => 12,
-        ],
-        'backup_auto' => [
-            'name' => 'النسخ الاحتياطي التلقائي الشامل للنظام (Google Drive)',
-            'command' => 'backup:auto',
-            'frequency' => 'daily',
-            'target_hour' => 3,
-        ],
-        'cleanup_user_sessions' => [
-            'name' => 'تنظيف الجلسات المنتهية والمبطلة',
-            'command' => 'cleanup:user-sessions',
-            'frequency' => 'daily',
-            'target_hour' => 2,
-        ],
-        'cleanup_expired_otp' => [
-            'name' => 'تنظيف رموز التحقق المؤقتة (OTP) المنتهية أو المستعملة',
-            'command' => 'cleanup:expired-otp',
-            'frequency' => 'daily',
-            'target_hour' => 2,
-        ],
-        'security_lift_bans' => [
-            'name' => 'رفع الحظر الأمني المنتهي تلقائياً',
-            'command' => 'security:lift-expired-bans',
-            'frequency' => 'daily',
-            'target_hour' => 2,
-        ],
-        'system_prune_logs' => [
-            'name' => 'أرشفة وتنظيف سجلات النظام القديمة',
-            'command' => 'system:prune-logs',
-            'frequency' => 'weekly',
-            'target_hour' => 4,
-        ],
-    ];
-
     public function __construct(
         protected ScheduledTaskRunRepositoryInterface $taskRunRepository,
         protected SystemSettingRepositoryInterface $systemSettingRepository,
         protected BackupSettingsService $backupSettings
     ) {}
+
+    /**
+     * جلب سجل كل المهام المجدولة في نظام NetSales وقواعد استحقاقها من ScheduledTaskType Enum
+     *
+     * @return array<string, array{type: ScheduledTaskType, name: string, command: string, frequency: string, target_hour: int}>
+     */
+    public function getTasks(): array
+    {
+        $tasks = [];
+        foreach (ScheduledTaskType::cases() as $type) {
+            $tasks[$type->value] = [
+                'type' => $type,
+                'name' => $type->label(),
+                'command' => $type->command(),
+                'frequency' => $type->frequency(),
+                'target_hour' => $type->defaultTargetHour(),
+            ];
+        }
+
+        return $tasks;
+    }
 
     /**
      * تشغيل فحص التعويض لكل المهام المجدولة
@@ -102,7 +59,7 @@ class SmartSchedulerCatchupService
         $executedTasks = [];
         $skippedTasks = [];
 
-        foreach ($this->tasks as $key => $config) {
+        foreach ($this->getTasks() as $key => $config) {
             if ($singleTask && $key !== $singleTask && $config['command'] !== $singleTask) {
                 continue;
             }
@@ -284,7 +241,7 @@ class SmartSchedulerCatchupService
         // 2. توثيق التنفيذ في جدول scheduled_task_runs لضمان عدم التكرار (Idempotency)
         try {
             $this->taskRunRepository->recordRun(
-                taskType: $key,
+                taskType: $config['type'] ?? $key,
                 networkId: null,
                 targetDate: $targetDate,
                 status: $status,

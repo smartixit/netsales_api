@@ -3,13 +3,13 @@
 namespace App\Console\Commands;
 
 use App\Enums\ScheduledTaskStatus;
+use App\Enums\ScheduledTaskType;
 use App\Enums\SmsMessageType;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
 use App\Models\Expense;
 use App\Models\Network;
 use App\Models\NetworkSmsSetting;
 use App\Models\SaleInvoice;
-use App\Models\ScheduledTaskRun;
 use App\Services\Support\SMSGateService;
 use App\Services\SystemLoggerService;
 use Carbon\Carbon;
@@ -69,7 +69,7 @@ class SendDailySummarySms extends Command
             }
 
             // فحص هل تم إرسال الملخص اليومي لهذه الشبكة في هذا التاريخ لمنع التكرار (Idempotency)
-            $taskType = SmsMessageType::DAILY_SUMMARY->value;
+            $taskType = ScheduledTaskType::REPORTS_DAILY_SMS;
             if (! $force && $taskRunRepository->wasExecuted($taskType, $network->network_id, $targetDate)) {
                 $skippedCount++;
 
@@ -94,9 +94,10 @@ class SendDailySummarySms extends Command
             $salesFormatted = number_format($salesTotal, 2);
             $expensesFormatted = number_format($expensesTotal, 2);
             $netFormatted = number_format($netIncome, 2);
+            $formattedDate = Carbon::parse($targetDate, 'Asia/Aden')->locale('ar')->translatedFormat('l، j F Y');
 
             $message = "📊 الملخص اليومي لشبكة ({$network->network_name})\n"
-                ."📅 التاريخ: {$targetDate}\n"
+                ."📅 التاريخ: {$formattedDate}\n"
                 ."🧾 عدد الفواتير: {$invoicesCount}\n"
                 ."💰 إجمالي المبيعات: {$salesFormatted} ر.ي\n"
                 ."💸 إجمالي المصروفات: {$expensesFormatted} ر.ي\n"
@@ -108,12 +109,10 @@ class SendDailySummarySms extends Command
                     message: $message,
                     priority: 2,
                     recipientId: $network->network_id,
-                    messageType: $taskType
+                    messageType: SmsMessageType::DAILY_SUMMARY->value
                 );
 
-                $status = $success
-                    ? ScheduledTaskStatus::SENT->value
-                    : ScheduledTaskStatus::FAILED->value;
+                $status = $success ? ScheduledTaskStatus::SENT : ScheduledTaskStatus::FAILED;
 
                 $taskRunRepository->recordRun(
                     taskType: $taskType,
@@ -129,7 +128,7 @@ class SendDailySummarySms extends Command
                     ]
                 );
 
-                if ($status === ScheduledTaskStatus::SENT->value) {
+                if ($status === ScheduledTaskStatus::SENT) {
                     $sentCount++;
                     $this->line("  ✔ تم إرسال ملخص شبكة: {$network->network_name}");
                 } else {
@@ -140,7 +139,7 @@ class SendDailySummarySms extends Command
                     taskType: $taskType,
                     networkId: $network->network_id,
                     targetDate: $targetDate,
-                    status: ScheduledTaskStatus::FAILED->value,
+                    status: ScheduledTaskStatus::FAILED,
                     extra: ['error' => $e->getMessage()]
                 );
 

@@ -4,12 +4,12 @@ namespace App\Console\Commands;
 
 use App\Enums\NotificationType;
 use App\Enums\ScheduledTaskStatus;
+use App\Enums\ScheduledTaskType;
 use App\Enums\SmsMessageType;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
 use App\Models\NetworkSmsSetting;
 use App\Models\Notification;
 use App\Models\PosWallet;
-use App\Models\ScheduledTaskRun;
 use App\Services\Support\SMSGateService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -48,67 +48,75 @@ class CheckLowBalanceAlerts extends Command
         }
 
         $alertCount = 0;
+        $taskType = ScheduledTaskType::ALERTS_LOW_BALANCE;
+        $walletsByNetwork = $lowWallets->groupBy('network_id');
 
-        foreach ($lowWallets as $wallet) {
-            $network = $wallet->network;
-            $pos = $wallet->pos;
+        foreach ($walletsByNetwork as $networkId => $wallets) {
+            $network = $wallets->first()->network;
             if (! $network) {
                 continue;
             }
 
-            $taskType = SmsMessageType::LOW_BALANCE->value;
-            $taskKey = "{$taskType}_pos_{$wallet->pos_id}";
-
-            if (! $force && $taskRunRepository->wasExecuted($taskKey, $network->network_id, $targetDate)) {
+            if (! $force && $taskRunRepository->wasExecuted($taskType, $network->network_id, $targetDate)) {
                 continue;
             }
 
-            $balanceFormatted = number_format((float) $wallet->wallet_balance, 2);
-            $posName = $pos?->pos_name ?? "نقطة بيع #{$wallet->pos_id}";
-
-            $message = "⚠️ تنبيه انخفاض الرصيد:\n"
-                ."رصيد المحفظة لدى ({$posName}) في شبكة ({$network->network_name}) قد انخفض إلى: {$balanceFormatted} ر.ي.\n"
-                ."يرجى تغذية المحفظة لضمان استمرار مبيعات الكروت.";
-
             $smsSetting = NetworkSmsSetting::where('network_id', $network->network_id)->first();
-            $smsSent = false;
+            $alertedWallets = [];
 
-            if ($smsSetting?->is_enabled && $smsSetting->notify_low_balance && $network->network_phone_number) {
-                try {
-                    $smsSent = $smsGateService->sendSms(
-                        phoneNumbers: $network->network_phone_number,
-                        message: $message,
-                        priority: 1,
-                        recipientId: $network->network_id,
-                        messageType: $taskType
-                    );
-                } catch (\Throwable $e) {
-                    $this->warn("تعذر إرسال SMS لشبكة {$network->network_name}: ".$e->getMessage());
+            foreach ($wallets as $wallet) {
+                $pos = $wallet->pos;
+                $balanceFormatted = number_format((float) $wallet->wallet_balance, 2);
+                $posName = $pos?->pos_name ?? "نقطة بيع #{$wallet->pos_id}";
+
+                $message = "⚠️ تنبيه انخفاض الرصيد:\n"
+                    ."رصيد المحفظة لدى ({$posName}) في شبكة ({$network->network_name}) قد انخفض إلى: {$balanceFormatted} ر.ي.\n"
+                    ."يرجى تغذية المحفظة لضمان استمرار مبيعات الكروت.";
+
+                $smsSent = false;
+                if ($smsSetting?->is_enabled && $smsSetting->notify_low_balance && $network->network_phone_number) {
+                    try {
+                        $smsSent = $smsGateService->sendSms(
+                            phoneNumbers: $network->network_phone_number,
+                            message: $message,
+                            priority: 1,
+                            recipientId: $network->network_id,
+                            messageType: SmsMessageType::LOW_BALANCE->value
+                        );
+                    } catch (\Throwable $e) {
+                        $this->warn("تعذر إرسال SMS لشبكة {$network->network_name}: ".$e->getMessage());
+                    }
                 }
-            }
 
-            Notification::create([
-                'user_id' => $network->approved_by ?? 1,
-                'notification_type' => NotificationType::WARNING,
-                'notification_title' => '⚠️ تنبيه انخفاض رصيد محفظة',
-                'notification_message' => $message,
-                'is_read' => false,
-            ]);
+                Notification::create([
+                    'user_id' => $network->approved_by ?? 1,
+                    'notification_type' => NotificationType::WARNING,
+                    'notification_title' => '⚠️ تنبيه انخفاض رصيد محفظة',
+                    'notification_message' => $message,
+                    'is_read' => false,
+                ]);
 
-            $taskRunRepository->recordRun(
-                taskType: $taskKey,
-                networkId: $network->network_id,
-                targetDate: $targetDate,
-                status: ScheduledTaskStatus::SENT->value,
-                extra: [
+                $alertedWallets[] = [
                     'pos_id' => $wallet->pos_id,
+                    'pos_name' => $posName,
                     'balance' => $wallet->wallet_balance,
                     'sms_sent' => $smsSent,
+                ];
+
+                $alertCount++;
+                $this->line("  ✔ تم إرسال تنبيه انخفاض رصيد لـ {$posName} ({$network->network_name})");
+            }
+
+            $taskRunRepository->recordRun(
+                taskType: $taskType,
+                networkId: $network->network_id,
+                targetDate: $targetDate,
+                status: ScheduledTaskStatus::SENT,
+                extra: [
+                    'wallets_count' => count($alertedWallets),
+                    'wallets' => $alertedWallets,
                 ]
             );
-
-            $alertCount++;
-            $this->line("  ✔ تم إرسال تنبيه انخفاض رصيد لـ {$posName} ({$network->network_name})");
         }
 
         $this->info("✅ اكتملت المهمة: تم إرسال {$alertCount} تنبيهاً لانخفاض الرصيد.");

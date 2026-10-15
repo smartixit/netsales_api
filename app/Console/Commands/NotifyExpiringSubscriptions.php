@@ -5,12 +5,12 @@ namespace App\Console\Commands;
 use App\Enums\NotificationType;
 use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\ScheduledTaskStatus;
+use App\Enums\ScheduledTaskType;
 use App\Enums\SmsMessageType;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
-use App\Models\Notification;
 use App\Models\NetworkSmsSetting;
+use App\Models\Notification;
 use App\Models\ProviderSubscription;
-use App\Models\ScheduledTaskRun;
 use App\Services\Support\SMSGateService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -60,7 +60,7 @@ class NotifyExpiringSubscriptions extends Command
                 continue;
             }
 
-            $taskType = SmsMessageType::SUBSCRIPTION_EXPIRY->value;
+            $taskType = ScheduledTaskType::SUBSCRIPTIONS_NOTIFY_EXPIRING;
             if (! $force && $taskRunRepository->wasExecuted($taskType, $network->network_id, $targetDate)) {
                 continue;
             }
@@ -82,7 +82,7 @@ class NotifyExpiringSubscriptions extends Command
                         message: $message,
                         priority: 1,
                         recipientId: $network->network_id,
-                        messageType: $taskType
+                        messageType: SmsMessageType::SUBSCRIPTION_EXPIRY->value
                     );
                 } catch (\Throwable $e) {
                     $this->warn("تعذر إرسال SMS لشبكة {$network->network_name}: ".$e->getMessage());
@@ -103,7 +103,7 @@ class NotifyExpiringSubscriptions extends Command
                 taskType: $taskType,
                 networkId: $network->network_id,
                 targetDate: $targetDate,
-                status: ScheduledTaskStatus::SENT->value,
+                status: ScheduledTaskStatus::SENT,
                 extra: [
                     'end_date' => $endDate,
                     'sms_sent' => $smsSent,
