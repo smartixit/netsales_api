@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\API\V1;
 
 use App\Http\Resources\API\V1\ScheduledTaskRun\ScheduledTaskRunResource;
 use App\Services\ScheduledTaskRunService;

@@ -2,7 +2,7 @@
 
 use App\Services\Support\AsymmetricCryptoService;
 use App\Services\SystemSettingService;
-use App\Support\AmountFormatter;
+use App\Helpers\AmountFormatter;
 
 if (! function_exists('encryptData')) {
     /**

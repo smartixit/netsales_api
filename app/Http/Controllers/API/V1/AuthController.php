@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\API\V1;
 
-use App\Http\Requests\Api\V1\Auth\LoginRequest;
-use App\Http\Requests\Api\V1\Auth\RegisterPosRequest;
-use App\Http\Requests\Api\V1\Auth\RegisterRequest;
-use App\Http\Requests\Api\V1\Auth\RequestPasswordResetRequest;
-use App\Http\Requests\Api\V1\Auth\ResetPasswordRequest;
-use App\Http\Requests\Api\V1\Auth\ToggleTwoFactorRequest;
-use App\Http\Requests\Api\V1\Auth\UpdatePasswordRequest;
-use App\Http\Requests\Api\V1\Auth\VerifyResetOtpRequest;
-use App\Http\Requests\Api\V1\Auth\VerifyTwoFactorRequest;
+use App\Http\Requests\API\V1\Auth\LoginRequest;
+use App\Http\Requests\API\V1\Auth\RegisterPosRequest;
+use App\Http\Requests\API\V1\Auth\RegisterRequest;
+use App\Http\Requests\API\V1\Auth\RequestPasswordResetRequest;
+use App\Http\Requests\API\V1\Auth\ResetPasswordRequest;
+use App\Http\Requests\API\V1\Auth\ToggleTwoFactorRequest;
+use App\Http\Requests\API\V1\Auth\UpdatePasswordRequest;
+use App\Http\Requests\API\V1\Auth\VerifyResetOtpRequest;
+use App\Http\Requests\API\V1\Auth\VerifyTwoFactorRequest;
 use App\Http\Resources\API\V1\Network\NetworkResource;
 use App\Http\Resources\API\V1\Pos\PosResource;
 use App\Http\Resources\API\V1\User\UserDeviceResource;

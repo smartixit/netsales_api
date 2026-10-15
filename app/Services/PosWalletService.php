@@ -20,7 +20,7 @@ use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
 use App\Models\PosWallet;
 use App\Models\PosWalletLog;
-use App\Support\AmountFormatter;
+use App\Helpers\AmountFormatter;
 use Exception;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;

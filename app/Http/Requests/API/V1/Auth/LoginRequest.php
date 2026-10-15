@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Api\V1\Auth;
+namespace App\Http\Requests\API\V1\Auth;
 
 use App\Enums\DeviceType;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;

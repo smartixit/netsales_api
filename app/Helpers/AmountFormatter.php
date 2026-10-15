@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support;
+namespace App\Helpers;
 
 /**
  * فئة مساعدة لتنسيق المبالغ والأرقام المالية بدقة وكود نظيف (Clean Amount Formatter).

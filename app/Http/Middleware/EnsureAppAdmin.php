@@ -8,9 +8,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * يقيّد الوصول لمدير التطبيق فقط (Super Admin).
- *
- * يستخدم لنقاط الإعدادات العامة وإعدادات المتاجر التي لا يجوز
- * لمديري المتاجر أو المستخدمين العاديين لمسها.
  */
 class EnsureAppAdmin
 {

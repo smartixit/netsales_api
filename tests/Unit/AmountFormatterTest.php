@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Support\AmountFormatter;
+use App\Helpers\AmountFormatter;
 use PHPUnit\Framework\TestCase;
 
 class AmountFormatterTest extends TestCase

@@ -19,7 +19,7 @@
                 ],
                 "summary": "إرسال إشعار إداري للجمهور عبر القنوات المحددة",
                 "description": "إرسال إشعار لجمهور متعدد عبر قنوات مختارة (داخل التطبيق / SMS / بريد).",
-                "operationId": "41d8a3a8719d4a094684bcfa933e7640",
+                "operationId": "2f272f9cd399829acb484c310e2f7da3",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -108,7 +108,7 @@
                 ],
                 "summary": "إرسال إشعار موجه لمستخدم محدد (In-App, FCM Push, SMS)",
                 "description": "إرسال إشعار موجه ومباشر لمستخدم محدد عبر القنوات المختارة (In-App / FCM Push / SMS).",
-                "operationId": "18bdfbf65b38b0f851f6ca9022705369",
+                "operationId": "467c43bb33576e951909005c6e25fdd6",
                 "requestBody": {
                     "description": "بيانات إرسال الإشعار للمستخدم",
                     "required": true,
@@ -169,7 +169,7 @@
                 ],
                 "summary": "تقديم طلب تسجيل مزود شبكة جديد",
                 "description": "إنشاء شبكة جديدة وحساب مسؤول الشبكة وجهازه بحالة معلقة (PENDING) في انتظار اعتماد الإدارة.",
-                "operationId": "5eb1e7eb22417646fbd5ce5af40b4d7b",
+                "operationId": "b7e1ab3f8c6c95666a14f344f83be9f3",
                 "requestBody": {
                     "description": "بيانات تسجيل مزود الشبكة وحساب المدير والجهاز بصيغة النموذج (Form Data)",
                     "required": true,
@@ -290,7 +290,7 @@
                 ],
                 "summary": "تقديم طلب تسجيل وكيل / نقطة بيع جديدة",
                 "description": "إنشاء نقطة بيع جديدة وحساب الوكيل وجهازه بحالة معلقة (PENDING) في انتظار اعتماد الإدارة.",
-                "operationId": "e314fc0185c3990cedbeac42ad7dfc19",
+                "operationId": "9619a700368aea15d48ecffa84843c86",
                 "requestBody": {
                     "description": "بيانات تسجيل نقطة البيع وحساب الوكيل والجهاز بصيغة النموذج (Form Data)",
                     "required": true,
@@ -416,7 +416,7 @@
                 ],
                 "summary": "تسجيل الدخول للنظام وإنشاء الجلسة",
                 "description": "التحقق من بيانات الاعتماد وحالة الحساب والشبكة/نقطة البيع والاشتراك والأجهزة، وإنشاء الجلسة في user_sessions.",
-                "operationId": "a7997e7c1e3bfed64d4e56de82415931",
+                "operationId": "bab3fbc2592f5537c990acc6071592fa",
                 "requestBody": {
                     "description": "بيانات تسجيل الدخول ومعلومات الجهاز بصيغة النموذج (Form Data)",
                     "required": true,
@@ -484,7 +484,7 @@
                 ],
                 "summary": "التحقق من كود OTP وإتمام الدخول للأجهزة الجديدة",
                 "description": "إتمام التحقق الثنائي أو تأكيد ربط الجهاز الجديد وإنشاء الجلسة.",
-                "operationId": "0496f8a10b5f847f10ea6cc8faeb449b",
+                "operationId": "b8b531eeb72cbcda51a27f6016aa2061",
                 "requestBody": {
                     "description": "بيانات التحقق الثنائي OTP وتأكيد الجهاز بصيغة النموذج (Form Data)",
                     "required": true,
@@ -548,7 +548,7 @@
                 ],
                 "summary": "جلب بيانات الملف الشخصي للمستخدم الحالي",
                 "description": "جلب بيانات الحساب الحالي والصلاحيات.",
-                "operationId": "37d33f0281f67d31d05b4c45eea0143b",
+                "operationId": "d5f318885e55ef236e0dbf804d8c13e1",
                 "responses": {
                     "200": {
                         "description": "بيانات الحساب الحالي والصلاحيات"
@@ -571,7 +571,7 @@
                 ],
                 "summary": "تسجيل الخروج وإنهاء الجلسة الحالية",
                 "description": "تسجيل الخروج وإنهاء الجلسة الحالية.",
-                "operationId": "f6b8957b4c0b25636613a9f0512a8ba9",
+                "operationId": "1a307e1f34681659d83cf736528e39aa",
                 "responses": {
                     "200": {
                         "description": "تم تسجيل الخروج بنجاح"
@@ -591,7 +591,7 @@
                 ],
                 "summary": "تسجيل الخروج من كافة الأجهزة الأخرى",
                 "description": "تسجيل الخروج من كافة الأجهزة الأخرى.",
-                "operationId": "788064b5ca5f2b93d159646c155e1d4d",
+                "operationId": "dacab202775a27a1a4fd3b9ffef11bf9",
                 "responses": {
                     "200": {
                         "description": "تم إنهاء كافة الجلسات الأخرى"
@@ -611,7 +611,7 @@
                 ],
                 "summary": "طلب إرسال رمز استعادة كلمة المرور عبر الهاتف",
                 "description": "طلب استعادة كلمة المرور عبر الرمز المؤقت.",
-                "operationId": "41d4fe28160550cb9cadd5f9fe0f91ef",
+                "operationId": "f03a2d420a116adf6c74dd7aac6cec6c",
                 "requestBody": {
                     "description": "رقم هاتف المستخدم لطلب استعادة كلمة المرور بصيغة النموذج (Form Data)",
                     "required": true,
@@ -646,7 +646,7 @@
                 ],
                 "summary": "التحقق من صحة كود استعادة كلمة المرور",
                 "description": "التحقق من رمز استعادة كلمة المرور.",
-                "operationId": "1da39df139226442647321a227e8b0c7",
+                "operationId": "cfb0c6a33a878e9fdd486b6931a66aab",
                 "requestBody": {
                     "description": "التحقق من رمز OTP لاستعادة كلمة المرور بصيغة النموذج (Form Data)",
                     "required": true,
@@ -686,7 +686,7 @@
                 ],
                 "summary": "إعادة تعيين كلمة المرور بعد التحقق",
                 "description": "اعتماد كلمة المرور الجديدة بعد التحقق.",
-                "operationId": "6cf249fbb00db4400f2499319b39eda3",
+                "operationId": "f34b40b316a2527e27b2a5ce175ad988",
                 "requestBody": {
                     "description": "إعادة تعيين كلمة المرور الجديدة مع رمز التحقق بصيغة النموذج (Form Data)",
                     "required": true,
@@ -738,7 +738,7 @@
                 ],
                 "summary": "تحديث كلمة المرور للمستخدم المصادق عليه",
                 "description": "تحديث كلمة المرور للحساب الحالي.",
-                "operationId": "c035ae30f9e4e5358cc69d5504d9bc76",
+                "operationId": "374b20987b030a48688b0f38fd049ece",
                 "requestBody": {
                     "description": "تحديث كلمة المرور الحالية بكلمة مرور جديدة بصيغة النموذج (Form Data)",
                     "required": true,
@@ -791,7 +791,7 @@
                 ],
                 "summary": "تفعيل أو تعطيل المصادقة الثنائية 2FA",
                 "description": "تفعيل أو تعطيل المصادقة الثنائية (2FA).",
-                "operationId": "df1751a3270c0dd8a9c25c1fa522afa9",
+                "operationId": "75d7f3052d6895873522bb7727876743",
                 "requestBody": {
                     "description": "تفعيل أو تعطيل ميزة التحقق الثنائي بصيغة النموذج (Form Data)",
                     "required": true,
@@ -836,7 +836,7 @@
                 ],
                 "summary": "جلب قائمة أجهزة المستخدم المقترنة",
                 "description": "جلب أجهزة المستخدم المقترنة بالحساب.",
-                "operationId": "034ff43b918e6a69ead8d5141900e4a3",
+                "operationId": "ad968925e93b15dd74c61c4024802824",
                 "responses": {
                     "200": {
                         "description": "قائمة الأجهزة المقترنة"
@@ -856,7 +856,7 @@
                 ],
                 "summary": "إلغاء إقران جهاز محدد للمستخدم",
                 "description": "إلغاء إقران وفصل جهاز محدد.",
-                "operationId": "d08003dc91b49ad17586c2cce19a5b4a",
+                "operationId": "a5b17de859d562a792d1b6ad302e6943",
                 "parameters": [
                     {
                         "name": "id",
@@ -887,7 +887,7 @@
                 ],
                 "summary": "عرض قائمة الحسابات البنكية",
                 "description": "عرض قائمة الحسابات البنكية مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "7007cb04659f60dad0d33bd222e4cdf9",
+                "operationId": "b58ba373fe8194c7cbf6466de1bae6ee",
                 "parameters": [
                     {
                         "name": "status",
@@ -943,7 +943,7 @@
                 ],
                 "summary": "إنشاء حساب بنكي جديد",
                 "description": "إنشاء حساب بنكي جديد مع رفع الشعار.",
-                "operationId": "522a6c8a4273005919a52cad87bc7c26",
+                "operationId": "8a09b46adaaad64eaffa4b4d7826ac2c",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -1005,7 +1005,7 @@
                 ],
                 "summary": "عرض الحسابات البنكية النشطة",
                 "description": "عرض الحسابات البنكية النشطة المتاحة للسداد والتحويل.",
-                "operationId": "8a924dbec71ce916693ffbdd27458ee5",
+                "operationId": "9035b20a7a82b5904c9436cf5db7a0e7",
                 "parameters": [
                     {
                         "name": "account_currency",
@@ -1038,7 +1038,7 @@
                 ],
                 "summary": "عرض تفاصيل حساب بنكي",
                 "description": "عرض تفاصيل حساب بنكي محدد.",
-                "operationId": "15c90e91460d1d74591b312259d21ca0",
+                "operationId": "59cb0e26fd640bcb94b96d1cf71d872a",
                 "parameters": [
                     {
                         "name": "id",
@@ -1061,7 +1061,7 @@
                 ],
                 "summary": "تحديث بيانات حساب بنكي",
                 "description": "تحديث بيانات حساب بنكي قائم واستبدال الشعار.",
-                "operationId": "21ca6153e0b3b116d506f231b1d4421c",
+                "operationId": "4e0729242c4c72ab80d38547b11e6250",
                 "parameters": [
                     {
                         "name": "id",
@@ -1125,7 +1125,7 @@
                 ],
                 "summary": "حذف حساب بنكي ناعماً",
                 "description": "حذف حساب بنكي ناعماً.",
-                "operationId": "8c09dfa675a5c564b6fa96cf6b2dc91d",
+                "operationId": "8030e7074f89343d8d1cbbaea74997b4",
                 "parameters": [
                     {
                         "name": "id",
@@ -1150,7 +1150,7 @@
                 ],
                 "summary": "تبديل حالة تفعيل الحساب البنكي",
                 "description": "تبديل حالة تفعيل الحساب البنكي (نشط / معطل).",
-                "operationId": "09b1f595c6dde4cd0b9d5ae554d100cf",
+                "operationId": "e5aae1636bcd2cc6dc1dbd05601383b8",
                 "parameters": [
                     {
                         "name": "id",
@@ -1175,7 +1175,7 @@
                 ],
                 "summary": "عرض الحسابات البنكية المحذوفة ناعماً",
                 "description": "عرض قائمة الحسابات البنكية المحذوفة ناعماً.",
-                "operationId": "70fa3316322bd8285af819a0b85fd70c",
+                "operationId": "7e9051285fdb1970ca93d15d98c141c6",
                 "parameters": [
                     {
                         "name": "search",
@@ -1217,7 +1217,7 @@
                 ],
                 "summary": "استعادة حساب بنكي محذوف",
                 "description": "استعادة حساب بنكي محذوف ناعماً.",
-                "operationId": "a2c6eb19578afa9ffbb72803eab22dfe",
+                "operationId": "d805b7ae6ec10e9357d422e8de8c90bb",
                 "parameters": [
                     {
                         "name": "id",
@@ -1242,7 +1242,7 @@
                 ],
                 "summary": "حذف نهائي للحساب البنكي",
                 "description": "حذف نهائي للحساب البنكي مع تنظيف الشعار.",
-                "operationId": "c1aef4826d91c68363a8d35397e7ca0e",
+                "operationId": "cce00f86d546adb7196edc156ee3a26a",
                 "parameters": [
                     {
                         "name": "id",
@@ -1267,7 +1267,7 @@
                 ],
                 "summary": "حذف مجمع للحسابات",
                 "description": "حذف مجمع ناعم للحسابات.",
-                "operationId": "09b3b510160c2788a18be571097ed921",
+                "operationId": "a135a35a82df703a3529f7720ab0499a",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -1305,7 +1305,7 @@
                 ],
                 "summary": "استعادة مجمعة للحسابات",
                 "description": "استعادة مجمعة للحسابات.",
-                "operationId": "2015e29c1bf1fae12d8f874c91c24756",
+                "operationId": "ab9ebac2d1887a0c3db27c2930d3384b",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -1343,7 +1343,7 @@
                 ],
                 "summary": "حذف نهائي مجمع للحسابات",
                 "description": "حذف نهائي مجمع للحسابات.",
-                "operationId": "5dc5068c9573e87241a500997f82ef49",
+                "operationId": "d3d6eb4a8edcaf491f3907caec4a22a4",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -1381,7 +1381,7 @@
                 ],
                 "summary": "عرض قائمة المديريات",
                 "description": "عرض قائمة المديريات مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "b948bc7812c9275248151dd4178fbad1",
+                "operationId": "ea4605eb38fb46f71a8dc2e8f7cd23bd",
                 "parameters": [
                     {
                         "name": "governorate_id",
@@ -1429,7 +1429,7 @@
                 ],
                 "summary": "إنشاء مديرية جديدة",
                 "description": "إنشاء مديرية جديدة.",
-                "operationId": "5d9dc20cd05e3fed2aaa1c93134c414d",
+                "operationId": "96be00e7a340a3dc6b638b3433921d1f",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -1468,7 +1468,7 @@
                 ],
                 "summary": "مديريات محافظة محددة",
                 "description": "عرض مديريات محافظة محددة.",
-                "operationId": "3b09c8100eaf30fecb48372d573897be",
+                "operationId": "123e9c2580fa1d1df9989b9b59f37e94",
                 "parameters": [
                     {
                         "name": "governorateId",
@@ -1493,7 +1493,7 @@
                 ],
                 "summary": "عرض تفاصيل مديرية محددة",
                 "description": "عرض تفاصيل مديرية محددة عبر المعرف الرقمي.",
-                "operationId": "de7ccd727ce6a76e537cb84540049ac5",
+                "operationId": "28961ffa3de60b69d4e982bb0a58457d",
                 "parameters": [
                     {
                         "name": "id",
@@ -1516,7 +1516,7 @@
                 ],
                 "summary": "تحديث بيانات مديرية",
                 "description": "تحديث بيانات مديرية قائمة.",
-                "operationId": "0468e6756c00e73d28ca8710c3f4e0bb",
+                "operationId": "964dc9727932c0d66bf55a6b62f7ff90",
                 "parameters": [
                     {
                         "name": "id",
@@ -1560,7 +1560,7 @@
                 ],
                 "summary": "حذف مديرية ناعماً",
                 "description": "حذف مديرية ناعماً.",
-                "operationId": "a95806804bfcf70ce760a4a016799d9d",
+                "operationId": "18e93b9923f35e587132290ae5a2850f",
                 "parameters": [
                     {
                         "name": "id",
@@ -1585,7 +1585,7 @@
                 ],
                 "summary": "عرض المديريات المحذوفة ناعماً",
                 "description": "عرض قائمة المديريات المحذوفة ناعماً.",
-                "operationId": "1c9c84ee55834c3145b90767cc06e360",
+                "operationId": "03d95bb5444e0c2e2e4e2ec1e51dcac6",
                 "parameters": [
                     {
                         "name": "governorate_id",
@@ -1635,7 +1635,7 @@
                 ],
                 "summary": "استعادة مديرية محذوفة ناعماً",
                 "description": "استعادة مديرية محذوفة ناعماً.",
-                "operationId": "95a368955c84c0396f45576e04806186",
+                "operationId": "dce6d82f429c7e34c403ee6b45cbeb99",
                 "parameters": [
                     {
                         "name": "id",
@@ -1660,7 +1660,7 @@
                 ],
                 "summary": "الحذف النهائي لمديرية",
                 "description": "الحذف النهائي لمديرية.",
-                "operationId": "2e9f1226adc7318ce34101c92af0f3b4",
+                "operationId": "c1b7ff6fa7d8322213c3f12916ae962f",
                 "parameters": [
                     {
                         "name": "id",
@@ -1685,7 +1685,7 @@
                 ],
                 "summary": "الحذف المجمع للمديريات ناعماً",
                 "description": "الحذف المجمع للمديريات ناعماً.",
-                "operationId": "302abe643e22d0d4045bb0e21912bddd",
+                "operationId": "f9ee85b6c41104aed39c9717393582a4",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -1723,7 +1723,7 @@
                 ],
                 "summary": "الاستعادة المجمعة للمديريات",
                 "description": "الاستعادة المجمعة للمديريات.",
-                "operationId": "46fbebb042b721b368e73a01d9b7a806",
+                "operationId": "628e845526ba6d5a31fecbb26f34375f",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -1761,7 +1761,7 @@
                 ],
                 "summary": "الحذف النهائي المجمع للمديريات",
                 "description": "الحذف النهائي المجمع للمديريات.",
-                "operationId": "cf9fb4ccc709909b3d4f3094c7b5130a",
+                "operationId": "b435a328ed95588f4a90d9108dad5611",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -1799,7 +1799,7 @@
                 ],
                 "summary": "عرض قائمة المصروفات التشغيلية",
                 "description": "عرض قائمة المصروفات مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "b1b77dc505b7fd85a1ae7f1b3880f8af",
+                "operationId": "15c897c10d45e7efa413c13ab95bd9b0",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -1860,7 +1860,7 @@
                 ],
                 "summary": "تسجيل مصروف تشغيلي جديد",
                 "description": "تسجيل مصروف تشغيلي جديد مع البنود والمرفقات وخصم إلزامي من محفظة الشبكة.",
-                "operationId": "7eca81a4560f60faba9c02b3071397ab",
+                "operationId": "d6ca185abb3b64ad4a5b5be0cc9ee17f",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -1918,7 +1918,7 @@
                 ],
                 "summary": "عرض تفاصيل مصروف محدد",
                 "description": "عرض تفاصيل مصروف تشغيلي محدد مع بنوده ومرفقاته.",
-                "operationId": "c0caaad2f7dc79419123743597023413",
+                "operationId": "56c1e9185662337fa3db5cb528e5fcf3",
                 "parameters": [
                     {
                         "name": "id",
@@ -1944,7 +1944,7 @@
                 ],
                 "summary": "تحديث بيانات مصروف قائم",
                 "description": "تحديث بيانات المصروف وبنوده ومرفقاته.",
-                "operationId": "2c85f04b86f024df4c3e1103e50e8b01",
+                "operationId": "de0243a0703b23e6d18122ef80ddc829",
                 "parameters": [
                     {
                         "name": "id",
@@ -2003,7 +2003,7 @@
                 ],
                 "summary": "حذف مصروف ناعماً",
                 "description": "حذف مصروف تشغيلي ناعماً.",
-                "operationId": "5ce6215b38e6452bda795185454fe930",
+                "operationId": "2cb7c063a036b74640a67ba8add18dde",
                 "parameters": [
                     {
                         "name": "id",
@@ -2028,7 +2028,7 @@
                 ],
                 "summary": "عرض المصروفات المحذوفة ناعماً",
                 "description": "عرض قائمة المصروفات المحذوفة ناعماً.",
-                "operationId": "d7efc2451f2a97c861c15e640b95557f",
+                "operationId": "960825b248678d44b30c0b1708a16195",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -2086,7 +2086,7 @@
                 ],
                 "summary": "استعادة مصروف محذوف",
                 "description": "استعادة مصروف محذوف ناعماً.",
-                "operationId": "6c6128306baf2d1d16f721cee83f4992",
+                "operationId": "959064dac0e1a262df96547607985625",
                 "parameters": [
                     {
                         "name": "id",
@@ -2111,7 +2111,7 @@
                 ],
                 "summary": "حذف نهائي للمصروف",
                 "description": "حذف نهائي للمصروف مع تنظيف المرفقات.",
-                "operationId": "8a5bac41275fbce20bad98a200f8e937",
+                "operationId": "395d17460837f625d2ff5791d15397ac",
                 "parameters": [
                     {
                         "name": "id",
@@ -2136,7 +2136,7 @@
                 ],
                 "summary": "حذف مجمع للمصروفات",
                 "description": "حذف مجمع ناعم للمصروفات.",
-                "operationId": "1ecc277fe161225cc8cd43b6f96031a9",
+                "operationId": "e81eb6851b827f61e5ce6fe067551ad7",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -2174,7 +2174,7 @@
                 ],
                 "summary": "استعادة مجمعة للمصروفات",
                 "description": "استعادة مجمعة للمصروفات المحذوفة.",
-                "operationId": "6a84871d2192adacd09505a363665f73",
+                "operationId": "689f9a983f86f8bda0f3fbd02abdb387",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -2212,7 +2212,7 @@
                 ],
                 "summary": "حذف نهائي مجمع للمصروفات",
                 "description": "حذف مجمع نهائي للمصروفات.",
-                "operationId": "4f80624b59edbf680ad9eebc94d4c5da",
+                "operationId": "1a00f8cb3f8193f6af73653b0f102ff6",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -2250,7 +2250,7 @@
                 ],
                 "summary": "إضافة بند منفرد للمصروف",
                 "description": "إضافة بند منفرد لمصروف قائم مع خصم المبلغ من المحفظة.",
-                "operationId": "393edab0db34b450f272c63cacc67f24",
+                "operationId": "643131e75178d475fe3d68b032ad6acb",
                 "parameters": [
                     {
                         "name": "id",
@@ -2299,7 +2299,7 @@
                 ],
                 "summary": "حذف بند منفرد من المصروف",
                 "description": "حذف بند منفرد من مصروف قائم مع استرداد المبلغ للمحفظة.",
-                "operationId": "d6272b59df6d974063b24565fcb6d4f7",
+                "operationId": "525590a9a7ab77207fd327ed0773e4df",
                 "parameters": [
                     {
                         "name": "id",
@@ -2332,7 +2332,7 @@
                 ],
                 "summary": "حذف مرفق منفرد من المصروف",
                 "description": "حذف مرفق منفرد من المصروف.",
-                "operationId": "e2ba5cd000097e59b7f8f6a2112423f8",
+                "operationId": "34ac622136df78646e5c9cc5433da786",
                 "parameters": [
                     {
                         "name": "id",
@@ -2365,7 +2365,7 @@
                 ],
                 "summary": "عرض قائمة ميزات النظام",
                 "description": "عرض قائمة ميزات النظام مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "39b5478beb9474b263cba5add2ef5978",
+                "operationId": "8db7ce443f5f1605c5052575cdc49c95",
                 "parameters": [
                     {
                         "name": "status",
@@ -2413,7 +2413,7 @@
                 ],
                 "summary": "إضافة ميزة جديدة",
                 "description": "إضافة ميزة جديدة في كتالوج النظام.",
-                "operationId": "176fc32d0f9bc59cd8b3e15e00485c0d",
+                "operationId": "139a69b3e5eea834535440cd43975fcf",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -2461,7 +2461,7 @@
                 ],
                 "summary": "عرض تفاصيل ميزة",
                 "description": "عرض تفاصيل ميزة محددة عبر معرفها.",
-                "operationId": "997285c1697a8fb2cd3e597fbb7b4be3",
+                "operationId": "facc4fb44f03a604dff28af74e68350a",
                 "parameters": [
                     {
                         "name": "id",
@@ -2484,7 +2484,7 @@
                 ],
                 "summary": "تحديث بيانات ميزة",
                 "description": "تحديث بيانات ميزة في النظام.",
-                "operationId": "8baa484fc7850ecb57d2f85f369a1d5b",
+                "operationId": "5e0a61bda852feb9d3a3b87c8d005981",
                 "parameters": [
                     {
                         "name": "id",
@@ -2537,7 +2537,7 @@
                 ],
                 "summary": "حذف ميزة ناعماً",
                 "description": "حذف ميزة ناعماً.",
-                "operationId": "0ef40e6ee831e3a736d43682a1518d43",
+                "operationId": "7a4dc18aebc0d9e7931755fa539fb59b",
                 "parameters": [
                     {
                         "name": "id",
@@ -2562,7 +2562,7 @@
                 ],
                 "summary": "تبديل حالة تفعيل الميزة",
                 "description": "تبديل حالة تفعيل الميزة (نشط / معطل).",
-                "operationId": "b72c83f3f5976411f07b983e94a7f448",
+                "operationId": "24b208af449008b84e0693eba6a1270b",
                 "parameters": [
                     {
                         "name": "id",
@@ -2587,7 +2587,7 @@
                 ],
                 "summary": "عرض الميزات المحذوفة ناعماً",
                 "description": "عرض قائمة الميزات المحذوفة ناعماً.",
-                "operationId": "bbe88a96ba7440e65dbe2c856b4b3782",
+                "operationId": "8527f0a472b2c07cd882904cd1da4394",
                 "parameters": [
                     {
                         "name": "search",
@@ -2629,7 +2629,7 @@
                 ],
                 "summary": "استعادة ميزة محذوفة",
                 "description": "استعادة ميزة محذوفة ناعماً.",
-                "operationId": "dfda515767baf731d3d4646c1eee3e29",
+                "operationId": "3dd7df088385ec29761a6386561082ec",
                 "parameters": [
                     {
                         "name": "id",
@@ -2654,7 +2654,7 @@
                 ],
                 "summary": "حذف نهائي للميزة",
                 "description": "حذف نهائي للميزة.",
-                "operationId": "91bedf6c1982350c77107f080f3d00b3",
+                "operationId": "6a1105919f582e11a6b9927974b2cde3",
                 "parameters": [
                     {
                         "name": "id",
@@ -2679,7 +2679,7 @@
                 ],
                 "summary": "حذف مجمع للميزات",
                 "description": "حذف مجمع ناعم للميزات.",
-                "operationId": "b501a90bc4435ec9a20775a5a855a033",
+                "operationId": "f608e52b633d33eaee4f9b00250b6766",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -2717,7 +2717,7 @@
                 ],
                 "summary": "استعادة مجمعة للميزات",
                 "description": "استعادة مجمعة للميزات.",
-                "operationId": "7aa935a2b9dba14b34002d0b647cb8a5",
+                "operationId": "4e6903c32c264d5663d86c4ffa38501b",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -2755,7 +2755,7 @@
                 ],
                 "summary": "حذف نهائي مجمع للميزات",
                 "description": "حذف نهائي مجمع للميزات.",
-                "operationId": "6f25314e64039f5315627b45de3da6c1",
+                "operationId": "1c4bbbbf0920d0654ab92e431fec7830",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -2793,7 +2793,7 @@
                 ],
                 "summary": "عرض قائمة المحافظات",
                 "description": "عرض قائمة المحافظات مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "a3f352ba2cefaca2e9c6866ae4a30347",
+                "operationId": "6834bb573e88d838e02aa4fb2d666a65",
                 "parameters": [
                     {
                         "name": "search",
@@ -2833,7 +2833,7 @@
                 ],
                 "summary": "إنشاء محافظة جديدة",
                 "description": "إنشاء محافظة جديدة.",
-                "operationId": "bd422e3ce0d69d514f8ff26277d916ca",
+                "operationId": "8df155a438763184bd7a2c86f4e51a16",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -2867,7 +2867,7 @@
                 ],
                 "summary": "المحافظات مع أعداد المديريات والشبكات",
                 "description": "جلب كافة المحافظات مع إحصائيات المديريات والشبكات ونقاط البيع.",
-                "operationId": "10ae25f96cfb54ea9fee6c7539ae5574",
+                "operationId": "1f29c197141ae4046570253f813ff654",
                 "responses": {
                     "200": {
                         "description": "تم استرجاع إحصائيات المحافظات بنجاح"
@@ -2882,7 +2882,7 @@
                 ],
                 "summary": "عرض تفاصيل محافظة محددة",
                 "description": "عرض تفاصيل محافظة محددة عبر المعرف الرقمي.",
-                "operationId": "6149f7e53b2dae5f1652ea5c2ce0d648",
+                "operationId": "a7be5d235e340abd89a7d29f784a9850",
                 "parameters": [
                     {
                         "name": "id",
@@ -2905,7 +2905,7 @@
                 ],
                 "summary": "تحديث بيانات محافظة",
                 "description": "تحديث بيانات محافظة قائمة.",
-                "operationId": "8528c71c2f82422e431db43f59e94b7e",
+                "operationId": "63ac2a13fcd03536dc479f749d871d8e",
                 "parameters": [
                     {
                         "name": "id",
@@ -2945,7 +2945,7 @@
                 ],
                 "summary": "حذف محافظة ناعماً",
                 "description": "حذف محافظة ناعماً.",
-                "operationId": "783c02a86a8328886cc22a8ca346da34",
+                "operationId": "bfa4aecf0eff935ef4116f469ab88352",
                 "parameters": [
                     {
                         "name": "id",
@@ -2970,7 +2970,7 @@
                 ],
                 "summary": "عرض المحافظات المحذوفة ناعماً",
                 "description": "عرض قائمة المحافظات المحذوفة ناعماً.",
-                "operationId": "01a0c9dc915a05465a7d3103d6be4ba6",
+                "operationId": "b3170a1bb91aa178b1ab1e44dc35d9ad",
                 "parameters": [
                     {
                         "name": "search",
@@ -3012,7 +3012,7 @@
                 ],
                 "summary": "استعادة محافظة محذوفة ناعماً",
                 "description": "استعادة محافظة محذوفة ناعماً.",
-                "operationId": "0a584b5f139274c4d060df8931d43470",
+                "operationId": "2e72a7f08759d5f4c35ba9ad85677009",
                 "parameters": [
                     {
                         "name": "id",
@@ -3037,7 +3037,7 @@
                 ],
                 "summary": "الحذف النهائي لمحافظة",
                 "description": "الحذف النهائي لمحافظة.",
-                "operationId": "f493fa1045e7acc8ecca776951d6a3ff",
+                "operationId": "1ffcbbbcf18fba5b16af944d688728cd",
                 "parameters": [
                     {
                         "name": "id",
@@ -3062,7 +3062,7 @@
                 ],
                 "summary": "الحذف المجمع للمحافظات ناعماً",
                 "description": "الحذف المجمع للمحافظات ناعماً.",
-                "operationId": "2f92f928e2f5bb22370d3ed0e22b0962",
+                "operationId": "e90db524f9147f69cee9429582a84e78",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -3100,7 +3100,7 @@
                 ],
                 "summary": "الاستعادة المجمعة للمحافظات",
                 "description": "الاستعادة المجمعة للمحافظات.",
-                "operationId": "1babea9c4eddeeea799bdd5fdf2a4cc2",
+                "operationId": "572d11dbe57a0ecf7c6012ebc8646268",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -3138,7 +3138,7 @@
                 ],
                 "summary": "الحذف النهائي المجمع للمحافظات",
                 "description": "الحذف النهائي المجمع للمحافظات.",
-                "operationId": "89a695738ae9fb15dd9e4231404de426",
+                "operationId": "6fdfb9dc55721a768dc2d448dbe729f7",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -3176,7 +3176,7 @@
                 ],
                 "summary": "عرض قائمة مزودي الشبكات",
                 "description": "استرجاع قائمة الشبكات مع دعم الفلترة حسب الحالة، المحافظة، البحث، والترقيم.",
-                "operationId": "de5bf8f68936cbb38eb6e840916a5eb6",
+                "operationId": "b843af1c6307815a74b78c495ade46e9",
                 "parameters": [
                     {
                         "name": "search",
@@ -3230,7 +3230,7 @@
                 ],
                 "summary": "إضافة شبكة جديدة إدارياً",
                 "description": "إنشاء شبكة جديدة إدارياً.",
-                "operationId": "2fc0609de4a408da0d4162464e8e53b4",
+                "operationId": "987dcaaf1f8b87984234eae2110b65d7",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -3291,7 +3291,7 @@
                 ],
                 "summary": "عرض تفاصيل شبكة",
                 "description": "جلب بيانات مزود الشبكة الكاملة مع المحافظة والمديرية والمحفظة.",
-                "operationId": "d348263ba24e14580ab3e5a9f02c9e78",
+                "operationId": "c685c2d7b0b885b8817aa210fa005337",
                 "parameters": [
                     {
                         "name": "id",
@@ -3317,7 +3317,7 @@
                 ],
                 "summary": "تعديل بيانات شبكة",
                 "description": "تحديث بيانات شبكة قائمة.",
-                "operationId": "c41d9348819458273509803c7f3a479f",
+                "operationId": "a059c63bca175a310b25c7f4b128fe2e",
                 "parameters": [
                     {
                         "name": "id",
@@ -3384,7 +3384,7 @@
                 ],
                 "summary": "حذف شبكة (Soft Delete)",
                 "description": "الحذف المؤقت لشبكة.",
-                "operationId": "6cd4a48f6e981fe890fbd2ed1608b53e",
+                "operationId": "1cc284fbfe918e112edadbd2c6ddc85d",
                 "parameters": [
                     {
                         "name": "id",
@@ -3412,7 +3412,7 @@
                 ],
                 "summary": "سلة محذوفات الشبكات",
                 "description": "عرض سلة محذوفات الشبكات.",
-                "operationId": "70d049638077b7d50a43ead7560bca03",
+                "operationId": "0ac897d4173128a119490900e2a27a15",
                 "parameters": [
                     {
                         "name": "search",
@@ -3454,7 +3454,7 @@
                 ],
                 "summary": "استعادة شبكة محذوفة",
                 "description": "استعادة شبكة محذوفة مؤقتاً.",
-                "operationId": "4a0a311fa60f131111b3a5a9648222a7",
+                "operationId": "ec31ea4f621c1ac518fe8fefb5af8dd6",
                 "parameters": [
                     {
                         "name": "id",
@@ -3482,7 +3482,7 @@
                 ],
                 "summary": "حذف نهائي لشبكة",
                 "description": "الحذف النهائي لشبكة من قاعدة البيانات.",
-                "operationId": "805cbb1a357dc4e8cbe725386ed6ac48",
+                "operationId": "41e46944631d7c4a3c620c5b8293f184",
                 "parameters": [
                     {
                         "name": "id",
@@ -3510,7 +3510,7 @@
                 ],
                 "summary": "حذف مجمع للشبكات (Batch Delete)",
                 "description": "حذف مجمع لعدة شبكات.",
-                "operationId": "eef870ff42608d845ca33fc3d40cc6be",
+                "operationId": "2f92695699be90f6bc53add48dc0e864",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -3551,7 +3551,7 @@
                 ],
                 "summary": "استعادة مجمعة للشبكات (Batch Restore)",
                 "description": "استعادة مجمعة لعدة شبكات من سلة المحذوفات.",
-                "operationId": "861a2cce40dca2d4557aa9d5f7b40d81",
+                "operationId": "f611101a9e212c3f57e2148b9afb61be",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -3592,7 +3592,7 @@
                 ],
                 "summary": "حذف نهائي مجمع للشبكات (Batch Force Delete)",
                 "description": "حذف نهائي مجمع لعدة شبكات.",
-                "operationId": "1c87c69b2f00b256965f076bb926208f",
+                "operationId": "9dde2057e0cc0597dc621893f831d721",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -3633,7 +3633,7 @@
                 ],
                 "summary": "الموافقة على طلب شبكة وتفعيل حسابها",
                 "description": "اعتماد والموافقة على طلب مزود شبكة.",
-                "operationId": "66bdf646e4f73ee59e33324130b611bb",
+                "operationId": "1c16ffe6cafbbb98774365a3a42dd088",
                 "parameters": [
                     {
                         "name": "id",
@@ -3664,7 +3664,7 @@
                 ],
                 "summary": "رفض طلب مزود شبكة مع السبب",
                 "description": "رفض طلب مزود شبكة مع توثيق السبب وإشعار صاحبه.",
-                "operationId": "5555cd72b09f78f23ce5b5f12d7465ba",
+                "operationId": "766f6566eca774fffad7bacc5aa50f28",
                 "parameters": [
                     {
                         "name": "id",
@@ -3714,7 +3714,7 @@
                 ],
                 "summary": "عرض ارتباطات نقاط البيع بالشبكات",
                 "description": "استرجاع قائمة ارتباطات نقاط البيع بمزودي الشبكات مع دعم الفلترة حسب الشبكة، نقطة البيع، الحالة، والبحث.",
-                "operationId": "7a405bf838da8d4d6d6bfdbc3f40f8da",
+                "operationId": "0d72fc92469d887baebea7d3baaed26a",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -3770,7 +3770,7 @@
                 ],
                 "summary": "ربط نقطة بيع بمزود شبكة",
                 "description": "إنشاء ارتباط جديد بين نقطة بيع وشبكة.",
-                "operationId": "f5020020c91a79b44cb549bc53dda323",
+                "operationId": "aedb8c5fcba5f7ba7da4c38b558f3613",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -3817,7 +3817,7 @@
                 ],
                 "summary": "عرض تفاصيل ارتباط نقطة بيع بشبكة",
                 "description": "عرض تفاصيل ارتباط محدد.",
-                "operationId": "c0a9ebdc645969f39af0b905320af995",
+                "operationId": "5d5579dd8654b5163d17c785c9ca7707",
                 "parameters": [
                     {
                         "name": "id",
@@ -3843,7 +3843,7 @@
                 ],
                 "summary": "تعديل حالة ارتباط نقطة بيع بشبكة",
                 "description": "تحديث حالة ارتباط نقطة بيع بشبكة.",
-                "operationId": "61642f81ca17ceaf93caa71bbb2d8d27",
+                "operationId": "96a0640a48984641378d692c95d38eb9",
                 "parameters": [
                     {
                         "name": "id",
@@ -3887,7 +3887,7 @@
                 ],
                 "summary": "فك ارتباط نقطة بيع بشبكة",
                 "description": "حذف أو فك ارتباط نقطة بيع بشبكة.",
-                "operationId": "eb4c56b3b76e8a9357093a1b3c3a7fa9",
+                "operationId": "12e26dd9671ba9bbfffed051ea7781ad",
                 "parameters": [
                     {
                         "name": "id",
@@ -3915,7 +3915,7 @@
                 ],
                 "summary": "تبديل حالة ارتباط نقطة بيع بشبكة",
                 "description": "تبديل حالة الارتباط (تفعيل / إلغاء تفعيل).",
-                "operationId": "3283d38a76cdc143d84ebdf063b834ab",
+                "operationId": "7d9a3ab3ac34b4386c0c11473426f582",
                 "parameters": [
                     {
                         "name": "id",
@@ -3943,7 +3943,7 @@
                 ],
                 "summary": "فك ارتباط مجمع لنقاط البيع بالشبكات",
                 "description": "حذف مجمع لسجلات الارتباط بين الشبكات ونقاط البيع.",
-                "operationId": "a331ce544be4490be505296db95f639a",
+                "operationId": "b2891b4c0bbf984b8a1b90d76ae337ec",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -3981,7 +3981,7 @@
                 ],
                 "summary": "تغيير حالة مجمعة لارتباطات نقاط البيع بالشبكات",
                 "description": "تغيير حالة مجموعة ارتباطات مجمعة (تفعيل أو إلغاء تفعيل مجمع).",
-                "operationId": "27e1c4d752a84fd8d50850756c965a75",
+                "operationId": "7eb05d84a4a9e9bfa23afa7d894595ac",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -4024,7 +4024,7 @@
                 ],
                 "summary": "عرض نقاط البيع المرتبطة بشبكة محددة",
                 "description": "عرض نقاط البيع المرتبطة بشبكة محددة.",
-                "operationId": "0a6221c137ab6062b3b1e7232a5f4dd3",
+                "operationId": "a492aa1a1fe9dc896f5490bc99d92e3f",
                 "parameters": [
                     {
                         "name": "id",
@@ -4049,7 +4049,7 @@
                 ],
                 "summary": "عرض الشبكات المرتبطة بنقطة بيع محددة",
                 "description": "عرض الشبكات المرتبطة بنقطة بيع محددة.",
-                "operationId": "d1cba80ae9cffdd935f5fa43bdf69c75",
+                "operationId": "2d5cc863b53c52ea17d8df4498fbd9e0",
                 "parameters": [
                     {
                         "name": "id",
@@ -4074,7 +4074,7 @@
                 ],
                 "summary": "عرض قائمة محافظ مزودي الشبكات",
                 "description": "عرض قائمة محافظ الشبكات مع الفلترة والبحث والترقيم.",
-                "operationId": "bf373c43b1c3a5b18681fda95bd2da5a",
+                "operationId": "c16a1b690982992e879c1a0deee77cfc",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -4146,7 +4146,7 @@
                 ],
                 "summary": "إنشاء محفظة جديدة لمزود شبكة",
                 "description": "إنشاء وتدشين محفظة جديدة لمزود الشبكة.",
-                "operationId": "5a9afeb1715e69b254f0801a051809bc",
+                "operationId": "7207597aa166fa0b302482fff06dc544",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -4189,7 +4189,7 @@
                 ],
                 "summary": "عرض تفاصيل محفظة شبكة عبر المعرف",
                 "description": "عرض تفاصيل محفظة شبكة محددة.",
-                "operationId": "2d6fe11583ae2eebc3d3905c8ed18db5",
+                "operationId": "3b8183032152069d633c61ceab434a6a",
                 "parameters": [
                     {
                         "name": "id",
@@ -4215,7 +4215,7 @@
                 ],
                 "summary": "تحديث حالة محفظة شبكة",
                 "description": "تحديث حالة محفظة شبكة (تفعيل / تجميد).",
-                "operationId": "9857e4c97168d7cce09adb177e8023d2",
+                "operationId": "e5baec92be02300dcda761d0811be455",
                 "parameters": [
                     {
                         "name": "id",
@@ -4256,7 +4256,7 @@
                 ],
                 "summary": "حذف محفظة شبكة مؤقتاً",
                 "description": "حذف محفظة شبكة (حذف مؤقت).",
-                "operationId": "ff77d1e35d3f2bb718145b81c6fc083a",
+                "operationId": "00193f16c48bbe06929d3c081c4096d5",
                 "parameters": [
                     {
                         "name": "id",
@@ -4281,7 +4281,7 @@
                 ],
                 "summary": "عرض محفظة شبكة عبر معرف الشبكة",
                 "description": "عرض محفظة شبكة محددة عبر معرف الشبكة.",
-                "operationId": "8d9b43e68517008aa8f3484e5eb5bb84",
+                "operationId": "98c69449c24eb9f849d886d82342db4d",
                 "parameters": [
                     {
                         "name": "networkId",
@@ -4306,7 +4306,7 @@
                 ],
                 "summary": "إيداع رصيد في محفظة الشبكة",
                 "description": "إيداع رصيد مالي في محفظة الشبكة مع تسجيل القيد بدفتر الأستاذ.",
-                "operationId": "e0b4fa2263a813d1775bd82230ac58e9",
+                "operationId": "c13a230cc7f57e356e3801563b460330",
                 "parameters": [
                     {
                         "name": "id",
@@ -4360,7 +4360,7 @@
                 ],
                 "summary": "سحب رصيد من محفظة الشبكة",
                 "description": "سحب رصيد مالي من محفظة الشبكة مع تسجيل القيد بدفتر الأستاذ.",
-                "operationId": "16904d5667a4d2c482cde12ce89ec070",
+                "operationId": "357f275540e09d1f79a38515e67077e0",
                 "parameters": [
                     {
                         "name": "id",
@@ -4414,7 +4414,7 @@
                 ],
                 "summary": "عرض كشف حساب وسجلات محفظة الشبكة",
                 "description": "استعراض قيود ودفتر أستاذ محفظة الشبكة.",
-                "operationId": "13e6803a54b85f8ab174b55ef362df93",
+                "operationId": "a0f5fbc731c4327f933d01281bc5b04f",
                 "parameters": [
                     {
                         "name": "id",
@@ -4439,7 +4439,7 @@
                 ],
                 "summary": "عرض المحافظ المحذوفة مؤقتاً",
                 "description": "عرض قائمة المحافظ المحذوفة مؤقتاً.",
-                "operationId": "f725a23b3a9b626a4d41f36b3ec30192",
+                "operationId": "06959a6afc49c4d2b6da56272ea511af",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -4489,7 +4489,7 @@
                 ],
                 "summary": "استعادة محفظة محذوفة مؤقتاً",
                 "description": "استعادة محفظة محذوفة مؤقتاً.",
-                "operationId": "8bc2784203a96c53526a4bfa5777259d",
+                "operationId": "25f77c6ab8a5d64ee48817e834f9e2b9",
                 "parameters": [
                     {
                         "name": "id",
@@ -4514,7 +4514,7 @@
                 ],
                 "summary": "الحذف النهائي لمحفظة شبكة",
                 "description": "الحذف النهائي لمحفظة شبكة من قاعدة البيانات.",
-                "operationId": "3cce5c73206507fe8aa16daee1be38a1",
+                "operationId": "20e1e86743e7dc85f8c173f1792d9ae1",
                 "parameters": [
                     {
                         "name": "id",
@@ -4539,7 +4539,7 @@
                 ],
                 "summary": "حذف مجمع لمحافظ الشبكات",
                 "description": "الحذف المجمع لمحافظ الشبكات.",
-                "operationId": "2992fe5725aaea5e0081d73fdbc29e38",
+                "operationId": "b9985a54330a50c020479427e4304f9e",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -4577,7 +4577,7 @@
                 ],
                 "summary": "استعادة مجمعة لمحافظ الشبكات",
                 "description": "الاستعادة المجمعة لمحافظ الشبكات.",
-                "operationId": "d7b82e3808486b3e8c8bc94cba35038a",
+                "operationId": "db97906ec88a4367d70a4be3ae6274c6",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -4615,7 +4615,7 @@
                 ],
                 "summary": "حذف نهائي مجمع لمحافظ الشبكات",
                 "description": "الحذف النهائي المجمع لمحافظ الشبكات.",
-                "operationId": "30561eee1abcf1e5c7fcc809b479955a",
+                "operationId": "12144969dde5af5c081a8dd1299125f6",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -4653,7 +4653,7 @@
                 ],
                 "summary": "عرض قائمة الإشعارات العامة",
                 "description": "عرض قائمة الإشعارات العامة مع الفلترة والترقيم بالمؤشر (إداري).",
-                "operationId": "cac3bdde44f0be0512f7d05c0a6064e4",
+                "operationId": "1b71181dec8338eabf1b36914eacd755",
                 "parameters": [
                     {
                         "name": "user_id",
@@ -4709,7 +4709,7 @@
                 ],
                 "summary": "إنشاء وإرسال إشعار جديد",
                 "description": "إنشاء إشعار وتوجيهه لمستخدم محدد (إداري).",
-                "operationId": "1fd84d2c66035574da4902f416cbd96a",
+                "operationId": "9afe28a5ec9cd6a39057ddc17f51a482",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -4768,7 +4768,7 @@
                 ],
                 "summary": "عرض إشعارات المستخدم الحالي",
                 "description": "عرض إشعارات المستخدم الحالي المسجل دخوله.",
-                "operationId": "e93a3dc022ba0a5c50ebcf3e49750637",
+                "operationId": "7b9c8dd903d4add28a4ba234043c3eab",
                 "parameters": [
                     {
                         "name": "is_read",
@@ -4802,7 +4802,7 @@
                 ],
                 "summary": "عدد الإشعارات غير المقروءة",
                 "description": "جلب عدد الإشعارات غير المقروءة للمستخدم الحالي.",
-                "operationId": "9fd717daa9c0cfd209252ee25d0715ea",
+                "operationId": "f435314cea9f3a340ef949ff47c7de6a",
                 "responses": {
                     "200": {
                         "description": "تم جلب عدد الإشعارات غير المقروءة بنجاح"
@@ -4817,7 +4817,7 @@
                 ],
                 "summary": "عرض الإشعارات المحذوفة",
                 "description": "عرض قائمة الإشعارات المحذوفة ناعماً.",
-                "operationId": "2257d201653828612d60bdb60157587f",
+                "operationId": "50e7e949a8c7395768bec51d6cd6c0d7",
                 "parameters": [
                     {
                         "name": "user_id",
@@ -4875,7 +4875,7 @@
                 ],
                 "summary": "عرض تفاصيل إشعار",
                 "description": "عرض تفاصيل إشعار محدد.",
-                "operationId": "22581e4d73af25a9036c6610c7e8fc72",
+                "operationId": "51b9a27721e012aa9ff15e3040eb67ed",
                 "parameters": [
                     {
                         "name": "id",
@@ -4898,7 +4898,7 @@
                 ],
                 "summary": "تحديث بيانات إشعار",
                 "description": "تحديث بيانات إشعار قائم (إداري).",
-                "operationId": "b4f86f6c4f52e080b246d560038cdc9b",
+                "operationId": "78012197d4b28fef2e0a8854ff9876ca",
                 "parameters": [
                     {
                         "name": "id",
@@ -4960,7 +4960,7 @@
                 ],
                 "summary": "حذف إشعار ناعماً",
                 "description": "حذف إشعار ناعماً.",
-                "operationId": "3f8fe68ea04e79015d8aad5912cadbc1",
+                "operationId": "8dbfa0da25f403837091c5a242ac96c1",
                 "parameters": [
                     {
                         "name": "id",
@@ -4985,7 +4985,7 @@
                 ],
                 "summary": "استعادة إشعار محذوف",
                 "description": "استعادة إشعار محذوف ناعماً.",
-                "operationId": "90b6355c485dfeac76f6b16e78272b06",
+                "operationId": "b17252577f63c5c4a90e5e430ca1e7c3",
                 "parameters": [
                     {
                         "name": "id",
@@ -5010,7 +5010,7 @@
                 ],
                 "summary": "الحذف النهائي لإشعار",
                 "description": "الحذف النهائي لإشعار من قاعدة البيانات.",
-                "operationId": "c22ead39be21b2d944fd413947968044",
+                "operationId": "d99e8daa15e9c9a0b31cbb1b22353f10",
                 "parameters": [
                     {
                         "name": "id",
@@ -5035,7 +5035,7 @@
                 ],
                 "summary": "الحذف المجمع للإشعارات",
                 "description": "الحذف المجمع للإشعارات ناعماً.",
-                "operationId": "cbd5aea8054149b54ada66689ebf1261",
+                "operationId": "d9756c1a33ea3aeb2f11e056741d7a19",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -5073,7 +5073,7 @@
                 ],
                 "summary": "الاستعادة المجمعة للإشعارات",
                 "description": "الاستعادة المجمعة للإشعارات المحذوفة ناعماً.",
-                "operationId": "55f16722cef63f21461b98a3e11b3d2d",
+                "operationId": "bfd049bb39d9b3d08e4496ddbf86eefd",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -5111,7 +5111,7 @@
                 ],
                 "summary": "الحذف النهائي المجمع للإشعارات",
                 "description": "الحذف النهائي المجمع للإشعارات من قاعدة البيانات.",
-                "operationId": "846b91a7e9336ce40022cd60f6c6959e",
+                "operationId": "37c21f65cfd062066ba394d5693feeac",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -5149,7 +5149,7 @@
                 ],
                 "summary": "تمييز إشعار كمقروء",
                 "description": "تمييز إشعار محدد كمقروء للمستخدم الحالي.",
-                "operationId": "fc1834c084071515133aef066568ee30",
+                "operationId": "a20894f74ac19ef10fd147b73a6397f7",
                 "parameters": [
                     {
                         "name": "id",
@@ -5174,7 +5174,7 @@
                 ],
                 "summary": "تمييز كافة الإشعارات كمقروءة",
                 "description": "تمييز كافة إشعارات المستخدم الحالي كمقروءة دفعة واحدة.",
-                "operationId": "617206fbe9a29f0eb57768eb7d32e64f",
+                "operationId": "9476666465e583f43f1fe4ab770328ed",
                 "responses": {
                     "200": {
                         "description": "تم تمييز جميع الإشعارات كمقروءة بنجاح"
@@ -5189,7 +5189,7 @@
                 ],
                 "summary": "تسجيل أو تحديث رمز إشعارات الدفع (FCM Token)",
                 "description": "تسجيل أو تحديث رمز الإشعارات الفورية (FCM Token) للجهاز الحالي.",
-                "operationId": "edd87a15500e5a8b2aae979df4eba517",
+                "operationId": "f4a3c179efafad1792ee16f1347836a1",
                 "requestBody": {
                     "description": "بيانات الجهاز ورمز FCM",
                     "required": true,
@@ -5246,7 +5246,7 @@
                 ],
                 "summary": "توليد وإرسال رمز تحقق جديد (OTP)",
                 "description": "يولد رمز تحقق مؤقت معتمد ويرسله عبر رسالة نصية SMS إلى رقم الهاتف المسجل مع مراعاة فترات التهدئة.",
-                "operationId": "ba58c9bebe207e3086bbc552bd0fc4a6",
+                "operationId": "29e539778bea1376b8419205d04deacd",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -5290,7 +5290,7 @@
                 ],
                 "summary": "التحقق من صحة رمز OTP",
                 "description": "يتحقق من مطابقة الرمز المدخل مع الرمز الصادر والمخزن في النظام وعدم انتهاء صلاحيته أو تجاوز المحاولات.",
-                "operationId": "92035b2a5758b7fcd2a6a4ec94336689",
+                "operationId": "5f93d12ff088b4c5d50f1c0b2ee70d1f",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -5337,7 +5337,7 @@
                 ],
                 "summary": "إعادة إرسال رمز التحقق (Resend OTP)",
                 "description": "إعادة توليد وإرسال رمز تحقق جديد بعد فحص انقضاء فترة التهدئة المحددة.",
-                "operationId": "62ef73f50c2d15a146407a1e6cd8ef17",
+                "operationId": "617b71a0b78deb0f9e06ae8352280aae",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -5381,7 +5381,7 @@
                 ],
                 "summary": "عرض قائمة نقاط البيع",
                 "description": "استرجاع قائمة نقاط البيع والوكلاء مع دعم الفلترة حسب الحالة، المحافظة، المديرية، البحث، والترقيم.",
-                "operationId": "8f74ce693aac15c2f3d0359638a0ccde",
+                "operationId": "cf8f39a39724f2e8c6aff058aba6ea95",
                 "parameters": [
                     {
                         "name": "search",
@@ -5443,7 +5443,7 @@
                 ],
                 "summary": "إضافة نقطة بيع جديدة إدارياً",
                 "description": "إنشاء نقطة بيع جديدة إدارياً.",
-                "operationId": "8d673852cc8555f9ca10a32fc90068ef",
+                "operationId": "a30912cee506c420d6dbf9b4e0192a87",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -5513,7 +5513,7 @@
                 ],
                 "summary": "عرض تفاصيل نقطة بيع",
                 "description": "جلب بيانات نقطة البيع الكاملة مع المحافظة والمديرية والمحافظ.",
-                "operationId": "9b822195a90db07a7d3ea4baf7240248",
+                "operationId": "6874aef4f58e178fbf2229710e80028b",
                 "parameters": [
                     {
                         "name": "id",
@@ -5539,7 +5539,7 @@
                 ],
                 "summary": "تحديث بيانات نقطة بيع",
                 "description": "تحديث بيانات نقطة بيع قائمة.",
-                "operationId": "b551a1bba02200914d36bb36a9ec4306",
+                "operationId": "b875ee9225c3fd2465c28589006a34d4",
                 "parameters": [
                     {
                         "name": "id",
@@ -5614,7 +5614,7 @@
                 ],
                 "summary": "حذف نقطة بيع (مؤقت)",
                 "description": "الحذف المؤقت لنقطة بيع (Soft Delete).",
-                "operationId": "a43fb96a2ce07f7dd44048c6d08e725b",
+                "operationId": "3922feb7c64cbe8d40a3ce4acee8f219",
                 "parameters": [
                     {
                         "name": "id",
@@ -5642,7 +5642,7 @@
                 ],
                 "summary": "عرض نقاط البيع في سلة المحذوفات",
                 "description": "استرجاع قائمة نقاط البيع المحذوفة مؤقتاً.",
-                "operationId": "f0b4f24be0471f791f67619ce4809130",
+                "operationId": "ebee380d01fa8e9d33d1b0875bfa4dec",
                 "parameters": [
                     {
                         "name": "search",
@@ -5684,7 +5684,7 @@
                 ],
                 "summary": "استعادة نقطة بيع محذوفة",
                 "description": "استعادة نقطة بيع محذوفة مؤقتاً.",
-                "operationId": "1982355af0c908e931489a24082eaad7",
+                "operationId": "3da6b7d06f22f3b9d090e72bee888715",
                 "parameters": [
                     {
                         "name": "id",
@@ -5712,7 +5712,7 @@
                 ],
                 "summary": "الحذف النهائي لنقطة بيع",
                 "description": "الحذف النهائي لنقطة بيع من قاعدة البيانات.",
-                "operationId": "da7053ccb5abb3a6ccc9c20f867d9824",
+                "operationId": "f9d2c065bbce4a3280485f77d2c7351f",
                 "parameters": [
                     {
                         "name": "id",
@@ -5737,7 +5737,7 @@
                 ],
                 "summary": "حذف مجمع لنقاط البيع (Batch Delete)",
                 "description": "حذف مجمع لعدة نقاط بيع مؤقتاً.",
-                "operationId": "75070ad47069de7185cceb29864e2ef0",
+                "operationId": "ba6676ce9be8a594ba18312263770d78",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -5775,7 +5775,7 @@
                 ],
                 "summary": "استعادة مجمعة لنقاط البيع (Batch Restore)",
                 "description": "استعادة مجمعة لعدة نقاط بيع من سلة المحذوفات.",
-                "operationId": "71d227ae33db0bb3819e2788715874fe",
+                "operationId": "e33e928798b13cb6ce53427877952381",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -5813,7 +5813,7 @@
                 ],
                 "summary": "حذف نهائي مجمع لنقاط البيع (Batch Force Delete)",
                 "description": "حذف نهائي مجمع لعدة نقاط بيع.",
-                "operationId": "1815b3809791332e320508b92de083da",
+                "operationId": "0911480362b7a5a8ae65cbddc1531b1f",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -5851,7 +5851,7 @@
                 ],
                 "summary": "اعتماد والموافقة على نقطة بيع",
                 "description": "الموافقة على طلب تسجيل نقطة بيع وتفعيل الحساب.",
-                "operationId": "4df5dce01ec1dae5f8441d5344e52df8",
+                "operationId": "0ce9a9c28978ade5a6a058cf46aca3b5",
                 "parameters": [
                     {
                         "name": "id",
@@ -5879,7 +5879,7 @@
                 ],
                 "summary": "رفض طلب نقطة بيع",
                 "description": "رفض طلب تسجيل نقطة بيع مع توثيق السبب.",
-                "operationId": "f793f7370864ec5fb3474adca63b6989",
+                "operationId": "52fffa8ae8b75b4b90a744e447fc0990",
                 "parameters": [
                     {
                         "name": "id",
@@ -5926,7 +5926,7 @@
                 ],
                 "summary": "عرض قائمة محافظ نقاط البيع",
                 "description": "عرض قائمة محافظ نقاط البيع مع الفلترة والبحث والترقيم.",
-                "operationId": "54dcb4bff52e2bd594e6be8b7124ced2",
+                "operationId": "d1f79a9fc329bc0b4400fce64a32d9d6",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -6006,7 +6006,7 @@
                 ],
                 "summary": "إنشاء محفظة جديدة لنقطة بيع",
                 "description": "إنشاء محفظة جديدة لنقطة بيع.",
-                "operationId": "e8f1a5a1705ce01cec02f37eecd33aef",
+                "operationId": "8dd636474c1f36785a119bff0eb2fd95",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -6054,7 +6054,7 @@
                 ],
                 "summary": "عرض تفاصيل محفظة نقطة بيع عبر المعرف",
                 "description": "عرض تفاصيل محفظة نقطة بيع محددة.",
-                "operationId": "b0301acbf529680f4dbc5b34de5b5d00",
+                "operationId": "761c2d1f80f169d202f33414b28885e3",
                 "parameters": [
                     {
                         "name": "id",
@@ -6080,7 +6080,7 @@
                 ],
                 "summary": "تحديث حالة محفظة نقطة بيع",
                 "description": "تحديث حالة محفظة نقطة بيع (تفعيل / تجميد).",
-                "operationId": "b924673c3c8cebc80d1d83baed565c09",
+                "operationId": "2d5abcda293d6fd5bcf8dc687e3e64e3",
                 "parameters": [
                     {
                         "name": "id",
@@ -6121,7 +6121,7 @@
                 ],
                 "summary": "حذف محفظة نقطة بيع مؤقتاً",
                 "description": "حذف محفظة نقطة بيع (حذف مؤقت).",
-                "operationId": "feee8ba0ee68937ea2e72ae433457fb3",
+                "operationId": "2f32ae3d2523e279c515790f6c7457fa",
                 "parameters": [
                     {
                         "name": "id",
@@ -6146,7 +6146,7 @@
                 ],
                 "summary": "عرض محفظة نقطة بيع عبر معرف الشبكة ومعرف نقطة البيع",
                 "description": "عرض محفظة نقطة بيع محددة لشبكة معينة.",
-                "operationId": "b4a6185da44a0015cb72a9b478e41fac",
+                "operationId": "ece97c800eaacdb1be34e2e0c1d921eb",
                 "parameters": [
                     {
                         "name": "networkId",
@@ -6179,7 +6179,7 @@
                 ],
                 "summary": "إيداع رصيد مباشر في محفظة نقطة البيع",
                 "description": "إيداع رصيد مالي مباشر في محفظة نقطة البيع.",
-                "operationId": "18c98c7302f67633131338230cebed9f",
+                "operationId": "ad4627bfbed1c78aaf844ddb6b97c2de",
                 "parameters": [
                     {
                         "name": "id",
@@ -6233,7 +6233,7 @@
                 ],
                 "summary": "سحب رصيد مباشر من محفظة نقطة البيع",
                 "description": "سحب رصيد مالي مباشر من محفظة نقطة البيع.",
-                "operationId": "c763dcf87e60622558d91d165ee9f303",
+                "operationId": "5dcbe6e181c54a499db1a0998b499b5a",
                 "parameters": [
                     {
                         "name": "id",
@@ -6287,7 +6287,7 @@
                 ],
                 "summary": "تحويل وتغذية رصيد من محفظة الشبكة إلى محفظة نقطة البيع",
                 "description": "تحويل وتغذية رصيد من محفظة الشبكة إلى محفظة نقطة البيع (عملية ذرية مشتركة).",
-                "operationId": "255c2aa2a24a2407b5f7fc4f82339c33",
+                "operationId": "bd5ea6d8f4a74bef77a967284faab43e",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -6335,7 +6335,7 @@
                 ],
                 "summary": "استرجاع أو تحويل رصيد من محفظة نقطة البيع إلى محفظة الشبكة",
                 "description": "استرجاع أو تحويل رصيد من محفظة نقطة البيع إلى محفظة الشبكة (عملية ذرية مشتركة).",
-                "operationId": "dbf7d094374f4ed90161c85ee3fb2a78",
+                "operationId": "68b8b1407f0f0a2cd1ee4f4ddb1c01a6",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -6383,7 +6383,7 @@
                 ],
                 "summary": "عرض كشف حساب وسجلات محفظة نقطة البيع",
                 "description": "استعراض قيود ودفتر أستاذ محفظة نقطة البيع.",
-                "operationId": "dc3e05846921de45b3ffdecfc4cf6d86",
+                "operationId": "802bafeab5b351fa144084e2dd843515",
                 "parameters": [
                     {
                         "name": "id",
@@ -6408,7 +6408,7 @@
                 ],
                 "summary": "عرض محافظ نقاط البيع المحذوفة مؤقتاً",
                 "description": "عرض قائمة المحافظ المحذوفة مؤقتاً لنقاط البيع.",
-                "operationId": "57d2b3b638f6cf2cd5234651bc5229fd",
+                "operationId": "d73b17519c1e001826ac9ca69e6b5b7a",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -6466,7 +6466,7 @@
                 ],
                 "summary": "استعادة محفظة نقطة بيع محذوفة مؤقتاً",
                 "description": "استعادة محفظة نقطة بيع محذوفة مؤقتاً.",
-                "operationId": "90839f60d119a484a0872dd540548857",
+                "operationId": "78c58f861b48332954f00f6971e76d6f",
                 "parameters": [
                     {
                         "name": "id",
@@ -6491,7 +6491,7 @@
                 ],
                 "summary": "الحذف النهائي لمحفظة نقطة بيع",
                 "description": "الحذف النهائي لمحفظة نقطة بيع.",
-                "operationId": "3c5fddb5e2b1e2a06f024df770322baf",
+                "operationId": "a5bc8126f58b53e2130b0189c3874c49",
                 "parameters": [
                     {
                         "name": "id",
@@ -6516,7 +6516,7 @@
                 ],
                 "summary": "حذف مجمع لمحافظ نقاط البيع",
                 "description": "الحذف المجمع لمحافظ نقاط البيع.",
-                "operationId": "7a3c05acfb3157dc3e3184334e7db84f",
+                "operationId": "c56a49a9d317e89078fe46102092e3e8",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -6554,7 +6554,7 @@
                 ],
                 "summary": "استعادة مجمعة لمحافظ نقاط البيع",
                 "description": "الاستعادة المجمعة لمحافظ نقاط البيع.",
-                "operationId": "a2e788c44d7df53d596b82cf5a5a0d4c",
+                "operationId": "bd3dc2937c0303d724975e5baffe1042",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -6592,7 +6592,7 @@
                 ],
                 "summary": "حذف نهائي مجمع لمحافظ نقاط البيع",
                 "description": "الحذف النهائي المجمع لمحافظ نقاط البيع.",
-                "operationId": "046d90b6adf5448a0c7735e1fdd74d88",
+                "operationId": "b7cca8850a89b92f097fc456256cfca1",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -6630,7 +6630,7 @@
                 ],
                 "summary": "عرض قائمة اشتراكات المزودين",
                 "description": "عرض قائمة اشتراكات مزودي الشبكات مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "850e393861f4c338f58fbb461ecf2ccc",
+                "operationId": "61105a50e9934631e4dd380d5a95c61b",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -6688,7 +6688,7 @@
                 ],
                 "summary": "عرض تفاصيل اشتراك مزود",
                 "description": "عرض تفاصيل اشتراك محدد عبر معرفه.",
-                "operationId": "85e53360262018ff1190d4c3eda34602",
+                "operationId": "a4617943a32b917e18b06b9f9c406176",
                 "parameters": [
                     {
                         "name": "id",
@@ -6713,7 +6713,7 @@
                 ],
                 "summary": "عرض الاشتراك النشط للشبكة",
                 "description": "جلب الاشتراك الساري والنشط حالياً لشبكة مزود معينة.",
-                "operationId": "286fe3db928c324578bb2ce33cf8ccb1",
+                "operationId": "25319c18ec534be21ae231c904d4d23f",
                 "parameters": [
                     {
                         "name": "networkId",
@@ -6738,7 +6738,7 @@
                 ],
                 "summary": "تمديد فترة صلاحية الاشتراك",
                 "description": "تمديد فترة صلاحية اشتراك قائم لشبكة معينة.",
-                "operationId": "6f009b22a4d7bdf2fb1e658eccd9d9fe",
+                "operationId": "8ccccd9ca1a43260fe17ec20ac9de3bd",
                 "parameters": [
                     {
                         "name": "id",
@@ -6783,7 +6783,7 @@
                 ],
                 "summary": "عرض استهلاك ميزات الاشتراك",
                 "description": "عرض سجلات استهلاك الميزات لاشتراك محدد.",
-                "operationId": "3d41e10f7ac4cbef4a4462f44353f5b6",
+                "operationId": "b753ef11ff0a661ceeaac271cc7c8b59",
                 "parameters": [
                     {
                         "name": "id",
@@ -6808,7 +6808,7 @@
                 ],
                 "summary": "تسجيل استهلاك ميزة للشبكة",
                 "description": "استهلاك حصة من ميزة للشبكة والتحقق من عدم تجاوز الحد الأقصى.",
-                "operationId": "bd85b206db0a47ce669baea55ea60ece",
+                "operationId": "64f971dcb3c89f0abda3d0c83915b793",
                 "parameters": [
                     {
                         "name": "networkId",
@@ -6856,7 +6856,7 @@
                 ],
                 "summary": "تفعيل الاشتراك المجدول مبكراً",
                 "description": "تفعيل الاشتراك المجدول مبكراً للشبكة بطلب مباشر.",
-                "operationId": "3f3919bf62b46bcca4452afa6a49f80f",
+                "operationId": "295f60e6f00c4e20bb8968ffc4cec8c4",
                 "parameters": [
                     {
                         "name": "networkId",
@@ -6881,7 +6881,7 @@
                 ],
                 "summary": "عرض قائمة طلبات كروت الإنترنت",
                 "description": "عرض قائمة طلبات الكروت مع الفلترة والبحث والترقيم.",
-                "operationId": "e8ba1b0f112480d4aad0b1360cb1a20a",
+                "operationId": "b68284cd92d5e90771607d1ae394ae1e",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -6977,7 +6977,7 @@
                 ],
                 "summary": "تقديم طلب كروت جديد",
                 "description": "إنشاء وتقديم طلب كروت جديد من نقطة البيع.",
-                "operationId": "927dd34168a9440882d2d9d4aea3091e",
+                "operationId": "f9d379108eb08e944c3bca5304663c3b",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -7030,7 +7030,7 @@
                 ],
                 "summary": "عرض تفاصيل طلب محدد",
                 "description": "عرض تفاصيل طلب محدد.",
-                "operationId": "ccb3309007cab7ed5d86ecc7c17cb037",
+                "operationId": "703392d940f82532d989994997e0d808",
                 "parameters": [
                     {
                         "name": "id",
@@ -7056,7 +7056,7 @@
                 ],
                 "summary": "حذف طلب كروت مؤقتاً",
                 "description": "حذف طلب مؤقتاً (Soft Delete).",
-                "operationId": "43c0f1596e3306070bad8ecc641774f8",
+                "operationId": "14ff9af74aba90f57bec9f7a862c6ee9",
                 "parameters": [
                     {
                         "name": "id",
@@ -7081,7 +7081,7 @@
                 ],
                 "summary": "اعتماد طلب الكروت وتوليد فاتورة المبيعات آلياً",
                 "description": "مراجعة واعتماد طلب الكروت وتوليد الفاتورة والتسوية المالية اللحظية.",
-                "operationId": "cb97be9a61df16e09d0ce51b0f783239",
+                "operationId": "bf0c6de84628385a631ddff84bff55cd",
                 "parameters": [
                     {
                         "name": "id",
@@ -7106,7 +7106,7 @@
                 ],
                 "summary": "رفض طلب الكروت",
                 "description": "رفض طلب الكروت مع توثيق السبب.",
-                "operationId": "276204c2aa810aa828aad310ee338cfc",
+                "operationId": "03e8cd48dce9957dd40b385bdc81882d",
                 "parameters": [
                     {
                         "name": "id",
@@ -7150,7 +7150,7 @@
                 ],
                 "summary": "إلغاء طلب الكروت",
                 "description": "إلغاء طلب الكروت من قبل صاحبه.",
-                "operationId": "8e0fd0ab3d0d9798e65ca31181f6340f",
+                "operationId": "d2f02a6a852f79cde10be985ea26a4a2",
                 "parameters": [
                     {
                         "name": "id",
@@ -7175,7 +7175,7 @@
                 ],
                 "summary": "عرض الطلبات المحذوفة مؤقتاً",
                 "description": "عرض قائمة الطلبات المحذوفة مؤقتاً.",
-                "operationId": "e65927a9e8292c44e50687d6fe634754",
+                "operationId": "b36702c98a92b7ed8ab807634c866f62",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -7233,7 +7233,7 @@
                 ],
                 "summary": "استعادة طلب كروت محذوف مؤقتاً",
                 "description": "استعادة طلب محذوف مؤقتاً.",
-                "operationId": "94e5c57d4a612e745f10804e2cfc89cb",
+                "operationId": "184f73f36de66cebac189b72f3cc8f10",
                 "parameters": [
                     {
                         "name": "id",
@@ -7258,7 +7258,7 @@
                 ],
                 "summary": "الحذف النهائي لطلب كروت",
                 "description": "الحذف النهائي لطلب كروت.",
-                "operationId": "c1b2ed2774f4292dc15a309eaedd935a",
+                "operationId": "2c802151fb1fb900a1dd36c68b52f8a4",
                 "parameters": [
                     {
                         "name": "id",
@@ -7283,7 +7283,7 @@
                 ],
                 "summary": "حذف مجمع لطلبات الكروت",
                 "description": "الحذف المجمع لطلبات الكروت.",
-                "operationId": "62082315dd6ec0643c5908fe031d1ea7",
+                "operationId": "e6fc60e0de9485df74184155cdc3eb7f",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -7321,7 +7321,7 @@
                 ],
                 "summary": "استعادة مجمعة لطلبات الكروت",
                 "description": "الاستعادة المجمعة لطلبات الكروت.",
-                "operationId": "96bd12bb0d332d46a24659db7dc1742f",
+                "operationId": "1dde780bad1a7ca46e6caa1386cdb1ef",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -7359,7 +7359,7 @@
                 ],
                 "summary": "حذف نهائي مجمع لطلبات الكروت",
                 "description": "الحذف النهائي المجمع لطلبات الكروت.",
-                "operationId": "c2aaca573a8b43bf94cd78ab4b5a0374",
+                "operationId": "b90e13c479ce6eae0adfb32f6246fde9",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -7397,7 +7397,7 @@
                 ],
                 "summary": "عرض قائمة فواتير مبيعات الكروت",
                 "description": "عرض قائمة فواتير المبيعات مع الفلترة والبحث والترقيم.",
-                "operationId": "4b2f9e73a8862d8b90b3789bba232821",
+                "operationId": "a6b85f31af1cca30caa1d1a9fe9e6956",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -7485,7 +7485,7 @@
                 ],
                 "summary": "إنشاء فاتورة مبيعات مباشرة",
                 "description": "إنشاء فاتورة مبيعات مباشرة.",
-                "operationId": "c3437077176cc76198820b63408cbebd",
+                "operationId": "fc4ea1a5c94027db3164d6462cfc6dbd",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -7537,7 +7537,7 @@
                 ],
                 "summary": "عرض تفاصيل فاتورة مبيعات محددة",
                 "description": "عرض تفاصيل فاتورة مبيعات محددة.",
-                "operationId": "62be4857617ed95947b0fb950d95f1fb",
+                "operationId": "fea52d74f1d2c54030638a77ecfbbdc0",
                 "parameters": [
                     {
                         "name": "id",
@@ -7563,7 +7563,7 @@
                 ],
                 "summary": "تحديث نوع الفاتورة",
                 "description": "تحديث نوع الفاتورة (كاش أو آجل).",
-                "operationId": "bbd8d60d7f437a1e34422791f6507e60",
+                "operationId": "60b7fa1f19cb5f39eb60dcfae5c203b7",
                 "parameters": [
                     {
                         "name": "id",
@@ -7603,7 +7603,7 @@
                 ],
                 "summary": "حذف فاتورة مبيعات مؤقتاً",
                 "description": "حذف فاتورة مبيعات مؤقتاً (Soft Delete).",
-                "operationId": "56b919f3633cd5df3cb2acdab40257bd",
+                "operationId": "10ea618051b228763bd460c43cfad650",
                 "parameters": [
                     {
                         "name": "id",
@@ -7628,7 +7628,7 @@
                 ],
                 "summary": "عرض فواتير المبيعات المحذوفة مؤقتاً",
                 "description": "عرض قائمة فواتير المبيعات المحذوفة مؤقتاً.",
-                "operationId": "fe84c419b518d8c4627e10dc5e023917",
+                "operationId": "8d5f57c1c6dfd972c05e684d8efebaba",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -7686,7 +7686,7 @@
                 ],
                 "summary": "استعادة فاتورة مبيعات محذوفة مؤقتاً",
                 "description": "استعادة فاتورة مبيعات محذوفة مؤقتاً.",
-                "operationId": "2816a8414d9711c691cd71fcb8967f63",
+                "operationId": "1f709df2e2bf539f04e1a333fdb69cbf",
                 "parameters": [
                     {
                         "name": "id",
@@ -7711,7 +7711,7 @@
                 ],
                 "summary": "الحذف النهائي لفاتورة مبيعات",
                 "description": "الحذف النهائي لفاتورة مبيعات.",
-                "operationId": "7b4fce3c3d818d93130058f843d639aa",
+                "operationId": "5dc16e5b58c6bf73bf4fa3cf375f90c4",
                 "parameters": [
                     {
                         "name": "id",
@@ -7736,7 +7736,7 @@
                 ],
                 "summary": "حذف مجمع لفواتير المبيعات",
                 "description": "الحذف المجمع لفواتير المبيعات.",
-                "operationId": "f55e4f6c783a52ea6691f42ecd619c4b",
+                "operationId": "16ce6f990c9f6496406b88035d0c06ed",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -7774,7 +7774,7 @@
                 ],
                 "summary": "استعادة مجمعة لفواتير المبيعات",
                 "description": "الاستعادة المجمعة لفواتير المبيعات.",
-                "operationId": "beace5bc04b5baa3687e56ef5ed7207d",
+                "operationId": "cc06d6dc0215a07d8ac8c7b0ced9ce74",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -7812,7 +7812,7 @@
                 ],
                 "summary": "حذف نهائي مجمع لفواتير المبيعات",
                 "description": "الحذف النهائي المجمع لفواتير المبيعات.",
-                "operationId": "b9e8696854db35fec5846e20f53255da",
+                "operationId": "7bb579dfc51d977ac7ffb43cddb70ad1",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -7850,7 +7850,7 @@
                 ],
                 "summary": "قائمة سجلات تشغيل المهام المجدولة",
                 "description": "عرض سجلات تشغيل المهام المجدولة مع الفلترة والترقيم.",
-                "operationId": "6a6e29db37572218d5a1719be2df69d3",
+                "operationId": "23dc9b2f5dc86ef9f65d2209b82c4de2",
                 "parameters": [
                     {
                         "name": "search",
@@ -7901,7 +7901,7 @@
                 ],
                 "summary": "إحصائيات المهام المجدولة",
                 "description": "إحصائيات سريعة لحالات المهام المجدولة لليوم والتاريخ الإجمالي.",
-                "operationId": "bf2ed22c47976ea06672e72fc1259cfa",
+                "operationId": "0c90e7ee523269c042c32c46002c4cc8",
                 "responses": {
                     "200": {
                         "description": "تم جلب إحصائيات المهام المجدولة بنجاح"
@@ -7925,7 +7925,7 @@
                 ],
                 "summary": "تشغيل محرك الاستدراك الذكي للمهام الفائتة",
                 "description": "تشغيل يدوي فوري لمحرك الاستدراك والتعويض الذكي للمهام الفائتة.",
-                "operationId": "c0f9f2255111da62c3b186987ba68f04",
+                "operationId": "228de668364c7eb60de14be579bbc586",
                 "responses": {
                     "200": {
                         "description": "تم تشغيل محرك التعويض الذكي بنجاح"
@@ -7949,7 +7949,7 @@
                 ],
                 "summary": "جلب المفاتيح العامة للتشفير والتوقيع الرقمي",
                 "description": "يعيد المفاتيح العامة السيادية للخادم بصيغة JWKS/Metadata للتحقق من التوقيعات وتشفير الرسائل من جانب العميل.",
-                "operationId": "5569411cafcddc83da7ea7a684651cde",
+                "operationId": "90577310d10d1125065c0bd2dfa4bc26",
                 "responses": {
                     "200": {
                         "description": "تم جلب المفاتيح العامة بنجاح"
@@ -7967,7 +7967,7 @@
                 ],
                 "summary": "عرض الجلسات النشطة للمستخدم",
                 "description": "استرجاع جميع الجلسات النشطة وغير المنتهية المرتبطة بحساب المستخدم المحدد.",
-                "operationId": "9f354cb98761c278499d54c028758160",
+                "operationId": "3907a7f2c85ed9b99d0dff0b47f98299",
                 "parameters": [
                     {
                         "name": "id",
@@ -7999,7 +7999,7 @@
                 ],
                 "summary": "عرض الأجهزة المرتبطة بحساب المستخدم",
                 "description": "استرجاع قائمة بكافة الأجهزة المسجلة للمستخدم (الأساسية والثانوية) وحالتها وتاريخ آخر استخدام.",
-                "operationId": "fc452f85da5d2ea43a0b3d1500c9c56c",
+                "operationId": "dd4f0d443eda8da76fb173a357bfb2ea",
                 "parameters": [
                     {
                         "name": "id",
@@ -8031,7 +8031,7 @@
                 ],
                 "summary": "تطبيق حظر أمني على مستخدم",
                 "description": "يفرض حظراً أمنياً دائماً أو مؤقتاً على المستخدم مع إبطال كافة جلساته المفتوحة وتحديث حالته إلى BANNED.",
-                "operationId": "9bc69290a1cdb144605544e289dd1339",
+                "operationId": "b9a72662285f44bb0f22d10a368ff53b",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -8092,7 +8092,7 @@
                 ],
                 "summary": "تطبيق حظر أمني على جهاز",
                 "description": "يفرض حظراً أمنياً على معرف جهاز محدد ويغير حالته إلى BANNED لمنع أي محاولة دخول لاحقة عبره.",
-                "operationId": "3c6ab6aa98e4f24aea08d68ffd1377b2",
+                "operationId": "df9c26a76fd95dd19b2e3ea6e956abec",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -8150,7 +8150,7 @@
                 ],
                 "summary": "رفع الحظر الأمني (Unban)",
                 "description": "إلغاء ورفع الحظر الأمني واستعادة الحالة الطبيعية للمستخدم أو الجهاز.",
-                "operationId": "78c109ac7daee1ed401fb71d57694af2",
+                "operationId": "20458239ba635d5cafb3d694b23ef84e",
                 "parameters": [
                     {
                         "name": "id",
@@ -8179,7 +8179,7 @@
                 ],
                 "summary": "إنهاء جلسة مستخدم محددة فوراً",
                 "description": "إبطال صلاحية جلسة مستخدم محددة عبر معرف الجلسة لمنع أي طلبات إضافية من خلالها.",
-                "operationId": "af09d77efec336c3131fffad7512bbd2",
+                "operationId": "c43ff2e88d7fb605eb1602a984aa6e63",
                 "parameters": [
                     {
                         "name": "id",
@@ -8208,7 +8208,7 @@
                 ],
                 "summary": "عرض قائمة باقات الاشتراك",
                 "description": "عرض قائمة باقات الاشتراك مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "2a1de88cf32fdbbfc9eab54243494b1a",
+                "operationId": "888991059abc64fc4a0c9f763bba7d89",
                 "parameters": [
                     {
                         "name": "status",
@@ -8251,7 +8251,7 @@
                 ],
                 "summary": "إنشاء باقة اشتراك جديدة",
                 "description": "إنشاء باقة اشتراك جديدة.",
-                "operationId": "35b1e5fac8831c72567ce140a9237e67",
+                "operationId": "7d1259173d96f3c795e0468995e6faae",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -8316,7 +8316,7 @@
                 ],
                 "summary": "عرض تفاصيل باقة اشتراك",
                 "description": "عرض تفاصيل باقة اشتراك محددة مع ميزاتها.",
-                "operationId": "b0a6fe3c7db746bd947f668aa0d360fa",
+                "operationId": "2e81dd514abf026372a0b90c7afe0a96",
                 "parameters": [
                     {
                         "name": "id",
@@ -8342,7 +8342,7 @@
                 ],
                 "summary": "تحديث بيانات باقة اشتراك",
                 "description": "تحديث بيانات باقة اشتراك قائمة وميزاتها.",
-                "operationId": "076e3793dc8498916181d3e95aef4fa3",
+                "operationId": "ac4d4102436fdb91e66ca413da87a901",
                 "parameters": [
                     {
                         "name": "id",
@@ -8411,7 +8411,7 @@
                 ],
                 "summary": "حذف باقة اشتراك ناعماً",
                 "description": "حذف باقة اشتراك ناعماً.",
-                "operationId": "4d0fd2081a81fa4db1505fee86b6376b",
+                "operationId": "752148f02adfe4ca786e8ad7cb50ba58",
                 "parameters": [
                     {
                         "name": "id",
@@ -8436,7 +8436,7 @@
                 ],
                 "summary": "تبديل حالة تفعيل باقة الاشتراك",
                 "description": "تبديل حالة تفعيل الباقة (نشط / معطل).",
-                "operationId": "4f1bd409bb295e50edced220d076ba61",
+                "operationId": "7c66f625581a624f093b512f10772346",
                 "parameters": [
                     {
                         "name": "id",
@@ -8461,7 +8461,7 @@
                 ],
                 "summary": "ربط أو تحديث ميزة بالباقة",
                 "description": "ربط أو تحديث ميزة في باقة معينة.",
-                "operationId": "7b2386ced48a6b6bea7101172ea6598f",
+                "operationId": "cab6843357db197db563756f91519d81",
                 "parameters": [
                     {
                         "name": "id",
@@ -8514,7 +8514,7 @@
                 ],
                 "summary": "إزالة ميزة من الباقة",
                 "description": "إزالة ميزة من باقة معينة.",
-                "operationId": "e2c926b320b7636f753ce7644172b4fa",
+                "operationId": "3e38485d9047d1a2d4e7a3e1c2c2319d",
                 "parameters": [
                     {
                         "name": "id",
@@ -8547,7 +8547,7 @@
                 ],
                 "summary": "عرض باقات الاشتراك المحذوفة ناعماً",
                 "description": "عرض قائمة باقات الاشتراك المحذوفة ناعماً.",
-                "operationId": "6037dadf8f229d4a9d213345023bef2a",
+                "operationId": "29c1c2101f21d5d1d73d2476075ff886",
                 "parameters": [
                     {
                         "name": "search",
@@ -8589,7 +8589,7 @@
                 ],
                 "summary": "استعادة باقة اشتراك محذوفة",
                 "description": "استعادة باقة اشتراك محذوفة ناعماً.",
-                "operationId": "36b3643b52786a913490e29b940a63ea",
+                "operationId": "75df29099c27367bb47fb6f1bfc662f0",
                 "parameters": [
                     {
                         "name": "id",
@@ -8614,7 +8614,7 @@
                 ],
                 "summary": "حذف نهائي لباقة الاشتراك",
                 "description": "حذف نهائي لباقة الاشتراك مع تنظيف ميزاتها.",
-                "operationId": "574ceaa045dc8bcfd4c36eca4704648a",
+                "operationId": "a3569d0b94411d360eb8c2f7a920d155",
                 "parameters": [
                     {
                         "name": "id",
@@ -8639,7 +8639,7 @@
                 ],
                 "summary": "حذف مجمع للباقات",
                 "description": "حذف مجمع ناعم للباقات.",
-                "operationId": "8627a1ad430c8c771138e207c809f775",
+                "operationId": "67ecd59a0fff83d0c94c910b69045aa0",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -8677,7 +8677,7 @@
                 ],
                 "summary": "استعادة مجمعة للباقات",
                 "description": "استعادة مجمعة للباقات المحذوفة.",
-                "operationId": "991806428b1f7df03e92bc3c89f69ef9",
+                "operationId": "2bc348e3fe6124d539e862c9302d6466",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -8715,7 +8715,7 @@
                 ],
                 "summary": "حذف نهائي مجمع للباقات",
                 "description": "حذف نهائي مجمع للباقات.",
-                "operationId": "bc70be64c700aa73d637e02cff0c0ca9",
+                "operationId": "b5533eee67805f1b85bf0b3660f8abb9",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -8753,7 +8753,7 @@
                 ],
                 "summary": "عرض قائمة طلبات الاشتراك",
                 "description": "عرض قائمة طلبات الاشتراك مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "70116d3b01bb17e124b36bfe6167488e",
+                "operationId": "1ff242d27ea071393d974d00a87ad4eb",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -8817,7 +8817,7 @@
                 ],
                 "summary": "تقديم طلب اشتراك جديد",
                 "description": "تقديم طلب اشتراك جديد لباقة محددة.",
-                "operationId": "172ad2fe583cd93df5aebfc52f2c58d1",
+                "operationId": "5dce322b2472087dee2eef570ea12fb7",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -8875,7 +8875,7 @@
                 ],
                 "summary": "عرض تفاصيل طلب اشتراك",
                 "description": "عرض تفاصيل طلب اشتراك محدد.",
-                "operationId": "5813df00a8f3640482d0ad4139d593e4",
+                "operationId": "635b42d7ddf75a64fc7d5a136f8da288",
                 "parameters": [
                     {
                         "name": "id",
@@ -8898,7 +8898,7 @@
                 ],
                 "summary": "حذف طلب اشتراك ناعماً",
                 "description": "حذف طلب اشتراك ناعماً.",
-                "operationId": "89b9b2f9916918cf61dbfb834f29ec74",
+                "operationId": "893b1c621bceb1a8379dc09206e29b4a",
                 "parameters": [
                     {
                         "name": "id",
@@ -8923,7 +8923,7 @@
                 ],
                 "summary": "اعتماد طلب الاشتراك",
                 "description": "اعتماد طلب الاشتراك وتوليد الاشتراك النشط للمزود وتهيئة الحصص.",
-                "operationId": "8ad1f4450682feed22481d39b2f05e49",
+                "operationId": "e5d16325187c7153139dcc64e0d92098",
                 "parameters": [
                     {
                         "name": "id",
@@ -8965,7 +8965,7 @@
                 ],
                 "summary": "رفض طلب الاشتراك",
                 "description": "رفض طلب الاشتراك مع توثيق السبب.",
-                "operationId": "e603edd6e854552053aede83b3131495",
+                "operationId": "1e71933a091c26fdfd70c2885e1c6613",
                 "parameters": [
                     {
                         "name": "id",
@@ -9012,7 +9012,7 @@
                 ],
                 "summary": "إلغاء طلب اشتراك معلق",
                 "description": "إلغاء طلب اشتراك معلق من قبل المستخدم.",
-                "operationId": "edde7ce92378e8ffb4b7535173e7f979",
+                "operationId": "45f3b5679599272175c9b05c4294f7f1",
                 "parameters": [
                     {
                         "name": "id",
@@ -9037,7 +9037,7 @@
                 ],
                 "summary": "عرض طلبات الاشتراك المحذوفة ناعماً",
                 "description": "عرض قائمة طلبات الاشتراك المحذوفة ناعماً.",
-                "operationId": "df071e08dae0e6143eacaf3ed4f35c84",
+                "operationId": "4e21768e47011db0445a9eb7f2da5496",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -9095,7 +9095,7 @@
                 ],
                 "summary": "استعادة طلب اشتراك محذوف",
                 "description": "استعادة طلب اشتراك محذوف ناعماً.",
-                "operationId": "7a54a8b8c66b755bc01dac25b426d4fc",
+                "operationId": "859d1216931665f141f8ad6da461f6b7",
                 "parameters": [
                     {
                         "name": "id",
@@ -9120,7 +9120,7 @@
                 ],
                 "summary": "حذف نهائي لطلب الاشتراك",
                 "description": "حذف نهائي لطلب الاشتراك مع تنظيف الإيصال.",
-                "operationId": "ac7a47950a78b0ccf7fbb8da3e664b1d",
+                "operationId": "8e7bbbf89a1adabba78bdbdfd5cb300e",
                 "parameters": [
                     {
                         "name": "id",
@@ -9145,7 +9145,7 @@
                 ],
                 "summary": "حذف مجمع للطلبات",
                 "description": "حذف مجمع ناعم للطلبات.",
-                "operationId": "4bf4d075d204684131a9b1b2266f26d8",
+                "operationId": "ad2c7b50aae4a0e52c1f69b78238e4ea",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -9183,7 +9183,7 @@
                 ],
                 "summary": "استعادة مجمعة للطلبات",
                 "description": "استعادة مجمعة للطلبات المحذوفة.",
-                "operationId": "88f585d330304c2765869847f1d5794f",
+                "operationId": "1ac713d26aa739f6c5e3398f0271a51e",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -9221,7 +9221,7 @@
                 ],
                 "summary": "حذف نهائي مجمع للطلبات",
                 "description": "حذف نهائي مجمع للطلبات.",
-                "operationId": "23fd90f3a40611ede569ab1f77c0e0aa",
+                "operationId": "387c00953c50595e1fe5bc76c1325dfe",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -9259,7 +9259,7 @@
                 ],
                 "summary": "عرض قائمة التذاكر",
                 "description": "عرض قائمة تذاكر الدعم الفني مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "0922cf7dccbb78c34f74268e060ed0d3",
+                "operationId": "2566ffc04afee10ff774a6aac346e8d2",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -9307,7 +9307,7 @@
                 ],
                 "summary": "إنشاء تذكرة دعم فني جديدة",
                 "description": "إنشاء تذكرة دعم فني جديدة.",
-                "operationId": "ba153e1f841c9463d414a495d58d6880",
+                "operationId": "d4b03674795d6097e506b1a880c1dc22",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -9353,7 +9353,7 @@
                 ],
                 "summary": "عرض التذاكر المحذوفة",
                 "description": "عرض قائمة التذاكر المحذوفة ناعماً.",
-                "operationId": "f4b9f343a24604984153eec66fa5f978",
+                "operationId": "ed05d2ea98eebba19983ecffb4ccc892",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -9403,7 +9403,7 @@
                 ],
                 "summary": "عرض تفاصيل تذكرة",
                 "description": "عرض تفاصيل تذكرة محددة عبر معرفها الرقمي.",
-                "operationId": "f6baecdc99aaecaee629f02a9ad9f189",
+                "operationId": "ed1b17d9f38edabaa1ff61cec24213d2",
                 "parameters": [
                     {
                         "name": "id",
@@ -9426,7 +9426,7 @@
                 ],
                 "summary": "تحديث بيانات تذكرة",
                 "description": "تحديث بيانات تذكرة قائمة.",
-                "operationId": "26869b65368d2d832242bfc8b6b75e5c",
+                "operationId": "e0f5dd4490ac872f51c4f8c6d05e9c46",
                 "parameters": [
                     {
                         "name": "id",
@@ -9474,7 +9474,7 @@
                 ],
                 "summary": "حذف تذكرة ناعماً",
                 "description": "حذف تذكرة ناعماً.",
-                "operationId": "c1918d55cc9c867083c5a271a62bc174",
+                "operationId": "635ad347fbb46fb28ee0815fe8ee69c2",
                 "parameters": [
                     {
                         "name": "id",
@@ -9499,7 +9499,7 @@
                 ],
                 "summary": "استعادة تذكرة محذوفة",
                 "description": "استعادة تذكرة محذوفة ناعماً.",
-                "operationId": "7359b26ddea0c45e5f7e5bbeed9f2026",
+                "operationId": "a2674bad6d1d28b840a05147297f53e8",
                 "parameters": [
                     {
                         "name": "id",
@@ -9524,7 +9524,7 @@
                 ],
                 "summary": "الحذف النهائي لتذكرة",
                 "description": "الحذف النهائي لتذكرة من قاعدة البيانات.",
-                "operationId": "116acd69c6ee98886912ba6c84c3b72b",
+                "operationId": "85c267ad657e8371dd716f3eb3e328b0",
                 "parameters": [
                     {
                         "name": "id",
@@ -9549,7 +9549,7 @@
                 ],
                 "summary": "الحذف المجمع للتذاكر",
                 "description": "الحذف المجمع للتذاكر ناعماً.",
-                "operationId": "782572afcba4272c4663803f4694a0cd",
+                "operationId": "5eb8b89737abb98b7bfc8a0018a0b14c",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -9587,7 +9587,7 @@
                 ],
                 "summary": "الاستعادة المجمعة للتذاكر",
                 "description": "الاستعادة المجمعة للتذاكر المحذوفة ناعماً.",
-                "operationId": "91babc0a34592e74b46df883a579ca21",
+                "operationId": "73caf20275382dcff477e62cabad821f",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -9625,7 +9625,7 @@
                 ],
                 "summary": "الحذف النهائي المجمع للتذاكر",
                 "description": "الحذف النهائي المجمع للتذاكر.",
-                "operationId": "88b01852b9ca54cffe3a8a21de783bbe",
+                "operationId": "284498712d633442ffb55ac5e03cbb60",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -9663,7 +9663,7 @@
                 ],
                 "summary": "عرض رسائل التذكرة",
                 "description": "عرض قائمة رسائل تذكرة معينة مرتبة زمنياً.",
-                "operationId": "39900a146b69d84d81814bef44cc47fc",
+                "operationId": "e3e25aebbdf12a0f093b9dd62db7f319",
                 "parameters": [
                     {
                         "name": "id",
@@ -9686,7 +9686,7 @@
                 ],
                 "summary": "إرسال رسالة في التذكرة",
                 "description": "إضافة رد / رسالة جديدة إلى تذكرة قائمة.",
-                "operationId": "0476bbc027e60c89a2b6c36e0d2095bb",
+                "operationId": "4b45e7df96bd5cc129bcc403be8125b9",
                 "parameters": [
                     {
                         "name": "id",
@@ -9753,7 +9753,7 @@
                 ],
                 "summary": "تمييز رسائل التذكرة كمقروءة",
                 "description": "تمييز رسائل التذكرة كمقروءة للمستخدم الحالي.",
-                "operationId": "6d808bd64bb97465b6b13cfcb2657629",
+                "operationId": "078ea9e516de49bc3a3e4ae9663b10de",
                 "parameters": [
                     {
                         "name": "id",
@@ -9778,7 +9778,7 @@
                 ],
                 "summary": "عرض قائمة سجلات تدقيق النظام",
                 "description": "عرض قائمة سجلات تدقيق النظام مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "3103acefdaebe12c52a9d845ec9e4df0",
+                "operationId": "ce5e37c1baad9bb441662e1259aca676",
                 "parameters": [
                     {
                         "name": "user_id",
@@ -9870,7 +9870,7 @@
                 ],
                 "summary": "إحصائيات ومؤشرات سجلات التدقيق",
                 "description": "إحصائيات النشاط العام ومؤشرات سجلات التدقيق.",
-                "operationId": "3571f7713e4dd2a4e6c39f59a91af14c",
+                "operationId": "9572a65f449c2d068e8324b8a15fe203",
                 "parameters": [
                     {
                         "name": "from_date",
@@ -9905,7 +9905,7 @@
                 ],
                 "summary": "قائمة الوحدات البرمجية المسجلة",
                 "description": "جلب قائمة الوحدات البرمجية المسجلة في السجلات.",
-                "operationId": "bbbbfeb966872eb1db9a60f94252049c",
+                "operationId": "9d3039a76aac3b644572f803c1b99a53",
                 "responses": {
                     "200": {
                         "description": "تم استرجاع قائمة الوحدات بنجاح"
@@ -9920,7 +9920,7 @@
                 ],
                 "summary": "قائمة الإجراءات المسجلة",
                 "description": "جلب قائمة الإجراءات المسجلة في السجلات.",
-                "operationId": "0e19ed0f8af9ecc5b219d26def81a04a",
+                "operationId": "783d0d26597e3a93dce898b4a6b37e83",
                 "responses": {
                     "200": {
                         "description": "تم استرجاع قائمة الإجراءات بنجاح"
@@ -9935,7 +9935,7 @@
                 ],
                 "summary": "عرض سجلات كيان محدد",
                 "description": "عرض سجلات كيان محدد.",
-                "operationId": "a062a572ac5abf54e0b168f833cd054f",
+                "operationId": "11fa80c8b7db894b0494bd2c7478bad9",
                 "parameters": [
                     {
                         "name": "entityType",
@@ -9968,7 +9968,7 @@
                 ],
                 "summary": "عرض سجلات مستخدم محدد",
                 "description": "عرض سجلات تدقيق مستخدم محدد.",
-                "operationId": "2ec17e965576dc72e97b1a43979ec9da",
+                "operationId": "50dbb30ac6d32dff9b51310029d01300",
                 "parameters": [
                     {
                         "name": "userId",
@@ -10002,7 +10002,7 @@
                 ],
                 "summary": "عرض تفاصيل سجل تدقيق محدد",
                 "description": "عرض تفاصيل سجل تدقيق محدد.",
-                "operationId": "d58f954f02c91473b9d5e23d3afacacf",
+                "operationId": "c284d021af4a6cf79d0fc27f2ec185fb",
                 "parameters": [
                     {
                         "name": "id",
@@ -10027,7 +10027,7 @@
                 ],
                 "summary": "عرض قائمة إعدادات النظام",
                 "description": "عرض قائمة إعدادات النظام مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "ac8c396ffb229d55f7b9998c34980c21",
+                "operationId": "af38ea067b07e65f552988b3a2f8a47b",
                 "parameters": [
                     {
                         "name": "setting_category",
@@ -10083,7 +10083,7 @@
                 ],
                 "summary": "إنشاء إعداد نظام جديد",
                 "description": "إنشاء إعداد نظام جديد.",
-                "operationId": "10c134e971ef1574158e3c5d226ab9bb",
+                "operationId": "efc5a6266dc33df9856b75214deb3833",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -10131,7 +10131,7 @@
                 ],
                 "summary": "عرض إعدادات تصنيف محدد",
                 "description": "عرض إعدادات تصنيف محدد.",
-                "operationId": "2f4557e3a2d5ac5bce890dbcead2d083",
+                "operationId": "35a7387256bb17ae997e35acaba79641",
                 "parameters": [
                     {
                         "name": "category",
@@ -10156,7 +10156,7 @@
                 ],
                 "summary": "عرض إعداد محدد عبر المفتاح",
                 "description": "عرض إعداد محدد عبر المفتاح الفريد.",
-                "operationId": "4e52f0e84bcd9a1efde1bc0960375608",
+                "operationId": "86e95e22091d1ade98193b557a950543",
                 "parameters": [
                     {
                         "name": "key",
@@ -10181,7 +10181,7 @@
                 ],
                 "summary": "عرض تفاصيل إعداد محدد",
                 "description": "عرض تفاصيل إعداد محدد عبر المعرف الرقمي.",
-                "operationId": "1a05859d91c3924ca77b587cf4bbd844",
+                "operationId": "150a674d56e0fee385387cf2c396c6b4",
                 "parameters": [
                     {
                         "name": "id",
@@ -10204,7 +10204,7 @@
                 ],
                 "summary": "تحديث بيانات إعداد نظام",
                 "description": "تحديث بيانات إعداد نظام قائم.",
-                "operationId": "3b3d8b2eb5220dd5164ab41fc41e84c6",
+                "operationId": "ec6c90726c84487dda40fd89f8138448",
                 "parameters": [
                     {
                         "name": "id",
@@ -10256,7 +10256,7 @@
                 ],
                 "summary": "حذف إعداد نظام ناعماً",
                 "description": "حذف إعداد نظام ناعماً.",
-                "operationId": "1d07542247f587ee74ca1af78c1f4c93",
+                "operationId": "6fd95e64d6a7df604c9c0b9589dac4d8",
                 "parameters": [
                     {
                         "name": "id",
@@ -10281,7 +10281,7 @@
                 ],
                 "summary": "تحديث مجمع لقيم إعدادات النظام",
                 "description": "تحديث مجمع لقيم إعدادات النظام.",
-                "operationId": "a0ad6691f1a5d0a1c858bb6c5f6dc960",
+                "operationId": "ab288fd7b36920b081e2c8fc8c9caaa5",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -10319,7 +10319,7 @@
                 ],
                 "summary": "عرض الإعدادات المحذوفة ناعماً",
                 "description": "عرض قائمة الإعدادات المحذوفة ناعماً.",
-                "operationId": "d98031ec6a5d67cc829f2228cabdf8a7",
+                "operationId": "37590170f009c6c4dcbab4d0960b4851",
                 "parameters": [
                     {
                         "name": "setting_category",
@@ -10369,7 +10369,7 @@
                 ],
                 "summary": "استعادة إعداد نظام محذوف ناعماً",
                 "description": "استعادة إعداد نظام محذوف ناعماً.",
-                "operationId": "fd4c7089f44d4b846d8323409a51021c",
+                "operationId": "a26ffcb1f38595d08f48886dfdd78e81",
                 "parameters": [
                     {
                         "name": "id",
@@ -10394,7 +10394,7 @@
                 ],
                 "summary": "الحذف النهائي لإعداد نظام",
                 "description": "الحذف النهائي لإعداد نظام.",
-                "operationId": "b28a8542a66fe54efeef6bddc0c15a79",
+                "operationId": "5795bec4dbb594718db518a332b2bd9e",
                 "parameters": [
                     {
                         "name": "id",
@@ -10419,7 +10419,7 @@
                 ],
                 "summary": "الحذف المجمع للإعدادات ناعماً",
                 "description": "الحذف المجمع للإعدادات ناعماً.",
-                "operationId": "1bbdfc4da6751894d9f205aa87bc174d",
+                "operationId": "1ee24eba9677626f8c3342b5ccf110eb",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -10457,7 +10457,7 @@
                 ],
                 "summary": "الاستعادة المجمعة للإعدادات",
                 "description": "الاستعادة المجمعة للإعدادات المحذوفة ناعماً.",
-                "operationId": "6667662ed6e6edd06ab53f2ba2fb9822",
+                "operationId": "c178e225ed8500dbdc1dddbebda68fd7",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -10495,7 +10495,7 @@
                 ],
                 "summary": "الحذف النهائي المجمع للإعدادات",
                 "description": "الحذف النهائي المجمع للإعدادات.",
-                "operationId": "1b2a069852d0fdbe89173c0bc9ef9274",
+                "operationId": "213014a7cdc73e7ef2fdaaf466190d75",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -10533,7 +10533,7 @@
                 ],
                 "summary": "تفريغ كاش إعدادات النظام",
                 "description": "تفريغ الذاكرة المؤقتة للإعدادات يدوياً.",
-                "operationId": "22a89de7c49ae1abaf43117d852d9673",
+                "operationId": "f59fa0e3f2b79ebbf547d591a437b04c",
                 "responses": {
                     "200": {
                         "description": "تم تفريغ كاش إعدادات النظام بنجاح"
@@ -10548,7 +10548,7 @@
                 ],
                 "summary": "عرض قائمة المستخدمين",
                 "description": "استرجاع قائمة المستخدمين مع دعم الفلترة حسب الحالة، الدور، البحث النصي، والترقيم بالمؤشر (Cursor).",
-                "operationId": "12e989554c281d650dff75443acabf54",
+                "operationId": "fbe4abc6115f6a931262eefde634d1f9",
                 "parameters": [
                     {
                         "name": "search",
@@ -10609,7 +10609,7 @@
                 ],
                 "summary": "إنشاء مستخدم جديد",
                 "description": "إضافة حساب مستخدم جديد في النظام وربطه بالدور المحدد وتشفير كلمة المرور ورفع صورته إن وجدت.",
-                "operationId": "64da9b5a20fa4f20e947ed61b2bbb6da",
+                "operationId": "243db3d4e5f82ed07ca14dc2bf82410c",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -10684,7 +10684,7 @@
                 ],
                 "summary": "عرض تفاصيل مستخدم",
                 "description": "جلب بيانات مستخدم محدد مع الدور والأجهزة والصلاحيات المرتبطة به.",
-                "operationId": "a9d321d5dc6bc2613c6cf5ba92b76c89",
+                "operationId": "05dabd18926420b0d890e4fc40b53825",
                 "parameters": [
                     {
                         "name": "id",
@@ -10714,7 +10714,7 @@
                 ],
                 "summary": "تحديث بيانات المستخدم",
                 "description": "تعديل البيانات الأساسية أو الدور أو كلمة المرور للمستخدم المحدد.",
-                "operationId": "5bcda8371b3cb9f863a47620e636be9b",
+                "operationId": "f1b6ca0c6427f48f79ba9e3abc6c4a42",
                 "parameters": [
                     {
                         "name": "id",
@@ -10787,7 +10787,7 @@
                 ],
                 "summary": "حذف مستخدم (Soft Delete)",
                 "description": "نقل المستخدم إلى سلة المحذوفات وإبطال كافة جلساته المفتوحة دون حذفه نهائياً.",
-                "operationId": "0446b3779430bbd9ca0f106d9fd0a2ed",
+                "operationId": "d2cba55c56618a8c24287a7fe2b89a60",
                 "parameters": [
                     {
                         "name": "id",
@@ -10816,7 +10816,7 @@
                 ],
                 "summary": "سلة محذوفات المستخدمين",
                 "description": "استرجاع قائمة المستخدمين المحذوفين مؤقتاً في النظام.",
-                "operationId": "783fddc04930d51f16933940f1ef0ccf",
+                "operationId": "704515b350809321444ca38cd54e5905",
                 "parameters": [
                     {
                         "name": "search",
@@ -10858,7 +10858,7 @@
                 ],
                 "summary": "استعادة مستخدم محذوف",
                 "description": "إعادة تفعيل واسترجاع حساب المستخدم من سلة المحذوفات.",
-                "operationId": "afbe86f998587aa8860476bdca8e260a",
+                "operationId": "339eae31ad43aaea41a13cccb48d39e8",
                 "parameters": [
                     {
                         "name": "id",
@@ -10887,7 +10887,7 @@
                 ],
                 "summary": "حذف نهائي لمستخدم (Force Delete)",
                 "description": "حذف حساب المستخدم وصورته نهائياً وبلا رجعة من قاعدة البيانات.",
-                "operationId": "159bff6a2d2fc5dfd9f3351cacf358a5",
+                "operationId": "efeedb87f8dd10bdd1230ee658720ded",
                 "parameters": [
                     {
                         "name": "id",
@@ -10916,7 +10916,7 @@
                 ],
                 "summary": "حذف مجمع للمستخدمين (Batch Delete)",
                 "description": "حذف مؤقت لمجموعة من المستخدمين عبر إرسال مصفوفة من المعرفات (ids).",
-                "operationId": "0dea26c074c86ce76d3a3afc8b40110c",
+                "operationId": "79208354e9354b3222824fa6b052e15a",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -10957,7 +10957,7 @@
                 ],
                 "summary": "استعادة مجمعة للمستخدمين (Batch Restore)",
                 "description": "استعادة مجموعة من المستخدمين المحذوفين مؤقتاً دفعة واحدة.",
-                "operationId": "9e28b259eb496a5e7acb0d2b6338a9c5",
+                "operationId": "395331f53f8b1319167fcdd5717b000f",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -10998,7 +10998,7 @@
                 ],
                 "summary": "حذف نهائي مجمع للمستخدمين (Batch Force Delete)",
                 "description": "الحذف النهائي الدائم لمجموعة مستخدمين دفعة واحدة.",
-                "operationId": "8390f84bfb3de854460842f043dbaecb",
+                "operationId": "b46370883d8f74a69bba399b150bc865",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -11039,7 +11039,7 @@
                 ],
                 "summary": "مزامنة الصلاحيات المباشرة للمستخدم",
                 "description": "تخصيص صلاحيات استثنائية مباشرة لحساب المستخدم المحدد.",
-                "operationId": "7a7b9f1085224549c2b37429f4ef346b",
+                "operationId": "9b8fd19440f2340b32ff5481cc5dadcb",
                 "parameters": [
                     {
                         "name": "id",
@@ -11089,7 +11089,7 @@
                 ],
                 "summary": "تحديث الصورة الشخصية للمستخدم",
                 "description": "رفع واستبدال الصورة الشخصية للمستخدم المحدد.",
-                "operationId": "76f22a76527f25315ea9a616901d7dd1",
+                "operationId": "5da68d1e31bc3f34a15534b715afdbdb",
                 "parameters": [
                     {
                         "name": "id",
@@ -11137,7 +11137,7 @@
                 ],
                 "summary": "عرض قائمة باقات كروت الإنترنت",
                 "description": "عرض قائمة باقات الكروت مع الفلترة والبحث والترقيم.",
-                "operationId": "523d3dbc7f4b9489e6fd6679793624a8",
+                "operationId": "0c1214e0b6c176b930a4fa7efe3fdb5e",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -11185,7 +11185,7 @@
                 ],
                 "summary": "إنشاء باقة كروت جديدة",
                 "description": "إنشاء باقة كروت جديدة.",
-                "operationId": "6ddcd28d3fdaa0082d0f6330d6ab03b0",
+                "operationId": "2b39716338e0df72a1d400c826482d90",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -11262,7 +11262,7 @@
                 ],
                 "summary": "عرض تفاصيل باقة كروت محددة",
                 "description": "عرض تفاصيل باقة كروت محددة.",
-                "operationId": "2e05dd9c390d95cbd88160eef4f627ae",
+                "operationId": "77c58c2fc5811b6532828eb3f8e3e2b7",
                 "parameters": [
                     {
                         "name": "id",
@@ -11288,7 +11288,7 @@
                 ],
                 "summary": "تحديث بيانات باقة كروت",
                 "description": "تحديث بيانات باقة كروت قائمة.",
-                "operationId": "7bd2675abc8414b0fde065e133abf1c6",
+                "operationId": "f7eac6260711bae2180c459625191ef5",
                 "parameters": [
                     {
                         "name": "id",
@@ -11366,7 +11366,7 @@
                 ],
                 "summary": "حذف باقة كروت (مؤقت)",
                 "description": "الحذف المؤقت لباقة كروت (Soft Delete).",
-                "operationId": "62548f18e85f38728002986e0d248839",
+                "operationId": "dde2418b1f563a78d82ea1099552daed",
                 "parameters": [
                     {
                         "name": "id",
@@ -11394,7 +11394,7 @@
                 ],
                 "summary": "عرض سلة محذوفات باقات الكروت",
                 "description": "عرض سلة محذوفات باقات الكروت.",
-                "operationId": "b001bd7d6e4a256275384baa96d1576c",
+                "operationId": "e8b927484ba5f25b6fe22beb58e37e9b",
                 "parameters": [
                     {
                         "name": "search",
@@ -11436,7 +11436,7 @@
                 ],
                 "summary": "استعادة باقة كروت محذوفة",
                 "description": "استعادة باقة كروت محذوفة مؤقتاً.",
-                "operationId": "9e18846ea25c3d367fd50e94c57f3096",
+                "operationId": "f74ecce08e985ccb7571193d60dcdba3",
                 "parameters": [
                     {
                         "name": "id",
@@ -11464,7 +11464,7 @@
                 ],
                 "summary": "الحذف النهائي لباقة كروت",
                 "description": "الحذف النهائي لباقة كروت من قاعدة البيانات.",
-                "operationId": "e9db3efb74c54cc45f6ea54af9122878",
+                "operationId": "69cbd40de59cdb4a930248fa4a6bc0d1",
                 "parameters": [
                     {
                         "name": "id",
@@ -11489,7 +11489,7 @@
                 ],
                 "summary": "حذف مجمع لباقات الكروت",
                 "description": "حذف مجمع لعدة باقات كروت.",
-                "operationId": "9c03a841fd42aaf4def74fd1111506bc",
+                "operationId": "ddbc0e451e9cf313822c23747f4d6ca4",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -11527,7 +11527,7 @@
                 ],
                 "summary": "استعادة مجمعة لباقات الكروت",
                 "description": "استعادة مجمعة لعدة باقات من سلة المحذوفات.",
-                "operationId": "3fa923453f1687c5d30cfcbcdf560617",
+                "operationId": "5f1b3c505b839c388077db5d0d626628",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -11565,7 +11565,7 @@
                 ],
                 "summary": "حذف نهائي مجمع لباقات الكروت",
                 "description": "حذف نهائي مجمع لعدة باقات كروت.",
-                "operationId": "5ec61ed10165d4ed8b5bacff53f22fd5",
+                "operationId": "590288e587e28f83367e943c61839d5c",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -11603,7 +11603,7 @@
                 ],
                 "summary": "تبديل حالة تفعيل باقة الكروت",
                 "description": "تبديل حالة تفعيل الباقة.",
-                "operationId": "3a7506bb33fa4620b65ca5ee8cfcb47c",
+                "operationId": "d511ad9ce66253fee133c7d016c10889",
                 "parameters": [
                     {
                         "name": "id",
@@ -11628,7 +11628,7 @@
                 ],
                 "summary": "عرض باقات شبكة معينة",
                 "description": "عرض باقات شبكة معينة.",
-                "operationId": "49063e25bdd834665a40afd89ae5c1b0",
+                "operationId": "74959d3703f5fa906ca9b52d226ab13b",
                 "parameters": [
                     {
                         "name": "id",
@@ -11653,7 +11653,7 @@
                 ],
                 "summary": "عرض قائمة الخصومات المخصصة للباقات",
                 "description": "عرض قائمة الخصومات المخصصة مع الفلترة والترقيم.",
-                "operationId": "549c806d57df402d5759b09dc557d4ef",
+                "operationId": "9a1f609339f44f4c090cdf2320c47380",
                 "parameters": [
                     {
                         "name": "network_id",
@@ -11717,7 +11717,7 @@
                 ],
                 "summary": "تخصيص خصم جديد لنقطة بيع",
                 "description": "إنشاء خصم مخصص جديد لنقطة بيع على باقة معينة.",
-                "operationId": "f9533f55d1779842ca25ff9abe88fc85",
+                "operationId": "17ede3f7b31a05cb847e952918329da7",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -11779,7 +11779,7 @@
                 ],
                 "summary": "عرض تفاصيل خصم محدد",
                 "description": "عرض تفاصيل خصم محدد.",
-                "operationId": "8e09ca45732f2e0649f29c5f8074cd80",
+                "operationId": "208fa75ff1df16a22b0e53c39e0342ec",
                 "parameters": [
                     {
                         "name": "id",
@@ -11805,7 +11805,7 @@
                 ],
                 "summary": "تحديث بيانات خصم مخصص",
                 "description": "تحديث بيانات خصم مخصص قائم.",
-                "operationId": "f1493b33ac805c9707915245e1940634",
+                "operationId": "03b70f60922604bfb61d7e0da9072338",
                 "parameters": [
                     {
                         "name": "id",
@@ -11860,7 +11860,7 @@
                 ],
                 "summary": "حذف خصم مخصص (مؤقت)",
                 "description": "الحذف المؤقت لخصم (Soft Delete).",
-                "operationId": "1930d89e0a522434ebb6a7a8aee75dcc",
+                "operationId": "cc879e2854420c7e88db9cb38e181df6",
                 "parameters": [
                     {
                         "name": "id",
@@ -11888,7 +11888,7 @@
                 ],
                 "summary": "عرض سلة محذوفات الخصومات",
                 "description": "عرض سلة محذوفات الخصومات المخصصة.",
-                "operationId": "fc8063c42517bf1a8d1926e0e1c207dc",
+                "operationId": "37d1e8dfed3355c2a8c0f5dcb411e2eb",
                 "parameters": [
                     {
                         "name": "search",
@@ -11930,7 +11930,7 @@
                 ],
                 "summary": "استعادة خصم محذوف",
                 "description": "استعادة خصم محذوف مؤقتاً.",
-                "operationId": "1d32eb9451bb03beb297029661b2aab6",
+                "operationId": "8565df206a6d21b5e3a6631ed93c5beb",
                 "parameters": [
                     {
                         "name": "id",
@@ -11958,7 +11958,7 @@
                 ],
                 "summary": "الحذف النهائي لخصم مخصص",
                 "description": "الحذف النهائي لخصم من قاعدة البيانات.",
-                "operationId": "d8133344d76ca1048c3f6a37667e18ab",
+                "operationId": "0fc29096013b250f5099117aed38008b",
                 "parameters": [
                     {
                         "name": "id",
@@ -11983,7 +11983,7 @@
                 ],
                 "summary": "حذف مجمع للخصومات",
                 "description": "حذف مجمع لعدة خصومات.",
-                "operationId": "3f25970ac3a435eca0b79377cfc9b153",
+                "operationId": "f05c9ba17115ed7f7f18e74f2adf4e88",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -12021,7 +12021,7 @@
                 ],
                 "summary": "استعادة مجمعة للخصومات",
                 "description": "استعادة مجمعة لعدة خصومات من سلة المحذوفات.",
-                "operationId": "a0f73f8d097648d58246ac4c7c96d25a",
+                "operationId": "cef97849637bacc147f407b277a51595",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -12059,7 +12059,7 @@
                 ],
                 "summary": "حذف نهائي مجمع للخصومات",
                 "description": "حذف نهائي مجمع لعدة خصومات.",
-                "operationId": "5f94362cf36ecc171ac7beee54ba68f2",
+                "operationId": "57a1ac5a8cba8d860665e6bb78f3fe33",
                 "requestBody": {
                     "description": "بيانات الطلب",
                     "required": true,
@@ -12097,7 +12097,7 @@
                 ],
                 "summary": "تبديل حالة تفعيل الخصم",
                 "description": "تبديل حالة تفعيل الخصم.",
-                "operationId": "7869d3c436d4d3db721f154bf54e9f15",
+                "operationId": "619266287ed10acbea3646a19a6ee42b",
                 "parameters": [
                     {
                         "name": "id",
@@ -12122,7 +12122,7 @@
                 ],
                 "summary": "احتساب الخصم الفعلي المطبق لنقطة بيع على باقة",
                 "description": "احتساب الخصم الفعلي المطبق لنقطة بيع على باقة معينة.",
-                "operationId": "5677467082c5e1db9d9d10af7a15ec8a",
+                "operationId": "952920bfdc963ce49882c7f4a27c870e",
                 "parameters": [
                     {
                         "name": "network_id",

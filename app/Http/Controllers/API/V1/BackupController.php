@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\API\V1;
 
 use App\Exceptions\BackupException;
 use App\Http\Requests\API\V1\Backup\DriveTokenRequest;
