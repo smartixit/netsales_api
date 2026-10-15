@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Enums\ScheduledTaskStatus;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
 use App\Models\ScheduledTaskRun;
 use Carbon\Carbon;
@@ -59,6 +60,30 @@ class ScheduledTaskRunRepository extends BaseRepository implements ScheduledTask
     }
 
     /**
+     * إحصائيات سريعة لحالات المهام المنفذة
+     */
+    public function getSummaryStats(): array
+    {
+        $today = Carbon::now('Asia/Aden')->toDateString();
+
+        $todayTotal = $this->model->newQuery()->whereDate('target_date', $today)->count();
+        $todaySent = $this->model->newQuery()->whereDate('target_date', $today)->whereIn('status', [ScheduledTaskStatus::STATUS_SENT->value, ScheduledTaskStatus::STATUS_COMPLETED->value])->count();
+        $todayFailed = $this->model->newQuery()->whereDate('target_date', $today)->where('status', ScheduledTaskStatus::STATUS_FAILED->value)->count();
+
+        $totalAllTime = $this->model->newQuery()->count();
+        $totalFailedAllTime = $this->model->newQuery()->where('status', ScheduledTaskStatus::STATUS_FAILED->value)->count();
+
+        return [
+            'today_total' => $todayTotal,
+            'today_sent' => $todaySent,
+            'today_failed' => $todayFailed,
+            'total_records' => $totalAllTime,
+            'total_failed' => $totalFailedAllTime,
+            'server_time' => Carbon::now('Asia/Aden')->toDateTimeString(),
+        ];
+    }
+
+    /**
      * التحقق مما إذا كانت المهمة قد نُفذت بنجاح لشبكة وتاريخ محدد
      */
     public function wasExecuted(string $taskType, ?int $networkId, string $targetDate): bool
@@ -66,7 +91,7 @@ class ScheduledTaskRunRepository extends BaseRepository implements ScheduledTask
         $query = $this->model->newQuery()
             ->where('task_type', $taskType)
             ->whereDate('target_date', $targetDate)
-            ->whereIn('status', [ScheduledTaskRun::STATUS_SENT, ScheduledTaskRun::STATUS_COMPLETED]);
+            ->whereIn('status', [ScheduledTaskStatus::STATUS_SENT->value, ScheduledTaskStatus::STATUS_COMPLETED->value]);
 
         if ($networkId !== null) {
             $query->where('network_id', $networkId);

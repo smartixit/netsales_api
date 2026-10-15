@@ -120,7 +120,7 @@ class GoogleDriveService
             'expires_at' => ((int) ($token['created'] ?? time())) + ((int) ($token['expires_in'] ?? 3600)),
             'account_email' => '',
             'folder_id' => null,
-            'connected_at' => now('Asia/Aden')->toIso8601String(),
+            'connected_at' => now('Asia/Aden')->toDateTimeString(),
         ];
 
         $connection['account_email'] = $this->currentUserEmail();

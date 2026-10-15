@@ -31,13 +31,13 @@ class BackupJobResource extends JsonResource
             'drive_folder_id' => $this->drive_folder_id,
             'manifest_summary' => $this->manifest_summary,
             'error_message' => $this->error_message,
-            'started_at' => $this->started_at ? Carbon::parse($this->started_at)->timezone('Asia/Aden')->toDateTimeString() : null,
-            'finished_at' => $this->finished_at ? Carbon::parse($this->finished_at)->timezone('Asia/Aden')->toDateTimeString() : null,
+            'started_at' => $this->started_at ? Carbon::parse($this->started_at)->toDateTimeString() : null,
+            'finished_at' => $this->finished_at ? Carbon::parse($this->finished_at)->toDateTimeString() : null,
             'duration_ms' => $this->duration_ms,
             'creator_id' => $this->created_by,
             'creator_name' => optional($this->creator)->user_full_name,
-            'created_at' => $this->created_at ? Carbon::parse($this->created_at)->timezone('Asia/Aden')->toDateTimeString() : null,
-            'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->timezone('Asia/Aden')->toDateTimeString() : null,
+            'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
+            'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
         ];
     }
 }

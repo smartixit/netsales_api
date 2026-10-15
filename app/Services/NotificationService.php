@@ -4,11 +4,18 @@ namespace App\Services;
 
 use App\Enums\NotificationType;
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
+use App\Http\Requests\API\V1\Notification\SendAdminNotificationRequest;
 use App\Http\Requests\API\V1\Notification\StoreNotificationRequest;
 use App\Http\Requests\API\V1\Notification\UpdateNotificationRequest;
 use App\Interfaces\NotificationRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
+use App\Jobs\SendEmailNotificationJob;
+use App\Jobs\SendSmsNotificationJob;
+use App\Models\Network;
 use App\Models\Notification;
+use App\Models\User;
+use App\Services\Support\FileUploadService;
+use App\Services\Support\SMSGateService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +33,9 @@ class NotificationService
 {
     public function __construct(
         protected NotificationRepositoryInterface $notificationRepository,
-        protected UserRepositoryInterface $userRepository
+        protected UserRepositoryInterface $userRepository,
+        protected FileUploadService $fileUploadService,
+        protected SMSGateService $smsGateService
     ) {}
 
     /**
@@ -275,5 +284,125 @@ class NotificationService
     public function markAllAsRead(int $userId): int
     {
         return $this->notificationRepository->markAllAsReadForUser($userId);
+    }
+
+    /**
+     * إرسال إشعار لجمهور متعدد عبر قنوات مختارة (داخل التطبيق / SMS / بريد).
+     */
+    public function sendToAudience(SendAdminNotificationRequest $request): array
+    {
+        $audience = $request->getAudience();
+        $channels = $request->getChannels();
+        $categoryStr = $request->getCategory() ?? 'INFO';
+        $type = NotificationType::tryFrom($categoryStr) ?? NotificationType::INFO;
+
+        $title = $request->getTitle();
+        $body = $request->getBody();
+        $imageFile = $request->getImage();
+
+        $imagePath = null;
+        if ($imageFile) {
+            $imagePath = $this->fileUploadService->uploadFile($imageFile, 'notifications');
+        }
+
+        $recipients = $this->resolveRecipients($audience);
+
+        foreach ($recipients as $user) {
+            if (in_array('in_app', $channels, true)) {
+                $this->notificationRepository->create([
+                    'user_id' => $user->user_id,
+                    'notification_type' => $type,
+                    'notification_title' => $title,
+                    'notification_message' => $body,
+                    'notification_image' => $imagePath,
+                    'is_read' => false,
+                ]);
+            }
+
+            if (in_array('sms', $channels, true) && ! empty($user->user_phone_number)) {
+                SendSmsNotificationJob::dispatch(
+                    phoneNumbers: $user->user_phone_number,
+                    message: "{$title}\n{$body}",
+                    priority: 1,
+                    messageType: 'admin_broadcast'
+                );
+            }
+
+            if (in_array('email', $channels, true) && ! empty($user->user_email)) {
+                SendEmailNotificationJob::dispatch(
+                    toEmail: $user->user_email,
+                    subject: $title,
+                    userName: $user->user_full_name,
+                    ctaLink: config('app.url'),
+                    body: $body
+                );
+            }
+        }
+
+        return [
+            'recipients_count' => $recipients->count(),
+            'channels' => $channels,
+        ];
+    }
+
+    /**
+     * حل وتحديد المستخدمين المستهدفين بناءً على خيارات الجمهور.
+     */
+    protected function resolveRecipients(array $audience): Collection
+    {
+        $type = $audience['type'] ?? 'all';
+
+        return match ($type) {
+            'role' => User::where('status', 'ACTIVE')->where('role_id', $audience['role_id'] ?? null)->get(),
+            'network' => $this->resolveNetworkUsers((int) ($audience['network_id'] ?? 0)),
+            'users' => User::where('status', 'ACTIVE')->whereIn('user_id', (array) ($audience['user_ids'] ?? []))->get(),
+            default => User::where('status', 'ACTIVE')->get(),
+        };
+    }
+
+    /**
+     * جلب المستخدمين المرتبطين بشبكة محددة.
+     */
+    protected function resolveNetworkUsers(int $networkId): Collection
+    {
+        $network = Network::find($networkId);
+        if (! $network) {
+            return new Collection();
+        }
+
+        return User::where('status', 'ACTIVE')
+            ->where(function ($q) use ($network) {
+                if ($network->network_phone_number) {
+                    $q->where('user_phone_number', $network->network_phone_number);
+                }
+                if ($network->network_email) {
+                    $q->orWhere('user_email', $network->network_email);
+                }
+                if ($network->approved_by) {
+                    $q->orWhere('user_id', $network->approved_by);
+                }
+            })->get();
+    }
+
+    /**
+     * إرسال رسالة SMS فورية لمستخدم محدد عبر SMSGate.
+     */
+    public function sendSmsToUser(int $userId, string $title, string $body): bool
+    {
+        $user = $this->userRepository->findById($userId);
+        if (! $user || empty($user->user_phone_number)) {
+            throw ValidationException::withMessages([
+                'user_id' => ['المستخدم المحدد غير موجود أو لا يملك رقم هاتف مسجل.'],
+            ]);
+        }
+
+        $message = "{$title}\n{$body}";
+
+        return $this->smsGateService->sendSms(
+            phoneNumbers: $user->user_phone_number,
+            message: $message,
+            priority: 1,
+            messageType: 'admin_broadcast'
+        );
     }
 }

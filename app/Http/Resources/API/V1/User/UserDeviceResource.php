@@ -38,7 +38,7 @@ class UserDeviceResource extends JsonResource
             'last_used_at' => $this->last_used_at ? Carbon::parse($this->last_used_at)->toDateTimeString() : null,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
-            'deleted_at' => $this->deleted_at ? Carbon::parse($this->deleted_at)->toDateTimeString() : null,
+            
 
             // Eager Loaded Relationships
             'user' => $this->whenLoaded('user', fn () => new UserResource($this->user)),

@@ -71,7 +71,7 @@ class BackupArchiveService
             $manifest = [
                 'app' => 'NetSales',
                 'backup_version' => 1,
-                'generated_at' => now('Asia/Aden')->toIso8601String(),
+                'generated_at' => now('Asia/Aden')->toDateTimeString(),
                 'php' => PHP_VERSION,
                 'laravel' => Application::VERSION,
                 'database' => [
@@ -177,7 +177,7 @@ class BackupArchiveService
             }
 
             $size = $entry->getSize();
-            if ($result['bytes'] + $size > $budget) {
+            if ($budget < $result['bytes'] + $size) {
                 throw new BackupException(sprintf(
                     'حجم ملفات التخزين مع الأرشيف يتجاوز الحد الأقصى المسموح (%s). أعد تقييم تضمين التخزين.',
                     $this->humanBytes($budget)

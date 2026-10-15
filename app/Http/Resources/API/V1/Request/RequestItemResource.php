@@ -27,7 +27,7 @@ class RequestItemResource extends JsonResource
             'item_voucher_count' => (int) $this->item_voucher_count,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
-            'deleted_at' => $this->deleted_at ? Carbon::parse($this->deleted_at)->toDateTimeString() : null,
+            
 
             // Eager Loaded Relationships
             'voucher_package' => $this->whenLoaded('voucherPackage', fn () => new VoucherPackageResource($this->voucherPackage)),

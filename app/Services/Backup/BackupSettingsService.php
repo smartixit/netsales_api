@@ -228,7 +228,7 @@ class BackupSettingsService
             'drive_auth' => [
                 'state' => $state,
                 'redirect_uri' => $redirectUri,
-                'expires_at' => now('Asia/Aden')->addSeconds($lifetimeSeconds)->toIso8601String(),
+                'expires_at' => now('Asia/Aden')->addSeconds($lifetimeSeconds)->toDateTimeString(),
             ],
         ]);
 

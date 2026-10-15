@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AdminNotificationController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BackupController;
 use App\Http\Controllers\Api\V1\BankAccountController;
 use App\Http\Controllers\Api\V1\DirectorateController;
 use App\Http\Controllers\Api\V1\ExpenseController;
@@ -9,6 +11,7 @@ use App\Http\Controllers\Api\V1\FileController;
 use App\Http\Controllers\Api\V1\GovernorateController;
 use App\Http\Controllers\Api\V1\NetworkController;
 use App\Http\Controllers\Api\V1\NetworkPosController;
+use App\Http\Controllers\Api\V1\NetworkSmsSettingController;
 use App\Http\Controllers\Api\V1\NetworkWalletController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OtpController;
@@ -17,6 +20,7 @@ use App\Http\Controllers\Api\V1\PosWalletController;
 use App\Http\Controllers\Api\V1\ProviderSubscriptionController;
 use App\Http\Controllers\Api\V1\RequestController;
 use App\Http\Controllers\Api\V1\SaleInvoiceController;
+use App\Http\Controllers\Api\V1\ScheduledTaskRunController;
 use App\Http\Controllers\Api\V1\SecurityController;
 use App\Http\Controllers\Api\V1\SubscriptionPlanController;
 use App\Http\Controllers\Api\V1\SubscriptionPlanRequestController;
@@ -593,6 +597,59 @@ Route::prefix('v1')->group(function () {
             Route::post('directorates/batch-restore', [DirectorateController::class, 'batchRestore'])->name('api.v1.directorates.batch_restore');
             Route::post('directorates/batch-force-delete', [DirectorateController::class, 'batchForceDelete'])->name('api.v1.directorates.batch_force_delete');
             Route::apiResource('directorates', DirectorateController::class)->parameters(['directorates' => 'id'])->except(['index', 'show']);
+        });
+
+        // ==========================================
+        // 23. إعدادات وبوابات الرسائل النصية للشبكات (Network SMS Settings)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('sms-settings', [NetworkSmsSettingController::class, 'getOverview'])->name('api.v1.sms_settings.overview');
+            Route::get('sms-settings/networks/{id}', [NetworkSmsSettingController::class, 'show'])->whereNumber('id')->name('api.v1.sms_settings.network');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::put('sms-settings/global', [NetworkSmsSettingController::class, 'updateGlobal'])->name('api.v1.sms_settings.update_global');
+            Route::put('sms-settings/networks/{id}', [NetworkSmsSettingController::class, 'update'])->whereNumber('id')->name('api.v1.sms_settings.update');
+            Route::post('sms-settings/networks/{id}/test', [NetworkSmsSettingController::class, 'testSms'])->whereNumber('id')->name('api.v1.sms_settings.test');
+        });
+
+        // ==========================================
+        // 24. محرك النسخ الاحتياطي السحابي الشامل (Cloud Backup & Disaster Recovery)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('backups/settings', [BackupController::class, 'settings'])->name('api.v1.backups.settings');
+            Route::get('backups/health', [BackupController::class, 'health'])->name('api.v1.backups.health');
+            Route::get('backups/drive/auth', [BackupController::class, 'driveAuthUrl'])->name('api.v1.backups.drive_auth');
+            Route::get('backups', [BackupController::class, 'index'])->name('api.v1.backups.index');
+            Route::get('backups/{id}', [BackupController::class, 'show'])->whereNumber('id')->name('api.v1.backups.show');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('backups/drive/token', [BackupController::class, 'storeDriveToken'])->name('api.v1.backups.drive_token');
+            Route::post('backups/drive/disconnect', [BackupController::class, 'disconnectDrive'])->name('api.v1.backups.drive_disconnect');
+            Route::put('backups/config', [BackupController::class, 'updateConfig'])->name('api.v1.backups.update_config');
+            Route::post('backups/run', [BackupController::class, 'runBackup'])->name('api.v1.backups.run');
+            Route::delete('backups/{id}', [BackupController::class, 'destroy'])->whereNumber('id')->name('api.v1.backups.destroy');
+        });
+
+        // ==========================================
+        // 25. سجلات ومحرك المهام المجدولة (Scheduled Tasks & Catch-up Engine)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('scheduled-tasks', [ScheduledTaskRunController::class, 'index'])->name('api.v1.scheduled_tasks.index');
+            Route::get('scheduled-tasks/stats', [ScheduledTaskRunController::class, 'stats'])->name('api.v1.scheduled_tasks.stats');
+        });
+
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('scheduled-tasks/catchup', [ScheduledTaskRunController::class, 'catchup'])->name('api.v1.scheduled_tasks.catchup');
+        });
+
+        // ==========================================
+        // 26. إشعارات ورسائل الإدارة الموجهة (Admin Multi-Channel Notifications)
+        // ==========================================
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('admin/notifications/send', [AdminNotificationController::class, 'send'])->name('api.v1.admin_notifications.send');
+            Route::post('admin/notifications/user', [AdminNotificationController::class, 'sendToUser'])->name('api.v1.admin_notifications.user');
         });
 
     });
