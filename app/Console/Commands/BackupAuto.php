@@ -4,9 +4,9 @@ namespace App\Console\Commands;
 
 use App\Enums\NotificationType;
 use App\Models\BackupJob;
-use App\Models\Notification;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\NotificationService;
 use App\Services\Backup\BackupOrchestratorService;
 use App\Services\Backup\BackupSettingsService;
 use App\Services\Support\SMSGateService;
@@ -208,15 +208,15 @@ class BackupAuto extends Command
                 return;
             }
 
-            // 1. إنشاء إشعار داخلي في التطبيق
+            // 1. إنشاء إشعار داخلي وإرسال Push FCM للمدراء
+            $notificationService = app(NotificationService::class);
             foreach ($superAdmins as $admin) {
-                Notification::create([
-                    'user_id' => $admin->user_id,
-                    'notification_type' => NotificationType::WARNING,
-                    'notification_title' => '🚨 تنبيه: فشل النسخ الاحتياطي التلقائي',
-                    'notification_message' => $reason,
-                    'is_read' => false,
-                ]);
+                $notificationService->sendDirect(
+                    userId: (int) $admin->user_id,
+                    type: NotificationType::WARNING,
+                    title: '🚨 تنبيه: فشل النسخ الاحتياطي التلقائي',
+                    message: $reason
+                );
             }
 
             // 2. إرسال SMS للـ Super Admin فقط

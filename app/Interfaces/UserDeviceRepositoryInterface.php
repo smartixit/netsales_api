@@ -52,4 +52,21 @@ interface UserDeviceRepositoryInterface extends BaseRepositoryInterface
      * Disconnect/remove a device for a specific user.
      */
     public function disconnectDevice(int $deviceId, int $userId): bool;
+
+    /**
+     * Get all active FCM tokens registered for a specific user.
+     *
+     * @return array<int, string>
+     */
+    public function getActiveFcmTokensForUser(int $userId): array;
+
+    /**
+     * Update FCM push token for a specific device.
+     */
+    public function updateFcmToken(int $userId, string $deviceUuid, ?string $fcmToken): bool;
+
+    /**
+     * Invalidate/remove an invalid or expired FCM token from all devices.
+     */
+    public function invalidateFcmToken(string $fcmToken): int;
 }

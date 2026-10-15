@@ -2,14 +2,20 @@
 
 namespace App\Services;
 
+use App\Enums\DeviceType;
 use App\Enums\NotificationType;
+use App\Enums\UserDeviceStatus;
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Notification\SendAdminNotificationRequest;
+use App\Http\Requests\API\V1\Notification\SendUserDirectNotificationRequest;
 use App\Http\Requests\API\V1\Notification\StoreNotificationRequest;
+use App\Http\Requests\API\V1\Notification\UpdateFcmTokenRequest;
 use App\Http\Requests\API\V1\Notification\UpdateNotificationRequest;
 use App\Interfaces\NotificationRepositoryInterface;
+use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Jobs\SendEmailNotificationJob;
+use App\Jobs\SendFcmNotificationJob;
 use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
 use App\Models\Notification;
@@ -34,6 +40,7 @@ class NotificationService
     public function __construct(
         protected NotificationRepositoryInterface $notificationRepository,
         protected UserRepositoryInterface $userRepository,
+        protected UserDeviceRepositoryInterface $userDeviceRepository,
         protected FileUploadService $fileUploadService,
         protected SMSGateService $smsGateService
     ) {}
@@ -125,7 +132,8 @@ class NotificationService
         string|NotificationType $type,
         string $title,
         string $message,
-        ?string $image = null
+        ?string $image = null,
+        bool $sendPush = true
     ): Notification {
         $typeValue = $type instanceof NotificationType ? $type->value : (string) $type;
 
@@ -139,7 +147,22 @@ class NotificationService
             'read_at' => null,
         ];
 
-        return $this->notificationRepository->create($data);
+        $notification = $this->notificationRepository->create($data);
+
+        if ($sendPush) {
+            SendFcmNotificationJob::dispatch(
+                userId: $userId,
+                title: $title,
+                body: $message,
+                data: [
+                    'notification_id' => $notification->notification_id,
+                    'notification_type' => $typeValue,
+                ],
+                image: $image
+            );
+        }
+
+        return $notification;
     }
 
     /**
@@ -150,12 +173,13 @@ class NotificationService
         string|NotificationType $type,
         string $title,
         string $message,
-        ?string $image = null
+        ?string $image = null,
+        bool $sendPush = true
     ): int {
-        return DB::transaction(function () use ($userIds, $type, $title, $message, $image) {
+        return DB::transaction(function () use ($userIds, $type, $title, $message, $image, $sendPush) {
             $count = 0;
             foreach ($userIds as $userId) {
-                $this->sendDirect((int) $userId, $type, $title, $message, $image);
+                $this->sendDirect((int) $userId, $type, $title, $message, $image, $sendPush);
                 $count++;
             }
 
@@ -337,6 +361,18 @@ class NotificationService
                     body: $body
                 );
             }
+
+            if (in_array('fcm', $channels, true) || in_array('push', $channels, true)) {
+                SendFcmNotificationJob::dispatch(
+                    userId: $user->user_id,
+                    title: $title,
+                    body: $body,
+                    data: [
+                        'notification_type' => $type->value,
+                    ],
+                    image: $imagePath
+                );
+            }
         }
 
         return [
@@ -404,5 +440,95 @@ class NotificationService
             priority: 1,
             messageType: 'admin_broadcast'
         );
+    }
+
+    /**
+     * تسجيل أو تحديث رمز FCM للجهاز الحالي للمستخدم.
+     */
+    public function updateFcmToken(UpdateFcmTokenRequest $request, int $userId): bool
+    {
+        return DB::transaction(function () use ($request, $userId) {
+            $deviceUuid = $request->getDeviceUuid();
+            $fcmToken = $request->getFcmToken();
+            $deviceName = $request->getDeviceName();
+            $deviceTypeStr = $request->getDeviceType();
+            $deviceType = $deviceTypeStr ? (DeviceType::tryFrom(strtoupper($deviceTypeStr)) ?? DeviceType::UNKNOWN) : DeviceType::UNKNOWN;
+
+            // التأكد من وجود الجهاز أو تسجيله للمستخدم
+            $device = $this->userDeviceRepository->findByUuid($userId, $deviceUuid);
+            if (! $device) {
+                $this->userDeviceRepository->registerOrUpdateDevice(
+                    userId: $userId,
+                    deviceUuid: $deviceUuid,
+                    deviceName: $deviceName ?: 'Mobile Device',
+                    deviceType: $deviceType,
+                    isPrimary: false,
+                    status: UserDeviceStatus::ACTIVE
+                );
+            }
+
+            return $this->userDeviceRepository->updateFcmToken($userId, $deviceUuid, $fcmToken);
+        });
+    }
+
+    /**
+     * إرسال إشعار موجه ومباشر لمستخدم من الإدارة مع تحديد القنوات (FCM / In-App / SMS).
+     */
+    public function sendDirectToUser(SendUserDirectNotificationRequest $request): array
+    {
+        $userId = $request->getUserId();
+        $title = $request->getTitle();
+        $body = $request->getBody();
+        $channels = $request->getChannels();
+
+        $user = $this->userRepository->findById($userId);
+        if (! $user) {
+            throw ValidationException::withMessages([
+                'user_id' => ["المستخدم رقم [{$userId}] غير موجود."],
+            ]);
+        }
+
+        $sentChannels = [];
+
+        // 1. القناة الداخلية (In-App)
+        if (in_array('in_app', $channels, true)) {
+            $this->notificationRepository->create([
+                'user_id' => $userId,
+                'notification_type' => NotificationType::INFO,
+                'notification_title' => $title,
+                'notification_message' => $body,
+                'is_read' => false,
+            ]);
+            $sentChannels[] = 'in_app';
+        }
+
+        // 2. إشعار الدفع الفوري (FCM Push)
+        if (in_array('fcm', $channels, true) || in_array('push', $channels, true)) {
+            SendFcmNotificationJob::dispatch(
+                userId: $userId,
+                title: $title,
+                body: $body,
+                data: [
+                    'notification_type' => NotificationType::INFO->value,
+                ]
+            );
+            $sentChannels[] = 'fcm';
+        }
+
+        // 3. الرسائل النصية القصيرة (SMS)
+        if (in_array('sms', $channels, true) && ! empty($user->user_phone_number)) {
+            SendSmsNotificationJob::dispatch(
+                phoneNumbers: $user->user_phone_number,
+                message: "{$title}\n{$body}",
+                priority: 1,
+                messageType: 'admin_broadcast'
+            );
+            $sentChannels[] = 'sms';
+        }
+
+        return [
+            'user_id' => $userId,
+            'channels' => $sentChannels,
+        ];
     }
 }

@@ -59,4 +59,11 @@ return [
         'folder_name' => env('GOOGLE_DRIVE_FOLDER_NAME', 'Qayd Backup'),
     ],
 
+    'firebase' => [
+        'is_enabled' => (bool) env('FIREBASE_ENABLED', true),
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+        'credentials_path' => env('FIREBASE_CREDENTIALS_PATH', storage_path('app/firebase-service-account.json')),
+    ],
+
 ];
+

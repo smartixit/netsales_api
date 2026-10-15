@@ -393,7 +393,7 @@ class SMSGateService
      */
     public function sendOtp(string $phoneNumber, string $code, ?int $recipientId = null): bool
     {
-        $message = "رمز التحقق الخاص بك في نظام مبيعات الشبكة هو: {$code}\nلا تشارك هذا الرمز مع أي شخص حفاظاً على أمان حسابك.";
+        $message = "🔐 رمز التحقق الخاص بك في نظام مبيعات الشبكة هو: {$code}\n⚠️ لا تشارك هذا الرمز مع أي شخص مهما كان السبب.";
 
         return $this->sendSms(
             phoneNumbers: $phoneNumber,

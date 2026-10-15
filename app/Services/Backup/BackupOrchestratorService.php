@@ -7,9 +7,9 @@ use App\Enums\RoleKey;
 use App\Exceptions\BackupException;
 use App\Interfaces\BackupJobRepositoryInterface;
 use App\Models\BackupJob;
-use App\Models\Notification;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\NotificationService;
 use App\Services\Support\SMSGateService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -38,8 +38,11 @@ class BackupOrchestratorService
         protected DatabaseDumpService $dumper,
         protected BackupArchiveService $archiver,
         protected GoogleDriveService $drive,
-        protected SMSGateService $smsGate
-    ) {}
+        protected SMSGateService $smsGate,
+        protected ?NotificationService $notificationService = null
+    ) {
+        $this->notificationService = $notificationService ?? app(NotificationService::class);
+    }
 
     /**
      * تنفيذ نسخة احتياطية كاملة وإرجاع سجل الوظيفة النهائي.
@@ -301,13 +304,12 @@ class BackupOrchestratorService
             }
 
             foreach ($superAdmins as $admin) {
-                Notification::create([
-                    'user_id' => $admin->user_id,
-                    'notification_type' => NotificationType::SYSTEM,
-                    'notification_title' => $title,
-                    'notification_message' => "النوع: {$type}\n{$body}",
-                    'is_read' => false,
-                ]);
+                $this->notificationService->sendDirect(
+                    userId: (int) $admin->user_id,
+                    type: NotificationType::SYSTEM,
+                    title: $title,
+                    message: "النوع: {$type}\n{$body}"
+                );
             }
 
             if ($this->settings->failureSmsEnabled() && $type === BackupJob::TYPE_AUTO) {
@@ -355,13 +357,12 @@ class BackupOrchestratorService
             $sizeFormatted = $sizeMb > 0 ? " ({$sizeMb} MB)" : '';
 
             foreach ($superAdmins as $admin) {
-                Notification::create([
-                    'user_id' => $admin->user_id,
-                    'notification_type' => NotificationType::SYSTEM,
-                    'notification_title' => '✅ تم إنشاء النسخة الاحتياطية بنجاح',
-                    'notification_message' => "تم حفظ النسخة الاحتياطية بنجاح على Google Drive.\nالملف: {$fileName}{$sizeFormatted}",
-                    'is_read' => false,
-                ]);
+                $this->notificationService->sendDirect(
+                    userId: (int) $admin->user_id,
+                    type: NotificationType::SYSTEM,
+                    title: '✅ تم إنشاء النسخة الاحتياطية بنجاح',
+                    message: "تم حفظ النسخة الاحتياطية بنجاح على Google Drive.\nالملف: {$fileName}{$sizeFormatted}"
+                );
             }
         } catch (Throwable $e) {
             Log::warning('تعذر إرسال إشعار نجاح النسخة الاحتياطية: '.$e->getMessage());

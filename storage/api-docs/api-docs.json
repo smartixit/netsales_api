@@ -106,11 +106,11 @@
                 "tags": [
                     "Admin Notifications"
                 ],
-                "summary": "إرسال رسالة SMS فورية لمستخدم معين",
-                "description": "إرسال رسالة نصية SMS فورية لمستخدم محدد عبر بوابة SMSGate.",
+                "summary": "إرسال إشعار موجه لمستخدم محدد (In-App, FCM Push, SMS)",
+                "description": "إرسال إشعار موجه ومباشر لمستخدم محدد عبر القنوات المختارة (In-App / FCM Push / SMS).",
                 "operationId": "18bdfbf65b38b0f851f6ca9022705369",
                 "requestBody": {
-                    "description": "بيانات إرسال رسالة SMS للمستخدم",
+                    "description": "بيانات إرسال الإشعار للمستخدم",
                     "required": true,
                     "content": {
                         "multipart/form-data": {
@@ -132,6 +132,13 @@
                                     "body": {
                                         "type": "string",
                                         "example": "تم تسجيل دخول جديد إلى حسابك"
+                                    },
+                                    "channels[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "fcm"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -141,10 +148,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "تم إرسال الرسالة النصية بنجاح"
+                        "description": "تم إرسال الإشعار للمستخدم بنجاح"
                     },
                     "422": {
-                        "description": "فشل في إرسال الرسالة النصية"
+                        "description": "فشل في إرسال الإشعار"
                     }
                 },
                 "security": [
@@ -5173,6 +5180,63 @@
                         "description": "تم تمييز جميع الإشعارات كمقروءة بنجاح"
                     }
                 }
+            }
+        },
+        "/api/v1/notifications/fcm-token": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "تسجيل أو تحديث رمز إشعارات الدفع (FCM Token)",
+                "description": "تسجيل أو تحديث رمز الإشعارات الفورية (FCM Token) للجهاز الحالي.",
+                "operationId": "edd87a15500e5a8b2aae979df4eba517",
+                "requestBody": {
+                    "description": "بيانات الجهاز ورمز FCM",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "device_uuid",
+                                    "fcm_token"
+                                ],
+                                "properties": {
+                                    "device_uuid": {
+                                        "type": "string",
+                                        "example": "uuid-12345"
+                                    },
+                                    "fcm_token": {
+                                        "type": "string",
+                                        "example": "fcm-token-xyz..."
+                                    },
+                                    "device_name": {
+                                        "type": "string",
+                                        "example": "Samsung S24 Ultra"
+                                    },
+                                    "device_type": {
+                                        "type": "string",
+                                        "example": "MOBILE"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث رمز الإشعارات الفورية بنجاح"
+                    },
+                    "422": {
+                        "description": "فشل في التحقق من البيانات"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": [],
+                        "deviceAuth": []
+                    }
+                ]
             }
         },
         "/api/v1/otp/generate": {
@@ -12144,7 +12208,7 @@
     "tags": [
         {
             "name": "Admin Notifications",
-            "description": "إرسال وتوزيع إشعارات الإدارة المتعددة القنوات (داخل التطبيق، SMS، البريد)"
+            "description": "إرسال وتوزيع إشعارات الإدارة المتعددة القنوات (داخل التطبيق، إشعارات الدفع FCM، SMS، البريد)"
         },
         {
             "name": "Auth",

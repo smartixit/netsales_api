@@ -29,7 +29,7 @@ class SendAdminNotificationRequest extends FormRequest
             'audience.user_ids' => ['required_if:audience.type,users', 'nullable', 'array', 'min:1'],
             'audience.user_ids.*' => ['integer', 'exists:users,user_id'],
             'channels' => ['required', 'array', 'min:1'],
-            'channels.*' => Rule::in(['in_app', 'sms', 'email']),
+            'channels.*' => Rule::in(['in_app', 'sms', 'email', 'fcm', 'push']),
             'category' => ['nullable', 'string', Rule::in(['SYSTEM', 'INFO', 'WARNING', 'SECURITY'])],
             'title' => ['required', 'string', 'max:200'],
             'body' => ['required', 'string', 'max:5000'],

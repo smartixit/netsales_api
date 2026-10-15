@@ -8,8 +8,8 @@ use App\Enums\ScheduledTaskType;
 use App\Enums\SmsMessageType;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
 use App\Models\NetworkSmsSetting;
-use App\Models\Notification;
 use App\Models\PosWallet;
+use App\Services\NotificationService;
 use App\Services\Support\SMSGateService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -27,7 +27,8 @@ class CheckLowBalanceAlerts extends Command
 
     public function handle(
         SMSGateService $smsGateService,
-        ScheduledTaskRunRepositoryInterface $taskRunRepository
+        ScheduledTaskRunRepositoryInterface $taskRunRepository,
+        NotificationService $notificationService
     ): int {
         $now = Carbon::now('Asia/Aden');
         $threshold = (float) $this->option('threshold');
@@ -88,13 +89,12 @@ class CheckLowBalanceAlerts extends Command
                     }
                 }
 
-                Notification::create([
-                    'user_id' => $network->approved_by ?? 1,
-                    'notification_type' => NotificationType::WARNING,
-                    'notification_title' => '⚠️ تنبيه انخفاض رصيد محفظة',
-                    'notification_message' => $message,
-                    'is_read' => false,
-                ]);
+                $notificationService->sendDirect(
+                    userId: (int) ($network->approved_by ?? 1),
+                    type: NotificationType::WARNING,
+                    title: '⚠️ تنبيه انخفاض رصيد محفظة',
+                    message: $message
+                );
 
                 $alertedWallets[] = [
                     'pos_id' => $wallet->pos_id,

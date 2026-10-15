@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\NotificationType;
 use App\Enums\RequestStatus;
 use App\Http\Requests\API\V1\Request\StoreRequestRequest;
 use App\Interfaces\NetworkPosRepositoryInterface;
@@ -12,6 +13,7 @@ use App\Interfaces\RequestRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Models\Request as RequestModel;
 use App\Models\SaleInvoice;
+use App\Services\NotificationService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +31,8 @@ class RequestService
         protected NetworkRepositoryInterface $networkRepository,
         protected PosRepositoryInterface $posRepository,
         protected NetworkPosRepositoryInterface $networkPosRepository,
-        protected SaleInvoiceService $saleInvoiceService
+        protected SaleInvoiceService $saleInvoiceService,
+        protected NotificationService $notificationService
     ) {}
 
     /**
@@ -134,6 +137,18 @@ class RequestService
 
             $createdRequest->load(['network', 'pos', 'createdBy', 'items.voucherPackage']);
 
+            // إشعار صاحب الشبكة بطلب الكروت الجديد عبر الإشعارات وFCM Push
+            if ($network && $network->approved_by) {
+                $posName = $pos?->pos_name ?? 'نقطة البيع';
+                $formattedAmount = number_format($totalAmount, 2);
+                $this->notificationService->sendDirect(
+                    userId: (int) $network->approved_by,
+                    type: NotificationType::INFO,
+                    title: '📥 طلب كروت جديد',
+                    message: "قامت نقطة البيع ({$posName}) بإنشاء طلب كروت رقم #{$createdRequest->request_uuid} بإجمالي {$formattedAmount} ر.ي."
+                );
+            }
+
             return $createdRequest;
         });
     }
@@ -168,6 +183,17 @@ class RequestService
 
             $request->refresh()->load(['network', 'pos', 'createdBy', 'reviewedBy', 'items.voucherPackage']);
 
+            // إشعار صاحب الطلب (نقطة البيع) باعتماد الطلب وتوليد الفاتورة عبر الإشعارات وFCM Push
+            if ($request->created_by) {
+                $invoiceNum = $invoice->invoice_uuid ?? $invoice->invoice_id;
+                $this->notificationService->sendDirect(
+                    userId: (int) $request->created_by,
+                    type: NotificationType::INFO,
+                    title: '✅ تم اعتماد طلب الكروت',
+                    message: "تم اعتماد طلب الكروت رقم #{$request->request_uuid} بنجاح، وتوليد فاتورة مبيعات رقم #{$invoiceNum}."
+                );
+            }
+
             return [
                 'request' => $request,
                 'invoice' => $invoice,
@@ -200,6 +226,16 @@ class RequestService
                 $updatedNote
             );
 
+            // إشعار صاحب الطلب برفض الطلب عبر الإشعارات وFCM Push
+            if ($request->created_by) {
+                $this->notificationService->sendDirect(
+                    userId: (int) $request->created_by,
+                    type: NotificationType::WARNING,
+                    title: '❌ تم رفض طلب الكروت',
+                    message: "تم رفض طلب الكروت رقم #{$request->request_uuid}. سبب الرفض: {$reason}"
+                );
+            }
+
             return $this->getById($requestId);
         });
     }
@@ -231,6 +267,16 @@ class RequestService
                 $userId,
                 'تم إلغاء الطلب بواسطة المستخدم'
             );
+
+            // إشعار صاحب الشبكة بإلغاء الطلب عبر الإشعارات وFCM Push
+            if ($request->network && $request->network->approved_by) {
+                $this->notificationService->sendDirect(
+                    userId: (int) $request->network->approved_by,
+                    type: NotificationType::INFO,
+                    title: 'ℹ️ إلغاء طلب كروت',
+                    message: "تم إلغاء طلب الكروت رقم #{$request->request_uuid} من قبل مقدم الطلب."
+                );
+            }
 
             return $this->getById($requestId);
         });

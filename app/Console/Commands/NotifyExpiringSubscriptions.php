@@ -9,8 +9,8 @@ use App\Enums\ScheduledTaskType;
 use App\Enums\SmsMessageType;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
 use App\Models\NetworkSmsSetting;
-use App\Models\Notification;
 use App\Models\ProviderSubscription;
+use App\Services\NotificationService;
 use App\Services\Support\SMSGateService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -28,7 +28,8 @@ class NotifyExpiringSubscriptions extends Command
 
     public function handle(
         SMSGateService $smsGateService,
-        ScheduledTaskRunRepositoryInterface $taskRunRepository
+        ScheduledTaskRunRepositoryInterface $taskRunRepository,
+        NotificationService $notificationService
     ): int {
         $now = Carbon::now('Asia/Aden');
         $days = (int) $this->option('days');
@@ -89,14 +90,13 @@ class NotifyExpiringSubscriptions extends Command
                 }
             }
 
-            // 2. تسجيل إشعار داخلي في النظام
-            Notification::create([
-                'user_id' => $network->approved_by ?? 1,
-                'notification_type' => NotificationType::WARNING,
-                'notification_title' => '⚠️ اقتراب انتهاء اشتراك الشبكة',
-                'notification_message' => $message,
-                'is_read' => false,
-            ]);
+            // 2. تسجيل إشعار داخلي في النظام وإرسال push FCM تلقائياً
+            $notificationService->sendDirect(
+                userId: (int) ($network->approved_by ?? 1),
+                type: NotificationType::WARNING,
+                title: '⚠️ اقتراب انتهاء اشتراك الشبكة',
+                message: $message
+            );
 
             // 3. توثيق تنفيذ المهمة لليوم
             $taskRunRepository->recordRun(

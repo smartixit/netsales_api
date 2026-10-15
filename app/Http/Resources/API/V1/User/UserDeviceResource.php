@@ -30,6 +30,7 @@ class UserDeviceResource extends JsonResource
             'device_type_label' => $this->device_type instanceof DeviceType
                 ? $this->device_type->label()
                 : (DeviceType::tryFrom((string) $this->device_type)?->label()),
+            'fcm_token' => $this->fcm_token,
             'is_primary' => (bool) $this->is_primary,
             'status' => $this->status instanceof UserDeviceStatus ? $this->status->value : $this->status,
             'status_label' => $this->status instanceof UserDeviceStatus

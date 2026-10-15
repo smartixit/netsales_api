@@ -32,6 +32,7 @@ class UserDevice extends Model
         'device_uuid',
         'device_name',
         'device_type',
+        'fcm_token',
         'is_primary',
         'status',
         'last_used_at',

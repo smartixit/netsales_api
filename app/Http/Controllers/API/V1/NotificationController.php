@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Notification\StoreNotificationRequest;
+use App\Http\Requests\API\V1\Notification\UpdateFcmTokenRequest;
 use App\Http\Requests\API\V1\Notification\UpdateNotificationRequest;
 use App\Http\Resources\API\V1\Notification\NotificationResource;
 use App\Services\NotificationService;
@@ -520,6 +521,49 @@ class NotificationController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('تعذر تمييز الإشعارات كمقروءة: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * تسجيل أو تحديث رمز الإشعارات الفورية (FCM Token) للجهاز الحالي.
+     */
+    #[OA\Post(
+        path: '/api/v1/notifications/fcm-token',
+        summary: 'تسجيل أو تحديث رمز إشعارات الدفع (FCM Token)',
+        security: [['sessionAuth' => [], 'deviceAuth' => []]],
+        tags: ['Notifications'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الجهاز ورمز FCM',
+            content: new OA\MediaType(
+                mediaType: 'application/json',
+                schema: new OA\Schema(
+                    required: ['device_uuid', 'fcm_token'],
+                    properties: [
+                        new OA\Property(property: 'device_uuid', type: 'string', example: 'uuid-12345'),
+                        new OA\Property(property: 'fcm_token', type: 'string', example: 'fcm-token-xyz...'),
+                        new OA\Property(property: 'device_name', type: 'string', example: 'Samsung S24 Ultra'),
+                        new OA\Property(property: 'device_type', type: 'string', example: 'MOBILE'),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'تم تحديث رمز الإشعارات الفورية بنجاح'),
+            new OA\Response(response: 422, description: 'فشل في التحقق من البيانات'),
+        ]
+    )]
+    public function updateFcmToken(UpdateFcmTokenRequest $request): JsonResponse
+    {
+        try {
+            $userId = (int) $request->user()->user_id;
+            $this->notificationService->updateFcmToken($request, $userId);
+
+            return $this->successResponse('تم تسجيل رمز الإشعارات الفورية (FCM Token) للجهاز بنجاح.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر تحديث رمز الإشعارات الفورية: '.$e->getMessage(), [], 422);
         }
     }
 }

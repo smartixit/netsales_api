@@ -97,4 +97,38 @@ class UserDeviceRepository extends BaseRepository implements UserDeviceRepositor
             ->where('device_id', $deviceId)
             ->delete();
     }
+
+    public function getActiveFcmTokensForUser(int $userId): array
+    {
+        return $this->model->newQuery()
+            ->forUser($userId)
+            ->active()
+            ->whereNotNull('fcm_token')
+            ->where('fcm_token', '!=', '')
+            ->pluck('fcm_token')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    public function updateFcmToken(int $userId, string $deviceUuid, ?string $fcmToken): bool
+    {
+        $device = $this->findByUuid($userId, $deviceUuid);
+
+        if ($device) {
+            return (bool) $device->update([
+                'fcm_token' => $fcmToken,
+                'last_used_at' => Carbon::now('Asia/Aden'),
+            ]);
+        }
+
+        return false;
+    }
+
+    public function invalidateFcmToken(string $fcmToken): int
+    {
+        return $this->model->newQuery()
+            ->where('fcm_token', $fcmToken)
+            ->update(['fcm_token' => null]);
+    }
 }

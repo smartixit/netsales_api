@@ -120,8 +120,8 @@ class OtpService
             $this->notificationService->sendDirect(
                 userId: (int) $user->user_id,
                 type: NotificationType::INFO,
-                title: 'رمز التحقق (OTP)',
-                message: "رمز التحقق الخاص بك في نظام مبيعات الشبكة هو: {$plainCode}"
+                title: "🔐 رمز التحقق (OTP)",
+                message:"🔐 رمز التحقق الخاص بك هو: {$plainCode}",
             );
 
             // 6. توثيق أمني

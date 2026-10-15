@@ -3,17 +3,17 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Requests\API\V1\Notification\SendAdminNotificationRequest;
+use App\Http\Requests\API\V1\Notification\SendUserDirectNotificationRequest;
 use App\Services\NotificationService;
 use Exception;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
 /**
  * متحكم إشعارات ورسائل الإدارة المركزية (Admin Notification Controller).
  */
-#[OA\Tag(name: 'Admin Notifications', description: 'إرسال وتوزيع إشعارات الإدارة المتعددة القنوات (داخل التطبيق، SMS، البريد)')]
+#[OA\Tag(name: 'Admin Notifications', description: 'إرسال وتوزيع إشعارات الإدارة المتعددة القنوات (داخل التطبيق، إشعارات الدفع FCM، SMS، البريد)')]
 class AdminNotificationController extends BaseController
 {
     public function __construct(
@@ -72,16 +72,16 @@ class AdminNotificationController extends BaseController
     }
 
     /**
-     * إرسال رسالة نصية SMS فورية لمستخدم محدد عبر بوابة SMSGate.
+     * إرسال إشعار موجه ومباشر لمستخدم محدد عبر القنوات المختارة (In-App / FCM Push / SMS).
      */
     #[OA\Post(
         path: '/api/v1/admin/notifications/user',
-        summary: 'إرسال رسالة SMS فورية لمستخدم معين',
+        summary: 'إرسال إشعار موجه لمستخدم محدد (In-App, FCM Push, SMS)',
         security: [['sessionAuth' => [], 'deviceAuth' => []]],
         tags: ['Admin Notifications'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
-            description: 'بيانات إرسال رسالة SMS للمستخدم',
+            description: 'بيانات إرسال الإشعار للمستخدم',
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
@@ -90,39 +90,26 @@ class AdminNotificationController extends BaseController
                         new OA\Property(property: 'user_id', type: 'integer', example: 1),
                         new OA\Property(property: 'title', type: 'string', example: 'تنبيه أمني'),
                         new OA\Property(property: 'body', type: 'string', example: 'تم تسجيل دخول جديد إلى حسابك'),
+                        new OA\Property(property: 'channels[]', type: 'array', items: new OA\Items(type: 'string', example: 'fcm')),
                     ]
                 )
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'تم إرسال الرسالة النصية بنجاح'),
-            new OA\Response(response: 422, description: 'فشل في إرسال الرسالة النصية'),
+            new OA\Response(response: 200, description: 'تم إرسال الإشعار للمستخدم بنجاح'),
+            new OA\Response(response: 422, description: 'فشل في إرسال الإشعار'),
         ]
     )]
-    public function sendToUser(Request $request): JsonResponse
+    public function sendToUser(SendUserDirectNotificationRequest $request): JsonResponse
     {
         try {
-            $request->validate([
-                'user_id' => ['required', 'integer', 'exists:users,user_id'],
-                'title' => ['required', 'string', 'max:150'],
-                'body' => ['required', 'string', 'max:1000'],
-            ]);
+            $result = $this->notificationService->sendDirectToUser($request);
 
-            $sent = $this->notificationService->sendSmsToUser(
-                userId: (int) $request->input('user_id'),
-                title: (string) $request->input('title'),
-                body: (string) $request->input('body')
-            );
-
-            if ($sent) {
-                return $this->successResponse('تم إرسال الرسالة النصية للمستخدم بنجاح.');
-            }
-
-            return $this->errorResponse('تعذر إرسال الرسالة النصية أو تم حظرها بسياسة النظام.', [], 422);
+            return $this->successResponse('تم إرسال الإشعار الموجه للمستخدم بنجاح.', $result);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
-            return $this->errorResponse('خطأ أثناء إرسال الرسالة النصية للمستخدم: '.$e->getMessage(), [], 422);
+            return $this->errorResponse('خطأ أثناء إرسال الإشعار للمستخدم: '.$e->getMessage(), [], 422);
         }
     }
 }

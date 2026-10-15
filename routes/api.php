@@ -521,6 +521,7 @@ Route::prefix('v1')->group(function () {
             Route::post('notifications/batch-force-delete', [NotificationController::class, 'batchForceDelete'])->name('api.v1.notifications.batch_force_delete');
             Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead'])->whereNumber('id')->name('api.v1.notifications.mark_as_read');
             Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('api.v1.notifications.mark_all_read');
+            Route::post('notifications/fcm-token', [NotificationController::class, 'updateFcmToken'])->name('api.v1.notifications.fcm_token');
             Route::apiResource('notifications', NotificationController::class)->parameters(['notifications' => 'id'])->except(['index', 'show']);
         });
 
