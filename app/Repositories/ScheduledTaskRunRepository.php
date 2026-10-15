@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Enums\ScheduledTaskStatus;
+use App\Enums\ScheduledTaskType;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
 use App\Models\ScheduledTaskRun;
 use Carbon\Carbon;
@@ -31,7 +32,10 @@ class ScheduledTaskRunRepository extends BaseRepository implements ScheduledTask
         $query = $this->model->newQuery()->with($withRelations);
 
         if (! empty($filters['task_type'])) {
-            $query->where('task_type', (string) $filters['task_type']);
+            $taskTypeValue = $filters['task_type'] instanceof ScheduledTaskType
+                ? $filters['task_type']->value
+                : (string) $filters['task_type'];
+            $query->where('task_type', $taskTypeValue);
         }
 
         if (isset($filters['network_id'])) {
@@ -47,7 +51,10 @@ class ScheduledTaskRunRepository extends BaseRepository implements ScheduledTask
         }
 
         if (! empty($filters['status'])) {
-            $query->where('status', (string) $filters['status']);
+            $statusValue = $filters['status'] instanceof ScheduledTaskStatus
+                ? $filters['status']->value
+                : (string) $filters['status'];
+            $query->where('status', $statusValue);
         }
 
         $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
@@ -67,11 +74,11 @@ class ScheduledTaskRunRepository extends BaseRepository implements ScheduledTask
         $today = Carbon::now('Asia/Aden')->toDateString();
 
         $todayTotal = $this->model->newQuery()->whereDate('target_date', $today)->count();
-        $todaySent = $this->model->newQuery()->whereDate('target_date', $today)->whereIn('status', [ScheduledTaskStatus::STATUS_SENT->value, ScheduledTaskStatus::STATUS_COMPLETED->value])->count();
-        $todayFailed = $this->model->newQuery()->whereDate('target_date', $today)->where('status', ScheduledTaskStatus::STATUS_FAILED->value)->count();
+        $todaySent = $this->model->newQuery()->whereDate('target_date', $today)->whereIn('status', [ScheduledTaskStatus::SENT->value, ScheduledTaskStatus::COMPLETED->value])->count();
+        $todayFailed = $this->model->newQuery()->whereDate('target_date', $today)->where('status', ScheduledTaskStatus::FAILED->value)->count();
 
         $totalAllTime = $this->model->newQuery()->count();
-        $totalFailedAllTime = $this->model->newQuery()->where('status', ScheduledTaskStatus::STATUS_FAILED->value)->count();
+        $totalFailedAllTime = $this->model->newQuery()->where('status', ScheduledTaskStatus::FAILED->value)->count();
 
         return [
             'today_total' => $todayTotal,
@@ -86,12 +93,14 @@ class ScheduledTaskRunRepository extends BaseRepository implements ScheduledTask
     /**
      * التحقق مما إذا كانت المهمة قد نُفذت بنجاح لشبكة وتاريخ محدد
      */
-    public function wasExecuted(string $taskType, ?int $networkId, string $targetDate): bool
+    public function wasExecuted(ScheduledTaskType|string $taskType, ?int $networkId, string $targetDate): bool
     {
+        $taskTypeValue = $taskType instanceof ScheduledTaskType ? $taskType->value : $taskType;
+
         $query = $this->model->newQuery()
-            ->where('task_type', $taskType)
+            ->where('task_type', $taskTypeValue)
             ->whereDate('target_date', $targetDate)
-            ->whereIn('status', [ScheduledTaskStatus::STATUS_SENT->value, ScheduledTaskStatus::STATUS_COMPLETED->value]);
+            ->whereIn('status', [ScheduledTaskStatus::SENT->value, ScheduledTaskStatus::COMPLETED->value]);
 
         if ($networkId !== null) {
             $query->where('network_id', $networkId);
@@ -105,17 +114,25 @@ class ScheduledTaskRunRepository extends BaseRepository implements ScheduledTask
     /**
      * تسجيل أو تحديث تنفيذ مهمة مجدولة لضمان عدم التكرار (Idempotent)
      */
-    public function recordRun(string $taskType, ?int $networkId, string $targetDate, string $status, ?array $extra = null): ScheduledTaskRun
-    {
+    public function recordRun(
+        ScheduledTaskType|string $taskType,
+        ?int $networkId,
+        string $targetDate,
+        ScheduledTaskStatus|string $status,
+        ?array $extra = null
+    ): ScheduledTaskRun {
+        $taskTypeValue = $taskType instanceof ScheduledTaskType ? $taskType->value : $taskType;
+        $statusValue = $status instanceof ScheduledTaskStatus ? $status->value : $status;
+
         /** @var ScheduledTaskRun $run */
         $run = $this->model->newQuery()->updateOrCreate(
             [
-                'task_type' => $taskType,
+                'task_type' => $taskTypeValue,
                 'network_id' => $networkId,
                 'target_date' => $targetDate,
             ],
             [
-                'status' => $status,
+                'status' => $statusValue,
                 'extra' => $extra,
                 'sent_at' => Carbon::now('Asia/Aden'),
             ]

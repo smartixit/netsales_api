@@ -99,7 +99,7 @@ class CheckLowBalanceAlerts extends Command
                 taskType: $taskKey,
                 networkId: $network->network_id,
                 targetDate: $targetDate,
-                status: ScheduledTaskStatus::STATUS_SENT->value,
+                status: ScheduledTaskStatus::SENT->value,
                 extra: [
                     'pos_id' => $wallet->pos_id,
                     'balance' => $wallet->wallet_balance,

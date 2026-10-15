@@ -113,8 +113,8 @@ class SendMonthlySummarySms extends Command
                 );
 
                 $status = $success
-                    ? ScheduledTaskStatus::STATUS_SENT->value
-                    : ScheduledTaskStatus::STATUS_FAILED->value;
+                    ? ScheduledTaskStatus::SENT->value
+                    : ScheduledTaskStatus::FAILED->value;
 
                 $taskRunRepository->recordRun(
                     taskType: $taskType,
@@ -130,7 +130,7 @@ class SendMonthlySummarySms extends Command
                     ]
                 );
 
-                if ($status === ScheduledTaskStatus::STATUS_SENT->value) {
+                if ($status === ScheduledTaskStatus::SENT->value) {
                     $sentCount++;
                     $this->line("  ✔ تم إرسال ملخص الشهر لشبكة: {$network->network_name}");
                 }
@@ -139,7 +139,7 @@ class SendMonthlySummarySms extends Command
                     taskType: $taskType,
                     networkId: $network->network_id,
                     targetDate: $targetDate,
-                    status: ScheduledTaskStatus::STATUS_FAILED->value,
+                    status: ScheduledTaskStatus::FAILED->value,
                     extra: ['error' => $e->getMessage()]
                 );
             }

@@ -2,14 +2,18 @@
 
 namespace App\Interfaces;
 
+use App\Enums\ScheduledTaskType;
+use App\Enums\ScheduledTaskStatus;
 use App\Models\ScheduledTaskRun;
+use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 interface ScheduledTaskRunRepositoryInterface extends BaseRepositoryInterface
 {
     /**
      * جلب قائمة سجلات المهام المجدولة مع الفلترة والترقيم.
      */
-    public function getFiltered(array $filters = [], array $relations = []): \Illuminate\Database\Eloquent\Collection|\Illuminate\Contracts\Pagination\CursorPaginator;
+    public function getFiltered(array $filters = [], array $relations = []): Collection|CursorPaginator;
 
     /**
      * إحصائيات سريعة لحالات المهام المنفذة
@@ -19,10 +23,16 @@ interface ScheduledTaskRunRepositoryInterface extends BaseRepositoryInterface
     /**
      * التحقق مما إذا كانت المهمة قد نُفذت بنجاح لشبكة وتاريخ محدد
      */
-    public function wasExecuted(string $taskType, ?int $networkId, string $targetDate): bool;
+    public function wasExecuted(ScheduledTaskType|string $taskType, ?int $networkId, string $targetDate): bool;
 
     /**
      * تسجيل أو تحديث تنفيذ مهمة مجدولة لضمان عدم التكرار (Idempotent)
      */
-    public function recordRun(string $taskType, ?int $networkId, string $targetDate, string $status, ?array $extra = null): ScheduledTaskRun;
+    public function recordRun(
+        ScheduledTaskType|string $taskType,
+        ?int $networkId,
+        string $targetDate,
+        ScheduledTaskStatus|string $status,
+        ?array $extra = null
+    ): ScheduledTaskRun;
 }

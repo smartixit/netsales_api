@@ -141,7 +141,7 @@ class SmartSchedulerCatchupService
                 $exitCode = Artisan::call($config['command']);
                 $output = trim(Artisan::output());
 
-                $status = $exitCode === 0 ? ScheduledTaskStatus::STATUS_COMPLETED->value : ScheduledTaskStatus::STATUS_FAILED->value;
+                $status = $exitCode === 0 ? ScheduledTaskStatus::COMPLETED : ScheduledTaskStatus::FAILED;
 
                 // تسجيل إتمام التنفيذ في قاعدة البيانات وذاكرة النظام
                 $this->markTaskExecuted($key, $config, $now, $status, ['output' => $output]);
@@ -170,7 +170,7 @@ class SmartSchedulerCatchupService
                     'trace' => $e->getTraceAsString(),
                 ]);
 
-                $this->markTaskExecuted($key, $config, $now, ScheduledTaskStatus::STATUS_FAILED->value, ['error' => $e->getMessage()]);
+                $this->markTaskExecuted($key, $config, $now, ScheduledTaskStatus::FAILED, ['error' => $e->getMessage()]);
 
                 $executedTasks[$key] = [
                     'name' => $config['name'],
@@ -251,7 +251,13 @@ class SmartSchedulerCatchupService
     /**
      * تسجيل أن المهمة نُفذت في الدورة الحالية وتخزينها في قاعدة البيانات والذاكرة
      */
-    public function markTaskExecuted(string $key, array $config, Carbon $now, string $status = ScheduledTaskRun::STATUS_COMPLETED, ?array $extra = null): void
+    public function markTaskExecuted(
+        string $key,
+        array $config,
+        Carbon $now,
+        ScheduledTaskStatus|string $status = ScheduledTaskStatus::COMPLETED,
+        ?array $extra = null
+    ): void
     {
         $frequency = $config['frequency'];
         $targetDate = $now->toDateString();

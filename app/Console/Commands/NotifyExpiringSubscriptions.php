@@ -103,7 +103,7 @@ class NotifyExpiringSubscriptions extends Command
                 taskType: $taskType,
                 networkId: $network->network_id,
                 targetDate: $targetDate,
-                status: ScheduledTaskStatus::STATUS_SENT->value,
+                status: ScheduledTaskStatus::SENT->value,
                 extra: [
                     'end_date' => $endDate,
                     'sms_sent' => $smsSent,

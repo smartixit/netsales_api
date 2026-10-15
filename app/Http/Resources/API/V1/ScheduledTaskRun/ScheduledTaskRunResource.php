@@ -26,7 +26,7 @@ class ScheduledTaskRunResource extends JsonResource
             'task_type_label'=>$this->task_type instanceof ScheduledTaskType ? $this->task_type->label(): (ScheduledTaskType::tryFrom($this->task_type)?->label()),
             'network_id' => $this->network_id,
             'network_name' => $this->network?->network_name,
-            'target_date' => $this->target_date ? Carbon::parse($this->target_date)->toDateTimeString() : null,
+            'target_date' => $this->target_date ? Carbon::parse($this->target_date)->toDateString() : null,
             'status' => $this->status,
             'extra' => $this->extra,
             'sent_at' => $this->sent_at ? Carbon::parse($this->sent_at)->toDateTimeString() : null, 

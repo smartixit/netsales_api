@@ -112,8 +112,8 @@ class SendDailySummarySms extends Command
                 );
 
                 $status = $success
-                    ? ScheduledTaskStatus::STATUS_SENT->value
-                    : ScheduledTaskStatus::STATUS_FAILED->value;
+                    ? ScheduledTaskStatus::SENT->value
+                    : ScheduledTaskStatus::FAILED->value;
 
                 $taskRunRepository->recordRun(
                     taskType: $taskType,
@@ -129,7 +129,7 @@ class SendDailySummarySms extends Command
                     ]
                 );
 
-                if ($status === ScheduledTaskStatus::STATUS_SENT->value) {
+                if ($status === ScheduledTaskStatus::SENT->value) {
                     $sentCount++;
                     $this->line("  ✔ تم إرسال ملخص شبكة: {$network->network_name}");
                 } else {
@@ -140,7 +140,7 @@ class SendDailySummarySms extends Command
                     taskType: $taskType,
                     networkId: $network->network_id,
                     targetDate: $targetDate,
-                    status: ScheduledTaskStatus::STATUS_FAILED->value,
+                    status: ScheduledTaskStatus::FAILED->value,
                     extra: ['error' => $e->getMessage()]
                 );
 

@@ -2,17 +2,15 @@
 
 namespace App\Enums;
 
+/**
+ * حالات تنفيذ المهام المجدولة (Scheduled Task Statuses).
+ */
 enum ScheduledTaskStatus: string
 {
-    case STATUS_SENT = 'sent';
-
-    case STATUS_FAILED = 'failed';
-
-    case STATUS_PARTIALLY_SENT = 'partially_sent';
-
-    case STATUS_COMPLETED = 'completed';
-
-    case STATUS_SKIPPED = 'skipped';
+    case SENT = 'sent';
+    case COMPLETED = 'completed';
+    case FAILED = 'failed';
+    case SKIPPED = 'skipped';
 
     public static function values(): array
     {
@@ -27,22 +25,25 @@ enum ScheduledTaskStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::STATUS_SENT => 'تم الإرسال',
-            self::STATUS_FAILED => 'فشل',
-            self::STATUS_PARTIALLY_SENT => 'تم الإرسال جزئيا',
-            self::STATUS_COMPLETED => 'تم الاكتمال',
-            self::STATUS_SKIPPED => 'تم التجاهل',
+            self::SENT => 'تم الإرسال',
+            self::COMPLETED => 'مكتمل بنجاح',
+            self::FAILED => 'فشل التنفيذ',
+            self::SKIPPED => 'تم التجاوز',
         };
     }
 
-    public static function labels(): array
+    public function isSuccess(): bool
     {
-        return [
-            self::STATUS_SENT->value => self::STATUS_SENT->label(),
-            self::STATUS_FAILED->value => self::STATUS_FAILED->label(),
-            self::STATUS_PARTIALLY_SENT->value => self::STATUS_PARTIALLY_SENT->label(),
-            self::STATUS_COMPLETED->value => self::STATUS_COMPLETED->label(),
-            self::STATUS_SKIPPED->value => self::STATUS_SKIPPED->label(),
-        ];
+        return in_array($this, [self::SENT, self::COMPLETED], true);
+    }
+
+    public function isFailed(): bool
+    {
+        return $this === self::FAILED;
+    }
+
+    public function isSkipped(): bool
+    {
+        return $this === self::SKIPPED;
     }
 }
