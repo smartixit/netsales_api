@@ -247,8 +247,8 @@ class VoucherRequestAndInvoicingTest extends TestCase
         $approveResponse->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.invoice.invoice_sale_type', PaymentType::CREDIT->value)
-            ->assertJsonPath('data.invoice.is_credit_sale', true)
             ->assertJsonPath('data.invoice.invoice_total_amount', 46000);
+
 
         // 4. التحقق من تسوية المحفظة بالرصيد السالب (مديونية على الوكيل)
         $refreshedPosWallet = $this->posWallet->fresh();

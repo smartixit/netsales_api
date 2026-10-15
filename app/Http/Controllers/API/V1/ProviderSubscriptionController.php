@@ -131,6 +131,19 @@ class ProviderSubscriptionController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['additional_days'],
+                    properties: [
+                    new OA\Property(property: 'additional_days', type: 'integer', example: 1),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تمديد الاشتراك بنجاح'),
         ]
@@ -187,6 +200,20 @@ class ProviderSubscriptionController extends BaseController
         parameters: [
             new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['feature_name'],
+                    properties: [
+                    new OA\Property(property: 'feature_name', type: 'string'),
+                    new OA\Property(property: 'amount', type: 'integer', example: 1),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تسجيل الاستهلاك بنجاح'),
         ]

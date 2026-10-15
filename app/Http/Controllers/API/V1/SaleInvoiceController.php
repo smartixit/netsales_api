@@ -35,6 +35,17 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices',
         summary: 'عرض قائمة فواتير مبيعات الكروت',
         tags: ['Sale Invoices'],
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'pos_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'invoice_sale_type', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'created_by', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع قائمة الفواتير بنجاح'),
         ]
@@ -60,6 +71,9 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices/{id}',
         summary: 'عرض تفاصيل فاتورة مبيعات محددة',
         tags: ['Sale Invoices'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع تفاصيل الفاتورة بنجاح'),
             new OA\Response(response: 404, description: 'الفاتورة غير موجودة'),
@@ -85,6 +99,22 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices',
         summary: 'إنشاء فاتورة مبيعات مباشرة',
         tags: ['Sale Invoices'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['network_id', 'pos_id', 'items'],
+                    properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'items[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                    new OA\Property(property: 'paid_amount', type: 'number', example: 100.5),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء الفاتورة بنجاح'),
         ]
@@ -110,6 +140,22 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices/{id}',
         summary: 'تحديث نوع الفاتورة',
         tags: ['Sale Invoices'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'invoice_sale_type', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث نوع الفاتورة بنجاح'),
         ]
@@ -134,6 +180,9 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices/{id}',
         summary: 'حذف فاتورة مبيعات مؤقتاً',
         tags: ['Sale Invoices'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم حذف الفاتورة مؤقتاً بنجاح'),
         ]
@@ -158,6 +207,13 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices/trashed',
         summary: 'عرض فواتير المبيعات المحذوفة مؤقتاً',
         tags: ['Sale Invoices'],
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'pos_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الفواتير المحذوفة بنجاح'),
         ]
@@ -183,6 +239,9 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices/{id}/restore',
         summary: 'استعادة فاتورة مبيعات محذوفة مؤقتاً',
         tags: ['Sale Invoices'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة الفاتورة بنجاح'),
         ]
@@ -207,6 +266,9 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices/{id}/force',
         summary: 'الحذف النهائي لفاتورة مبيعات',
         tags: ['Sale Invoices'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي للفاتورة بنجاح'),
         ]
@@ -231,6 +293,19 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices/batch-delete',
         summary: 'حذف مجمع لفواتير المبيعات',
         tags: ['Sale Invoices'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
         ]
@@ -255,6 +330,19 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices/batch-restore',
         summary: 'استعادة مجمعة لفواتير المبيعات',
         tags: ['Sale Invoices'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
         ]
@@ -279,6 +367,19 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices/batch-force-delete',
         summary: 'حذف نهائي مجمع لفواتير المبيعات',
         tags: ['Sale Invoices'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
         ]

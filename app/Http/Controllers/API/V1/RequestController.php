@@ -36,6 +36,18 @@ class RequestController extends BaseController
         path: '/api/v1/requests',
         summary: 'عرض قائمة طلبات كروت الإنترنت',
         tags: ['Voucher Requests'],
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'pos_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'created_by', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'reviewed_by', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع قائمة الطلبات بنجاح'),
         ]
@@ -61,6 +73,9 @@ class RequestController extends BaseController
         path: '/api/v1/requests/{id}',
         summary: 'عرض تفاصيل طلب محدد',
         tags: ['Voucher Requests'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع تفاصيل الطلب بنجاح'),
             new OA\Response(response: 404, description: 'الطلب غير موجود'),
@@ -86,6 +101,23 @@ class RequestController extends BaseController
         path: '/api/v1/requests',
         summary: 'تقديم طلب كروت جديد',
         tags: ['Voucher Requests'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['network_id', 'pos_id'],
+                    properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'request_note', type: 'string'),
+                    new OA\Property(property: 'status', type: 'string'),
+                    new OA\Property(property: 'items[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء الطلب بنجاح'),
         ]
@@ -111,6 +143,9 @@ class RequestController extends BaseController
         path: '/api/v1/requests/{id}/approve',
         summary: 'اعتماد طلب الكروت وتوليد فاتورة المبيعات آلياً',
         tags: ['Voucher Requests'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم اعتماد الطلب وتوليد الفاتورة بنجاح'),
         ]
@@ -140,6 +175,22 @@ class RequestController extends BaseController
         path: '/api/v1/requests/{id}/reject',
         summary: 'رفض طلب الكروت',
         tags: ['Voucher Requests'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['reason'],
+                    properties: [
+                    new OA\Property(property: 'reason', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم رفض الطلب بنجاح'),
         ]
@@ -165,6 +216,9 @@ class RequestController extends BaseController
         path: '/api/v1/requests/{id}/cancel',
         summary: 'إلغاء طلب الكروت',
         tags: ['Voucher Requests'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم إلغاء الطلب بنجاح'),
         ]
@@ -190,6 +244,9 @@ class RequestController extends BaseController
         path: '/api/v1/requests/{id}',
         summary: 'حذف طلب كروت مؤقتاً',
         tags: ['Voucher Requests'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم حذف الطلب مؤقتاً بنجاح'),
         ]
@@ -214,6 +271,13 @@ class RequestController extends BaseController
         path: '/api/v1/requests/trashed',
         summary: 'عرض الطلبات المحذوفة مؤقتاً',
         tags: ['Voucher Requests'],
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'pos_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الطلبات المحذوفة بنجاح'),
         ]
@@ -239,6 +303,9 @@ class RequestController extends BaseController
         path: '/api/v1/requests/{id}/restore',
         summary: 'استعادة طلب كروت محذوف مؤقتاً',
         tags: ['Voucher Requests'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة الطلب بنجاح'),
         ]
@@ -263,6 +330,9 @@ class RequestController extends BaseController
         path: '/api/v1/requests/{id}/force',
         summary: 'الحذف النهائي لطلب كروت',
         tags: ['Voucher Requests'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي للطلب بنجاح'),
         ]
@@ -287,6 +357,19 @@ class RequestController extends BaseController
         path: '/api/v1/requests/batch-delete',
         summary: 'حذف مجمع لطلبات الكروت',
         tags: ['Voucher Requests'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
         ]
@@ -311,6 +394,19 @@ class RequestController extends BaseController
         path: '/api/v1/requests/batch-restore',
         summary: 'استعادة مجمعة لطلبات الكروت',
         tags: ['Voucher Requests'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
         ]
@@ -335,6 +431,19 @@ class RequestController extends BaseController
         path: '/api/v1/requests/batch-force-delete',
         summary: 'حذف نهائي مجمع لطلبات الكروت',
         tags: ['Voucher Requests'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
         ]

@@ -99,6 +99,25 @@ class SubscriptionPlanController extends BaseController
         summary: 'إنشاء باقة اشتراك جديدة',
         
         tags: ['Subscription Plans'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['plan_name', 'plan_price', 'plan_validity'],
+                    properties: [
+                    new OA\Property(property: 'plan_name', type: 'string'),
+                    new OA\Property(property: 'plan_price', type: 'number', example: 100.5),
+                    new OA\Property(property: 'plan_discount', type: 'number', example: 100.5),
+                    new OA\Property(property: 'plan_validity', type: 'integer', example: 1),
+                    new OA\Property(property: 'plan_desc', type: 'string'),
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    new OA\Property(property: 'features[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء باقة الاشتراك بنجاح'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
@@ -129,6 +148,25 @@ class SubscriptionPlanController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'plan_name', type: 'string'),
+                    new OA\Property(property: 'plan_price', type: 'number', example: 100.5),
+                    new OA\Property(property: 'plan_discount', type: 'number', example: 100.5),
+                    new OA\Property(property: 'plan_validity', type: 'integer', example: 1),
+                    new OA\Property(property: 'plan_desc', type: 'string'),
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    new OA\Property(property: 'features[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث باقة الاشتراك بنجاح'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
@@ -187,6 +225,21 @@ class SubscriptionPlanController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['feature_id', 'plan_feature_value'],
+                    properties: [
+                    new OA\Property(property: 'feature_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'plan_feature_value', type: 'string'),
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم ربط الميزة بالباقة بنجاح'),
         ]
@@ -270,6 +323,11 @@ class SubscriptionPlanController extends BaseController
         summary: 'عرض باقات الاشتراك المحذوفة ناعماً',
         
         tags: ['Subscription Plans'],
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الباقات المحذوفة بنجاح'),
         ]
@@ -352,6 +410,19 @@ class SubscriptionPlanController extends BaseController
         summary: 'حذف مجمع للباقات',
         
         tags: ['Subscription Plans'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
         ]
@@ -377,6 +448,19 @@ class SubscriptionPlanController extends BaseController
         summary: 'استعادة مجمعة للباقات',
         
         tags: ['Subscription Plans'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
         ]
@@ -402,6 +486,19 @@ class SubscriptionPlanController extends BaseController
         summary: 'حذف نهائي مجمع للباقات',
         
         tags: ['Subscription Plans'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
         ]

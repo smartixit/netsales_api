@@ -70,6 +70,12 @@ class SupportTicketController extends BaseController
         summary: 'عرض التذاكر المحذوفة',
         
         tags: ['Support Tickets'],
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'pos_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع التذاكر المحذوفة بنجاح'),
         ]
@@ -96,6 +102,22 @@ class SupportTicketController extends BaseController
         summary: 'إنشاء تذكرة دعم فني جديدة',
         
         tags: ['Support Tickets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['network_id', 'ticket_subject'],
+                    properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'ticket_subject', type: 'string'),
+                    new OA\Property(property: 'message_body', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء التذكرة بنجاح'),
         ]
@@ -153,6 +175,21 @@ class SupportTicketController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'ticket_subject', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث التذكرة بنجاح'),
         ]
@@ -262,6 +299,19 @@ class SupportTicketController extends BaseController
         summary: 'الحذف المجمع للتذاكر',
         
         tags: ['Support Tickets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع للتذاكر بنجاح'),
         ]
@@ -287,6 +337,19 @@ class SupportTicketController extends BaseController
         summary: 'الاستعادة المجمعة للتذاكر',
         
         tags: ['Support Tickets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة التذاكر المحددة بنجاح'),
         ]
@@ -312,6 +375,19 @@ class SupportTicketController extends BaseController
         summary: 'الحذف النهائي المجمع للتذاكر',
         
         tags: ['Support Tickets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي للتذاكر بنجاح'),
         ]
@@ -368,6 +444,24 @@ class SupportTicketController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ticket_id', 'message_body'],
+                    properties: [
+                    new OA\Property(property: 'ticket_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'sent_by', type: 'integer', example: 1),
+                    new OA\Property(property: 'message_body', type: 'string'),
+                    new OA\Property(property: 'sent_at', type: 'string', format: 'date', example: '2026-01-01'),
+                    new OA\Property(property: 'is_read', type: 'boolean', example: true),
+                    new OA\Property(property: 'read_at', type: 'string', format: 'date', example: '2026-01-01'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إرسال الرسالة بنجاح'),
         ]

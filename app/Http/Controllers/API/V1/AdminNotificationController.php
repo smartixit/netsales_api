@@ -28,6 +28,28 @@ class AdminNotificationController extends BaseController
         summary: 'إرسال إشعار إداري للجمهور عبر القنوات المحددة',
         security: [['sessionAuth' => [], 'deviceAuth' => []]],
         tags: ['Admin Notifications'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['audience', 'audience.type', 'channels', 'title', 'body'],
+                    properties: [
+                    new OA\Property(property: 'audience[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                    new OA\Property(property: 'audience.type', type: 'string'),
+                    new OA\Property(property: 'audience.role_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'audience.network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'audience.user_ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    new OA\Property(property: 'channels[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                    new OA\Property(property: 'category', type: 'string'),
+                    new OA\Property(property: 'title', type: 'string'),
+                    new OA\Property(property: 'body', type: 'string'),
+                    new OA\Property(property: 'image', type: 'string', format: 'binary'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم إرسال وتوزيع الإشعار بنجاح'),
             new OA\Response(response: 422, description: 'فشل في إرسال الإشعار'),
@@ -57,6 +79,21 @@ class AdminNotificationController extends BaseController
         summary: 'إرسال رسالة SMS فورية لمستخدم معين',
         security: [['sessionAuth' => [], 'deviceAuth' => []]],
         tags: ['Admin Notifications'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات إرسال رسالة SMS للمستخدم',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['user_id', 'title', 'body'],
+                    properties: [
+                        new OA\Property(property: 'user_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'title', type: 'string', example: 'تنبيه أمني'),
+                        new OA\Property(property: 'body', type: 'string', example: 'تم تسجيل دخول جديد إلى حسابك'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم إرسال الرسالة النصية بنجاح'),
             new OA\Response(response: 422, description: 'فشل في إرسال الرسالة النصية'),

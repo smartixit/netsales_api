@@ -154,6 +154,23 @@ class SystemSettingController extends BaseController
         summary: 'إنشاء إعداد نظام جديد',
         
         tags: ['SystemSettings'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['setting_category', 'setting_key', 'setting_value_type'],
+                    properties: [
+                    new OA\Property(property: 'setting_category', type: 'string'),
+                    new OA\Property(property: 'setting_key', type: 'string'),
+                    new OA\Property(property: 'setting_value_type', type: 'string'),
+                    new OA\Property(property: 'setting_value', type: 'string'),
+                    new OA\Property(property: 'setting_desc', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء إعداد النظام بنجاح'),
         ]
@@ -182,6 +199,23 @@ class SystemSettingController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'setting_category', type: 'string'),
+                    new OA\Property(property: 'setting_key', type: 'string'),
+                    new OA\Property(property: 'setting_value_type', type: 'string'),
+                    new OA\Property(property: 'setting_value', type: 'string'),
+                    new OA\Property(property: 'setting_desc', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث إعداد النظام بنجاح'),
         ]
@@ -207,6 +241,19 @@ class SystemSettingController extends BaseController
         summary: 'تحديث مجمع لقيم إعدادات النظام',
         
         tags: ['SystemSettings'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['settings'],
+                    properties: [
+                    new OA\Property(property: 'settings[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث الإعدادات المحددة بنجاح'),
         ]
@@ -260,6 +307,12 @@ class SystemSettingController extends BaseController
         summary: 'عرض الإعدادات المحذوفة ناعماً',
         
         tags: ['SystemSettings'],
+        parameters: [
+            new OA\Parameter(name: 'setting_category', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الإعدادات المحذوفة بنجاح'),
         ]
@@ -342,6 +395,19 @@ class SystemSettingController extends BaseController
         summary: 'الحذف المجمع للإعدادات ناعماً',
         
         tags: ['SystemSettings'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم حذف الإعدادات المحددة بنجاح'),
         ]
@@ -367,6 +433,19 @@ class SystemSettingController extends BaseController
         summary: 'الاستعادة المجمعة للإعدادات',
         
         tags: ['SystemSettings'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة الإعدادات المحددة بنجاح'),
         ]
@@ -392,6 +471,19 @@ class SystemSettingController extends BaseController
         summary: 'الحذف النهائي المجمع للإعدادات',
         
         tags: ['SystemSettings'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم حذف الإعدادات نهائياً بنجاح'),
         ]

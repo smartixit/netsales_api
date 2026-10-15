@@ -69,6 +69,10 @@ class BankAccountController extends BaseController
         summary: 'عرض الحسابات البنكية النشطة',
         
         tags: ['Bank Accounts'],
+        parameters: [
+            new OA\Parameter(name: 'account_currency', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'account_type', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الحسابات النشطة بنجاح'),
         ]
@@ -123,6 +127,26 @@ class BankAccountController extends BaseController
         summary: 'إنشاء حساب بنكي جديد',
         
         tags: ['Bank Accounts'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['bank_name', 'account_holder_name', 'account_number', 'account_type', 'account_currency'],
+                    properties: [
+                    new OA\Property(property: 'bank_name', type: 'string'),
+                    new OA\Property(property: 'account_holder_name', type: 'string'),
+                    new OA\Property(property: 'account_number', type: 'string'),
+                    new OA\Property(property: 'account_type', type: 'string'),
+                    new OA\Property(property: 'account_currency', type: 'string'),
+                    new OA\Property(property: 'account_balance', type: 'number', example: 100.5),
+                    new OA\Property(property: 'bank_logo', type: 'string', format: 'binary'),
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء الحساب بنجاح'),
         ]
@@ -151,6 +175,26 @@ class BankAccountController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'bank_name', type: 'string'),
+                    new OA\Property(property: 'account_holder_name', type: 'string'),
+                    new OA\Property(property: 'account_number', type: 'string'),
+                    new OA\Property(property: 'account_type', type: 'string'),
+                    new OA\Property(property: 'account_currency', type: 'string'),
+                    new OA\Property(property: 'account_balance', type: 'number', example: 100.5),
+                    new OA\Property(property: 'bank_logo', type: 'string', format: 'binary'),
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث الحساب بنجاح'),
         ]
@@ -232,6 +276,11 @@ class BankAccountController extends BaseController
         summary: 'عرض الحسابات البنكية المحذوفة ناعماً',
         
         tags: ['Bank Accounts'],
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الحسابات المحذوفة بنجاح'),
         ]
@@ -314,6 +363,19 @@ class BankAccountController extends BaseController
         summary: 'حذف مجمع للحسابات',
         
         tags: ['Bank Accounts'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
         ]
@@ -339,6 +401,19 @@ class BankAccountController extends BaseController
         summary: 'استعادة مجمعة للحسابات',
         
         tags: ['Bank Accounts'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
         ]
@@ -364,6 +439,19 @@ class BankAccountController extends BaseController
         summary: 'حذف نهائي مجمع للحسابات',
         
         tags: ['Bank Accounts'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
         ]

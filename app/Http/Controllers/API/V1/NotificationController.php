@@ -126,6 +126,13 @@ class NotificationController extends BaseController
         summary: 'عرض الإشعارات المحذوفة',
         
         tags: ['Notifications'],
+        parameters: [
+            new OA\Parameter(name: 'user_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'notification_type', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الإشعارات المحذوفة بنجاح'),
         ]
@@ -152,6 +159,25 @@ class NotificationController extends BaseController
         summary: 'إنشاء وإرسال إشعار جديد',
         
         tags: ['Notifications'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['user_id', 'notification_type', 'notification_title', 'notification_message'],
+                    properties: [
+                    new OA\Property(property: 'user_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'notification_type', type: 'string'),
+                    new OA\Property(property: 'notification_title', type: 'string'),
+                    new OA\Property(property: 'notification_message', type: 'string'),
+                    new OA\Property(property: 'notification_image', type: 'string'),
+                    new OA\Property(property: 'is_read', type: 'boolean', example: true),
+                    new OA\Property(property: 'read_at', type: 'string', format: 'date', example: '2026-01-01'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء وإرسال الإشعار بنجاح'),
         ]
@@ -208,6 +234,25 @@ class NotificationController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'user_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'notification_type', type: 'string'),
+                    new OA\Property(property: 'notification_title', type: 'string'),
+                    new OA\Property(property: 'notification_message', type: 'string'),
+                    new OA\Property(property: 'notification_image', type: 'string'),
+                    new OA\Property(property: 'is_read', type: 'boolean', example: true),
+                    new OA\Property(property: 'read_at', type: 'string', format: 'date', example: '2026-01-01'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث الإشعار بنجاح'),
         ]
@@ -317,6 +362,19 @@ class NotificationController extends BaseController
         summary: 'الحذف المجمع للإشعارات',
         
         tags: ['Notifications'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع للإشعارات بنجاح'),
         ]
@@ -342,6 +400,19 @@ class NotificationController extends BaseController
         summary: 'الاستعادة المجمعة للإشعارات',
         
         tags: ['Notifications'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة الإشعارات المحددة بنجاح'),
         ]
@@ -367,6 +438,19 @@ class NotificationController extends BaseController
         summary: 'الحذف النهائي المجمع للإشعارات',
         
         tags: ['Notifications'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي للإشعارات بنجاح'),
         ]

@@ -100,6 +100,25 @@ class NetworkController extends BaseController
         path: '/api/v1/networks',
         summary: 'إضافة شبكة جديدة إدارياً',
         tags: ['Networks'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['network_name', 'governorate_id', 'directorate_id', 'network_phone'],
+                    properties: [
+                    new OA\Property(property: 'network_name', type: 'string'),
+                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'network_phone', type: 'string'),
+                    new OA\Property(property: 'network_address', type: 'string'),
+                    new OA\Property(property: 'network_logo', type: 'string', format: 'binary'),
+                    new OA\Property(property: 'status', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء الشبكة بنجاح'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
@@ -128,6 +147,25 @@ class NetworkController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'network_name', type: 'string'),
+                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'network_phone', type: 'string'),
+                    new OA\Property(property: 'network_address', type: 'string'),
+                    new OA\Property(property: 'network_logo', type: 'string', format: 'binary'),
+                    new OA\Property(property: 'status', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث الشبكة بنجاح'),
             new OA\Response(response: 404, description: 'الشبكة غير موجودة'),
@@ -185,6 +223,11 @@ class NetworkController extends BaseController
         path: '/api/v1/networks/trashed',
         summary: 'سلة محذوفات الشبكات',
         tags: ['Networks'],
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع المحذوفات بنجاح'),
         ]
@@ -272,6 +315,19 @@ class NetworkController extends BaseController
         path: '/api/v1/networks/batch-delete',
         summary: 'حذف مجمع للشبكات (Batch Delete)',
         tags: ['Networks'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف بنجاح'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
@@ -297,6 +353,19 @@ class NetworkController extends BaseController
         path: '/api/v1/networks/batch-restore',
         summary: 'استعادة مجمعة للشبكات (Batch Restore)',
         tags: ['Networks'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة بنجاح'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
@@ -322,6 +391,19 @@ class NetworkController extends BaseController
         path: '/api/v1/networks/batch-force-delete',
         summary: 'حذف نهائي مجمع للشبكات (Batch Force Delete)',
         tags: ['Networks'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي بنجاح'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
@@ -379,6 +461,19 @@ class NetworkController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['reason'],
+                    properties: [
+                    new OA\Property(property: 'reason', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم رفض طلب الشبكة بنجاح'),
             new OA\Response(response: 404, description: 'الشبكة غير موجودة'),

@@ -35,6 +35,7 @@ class SaleInvoiceResource extends JsonResource
                 : (PaymentType::tryFrom((string) $this->invoice_sale_type)?->label()),
             'invoice_total_amount' => (float) $this->invoice_total_amount,
             'paid_amount' => (float) ($this->paid_amount ?? 0.0),
+
             'remaining_amount' => (float) ($this->remaining_amount ?? 0.0),
             'payment_status' => $this->payment_status instanceof InvoicePaymentStatus ? $this->payment_status->value : $this->payment_status,
             'payment_status_label' => $this->payment_status instanceof InvoicePaymentStatus
@@ -45,7 +46,6 @@ class SaleInvoiceResource extends JsonResource
             'created_by' => $this->created_by,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
-            
 
             // Eager Loaded Relationships
             'network' => $this->whenLoaded('network', fn () => new NetworkResource($this->network)),

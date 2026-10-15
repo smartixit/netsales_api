@@ -30,6 +30,11 @@ class ScheduledTaskRunController extends BaseController
         summary: 'قائمة سجلات تشغيل المهام المجدولة',
         security: [['sessionAuth' => [], 'deviceAuth' => []]],
         tags: ['Scheduled Tasks'],
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم جلب سجلات المهام المجدولة بنجاح'),
             new OA\Response(response: 422, description: 'خطأ أثناء جلب سجلات المهام المجدولة'),

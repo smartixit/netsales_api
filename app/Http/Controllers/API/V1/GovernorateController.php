@@ -119,6 +119,19 @@ class GovernorateController extends BaseController
         summary: 'إنشاء محافظة جديدة',
 
         tags: ['Governorates'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['governorate_name'],
+                    properties: [
+                    new OA\Property(property: 'governorate_name', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء المحافظة بنجاح'),
         ]
@@ -147,6 +160,19 @@ class GovernorateController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'governorate_name', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث بيانات المحافظة بنجاح'),
         ]
@@ -200,6 +226,11 @@ class GovernorateController extends BaseController
         summary: 'عرض المحافظات المحذوفة ناعماً',
 
         tags: ['Governorates'],
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع المحافظات المحذوفة بنجاح'),
         ]
@@ -282,6 +313,19 @@ class GovernorateController extends BaseController
         summary: 'الحذف المجمع للمحافظات ناعماً',
 
         tags: ['Governorates'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم حذف المحافظات المحددة بنجاح'),
         ]
@@ -307,6 +351,19 @@ class GovernorateController extends BaseController
         summary: 'الاستعادة المجمعة للمحافظات',
 
         tags: ['Governorates'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة المحافظات المحددة بنجاح'),
         ]
@@ -332,6 +389,19 @@ class GovernorateController extends BaseController
         summary: 'الحذف النهائي المجمع للمحافظات',
 
         tags: ['Governorates'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم حذف المحافظات نهائياً بنجاح'),
         ]

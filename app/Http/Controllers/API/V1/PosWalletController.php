@@ -42,6 +42,16 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets',
         summary: 'عرض قائمة محافظ نقاط البيع',
         tags: ['POS Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'pos_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'min_balance', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'max_balance', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع قائمة المحافظ بنجاح'),
         ]
@@ -67,6 +77,9 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/{id}',
         summary: 'عرض تفاصيل محفظة نقطة بيع عبر المعرف',
         tags: ['POS Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع بيانات المحفظة بنجاح'),
             new OA\Response(response: 404, description: 'المحفظة غير موجودة'),
@@ -92,6 +105,10 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/network/{networkId}/pos/{posId}',
         summary: 'عرض محفظة نقطة بيع عبر معرف الشبكة ومعرف نقطة البيع',
         tags: ['POS Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'posId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع المحفظة بنجاح'),
         ]
@@ -116,6 +133,22 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets',
         summary: 'إنشاء محفظة جديدة لنقطة بيع',
         tags: ['POS Wallets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['network_id', 'pos_id'],
+                    properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'wallet_balance', type: 'number', example: 100.5),
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء وتدشين محفظة نقطة البيع بنجاح'),
         ]
@@ -141,6 +174,22 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/{id}',
         summary: 'تحديث حالة محفظة نقطة بيع',
         tags: ['POS Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث حالة المحفظة بنجاح'),
         ]
@@ -165,6 +214,24 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/{id}/deposit',
         summary: 'إيداع رصيد مباشر في محفظة نقطة البيع',
         tags: ['POS Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['amount', 'statement'],
+                    properties: [
+                    new OA\Property(property: 'amount', type: 'number', example: 100.5),
+                    new OA\Property(property: 'statement', type: 'string'),
+                    new OA\Property(property: 'log_date', type: 'string', format: 'date', example: '2026-01-01'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم إيداع الرصيد بنجاح'),
         ]
@@ -193,6 +260,24 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/{id}/withdraw',
         summary: 'سحب رصيد مباشر من محفظة نقطة البيع',
         tags: ['POS Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['amount', 'statement'],
+                    properties: [
+                    new OA\Property(property: 'amount', type: 'number', example: 100.5),
+                    new OA\Property(property: 'statement', type: 'string'),
+                    new OA\Property(property: 'log_date', type: 'string', format: 'date', example: '2026-01-01'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم سحب الرصيد بنجاح'),
         ]
@@ -221,6 +306,22 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/transfer-from-network',
         summary: 'تحويل وتغذية رصيد من محفظة الشبكة إلى محفظة نقطة البيع',
         tags: ['POS Wallets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['network_id', 'pos_id', 'amount'],
+                    properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'amount', type: 'number', example: 100.5),
+                    new OA\Property(property: 'statement', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحويل وتغذية الرصيد بنجاح'),
         ]
@@ -251,6 +352,22 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/transfer-to-network',
         summary: 'استرجاع أو تحويل رصيد من محفظة نقطة البيع إلى محفظة الشبكة',
         tags: ['POS Wallets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['network_id', 'pos_id', 'amount'],
+                    properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'amount', type: 'number', example: 100.5),
+                    new OA\Property(property: 'statement', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الرصيد بنجاح'),
         ]
@@ -281,6 +398,9 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/{id}/logs',
         summary: 'عرض كشف حساب وسجلات محفظة نقطة البيع',
         tags: ['POS Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع قيود دفتر الأستاذ بنجاح'),
         ]
@@ -306,6 +426,9 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/{id}',
         summary: 'حذف محفظة نقطة بيع مؤقتاً',
         tags: ['POS Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم حذف المحفظة مؤقتاً بنجاح'),
         ]
@@ -330,6 +453,13 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/trashed',
         summary: 'عرض محافظ نقاط البيع المحذوفة مؤقتاً',
         tags: ['POS Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'pos_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع المحافظ المحذوفة بنجاح'),
         ]
@@ -355,6 +485,9 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/{id}/restore',
         summary: 'استعادة محفظة نقطة بيع محذوفة مؤقتاً',
         tags: ['POS Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة المحفظة بنجاح'),
         ]
@@ -379,6 +512,9 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/{id}/force',
         summary: 'الحذف النهائي لمحفظة نقطة بيع',
         tags: ['POS Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي للمحفظة بنجاح'),
         ]
@@ -403,6 +539,19 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/batch-delete',
         summary: 'حذف مجمع لمحافظ نقاط البيع',
         tags: ['POS Wallets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
         ]
@@ -427,6 +576,19 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/batch-restore',
         summary: 'استعادة مجمعة لمحافظ نقاط البيع',
         tags: ['POS Wallets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
         ]
@@ -451,6 +613,19 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/batch-force-delete',
         summary: 'حذف نهائي مجمع لمحافظ نقاط البيع',
         tags: ['POS Wallets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
         ]

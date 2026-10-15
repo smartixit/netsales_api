@@ -100,6 +100,25 @@ class SubscriptionPlanRequestController extends BaseController
         summary: 'تقديم طلب اشتراك جديد',
         
         tags: ['Subscription Plan Requests'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['network_id', 'plan_id', 'request_payment_type'],
+                    properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'plan_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'request_payment_type', type: 'string'),
+                    new OA\Property(property: 'account_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'transaction_reference', type: 'string'),
+                    new OA\Property(property: 'transaction_receipt', type: 'string', format: 'binary'),
+                    new OA\Property(property: 'request_note', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم تقديم طلب الاشتراك بنجاح'),
         ]
@@ -129,6 +148,19 @@ class SubscriptionPlanRequestController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'note', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم اعتماد الطلب وتفعيل الاشتراك بنجاح'),
         ]
@@ -161,6 +193,20 @@ class SubscriptionPlanRequestController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['reason'],
+                    properties: [
+                    new OA\Property(property: 'reason', type: 'string'),
+                    new OA\Property(property: 'note', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم رفض الطلب بنجاح'),
         ]
@@ -244,6 +290,13 @@ class SubscriptionPlanRequestController extends BaseController
         summary: 'عرض طلبات الاشتراك المحذوفة ناعماً',
         
         tags: ['Subscription Plan Requests'],
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'plan_id', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الطلبات المحذوفة بنجاح'),
         ]
@@ -326,6 +379,19 @@ class SubscriptionPlanRequestController extends BaseController
         summary: 'حذف مجمع للطلبات',
         
         tags: ['Subscription Plan Requests'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
         ]
@@ -351,6 +417,19 @@ class SubscriptionPlanRequestController extends BaseController
         summary: 'استعادة مجمعة للطلبات',
         
         tags: ['Subscription Plan Requests'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
         ]
@@ -376,6 +455,19 @@ class SubscriptionPlanRequestController extends BaseController
         summary: 'حذف نهائي مجمع للطلبات',
         
         tags: ['Subscription Plan Requests'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
         ]

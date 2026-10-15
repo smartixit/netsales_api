@@ -38,6 +38,15 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets',
         summary: 'عرض قائمة محافظ مزودي الشبكات',
         tags: ['Network Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'min_balance', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'max_balance', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع قائمة المحافظ بنجاح'),
         ]
@@ -63,6 +72,9 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/{id}',
         summary: 'عرض تفاصيل محفظة شبكة عبر المعرف',
         tags: ['Network Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع بيانات المحفظة بنجاح'),
             new OA\Response(response: 404, description: 'المحفظة غير موجودة'),
@@ -88,6 +100,9 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/network/{networkId}',
         summary: 'عرض محفظة شبكة عبر معرف الشبكة',
         tags: ['Network Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع محفظة الشبكة بنجاح'),
         ]
@@ -112,6 +127,21 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets',
         summary: 'إنشاء محفظة جديدة لمزود شبكة',
         tags: ['Network Wallets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['network_id'],
+                    properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'wallet_balance', type: 'number', example: 100.5),
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء وتدشين المحفظة بنجاح'),
         ]
@@ -137,6 +167,22 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/{id}',
         summary: 'تحديث حالة محفظة شبكة',
         tags: ['Network Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث حالة المحفظة بنجاح'),
         ]
@@ -161,6 +207,24 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/{id}/deposit',
         summary: 'إيداع رصيد في محفظة الشبكة',
         tags: ['Network Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['amount', 'statement'],
+                    properties: [
+                    new OA\Property(property: 'amount', type: 'number', example: 100.5),
+                    new OA\Property(property: 'statement', type: 'string'),
+                    new OA\Property(property: 'log_date', type: 'string', format: 'date', example: '2026-01-01'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم إيداع الرصيد بنجاح'),
         ]
@@ -189,6 +253,24 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/{id}/withdraw',
         summary: 'سحب رصيد من محفظة الشبكة',
         tags: ['Network Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['amount', 'statement'],
+                    properties: [
+                    new OA\Property(property: 'amount', type: 'number', example: 100.5),
+                    new OA\Property(property: 'statement', type: 'string'),
+                    new OA\Property(property: 'log_date', type: 'string', format: 'date', example: '2026-01-01'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم سحب الرصيد بنجاح'),
         ]
@@ -217,6 +299,9 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/{id}/logs',
         summary: 'عرض كشف حساب وسجلات محفظة الشبكة',
         tags: ['Network Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع قيود دفتر الأستاذ بنجاح'),
         ]
@@ -242,6 +327,9 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/{id}',
         summary: 'حذف محفظة شبكة مؤقتاً',
         tags: ['Network Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم حذف المحفظة مؤقتاً بنجاح'),
         ]
@@ -266,6 +354,12 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/trashed',
         summary: 'عرض المحافظ المحذوفة مؤقتاً',
         tags: ['Network Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع المحافظ المحذوفة بنجاح'),
         ]
@@ -291,6 +385,9 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/{id}/restore',
         summary: 'استعادة محفظة محذوفة مؤقتاً',
         tags: ['Network Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة المحفظة بنجاح'),
         ]
@@ -315,6 +412,9 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/{id}/force',
         summary: 'الحذف النهائي لمحفظة شبكة',
         tags: ['Network Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي للمحفظة بنجاح'),
         ]
@@ -339,6 +439,19 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/batch-delete',
         summary: 'حذف مجمع لمحافظ الشبكات',
         tags: ['Network Wallets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
         ]
@@ -363,6 +476,19 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/batch-restore',
         summary: 'استعادة مجمعة لمحافظ الشبكات',
         tags: ['Network Wallets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
         ]
@@ -387,6 +513,19 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/batch-force-delete',
         summary: 'حذف نهائي مجمع لمحافظ الشبكات',
         tags: ['Network Wallets'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
         ]

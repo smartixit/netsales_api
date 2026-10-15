@@ -31,14 +31,18 @@ class OtpController extends BaseController
         summary: 'توليد وإرسال رمز تحقق جديد (OTP)',
         description: 'يولد رمز تحقق مؤقت معتمد ويرسله عبر رسالة نصية SMS إلى رقم الهاتف المسجل مع مراعاة فترات التهدئة.',
         tags: ['OTP'],
-        requestBody: new OA\RequestBody(
+                requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(
-                required: ['user_phone_number', 'otp_type'],
-                properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
-                    new OA\Property(property: 'otp_type', type: 'string', enum: ['OTP_2FA', 'RESET_PASSWORD', 'VERIFY_PHONE', 'CONFIRM_TRANSACTION'], example: 'RESET_PASSWORD'),
-                ]
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['user_phone_number', 'otp_type'],
+                    properties: [
+                    new OA\Property(property: 'user_phone_number', type: 'string'),
+                    new OA\Property(property: 'otp_type', type: 'string'),
+                    ]
+                )
             )
         ),
         responses: [
@@ -80,15 +84,19 @@ class OtpController extends BaseController
         summary: 'التحقق من صحة رمز OTP',
         description: 'يتحقق من مطابقة الرمز المدخل مع الرمز الصادر والمخزن في النظام وعدم انتهاء صلاحيته أو تجاوز المحاولات.',
         tags: ['OTP'],
-        requestBody: new OA\RequestBody(
+                requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(
-                required: ['user_phone_number', 'otp'],
-                properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
-                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
-                    new OA\Property(property: 'type', type: 'string', enum: ['OTP_2FA', 'RESET_PASSWORD', 'VERIFY_PHONE', 'CONFIRM_TRANSACTION'], example: 'RESET_PASSWORD'),
-                ]
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['user_phone_number', 'otp'],
+                    properties: [
+                    new OA\Property(property: 'user_phone_number', type: 'string'),
+                    new OA\Property(property: 'otp', type: 'string'),
+                    new OA\Property(property: 'type', type: 'string'),
+                    ]
+                )
             )
         ),
         responses: [
@@ -118,14 +126,18 @@ class OtpController extends BaseController
         summary: 'إعادة إرسال رمز التحقق (Resend OTP)',
         description: 'إعادة توليد وإرسال رمز تحقق جديد بعد فحص انقضاء فترة التهدئة المحددة.',
         tags: ['OTP'],
-        requestBody: new OA\RequestBody(
+                requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(
-                required: ['user_phone_number', 'otp_type'],
-                properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
-                    new OA\Property(property: 'otp_type', type: 'string', enum: ['OTP_2FA', 'RESET_PASSWORD', 'VERIFY_PHONE', 'CONFIRM_TRANSACTION'], example: 'RESET_PASSWORD'),
-                ]
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['user_phone_number', 'otp_type'],
+                    properties: [
+                    new OA\Property(property: 'user_phone_number', type: 'string'),
+                    new OA\Property(property: 'otp_type', type: 'string'),
+                    ]
+                )
             )
         ),
         responses: [

@@ -101,6 +101,27 @@ class PosController extends BaseController
         path: '/api/v1/pos',
         summary: 'إضافة نقطة بيع جديدة إدارياً',
         tags: ['POS'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['pos_name', 'pos_holder_name', 'pos_phone_number', 'governorate_id', 'directorate_id'],
+                    properties: [
+                    new OA\Property(property: 'pos_name', type: 'string'),
+                    new OA\Property(property: 'pos_holder_name', type: 'string'),
+                    new OA\Property(property: 'pos_phone_number', type: 'string'),
+                    new OA\Property(property: 'pos_email', type: 'string', format: 'email', example: 'user@example.com'),
+                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'pos_address', type: 'string'),
+                    new OA\Property(property: 'pos_profile_logo', type: 'string', format: 'binary'),
+                    new OA\Property(property: 'status', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء نقطة البيع بنجاح'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
@@ -129,6 +150,27 @@ class PosController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'pos_name', type: 'string'),
+                    new OA\Property(property: 'pos_holder_name', type: 'string'),
+                    new OA\Property(property: 'pos_phone_number', type: 'string'),
+                    new OA\Property(property: 'pos_email', type: 'string', format: 'email', example: 'user@example.com'),
+                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'pos_address', type: 'string'),
+                    new OA\Property(property: 'pos_profile_logo', type: 'string', format: 'binary'),
+                    new OA\Property(property: 'status', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث بيانات نقطة البيع بنجاح'),
             new OA\Response(response: 404, description: 'نقطة البيع غير موجودة'),
@@ -186,6 +228,11 @@ class PosController extends BaseController
         path: '/api/v1/pos/trashed',
         summary: 'عرض نقاط البيع في سلة المحذوفات',
         tags: ['POS'],
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع المحذوفات بنجاح'),
         ]
@@ -272,6 +319,19 @@ class PosController extends BaseController
         path: '/api/v1/pos/batch-delete',
         summary: 'حذف مجمع لنقاط البيع (Batch Delete)',
         tags: ['POS'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
         ]
@@ -297,6 +357,19 @@ class PosController extends BaseController
         path: '/api/v1/pos/batch-restore',
         summary: 'استعادة مجمعة لنقاط البيع (Batch Restore)',
         tags: ['POS'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
         ]
@@ -322,6 +395,19 @@ class PosController extends BaseController
         path: '/api/v1/pos/batch-force-delete',
         summary: 'حذف نهائي مجمع لنقاط البيع (Batch Force Delete)',
         tags: ['POS'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
         ]
@@ -378,6 +464,19 @@ class PosController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['reason'],
+                    properties: [
+                    new OA\Property(property: 'reason', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم رفض طلب نقطة البيع بنجاح'),
             new OA\Response(response: 422, description: 'نقطة البيع غير موجودة'),

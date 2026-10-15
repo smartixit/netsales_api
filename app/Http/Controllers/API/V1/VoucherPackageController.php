@@ -97,6 +97,29 @@ class VoucherPackageController extends BaseController
         path: '/api/v1/voucher-packages',
         summary: 'إنشاء باقة كروت جديدة',
         tags: ['Voucher Packages'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['network_id', 'package_name', 'package_voucher_price', 'package_default_cash_discount', 'package_default_credit_discount'],
+                    properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'package_name', type: 'string'),
+                    new OA\Property(property: 'package_color', type: 'string'),
+                    new OA\Property(property: 'package_balance', type: 'string'),
+                    new OA\Property(property: 'package_uptime', type: 'string'),
+                    new OA\Property(property: 'package_validity', type: 'string'),
+                    new OA\Property(property: 'package_voucher_count', type: 'integer', example: 1),
+                    new OA\Property(property: 'package_voucher_price', type: 'number', example: 100.5),
+                    new OA\Property(property: 'package_default_cash_discount', type: 'number', example: 100.5),
+                    new OA\Property(property: 'package_default_credit_discount', type: 'number', example: 100.5),
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء الباقة بنجاح'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
@@ -125,6 +148,28 @@ class VoucherPackageController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'package_name', type: 'string'),
+                    new OA\Property(property: 'package_color', type: 'string'),
+                    new OA\Property(property: 'package_balance', type: 'string'),
+                    new OA\Property(property: 'package_uptime', type: 'string'),
+                    new OA\Property(property: 'package_validity', type: 'string'),
+                    new OA\Property(property: 'package_voucher_count', type: 'integer', example: 1),
+                    new OA\Property(property: 'package_voucher_price', type: 'number', example: 100.5),
+                    new OA\Property(property: 'package_default_cash_discount', type: 'number', example: 100.5),
+                    new OA\Property(property: 'package_default_credit_discount', type: 'number', example: 100.5),
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث بيانات الباقة بنجاح'),
             new OA\Response(response: 404, description: 'الباقة غير موجودة'),
@@ -182,6 +227,11 @@ class VoucherPackageController extends BaseController
         path: '/api/v1/voucher-packages/trashed',
         summary: 'عرض سلة محذوفات باقات الكروت',
         tags: ['Voucher Packages'],
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع المحذوفات بنجاح'),
         ]
@@ -268,6 +318,19 @@ class VoucherPackageController extends BaseController
         path: '/api/v1/voucher-packages/batch-delete',
         summary: 'حذف مجمع لباقات الكروت',
         tags: ['Voucher Packages'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
         ]
@@ -293,6 +356,19 @@ class VoucherPackageController extends BaseController
         path: '/api/v1/voucher-packages/batch-restore',
         summary: 'استعادة مجمعة لباقات الكروت',
         tags: ['Voucher Packages'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
         ]
@@ -318,6 +394,19 @@ class VoucherPackageController extends BaseController
         path: '/api/v1/voucher-packages/batch-force-delete',
         summary: 'حذف نهائي مجمع لباقات الكروت',
         tags: ['Voucher Packages'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
         ]

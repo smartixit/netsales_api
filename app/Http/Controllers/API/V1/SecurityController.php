@@ -124,17 +124,22 @@ class SecurityController extends BaseController
         summary: 'تطبيق حظر أمني على مستخدم',
         description: 'يفرض حظراً أمنياً دائماً أو مؤقتاً على المستخدم مع إبطال كافة جلساته المفتوحة وتحديث حالته إلى BANNED.',
         tags: ['Security'],
-        requestBody: new OA\RequestBody(
+                requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(
-                required: ['user_id', 'ban_type'],
-                properties: [
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ban_type'],
+                    properties: [
                     new OA\Property(property: 'user_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'ban_type', type: 'string', enum: ['PERMANENT', 'TEMPORARY'], example: 'PERMANENT'),
-                    new OA\Property(property: 'ban_reason', type: 'string', example: 'مخالفة سياسات الاستخدام والأمان'),
-                    new OA\Property(property: 'start_at', type: 'string', format: 'date-time'),
-                    new OA\Property(property: 'end_at', type: 'string', format: 'date-time'),
-                ]
+                    new OA\Property(property: 'device_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'ban_type', type: 'string'),
+                    new OA\Property(property: 'ban_reason', type: 'string'),
+                    new OA\Property(property: 'start_at', type: 'string', format: 'date', example: '2026-01-01'),
+                    new OA\Property(property: 'end_at', type: 'string', format: 'date', example: '2026-01-01'),
+                    ]
+                )
             )
         ),
         responses: [
@@ -167,17 +172,22 @@ class SecurityController extends BaseController
         summary: 'تطبيق حظر أمني على جهاز',
         description: 'يفرض حظراً أمنياً على معرف جهاز محدد ويغير حالته إلى BANNED لمنع أي محاولة دخول لاحقة عبره.',
         tags: ['Security'],
-        requestBody: new OA\RequestBody(
+                requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(
-                required: ['device_id', 'ban_type'],
-                properties: [
-                    new OA\Property(property: 'device_id', type: 'integer', example: 5),
-                    new OA\Property(property: 'ban_type', type: 'string', enum: ['PERMANENT', 'TEMPORARY'], example: 'PERMANENT'),
-                    new OA\Property(property: 'ban_reason', type: 'string', example: 'جهاز مشبوه / محاولات اختراق متكررة'),
-                    new OA\Property(property: 'start_at', type: 'string', format: 'date-time'),
-                    new OA\Property(property: 'end_at', type: 'string', format: 'date-time'),
-                ]
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ban_type'],
+                    properties: [
+                    new OA\Property(property: 'user_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'device_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'ban_type', type: 'string'),
+                    new OA\Property(property: 'ban_reason', type: 'string'),
+                    new OA\Property(property: 'start_at', type: 'string', format: 'date', example: '2026-01-01'),
+                    new OA\Property(property: 'end_at', type: 'string', format: 'date', example: '2026-01-01'),
+                    ]
+                )
             )
         ),
         responses: [

@@ -101,6 +101,22 @@ class ExpenseController extends BaseController
         summary: 'تسجيل مصروف تشغيلي جديد',
         
         tags: ['Expenses'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['network_id', 'items'],
+                    properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'expense_date', type: 'string', format: 'date', example: '2026-01-01'),
+                    new OA\Property(property: 'items[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                    new OA\Property(property: 'attachments[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم تسجيل المصروف والخصم من المحفظة بنجاح'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
@@ -131,6 +147,21 @@ class ExpenseController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'expense_date', type: 'string', format: 'date', example: '2026-01-01'),
+                    new OA\Property(property: 'items[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                    new OA\Property(property: 'attachments[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث المصروف وتسوية المحفظة بنجاح'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
@@ -186,6 +217,13 @@ class ExpenseController extends BaseController
         summary: 'عرض المصروفات المحذوفة ناعماً',
         
         tags: ['Expenses'],
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'created_by', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع المصروفات المحذوفة بنجاح'),
         ]
@@ -268,6 +306,19 @@ class ExpenseController extends BaseController
         summary: 'حذف مجمع للمصروفات',
         
         tags: ['Expenses'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
         ]
@@ -293,6 +344,19 @@ class ExpenseController extends BaseController
         summary: 'استعادة مجمعة للمصروفات',
         
         tags: ['Expenses'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
         ]
@@ -318,6 +382,19 @@ class ExpenseController extends BaseController
         summary: 'حذف نهائي مجمع للمصروفات',
         
         tags: ['Expenses'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
         ]
@@ -346,6 +423,20 @@ class ExpenseController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['item_statement', 'item_amount'],
+                    properties: [
+                    new OA\Property(property: 'item_statement', type: 'string'),
+                    new OA\Property(property: 'item_amount', type: 'number', example: 100.5),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تمت إضافة البند وتسوية المحفظة بنجاح'),
         ]

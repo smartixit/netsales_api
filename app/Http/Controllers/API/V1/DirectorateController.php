@@ -124,6 +124,20 @@ class DirectorateController extends BaseController
         summary: 'إنشاء مديرية جديدة',
         
         tags: ['Directorates'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['governorate_id', 'directorate_name'],
+                    properties: [
+                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'directorate_name', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء المديرية بنجاح'),
         ]
@@ -152,6 +166,20 @@ class DirectorateController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'directorate_name', type: 'string'),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث بيانات المديرية بنجاح'),
         ]
@@ -205,6 +233,12 @@ class DirectorateController extends BaseController
         summary: 'عرض المديريات المحذوفة ناعماً',
         
         tags: ['Directorates'],
+        parameters: [
+            new OA\Parameter(name: 'governorate_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع المديريات المحذوفة بنجاح'),
         ]
@@ -287,6 +321,19 @@ class DirectorateController extends BaseController
         summary: 'الحذف المجمع للمديريات ناعماً',
         
         tags: ['Directorates'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم حذف المديريات المحددة بنجاح'),
         ]
@@ -312,6 +359,19 @@ class DirectorateController extends BaseController
         summary: 'الاستعادة المجمعة للمديريات',
         
         tags: ['Directorates'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم استعادة المديريات المحددة بنجاح'),
         ]
@@ -337,6 +397,19 @@ class DirectorateController extends BaseController
         summary: 'الحذف النهائي المجمع للمديريات',
         
         tags: ['Directorates'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم حذف المديريات نهائياً بنجاح'),
         ]

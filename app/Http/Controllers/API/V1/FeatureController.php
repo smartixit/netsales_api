@@ -96,6 +96,23 @@ class FeatureController extends BaseController
         summary: 'إضافة ميزة جديدة',
         
         tags: ['Features'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['feature_name', 'feature_value_type'],
+                    properties: [
+                    new OA\Property(property: 'feature_name', type: 'string'),
+                    new OA\Property(property: 'feature_value_type', type: 'string'),
+                    new OA\Property(property: 'feature_value', type: 'string'),
+                    new OA\Property(property: 'feature_desc', type: 'string'),
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء الميزة بنجاح'),
         ]
@@ -124,6 +141,23 @@ class FeatureController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'feature_name', type: 'string'),
+                    new OA\Property(property: 'feature_value_type', type: 'string'),
+                    new OA\Property(property: 'feature_value', type: 'string'),
+                    new OA\Property(property: 'feature_desc', type: 'string'),
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث الميزة بنجاح'),
         ]
@@ -205,6 +239,11 @@ class FeatureController extends BaseController
         summary: 'عرض الميزات المحذوفة ناعماً',
         
         tags: ['Features'],
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع الميزات المحذوفة بنجاح'),
         ]
@@ -287,6 +326,19 @@ class FeatureController extends BaseController
         summary: 'حذف مجمع للميزات',
         
         tags: ['Features'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
         ]
@@ -312,6 +364,19 @@ class FeatureController extends BaseController
         summary: 'استعادة مجمعة للميزات',
         
         tags: ['Features'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
         ]
@@ -337,6 +402,19 @@ class FeatureController extends BaseController
         summary: 'حذف نهائي مجمع للميزات',
         
         tags: ['Features'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
         ]

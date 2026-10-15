@@ -99,6 +99,24 @@ class VoucherPackageDiscountController extends BaseController
         path: '/api/v1/voucher-package-discounts',
         summary: 'تخصيص خصم جديد لنقطة بيع',
         tags: ['Package Discounts'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['network_id', 'package_id', 'pos_id', 'discount_cash', 'discount_credit'],
+                    properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'package_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'discount_cash', type: 'number', example: 100.5),
+                    new OA\Property(property: 'discount_credit', type: 'number', example: 100.5),
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء الخصم بنجاح'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
@@ -127,6 +145,21 @@ class VoucherPackageDiscountController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                    new OA\Property(property: 'discount_cash', type: 'number', example: 100.5),
+                    new OA\Property(property: 'discount_credit', type: 'number', example: 100.5),
+                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث بيانات الخصم بنجاح'),
             new OA\Response(response: 404, description: 'الخصم غير موجود'),
@@ -184,6 +217,11 @@ class VoucherPackageDiscountController extends BaseController
         path: '/api/v1/voucher-package-discounts/trashed',
         summary: 'عرض سلة محذوفات الخصومات',
         tags: ['Package Discounts'],
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع المحذوفات بنجاح'),
         ]
@@ -270,6 +308,19 @@ class VoucherPackageDiscountController extends BaseController
         path: '/api/v1/voucher-package-discounts/batch-delete',
         summary: 'حذف مجمع للخصومات',
         tags: ['Package Discounts'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
         ]
@@ -295,6 +346,19 @@ class VoucherPackageDiscountController extends BaseController
         path: '/api/v1/voucher-package-discounts/batch-restore',
         summary: 'استعادة مجمعة للخصومات',
         tags: ['Package Discounts'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
         ]
@@ -320,6 +384,19 @@ class VoucherPackageDiscountController extends BaseController
         path: '/api/v1/voucher-package-discounts/batch-force-delete',
         summary: 'حذف نهائي مجمع للخصومات',
         tags: ['Package Discounts'],
+                requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ids'],
+                    properties: [
+                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                    ]
+                )
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
         ]
