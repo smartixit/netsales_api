@@ -128,7 +128,7 @@ class VoucherPackageController extends BaseController
     public function store(StoreVoucherPackageRequest $request): JsonResponse
     {
         try {
-            $package = $this->voucherPackageService->create($request, auth()->id() ?? 1);
+            $package = $this->voucherPackageService->create($request, $this->currentUser()->user_id);
 
             return $this->successResponse('تم إنشاء باقة الكروت بنجاح.', new VoucherPackageResource($package), 201);
         } catch (ValidationException $e) {

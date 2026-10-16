@@ -441,7 +441,7 @@ class NetworkController extends BaseController
     public function approve(int $id): JsonResponse
     {
         try {
-            $network = $this->networkService->approve($id, auth()->id());
+            $network = $this->networkService->approve($id, (int) $this->currentUserId());
 
             return $this->successResponse('تمت الموافقة على طلب مزود الشبكة وتفعيل حسابه بنجاح.', new NetworkResource($network));
         } catch (ValidationException $e) {
@@ -483,7 +483,7 @@ class NetworkController extends BaseController
     public function reject(RejectRequest $request, int $id): JsonResponse
     {
         try {
-            $network = $this->networkService->reject($id, auth()->id(), $request->getReason());
+            $network = $this->networkService->reject($id, (int) $this->currentUserId(), $request->getReason());
 
             return $this->successResponse('تم رفض طلب مزود الشبكة وتوثيق السبب بنجاح.', new NetworkResource($network));
         } catch (ValidationException $e) {

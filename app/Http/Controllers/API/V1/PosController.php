@@ -444,7 +444,7 @@ class PosController extends BaseController
     public function approve(int $id): JsonResponse
     {
         try {
-            $pos = $this->posService->approve($id, auth()->id() ?? 1);
+            $pos = $this->posService->approve($id, (int) $this->currentUserId());
 
             return $this->successResponse('تمت الموافقة على طلب نقطة البيع وتفعيل حسابها بنجاح.', new PosResource($pos));
         } catch (ValidationException $e) {
@@ -485,7 +485,7 @@ class PosController extends BaseController
     public function reject(RejectRequest $request, int $id): JsonResponse
     {
         try {
-            $pos = $this->posService->reject($id, auth()->id() ?? 1, (string) $request->reason);
+            $pos = $this->posService->reject($id, (int) $this->currentUserId(), (string) $request->reason);
 
             return $this->successResponse('تم رفض طلب نقطة البيع بنجاح.', new PosResource($pos));
         } catch (ValidationException $e) {

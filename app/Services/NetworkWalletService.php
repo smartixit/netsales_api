@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\WalletOperationType;
+use App\Helpers\AmountFormatter;
 use App\Http\Requests\API\V1\Network\DepositNetworkWalletRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkWalletRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkWalletRequest;
@@ -13,7 +14,6 @@ use App\Interfaces\NetworkWalletRepositoryInterface;
 use App\Jobs\SendSmsNotificationJob;
 use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
-use App\Helpers\AmountFormatter;
 use Exception;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -103,16 +103,13 @@ class NetworkWalletService
                 'status' => $status,
             ]);
 
-            // إذا كان هناك رصيد افتتاحي، تسجيل قيد إيداع في دفتر الأستاذ
-            if ($initialBalance > 0) {
-                $this->networkWalletLogRepository->createLog(
-                    $wallet->wallet_id,
-                    WalletOperationType::DEPOSIT->value,
-                    $initialBalance,
-                    'رصيد افتتاحي عند تدشين محفظة الشبكة',
-                    $userId
-                );
-            }
+            $this->networkWalletLogRepository->createLog(
+                $wallet->wallet_id,
+                WalletOperationType::DEPOSIT->value,
+                $initialBalance,
+                'رصيد افتتاحي',
+                $userId
+            );
 
             $wallet->load('network');
 

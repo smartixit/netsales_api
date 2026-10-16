@@ -35,7 +35,7 @@ class SystemSettingSeeder extends Seeder
                 'setting_category' => 'GENERAL',
                 'setting_key' => 'app_company_name',
                 'setting_value_type' => 'TEXT',
-                'setting_value' => 'Smartix IT Solutions',
+                'setting_value' => 'Smartix Technology Solutions',
                 'setting_desc' => 'اسم الشركة المطورة / المشغلة',
             ],
             [

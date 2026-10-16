@@ -71,6 +71,14 @@ class BaseController
 
     protected function currentUser(): ?User
     {
-        return auth()->user();
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        return $user;
+    }
+
+    protected function currentUserId(): ?int
+    {
+        return $this->currentUser()?->user_id;
     }
 }

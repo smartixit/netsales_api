@@ -8,12 +8,13 @@ use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
 use App\Http\Requests\API\V1\Pos\StorePosRequest;
 use App\Http\Requests\API\V1\Pos\UpdatePosRequest;
+use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
+use App\Interfaces\PosWalletRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Jobs\SendEmailNotificationJob;
 use App\Jobs\SendSmsNotificationJob;
-use App\Models\NetworkPos;
 use App\Models\Pos;
 use App\Services\Support\FileUploadService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -41,6 +42,8 @@ class PosService
         protected UserDeviceRepositoryInterface $userDeviceRepository,
         protected FileUploadService $fileUploadService,
         protected NotificationService $notificationService,
+        protected NetworkPosRepositoryInterface $networkPosRepository,
+        protected PosWalletRepositoryInterface $posWalletRepository,
     ) {}
 
     /**
@@ -247,8 +250,30 @@ class PosService
 
             $pos->refresh();
 
-            // تفعيل ربط الشبكات إن وُجد
-            NetworkPos::where('pos_id', $pos->pos_id)->update(['status' => true]);
+            // تفعيل ربط الشبكات وإنشاء المحافظ المالية المشتركة إن وُجدت
+            $links = $this->networkPosRepository->getNetworksForPos($pos->pos_id, ['all' => true]);
+            $linkIdsToActivate = [];
+            foreach ($links as $link) {
+                if (! $link->status) {
+                    $linkIdsToActivate[] = (int) $link->network_pos_id;
+                }
+
+                $existingWallet = $this->posWalletRepository->findByNetworkAndPos((int) $link->network_id, (int) $pos->pos_id);
+                if (! $existingWallet) {
+                    $this->posWalletRepository->create([
+                        'network_id' => (int) $link->network_id,
+                        'pos_id' => (int) $pos->pos_id,
+                        'wallet_balance' => 0.00,
+                        'status' => true,
+                    ]);
+                } else {
+                    $this->posWalletRepository->updateStatus((int) $existingWallet->wallet_id, true);
+                }
+            }
+
+            if (! empty($linkIdsToActivate)) {
+                $this->networkPosRepository->bulkToggleStatus($linkIdsToActivate, true);
+            }
 
             // تفعيل المستخدم والجهاز المرتبط برقم هاتف نقطة البيع
             $user = $this->userRepository->findByPhone($pos->pos_phone_number);

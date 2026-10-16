@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\WalletOperationType;
+use App\Helpers\AmountFormatter;
 use App\Http\Requests\API\V1\Pos\DepositPosWalletRequest;
 use App\Http\Requests\API\V1\Pos\StorePosWalletRequest;
 use App\Http\Requests\API\V1\Pos\TransferNetworkToPosWalletRequest;
@@ -20,7 +21,6 @@ use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
 use App\Models\PosWallet;
 use App\Models\PosWalletLog;
-use App\Helpers\AmountFormatter;
 use Exception;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -116,16 +116,13 @@ class PosWalletService
                 'status' => $status,
             ]);
 
-            // قيد افتتاحي إذا كان الرصيد أكبر من صفر
-            if ($initialBalance > 0) {
-                $this->posWalletLogRepository->createLog(
-                    $wallet->wallet_id,
-                    WalletOperationType::DEPOSIT->value,
-                    $initialBalance,
-                    'رصيد افتتاحي عند تدشين محفظة نقطة البيع',
-                    $userId
-                );
-            }
+            $this->posWalletLogRepository->createLog(
+                $wallet->wallet_id,
+                WalletOperationType::DEPOSIT->value,
+                $initialBalance,
+                'رصيد افتتاحي عند تدشين محفظة نقطة البيع',
+                $userId
+            );
 
             $wallet->load(['network', 'pos']);
 

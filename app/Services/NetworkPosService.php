@@ -7,6 +7,7 @@ use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
 use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
+use App\Interfaces\PosWalletRepositoryInterface;
 use App\Models\NetworkPos;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -29,6 +30,7 @@ class NetworkPosService
         protected NetworkPosRepositoryInterface $networkPosRepository,
         protected NetworkRepositoryInterface $networkRepository,
         protected PosRepositoryInterface $posRepository,
+        protected PosWalletRepositoryInterface $posWalletRepository,
     ) {}
 
     /**
@@ -100,6 +102,17 @@ class NetworkPosService
                 'pos_id' => $posId,
                 'status' => $status,
             ]);
+
+            // إنشاء محفظة مالية لنقطة البيع لدى هذه الشبكة برصيد 0.00 تلقائياً إذا لم تكن موجودة مسبقاً
+            $wallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId);
+            if (! $wallet) {
+                $this->posWalletRepository->create([
+                    'network_id' => $networkId,
+                    'pos_id' => $posId,
+                    'wallet_balance' => 0.00,
+                    'status' => true,
+                ]);
+            }
 
             return $networkPos->load(['network', 'pos']);
         });
