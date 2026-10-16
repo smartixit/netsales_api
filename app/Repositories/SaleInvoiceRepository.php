@@ -28,8 +28,8 @@ class SaleInvoiceRepository extends BaseRepository implements SaleInvoiceReposit
     {
         parent::applyFilters($query, $filters);
 
-        if (! empty($filters['invoice_sale_type'])) {
-            $query->where('invoice_sale_type', $filters['invoice_sale_type']);
+        if (! empty($filters['sale_type'])) {
+            $query->where('sale_type', $filters['sale_type']);
         }
 
         if (! empty($filters['payment_status'])) {

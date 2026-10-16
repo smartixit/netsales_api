@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\API\V1\SaleInvoice;
 
-use App\Enums\PaymentType;
+use App\Enums\SaleType;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -29,10 +29,10 @@ class StoreSaleInvoiceRequest extends FormRequest
                 'integer',
                 Rule::exists('pos', 'pos_id')->whereNull('deleted_at'),
             ],
-            // 'invoice_sale_type' => [
-            //     'nullable',
-            //     Rule::enum(PaymentType::class),
-            // ],
+            'sale_type' => [
+                'nullable',
+                Rule::enum(SaleType::class),
+            ],
             'items' => [
                 'required',
                 'array',
@@ -76,11 +76,11 @@ class StoreSaleInvoiceRequest extends FormRequest
         return (int) $this->input('pos_id');
     }
 
-    public function getSaleType(): PaymentType
+    public function getSaleType(): SaleType
     {
-        $type = $this->input('invoice_sale_type');
+        $type = $this->input('sale_type');
 
-        return $type ? PaymentType::tryFrom(strtoupper((string) $type)) ?? PaymentType::CASH : PaymentType::CASH;
+        return $type ? SaleType::tryFrom(strtoupper((string) $type)) ?? SaleType::CASH : SaleType::CASH;
     }
 
     public function getPaidAmount(): ?float

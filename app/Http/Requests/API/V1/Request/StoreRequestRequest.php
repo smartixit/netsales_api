@@ -3,6 +3,7 @@
 namespace App\Http\Requests\API\V1\Request;
 
 use App\Enums\RequestStatus;
+use App\Enums\SaleType;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -29,6 +30,10 @@ class StoreRequestRequest extends FormRequest
                 'integer',
                 Rule::exists('pos', 'pos_id')->whereNull('deleted_at'),
             ],
+            'sale_type' => [
+                'nullable',
+                Rule::enum(SaleType::class),
+            ],
             'request_note' => [
                 'nullable',
                 'string',
@@ -52,6 +57,16 @@ class StoreRequestRequest extends FormRequest
                 'integer',
                 'min:1',
             ],
+            'items.*.voucher_price' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+            'items.*.item_discount' => [
+                'nullable',
+                'numeric',
+                'between:0,100',
+            ],
         ];
     }
 
@@ -63,6 +78,13 @@ class StoreRequestRequest extends FormRequest
     public function getPosId(): int
     {
         return (int) $this->input('pos_id');
+    }
+
+    public function getSaleType(): SaleType
+    {
+        $saleType = $this->input('sale_type');
+
+        return $saleType ? (SaleType::tryFrom((string) $saleType) ?? SaleType::CASH) : SaleType::CASH;
     }
 
     public function getRequestNote(): ?string

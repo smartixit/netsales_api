@@ -918,6 +918,7 @@ namespace App\Models{
  * @property int $network_id
  * @property int $pos_id
  * @property string $request_uuid
+ * @property \App\Enums\SaleType $sale_type
  * @property numeric $request_total_amount
  * @property \Illuminate\Support\Carbon $request_date
  * @property \App\Enums\RequestStatus $status
@@ -937,6 +938,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request approved()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request forNetwork(int $networkId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request forPos(int $posId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Request forSaleType(\App\Enums\SaleType|string $saleType)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request onlyTrashed()
@@ -955,6 +957,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request whereRequestUuid($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request whereReviewDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request whereReviewedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Request whereSaleType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request withTrashed(bool $withTrashed = true)
@@ -968,7 +971,10 @@ namespace App\Models{
  * @property int $item_id
  * @property int $request_id
  * @property int $package_id
- * @property int $item_voucher_count
+ * @property numeric $voucher_price
+ * @property int $voucher_count
+ * @property numeric $item_discount
+ * @property numeric $item_total_amount
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
@@ -980,11 +986,14 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereItemDiscount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereItemId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereItemVoucherCount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereItemTotalAmount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem wherePackageId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereRequestId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereVoucherCount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereVoucherPrice($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem withoutTrashed()
  */
@@ -1059,7 +1068,7 @@ namespace App\Models{
  * @property int $network_id
  * @property int $pos_id
  * @property string $invoice_uuid
- * @property \App\Enums\PaymentType $invoice_sale_type
+ * @property \App\Enums\SaleType $sale_type
  * @property numeric $invoice_total_amount
  * @property numeric $paid_amount
  * @property numeric $remaining_amount
@@ -1085,7 +1094,6 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereInvoiceDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereInvoiceId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereInvoiceSaleType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereInvoiceTotalAmount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereInvoiceUuid($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereNetworkId($value)
@@ -1093,6 +1101,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice wherePaymentStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice wherePosId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereRemainingAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereSaleType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice withoutTrashed()
@@ -1318,7 +1327,7 @@ namespace App\Models{
  * @property int $requested_by
  * @property string $request_uuid
  * @property numeric $request_total_amount
- * @property \App\Enums\RequestPaymentType $request_payment_type
+ * @property \App\Enums\PaymentType $request_payment_type
  * @property int|null $account_id
  * @property string|null $transaction_reference
  * @property string|null $transaction_receipt

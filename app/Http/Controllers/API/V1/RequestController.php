@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Common\RejectRequest;
+use App\Http\Requests\API\V1\Request\ApproveRequestRequest;
 use App\Http\Requests\API\V1\Request\StoreRequestRequest;
 use App\Http\Resources\API\V1\Request\RequestResource;
 use App\Http\Resources\API\V1\SaleInvoice\SaleInvoiceResource;
@@ -150,12 +151,11 @@ class RequestController extends BaseController
             new OA\Response(response: 200, description: 'تم اعتماد الطلب وتوليد الفاتورة بنجاح'),
         ]
     )]
-    public function approve(Request $request, int $id): JsonResponse
+    public function approve(ApproveRequestRequest $request, int $id): JsonResponse
     {
         try {
             $reviewedBy = (int) ($request->user()?->user_id ?? 1);
-            $note = $request->input('request_note');
-            $result = $this->requestService->approve($id, $reviewedBy, $note);
+            $result = $this->requestService->approve($id, $reviewedBy, $request);
 
             return $this->successResponse('تم اعتماد طلب الكروت وتوليد فاتورة المبيعات وتسوية الرصيد بنجاح.', [
                 'request' => new RequestResource($result['request']),

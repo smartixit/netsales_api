@@ -3,6 +3,7 @@
 namespace App\Http\Resources\API\V1\Request;
 
 use App\Enums\RequestStatus;
+use App\Enums\SaleType;
 use App\Http\Resources\API\V1\Network\NetworkResource;
 use App\Http\Resources\API\V1\Pos\PosResource;
 use App\Http\Resources\API\V1\User\UserResource;
@@ -28,6 +29,10 @@ class RequestResource extends JsonResource
             'network_id' => $this->network_id,
             'pos_id' => $this->pos_id,
             'request_uuid' => $this->request_uuid,
+            'sale_type' => $this->sale_type instanceof SaleType ? $this->sale_type->value : $this->sale_type,
+            'sale_type_label' => $this->sale_type instanceof SaleType
+                ? $this->sale_type->label()
+                : (SaleType::tryFrom((string) $this->sale_type)?->label()),
             'request_total_amount' => (float) $this->request_total_amount,
             'request_date' => $this->request_date ? Carbon::parse($this->request_date)->toDateTimeString() : null,
             'status' => $this->status instanceof RequestStatus ? $this->status->value : $this->status,

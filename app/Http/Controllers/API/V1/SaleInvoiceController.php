@@ -38,7 +38,7 @@ class SaleInvoiceController extends BaseController
         parameters: [
             new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
             new OA\Parameter(name: 'pos_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
-            new OA\Parameter(name: 'invoice_sale_type', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'sale_type', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'created_by', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
             new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
@@ -53,7 +53,7 @@ class SaleInvoiceController extends BaseController
     public function index(Request $request): JsonResponse
     {
         try {
-            $filters = $request->only(['network_id', 'pos_id', 'invoice_sale_type', 'created_by', 'from_date', 'to_date', 'search', 'per_page', 'all']);
+            $filters = $request->only(['network_id', 'pos_id', 'sale_type', 'created_by', 'from_date', 'to_date', 'search', 'per_page', 'all']);
             $invoices = $this->saleInvoiceService->getFiltered($filters);
 
             return $this->successResponse('تم استرجاع قائمة فواتير المبيعات بنجاح.', SaleInvoiceResource::collection($invoices));
@@ -151,7 +151,7 @@ class SaleInvoiceController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'invoice_sale_type', type: 'string'),
+                    new OA\Property(property: 'sale_type', type: 'string'),
                     ]
                 )
             )

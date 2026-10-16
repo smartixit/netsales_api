@@ -41,7 +41,10 @@ class RequestItemRepository extends BaseRepository implements RequestItemReposit
             $records[] = [
                 'request_id' => $requestId,
                 'package_id' => (int) $item['package_id'],
+                'voucher_price' => (float) ($item['voucher_price'] ?? 0.00),
                 'voucher_count' => (int) $item['voucher_count'],
+                'item_discount' => (float) ($item['item_discount'] ?? 0.00),
+                'item_total_amount' => (float) ($item['item_total_amount'] ?? 0.00),
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
             ];

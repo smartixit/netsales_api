@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\NotificationType;
 use App\Enums\RequestStatus;
+use App\Enums\SaleType;
+use App\Http\Requests\API\V1\Request\ApproveRequestRequest;
 use App\Http\Requests\API\V1\Request\StoreRequestRequest;
 use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
@@ -12,8 +14,10 @@ use App\Interfaces\RequestItemRepositoryInterface;
 use App\Interfaces\RequestRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Models\Request as RequestModel;
+use App\Models\RequestItem;
 use App\Models\SaleInvoice;
 use App\Services\NotificationService;
+use App\Services\VoucherPackageDiscountService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +36,8 @@ class RequestService
         protected PosRepositoryInterface $posRepository,
         protected NetworkPosRepositoryInterface $networkPosRepository,
         protected SaleInvoiceService $saleInvoiceService,
-        protected NotificationService $notificationService
+        protected NotificationService $notificationService,
+        protected VoucherPackageDiscountService $voucherPackageDiscountService
     ) {}
 
     /**
@@ -71,6 +76,7 @@ class RequestService
         return DB::transaction(function () use ($request, $userId): RequestModel {
             $networkId = $request->getNetworkId();
             $posId = $request->getPosId();
+            $saleType = $request->getSaleType();
             $items = $request->getItems();
             $note = $request->getRequestNote();
 
@@ -92,7 +98,7 @@ class RequestService
                 ]);
             }
 
-            // التحقق من صحة الباقات وتبعيتها للشبكة واحتساب الإجمالي المبدئي
+            // التحقق من صحة الباقات وتبعيتها للشبكة واحتساب الإجمالي مع الخصومات المطبقة
             $totalAmount = 0.0;
             $itemsData = [];
 
@@ -114,11 +120,35 @@ class RequestService
                     ]);
                 }
 
-                $totalAmount += round((float) $package->package_voucher_price * $count, 2);
+                $voucherPrice = isset($item['voucher_price']) && (float) $item['voucher_price'] > 0
+                    ? (float) $item['voucher_price']
+                    : (float) $package->package_voucher_price;
+
+                if (isset($item['item_discount']) && $item['item_discount'] !== null) {
+                    $discountPercent = (float) $item['item_discount'];
+                } else {
+                    $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $packageId);
+                    $discountPercent = $saleType->isCash()
+                        ? (float) ($discountData['discount_cash'] ?? 0.0)
+                        : (float) ($discountData['discount_credit'] ?? 0.0);
+                }
+
+                $itemModel = new RequestItem([
+                    'package_id' => $packageId,
+                    'voucher_price' => $voucherPrice,
+                    'voucher_count' => $count,
+                    'item_discount' => $discountPercent,
+                ]);
+                $lineTotal = $itemModel->calculateLineTotal();
+
+                $totalAmount += $lineTotal;
 
                 $itemsData[] = [
                     'package_id' => $packageId,
+                    'voucher_price' => $voucherPrice,
                     'voucher_count' => $count,
+                    'item_discount' => $discountPercent,
+                    'item_total_amount' => $lineTotal,
                 ];
             }
 
@@ -126,6 +156,7 @@ class RequestService
             $createdRequest = $this->requestRepository->create([
                 'network_id' => $networkId,
                 'pos_id' => $posId,
+                'sale_type' => $saleType,
                 'request_total_amount' => $totalAmount,
                 'request_date' => now('Asia/Aden'),
                 'status' => RequestStatus::PENDING,
@@ -155,13 +186,14 @@ class RequestService
     }
 
     /**
-     * اعتماد طلب الكروت وتوليد فاتورة المبيعات وتسوية الرصيد آلياً.
+     * اعتماد طلب الكروت وتوليد فاتورة المبيعات وتسوية الرصيد آلياً بالنمط المرن.
+     * يدعم تمرير تعديلات اختيارية على نوع البيع والبنود دون تعديل سجل الطلب الأصلي.
      *
      * @return array{request: RequestModel, invoice: SaleInvoice}
      */
-    public function approve(int $requestId, int $reviewedBy, ?string $note = null): array
+    public function approve(int $requestId, int $reviewedBy, ApproveRequestRequest|string|null $requestData = null): array
     {
-        return DB::transaction(function () use ($requestId, $reviewedBy, $note): array {
+        return DB::transaction(function () use ($requestId, $reviewedBy, $requestData): array {
             /** @var RequestModel $request */
             $request = $this->requestRepository->findById($requestId);
 
@@ -171,10 +203,27 @@ class RequestService
                 ]);
             }
 
-            // توليد الفاتورة والخصم من محفظة الوكيل والإيداع في محفظة الشبكة ذرياً
-            $invoice = $this->saleInvoiceService->generateFromRequest($request, $reviewedBy);
+            $note = null;
+            $overrideSaleType = null;
+            $overrideItems = null;
 
-            // تحديث حالة الطلب إلى معتمد (APPROVED)
+            if ($requestData instanceof ApproveRequestRequest) {
+                $note = $requestData->getRequestNote();
+                $overrideSaleType = $requestData->getSaleType();
+                $overrideItems = $requestData->hasItems() ? $requestData->getItems() : null;
+            } elseif (is_string($requestData)) {
+                $note = $requestData;
+            }
+
+            // توليد الفاتورة والخصم من محفظة الوكيل والإيداع في محفظة الشبكة ذرياً (دون تعديل بنود الطلب الأصلي)
+            $invoice = $this->saleInvoiceService->generateFromRequest(
+                $request,
+                $reviewedBy,
+                $overrideSaleType,
+                $overrideItems
+            );
+
+            // تحديث حالة الطلب الأصلي إلى معتمد (APPROVED) وتوثيق ملاحظة المراجعة مع بقاء بنوده كما طُلبت
             $this->requestRepository->updateStatus(
                 $requestId,
                 RequestStatus::APPROVED,

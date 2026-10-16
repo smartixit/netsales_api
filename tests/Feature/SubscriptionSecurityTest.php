@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
 use App\Enums\ProviderSubscriptionStatus;
-use App\Enums\RequestPaymentType;
+use App\Enums\PaymentType;
 use App\Enums\ValueType;
 use App\Models\Feature;
 use App\Models\Network;
@@ -185,7 +185,7 @@ class SubscriptionSecurityTest extends TestCase
         $req = $this->withHeaders($this->headers)->postJson('/api/v1/subscription-plan-requests', [
             'network_id' => $this->network->network_id,
             'plan_id' => $plan->plan_id,
-            'request_payment_type' => RequestPaymentType::CASH->value,
+            'request_payment_type' => PaymentType::CASH->value,
         ]);
         $reqId = (int) $req->json('data.request_id');
         $this->withHeaders($this->headers)->postJson("/api/v1/subscription-plan-requests/{$reqId}/approve");
@@ -221,7 +221,7 @@ class SubscriptionSecurityTest extends TestCase
         $req = $this->withHeaders($tamperedHeaders)->postJson('/api/v1/subscription-plan-requests', [
             'network_id' => $this->network->network_id,
             'plan_id' => $plan->plan_id,
-            'request_payment_type' => RequestPaymentType::CASH->value,
+            'request_payment_type' => PaymentType::CASH->value,
             'subscription_start_date' => '2010-01-01',
             'subscription_end_date' => '2050-01-01',
         ]);

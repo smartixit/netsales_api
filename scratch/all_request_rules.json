@@ -2044,7 +2044,7 @@
         ]
     },
     "UpdateSaleInvoiceRequest": {
-        "invoice_sale_type": [
+        "sale_type": [
             "required",
             {}
         ]

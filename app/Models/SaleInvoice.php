@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Enums\InvoicePaymentStatus;
-use App\Enums\PaymentType;
+use App\Enums\SaleType;
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
@@ -31,7 +31,7 @@ class SaleInvoice extends Model
         'network_id',
         'pos_id',
         'invoice_uuid',
-        'invoice_sale_type',
+        'sale_type',
         'invoice_total_amount',
         'paid_amount',
         'remaining_amount',
@@ -43,7 +43,7 @@ class SaleInvoice extends Model
     protected function casts(): array
     {
         return [
-            'invoice_sale_type' => PaymentType::class,
+            'sale_type' => SaleType::class,
             'invoice_total_amount' => 'decimal:2',
             'paid_amount' => 'decimal:2',
             'remaining_amount' => 'decimal:2',
@@ -108,5 +108,10 @@ class SaleInvoice extends Model
     public function isUnpaid(): bool
     {
         return $this->payment_status === InvoicePaymentStatus::UNPAID;
+    }
+
+    public function calculateTotalFromItems(): float
+    {
+        return round($this->items->sum(fn (SaleInvoiceItem $item) => $item->calculateLineTotal()), 2);
     }
 }

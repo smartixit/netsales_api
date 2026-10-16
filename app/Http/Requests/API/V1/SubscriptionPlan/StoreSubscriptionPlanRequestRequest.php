@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\API\V1\SubscriptionPlan;
 
-use App\Enums\RequestPaymentType;
+use App\Enums\PaymentType;
 use App\Enums\RequestStatus;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
@@ -55,7 +55,7 @@ class StoreSubscriptionPlanRequestRequest extends FormRequest
             ],
             'request_payment_type' => [
                 'required',
-                Rule::enum(RequestPaymentType::class),
+                Rule::enum(PaymentType::class),
             ],
             'account_id' => [
                 'nullable',

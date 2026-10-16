@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
-use App\Enums\PaymentType;
+use App\Enums\SaleType;
 use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
 use App\Enums\UserStatus;
@@ -152,7 +152,11 @@ class VoucherRequestAndInvoicingTest extends TestCase
         $createResponse->assertStatus(201)
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.status', RequestStatus::PENDING->value)
-            ->assertJsonPath('data.request_total_amount', 50000);
+            ->assertJsonPath('data.sale_type', SaleType::CASH->value)
+            ->assertJsonPath('data.request_total_amount', 45000)
+            ->assertJsonPath('data.items.0.voucher_price', 500)
+            ->assertJsonPath('data.items.0.item_discount', 10)
+            ->assertJsonPath('data.items.0.item_total_amount', 45000);
 
         $requestId = $createResponse->json('data.request_id');
 
@@ -168,7 +172,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
         $approveResponse->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.request.status', RequestStatus::APPROVED->value)
-            ->assertJsonPath('data.invoice.invoice_sale_type', PaymentType::CASH->value)
+            ->assertJsonPath('data.invoice.sale_type', SaleType::CASH->value)
             ->assertJsonPath('data.invoice.invoice_total_amount', 45000);
 
         // 3. Verify Wallet Balances Settlement
@@ -255,7 +259,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
 
         $approveResponse->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.invoice.invoice_sale_type', PaymentType::CREDIT->value)
+            ->assertJsonPath('data.invoice.sale_type', SaleType::CREDIT->value)
             ->assertJsonPath('data.invoice.invoice_total_amount', 46000);
 
 
@@ -280,4 +284,104 @@ class VoucherRequestAndInvoicingTest extends TestCase
             ->assertJsonPath('data.is_overdrawn', true)
             ->assertJsonPath('data.debit_amount', 46000);
     }
+
+    public function test_explicit_credit_request_applies_credit_discount_and_generates_credit_invoice(): void
+    {
+        // 1. Submit Request with SaleType::CREDIT
+        // Gross: 100 * 500 = 50,000
+        // Credit discount is 8% = 4,000 -> Net: 46,000
+        $createResponse = $this->withHeaders($this->headers)
+            ->postJson('/api/v1/requests', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'sale_type' => SaleType::CREDIT->value,
+                'request_note' => 'طلب آجل صريح',
+                'items' => [
+                    [
+                        'package_id' => $this->package->package_id,
+                        'voucher_count' => 100,
+                    ],
+                ],
+            ]);
+
+        $createResponse->assertStatus(201)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.sale_type', SaleType::CREDIT->value)
+            ->assertJsonPath('data.request_total_amount', 46000)
+            ->assertJsonPath('data.items.0.voucher_price', 500)
+            ->assertJsonPath('data.items.0.item_discount', 8)
+            ->assertJsonPath('data.items.0.item_total_amount', 46000);
+
+        $requestId = $createResponse->json('data.request_id');
+
+        // 2. Approve Request -> invoice should also be CREDIT with 46,000
+        $approveResponse = $this->withHeaders($this->headers)
+            ->postJson("/api/v1/requests/{$requestId}/approve", [
+                'request_note' => 'موافقة على الطلب الآجل',
+            ]);
+
+        $approveResponse->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.invoice.sale_type', SaleType::CREDIT->value)
+            ->assertJsonPath('data.invoice.invoice_total_amount', 46000);
+    }
+
+    public function test_flexible_approval_with_override_items_and_sale_type_leaves_original_request_untouched(): void
+    {
+        // 1. Submit original request for 100 vouchers (CASH, Net 45,000)
+        $createResponse = $this->withHeaders($this->headers)
+            ->postJson('/api/v1/requests', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'sale_type' => SaleType::CASH->value,
+                'request_note' => 'طلب كروت 100 حبة نقداً',
+                'items' => [
+                    [
+                        'package_id' => $this->package->package_id,
+                        'voucher_count' => 100,
+                    ],
+                ],
+            ]);
+
+        $createResponse->assertStatus(201);
+        $requestId = $createResponse->json('data.request_id');
+
+        // 2. Approve with overrides:
+        // - Change sale_type to CREDIT
+        // - Change quantity to 50 vouchers instead of 100
+        // Expected for Invoice:
+        // Gross: 50 * 500 = 25,000
+        // Credit discount (8%) = 2,000 -> Net: 23,000
+        $approveResponse = $this->withHeaders($this->headers)
+            ->postJson("/api/v1/requests/{$requestId}/approve", [
+                'request_note' => 'اعتماد جزئي لـ 50 كرت فقط بالبيع الآجل',
+                'sale_type' => SaleType::CREDIT->value,
+                'items' => [
+                    [
+                        'package_id' => $this->package->package_id,
+                        'voucher_count' => 50,
+                    ],
+                ],
+            ]);
+
+        $approveResponse->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.invoice.sale_type', SaleType::CREDIT->value)
+            ->assertJsonPath('data.invoice.invoice_total_amount', 23000)
+            ->assertJsonPath('data.invoice.items.0.voucher_count', 50)
+            ->assertJsonPath('data.invoice.items.0.item_discount', 8)
+            ->assertJsonPath('data.invoice.items.0.item_total_amount', 23000);
+
+        // 3. Verify that the ORIGINAL Request and its items were NOT modified in the database
+        $originalRequestResponse = $this->withHeaders($this->headers)
+            ->getJson("/api/v1/requests/{$requestId}");
+
+        $originalRequestResponse->assertStatus(200)
+            ->assertJsonPath('data.status', RequestStatus::APPROVED->value)
+            ->assertJsonPath('data.sale_type', SaleType::CASH->value) // Untouched!
+            ->assertJsonPath('data.request_total_amount', 45000) // Untouched!
+            ->assertJsonPath('data.items.0.voucher_count', 100) // Untouched!
+            ->assertJsonPath('data.items.0.item_total_amount', 45000); // Untouched!
+    }
 }
+

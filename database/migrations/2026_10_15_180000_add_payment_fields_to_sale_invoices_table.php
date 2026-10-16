@@ -20,7 +20,7 @@ return new class extends Migration
 
         // تحديث البيانات القديمة لتطابق المنطق المحاسبي
         // DB::table('sale_invoices')
-        //     ->where('invoice_sale_type', 'CASH')
+        //     ->where('sale_type', 'CASH')
         //     ->update([
         //         'paid_amount' => DB::raw('invoice_total_amount'),
         //         'remaining_amount' => 0.00,
@@ -28,7 +28,7 @@ return new class extends Migration
         //     ]);
 
         // DB::table('sale_invoices')
-        //     ->where('invoice_sale_type', 'CREDIT')
+        //     ->where('sale_type', 'CREDIT')
         //     ->update([
         //         'paid_amount' => 0.00,
         //         'remaining_amount' => DB::raw('invoice_total_amount'),

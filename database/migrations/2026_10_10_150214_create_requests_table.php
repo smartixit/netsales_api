@@ -24,6 +24,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->string('request_uuid', 50)->unique('uq_requests_request_uuid');
+            $table->string('sale_type', 20)->default('CASH')->index('idx_requests_sale_type'); // CASH, CREDIT
             $table->decimal('request_total_amount', 15, 2)->default(0.00);
             $table->timestamp('request_date')->useCurrent();
             $table->string('status', 20)->default('PENDING')->index('idx_requests_status');

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RequestStatus;
+use App\Enums\SaleType;
 use App\Services\Support\BusinessIdentifierGenerator;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,6 +31,7 @@ class Request extends Model
         'network_id',
         'pos_id',
         'request_uuid',
+        'sale_type',
         'request_total_amount',
         'request_date',
         'status',
@@ -42,6 +44,7 @@ class Request extends Model
     protected function casts(): array
     {
         return [
+            'sale_type' => SaleType::class,
             'request_total_amount' => 'decimal:2',
             'request_date' => 'datetime',
             'status' => RequestStatus::class,
@@ -111,6 +114,13 @@ class Request extends Model
         return $query->where('pos_id', $posId);
     }
 
+    public function scopeForSaleType(Builder $query, SaleType|string $saleType): Builder
+    {
+        $val = $saleType instanceof SaleType ? $saleType->value : (string) $saleType;
+
+        return $query->where('sale_type', $val);
+    }
+
     // Checkers
     public function isPending(): bool
     {
@@ -127,13 +137,18 @@ class Request extends Model
         return $this->status === RequestStatus::REJECTED;
     }
 
-    // Calculations
-    public function recalculateTotal(): void
+    public function isCash(): bool
     {
-        $total = $this->items()->with('voucherPackage')->get()->sum(function (RequestItem $item): float {
-            return (float) ($item->voucher_count * ($item->voucherPackage?->package_voucher_price ?? 0));
-        });
+        return $this->sale_type === SaleType::CASH;
+    }
 
-        $this->update(['request_total_amount' => $total]);
+    public function isCredit(): bool
+    {
+        return $this->sale_type === SaleType::CREDIT;
+    }
+
+    public function calculateTotalFromItems(): float
+    {
+        return round($this->items->sum(fn (RequestItem $item) => $item->calculateLineTotal()), 2);
     }
 }

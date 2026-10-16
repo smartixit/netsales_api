@@ -2,11 +2,10 @@
 
 namespace App\Enums;
 
-enum RequestPaymentType: string
+enum SaleType: string
 {
     case CASH = 'CASH';
-    case BANK = 'BANK';
-    case WALLET = 'WALLET';
+    case CREDIT = 'CREDIT';
 
     public static function values(): array
     {
@@ -18,12 +17,21 @@ enum RequestPaymentType: string
         return self::values();
     }
 
+    public function isCash(): bool
+    {
+        return $this === self::CASH;
+    }
+
+    public function isCredit(): bool
+    {
+        return $this === self::CREDIT;
+    }
+
     public function label(): string
     {
         return match ($this) {
             self::CASH => 'نقدي',
-            self::BANK => 'بنكي',
-            self::WALLET => 'محفظة',
+            self::CREDIT => 'آجل',
         };
     }
 
@@ -31,8 +39,7 @@ enum RequestPaymentType: string
     {
         return [
             self::CASH->value => self::CASH->label(),
-            self::BANK->value => self::BANK->label(),
-            self::WALLET->value => self::WALLET->label(),
+            self::CREDIT->value => self::CREDIT->label(),
         ];
     }
 }

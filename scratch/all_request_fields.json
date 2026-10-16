@@ -769,7 +769,7 @@
     "paid_amount": [
         "StoreSaleInvoiceRequest"
     ],
-    "invoice_sale_type": [
+    "sale_type": [
         "UpdateSaleInvoiceRequest"
     ],
     "settings": [

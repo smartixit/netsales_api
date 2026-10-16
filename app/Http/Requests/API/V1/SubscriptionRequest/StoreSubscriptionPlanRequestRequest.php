@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\API\V1\SubscriptionRequest;
 
-use App\Enums\RequestPaymentType;
+use App\Enums\PaymentType;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -31,7 +31,7 @@ class StoreSubscriptionPlanRequestRequest extends FormRequest
             ],
             'request_payment_type' => [
                 'required',
-                Rule::enum(RequestPaymentType::class),
+                Rule::enum(PaymentType::class),
             ],
             'account_id' => [
                 'nullable',
@@ -70,7 +70,7 @@ class StoreSubscriptionPlanRequestRequest extends FormRequest
 
     public function getRequestPaymentType(): string
     {
-        return (string) $this->input('request_payment_type', RequestPaymentType::CASH->value);
+        return (string) $this->input('request_payment_type', PaymentType::CASH->value);
     }
 
     public function getAccountId(): ?int

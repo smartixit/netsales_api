@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\InvoicePaymentStatus;
 use App\Enums\NetworkStatus;
-use App\Enums\PaymentType;
+use App\Enums\SaleType;
 use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
 use App\Enums\UserStatus;
@@ -346,7 +346,7 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
         $invoice = SaleInvoice::create([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
-            'invoice_sale_type' => PaymentType::CREDIT,
+            'sale_type' => SaleType::CREDIT,
             'invoice_total_amount' => 10000.00,
             'paid_amount' => 0.00,
             'remaining_amount' => 10000.00,

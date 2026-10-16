@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ProviderSubscriptionStatus;
-use App\Enums\RequestPaymentType;
+use App\Enums\PaymentType;
 use App\Enums\ValueType;
 use App\Models\Feature;
 use App\Models\Network;
@@ -130,7 +130,7 @@ class SubscriptionQuotaAndFeatureLimitTest extends TestCase
             'network_id' => $this->network->network_id,
             'plan_id' => $this->basicPlan->plan_id,
             'requested_by' => $this->user->user_id,
-            'request_payment_type' => RequestPaymentType::CASH,
+            'request_payment_type' => PaymentType::CASH,
             'request_total_amount' => 5000.00,
             'request_date' => now('Asia/Aden'),
             'status' => 'PENDING',
@@ -173,7 +173,7 @@ class SubscriptionQuotaAndFeatureLimitTest extends TestCase
             'network_id' => $this->network->network_id,
             'plan_id' => $this->proPlan->plan_id,
             'requested_by' => $this->user->user_id,
-            'request_payment_type' => RequestPaymentType::CASH,
+            'request_payment_type' => PaymentType::CASH,
             'request_total_amount' => 15000.00,
             'request_date' => now('Asia/Aden'),
             'status' => 'PENDING',

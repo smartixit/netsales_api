@@ -268,7 +268,7 @@
         "network_id": "foreignId",
         "pos_id": "foreignId",
         "invoice_uuid": "string",
-        "invoice_sale_type": "string",
+        "sale_type": "string",
         "invoice_total_amount": "decimal",
         "invoice_date": "timestamp",
         "created_by": "foreignId"

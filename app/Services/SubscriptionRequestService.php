@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Enums\ProviderSubscriptionStatus;
-use App\Enums\RequestPaymentType;
+use App\Enums\PaymentType;
 use App\Enums\RequestStatus;
 use App\Http\Requests\API\V1\SubscriptionRequest\ApproveSubscriptionPlanRequestRequest;
 use App\Http\Requests\API\V1\SubscriptionRequest\RejectSubscriptionPlanRequestRequest;
@@ -121,7 +121,7 @@ class SubscriptionRequestService
             $paymentType = $request->getRequestPaymentType();
             $accountId = $request->getAccountId();
 
-            if ($paymentType === RequestPaymentType::BANK->value && empty($accountId)) {
+            if ($paymentType === PaymentType::BANK->value && empty($accountId)) {
                 throw ValidationException::withMessages([
                     'account_id' => ['يجب اختيار الحساب البنكي المحول إليه عند اختيار السداد البنكي.'],
                 ]);

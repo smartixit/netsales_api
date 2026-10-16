@@ -25,13 +25,19 @@ class RequestItem extends Model
     protected $fillable = [
         'request_id',
         'package_id',
+        'voucher_price',
         'voucher_count',
+        'item_discount',
+        'item_total_amount',
     ];
 
     protected function casts(): array
     {
         return [
+            'voucher_price' => 'decimal:2',
             'voucher_count' => 'integer',
+            'item_discount' => 'decimal:2',
+            'item_total_amount' => 'decimal:2',
         ];
     }
 
@@ -47,10 +53,20 @@ class RequestItem extends Model
     }
 
     // Calculations
-    public function calculateSubtotal(?float $unitPrice = null): float
+    public function grossAmount(): float
     {
-        $price = $unitPrice ?? (float) ($this->voucherPackage?->package_voucher_price ?? 0);
+        return round((float) $this->voucher_price * (int) $this->voucher_count, 2);
+    }
 
-        return (float) ($this->voucher_count * $price);
+    public function calculateDiscountAmount(): float
+    {
+        $discountPercent = (float) ($this->item_discount ?? 0.0);
+
+        return round($this->grossAmount() * ($discountPercent / 100), 2);
+    }
+
+    public function calculateLineTotal(): float
+    {
+        return max(0.0, round($this->grossAmount() - $this->calculateDiscountAmount(), 2));
     }
 }

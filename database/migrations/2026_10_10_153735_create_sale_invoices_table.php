@@ -24,7 +24,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->string('invoice_uuid', 50)->unique('uq_sale_invoices_invoice_uuid');
-            $table->string('invoice_sale_type', 20)->default('CASH')->index('idx_sale_invoices_invoice_sale_type'); // CASH, CREDIT
+            $table->string('sale_type', 20)->default('CASH')->index('idx_sale_invoices_sale_type'); // CASH, CREDIT
             $table->decimal('invoice_total_amount', 15, 2)->default(0.00);
             $table->timestamp('invoice_date')->useCurrent();
 

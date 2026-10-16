@@ -178,10 +178,8 @@
                             "schema": {
                                 "required": [
                                     "network_name",
-                                    "network_holder_name",
                                     "governorate_id",
                                     "directorate_id",
-                                    "network_phone_number",
                                     "user_full_name",
                                     "user_phone_number",
                                     "user_password",
@@ -192,10 +190,6 @@
                                         "type": "string",
                                         "example": "شبكة سمارتكس"
                                     },
-                                    "network_holder_name": {
-                                        "type": "string",
-                                        "example": "حسام خالد سعيد علي"
-                                    },
                                     "governorate_id": {
                                         "type": "integer",
                                         "example": 1
@@ -203,10 +197,6 @@
                                     "directorate_id": {
                                         "type": "integer",
                                         "example": 1
-                                    },
-                                    "network_phone_number": {
-                                        "type": "string",
-                                        "example": "772957881"
                                     },
                                     "network_email": {
                                         "type": "string",
@@ -299,10 +289,8 @@
                             "schema": {
                                 "required": [
                                     "pos_name",
-                                    "pos_holder_name",
                                     "governorate_id",
                                     "directorate_id",
-                                    "pos_phone_number",
                                     "user_full_name",
                                     "user_phone_number",
                                     "user_password",
@@ -313,10 +301,6 @@
                                         "type": "string",
                                         "example": "نقطة بيع النور"
                                     },
-                                    "pos_holder_name": {
-                                        "type": "string",
-                                        "example": "خالد عبد الله"
-                                    },
                                     "governorate_id": {
                                         "type": "integer",
                                         "example": 1
@@ -324,10 +308,6 @@
                                     "directorate_id": {
                                         "type": "integer",
                                         "example": 1
-                                    },
-                                    "pos_phone_number": {
-                                        "type": "string",
-                                        "example": "771234567"
                                     },
                                     "pos_email": {
                                         "type": "string",
@@ -3240,8 +3220,7 @@
                                 "required": [
                                     "network_name",
                                     "governorate_id",
-                                    "directorate_id",
-                                    "network_phone"
+                                    "directorate_id"
                                 ],
                                 "properties": {
                                     "network_name": {
@@ -3254,9 +3233,6 @@
                                     "directorate_id": {
                                         "type": "integer",
                                         "example": 1
-                                    },
-                                    "network_phone": {
-                                        "type": "string"
                                     },
                                     "network_address": {
                                         "type": "string"
@@ -3346,9 +3322,6 @@
                                     "directorate_id": {
                                         "type": "integer",
                                         "example": 1
-                                    },
-                                    "network_phone": {
-                                        "type": "string"
                                     },
                                     "network_address": {
                                         "type": "string"
@@ -3682,10 +3655,10 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "reason"
+                                    "rejection_reason"
                                 ],
                                 "properties": {
-                                    "reason": {
+                                    "rejection_reason": {
                                         "type": "string"
                                     }
                                 },
@@ -5452,19 +5425,11 @@
                             "schema": {
                                 "required": [
                                     "pos_name",
-                                    "pos_holder_name",
-                                    "pos_phone_number",
                                     "governorate_id",
                                     "directorate_id"
                                 ],
                                 "properties": {
                                     "pos_name": {
-                                        "type": "string"
-                                    },
-                                    "pos_holder_name": {
-                                        "type": "string"
-                                    },
-                                    "pos_phone_number": {
                                         "type": "string"
                                     },
                                     "pos_email": {
@@ -5559,12 +5524,6 @@
                                 "required": [],
                                 "properties": {
                                     "pos_name": {
-                                        "type": "string"
-                                    },
-                                    "pos_holder_name": {
-                                        "type": "string"
-                                    },
-                                    "pos_phone_number": {
                                         "type": "string"
                                     },
                                     "pos_email": {
@@ -5897,10 +5856,10 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "reason"
+                                    "rejection_reason"
                                 ],
                                 "properties": {
-                                    "reason": {
+                                    "rejection_reason": {
                                         "type": "string"
                                     }
                                 },
@@ -7124,10 +7083,10 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "reason"
+                                    "rejection_reason"
                                 ],
                                 "properties": {
-                                    "reason": {
+                                    "rejection_reason": {
                                         "type": "string"
                                     }
                                 },
@@ -7416,7 +7375,7 @@
                         }
                     },
                     {
-                        "name": "invoice_sale_type",
+                        "name": "sale_type",
                         "in": "query",
                         "required": false,
                         "schema": {
@@ -7582,7 +7541,7 @@
                             "schema": {
                                 "required": [],
                                 "properties": {
-                                    "invoice_sale_type": {
+                                    "sale_type": {
                                         "type": "string"
                                     }
                                 },
@@ -8942,7 +8901,7 @@
                             "schema": {
                                 "required": [],
                                 "properties": {
-                                    "note": {
+                                    "request_note": {
                                         "type": "string"
                                     }
                                 },
@@ -8983,13 +8942,13 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "reason"
+                                    "rejection_reason"
                                 ],
                                 "properties": {
-                                    "reason": {
+                                    "rejection_reason": {
                                         "type": "string"
                                     },
-                                    "note": {
+                                    "request_note": {
                                         "type": "string"
                                     }
                                 },

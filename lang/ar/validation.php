@@ -423,7 +423,7 @@ return [
         'invoice_id' => 'فاتورة المبيعات',
         'invoice_uuid' => 'المعرف الفريد للفاتورة',
         'invoice_type' => 'نوع الفاتورة',
-        'invoice_sale_type' => 'نوع مبيعات الفاتورة (نقدي/آجل)',
+        'sale_type' => 'نوع مبيعات الفاتورة (نقدي/آجل)',
         'invoice_payment_type' => 'طريقة سداد الفاتورة',
         'invoice_payment_status' => 'حالة سداد الفاتورة',
         'payment_status' => 'حالة السداد',
@@ -1188,7 +1188,7 @@ return [
         ],
 
         'UpdateSaleInvoiceRequest' => [
-            'invoice_sale_type' => [
+            'sale_type' => [
                 'required' => 'نوع مبيعات الفاتورة (نقدي/آجل) مطلوب.',
             ],
         ],
@@ -1577,7 +1577,7 @@ return [
             'WALLET' => 'خصم من المحفظة',
             'CREDIT' => 'آجل',
         ],
-        'invoice_sale_type' => [
+        'sale_type' => [
             'CASH' => 'نقدي',
             'CREDIT' => 'آجل',
         ],

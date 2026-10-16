@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\API\V1\SaleInvoice;
 
-use App\Enums\PaymentType;
+use App\Enums\SaleType;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -19,15 +19,15 @@ class UpdateSaleInvoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'invoice_sale_type' => [
+            'sale_type' => [
                 'required',
-                Rule::enum(PaymentType::class),
+                Rule::enum(SaleType::class),
             ],
         ];
     }
 
-    public function getSaleType(): PaymentType
+    public function getSaleType(): SaleType
     {
-        return PaymentType::from((string) $this->input('invoice_sale_type'));
+        return SaleType::from((string) $this->input('sale_type'));
     }
 }

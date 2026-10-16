@@ -3,7 +3,7 @@
 namespace App\Http\Resources\API\V1\SaleInvoice;
 
 use App\Enums\InvoicePaymentStatus;
-use App\Enums\PaymentType;
+use App\Enums\SaleType;
 use App\Http\Resources\API\V1\Network\NetworkResource;
 use App\Http\Resources\API\V1\Pos\PosResource;
 use App\Http\Resources\API\V1\User\UserResource;
@@ -29,10 +29,10 @@ class SaleInvoiceResource extends JsonResource
             'network_id' => $this->network_id,
             'pos_id' => $this->pos_id,
             'invoice_uuid' => $this->invoice_uuid,
-            'invoice_sale_type' => $this->invoice_sale_type instanceof PaymentType ? $this->invoice_sale_type->value : $this->invoice_sale_type,
-            'invoice_sale_type_label' => $this->invoice_sale_type instanceof PaymentType
-                ? $this->invoice_sale_type->label()
-                : (PaymentType::tryFrom((string) $this->invoice_sale_type)?->label()),
+            'sale_type' => $this->sale_type instanceof SaleType ? $this->sale_type->value : $this->sale_type,
+            'sale_type_label' => $this->sale_type instanceof SaleType
+                ? $this->sale_type->label()
+                : (SaleType::tryFrom((string) $this->sale_type)?->label()),
             'invoice_total_amount' => (float) $this->invoice_total_amount,
             'paid_amount' => (float) ($this->paid_amount ?? 0.0),
 

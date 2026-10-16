@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Enums\BankAccountType;
 use App\Enums\NetworkStatus;
 use App\Enums\ProviderSubscriptionStatus;
-use App\Enums\RequestPaymentType;
+use App\Enums\PaymentType;
 use App\Enums\RequestStatus;
 use App\Enums\ValueType;
 use App\Models\BankAccount;
@@ -192,7 +192,7 @@ class SubscriptionSystemTest extends TestCase
         $requestResponse = $this->withHeaders($this->headers)->postJson('/api/v1/subscription-plan-requests', [
             'network_id' => $this->network->network_id,
             'plan_id' => $plan->plan_id,
-            'request_payment_type' => RequestPaymentType::BANK->value,
+            'request_payment_type' => PaymentType::BANK->value,
             'account_id' => $bankAccount->account_id,
             'transaction_reference' => 'TX-REF-998811',
             'request_note' => 'طلب اشتراك وتفعيل باقة المؤسسات',
@@ -268,7 +268,7 @@ class SubscriptionSystemTest extends TestCase
         $requestResponse = $this->withHeaders($this->headers)->postJson('/api/v1/subscription-plan-requests', [
             'network_id' => $this->network->network_id,
             'plan_id' => $plan->plan_id,
-            'request_payment_type' => RequestPaymentType::CASH->value,
+            'request_payment_type' => PaymentType::CASH->value,
             'request_note' => 'طلب نقدي تجريبي',
         ]);
 
@@ -315,7 +315,7 @@ class SubscriptionSystemTest extends TestCase
         $req1 = $this->withHeaders($this->headers)->postJson('/api/v1/subscription-plan-requests', [
             'network_id' => $this->network->network_id,
             'plan_id' => $plan1->plan_id,
-            'request_payment_type' => RequestPaymentType::CASH->value,
+            'request_payment_type' => PaymentType::CASH->value,
         ]);
         $req1Id = (int) $req1->json('data.request_id');
         $this->withHeaders($this->headers)->postJson("/api/v1/subscription-plan-requests/{$req1Id}/approve");
@@ -343,7 +343,7 @@ class SubscriptionSystemTest extends TestCase
         $req2 = $this->withHeaders($this->headers)->postJson('/api/v1/subscription-plan-requests', [
             'network_id' => $this->network->network_id,
             'plan_id' => $plan2->plan_id,
-            'request_payment_type' => RequestPaymentType::CASH->value,
+            'request_payment_type' => PaymentType::CASH->value,
         ]);
         $req2Id = (int) $req2->json('data.request_id');
         $approve2Res = $this->withHeaders($this->headers)->postJson("/api/v1/subscription-plan-requests/{$req2Id}/approve");
