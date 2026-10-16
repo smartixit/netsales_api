@@ -34,4 +34,12 @@ interface PosRepositoryInterface extends BaseRepositoryInterface
      * التحقق من تفرد اسم نقطة البيع.
      */
     public function isNameUnique(string $name, ?int $ignoreId = null): bool;
+    /**
+     * تحديث رقم الهاتف لنقطة البيع التي يمتلكها المستخدم (owner_id).
+     * @param int $ownerId معرف المستخدم.
+     * @param string $phone رقم الهاتف الجديد.
+     * @return int عدد السجلات المعدلة.
+     */
+    public function syncPhoneForUser(int $ownerId, string $phone): int;
+
 }

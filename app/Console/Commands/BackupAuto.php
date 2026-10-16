@@ -6,13 +6,12 @@ use App\Enums\BackupStatus;
 use App\Enums\BackupType;
 use App\Enums\NotificationType;
 use App\Enums\RoleKey;
-use App\Models\BackupJob;
+use App\Enums\SmsMessageType;
 use App\Models\Role;
 use App\Models\User;
-use App\Services\NotificationService;
 use App\Services\Backup\BackupOrchestratorService;
 use App\Services\Backup\BackupSettingsService;
-use App\Services\Support\SMSGateService;
+use App\Services\NotificationService;
 use App\Services\SystemLoggerService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -211,17 +210,6 @@ class BackupAuto extends Command
                 return;
             }
 
-            // 1. إنشاء إشعار داخلي وإرسال Push FCM للمدراء
-            $notificationService = app(NotificationService::class);
-            foreach ($superAdmins as $admin) {
-                $notificationService->sendDirect(
-                    userId: (int) $admin->user_id,
-                    type: NotificationType::WARNING,
-                    title: '🚨 تنبيه: فشل النسخ الاحتياطي التلقائي',
-                    message: $reason
-                );
-            }
-
             // 2. إرسال SMS للـ Super Admin فقط
             if ($settings->failureSmsEnabled()) {
                 $phoneNumbers = $superAdmins->pluck('user_phone_number')
@@ -232,14 +220,20 @@ class BackupAuto extends Command
 
                 if (! empty($phoneNumbers)) {
                     $nowStr = $now->format('Y-m-d h:i A');
-                    $smsMessage = "🚨 NetSales | تنبيه نهائي للنسخ الاحتياطي:\n{$reason}\n⏰ التوقيت: {$nowStr}";
+                    $message = "🚨 NetSales | تنبيه نهائي للنسخ الاحتياطي:\n{$reason}\n⏰ التوقيت: {$nowStr}";
+                    $notificationService = app(NotificationService::class);
 
-                    $smsGate = app(SMSGateService::class);
-                    $smsGate->sendSms(
-                        phoneNumbers: $phoneNumbers,
-                        message: $smsMessage,
+                    $notificationService->sendDirect(
+                        userId: $phoneNumbers,
+                        type: NotificationType::WARNING,
+                        push: true,
+                        sms: true,
+                        email: true,
+                        emailSubject: $message,
                         priority: 1,
-                        messageType: 'admin_broadcast'
+                        smsMessageType: SmsMessageType::ADMIN_BROADCAST,
+                        title: '🚨 تنبيه: فشل النسخ الاحتياطي التلقائي',
+                        message: $message
                     );
                 }
             }

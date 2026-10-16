@@ -95,7 +95,10 @@ class NotifyExpiringSubscriptions extends Command
             $notificationService->sendDirect(
                 userId: (int) ($network->approved_by ?? 1),
                 type: NotificationType::WARNING,
+                push: true,
+                sms: true,
                 title: '⚠️ اقتراب انتهاء اشتراك الشبكة',
+                smsMessageType: SmsMessageType::ADMIN_BROADCAST,
                 message: $message
             );
 

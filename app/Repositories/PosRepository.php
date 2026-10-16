@@ -88,4 +88,14 @@ class PosRepository extends BaseRepository implements PosRepositoryInterface
 
         return ! $query->exists();
     }
+
+    /**
+     * synchronize phone number for all POS of a given owner
+     */
+    public function syncPhoneForUser(int $ownerId, string $phone): int
+    {
+        return $this->model->newQuery()
+            ->where('owner_id', $ownerId)
+            ->update(['pos_phone_number' => $phone]);
+    }
 }

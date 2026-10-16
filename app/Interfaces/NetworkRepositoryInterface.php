@@ -21,6 +21,14 @@ interface NetworkRepositoryInterface extends BaseRepositoryInterface
     public function getFiltered(array $filters = [], array $relations = []): Collection|CursorPaginator;
 
     /**
+     * تحديث رقم الهاتف لجميع الشبكات التي يمتلكها المستخدم (owner_id).
+     * @param int $ownerId معرف المستخدم.
+     * @param string $phone رقم الهاتف الجديد.
+     * @return int عدد السجلات المعدلة.
+     */
+    public function syncPhoneForUser(int $ownerId, string $phone): int;
+
+    /**
      * البحث عن شبكة عبر رقم هاتفها.
      */
     public function findByPhone(string $phone): ?Network;

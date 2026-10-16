@@ -346,4 +346,12 @@ class PosService
             return $pos->load(['governorate', 'directorate']);
         });
     }
+
+    /**
+     * تحديث رقم الهاتف لجميع نقاط البيع التي يمتلكها المستخدم (owner_id).
+     */
+    public function syncPhoneForUser(int $ownerId, string $phone): int
+    {
+        return $this->posRepository->syncPhoneForUser($ownerId, $phone);
+    }
 }

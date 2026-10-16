@@ -15,6 +15,9 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Services\SessionValidatorService;
+use App\Services\NetworkService;
+use App\Services\PosService;
 
 /**
  * خدمة إدارة المستخدمين والعمليات الإدارية (Enterprise User Service).
@@ -32,6 +35,8 @@ class UserService
         protected UserRepositoryInterface $userRepository,
         protected FileUploadService $fileUploadService,
         protected SessionValidatorService $sessionValidatorService,
+        protected NetworkService $networkService,
+        protected PosService $posService,
     ) {}
 
     /**
@@ -137,6 +142,11 @@ class UserService
             }
 
             $this->userRepository->update($user->user_id, $data);
+            // Synchronize related phone numbers directly after user update
+            if (isset($data['user_phone_number'])) {
+                $this->networkService->syncPhoneForUser($user->user_id, $data['user_phone_number']);
+                $this->posService->syncPhoneForUser($user->user_id, $data['user_phone_number']);
+            }
             $user->refresh();
 
             return $user->load(['role', 'permissions']);

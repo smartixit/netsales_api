@@ -60,6 +60,14 @@ class NetworkService
     }
 
     /**
+     * تحديث رقم الهاتف لجميع الشبكات التي يمتلكها المستخدم (owner_id).
+     */
+    public function syncPhoneForUser(int $ownerId, string $phone): int
+    {
+        return $this->networkRepository->syncPhoneForUser($ownerId, $phone);
+    }
+
+    /**
      * البحث عن شبكة عبر المعرف.
      */
     public function findById(int $id, array $relations = ['governorate', 'directorate', 'wallet']): ?Network

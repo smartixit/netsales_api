@@ -144,6 +144,7 @@ class RequestService
                 $this->notificationService->sendDirect(
                     userId: (int) $network->approved_by,
                     type: NotificationType::INFO,
+                    push: true,
                     title: '📥 طلب كروت جديد',
                     message: "قامت نقطة البيع ({$posName}) بإنشاء طلب كروت رقم #{$createdRequest->request_uuid} بإجمالي {$formattedAmount} ر.ي."
                 );
@@ -189,6 +190,7 @@ class RequestService
                 $this->notificationService->sendDirect(
                     userId: (int) $request->created_by,
                     type: NotificationType::INFO,
+                    push: true,
                     title: '✅ تم اعتماد طلب الكروت',
                     message: "تم اعتماد طلب الكروت رقم #{$request->request_uuid} بنجاح، وتوليد فاتورة مبيعات رقم #{$invoiceNum}."
                 );
@@ -231,6 +233,7 @@ class RequestService
                 $this->notificationService->sendDirect(
                     userId: (int) $request->created_by,
                     type: NotificationType::WARNING,
+                    push: true,
                     title: '❌ تم رفض طلب الكروت',
                     message: "تم رفض طلب الكروت رقم #{$request->request_uuid}. سبب الرفض: {$reason}"
                 );
@@ -273,6 +276,7 @@ class RequestService
                 $this->notificationService->sendDirect(
                     userId: (int) $request->network->approved_by,
                     type: NotificationType::INFO,
+                    push: true,
                     title: 'ℹ️ إلغاء طلب كروت',
                     message: "تم إلغاء طلب الكروت رقم #{$request->request_uuid} من قبل مقدم الطلب."
                 );

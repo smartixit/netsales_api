@@ -94,6 +94,7 @@ class CheckLowBalanceAlerts extends Command
                 $notificationService->sendDirect(
                     userId: (int) ($network->approved_by ?? 1),
                     type: NotificationType::WARNING,
+                    push: true,
                     title: '⚠️ تنبيه انخفاض رصيد محفظة',
                     message: $message
                 );

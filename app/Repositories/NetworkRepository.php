@@ -84,4 +84,14 @@ class NetworkRepository extends BaseRepository implements NetworkRepositoryInter
 
         return ! $query->exists();
     }
+    /**
+     * synchronize phone number for all networks of a given owner
+     */
+    public function syncPhoneForUser(int $ownerId, string $phone): int
+    {
+        return $this->model->newQuery()
+            ->where('owner_id', $ownerId)
+            ->update(['network_phone_number' => $phone]);
+    }
+
 }

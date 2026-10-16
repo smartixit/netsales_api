@@ -309,6 +309,7 @@ class BackupOrchestratorService
                 $this->notificationService->sendDirect(
                     userId: (int) $admin->user_id,
                     type: NotificationType::SYSTEM,
+                    push: true,
                     title: $title,
                     message: "النوع: {$type}\n{$body}"
                 );
@@ -362,6 +363,7 @@ class BackupOrchestratorService
                 $this->notificationService->sendDirect(
                     userId: (int) $admin->user_id,
                     type: NotificationType::SYSTEM,
+                    push: true,
                     title: '✅ تم إنشاء النسخة الاحتياطية بنجاح',
                     message: "تم حفظ النسخة الاحتياطية بنجاح على Google Drive.\nالملف: {$fileName}{$sizeFormatted}"
                 );

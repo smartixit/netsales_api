@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\NotificationType;
 use App\Enums\OtpType;
+use App\Enums\SmsMessageType;
 use App\Enums\UserStatus;
 use App\Http\Requests\API\V1\System\GenerateOtpRequest;
 use App\Http\Requests\API\V1\System\VerifyOtpRequest;
@@ -175,16 +176,19 @@ class OtpService
                 expiresInMinutes: $expirationMinutes
             );
 
-            // 4. إرسال رسالة SMS عبر البوابة
-            $this->smsGateService->sendOtp(
-                phoneNumber: $user->user_phone_number,
-                code: $plainCode
-            );
+            // // 4. إرسال رسالة SMS عبر البوابة
+            // $this->smsGateService->sendOtp(
+            //     phoneNumber: $user->user_phone_number,
+            //     code: $plainCode
+            // );
 
             // 5. تسجيل إشعار موجه للمستخدم عبر خدمة الإشعارات المركزية
             $this->notificationService->sendDirect(
                 userId: (int) $user->user_id,
                 type: NotificationType::INFO,
+                sms: true,
+                push: true,
+                smsMessageType: SmsMessageType::OTP,
                 title: "🔐 رمز التحقق (OTP)",
                 message:"🔐 رمز التحقق الخاص بك هو: {$plainCode}",
             );
