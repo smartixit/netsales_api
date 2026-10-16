@@ -17,8 +17,6 @@ use App\Interfaces\ProviderSubscriptionRepositoryInterface;
 use App\Interfaces\SubscriptionPlanRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
-use App\Jobs\SendEmailNotificationJob;
-use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
 use App\Services\Support\FileUploadService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -297,26 +295,18 @@ class NetworkService
                 }
 
                 $this->notificationService->sendDirect(
-                    (int) $user->user_id,
-                    NotificationType::ACCOUNT_APPROVAL,
-                    'تمت الموافقة على طلب تسجيل الشبكة',
-                    "تهانينا! تمت الموافقة على طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام."
+                    userId: (int) $user->user_id,
+                    type: NotificationType::ACCOUNT_APPROVAL,
+                    title: 'تمت الموافقة على طلب تسجيل الشبكة',
+                    message: "تهانينا! تمت الموافقة على طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام.",
+                    inApp: true,
+                    push: true,
+                    sms: true,
+                    email: true,
+                    networkId: $network->network_id,
+                    smsMessageType: SmsMessageType::ADMIN_BROADCAST,
+                    emailSubject: 'الموافقة على طلب مزود الشبكة - NetSales'
                 );
-
-                SendSmsNotificationJob::dispatch(
-                    phoneNumbers: $user->user_phone_number,
-                    message: "تهانينا! تمت الموافقة على طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح.",
-                    messageType: SmsMessageType::ADMIN_BROADCAST
-                );
-
-                if (! empty($user->user_email)) {
-                    SendEmailNotificationJob::dispatch(
-                        $user->user_email,
-                        'الموافقة على طلب مزود الشبكة - NetSales',
-                        "تهانينا! تمت مراجعة واعتماد طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح.",
-                        userName: $user->user_full_name
-                    );
-                }
             }
 
             return $network->load(['governorate', 'directorate']);
@@ -349,16 +339,16 @@ class NetworkService
             $user = $this->userRepository->findByPhone($network->network_phone_number);
             if ($user) {
                 $this->notificationService->sendDirect(
-                    (int) $user->user_id,
-                    NotificationType::ACCOUNT_REJECTION,
-                    'تم رفض طلب تسجيل شبكتكم',
-                    "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل شبكة {$network->network_name}. السبب: {$reason}"
-                );
-
-                SendSmsNotificationJob::dispatch(
-                    phoneNumbers: $user->user_phone_number,
-                    message: "نأسف لإبلاغكم برفض طلب تسجيل شبكة {$network->network_name}. السبب: {$reason}",
-                    messageType: SmsMessageType::ADMIN_BROADCAST
+                    userId: (int) $user->user_id,
+                    type: NotificationType::ACCOUNT_REJECTION,
+                    title: 'تم رفض طلب تسجيل شبكتكم',
+                    message: "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل شبكة {$network->network_name}. السبب: {$reason}",
+                    inApp: true,
+                    push: true,
+                    sms: true,
+                    email: false,
+                    networkId: $network->network_id,
+                    smsMessageType: SmsMessageType::ADMIN_BROADCAST
                 );
             }
 

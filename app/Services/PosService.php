@@ -14,8 +14,6 @@ use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\PosWalletRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
-use App\Jobs\SendEmailNotificationJob;
-use App\Jobs\SendSmsNotificationJob;
 use App\Models\Pos;
 use App\Services\Support\FileUploadService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -286,26 +284,18 @@ class PosService
                 }
 
                 $this->notificationService->sendDirect(
-                    (int) $user->user_id,
-                    NotificationType::ACCOUNT_APPROVAL,
-                    'تمت الموافقة على طلب تسجيل نقطة البيع',
-                    "تهانينا! تمت الموافقة على طلب تسجيل نقطة البيع {$pos->pos_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام."
+                    userId: (int) $user->user_id,
+                    type: NotificationType::ACCOUNT_APPROVAL,
+                    title: 'تمت الموافقة على طلب تسجيل نقطة البيع',
+                    message: "تهانينا! تمت الموافقة على طلب تسجيل نقطة البيع {$pos->pos_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام.",
+                    inApp: true,
+                    push: true,
+                    sms: true,
+                    email: true,
+                    networkId: null,
+                    smsMessageType: SmsMessageType::ADMIN_BROADCAST,
+                    emailSubject: 'الموافقة على طلب نقطة البيع - NetSales'
                 );
-
-                SendSmsNotificationJob::dispatch(
-                    phoneNumbers: $user->user_phone_number,
-                    message: "تهانينا! تمت الموافقة على طلب تسجيل نقطة البيع {$pos->pos_name} وتفعيل حسابكم بنجاح.",
-                    messageType: SmsMessageType::ADMIN_BROADCAST
-                );
-
-                if (! empty($user->user_email)) {
-                    SendEmailNotificationJob::dispatch(
-                        $user->user_email,
-                        'الموافقة على طلب نقطة البيع - NetSales',
-                        "تهانينا! تمت مراجعة واعتماد طلب تسجيل نقطة البيع {$pos->pos_name} وتفعيل حسابكم بنجاح.",
-                        userName: $user->user_full_name
-                    );
-                }
             }
 
             return $pos->load(['governorate', 'directorate']);
@@ -338,16 +328,16 @@ class PosService
             $user = $this->userRepository->findByPhone($pos->pos_phone_number);
             if ($user) {
                 $this->notificationService->sendDirect(
-                    (int) $user->user_id,
-                    NotificationType::ACCOUNT_REJECTION,
-                    'تم رفض طلب تسجيل نقطة البيع',
-                    "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل نقطة البيع {$pos->pos_name}. السبب: {$reason}"
-                );
-
-                SendSmsNotificationJob::dispatch(
-                    phoneNumbers: $user->user_phone_number,
-                    message: "نأسف لإبلاغكم برفض طلب تسجيل نقطة البيع {$pos->pos_name}. السبب: {$reason}",
-                    messageType: SmsMessageType::ADMIN_BROADCAST
+                    userId: (int) $user->user_id,
+                    type: NotificationType::ACCOUNT_REJECTION,
+                    title: 'تم رفض طلب تسجيل نقطة البيع',
+                    message: "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل نقطة البيع {$pos->pos_name}. السبب: {$reason}",
+                    inApp: true,
+                    push: true,
+                    sms: true,
+                    email: false,
+                    networkId: null,
+                    smsMessageType: SmsMessageType::ADMIN_BROADCAST
                 );
             }
 

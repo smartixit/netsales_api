@@ -3,12 +3,18 @@
 namespace Tests\Feature;
 
 use App\Enums\NotificationType;
+use App\Enums\SmsMessageType;
+use App\Jobs\SendEmailNotificationJob;
+use App\Jobs\SendFcmNotificationJob;
+use App\Jobs\SendSmsNotificationJob;
 use App\Models\Notification;
 use App\Models\User;
 use App\Models\UserSession;
 use App\Services\NotificationService;
+use App\Services\Support\SMSGateService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class NotificationSystemTest extends TestCase
@@ -215,5 +221,80 @@ class NotificationSystemTest extends TestCase
             ->assertJsonPath('data.force_deleted_count', 3);
 
         $this->assertDatabaseMissing('notifications', ['notification_id' => $notif1->notification_id]);
+    }
+
+    public function test_omnichannel_send_direct_dispatches_configured_channels(): void
+    {
+        Queue::fake();
+
+        /** @var NotificationService $service */
+        $service = app(NotificationService::class);
+
+        $notif = $service->sendDirect(
+            userId: (int) $this->user->user_id,
+            type: NotificationType::INFO,
+            title: 'إشعار شامل لكافة القنوات',
+            message: 'نص الإشعار التجريبي لجميع القنوات المفعلة',
+            inApp: true,
+            push: true,
+            sms: true,
+            email: true,
+            smsMessageType: SmsMessageType::ADMIN_BROADCAST,
+            emailSubject: 'عنوان البريد المخصص'
+        );
+
+        $this->assertNotNull($notif);
+        $this->assertEquals('إشعار شامل لكافة القنوات', $notif->notification_title);
+
+        Queue::assertPushed(SendFcmNotificationJob::class, function (SendFcmNotificationJob $job) {
+            return $job->userId === (int) $this->user->user_id && $job->title === 'إشعار شامل لكافة القنوات';
+        });
+
+        Queue::assertPushed(SendSmsNotificationJob::class, function (SendSmsNotificationJob $job) {
+            return $job->messageType === SmsMessageType::ADMIN_BROADCAST;
+        });
+
+        Queue::assertPushed(SendEmailNotificationJob::class, function (SendEmailNotificationJob $job) {
+            return $job->subject === 'عنوان البريد المخصص';
+        });
+
+        // Test with only SMS enabled, no in-app record
+        Queue::fake();
+        $notif2 = $service->sendDirect(
+            userId: (int) $this->user->user_id,
+            type: NotificationType::WARNING,
+            title: 'SMS فقط',
+            message: 'رسالة نصية فقط دون إشعار داخلي',
+            inApp: false,
+            push: false,
+            sms: true,
+            email: false,
+            smsMessageType: SmsMessageType::ADMIN_BROADCAST
+        );
+
+        $this->assertNull($notif2);
+        Queue::assertNotPushed(SendFcmNotificationJob::class);
+        Queue::assertNotPushed(SendEmailNotificationJob::class);
+        Queue::assertPushed(SendSmsNotificationJob::class);
+    }
+
+    public function test_sms_gate_service_strictly_blocks_null_message_type(): void
+    {
+        /** @var SMSGateService $smsGateService */
+        $smsGateService = app(SMSGateService::class);
+
+        // When messageType is null, resolveGatewaySettings MUST block
+        [$config, $ownerType] = $smsGateService->resolveGatewaySettings(null, messageType: null);
+        $this->assertNull($config);
+        $this->assertEquals('none', $ownerType);
+
+        // Even with networkId, null messageType is NOT allowed
+        [$netConfig, $netOwner] = $smsGateService->resolveGatewaySettings(1, messageType: null);
+        $this->assertNull($netConfig);
+        $this->assertEquals('none', $netOwner);
+
+        // smsAllowedFor must return false for null messageType
+        $this->assertFalse($smsGateService->smsAllowedFor(null, messageType: null));
+        $this->assertFalse($smsGateService->smsAllowedFor(1, messageType: null));
     }
 }

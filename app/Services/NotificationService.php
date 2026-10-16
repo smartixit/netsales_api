@@ -8,7 +8,6 @@ use App\Enums\SmsMessageType;
 use App\Enums\UserDeviceStatus;
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Notification\SendAdminNotificationRequest;
-use App\Http\Requests\API\V1\Notification\SendUserDirectNotificationRequest;
 use App\Http\Requests\API\V1\Notification\StoreNotificationRequest;
 use App\Http\Requests\API\V1\Notification\UpdateFcmTokenRequest;
 use App\Http\Requests\API\V1\Notification\UpdateNotificationRequest;
@@ -26,6 +25,7 @@ use App\Services\Support\SMSGateService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -131,66 +131,128 @@ class NotificationService
     }
 
     /**
-     * إرسال إشعار فوري مباشر لمستخدم (برمجياً من كافة خدمات النظام).
+     * المحرك الموحد الشامل للإرسال المباشر والفردي والجماعي (Enterprise Omnichannel Dispatcher).
+     *
+     * يدعم الإرسال لمستخدم واحد (int) أو مجموعة مستخدمين (array) عبر القنوات المختارة بمرونة:
+     * - In-App: تسجيل الإشعار في قاعدة البيانات
+     * - Push: إشعار الدفع الفوري عبر FCM
+     * - SMS: رسائل نصية قصيرة مع العزل التام للبوابات وفحص سياسات الشبكات
+     * - Email: بريد إلكتروني رسمي للمستخدم
+     *
+     * @param  int|array<int>  $userId  معرف مستخدم مفرد أو مصفوفة معرفات
+     * @param  NotificationType|string  $type  نوع/تصنيف الإشعار
+     * @param  string  $title  عنوان الإشعار
+     * @param  string  $message  نص الإشعار
+     * @param  bool  $inApp  تفعيل الإشعار الداخلي (قاعدة البيانات)
+     * @param  bool  $push  تفعيل إشعار الدفع الفوري (FCM Push)
+     * @param  bool  $sms  تفعيل الرسائل النصية القصيرة (SMS)
+     * @param  bool  $email  تفعيل البريد الإلكتروني (Email)
+     * @param  int|null  $networkId  معرف الشبكة (لتطبيق سياسات وبوابات الرسائل النصية الخاصة)
+     * @param  SmsMessageType|null  $smsMessageType  نوع الرسالة النصية المحدد بدقة (Enum)
+     * @param  string|null  $emailSubject  عنوان البريد المخصص (يسقط على العنوان الرئيسي إذا كان فارغاً)
+     * @param  string|null  $image  مسار الصورة المرفقة
+     * @param  string|null  $actionUrl  رابط الإجراء أو التوجيه التفاعلي
+     * @param  array  $extraData  بيانات إضافية مخصصة لحمولة الـ Push
+     * @return Notification|array<int, Notification|null>|null يرجع كائن الإشعار للمستخدم المفرد، أو مصفوفة نتائج للإرسال الجماعي
      */
     public function sendDirect(
-        int $userId,
-        string|NotificationType $type,
+        int|array $userId,
+        NotificationType|string $type,
         string $title,
         string $message,
+        bool $inApp = true,
+        bool $push = true,
+        bool $sms = false,
+        bool $email = false,
+        ?int $networkId = null,
+        ?SmsMessageType $smsMessageType = null,
+        ?string $emailSubject = null,
         ?string $image = null,
-        bool $sendPush = true
-    ): Notification {
-        $typeValue = $type instanceof NotificationType ? $type->value : (string) $type;
+        ?string $actionUrl = null,
+        array $extraData = []
+    ): Notification|array|null {
+        $isSingle = ! is_array($userId);
+        $ids = $isSingle ? [$userId] : array_values(array_unique(array_filter($userId)));
 
-        $data = [
-            'user_id' => $userId,
-            'notification_type' => $typeValue,
-            'notification_title' => $title,
-            'notification_message' => $message,
-            'notification_image' => $image,
-            'is_read' => false,
-            'read_at' => null,
-        ];
-
-        $notification = $this->notificationRepository->create($data);
-
-        if ($sendPush && $this->systemSettingService->getBool('firebase_enabled', true)) {
-            SendFcmNotificationJob::dispatch(
-                userId: $userId,
-                title: $title,
-                body: $message,
-                data: [
-                    'notification_id' => $notification->notification_id,
-                    'notification_type' => $typeValue,
-                ],
-                image: $image
-            );
+        if (empty($ids)) {
+            return $isSingle ? null : [];
         }
 
-        return $notification;
-    }
+        $typeEnum = $type instanceof NotificationType ? $type : (NotificationType::tryFrom((string) $type) ?? NotificationType::INFO);
+        $typeValue = $typeEnum->value;
 
-    /**
-     * إرسال إشعار جماعي لمجموعة من المستخدمين.
-     */
-    public function sendBulk(
-        array $userIds,
-        string|NotificationType $type,
-        string $title,
-        string $message,
-        ?string $image = null,
-        bool $sendPush = true
-    ): int {
-        return DB::transaction(function () use ($userIds, $type, $title, $message, $image, $sendPush) {
-            $count = 0;
-            foreach ($userIds as $userId) {
-                $this->sendDirect((int) $userId, $type, $title, $message, $image, $sendPush);
-                $count++;
+        $results = [];
+
+        foreach ($ids as $userId) {
+            $user = $this->userRepository->findById((int) $userId);
+            if (! $user) {
+                Log::warning("NotificationService::sendDirect: User ID {$userId} not found.");
+                $results[$userId] = null;
+
+                continue;
             }
 
-            return $count;
-        });
+            $notification = null;
+
+            // 1. قناة الإشعارات الداخلية للتطبيق (In-App Database Record)
+            if ($inApp) {
+                $notification = $this->notificationRepository->create([
+                    'user_id' => $user->user_id,
+                    'notification_type' => $typeValue,
+                    'notification_title' => $title,
+                    'notification_message' => $message,
+                    'notification_image' => $image,
+                    'is_read' => false,
+                    'read_at' => null,
+                ]);
+            }
+
+            // 2. قناة إشعارات الدفع الفوري (FCM Push)
+            if ($push && $this->systemSettingService->getBool('firebase_enabled', true)) {
+                $payloadData = array_merge([
+                    'notification_id' => $notification?->notification_id,
+                    'notification_type' => $typeValue,
+                ], $extraData);
+
+                if ($actionUrl) {
+                    $payloadData['action_url'] = $actionUrl;
+                }
+
+                SendFcmNotificationJob::dispatch(
+                    userId: $user->user_id,
+                    title: $title,
+                    body: $message,
+                    data: $payloadData,
+                    image: $image
+                );
+            }
+
+            // 3. قناة الرسائل النصية القصيرة (SMS)
+            if ($sms && ! empty($user->user_phone_number) && $this->systemSettingService->getBool('sms_enabled', true)) {
+                SendSmsNotificationJob::dispatch(
+                    phoneNumbers: $user->user_phone_number,
+                    message: "{$title}\n{$message}",
+                    priority: 1,
+                    recipientId: $networkId,
+                    messageType: $smsMessageType ?? SmsMessageType::ADMIN_BROADCAST
+                );
+            }
+
+            // 4. قناة البريد الإلكتروني (Email)
+            if ($email && ! empty($user->user_email) && $this->systemSettingService->getBool('email_enabled', true)) {
+                SendEmailNotificationJob::dispatch(
+                    toEmail: $user->user_email,
+                    subject: $emailSubject ?: $title,
+                    userName: $user->user_full_name,
+                    ctaLink: $actionUrl ?: config('app.url'),
+                    body: $message
+                );
+            }
+
+            $results[$userId] = $notification;
+        }
+
+        return $isSingle ? ($results[$ids[0]] ?? null) : $results;
     }
 
     /**
@@ -317,7 +379,7 @@ class NotificationService
     }
 
     /**
-     * إرسال إشعار لجمهور متعدد عبر قنوات مختارة (داخل التطبيق / SMS / بريد).
+     * إرسال إشعار لجمهور متعدد عبر قنوات مختارة بالاعتماد على المحرك الموحد sendDirect.
      */
     public function sendToAudience(SendAdminNotificationRequest $request): array
     {
@@ -336,53 +398,26 @@ class NotificationService
         }
 
         $recipients = $this->resolveRecipients($audience);
+        $recipientIds = $recipients->pluck('user_id')->all();
 
-        foreach ($recipients as $user) {
-            if (in_array('in_app', $channels, true)) {
-                $this->notificationRepository->create([
-                    'user_id' => $user->user_id,
-                    'notification_type' => $type,
-                    'notification_title' => $title,
-                    'notification_message' => $body,
-                    'notification_image' => $imagePath,
-                    'is_read' => false,
-                ]);
-            }
-
-            if (in_array('sms', $channels, true) && ! empty($user->user_phone_number) && $this->systemSettingService->getBool('sms_enabled', true)) {
-                SendSmsNotificationJob::dispatch(
-                    phoneNumbers: $user->user_phone_number,
-                    message: "{$title}\n{$body}",
-                    priority: 1,
-                    messageType: SmsMessageType::ADMIN_BROADCAST
-                );
-            }
-
-            if (in_array('email', $channels, true) && ! empty($user->user_email) && $this->systemSettingService->getBool('email_enabled', true)) {
-                SendEmailNotificationJob::dispatch(
-                    toEmail: $user->user_email,
-                    subject: $title,
-                    userName: $user->user_full_name,
-                    ctaLink: config('app.url'),
-                    body: $body
-                );
-            }
-
-            if ((in_array('fcm', $channels, true) || in_array('push', $channels, true)) && $this->systemSettingService->getBool('firebase_enabled', true)) {
-                SendFcmNotificationJob::dispatch(
-                    userId: $user->user_id,
-                    title: $title,
-                    body: $body,
-                    data: [
-                        'notification_type' => $type->value,
-                    ],
-                    image: $imagePath
-                );
-            }
-        }
+        $this->sendDirect(
+            userId: $recipientIds,
+            type: $type,
+            title: $title,
+            message: $body,
+            inApp: in_array('in_app', $channels, true),
+            push: in_array('fcm', $channels, true) || in_array('push', $channels, true),
+            sms: in_array('sms', $channels, true),
+            email: in_array('email', $channels, true),
+            networkId: null,
+            smsMessageType: SmsMessageType::ADMIN_BROADCAST,
+            emailSubject: $title,
+            image: $imagePath,
+            actionUrl: config('app.url')
+        );
 
         return [
-            'recipients_count' => $recipients->count(),
+            'recipients_count' => count($recipientIds),
             'channels' => $channels,
         ];
     }
@@ -403,49 +438,36 @@ class NotificationService
     }
 
     /**
-     * جلب المستخدمين المرتبطين بشبكة محددة.
+     * جلب المستخدمين المرتبطين بشبكة محددة ونقاط البيع التابعة لها.
      */
     protected function resolveNetworkUsers(int $networkId): Collection
     {
-        $network = Network::find($networkId);
+        $network = Network::with('pos')->find($networkId);
         if (! $network) {
-            return new Collection();
+            return new Collection;
+        }
+
+        $phones = array_filter([$network->network_phone_number]);
+        $emails = array_filter([$network->network_email]);
+
+        foreach ($network->pos as $pos) {
+            if ($pos->pos_phone_number) {
+                $phones[] = $pos->pos_phone_number;
+            }
+            if ($pos->pos_email) {
+                $emails[] = $pos->pos_email;
+            }
         }
 
         return User::where('status', 'ACTIVE')
-            ->where(function ($q) use ($network) {
-                if ($network->network_phone_number) {
-                    $q->where('user_phone_number', $network->network_phone_number);
+            ->where(function ($q) use ($phones, $emails) {
+                if (! empty($phones)) {
+                    $q->whereIn('user_phone_number', array_unique($phones));
                 }
-                if ($network->network_email) {
-                    $q->orWhere('user_email', $network->network_email);
-                }
-                if ($network->approved_by) {
-                    $q->orWhere('user_id', $network->approved_by);
+                if (! empty($emails)) {
+                    $q->orWhereIn('user_email', array_unique($emails));
                 }
             })->get();
-    }
-
-    /**
-     * إرسال رسالة SMS فورية لمستخدم محدد عبر SMSGate.
-     */
-    public function sendSmsToUser(int $userId, string $title, string $body): bool
-    {
-        $user = $this->userRepository->findById($userId);
-        if (! $user || empty($user->user_phone_number)) {
-            throw ValidationException::withMessages([
-                'user_id' => ['المستخدم المحدد غير موجود أو لا يملك رقم هاتف مسجل.'],
-            ]);
-        }
-
-        $message = "{$title}\n{$body}";
-
-        return $this->smsGateService->sendSms(
-            phoneNumbers: $user->user_phone_number,
-            message: $message,
-            priority: 1,
-            messageType: SmsMessageType::ADMIN_BROADCAST
-        );
     }
 
     /**
@@ -475,66 +497,5 @@ class NotificationService
 
             return $this->userDeviceRepository->updateFcmToken($userId, $deviceUuid, $fcmToken);
         });
-    }
-
-    /**
-     * إرسال إشعار موجه ومباشر لمستخدم من الإدارة مع تحديد القنوات (FCM / In-App / SMS).
-     */
-    public function sendDirectToUser(SendUserDirectNotificationRequest $request): array
-    {
-        $userId = $request->getUserId();
-        $title = $request->getTitle();
-        $body = $request->getBody();
-        $channels = $request->getChannels();
-
-        $user = $this->userRepository->findById($userId);
-        if (! $user) {
-            throw ValidationException::withMessages([
-                'user_id' => ["المستخدم رقم [{$userId}] غير موجود."],
-            ]);
-        }
-
-        $sentChannels = [];
-
-        // 1. القناة الداخلية (In-App)
-        if (in_array('in_app', $channels, true)) {
-            $this->notificationRepository->create([
-                'user_id' => $userId,
-                'notification_type' => NotificationType::INFO,
-                'notification_title' => $title,
-                'notification_message' => $body,
-                'is_read' => false,
-            ]);
-            $sentChannels[] = 'in_app';
-        }
-
-        // 2. إشعار الدفع الفوري (FCM Push)
-        if ((in_array('fcm', $channels, true) || in_array('push', $channels, true)) && $this->systemSettingService->getBool('firebase_enabled', true)) {
-            SendFcmNotificationJob::dispatch(
-                userId: $userId,
-                title: $title,
-                body: $body,
-                data: [
-                    'notification_type' => NotificationType::INFO->value,
-                ]
-            );
-            $sentChannels[] = 'fcm';
-        }
-
-        // 3. الرسائل النصية القصيرة (SMS)
-        if (in_array('sms', $channels, true) && ! empty($user->user_phone_number) && $this->systemSettingService->getBool('sms_enabled', true)) {
-            SendSmsNotificationJob::dispatch(
-                phoneNumbers: $user->user_phone_number,
-                message: "{$title}\n{$body}",
-                priority: 1,
-                messageType: SmsMessageType::ADMIN_BROADCAST
-            );
-            $sentChannels[] = 'sms';
-        }
-
-        return [
-            'user_id' => $userId,
-            'channels' => $sentChannels,
-        ];
     }
 }

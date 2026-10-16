@@ -366,10 +366,10 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property int $network_id
+ * @property int $owner_id
  * @property string $network_uuid
  * @property string $network_name
  * @property string|null $network_profile_logo
- * @property string $network_holder_name
  * @property string $network_phone_number
  * @property string|null $network_email
  * @property int $governorate_id
@@ -388,9 +388,11 @@ namespace App\Models{
  * @property-read \App\Models\Directorate|null $directorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Expense> $expenses
  * @property-read int|null $expenses_count
+ * @property-read string $network_holder_name
  * @property-read \App\Models\Governorate|null $governorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkPos> $networkPos
  * @property-read int|null $network_pos_count
+ * @property-read \App\Models\User|null $owner
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Pos> $pos
  * @property-read int|null $pos_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PosWallet> $posWallets
@@ -429,12 +431,12 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereGovernorateId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereNetworkAddress($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereNetworkEmail($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereNetworkHolderName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereNetworkId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereNetworkName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereNetworkPhoneNumber($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereNetworkProfileLogo($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereNetworkUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereOwnerId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereRejectedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereRejectedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereRejectionReason($value)
@@ -724,10 +726,10 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property int $pos_id
+ * @property int $owner_id
  * @property string $pos_uuid
  * @property string $pos_name
  * @property string|null $pos_profile_logo
- * @property string $pos_holder_name
  * @property string $pos_phone_number
  * @property string|null $pos_email
  * @property int $governorate_id
@@ -744,11 +746,13 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read \App\Models\User|null $approvedBy
  * @property-read \App\Models\Directorate|null $directorate
+ * @property-read string $pos_holder_name
  * @property-read \App\Models\Governorate|null $governorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkPos> $networkPos
  * @property-read int|null $network_pos_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Network> $networks
  * @property-read int|null $networks_count
+ * @property-read \App\Models\User|null $owner
  * @property-read \App\Models\User|null $rejectedBy
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Request> $requests
  * @property-read int|null $requests_count
@@ -776,9 +780,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos whereDirectorateId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos whereGovernorateId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos whereOwnerId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos wherePosAddress($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos wherePosEmail($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos wherePosHolderName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos wherePosId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos wherePosName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos wherePosPhoneNumber($value)

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Enums\NotificationType;
+use App\Enums\SmsMessageType;
 use App\Http\Requests\API\V1\Notification\SendAdminNotificationRequest;
 use App\Http\Requests\API\V1\Notification\SendUserDirectNotificationRequest;
 use App\Services\NotificationService;
@@ -103,9 +105,25 @@ class AdminNotificationController extends BaseController
     public function sendToUser(SendUserDirectNotificationRequest $request): JsonResponse
     {
         try {
-            $result = $this->notificationService->sendDirectToUser($request);
+            $channels = $request->getChannels();
 
-            return $this->successResponse('تم إرسال الإشعار الموجه للمستخدم بنجاح.', $result);
+            $this->notificationService->sendDirect(
+                userId: $request->getUserId(),
+                type: NotificationType::INFO,
+                title: $request->getTitle(),
+                message: $request->getBody(),
+                inApp: in_array('in_app', $channels, true),
+                push: in_array('fcm', $channels, true) || in_array('push', $channels, true),
+                sms: in_array('sms', $channels, true),
+                email: false,
+                networkId: null,
+                smsMessageType: SmsMessageType::ADMIN_BROADCAST
+            );
+
+            return $this->successResponse('تم إرسال الإشعار الموجه للمستخدم بنجاح.', [
+                'user_id' => $request->getUserId(),
+                'channels' => $channels,
+            ]);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {

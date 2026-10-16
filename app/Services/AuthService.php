@@ -30,7 +30,6 @@ use App\Interfaces\SecurityBanRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
-use App\Jobs\SendEmailNotificationJob;
 use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
 use App\Models\NetworkPos;
@@ -311,21 +310,16 @@ class AuthService
 
             if (! $existingDevice->is_primary) {
                 $this->notificationService->sendDirect(
-                    (int) $user->user_id,
-                    NotificationType::SECURITY,
-                    'تنبيه أمني: دخول من جهاز موثوق',
-                    $body
+                    userId: (int) $user->user_id,
+                    type: NotificationType::SECURITY,
+                    title: 'تنبيه أمني: دخول من جهاز موثوق',
+                    message: $body,
+                    inApp: true,
+                    push: true,
+                    sms: false,
+                    email: true,
+                    emailSubject: 'تنبيه أمني: دخول من جهاز موثوق'
                 );
-
-                // إرسال بريد إلكتروني إذا وُجد
-                if (! empty($user->user_email)) {
-                    SendEmailNotificationJob::dispatch(
-                        $user->user_email,
-                        'تنبيه أمني: دخول من جهاز موثوق',
-                        $body,
-                        userName: $user->user_full_name
-                    );
-                }
             }
 
             SystemLoggerService::logAuth('user_logged_in', $user->user_id, [
@@ -499,27 +493,18 @@ class AuthService
                 "• الوقت: {$time}";
 
             $this->notificationService->sendDirect(
-                (int) $user->user_id,
-                NotificationType::SECURITY,
-                'تنبيه أمني: تسجيل دخول من جهاز جديد',
-                $smsMessage
-            );
-
-            SendSmsNotificationJob::dispatch(
-                phoneNumbers: $user->user_phone_number,
+                userId: (int) $user->user_id,
+                type: NotificationType::SECURITY,
+                title: 'تنبيه أمني: تسجيل دخول من جهاز جديد',
                 message: $smsMessage,
-                messageType: SmsMessageType::ADMIN_BROADCAST
+                inApp: true,
+                push: true,
+                sms: true,
+                email: true,
+                networkId: null,
+                smsMessageType: SmsMessageType::ADMIN_BROADCAST,
+                emailSubject: 'تنبيه أمني: تسجيل دخول من جهاز جديد'
             );
-
-            // إرسال بريد إلكتروني إذا وُجد
-            if (! empty($user->user_email)) {
-                SendEmailNotificationJob::dispatch(
-                    $user->user_email,
-                    'تنبيه أمني: تسجيل دخول من جهاز جديد',
-                    $smsMessage,
-                    userName: $user->user_full_name
-                );
-            }
 
             SystemLoggerService::logAuth('user_logged_in_verified', $user->user_id, [
                 'session_id' => $session->session_id,
@@ -866,10 +851,18 @@ class AuthService
                 ? 'إشعار أمني: تم تغيير كلمة المرور لحسابكم في NetSales بنجاح. إذا لم تكن أنت من قام بهذا الإجراء يرجى التواصل فوراً مع الدعم.'
                 : "تمت استعادة كلمة المرور لحسابكم في NetSales بنجاح. كلمة المرور المؤقتة الجديدة هي: {$finalPassword} - يرجى تسجيل الدخول وتغييرها فوراً.";
 
-            SendSmsNotificationJob::dispatch(
-                phoneNumbers: $user->user_phone_number,
+            $this->notificationService->sendDirect(
+                userId: (int) $user->user_id,
+                type: NotificationType::SECURITY,
+                title: 'إشعار أمني: تم تغيير كلمة المرور',
                 message: $smsMessage,
-                messageType: SmsMessageType::ADMIN_BROADCAST
+                inApp: true,
+                push: true,
+                sms: true,
+                email: true,
+                networkId: null,
+                smsMessageType: SmsMessageType::ADMIN_BROADCAST,
+                emailSubject: 'إشعار أمني: تم تغيير كلمة المرور لحسابكم'
             );
 
             SystemLoggerService::logAuth('password_reset_completed', $user->user_id);

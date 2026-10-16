@@ -13,24 +13,13 @@ class SendEmailNotificationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $toEmail;
-
-    protected $subject;
-
-    protected $body;
-
-    protected $userName;
-
-    protected $ctaLink;
-
-    public function __construct(string $toEmail, string $subject, string $userName, string $ctaLink, string $body)
-    {
-        $this->toEmail = $toEmail;
-        $this->subject = $subject;
-        $this->userName = $userName;
-        $this->ctaLink = $ctaLink;
-        $this->body = $body;
-    }
+    public function __construct(
+        public string $toEmail,
+        public string $subject,
+        public string $userName = '',
+        public string $ctaLink = '',
+        public string $body = ''
+    ) {}
 
     public function handle(EmailNotificationService $emailService): void
     {

@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Log;
 class SMSGateService
 {
     protected array $config;
+
     protected SystemSettingService $systemSettingService;
 
     public function __construct(
@@ -260,12 +261,21 @@ class SMSGateService
      */
     public function resolveGatewaySettings(?int $networkId, bool $bypassPolicy = false, SmsMessageType|string|null $messageType = null): array
     {
+        // حظر تام لأي رسالة مجهولة أو غير مصنفة النوع: لا تُعامل إطلاقاً كرسالة عامة أو سيادية
+        if ($messageType === null) {
+            return [null, 'none', null];
+        }
+
         $typeEnum = $messageType instanceof SmsMessageType
             ? $messageType
             : (is_string($messageType) ? SmsMessageType::tryFrom($messageType) : null);
 
+        if ($typeEnum === null) {
+            return [null, 'none', null];
+        }
+
         // رسائل السيادة العامة للنظام (OTP وبث الإدارة): تستخدم حصراً إعدادات بوابة النظام العامة
-        if ($typeEnum?->isSovereign()) {
+        if ($typeEnum->isSovereign()) {
             return [$this->config, 'system', null];
         }
 
@@ -498,6 +508,11 @@ class SMSGateService
      */
     public function smsAllowedFor(?int $networkId, SmsMessageType|string|null $messageType = null): bool
     {
+        // حظر تام لأي رسالة مجهولة أو غير محددة النوع
+        if ($messageType === null) {
+            return false;
+        }
+
         $typeEnum = $messageType instanceof SmsMessageType
             ? $messageType
             : (is_string($messageType) ? SmsMessageType::tryFrom($messageType) : null);
