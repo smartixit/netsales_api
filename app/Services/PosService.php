@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\NotificationType;
 use App\Enums\PosStatus;
+use App\Enums\SmsMessageType;
 use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
 use App\Http\Requests\API\V1\Pos\StorePosRequest;
@@ -292,8 +293,9 @@ class PosService
                 );
 
                 SendSmsNotificationJob::dispatch(
-                    $user->user_phone_number,
-                    "تهانينا! تمت الموافقة على طلب تسجيل نقطة البيع {$pos->pos_name} وتفعيل حسابكم بنجاح."
+                    phoneNumbers: $user->user_phone_number,
+                    message: "تهانينا! تمت الموافقة على طلب تسجيل نقطة البيع {$pos->pos_name} وتفعيل حسابكم بنجاح.",
+                    messageType: SmsMessageType::ADMIN_BROADCAST
                 );
 
                 if (! empty($user->user_email)) {
@@ -343,8 +345,9 @@ class PosService
                 );
 
                 SendSmsNotificationJob::dispatch(
-                    $user->user_phone_number,
-                    "نأسف لإبلاغكم برفض طلب تسجيل نقطة البيع {$pos->pos_name}. السبب: {$reason}"
+                    phoneNumbers: $user->user_phone_number,
+                    message: "نأسف لإبلاغكم برفض طلب تسجيل نقطة البيع {$pos->pos_name}. السبب: {$reason}",
+                    messageType: SmsMessageType::ADMIN_BROADCAST
                 );
             }
 

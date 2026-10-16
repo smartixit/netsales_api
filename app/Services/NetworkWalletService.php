@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\SmsMessageType;
 use App\Enums\WalletOperationType;
 use App\Helpers\AmountFormatter;
 use App\Http\Requests\API\V1\Network\DepositNetworkWalletRequest;
@@ -350,7 +351,7 @@ class NetworkWalletService
             phoneNumbers: $phoneNumber,
             message: $message,
             recipientId: $wallet->network_id,
-            messageType: 'network_wallet_transaction'
+            messageType: ($action === 'receipt') ? SmsMessageType::RECEIPT : SmsMessageType::PAYMENT
         );
     }
 }

@@ -41,7 +41,7 @@ class NetworkSmsSettingResource extends JsonResource
                 'has_password' => ! empty($this->password),
                 'device_id' => $this->device_id,
                 'sim_number' => (int) ($this->sim_number ?? 1),
-                'skip_phone_validation' => (bool) ($this->skip_phone_validation ?? true),
+                'skip_phone_validation' => (bool) ($this->skip_phone_validation ?? false),
                 'device_active_within' => (int) ($this->device_active_within ?? 0),
             ],
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),

@@ -9,6 +9,7 @@ use App\Enums\OtpType;
 use App\Enums\PosStatus;
 use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\RoleKey;
+use App\Enums\SmsMessageType;
 use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
@@ -504,7 +505,11 @@ class AuthService
                 $smsMessage
             );
 
-            SendSmsNotificationJob::dispatch($user->user_phone_number, $smsMessage);
+            SendSmsNotificationJob::dispatch(
+                phoneNumbers: $user->user_phone_number,
+                message: $smsMessage,
+                messageType: SmsMessageType::ADMIN_BROADCAST
+            );
 
             // إرسال بريد إلكتروني إذا وُجد
             if (! empty($user->user_email)) {
@@ -806,8 +811,9 @@ class AuthService
             // 5. إرسال كلمة المرور العشوائية وإشعار التغيير للمستخدم عبر رسالة SMS مدمجة
             $smsMessage = "تمت استعادة كلمة المرور لحسابكم في NetSales بنجاح. كلمة المرور المؤقتة الجديدة هي: {$randomPassword} - يرجى تسجيل الدخول وتغييرها فوراً.";
             SendSmsNotificationJob::dispatch(
-                $user->user_phone_number,
-                $smsMessage
+                phoneNumbers: $user->user_phone_number,
+                message: $smsMessage,
+                messageType: SmsMessageType::OTP
             );
 
             SystemLoggerService::logAuth('password_reset_random_dispatched', $user->user_id);
@@ -861,8 +867,9 @@ class AuthService
                 : "تمت استعادة كلمة المرور لحسابكم في NetSales بنجاح. كلمة المرور المؤقتة الجديدة هي: {$finalPassword} - يرجى تسجيل الدخول وتغييرها فوراً.";
 
             SendSmsNotificationJob::dispatch(
-                $user->user_phone_number,
-                $smsMessage
+                phoneNumbers: $user->user_phone_number,
+                message: $smsMessage,
+                messageType: SmsMessageType::ADMIN_BROADCAST
             );
 
             SystemLoggerService::logAuth('password_reset_completed', $user->user_id);

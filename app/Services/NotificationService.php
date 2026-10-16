@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\DeviceType;
 use App\Enums\NotificationType;
+use App\Enums\SmsMessageType;
 use App\Enums\UserDeviceStatus;
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Notification\SendAdminNotificationRequest;
@@ -353,7 +354,7 @@ class NotificationService
                     phoneNumbers: $user->user_phone_number,
                     message: "{$title}\n{$body}",
                     priority: 1,
-                    messageType: 'admin_broadcast'
+                    messageType: SmsMessageType::ADMIN_BROADCAST
                 );
             }
 
@@ -443,7 +444,7 @@ class NotificationService
             phoneNumbers: $user->user_phone_number,
             message: $message,
             priority: 1,
-            messageType: 'admin_broadcast'
+            messageType: SmsMessageType::ADMIN_BROADCAST
         );
     }
 
@@ -526,7 +527,7 @@ class NotificationService
                 phoneNumbers: $user->user_phone_number,
                 message: "{$title}\n{$body}",
                 priority: 1,
-                messageType: 'admin_broadcast'
+                messageType: SmsMessageType::ADMIN_BROADCAST
             );
             $sentChannels[] = 'sms';
         }

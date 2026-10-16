@@ -2,6 +2,7 @@
 
 namespace App\Services\Support;
 
+use App\Enums\SmsMessageType;
 use App\Models\NetworkSmsSetting;
 use App\Models\SystemSetting;
 use App\Models\User;
@@ -128,7 +129,7 @@ class SMSGateService
         int $ttl = 604800,
         ?int $recipientId = null,
         bool $bypassPolicy = false,
-        ?string $messageType = null
+        SmsMessageType|string|null $messageType = null
     ): bool {
         // 0. فحص سياسة التفعيل: المفتاح العام ثم مفاتيح الشبكة والنوع المحدد
         if (! $bypassPolicy && ! $this->smsAllowedFor($recipientId, $messageType)) {
@@ -143,7 +144,7 @@ class SMSGateService
         // في بيئة الاختبارات: محاكاة النجاح لتفادي استهلاك الرسائل والاتصال الخارجي
         if (app()->runningUnitTests()) {
             Log::info('SMSGate [Mocked]: Message dispatched to recipient(s).', [
-                'type' => $messageType,
+                'type' => $messageType instanceof SmsMessageType ? $messageType->value : $messageType,
                 'recipient_id' => $recipientId,
             ]);
 
@@ -170,6 +171,15 @@ class SMSGateService
         // 2. تحديد إعدادات البوابة والمالك (الشبكة أو النظام)
         [$effectiveConfig, $tokenOwnerType, $tokenOwnerId] = $this->resolveGatewaySettings($recipientId, $bypassPolicy, $messageType);
 
+        if ($effectiveConfig === null) {
+            Log::info('SMSGate Send Blocked: Network has no configured custom gateway and fallback to system gateway is prohibited.', [
+                'network_id' => $recipientId,
+                'message_type' => $messageType instanceof SmsMessageType ? $messageType->value : $messageType,
+            ]);
+
+            return false;
+        }
+
         // 3. ضمان توكن Bearer صالح دائماً وتجديده (عبر refresh_token أو السقوط على basic auth)
         $this->ensureValidToken($effectiveConfig, $tokenOwnerType, $tokenOwnerId);
 
@@ -177,7 +187,7 @@ class SMSGateService
         $token = $effectiveConfig['api_token'] ?? '';
         $deviceId = $effectiveConfig['device_id'] ?? null;
         $simNumber = (int) ($effectiveConfig['sim_number'] ?? 1);
-        $skipValidation = (bool) ($effectiveConfig['skip_phone_validation'] ?? true);
+        $skipValidation = (bool) ($effectiveConfig['skip_phone_validation'] ?? false);
         $deviceActiveWithin = (int) ($effectiveConfig['device_active_within'] ?? 0);
 
         if (empty($token)) {
@@ -246,25 +256,32 @@ class SMSGateService
     /**
      * تحديد مصدر إعدادات البوابة: بوابة النظام العامة أم بوابة خاصة بالشبكة.
      *
-     * @return array{0: array, 1: string, 2: int|null} [settings, tokenOwnerType, tokenOwnerId]
+     * @return array{0: array|null, 1: string, 2: int|null} [settings, tokenOwnerType, tokenOwnerId]
      */
-    public function resolveGatewaySettings(?int $networkId, bool $bypassPolicy = false, ?string $messageType = null): array
+    public function resolveGatewaySettings(?int $networkId, bool $bypassPolicy = false, SmsMessageType|string|null $messageType = null): array
     {
-        // رموز OTP ورسائل الإدارة العامة والبث النظامي: تستخدم حصراً إعدادات بوابة النظام العامة
-        if ($messageType === 'otp' || $messageType === 'admin_broadcast' || $networkId === null) {
+        $typeEnum = $messageType instanceof SmsMessageType
+            ? $messageType
+            : (is_string($messageType) ? SmsMessageType::tryFrom($messageType) : null);
+
+        // رسائل السيادة العامة للنظام (OTP وبث الإدارة): تستخدم حصراً إعدادات بوابة النظام العامة
+        if ($typeEnum?->isSovereign()) {
             return [$this->config, 'system', null];
         }
 
-        /** @var NetworkSmsSetting|null $networkSetting */
-        $networkSetting = NetworkSmsSetting::where('network_id', $networkId)->first();
+        // الرسائل التشغيلية للشبكات: تتطلب حصراً معرف شبكة وإعدادات بوابة خاصة فعالة
+        if ($networkId !== null) {
+            /** @var NetworkSmsSetting|null $networkSetting */
+            $networkSetting = NetworkSmsSetting::where('network_id', $networkId)->first();
 
-        // إذا كانت الشبكة قد فعّلت بوابة خاصة ولديها توكن أو بيانات مصادقة
-        if ($networkSetting && $networkSetting->use_custom_gateway && (! empty($networkSetting->api_token) || ! empty($networkSetting->username))) {
-            return [$networkSetting->toGatewayConfigArray(), 'network', $networkId];
+            // إذا كانت الشبكة قد فعّلت بوابة خاصة ولديها توكن أو بيانات مصادقة
+            if ($networkSetting && $networkSetting->use_custom_gateway && (! empty($networkSetting->api_token) || ! empty($networkSetting->username))) {
+                return [$networkSetting->toGatewayConfigArray(), 'network', $networkId];
+            }
         }
 
-        // وراثة إعدادات بوابة النظام العامة
-        return [$this->config, 'system', null];
+        // عزل مالي وأمني للمستأجرين: يُحظر نهائياً استخدام بوابة النظام العامة لأي رسائل تشغيلية أو مجهولة الهوية
+        return [null, 'none', null];
     }
 
     /**
@@ -434,14 +451,14 @@ class SMSGateService
             ttl: 300,
             recipientId: $recipientId,
             bypassPolicy: true,
-            messageType: 'otp'
+            messageType: SmsMessageType::OTP
         );
     }
 
     /**
      * إرسال رسالة نصية مباشرة لمستخدم محدد بالاعتماد على رقم هاتفه المسجل.
      */
-    public function sendToUser(int $userId, string $title, string $body, int $priority = 0, ?int $networkId = null, ?string $messageType = null): bool
+    public function sendToUser(int $userId, string $title, string $body, int $priority = 0, ?int $networkId = null, SmsMessageType|string|null $messageType = null): bool
     {
         /** @var User|null $user */
         $user = User::find($userId);
@@ -479,10 +496,14 @@ class SMSGateService
     /**
      * التحقق من سياسة تفعيل الإرسال الهرمية للشبكة ونوع الرسالة.
      */
-    public function smsAllowedFor(?int $networkId, ?string $messageType = null): bool
+    public function smsAllowedFor(?int $networkId, SmsMessageType|string|null $messageType = null): bool
     {
-        // رموز OTP تمر دائماً لأسباب أمنية وحرجة
-        if ($messageType === 'otp') {
+        $typeEnum = $messageType instanceof SmsMessageType
+            ? $messageType
+            : (is_string($messageType) ? SmsMessageType::tryFrom($messageType) : null);
+
+        // رموز OTP ورسائل البث الإداري السيادية تمر دائماً لأسباب أمنية وتشغيلية عليا
+        if ($typeEnum?->isSovereign()) {
             return true;
         }
 
@@ -491,16 +512,17 @@ class SMSGateService
             return false;
         }
 
+        // الرسائل التشغيلية تتطلب إلزامياً وجود شبكة منسوبة إليها
         if ($networkId === null) {
-            return true;
+            return false;
         }
 
         /** @var NetworkSmsSetting|null $setting */
         $setting = NetworkSmsSetting::where('network_id', $networkId)->first();
         if ($setting !== null) {
-            return $setting->isMessageTypeEnabled($messageType);
+            return $setting->isMessageTypeEnabled($typeEnum?->value ?? (is_string($messageType) ? $messageType : null));
         }
 
-        return true;
+        return false;
     }
 }

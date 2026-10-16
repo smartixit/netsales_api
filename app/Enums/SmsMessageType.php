@@ -15,7 +15,15 @@ enum SmsMessageType: string
     case MONTHLY_SUMMARY = 'monthly_summary';         // الملخص الشهري
     case SUBSCRIPTION_EXPIRY = 'subscription_expiry'; // انتهاء الاشتراك
     case OTP = 'otp';                                 // رموز التحقق
-    case GENERAL = 'general';                         // رسائل عامة
+    case ADMIN_BROADCAST = 'admin_broadcast';         // بث إداري / رسائل النظام السيادية
+
+    /**
+     * هل الرسالة سيادية وتتبع إدارة المنظومة حصراً (تستخدم بوابة النظام العامة دائماً)
+     */
+    public function isSovereign(): bool
+    {
+        return $this === self::OTP || $this === self::ADMIN_BROADCAST;
+    }
 
     /**
      * اسم العمود المقابل في جدول network_sms_settings
@@ -33,7 +41,7 @@ enum SmsMessageType: string
             self::DAILY_SUMMARY => 'notify_daily_summary',
             self::MONTHLY_SUMMARY => 'notify_monthly_summary',
             self::SUBSCRIPTION_EXPIRY => 'notify_subscription_expiry',
-            self::OTP, self::GENERAL => null,
+            self::OTP, self::ADMIN_BROADCAST => null,
         };
     }
 
@@ -54,7 +62,7 @@ enum SmsMessageType: string
             self::MONTHLY_SUMMARY => 'الملخص الشهري',
             self::SUBSCRIPTION_EXPIRY => 'تنبيه اشتراك الشبكة',
             self::OTP => 'رمز تحقق OTP',
-            self::GENERAL => 'رسالة عامة',
+            self::ADMIN_BROADCAST => 'بث إداري / رسالة نظام',
         };
     }
 }

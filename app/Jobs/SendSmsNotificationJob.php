@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\SmsMessageType;
 use App\Services\Support\SMSGateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -16,7 +17,7 @@ class SendSmsNotificationJob implements ShouldQueue
     /**
      * Create a new job instance.
      *
-     * @param  int|null  $recipientId  متجر صاحب الرسالة لتطبيق سياسة تفعيل الرسائل الخاصة به.
+     * @param  int|null  $recipientId  معرف الشبكة صاحبة الرسالة لتطبيق سياساتها وبوابتها الخاصة.
      */
     public function __construct(
         public string|array $phoneNumbers,
@@ -24,7 +25,7 @@ class SendSmsNotificationJob implements ShouldQueue
         public int $priority = 0,
         public int $ttl = 604800,
         public ?int $recipientId = null,
-        public ?string $messageType = null,
+        public SmsMessageType|string|null $messageType = null,
     ) {}
 
     /**

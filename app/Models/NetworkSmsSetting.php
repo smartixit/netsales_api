@@ -111,18 +111,18 @@ class NetworkSmsSetting extends Model
             return false;
         }
 
-        if (empty($type) || $type === 'general') {
-            return true;
+        if (empty($type)) {
+            return false;
         }
 
         $enum = SmsMessageType::tryFrom($type);
         if (! $enum) {
-            return true;
+            return false;
         }
 
         $col = $enum->settingColumn();
         if ($col === null) {
-            return true;
+            return false;
         }
 
         return (bool) $this->{$col};
@@ -144,7 +144,7 @@ class NetworkSmsSetting extends Model
             'password' => $this->password,
             'device_id' => $this->device_id,
             'sim_number' => (int) ($this->sim_number ?? 1),
-            'skip_phone_validation' => (bool) ($this->skip_phone_validation ?? true),
+            'skip_phone_validation' => (bool) ($this->skip_phone_validation ?? false),
             'device_active_within' => (int) ($this->device_active_within ?? 0),
         ];
     }

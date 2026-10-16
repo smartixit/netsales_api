@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\SmsMessageType;
 use App\Enums\WalletOperationType;
 use App\Helpers\AmountFormatter;
 use App\Http\Requests\API\V1\Pos\DepositPosWalletRequest;
@@ -544,8 +545,8 @@ class PosWalletService
         SendSmsNotificationJob::dispatch(
             phoneNumbers: $phoneNumber,
             message: $message,
-            recipientId: $wallet->pos_id,
-            messageType: 'pos_wallet_transaction'
+            recipientId: $wallet->network_id,
+            messageType: ($action === 'receipt') ? SmsMessageType::RECEIPT : SmsMessageType::PAYMENT
         );
     }
 }

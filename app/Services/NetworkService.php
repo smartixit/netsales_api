@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\NetworkStatus;
 use App\Enums\NotificationType;
+use App\Enums\SmsMessageType;
 use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
@@ -283,9 +284,8 @@ class NetworkService
                 }
             }
 
-            $networkSmsSetting = $this->networkSmsSettingRepository->create(
-                
-            );
+            // 3. إنشاء إعدادات الرسائل النصية للشبكة (تفعيل الإشعارات افتراضياً عبر بوابة النظام العامة)
+            $this->networkSmsSettingRepository->getOrCreateForNetwork($network->network_id);
 
             // تفعيل المستخدم والجهاز المرتبط برقم هاتف الشبكة
             $user = $this->userRepository->findByPhone($network->network_phone_number);
@@ -304,8 +304,9 @@ class NetworkService
                 );
 
                 SendSmsNotificationJob::dispatch(
-                    $user->user_phone_number,
-                    "تهانينا! تمت الموافقة على طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح."
+                    phoneNumbers: $user->user_phone_number,
+                    message: "تهانينا! تمت الموافقة على طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح.",
+                    messageType: SmsMessageType::ADMIN_BROADCAST
                 );
 
                 if (! empty($user->user_email)) {
@@ -355,8 +356,9 @@ class NetworkService
                 );
 
                 SendSmsNotificationJob::dispatch(
-                    $user->user_phone_number,
-                    "نأسف لإبلاغكم برفض طلب تسجيل شبكة {$network->network_name}. السبب: {$reason}"
+                    phoneNumbers: $user->user_phone_number,
+                    message: "نأسف لإبلاغكم برفض طلب تسجيل شبكة {$network->network_name}. السبب: {$reason}",
+                    messageType: SmsMessageType::ADMIN_BROADCAST
                 );
             }
 

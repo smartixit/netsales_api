@@ -42,7 +42,7 @@ return new class extends Migration
             $table->text('password')->nullable();
             $table->string('device_id', 100)->nullable();
             $table->unsignedTinyInteger('sim_number')->default(1);
-            $table->boolean('skip_phone_validation')->default(true);
+            $table->boolean('skip_phone_validation')->default(false);
             $table->unsignedInteger('device_active_within')->default(0);
 
             $table->timestamps();

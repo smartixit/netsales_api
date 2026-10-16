@@ -156,17 +156,17 @@ class NetworkSmsSettingService
                 'has_password' => ! empty($setting->password),
                 'device_id' => $setting->device_id,
                 'sim_number' => (int) ($setting->sim_number ?? 1),
-                'skip_phone_validation' => (bool) ($setting->skip_phone_validation ?? true),
+                'skip_phone_validation' => (bool) ($setting->skip_phone_validation ?? false),
                 'device_active_within' => (int) ($setting->device_active_within ?? 0),
             ],
-            'effective_gateway' => [
+            'effective_gateway' => $effectiveGateway ? [
                 'server_type' => $effectiveGateway['server_type'] ?? 'cloud',
                 'base_url' => $effectiveGateway['base_url'] ?? 'https://api.sms-gate.app',
                 'auth_type' => $effectiveGateway['auth_type'] ?? 'bearer',
                 'device_id' => $effectiveGateway['device_id'] ?? null,
                 'sim_number' => (int) ($effectiveGateway['sim_number'] ?? 1),
                 'is_custom' => (bool) $setting->use_custom_gateway,
-            ],
+            ] : null,
         ];
     }
 
@@ -237,7 +237,7 @@ class NetworkSmsSettingService
                 $setting->sim_number = (int) $request->input('sim_number', 1);
             }
             if ($request->has('skip_phone_validation')) {
-                $setting->skip_phone_validation = (bool) $request->input('skip_phone_validation', true);
+                $setting->skip_phone_validation = (bool) $request->input('skip_phone_validation', false);
             }
             if ($request->has('device_active_within')) {
                 $setting->device_active_within = (int) $request->input('device_active_within', 0);
