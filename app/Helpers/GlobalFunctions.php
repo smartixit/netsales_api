@@ -71,11 +71,13 @@ if (! function_exists('formatWithCurrency')) {
      */
     function formatWithCurrency(
         float|int|string|null $amount,
-        string $currency = systemSetting('base_currency', 'YER'),
+        ?string $currency = null,
         int $maxDecimals = 2,
         bool $space = false,
         bool $trimZeroDecimals = false
     ): string {
+        $currency = $currency ?? systemSetting('base_currency', 'YER');
+
         return AmountFormatter::formatWithCurrency($amount, $currency, $maxDecimals, $space, $trimZeroDecimals);
     }
 }

@@ -4,6 +4,9 @@ namespace App\Repositories;
 
 use App\Interfaces\BaseRepositoryInterface;
 use App\Services\SystemLoggerService;
+use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -211,17 +214,54 @@ class BaseRepository implements BaseRepositoryInterface
         return $this->model->newQuery()->onlyTrashed()->orderBy($keyName, 'desc')->cursorPaginate($perPage);
     }
 
-    public function getFiltered(array $filters = [], array $relations = [])
+    /**
+     * Get filtered records with relations and cursor pagination.
+     */
+    public function getFiltered(array $filters = [], array $relations = []): Collection|CursorPaginator
     {
-        $query = $this->model->newQuery();
+        $query = $this->buildBaseFilteredQuery($filters, $relations, false);
 
-        $relations = $filters['with'] ?? $filters['relations'] ?? [];
-        if (! empty($relations)) {
-            $query->with((array) $relations);
+        return $this->paginateOrAll($query, $filters);
+    }
+
+    /**
+     * Get filtered soft-deleted records with relations and cursor pagination.
+     */
+    public function getTrashedFiltered(array $filters = [], array $relations = []): Collection|CursorPaginator
+    {
+        if (! $this->usesSoftDeletes()) {
+            return collect();
         }
 
+        $query = $this->buildBaseFilteredQuery($filters, $relations, true);
+
+        return $this->paginateOrAll($query, $filters);
+    }
+
+    /**
+     * Build the query for getFiltered and getTrashedFiltered.
+     */
+    protected function buildBaseFilteredQuery(array $filters = [], array $relations = [], bool $onlyTrashed = false): Builder
+    {
+        $query = $onlyTrashed ? $this->model->newQuery()->onlyTrashed() : $this->model->newQuery();
+
+        $with = ! empty($relations) ? $relations : ($filters['with'] ?? $filters['relations'] ?? []);
+        if (! empty($with)) {
+            $query->with((array) $with);
+        }
+
+        $this->applyFilters($query, $filters);
+
+        return $query;
+    }
+
+    /**
+     * Hook to apply filters to the query. Child repositories can override or extend this method.
+     */
+    protected function applyFilters(Builder $query, array $filters): void
+    {
         if (! empty($filters['search']) && method_exists($this->model, 'scopeSearch')) {
-            $query->search($filters['search']);
+            $query->search(trim((string) $filters['search']));
         }
 
         if (isset($filters['status']) && method_exists($this->model, 'scopeStatus')) {
@@ -230,66 +270,33 @@ class BaseRepository implements BaseRepositoryInterface
             $query->active();
         }
 
-        if (! empty($filters['center_id']) && method_exists($this->model, 'scopeForCenter')) {
-            $query->forCenter((int) $filters['center_id']);
-        }
-
-        if (! empty($filters['user_id']) && method_exists($this->model, 'scopeForUser')) {
-            $query->forUser((int) $filters['user_id']);
-        }
-
-        if (! empty($filters['academic_year']) && method_exists($this->model, 'scopeAcademicYear')) {
-            $query->academicYear($filters['academic_year']);
-        }
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy($this->model->getKeyName(), 'desc')->get();
-        }
-
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
-
-        return $query->orderBy($this->model->getKeyName(), 'desc')->cursorPaginate($perPage);
-    }
-
-    public function getTrashedFiltered(array $filters = [], array $relations = [])
-    {
-        if (! $this->usesSoftDeletes()) {
-            return collect();
-        }
-
-        $query = $this->model->newQuery()->onlyTrashed();
-
-        if (! empty($relations)) {
-            $query->with($relations);
-        }
-
-        if (! empty($filters['search']) && method_exists($this->model, 'scopeSearch')) {
-            $query->search($filters['search']);
-        }
-
-        if (isset($filters['status']) && method_exists($this->model, 'scopeStatus')) {
-            $query->status($filters['status']);
-        }
-
         if (! empty($filters['network_id']) && method_exists($this->model, 'scopeForNetwork')) {
             $query->forNetwork((int) $filters['network_id']);
-        }
-
-        if (! empty($filters['user_id']) && method_exists($this->model, 'scopeForUser')) {
-            $query->forUser((int) $filters['user_id']);
         }
 
         if (! empty($filters['pos_id']) && method_exists($this->model, 'scopeForPos')) {
             $query->forPos((int) $filters['pos_id']);
         }
 
+        if (! empty($filters['user_id']) && method_exists($this->model, 'scopeForUser')) {
+            $query->forUser((int) $filters['user_id']);
+        }
+    }
+
+    /**
+     * Paginate using cursor or fetch all records.
+     */
+    protected function paginateOrAll(Builder $query, array $filters, ?string $orderColumn = null): Collection|CursorPaginator
+    {
+        $keyName = $orderColumn ?? $this->model->getKeyName();
+
         if (! empty($filters['all'])) {
-            return $query->orderBy($this->model->getKeyName(), 'desc')->get();
+            return $query->orderBy($keyName, 'desc')->get();
         }
 
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
+        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 100);
 
-        return $query->orderBy($this->model->getKeyName(), 'desc')->cursorPaginate($perPage);
+        return $query->orderBy($keyName, 'desc')->cursorPaginate($perPage);
     }
 
     public function usesSoftDeletes(): bool

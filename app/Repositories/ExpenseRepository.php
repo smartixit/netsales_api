@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Interfaces\ExpenseRepositoryInterface;
 use App\Models\Expense;
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -20,15 +21,11 @@ class ExpenseRepository extends BaseRepository implements ExpenseRepositoryInter
     }
 
     /**
-     * جلب المصروفات مع الفلترة والترقيم بالمؤشر.
+     * تطبيق الفلاتر الخاصة بالمصروفات.
      */
-    public function getFiltered(array $filters = [], array $relations = ['network', 'createdBy', 'items', 'attachments']): Collection|CursorPaginator
+    protected function applyFilters(Builder $query, array $filters): void
     {
-        $query = $this->model->newQuery()->with($relations);
-
-        if (! empty($filters['network_id'])) {
-            $query->forNetwork((int) $filters['network_id']);
-        }
+        parent::applyFilters($query, $filters);
 
         if (! empty($filters['created_by'])) {
             $query->where('created_by', (int) $filters['created_by']);
@@ -54,14 +51,14 @@ class ExpenseRepository extends BaseRepository implements ExpenseRepositoryInter
                     });
             });
         }
+    }
 
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('expense_id', 'desc')->get();
-        }
-
-        return $query->orderBy('expense_id', 'desc')->cursorPaginate($perPage);
+    /**
+     * جلب المصروفات مع الفلترة والترقيم بالمؤشر.
+     */
+    public function getFiltered(array $filters = [], array $relations = ['network', 'createdBy', 'items', 'attachments']): Collection|CursorPaginator
+    {
+        return parent::getFiltered($filters, $relations);
     }
 
     /**
@@ -69,33 +66,7 @@ class ExpenseRepository extends BaseRepository implements ExpenseRepositoryInter
      */
     public function getTrashedFiltered(array $filters = [], array $relations = ['network', 'createdBy']): Collection|CursorPaginator
     {
-        $query = $this->model->newQuery()->onlyTrashed()->with($relations);
-
-        if (! empty($filters['network_id'])) {
-            $query->forNetwork((int) $filters['network_id']);
-        }
-
-        if (! empty($filters['created_by'])) {
-            $query->where('created_by', (int) $filters['created_by']);
-        }
-
-        if (! empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('expense_uuid', 'like', "%{$search}%")
-                    ->orWhereHas('network', function ($nq) use ($search) {
-                        $nq->where('network_name', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('expense_id', 'desc')->get();
-        }
-
-        return $query->orderBy('expense_id', 'desc')->cursorPaginate($perPage);
+        return parent::getTrashedFiltered($filters, $relations);
     }
 
     /**

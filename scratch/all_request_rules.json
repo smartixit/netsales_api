@@ -1895,7 +1895,7 @@
             "integer",
             {}
         ],
-        "item_voucher_count": [
+        "voucher_count": [
             "required",
             "integer",
             "min:1"
@@ -1930,14 +1930,14 @@
             "integer",
             {}
         ],
-        "items.*.item_voucher_count": [
+        "items.*.voucher_count": [
             "required_with:items",
             "integer",
             "min:1"
         ]
     },
     "UpdateRequestItemRequest": {
-        "item_voucher_count": [
+        "voucher_count": [
             "required",
             "integer",
             "min:1"

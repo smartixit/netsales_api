@@ -112,7 +112,7 @@ class SecurityService
                 newData: [
                     'ban_id' => $securityBan->ban_id,
                     'ban_type' => $banType instanceof BanType ? $banType->value : $banType,
-                    'reason' => $reason,
+                    'ban_reason' => $reason,
                     'end_at' => $endAt?->format('Y-m-d H:i:s'),
                 ],
                 userId: $adminUserId
@@ -155,7 +155,7 @@ class SecurityService
                 entityId: $deviceId,
                 newData: [
                     'ban_id' => $securityBan->ban_id,
-                    'reason' => $reason,
+                    'ban_reason' => $reason,
                 ],
                 userId: $adminUserId
             );

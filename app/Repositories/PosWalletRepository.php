@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Interfaces\PosWalletRepositoryInterface;
 use App\Models\PosWallet;
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -20,12 +21,10 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
     }
 
     /**
-     * جلب قائمة محافظ نقاط البيع مع تطبيق الفلاتر والترقيم بالمؤشر.
+     * تطبيق الفلاتر الخاصة بمحافظ نقاط البيع.
      */
-    public function getFiltered(array $filters = [], array $relations = ['network', 'pos']): Collection|CursorPaginator
+    protected function applyFilters(Builder $query, array $filters): void
     {
-        $query = $this->model->newQuery()->with($relations);
-
         if (! empty($filters['network_id']) && ! empty($filters['pos_id'])) {
             $query->forNetworkAndPos((int) $filters['network_id'], (int) $filters['pos_id']);
         } else {
@@ -64,14 +63,14 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
                     });
             });
         }
+    }
 
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('wallet_id', 'desc')->get();
-        }
-
-        return $query->orderBy('wallet_id', 'desc')->cursorPaginate($perPage);
+    /**
+     * جلب قائمة محافظ نقاط البيع مع تطبيق الفلاتر والترقيم بالمؤشر.
+     */
+    public function getFiltered(array $filters = [], array $relations = ['network', 'pos']): Collection|CursorPaginator
+    {
+        return parent::getFiltered($filters, $relations);
     }
 
     /**
@@ -79,41 +78,7 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
      */
     public function getTrashedFiltered(array $filters = [], array $relations = ['network', 'pos']): Collection|CursorPaginator
     {
-        $query = $this->model->newQuery()->onlyTrashed()->with($relations);
-
-        if (! empty($filters['network_id']) && ! empty($filters['pos_id'])) {
-            $query->forNetworkAndPos((int) $filters['network_id'], (int) $filters['pos_id']);
-        } else {
-            if (! empty($filters['network_id'])) {
-                $query->forNetwork((int) $filters['network_id']);
-            }
-
-            if (! empty($filters['pos_id'])) {
-                $query->forPos((int) $filters['pos_id']);
-            }
-        }
-
-        if (! empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('wallet_uuid', 'like', "%{$search}%")
-                    ->orWhereHas('network', function ($nq) use ($search) {
-                        $nq->where('network_name', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('pos', function ($pq) use ($search) {
-                        $pq->where('pos_name', 'like', "%{$search}%")
-                            ->orWhere('pos_phone_number', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('wallet_id', 'desc')->get();
-        }
-
-        return $query->orderBy('wallet_id', 'desc')->cursorPaginate($perPage);
+        return parent::getTrashedFiltered($filters, $relations);
     }
 
     /**

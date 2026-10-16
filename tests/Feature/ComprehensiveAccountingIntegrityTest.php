@@ -313,7 +313,7 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
                 'items' => [
                     [
                         'package_id' => $this->package->package_id,
-                        'item_voucher_count' => 10,
+                        'voucher_count' => 10,
                     ],
                 ],
             ]);

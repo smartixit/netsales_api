@@ -47,7 +47,7 @@ class StoreRequestRequest extends FormRequest
                 'integer',
                 Rule::exists('voucher_packages', 'package_id')->whereNull('deleted_at'),
             ],
-            'items.*.item_voucher_count' => [
+            'items.*.voucher_count' => [
                 'required_with:items',
                 'integer',
                 'min:1',
@@ -78,7 +78,7 @@ class StoreRequestRequest extends FormRequest
     }
 
     /**
-     * @return array<int, array{package_id: int, item_voucher_count: int}>
+     * @return array<int, array{package_id: int, voucher_count: int}>
      */
     public function getItems(): array
     {

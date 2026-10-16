@@ -207,7 +207,7 @@ class SubscriptionSystemTest extends TestCase
 
         // 3. اعتماد طلب الاشتراك
         $approveResponse = $this->withHeaders($this->headers)->postJson("/api/v1/subscription-plan-requests/{$requestId}/approve", [
-            'note' => 'تم التحقق من الحوالة البنكية واعتماد التفعيل',
+            'request_note' => 'تم التحقق من الحوالة البنكية واعتماد التفعيل',
         ]);
 
         $approveResponse->assertStatus(200)
@@ -276,8 +276,8 @@ class SubscriptionSystemTest extends TestCase
 
         // رفض الطلب
         $rejectResponse = $this->withHeaders($this->headers)->postJson("/api/v1/subscription-plan-requests/{$requestId}/reject", [
-            'reason' => 'عدم تسليم المبلغ النقدي للمحصل',
-            'note' => 'يرجى مراجعة الإدارة المالية',
+            'rejection_reason' => 'عدم تسليم المبلغ النقدي للمحصل',
+            'request_note' => 'يرجى مراجعة الإدارة المالية',
         ]);
 
         $rejectResponse->assertStatus(200)

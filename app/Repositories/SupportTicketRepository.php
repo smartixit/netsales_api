@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Interfaces\SupportTicketRepositoryInterface;
 use App\Models\SupportTicket;
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -31,37 +32,29 @@ class SupportTicketRepository extends BaseRepository implements SupportTicketRep
     }
 
     /**
+     * تطبيق الفلاتر الخاصة بتذاكر الدعم الفني.
+     */
+    protected function applyFilters(Builder $query, array $filters): void
+    {
+        parent::applyFilters($query, $filters);
+
+        if (! empty($filters['search'])) {
+            $term = trim((string) $filters['search']);
+            $query->where(function ($q) use ($term) {
+                $q->where('ticket_subject', 'like', "%{$term}%")
+                    ->orWhere('ticket_uuid', 'like', "%{$term}%");
+            });
+        }
+    }
+
+    /**
      * جلب قائمة التذاكر مع الفلترة والترقيم بالمؤشر والعلاقات.
      */
     public function getFiltered(
         array $filters = [],
         array $relations = ['network', 'pos', 'latestMessage.sentBy']
     ): Collection|CursorPaginator {
-        $query = $this->model->newQuery()->with($relations);
-
-        if (! empty($filters['network_id'])) {
-            $query->forNetwork((int) $filters['network_id']);
-        }
-
-        if (! empty($filters['pos_id'])) {
-            $query->forPos((int) $filters['pos_id']);
-        }
-
-        if (! empty($filters['search'])) {
-            $term = trim($filters['search']);
-            $query->where(function ($q) use ($term) {
-                $q->where('ticket_subject', 'like', "%{$term}%")
-                    ->orWhere('ticket_uuid', 'like', "%{$term}%");
-            });
-        }
-
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('ticket_id', 'desc')->get();
-        }
-
-        return $query->orderBy('ticket_id', 'desc')->cursorPaginate($perPage);
+        return parent::getFiltered($filters, $relations);
     }
 
     /**
@@ -71,23 +64,13 @@ class SupportTicketRepository extends BaseRepository implements SupportTicketRep
         array $filters = [],
         array $relations = ['network', 'pos']
     ): Collection|CursorPaginator {
-        $query = $this->model->newQuery()->onlyTrashed()->with($relations);
-
-        if (! empty($filters['network_id'])) {
-            $query->forNetwork((int) $filters['network_id']);
+        if (! $this->usesSoftDeletes()) {
+            return collect();
         }
 
-        if (! empty($filters['pos_id'])) {
-            $query->forPos((int) $filters['pos_id']);
-        }
+        $query = $this->buildBaseFilteredQuery($filters, $relations, true);
 
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('deleted_at', 'desc')->get();
-        }
-
-        return $query->orderBy('deleted_at', 'desc')->cursorPaginate($perPage);
+        return $this->paginateOrAll($query, $filters, 'deleted_at');
     }
 
     /**

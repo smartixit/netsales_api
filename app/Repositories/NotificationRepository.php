@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Interfaces\NotificationRepositoryInterface;
 use App\Models\Notification;
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -20,17 +21,11 @@ class NotificationRepository extends BaseRepository implements NotificationRepos
     }
 
     /**
-     * جلب قائمة الإشعارات مع الفلترة والترقيم بالمؤشر والعلاقات.
+     * تطبيق الفلاتر الخاصة بالإشعارات.
      */
-    public function getFiltered(
-        array $filters = [],
-        array $relations = ['user']
-    ): Collection|CursorPaginator {
-        $query = $this->model->newQuery()->with($relations);
-
-        if (! empty($filters['user_id'])) {
-            $query->where('user_id', (int) $filters['user_id']);
-        }
+    protected function applyFilters(Builder $query, array $filters): void
+    {
+        parent::applyFilters($query, $filters);
 
         if (! empty($filters['notification_type'])) {
             $query->where('notification_type', $filters['notification_type']);
@@ -41,14 +36,6 @@ class NotificationRepository extends BaseRepository implements NotificationRepos
             $isRead ? $query->read() : $query->unread();
         }
 
-        if (! empty($filters['search'])) {
-            $term = trim($filters['search']);
-            $query->where(function ($q) use ($term) {
-                $q->where('notification_title', 'like', "%{$term}%")
-                    ->orWhere('notification_message', 'like', "%{$term}%");
-            });
-        }
-
         if (! empty($filters['from_date'])) {
             $query->whereDate('created_at', '>=', $filters['from_date']);
         }
@@ -57,13 +44,23 @@ class NotificationRepository extends BaseRepository implements NotificationRepos
             $query->whereDate('created_at', '<=', $filters['to_date']);
         }
 
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('notification_id', 'desc')->get();
+        if (! empty($filters['search'])) {
+            $term = trim((string) $filters['search']);
+            $query->where(function ($q) use ($term) {
+                $q->where('notification_title', 'like', "%{$term}%")
+                    ->orWhere('notification_message', 'like', "%{$term}%");
+            });
         }
+    }
 
-        return $query->orderBy('notification_id', 'desc')->cursorPaginate($perPage);
+    /**
+     * جلب قائمة الإشعارات مع الفلترة والترقيم بالمؤشر والعلاقات.
+     */
+    public function getFiltered(
+        array $filters = [],
+        array $relations = ['user']
+    ): Collection|CursorPaginator {
+        return parent::getFiltered($filters, $relations);
     }
 
     /**
@@ -73,31 +70,7 @@ class NotificationRepository extends BaseRepository implements NotificationRepos
         array $filters = [],
         array $relations = ['user']
     ): Collection|CursorPaginator {
-        $query = $this->model->newQuery()->onlyTrashed()->with($relations);
-
-        if (! empty($filters['user_id'])) {
-            $query->where('user_id', (int) $filters['user_id']);
-        }
-
-        if (! empty($filters['notification_type'])) {
-            $query->where('notification_type', $filters['notification_type']);
-        }
-
-        if (! empty($filters['search'])) {
-            $term = trim($filters['search']);
-            $query->where(function ($q) use ($term) {
-                $q->where('notification_title', 'like', "%{$term}%")
-                    ->orWhere('notification_message', 'like', "%{$term}%");
-            });
-        }
-
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('notification_id', 'desc')->get();
-        }
-
-        return $query->orderBy('notification_id', 'desc')->cursorPaginate($perPage);
+        return parent::getTrashedFiltered($filters, $relations);
     }
 
     /**

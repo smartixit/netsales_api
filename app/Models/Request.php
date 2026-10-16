@@ -131,7 +131,7 @@ class Request extends Model
     public function recalculateTotal(): void
     {
         $total = $this->items()->with('voucherPackage')->get()->sum(function (RequestItem $item): float {
-            return (float) ($item->item_voucher_count * ($item->voucherPackage?->package_voucher_price ?? 0));
+            return (float) ($item->voucher_count * ($item->voucherPackage?->package_voucher_price ?? 0));
         });
 
         $this->update(['request_total_amount' => $total]);

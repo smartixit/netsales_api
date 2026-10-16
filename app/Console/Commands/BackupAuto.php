@@ -230,7 +230,6 @@ class BackupAuto extends Command
                         sms: true,
                         email: true,
                         emailSubject: $message,
-                        priority: 1,
                         smsMessageType: SmsMessageType::ADMIN_BROADCAST,
                         title: '🚨 تنبيه: فشل النسخ الاحتياطي التلقائي',
                         message: $message

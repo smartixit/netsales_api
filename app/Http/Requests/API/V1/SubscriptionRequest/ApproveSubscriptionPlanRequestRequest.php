@@ -17,7 +17,7 @@ class ApproveSubscriptionPlanRequestRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'note' => [
+            'request_note' => [
                 'nullable',
                 'string',
                 'max:150',
@@ -27,6 +27,6 @@ class ApproveSubscriptionPlanRequestRequest extends FormRequest
 
     public function getNote(): ?string
     {
-        return $this->filled('note') ? (string) $this->input('note') : null;
+        return $this->filled('request_note') ? (string) $this->input('request_note') : null;
     }
 }

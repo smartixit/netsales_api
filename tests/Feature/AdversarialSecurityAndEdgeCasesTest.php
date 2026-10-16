@@ -248,7 +248,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
                 'items' => [
                     [
                         'package_id' => $this->packageA->package_id,
-                        'item_voucher_count' => 10,
+                        'voucher_count' => 10,
                     ],
                 ],
             ]);
@@ -289,7 +289,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
                 'items' => [
                     [
                         'package_id' => $this->packageA->package_id,
-                        'item_voucher_count' => 5,
+                        'voucher_count' => 5,
                     ],
                 ],
             ]);
@@ -304,7 +304,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
         // محاولة رفض الطلب المعتمد
         $rejectApproved = $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$requestId}/reject", [
-                'reason' => 'محاولة رفض طلب بعد أن أصبح معتمداً',
+                'rejection_reason' => 'محاولة رفض طلب بعد أن أصبح معتمداً',
             ]);
 
         $rejectApproved->assertStatus(422);
@@ -318,7 +318,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
                 'items' => [
                     [
                         'package_id' => $this->packageA->package_id,
-                        'item_voucher_count' => 2,
+                        'voucher_count' => 2,
                     ],
                 ],
             ])->json('data.request_id');
@@ -326,13 +326,13 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
         // الرفض الأول
         $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$anotherRequest}/reject", [
-                'reason' => 'الرفض الأول الشرعي',
+                'rejection_reason' => 'الرفض الأول الشرعي',
             ])->assertStatus(200);
 
         // محاولة الرفض الثاني للطلب المرفوض مسبقاً
         $secondReject = $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$anotherRequest}/reject", [
-                'reason' => 'الرفض الثاني غير المسموح به',
+                'rejection_reason' => 'الرفض الثاني غير المسموح به',
             ]);
 
         $secondReject->assertStatus(422);
@@ -351,7 +351,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
                 'items' => [
                     [
                         'package_id' => $this->packageA->package_id,
-                        'item_voucher_count' => 1,
+                        'voucher_count' => 1,
                     ],
                 ],
             ]);

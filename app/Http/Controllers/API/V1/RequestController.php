@@ -154,7 +154,7 @@ class RequestController extends BaseController
     {
         try {
             $reviewedBy = (int) ($request->user()?->user_id ?? 1);
-            $note = $request->input('note');
+            $note = $request->input('request_note');
             $result = $this->requestService->approve($id, $reviewedBy, $note);
 
             return $this->successResponse('تم اعتماد طلب الكروت وتوليد فاتورة المبيعات وتسوية الرصيد بنجاح.', [
@@ -184,9 +184,9 @@ class RequestController extends BaseController
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['reason'],
+                    required: ['rejection_reason'],
                     properties: [
-                    new OA\Property(property: 'reason', type: 'string'),
+                    new OA\Property(property: 'rejection_reason', type: 'string'),
                     ]
                 )
             )

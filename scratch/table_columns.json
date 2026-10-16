@@ -261,7 +261,7 @@
         "item_id": "id",
         "request_id": "foreignId",
         "package_id": "foreignId",
-        "item_voucher_count": "integer"
+        "voucher_count": "integer"
     },
     "sale_invoices": {
         "invoice_id": "id",

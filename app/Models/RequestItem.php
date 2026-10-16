@@ -25,13 +25,13 @@ class RequestItem extends Model
     protected $fillable = [
         'request_id',
         'package_id',
-        'item_voucher_count',
+        'voucher_count',
     ];
 
     protected function casts(): array
     {
         return [
-            'item_voucher_count' => 'integer',
+            'voucher_count' => 'integer',
         ];
     }
 
@@ -51,6 +51,6 @@ class RequestItem extends Model
     {
         $price = $unitPrice ?? (float) ($this->voucherPackage?->package_voucher_price ?? 0);
 
-        return (float) ($this->item_voucher_count * $price);
+        return (float) ($this->voucher_count * $price);
     }
 }

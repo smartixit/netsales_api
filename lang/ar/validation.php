@@ -350,7 +350,7 @@ return [
         'reference_type' => 'نوع المرجع المالي',
         'reference_id' => 'رقم المرجع المالي',
         'statement' => 'بيان العملية المالية',
-        'note' => 'الملاحظة',
+        'request_note' => 'الملاحظة',
 
         'log_operation' => 'نوع العملية',
         'log_operation_type' => 'نوع حركة المحفظة',
@@ -409,13 +409,12 @@ return [
         'reason' => 'سبب العملية',
         'reviewed_by' => 'تم التدقيق بواسطة',
         'review_date' => 'تاريخ التدقيق',
-        'request_note' => 'ملاحظة الطلب',
 
         'item_id' => 'العنصر',
         'quantity' => 'الكمية',
         'voucher_price' => 'سعر الكرت',
         'voucher_count' => 'عدد الكروت',
-        'item_voucher_count' => 'عدد كروت البند',
+        'voucher_count' => 'عدد كروت البند',
         'unit_price' => 'سعر الوحدة',
         'item_discount' => 'نسبة خصم العنصر',
         'item_total_amount' => 'إجمالي مبلغ البند',
@@ -458,7 +457,7 @@ return [
 
         'items' => 'قائمة البنود',
         'items.*.package_id' => 'باقة الكروت للبند',
-        'items.*.item_voucher_count' => 'عدد كروت البند',
+        'items.*.voucher_count' => 'عدد كروت البند',
         'items.*.voucher_price' => 'سعر الكرت للبند',
         'items.*.voucher_count' => 'عدد الكروت للبند',
         'items.*.item_discount' => 'نسبة الخصم للبند',
@@ -1166,7 +1165,7 @@ return [
             'package_id' => [
                 'required' => 'يرجى تحديد باقة الكروت المطلوبة.',
             ],
-            'item_voucher_count' => [
+            'voucher_count' => [
                 'required' => 'كمية الكروت المطلوبة إلزامية.',
                 'min' => 'يجب أن تكون الكمية كرت واحد على الأقل.',
             ],
@@ -1518,7 +1517,7 @@ return [
         ],
 
         'RejectRequest' => [
-            'reason' => [
+            'rejection_reason' => [
                 'required' => 'يرجى تدوين سبب الرفض بالتفصيل.',
                 'min' => 'سبب الرفض يجب ألا يقل عن 3 أحرف.',
             ],

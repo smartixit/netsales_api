@@ -130,7 +130,7 @@ class SaleInvoiceService
                 }
 
                 $voucherPrice = (float) $package->package_voucher_price;
-                $voucherCount = (int) $item->item_voucher_count;
+                $voucherCount = (int) $item->voucher_count;
                 $grossAmount = round($voucherPrice * $voucherCount, 2);
 
                 $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $package->package_id);

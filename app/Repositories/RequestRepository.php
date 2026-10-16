@@ -6,6 +6,7 @@ use App\Enums\RequestStatus;
 use App\Interfaces\RequestRepositoryInterface;
 use App\Models\Request as RequestModel;
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -21,19 +22,11 @@ class RequestRepository extends BaseRepository implements RequestRepositoryInter
     }
 
     /**
-     * جلب قائمة الطلبات مع الفلترة المتقدمة والترقيم بالمؤشر.
+     * تطبيق الفلاتر الخاصة بطلبات الكروت.
      */
-    public function getFiltered(array $filters = [], array $relations = ['network', 'pos', 'createdBy', 'reviewedBy', 'items.voucherPackage']): Collection|CursorPaginator
+    protected function applyFilters(Builder $query, array $filters): void
     {
-        $query = $this->model->newQuery()->with($relations);
-
-        if (! empty($filters['network_id'])) {
-            $query->forNetwork((int) $filters['network_id']);
-        }
-
-        if (! empty($filters['pos_id'])) {
-            $query->forPos((int) $filters['pos_id']);
-        }
+        parent::applyFilters($query, $filters);
 
         if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
@@ -69,14 +62,14 @@ class RequestRepository extends BaseRepository implements RequestRepositoryInter
                     });
             });
         }
+    }
 
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('request_id', 'desc')->get();
-        }
-
-        return $query->orderBy('request_id', 'desc')->cursorPaginate($perPage);
+    /**
+     * جلب قائمة الطلبات مع الفلترة المتقدمة والترقيم بالمؤشر.
+     */
+    public function getFiltered(array $filters = [], array $relations = ['network', 'pos', 'createdBy', 'reviewedBy', 'items.voucherPackage']): Collection|CursorPaginator
+    {
+        return parent::getFiltered($filters, $relations);
     }
 
     /**
@@ -84,36 +77,7 @@ class RequestRepository extends BaseRepository implements RequestRepositoryInter
      */
     public function getTrashedFiltered(array $filters = [], array $relations = ['network', 'pos']): Collection|CursorPaginator
     {
-        $query = $this->model->newQuery()->onlyTrashed()->with($relations);
-
-        if (! empty($filters['network_id'])) {
-            $query->forNetwork((int) $filters['network_id']);
-        }
-
-        if (! empty($filters['pos_id'])) {
-            $query->forPos((int) $filters['pos_id']);
-        }
-
-        if (! empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('request_uuid', 'like', "%{$search}%")
-                    ->orWhereHas('network', function ($nq) use ($search) {
-                        $nq->where('network_name', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('pos', function ($pq) use ($search) {
-                        $pq->where('pos_name', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('request_id', 'desc')->get();
-        }
-
-        return $query->orderBy('request_id', 'desc')->cursorPaginate($perPage);
+        return parent::getTrashedFiltered($filters, $relations);
     }
 
     /**

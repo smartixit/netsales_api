@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Interfaces\DirectorateRepositoryInterface;
 use App\Models\Directorate;
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -20,31 +21,29 @@ class DirectorateRepository extends BaseRepository implements DirectorateReposit
     }
 
     /**
-     * جلب قائمة المديريات المفلترة مع الترقيم بالمؤشر.
+     * تطبيق الفلاتر الخاصة بالمديريات.
      */
-    public function getFiltered(array $filters = [], array $relations = ['governorate']): Collection|CursorPaginator
+    protected function applyFilters(Builder $query, array $filters): void
     {
-        $query = $this->model->newQuery();
-
-        if (! empty($relations)) {
-            $query->with($relations);
-        }
+        parent::applyFilters($query, $filters);
 
         if (! empty($filters['governorate_id'])) {
             $query->inGovernorate((int) $filters['governorate_id']);
         }
+    }
 
-        if (! empty($filters['search'])) {
-            $query->search(trim($filters['search']));
-        }
-
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 100);
+    /**
+     * جلب قائمة المديريات المفلترة مع الترقيم بالمؤشر.
+     */
+    public function getFiltered(array $filters = [], array $relations = ['governorate']): Collection|CursorPaginator
+    {
+        $query = $this->buildBaseFilteredQuery($filters, $relations, false);
 
         if (! empty($filters['all'])) {
             return $query->orderBy('governorate_id')->orderBy('directorate_name')->get();
         }
 
-        return $query->orderBy('directorate_id', 'desc')->cursorPaginate($perPage);
+        return $this->paginateOrAll($query, $filters);
     }
 
     /**
@@ -52,27 +51,7 @@ class DirectorateRepository extends BaseRepository implements DirectorateReposit
      */
     public function getTrashedFiltered(array $filters = [], array $relations = ['governorate']): Collection|CursorPaginator
     {
-        $query = $this->model->newQuery()->onlyTrashed();
-
-        if (! empty($relations)) {
-            $query->with($relations);
-        }
-
-        if (! empty($filters['governorate_id'])) {
-            $query->inGovernorate((int) $filters['governorate_id']);
-        }
-
-        if (! empty($filters['search'])) {
-            $query->search(trim($filters['search']));
-        }
-
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 100);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('directorate_id', 'desc')->get();
-        }
-
-        return $query->orderBy('directorate_id', 'desc')->cursorPaginate($perPage);
+        return parent::getTrashedFiltered($filters, $relations);
     }
 
     /**

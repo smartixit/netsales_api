@@ -724,7 +724,7 @@
     "request_id": [
         "StoreRequestItemRequest"
     ],
-    "item_voucher_count": [
+    "voucher_count": [
         "StoreRequestItemRequest",
         "UpdateRequestItemRequest"
     ],
@@ -739,7 +739,7 @@
         "StoreRequestRequest",
         "StoreSaleInvoiceRequest"
     ],
-    "items.*.item_voucher_count": [
+    "items.*.voucher_count": [
         "StoreRequestRequest"
     ],
     "invoice_id": [

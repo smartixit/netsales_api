@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Interfaces\NetworkWalletRepositoryInterface;
 use App\Models\NetworkWallet;
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -20,15 +21,11 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
     }
 
     /**
-     * جلب قائمة محافظ الشبكات مع تطبيق الفلاتر والترقيم بالمؤشر.
+     * تطبيق الفلاتر الخاصة بمحافظ الشبكات.
      */
-    public function getFiltered(array $filters = [], array $relations = ['network']): Collection|CursorPaginator
+    protected function applyFilters(Builder $query, array $filters): void
     {
-        $query = $this->model->newQuery()->with($relations);
-
-        if (! empty($filters['network_id'])) {
-            $query->forNetwork((int) $filters['network_id']);
-        }
+        parent::applyFilters($query, $filters);
 
         if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
             $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
@@ -53,14 +50,14 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
                     });
             });
         }
+    }
 
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('wallet_id', 'desc')->get();
-        }
-
-        return $query->orderBy('wallet_id', 'desc')->cursorPaginate($perPage);
+    /**
+     * جلب قائمة محافظ الشبكات مع تطبيق الفلاتر والترقيم بالمؤشر.
+     */
+    public function getFiltered(array $filters = [], array $relations = ['network']): Collection|CursorPaginator
+    {
+        return parent::getFiltered($filters, $relations);
     }
 
     /**
@@ -68,29 +65,7 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
      */
     public function getTrashedFiltered(array $filters = [], array $relations = ['network']): Collection|CursorPaginator
     {
-        $query = $this->model->newQuery()->onlyTrashed()->with($relations);
-
-        if (! empty($filters['network_id'])) {
-            $query->forNetwork((int) $filters['network_id']);
-        }
-
-        if (! empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('wallet_uuid', 'like', "%{$search}%")
-                    ->orWhereHas('network', function ($nq) use ($search) {
-                        $nq->where('network_name', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('wallet_id', 'desc')->get();
-        }
-
-        return $query->orderBy('wallet_id', 'desc')->cursorPaginate($perPage);
+        return parent::getTrashedFiltered($filters, $relations);
     }
 
     /**

@@ -24,23 +24,13 @@ class GovernorateRepository extends BaseRepository implements GovernorateReposit
      */
     public function getFiltered(array $filters = [], array $relations = ['directorates']): Collection|CursorPaginator
     {
-        $query = $this->model->newQuery();
-
-        if (! empty($relations)) {
-            $query->with($relations);
-        }
-
-        if (! empty($filters['search'])) {
-            $query->search(trim($filters['search']));
-        }
-
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 100);
+        $query = $this->buildBaseFilteredQuery($filters, $relations, false);
 
         if (! empty($filters['all'])) {
             return $query->orderBy('governorate_name')->get();
         }
 
-        return $query->orderBy('governorate_id', 'desc')->cursorPaginate($perPage);
+        return $this->paginateOrAll($query, $filters);
     }
 
     /**
@@ -48,23 +38,7 @@ class GovernorateRepository extends BaseRepository implements GovernorateReposit
      */
     public function getTrashedFiltered(array $filters = [], array $relations = ['directorates']): Collection|CursorPaginator
     {
-        $query = $this->model->newQuery()->onlyTrashed();
-
-        if (! empty($relations)) {
-            $query->with($relations);
-        }
-
-        if (! empty($filters['search'])) {
-            $query->search(trim($filters['search']));
-        }
-
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 100);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('governorate_id', 'desc')->get();
-        }
-
-        return $query->orderBy('governorate_id', 'desc')->cursorPaginate($perPage);
+        return parent::getTrashedFiltered($filters, $relations);
     }
 
     /**

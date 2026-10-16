@@ -17,7 +17,7 @@ class UpdateRequestItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'item_voucher_count' => [
+            'voucher_count' => [
                 'required',
                 'integer',
                 'min:1',

@@ -20,7 +20,7 @@ interface RequestItemRepositoryInterface extends BaseRepositoryInterface
     /**
      * إضافة بنود متعددة لطلب محدد دفعة واحدة.
      *
-     * @param  array<int, array{package_id: int, item_voucher_count: int}>  $items
+     * @param  array<int, array{package_id: int, voucher_count: int}>  $items
      */
     public function createManyForRequest(int $requestId, array $items): bool;
 

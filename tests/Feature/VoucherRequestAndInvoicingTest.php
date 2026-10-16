@@ -144,7 +144,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
                 'items' => [
                     [
                         'package_id' => $this->package->package_id,
-                        'item_voucher_count' => 100,
+                        'voucher_count' => 100,
                     ],
                 ],
             ]);
@@ -162,7 +162,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
         // Net Invoice Amount = 45,000
         $approveResponse = $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$requestId}/approve", [
-                'note' => 'تمت الموافقة وتجهيز الكروت',
+                'request_note' => 'تمت الموافقة وتجهيز الكروت',
             ]);
 
         $approveResponse->assertStatus(200)
@@ -204,7 +204,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
                 'items' => [
                     [
                         'package_id' => $this->package->package_id,
-                        'item_voucher_count' => 20,
+                        'voucher_count' => 20,
                     ],
                 ],
             ]);
@@ -214,7 +214,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
 
         $rejectResponse = $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$requestId}/reject", [
-                'reason' => 'نفاد الكمية المطبوعة حالياً',
+                'rejection_reason' => 'نفاد الكمية المطبوعة حالياً',
             ]);
 
         $rejectResponse->assertStatus(200)
@@ -237,7 +237,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
                 'items' => [
                     [
                         'package_id' => $this->package->package_id,
-                        'item_voucher_count' => 100,
+                        'voucher_count' => 100,
                     ],
                 ],
             ]);
@@ -250,7 +250,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
         // مع تطبيق نسبة خصم الآجل (8% = 4,000) فيكون الصافي = 46,000
         $approveResponse = $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$requestId}/approve", [
-                'note' => 'تم الاعتماد بالبيع الآجل وفق التسهيل الائتماني',
+                'request_note' => 'تم الاعتماد بالبيع الآجل وفق التسهيل الائتماني',
             ]);
 
         $approveResponse->assertStatus(200)

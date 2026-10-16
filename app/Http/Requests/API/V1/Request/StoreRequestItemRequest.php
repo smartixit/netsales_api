@@ -28,7 +28,7 @@ class StoreRequestItemRequest extends FormRequest
                 'integer',
                 Rule::exists('voucher_packages', 'package_id')->whereNull('deleted_at'),
             ],
-            'item_voucher_count' => [
+            'voucher_count' => [
                 'required',
                 'integer',
                 'min:1',

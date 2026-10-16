@@ -23,7 +23,7 @@ return new class extends Migration
                 ->cascadeOnUpdate()
                 ->restrictOnDelete();
 
-            $table->integer('item_voucher_count')->default(0);
+            $table->integer('voucher_count')->default(0);
 
             $table->timestamps();
             $table->softDeletes()->index('idx_request_items_deleted_at');

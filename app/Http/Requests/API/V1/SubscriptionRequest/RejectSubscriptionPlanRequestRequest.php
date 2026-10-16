@@ -17,12 +17,12 @@ class RejectSubscriptionPlanRequestRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'reason' => [
+            'rejection_reason' => [
                 'required',
                 'string',
                 'max:150',
             ],
-            'note' => [
+            'request_note' => [
                 'nullable',
                 'string',
                 'max:150',
@@ -32,11 +32,11 @@ class RejectSubscriptionPlanRequestRequest extends FormRequest
 
     public function getReason(): string
     {
-        return (string) $this->input('reason');
+        return (string) $this->input('rejection_reason');
     }
 
     public function getNote(): ?string
     {
-        return $this->filled('note') ? (string) $this->input('note') : null;
+        return $this->filled('request_note') ? (string) $this->input('request_note') : null;
     }
 }

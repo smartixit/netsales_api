@@ -98,7 +98,7 @@ class RequestService
 
             foreach ($items as $item) {
                 $packageId = (int) $item['package_id'];
-                $count = (int) $item['item_voucher_count'];
+                $count = (int) $item['voucher_count'];
 
                 $package = $this->voucherPackageRepository->findById($packageId);
 
@@ -118,7 +118,7 @@ class RequestService
 
                 $itemsData[] = [
                     'package_id' => $packageId,
-                    'item_voucher_count' => $count,
+                    'voucher_count' => $count,
                 ];
             }
 
@@ -146,7 +146,7 @@ class RequestService
                     type: NotificationType::INFO,
                     push: true,
                     title: '📥 طلب كروت جديد',
-                    message: "قامت نقطة البيع ({$posName}) بإنشاء طلب كروت رقم #{$createdRequest->request_uuid} بإجمالي {$formattedAmount} ر.ي."
+                    message: "قمت نقطة بيع ({$posName}) بإنشاء طلب كروت رقم #{$createdRequest->request_uuid} بإجمالي {$formattedAmount} ر.ي."
                 );
             }
 

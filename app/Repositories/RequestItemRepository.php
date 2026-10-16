@@ -41,7 +41,7 @@ class RequestItemRepository extends BaseRepository implements RequestItemReposit
             $records[] = [
                 'request_id' => $requestId,
                 'package_id' => (int) $item['package_id'],
-                'item_voucher_count' => (int) $item['item_voucher_count'],
+                'voucher_count' => (int) $item['voucher_count'],
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
             ];

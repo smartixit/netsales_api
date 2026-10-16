@@ -20,7 +20,7 @@ class RejectRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'reason' => [
+            'rejection_reason' => [
                 'required',
                 'string',
                 'min:3',
@@ -31,6 +31,6 @@ class RejectRequest extends FormRequest
 
     public function getReason(): string
     {
-        return trim((string) $this->input('reason'));
+        return trim((string) $this->input('rejection_reason'));
     }
 }

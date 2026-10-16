@@ -6,6 +6,7 @@ use App\Enums\SettingCategory;
 use App\Interfaces\SystemSettingRepositoryInterface;
 use App\Models\SystemSetting;
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -24,15 +25,11 @@ class SystemSettingRepository extends BaseRepository implements SystemSettingRep
     }
 
     /**
-     * جلب قائمة إعدادات النظام مع الفلترة والترقيم بالمؤشر.
+     * تطبيق الفلاتر الخاصة بإعدادات النظام.
      */
-    public function getFiltered(array $filters = [], array $relations = []): Collection|CursorPaginator
+    protected function applyFilters(Builder $query, array $filters): void
     {
-        $query = $this->model->newQuery();
-
-        if (! empty($relations)) {
-            $query->with($relations);
-        }
+        parent::applyFilters($query, $filters);
 
         if (! empty($filters['setting_category'])) {
             $query->category($filters['setting_category']);
@@ -43,21 +40,27 @@ class SystemSettingRepository extends BaseRepository implements SystemSettingRep
         }
 
         if (! empty($filters['search'])) {
-            $term = trim($filters['search']);
+            $term = trim((string) $filters['search']);
             $query->where(function ($q) use ($term) {
                 $q->where('setting_key', 'like', "%{$term}%")
                     ->orWhere('setting_desc', 'like', "%{$term}%")
                     ->orWhere('setting_value', 'like', "%{$term}%");
             });
         }
+    }
 
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 100);
+    /**
+     * جلب قائمة إعدادات النظام مع الفلترة والترقيم بالمؤشر.
+     */
+    public function getFiltered(array $filters = [], array $relations = []): Collection|CursorPaginator
+    {
+        $query = $this->buildBaseFilteredQuery($filters, $relations, false);
 
         if (! empty($filters['all'])) {
             return $query->orderBy('setting_category')->orderBy('setting_key')->get();
         }
 
-        return $query->orderBy('setting_id', 'desc')->cursorPaginate($perPage);
+        return $this->paginateOrAll($query, $filters);
     }
 
     /**
@@ -65,31 +68,7 @@ class SystemSettingRepository extends BaseRepository implements SystemSettingRep
      */
     public function getTrashedFiltered(array $filters = [], array $relations = []): Collection|CursorPaginator
     {
-        $query = $this->model->newQuery()->onlyTrashed();
-
-        if (! empty($relations)) {
-            $query->with($relations);
-        }
-
-        if (! empty($filters['setting_category'])) {
-            $query->category($filters['setting_category']);
-        }
-
-        if (! empty($filters['search'])) {
-            $term = trim($filters['search']);
-            $query->where(function ($q) use ($term) {
-                $q->where('setting_key', 'like', "%{$term}%")
-                    ->orWhere('setting_desc', 'like', "%{$term}%");
-            });
-        }
-
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 100);
-
-        if (! empty($filters['all'])) {
-            return $query->orderBy('setting_id', 'desc')->get();
-        }
-
-        return $query->orderBy('setting_id', 'desc')->cursorPaginate($perPage);
+        return parent::getTrashedFiltered($filters, $relations);
     }
 
     /**

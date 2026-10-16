@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Models\Network;
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -20,12 +21,10 @@ class NetworkRepository extends BaseRepository implements NetworkRepositoryInter
     }
 
     /**
-     * جلب قائمة مزودي الشبكات مع تطبيق الفلاتر والبحث والترقيم.
+     * تطبيق الفلاتر الخاصة بمزودي الشبكات.
      */
-    public function getFiltered(array $filters = [], array $relations = ['governorate', 'directorate']): Collection|CursorPaginator
+    protected function applyFilters(Builder $query, array $filters): void
     {
-        $query = $this->model->newQuery()->with($relations);
-
         if (! empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
@@ -46,14 +45,22 @@ class NetworkRepository extends BaseRepository implements NetworkRepositoryInter
         if (! empty($filters['directorate_id'])) {
             $query->inDirectorate((int) $filters['directorate_id']);
         }
+    }
 
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
+    /**
+     * جلب قائمة مزودي الشبكات مع تطبيق الفلاتر والبحث والترقيم.
+     */
+    public function getFiltered(array $filters = [], array $relations = ['governorate', 'directorate']): Collection|CursorPaginator
+    {
+        return parent::getFiltered($filters, $relations);
+    }
 
-        if (! empty($filters['all'])) {
-            return $query->orderBy('network_id', 'desc')->get();
-        }
-
-        return $query->orderBy('network_id', 'desc')->cursorPaginate($perPage);
+    /**
+     * جلب قائمة مزودي الشبكات المحذوفة مؤقتاً مع تطبيق الفلاتر والبحث والترقيم.
+     */
+    public function getTrashedFiltered(array $filters = [], array $relations = ['governorate', 'directorate']): Collection|CursorPaginator
+    {
+        return parent::getTrashedFiltered($filters, $relations);
     }
 
     /**

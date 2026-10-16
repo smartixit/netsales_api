@@ -465,9 +465,9 @@ class NetworkController extends BaseController
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['reason'],
+                    required: ['rejection_reason'],
                     properties: [
-                    new OA\Property(property: 'reason', type: 'string'),
+                    new OA\Property(property: 'rejection_reason', type: 'string'),
                     ]
                 )
             )

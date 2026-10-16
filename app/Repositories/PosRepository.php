@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Interfaces\PosRepositoryInterface;
 use App\Models\Pos;
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -20,12 +21,10 @@ class PosRepository extends BaseRepository implements PosRepositoryInterface
     }
 
     /**
-     * جلب قائمة نقاط البيع مع تطبيق الفلاتر والبحث والترقيم.
+     * تطبيق الفلاتر الخاصة بنقاط البيع.
      */
-    public function getFiltered(array $filters = [], array $relations = ['governorate', 'directorate']): Collection|CursorPaginator
+    protected function applyFilters(Builder $query, array $filters): void
     {
-        $query = $this->model->newQuery()->with($relations);
-
         if (! empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
@@ -50,14 +49,22 @@ class PosRepository extends BaseRepository implements PosRepositoryInterface
         if (! empty($filters['network_id'])) {
             $query->linkedToNetwork((int) $filters['network_id']);
         }
+    }
 
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
+    /**
+     * جلب قائمة نقاط البيع مع تطبيق الفلاتر والبحث والترقيم.
+     */
+    public function getFiltered(array $filters = [], array $relations = ['governorate', 'directorate']): Collection|CursorPaginator
+    {
+        return parent::getFiltered($filters, $relations);
+    }
 
-        if (! empty($filters['all'])) {
-            return $query->orderBy('pos_id', 'desc')->get();
-        }
-
-        return $query->orderBy('pos_id', 'desc')->cursorPaginate($perPage);
+    /**
+     * جلب قائمة نقاط البيع المحذوفة مؤقتاً مع تطبيق الفلاتر والبحث والترقيم.
+     */
+    public function getTrashedFiltered(array $filters = [], array $relations = ['governorate', 'directorate']): Collection|CursorPaginator
+    {
+        return parent::getTrashedFiltered($filters, $relations);
     }
 
     /**
