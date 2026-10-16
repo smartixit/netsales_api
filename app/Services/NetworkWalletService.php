@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\NotificationType;
 use App\Enums\SmsMessageType;
 use App\Enums\WalletOperationType;
 use App\Helpers\AmountFormatter;
@@ -12,7 +13,6 @@ use App\Http\Requests\API\V1\Network\WithdrawNetworkWalletRequest;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
 use App\Interfaces\NetworkWalletRepositoryInterface;
-use App\Jobs\SendSmsNotificationJob;
 use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
 use Exception;
@@ -29,7 +29,8 @@ class NetworkWalletService
     public function __construct(
         protected NetworkWalletRepositoryInterface $networkWalletRepository,
         protected NetworkWalletLogRepositoryInterface $networkWalletLogRepository,
-        protected NetworkRepositoryInterface $networkRepository
+        protected NetworkRepositoryInterface $networkRepository,
+        protected NotificationService $notificationService,
     ) {}
 
     /**
@@ -331,7 +332,7 @@ class NetworkWalletService
     ): void {
         $wallet->loadMissing('network');
 
-        $phoneNumber = $wallet->network?->network_phone_number;
+        $phoneNumber = $wallet->network->network_phone_number;
         if (empty($phoneNumber)) {
             return;
         }
@@ -339,19 +340,24 @@ class NetworkWalletService
         $networkName = $wallet->network?->network_name ?? "شبكة #{$wallet->network_id}";
         $balance = $currentBalance ?? (float) $wallet->wallet_balance;
 
-        $formattedAmount = AmountFormatter::formatWithCurrency($amount, 'YER');
-        $formattedBalance = AmountFormatter::formatWithCurrency($balance, 'YER');
+        $formattedAmount = AmountFormatter::formatWithCurrency($amount, systemSetting('base_currency', 'YER'));
+        $formattedBalance = AmountFormatter::formatWithCurrency($balance, systemSetting('base_currency', 'YER'));
 
         $actionText = ($action === 'receipt') ? 'لكم سند قبض' : 'عليكم سند صرف';
         $reasonText = $reason ? " ({$reason})" : '';
 
         $message = "شبكة {$networkName}: {$actionText}{$reasonText} بمبلغ {$formattedAmount} رصيدكم {$formattedBalance}";
 
-        SendSmsNotificationJob::dispatch(
-            phoneNumbers: $phoneNumber,
+        $this->notificationService->sendDirect(
+            userId: $wallet->network->owner_id,
+            type: NotificationType::TRANSACTION,
+            title: 'حركة مالية',
             message: $message,
-            recipientId: $wallet->network_id,
-            messageType: ($action === 'receipt') ? SmsMessageType::RECEIPT : SmsMessageType::PAYMENT
+            inApp: true,
+            push: true,
+            sms: true,
+            networkId: $wallet->network_id,
+            smsMessageType: ($action === 'receipt') ? SmsMessageType::RECEIPT : SmsMessageType::PAYMENT
         );
     }
 }

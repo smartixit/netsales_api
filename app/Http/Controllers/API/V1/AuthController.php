@@ -4,7 +4,7 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Http\Requests\API\V1\Auth\LoginRequest;
 use App\Http\Requests\API\V1\Auth\RegisterPosRequest;
-use App\Http\Requests\API\V1\Auth\RegisterRequest;
+use App\Http\Requests\API\V1\Auth\RegisterNetworkRequest;
 use App\Http\Requests\API\V1\Auth\RequestPasswordResetRequest;
 use App\Http\Requests\API\V1\Auth\ResetPasswordRequest;
 use App\Http\Requests\API\V1\Auth\ToggleTwoFactorRequest;
@@ -48,13 +48,11 @@ class AuthController extends BaseController
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['network_name', 'network_holder_name', 'governorate_id', 'directorate_id', 'network_phone_number', 'user_full_name', 'user_phone_number', 'user_password', 'device_uuid'],
+                    required: ['network_name', 'governorate_id', 'directorate_id', 'user_full_name', 'user_phone_number', 'user_password', 'device_uuid'],
                     properties: [
                         new OA\Property(property: 'network_name', type: 'string', example: 'شبكة سمارتكس'),
-                        new OA\Property(property: 'network_holder_name', type: 'string', example: 'حسام خالد سعيد علي'),
                         new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
                         new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
-                        new OA\Property(property: 'network_phone_number', type: 'string', example: '772957881'),
                         new OA\Property(property: 'network_email', type: 'string', format: 'email', example: 'network@example.com'),
                         new OA\Property(property: 'network_address', type: 'string', example: 'شارع حدة، صنعاء'),
                         new OA\Property(property: 'network_profile_logo', type: 'string', format: 'binary', description: 'شعار الشبكة'),
@@ -76,7 +74,7 @@ class AuthController extends BaseController
             new OA\Response(response: 500, description: 'خطأ في الخادم الداخلي'),
         ]
     )]
-    public function registerNetwork(RegisterRequest $request): JsonResponse
+    public function registerNetwork(RegisterNetworkRequest $request): JsonResponse
     {
         try {
             $result = $this->authService->registerNetwork($request);
@@ -110,13 +108,11 @@ class AuthController extends BaseController
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['pos_name', 'pos_holder_name', 'governorate_id', 'directorate_id', 'pos_phone_number', 'user_full_name', 'user_phone_number', 'user_password', 'device_uuid'],
+                    required: ['pos_name', 'governorate_id', 'directorate_id', 'user_full_name', 'user_phone_number', 'user_password', 'device_uuid'],
                     properties: [
                         new OA\Property(property: 'pos_name', type: 'string', example: 'نقطة بيع النور'),
-                        new OA\Property(property: 'pos_holder_name', type: 'string', example: 'خالد عبد الله'),
                         new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
                         new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
-                        new OA\Property(property: 'pos_phone_number', type: 'string', example: '771234567'),
                         new OA\Property(property: 'pos_email', type: 'string', format: 'email', example: 'pos@example.com'),
                         new OA\Property(property: 'pos_address', type: 'string', example: 'حي الصافية، صنعاء'),
                         new OA\Property(property: 'pos_profile_logo', type: 'string', format: 'binary', description: 'شعار نقطة البيع'),

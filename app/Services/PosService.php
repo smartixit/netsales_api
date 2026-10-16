@@ -76,10 +76,8 @@ class PosService
             $logo = $request->file('pos_profile_logo') ?? $request->file('logo');
             $data = [
                 'pos_name' => (string) $request->pos_name,
-                'pos_holder_name' => (string) ($request->pos_holder_name ?? $request->pos_name),
                 'governorate_id' => (int) $request->governorate_id,
                 'directorate_id' => (int) $request->directorate_id,
-                'pos_phone_number' => (string) ($request->pos_phone_number ?? $request->pos_phone),
                 'pos_email' => $request->pos_email,
                 'pos_address' => $request->pos_address,
                 'status' => $request->status ?? PosStatus::ACTIVE,
@@ -88,6 +86,12 @@ class PosService
             $data = $request;
         }
 
+        $ownerId = auth()->id() ?? $data['owner_id'];
+        $owner = $this->userRepository->findById($ownerId);
+        $data['owner_id'] = $owner->user_id;
+        $data['pos_phone_number'] = (string) $owner->user_phone_number;
+        // unset($data['pos_holder_name']);
+
         return DB::transaction(function () use ($data, $logo) {
             if ($logo) {
                 $data['pos_profile_logo'] = $this->fileUploadService->uploadFile($logo, 'pos/logos');
@@ -95,7 +99,7 @@ class PosService
 
             $pos = $this->posRepository->create($data);
 
-            return $pos->load(['governorate', 'directorate']);
+            return $pos->load(['governorate', 'directorate', 'owner']);
         });
     }
 
@@ -116,10 +120,8 @@ class PosService
             $logo = $request->file('pos_profile_logo') ?? $request->file('logo');
             $data = array_filter([
                 'pos_name' => $request->pos_name,
-                'pos_holder_name' => $request->pos_holder_name,
                 'governorate_id' => $request->governorate_id !== null ? (int) $request->governorate_id : null,
                 'directorate_id' => $request->directorate_id !== null ? (int) $request->directorate_id : null,
-                'pos_phone_number' => $request->pos_phone_number ?? $request->pos_phone,
                 'pos_email' => $request->pos_email,
                 'pos_address' => $request->pos_address,
                 'status' => $request->status,
@@ -274,8 +276,8 @@ class PosService
                 $this->networkPosRepository->bulkToggleStatus($linkIdsToActivate, true);
             }
 
-            // تفعيل المستخدم والجهاز المرتبط برقم هاتف نقطة البيع
-            $user = $this->userRepository->findByPhone($pos->pos_phone_number);
+            // تفعيل المستخدم والجهاز المرتبط بمالك نقطة البيع
+            $user = $pos->owner;
             if ($user) {
                 $this->userRepository->update($user->user_id, ['status' => UserStatus::ACTIVE]);
                 $devices = $this->userDeviceRepository->getDevicesForUser($user->user_id);
@@ -287,18 +289,18 @@ class PosService
                     userId: (int) $user->user_id,
                     type: NotificationType::ACCOUNT_APPROVAL,
                     title: 'تمت الموافقة على طلب تسجيل نقطة البيع',
-                    message: "تهانينا! تمت الموافقة على طلب تسجيل نقطة البيع {$pos->pos_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام.",
+                    message: "تهانينا! تمت الموافقة على طلب تسجيل نقطة بيع {$pos->pos_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام.",
                     inApp: true,
                     push: true,
                     sms: true,
                     email: true,
                     networkId: null,
                     smsMessageType: SmsMessageType::ADMIN_BROADCAST,
-                    emailSubject: 'الموافقة على طلب نقطة البيع - NetSales'
+                    emailSubject: 'الموافقة على طلب تسجيل نقطة البيع - NetSales'
                 );
             }
 
-            return $pos->load(['governorate', 'directorate']);
+            return $pos->load(['governorate', 'directorate', 'owner']);
         });
     }
 
@@ -325,13 +327,13 @@ class PosService
 
             $pos->refresh();
 
-            $user = $this->userRepository->findByPhone($pos->pos_phone_number);
+            $user = $pos->owner;
             if ($user) {
                 $this->notificationService->sendDirect(
                     userId: (int) $user->user_id,
                     type: NotificationType::ACCOUNT_REJECTION,
                     title: 'تم رفض طلب تسجيل نقطة البيع',
-                    message: "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل نقطة البيع {$pos->pos_name}. السبب: {$reason}",
+                    message: "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل نقطة بيع {$pos->pos_name}. السبب: {$reason}",
                     inApp: true,
                     push: true,
                     sms: true,

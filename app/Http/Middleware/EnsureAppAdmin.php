@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\RoleKey;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,7 +18,7 @@ class EnsureAppAdmin
 
         $isSuperAdmin = $user !== null && (
             (int) $user->role_id === 1
-            || $user->role?->role_key === 'super_admin'
+            || $user->role?->role_key === RoleKey::SUPER_ADMIN->value
         );
 
         if (! $isSuperAdmin) {

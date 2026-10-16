@@ -22,12 +22,6 @@ class UpdatePosRequest extends FormRequest
         if (is_string($this->pos_name)) {
             $data['pos_name'] = trim($this->pos_name);
         }
-        if (is_string($this->pos_holder_name)) {
-            $data['pos_holder_name'] = trim($this->pos_holder_name);
-        }
-        if (is_string($this->pos_phone_number)) {
-            $data['pos_phone_number'] = trim($this->pos_phone_number);
-        }
         if (is_string($this->pos_email)) {
             $data['pos_email'] = trim(strtolower($this->pos_email));
         }
@@ -49,22 +43,6 @@ class UpdatePosRequest extends FormRequest
                 Rule::unique('pos', 'pos_name')
                     ->ignore($posId, 'pos_id')
                     ->whereNull('deleted_at'),
-            ],
-            'pos_holder_name' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:100',
-            ],
-            'pos_phone_number' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:20',
-                'regex:/^[0-9+\-\s()]+$/',
-                // Rule::unique('pos', 'pos_phone_number')
-                //     ->ignore($posId, 'pos_id')
-                //     ->whereNull('deleted_at'),
             ],
             'pos_email' => [
                 'nullable',

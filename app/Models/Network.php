@@ -30,10 +30,10 @@ class Network extends Model
     public $timestamps = true;
 
     protected $fillable = [
+        'owner_id',
         'network_uuid',
         'network_name',
         'network_profile_logo',
-        'network_holder_name',
         'network_phone_number',
         'network_email',
         'network_address',
@@ -67,6 +67,11 @@ class Network extends Model
     }
 
     // Relationships
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id', 'user_id');
+    }
+
     public function governorate(): BelongsTo
     {
         return $this->belongsTo(Governorate::class, 'governorate_id', 'governorate_id');

@@ -71,7 +71,7 @@ if (! function_exists('formatWithCurrency')) {
      */
     function formatWithCurrency(
         float|int|string|null $amount,
-        string $currency = 'YER',
+        string $currency = systemSetting('base_currency', 'YER'),
         int $maxDecimals = 2,
         bool $space = false,
         bool $trimZeroDecimals = false

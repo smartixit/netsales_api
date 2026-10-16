@@ -22,9 +22,6 @@ class UpdateNetworkRequest extends FormRequest
         if (is_string($this->network_name)) {
             $data['network_name'] = trim($this->network_name);
         }
-        if (is_string($this->network_phone)) {
-            $data['network_phone'] = trim($this->network_phone);
-        }
         if (! empty($data)) {
             $this->merge($data);
         }
@@ -55,16 +52,6 @@ class UpdateNetworkRequest extends FormRequest
                 'required',
                 'integer',
                 Rule::exists('directorates', 'directorate_id')->whereNull('deleted_at'),
-            ],
-            'network_phone' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:20',
-                'regex:/^[0-9+\-\s()]+$/',
-                // Rule::unique('networks', 'network_phone')
-                //     ->ignore($networkId, 'network_id')
-                //     ->whereNull('deleted_at'),
             ],
             'network_address' => [
                 'nullable',

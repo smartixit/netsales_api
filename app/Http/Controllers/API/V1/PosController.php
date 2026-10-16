@@ -107,11 +107,9 @@ class PosController extends BaseController
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['pos_name', 'pos_holder_name', 'pos_phone_number', 'governorate_id', 'directorate_id'],
+                    required: ['pos_name', 'governorate_id', 'directorate_id'],
                     properties: [
                     new OA\Property(property: 'pos_name', type: 'string'),
-                    new OA\Property(property: 'pos_holder_name', type: 'string'),
-                    new OA\Property(property: 'pos_phone_number', type: 'string'),
                     new OA\Property(property: 'pos_email', type: 'string', format: 'email', example: 'user@example.com'),
                     new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
                     new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
@@ -159,8 +157,6 @@ class PosController extends BaseController
                     required: [],
                     properties: [
                     new OA\Property(property: 'pos_name', type: 'string'),
-                    new OA\Property(property: 'pos_holder_name', type: 'string'),
-                    new OA\Property(property: 'pos_phone_number', type: 'string'),
                     new OA\Property(property: 'pos_email', type: 'string', format: 'email', example: 'user@example.com'),
                     new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
                     new OA\Property(property: 'directorate_id', type: 'integer', example: 1),

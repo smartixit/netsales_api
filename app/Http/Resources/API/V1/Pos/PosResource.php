@@ -25,10 +25,11 @@ class PosResource extends JsonResource
     {
         return [
             'pos_id' => $this->pos_id,
+            'owner_id' => $this->owner_id,
             'pos_uuid' => $this->pos_uuid,
             'pos_name' => $this->pos_name,
             'pos_profile_logo' => $this->pos_profile_logo,
-            'pos_holder_name' => $this->pos_holder_name,
+            'pos_holder_name' => $this->owner->user_full_name,
             'pos_phone_number' => $this->pos_phone_number,
             'pos_email' => $this->pos_email,
             'governorate_id' => $this->governorate_id,
@@ -48,6 +49,7 @@ class PosResource extends JsonResource
             
 
             // Eager Loaded Relationships
+            'owner' => $this->whenLoaded('owner', fn () => new UserResource($this->owner)),
             'governorate' => $this->whenLoaded('governorate', fn () => new GovernorateResource($this->governorate)),
             'directorate' => $this->whenLoaded('directorate', fn () => new DirectorateResource($this->directorate)),
             'approved_by_user' => $this->whenLoaded('approvedBy', fn () => new UserResource($this->approvedBy)),

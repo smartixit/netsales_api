@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Enums\BackupStatus;
 use App\Enums\BackupType;
 use App\Enums\NotificationType;
+use App\Enums\RoleKey;
 use App\Models\BackupJob;
 use App\Models\Role;
 use App\Models\User;
@@ -197,7 +198,7 @@ class BackupAuto extends Command
     protected function sendFailureAlertsToSuperAdmin(BackupSettingsService $settings, string $reason, Carbon $now): void
     {
         try {
-            $roleIds = Role::whereIn('role_name', ['Super Admin', 'super_admin', 'Admin'])
+            $roleIds = Role::where('role_key', RoleKey::SUPER_ADMIN->value)
                 ->orWhere('role_id', 1)
                 ->pluck('role_id')
                 ->all();

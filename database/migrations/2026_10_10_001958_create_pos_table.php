@@ -13,11 +13,15 @@ return new class extends Migration
     {
         Schema::create('pos', function (Blueprint $table) {
             $table->id('pos_id');
+            $table->foreignId('owner_id')
+                ->unique('uq_pos_owner_id')
+                ->constrained('users', 'user_id')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
             $table->string('pos_uuid', 50)->unique('uq_pos_uuid');
             $table->string('pos_name', 50)->unique('uq_pos_name');
             $table->string('pos_profile_logo', 150)->nullable();
-            $table->string('pos_holder_name', 50);
-            $table->string('pos_phone_number', 20);
+            $table->string('pos_phone_number', 20)->unique('uq_pos_phone_number');
             $table->string('pos_email', 50)->nullable();
 
             $table->foreignId('governorate_id')

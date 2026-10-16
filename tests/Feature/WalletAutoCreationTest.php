@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Enums\UserStatus;
 use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\NetworkWalletRepositoryInterface;
@@ -55,8 +56,8 @@ class WalletAutoCreationTest extends TestCase
         $admin = User::firstOrFail();
 
         $network = $this->networkRepository->create([
+            'owner_id' => $admin->user_id,
             'network_name' => 'Test Telecom',
-            'network_holder_name' => 'John Doe',
             'governorate_id' => $gov->governorate_id,
             'directorate_id' => $dir->directorate_id,
             'network_phone_number' => '777111222',
@@ -84,9 +85,18 @@ class WalletAutoCreationTest extends TestCase
         $gov = Governorate::firstOrCreate(['governorate_name' => 'Aden']);
         $dir = Directorate::firstOrCreate(['governorate_id' => $gov->governorate_id, 'directorate_name' => 'Crater']);
 
+        $admin = User::firstOrFail();
+        $posUser = User::create([
+            'role_id' => $admin->role_id,
+            'user_full_name' => 'Retailer 1',
+            'user_phone_number' => '733999888',
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+
         $network = $this->networkRepository->create([
+            'owner_id' => $admin->user_id,
             'network_name' => 'Aden Net',
-            'network_holder_name' => 'Net Admin',
             'governorate_id' => $gov->governorate_id,
             'directorate_id' => $dir->directorate_id,
             'network_phone_number' => '733111222',
@@ -94,8 +104,8 @@ class WalletAutoCreationTest extends TestCase
         ]);
 
         $pos = $this->posRepository->create([
+            'owner_id' => $posUser->user_id,
             'pos_name' => 'Shop 1',
-            'pos_holder_name' => 'Retailer 1',
             'governorate_id' => $gov->governorate_id,
             'directorate_id' => $dir->directorate_id,
             'pos_phone_number' => '733999888',
@@ -123,9 +133,17 @@ class WalletAutoCreationTest extends TestCase
         $dir = Directorate::firstOrCreate(['governorate_id' => $gov->governorate_id, 'directorate_name' => 'Al-Qahirah']);
         $admin = User::firstOrFail();
 
+        $posUser2 = User::create([
+            'role_id' => $admin->role_id,
+            'user_full_name' => 'Pending Retailer',
+            'user_phone_number' => '711999888',
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::PENDING,
+        ]);
+
         $network1 = $this->networkRepository->create([
+            'owner_id' => $admin->user_id,
             'network_name' => 'Net 1',
-            'network_holder_name' => 'Admin 1',
             'governorate_id' => $gov->governorate_id,
             'directorate_id' => $dir->directorate_id,
             'network_phone_number' => '711111222',
@@ -133,8 +151,8 @@ class WalletAutoCreationTest extends TestCase
         ]);
 
         $pos = $this->posRepository->create([
+            'owner_id' => $posUser2->user_id,
             'pos_name' => 'Pending Shop',
-            'pos_holder_name' => 'Pending Retailer',
             'governorate_id' => $gov->governorate_id,
             'directorate_id' => $dir->directorate_id,
             'pos_phone_number' => '711999888',
@@ -166,10 +184,11 @@ class WalletAutoCreationTest extends TestCase
     {
         $gov = Governorate::firstOrCreate(['governorate_name' => 'Ibb']);
         $dir = Directorate::firstOrCreate(['governorate_id' => $gov->governorate_id, 'directorate_name' => 'Al-Mashannah']);
+        $admin = User::firstOrFail();
 
         $network = $this->networkRepository->create([
+            'owner_id' => $admin->user_id,
             'network_name' => 'Isolated Net',
-            'network_holder_name' => 'Network Admin',
             'governorate_id' => $gov->governorate_id,
             'directorate_id' => $dir->directorate_id,
             'network_phone_number' => '733000111',

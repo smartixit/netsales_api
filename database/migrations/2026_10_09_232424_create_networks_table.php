@@ -13,10 +13,13 @@ return new class extends Migration
     {
         Schema::create('networks', function (Blueprint $table) {
             $table->id('network_id');
+            $table->foreignId('owner_id')
+                ->constrained('users', 'user_id')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
             $table->string('network_uuid', 50)->unique('uq_networks_network_uuid');
             $table->string('network_name', 50)->unique('uq_networks_network_name');
             $table->string('network_profile_logo', 150)->nullable();
-            $table->string('network_holder_name', 50);
             $table->string('network_phone_number', 20);
             $table->string('network_email', 50)->nullable();
 
@@ -50,6 +53,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes()->index('idx_networks_deleted_at');
 
+            $table->index('owner_id', 'idx_networks_owner_id');
             $table->index('governorate_id', 'idx_networks_governorate_id');
             $table->index('directorate_id', 'idx_networks_directorate_id');
             $table->index('approved_by', 'idx_networks_approved_by');

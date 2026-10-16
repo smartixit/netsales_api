@@ -25,10 +25,11 @@ class NetworkResource extends JsonResource
     {
         return [
             'network_id' => $this->network_id,
+            'owner_id' => $this->owner_id,
             'network_uuid' => $this->network_uuid,
             'network_name' => $this->network_name,
             'network_profile_logo' => $this->network_profile_logo,
-            'network_holder_name' => $this->network_holder_name,
+            'network_holder_name' => $this->owner->user_full_name,
             'network_phone_number' => $this->network_phone_number,
             'network_email' => $this->network_email,
             'governorate_id' => $this->governorate_id,
@@ -48,6 +49,7 @@ class NetworkResource extends JsonResource
             
 
             // Eager Loaded Relationships
+            'owner' => $this->whenLoaded('owner', fn () => new UserResource($this->owner)),
             'governorate' => $this->whenLoaded('governorate', fn () => new GovernorateResource($this->governorate)),
             'directorate' => $this->whenLoaded('directorate', fn () => new DirectorateResource($this->directorate)),
             'approved_by_user' => $this->whenLoaded('approvedBy', fn () => new UserResource($this->approvedBy)),

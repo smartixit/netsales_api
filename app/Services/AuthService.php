@@ -7,14 +7,13 @@ use App\Enums\NetworkStatus;
 use App\Enums\NotificationType;
 use App\Enums\OtpType;
 use App\Enums\PosStatus;
-use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\RoleKey;
 use App\Enums\SmsMessageType;
 use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
+use App\Http\Requests\Api\V1\Auth\RegisterNetworkRequest;
 use App\Http\Requests\Api\V1\Auth\RegisterPosRequest;
-use App\Http\Requests\Api\V1\Auth\RegisterRequest;
 use App\Http\Requests\Api\V1\Auth\RequestPasswordResetRequest;
 use App\Http\Requests\Api\V1\Auth\ResetPasswordRequest;
 use App\Http\Requests\Api\V1\Auth\ToggleTwoFactorRequest;
@@ -22,10 +21,7 @@ use App\Http\Requests\Api\V1\Auth\UpdatePasswordRequest;
 use App\Http\Requests\Api\V1\Auth\VerifyResetOtpRequest;
 use App\Http\Requests\Api\V1\Auth\VerifyTwoFactorRequest;
 use App\Interfaces\NetworkRepositoryInterface;
-use App\Interfaces\NetworkSmsSettingRepositoryInterface;
-use App\Interfaces\NetworkWalletRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
-use App\Interfaces\PosWalletRepositoryInterface;
 use App\Interfaces\SecurityBanRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
@@ -34,15 +30,11 @@ use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\Pos;
-use App\Models\ProviderSubscription;
 use App\Models\Role;
-use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Models\UserDevice;
 use App\Services\Support\EmailNotificationService;
 use App\Services\Support\FileUploadService;
-use App\Services\SystemLoggerService;
-use App\Services\SystemSettingService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -300,14 +292,6 @@ class AuthService
                 "• العنوان (IP): {$ip}\n".
                 "• الوقت: {$time}";
 
-            // إشعار المستخدم عبر SMS إذا كان جهازاً ثانوياً
-            // if (! $existingDevice->is_primary) {
-            //     SendSmsNotificationJob::dispatch(
-            //         $user->user_phone_number,
-            //         $body,
-            //     );
-            // }
-
             if (! $existingDevice->is_primary) {
                 $this->notificationService->sendDirect(
                     userId: (int) $user->user_id,
@@ -341,63 +325,12 @@ class AuthService
      */
     protected function verifyUserEntityStatus(User $user): void
     {
-        // 1. إذا كان المستخدم مزود شبكة
-        if ($user->hasRole(RoleKey::NETWORK_ADMIN) || $user->hasRole(RoleKey::NETWORK_OWNER)) {
-            $network = Network::where('network_phone_number', $user->user_phone_number)->first();
+        // 1. مزود الشبكة: كل شبكة منفصلة عن الأخرى وحالة شبكة معينة لا تمنع المستخدم من تسجيل الدخول إلى حسابه.
+        // يتم التحقق من حالة الشبكة وصلاحية اشتراكها عند تنفيذ العمليات على الشبكة المحددة.
 
-            if ($network) {
-                $status = $network->status instanceof NetworkStatus ? $network->status : NetworkStatus::tryFrom((string) $network->status);
-
-                if ($status === NetworkStatus::PENDING) {
-                    throw ValidationException::withMessages([
-                        'user_phone_number' => ['طلب مزود الشبكة قيد المراجعة والاعتماد من قبل إدارة النظام.'],
-                    ]);
-                }
-
-                if ($status === NetworkStatus::REJECTED) {
-                    $reason = $network->rejection_reason ?: 'تم رفض الطلب من قِبل إدارة النظام.';
-                    throw ValidationException::withMessages([
-                        'user_phone_number' => ["تم رفض طلب مزود الشبكة. السبب: {$reason}"],
-                    ]);
-                }
-
-                if ($status === NetworkStatus::BANNED) {
-                    throw ValidationException::withMessages([
-                        'user_phone_number' => ['مزود الشبكة محظور من قِبل إدارة النظام.'],
-                    ]);
-                }
-
-                if ($status === NetworkStatus::INACTIVE) {
-                    throw ValidationException::withMessages([
-                        'user_phone_number' => ['مزود الشبكة غير مفعّل. يرجى التواصل مع إدارة النظام.'],
-                    ]);
-                }
-
-                // فحص صلاحية اشتراك الشبكة مع احتساب فترة السماح (Grace Period) وتعليق الحساب التلقائي من إعدادات النظام
-                $graceDays = $this->systemSettingService->getInt('grace_period_days', 3);
-                $autoSuspend = $this->systemSettingService->getBool('auto_suspend_expired', true);
-
-                $hasSubscription = ProviderSubscription::where('network_id', $network->network_id)
-                    ->where('status', ProviderSubscriptionStatus::ACTIVE)
-                    ->where(function ($q) use ($graceDays) {
-                        $q->whereNull('subscription_end_date')
-                            ->orWhere('subscription_end_date', '>', now('Asia/Aden')->subDays($graceDays));
-                    })
-                    ->exists();
-
-                // إذا كان لدى الشبكة اشتراكات مسجلة ولكن جميعها تجاوزت فترة الصلاحية والسماح
-                $hasAnySubscription = ProviderSubscription::where('network_id', $network->network_id)->exists();
-                if ($hasAnySubscription && ! $hasSubscription && $autoSuspend) {
-                    throw ValidationException::withMessages([
-                        'user_phone_number' => ['انتهت صلاحية اشتراك الشبكة وفترة السماح الممنوحة، يرجى تجديد الاشتراك للمتابعة.'],
-                    ]);
-                }
-            }
-        }
-
-        // 2. إذا كان المستخدم وكيل نقطة بيع
+        // 2. إذا كان المستخدم وكيل نقطة بيع (يمتلك نقطة بيع واحدة مرتبطة به)
         if ($user->hasRole(RoleKey::POS_AGENT)) {
-            $pos = Pos::where('pos_phone_number', $user->user_phone_number)->first();
+            $pos = $user->pos;
 
             if ($pos) {
                 $status = $pos->status instanceof PosStatus ? $pos->status : PosStatus::tryFrom((string) $pos->status);
@@ -451,7 +384,7 @@ class AuthService
         return DB::transaction(function () use ($user, $request) {
             $incomingDeviceId = (string) $request->device_uuid;
             $deviceName = (string) ($request->device_name ?? 'جهاز المستخدم');
-            $deviceType = (string) ($request->device_type ?? 'WEB');
+            $deviceType = (string) ($request->device_type ?? 'UNKNOWN');
             $deviceTypeEnum = DeviceType::tryFrom(strtoupper($deviceType)) ?? DeviceType::UNKNOWN;
 
             $existingDevices = $this->userDeviceRepository->getDevicesForUser($user->user_id);
@@ -526,43 +459,23 @@ class AuthService
      *
      * @return array<string, mixed>
      */
-    public function registerNetwork(RegisterRequest $request): array
+    public function registerNetwork(RegisterNetworkRequest $request): array
     {
         return DB::transaction(function () use ($request) {
             // 1. استخراج دور مدير أو مالك الشبكة
-            $role = Role::whereIn('role_key', [RoleKey::NETWORK_ADMIN->value, RoleKey::NETWORK_OWNER->value])->first();
+            $role = Role::where('role_key', RoleKey::NETWORK_OWNER->value)->first();
             if (! $role) {
                 throw new RuntimeException('دور مدير أو مالك الشبكة غير معرف في النظام.');
             }
 
-            // 2. رفع شعار الشبكة إن وُجد
-            $networkProfileLogo = $request->file('network_profile_logo');
-            $networkLogoPath = null;
-            if ($networkProfileLogo) {
-                $networkLogoPath = $this->fileUploadService->uploadFile($networkProfileLogo, 'networks/logos');
-            }
-
-            // 3. إنشاء سجل الشبكة بحالة PENDING عبر المستودع
-            $network = $this->networkRepository->create([
-                'network_name' => (string) $request->network_name,
-                'network_holder_name' => (string) $request->network_holder_name,
-                'governorate_id' => (int) $request->governorate_id,
-                'directorate_id' => (int) $request->directorate_id,
-                'network_phone_number' => (string) $request->network_phone_number,
-                'network_email' => $request->network_email,
-                'network_address' => $request->network_address,
-                'network_profile_logo' => $networkLogoPath,
-                'status' => NetworkStatus::PENDING,
-            ]);
-
-            // 4. رفع الصورة الشخصية للمسؤول إن وُجدت
+            // 2. رفع الصورة الشخصية للمسؤول إن وُجدت
             $userLogoPath = null;
             $uploadedUserPic = $request->file('user_profile_logo') ?? $request->file('profile_picture');
             if ($uploadedUserPic instanceof UploadedFile) {
                 $userLogoPath = $this->fileUploadService->uploadProfilePicture($uploadedUserPic, 'users');
             }
 
-            // 5. إنشاء حساب المستخدم بحالة PENDING عبر المستودع
+            // 3. إنشاء حساب المستخدم أولاً بحالة PENDING عبر المستودع
             $user = $this->userRepository->create([
                 'role_id' => $role->role_id,
                 'user_full_name' => (string) $request->user_full_name,
@@ -575,8 +488,28 @@ class AuthService
                 'status' => UserStatus::PENDING,
             ]);
 
+            // 4. رفع شعار الشبكة إن وُجد
+            $networkProfileLogo = $request->file('network_profile_logo');
+            $networkLogoPath = null;
+            if ($networkProfileLogo) {
+                $networkLogoPath = $this->fileUploadService->uploadFile($networkProfileLogo, 'networks/logos');
+            }
+
+            // 5. إنشاء سجل الشبكة بحالة PENDING مرتبطاً بمالكها
+            $network = $this->networkRepository->create([
+                'owner_id' => $user->user_id,
+                'network_name' => (string) $request->network_name,
+                'governorate_id' => (int) $request->governorate_id,
+                'directorate_id' => (int) $request->directorate_id,
+                'network_phone_number' => (string) $user->user_phone_number,
+                'network_email' => $request->network_email,
+                'network_address' => $request->network_address,
+                'network_profile_logo' => $networkLogoPath,
+                'status' => NetworkStatus::PENDING,
+            ]);
+
             // 6. تسجيل الجهاز كجهاز أساسي بحالة PENDING عبر المستودع
-            $deviceType = (string) ($request->device_type ?? 'WEB');
+            $deviceType = (string) ($request->device_type ?? 'UNKNOWN');
             $deviceTypeEnum = DeviceType::tryFrom(strtoupper($deviceType)) ?? DeviceType::UNKNOWN;
 
             $this->userDeviceRepository->registerOrUpdateDevice(
@@ -616,20 +549,40 @@ class AuthService
                 throw new RuntimeException('دور وكيل نقطة البيع غير معرف في النظام.');
             }
 
-            // 2. رفع شعار نقطة البيع إن وُجد
+            // 2. رفع الصورة الشخصية للوكيل إن وُجدت
+            $userLogoPath = null;
+            $uploadedUserPic = $request->file('user_profile_logo') ?? $request->file('profile_picture');
+            if ($uploadedUserPic instanceof UploadedFile) {
+                $userLogoPath = $this->fileUploadService->uploadProfilePicture($uploadedUserPic, 'users');
+            }
+
+            // 3. إنشاء حساب المستخدم أولاً بحالة PENDING عبر المستودع
+            $user = $this->userRepository->create([
+                'role_id' => $role->role_id,
+                'user_full_name' => (string) $request->user_full_name,
+                'user_phone_number' => (string) $request->user_phone_number,
+                'user_email' => $request->user_email,
+                'user_password' => Hash::make((string) $request->user_password),
+                'user_profile_logo' => $userLogoPath,
+                'user_2fa_enabled' => false,
+                'user_login_attempts' => 0,
+                'status' => UserStatus::PENDING,
+            ]);
+
+            // 4. رفع شعار نقطة البيع إن وُجد
             $posProfileLogo = $request->file('pos_profile_logo');
             $posLogoPath = null;
             if ($posProfileLogo) {
                 $posLogoPath = $this->fileUploadService->uploadFile($posProfileLogo, 'pos/logos');
             }
 
-            // 3. إنشاء سجل نقطة البيع بحالة PENDING عبر المستودع
+            // 5. إنشاء سجل نقطة البيع بحالة PENDING مرتبطاً بوكيلها
             $pos = $this->posRepository->create([
+                'owner_id' => $user->user_id,
                 'pos_name' => (string) $request->pos_name,
-                'pos_holder_name' => (string) $request->pos_holder_name,
                 'governorate_id' => (int) $request->governorate_id,
                 'directorate_id' => (int) $request->directorate_id,
-                'pos_phone_number' => (string) $request->pos_phone_number,
+                'pos_phone_number' => (string) $user->user_phone_number,
                 'pos_email' => $request->pos_email,
                 'pos_address' => $request->pos_address,
                 'pos_profile_logo' => $posLogoPath,
@@ -645,28 +598,8 @@ class AuthService
                 ]);
             }
 
-            // 4. رفع الصورة الشخصية للوكيل إن وُجدت
-            $userLogoPath = null;
-            $uploadedUserPic = $request->file('user_profile_logo') ?? $request->file('profile_picture');
-            if ($uploadedUserPic instanceof UploadedFile) {
-                $userLogoPath = $this->fileUploadService->uploadProfilePicture($uploadedUserPic, 'users');
-            }
-
-            // 5. إنشاء حساب المستخدم بحالة PENDING عبر المستودع
-            $user = $this->userRepository->create([
-                'role_id' => $role->role_id,
-                'user_full_name' => (string) $request->user_full_name,
-                'user_phone_number' => (string) $request->user_phone_number,
-                'user_email' => $request->user_email,
-                'user_password' => Hash::make((string) $request->user_password),
-                'user_profile_logo' => $userLogoPath,
-                'user_2fa_enabled' => false,
-                'user_login_attempts' => 0,
-                'status' => UserStatus::PENDING,
-            ]);
-
             // 6. تسجيل الجهاز كجهاز أساسي بحالة PENDING عبر المستودع
-            $deviceType = (string) ($request->device_type ?? 'WEB');
+            $deviceType = (string) ($request->device_type ?? 'UNKNOWN');
             $deviceTypeEnum = DeviceType::tryFrom(strtoupper($deviceType)) ?? DeviceType::UNKNOWN;
 
             $this->userDeviceRepository->registerOrUpdateDevice(

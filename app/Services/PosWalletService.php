@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\NotificationType;
 use App\Enums\SmsMessageType;
 use App\Enums\WalletOperationType;
 use App\Helpers\AmountFormatter;
@@ -17,7 +18,6 @@ use App\Interfaces\NetworkWalletRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\PosWalletLogRepositoryInterface;
 use App\Interfaces\PosWalletRepositoryInterface;
-use App\Jobs\SendSmsNotificationJob;
 use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
 use App\Models\PosWallet;
@@ -39,7 +39,8 @@ class PosWalletService
         protected NetworkWalletRepositoryInterface $networkWalletRepository,
         protected NetworkWalletLogRepositoryInterface $networkWalletLogRepository,
         protected NetworkRepositoryInterface $networkRepository,
-        protected PosRepositoryInterface $posRepository
+        protected PosRepositoryInterface $posRepository,
+        protected NotificationService $notificationService,
     ) {}
 
     /**
@@ -525,28 +526,33 @@ class PosWalletService
     {
         $wallet->loadMissing(['pos', 'network']);
 
-        $phoneNumber = $wallet->pos?->pos_phone_number;
+        $phoneNumber = $wallet->pos->pos_phone_number;
         if (empty($phoneNumber)) {
             return;
         }
 
-        $posName = $wallet->pos?->pos_name ?? $wallet->pos?->pos_holder_name ?? "نقطة #{$wallet->pos_id}";
-        $networkName = $wallet->network?->network_name ?? "شبكة #{$wallet->network_id}";
+        $posName = $wallet->pos->pos_name ?? "نقطة #{$wallet->pos_id}";
+        $networkName = $wallet->network->network_name ?? "شبكة #{$wallet->network_id}";
 
         $balance = $currentBalance ?? (float) $wallet->wallet_balance;
 
-        $formattedAmount = AmountFormatter::formatWithCurrency($amount, 'YER');
-        $formattedBalance = AmountFormatter::formatWithCurrency($balance, 'YER');
+        $formattedAmount = AmountFormatter::formatWithCurrency($amount, systemSetting('base_currency', 'YER'));
+        $formattedBalance = AmountFormatter::formatWithCurrency($balance, systemSetting('base_currency', 'YER'));
 
         $actionText = ($action === 'receipt') ? 'لكم سند قبض' : 'عليكم سند دفع';
 
         $message = "نقطة {$posName} - شبكة {$networkName}: {$actionText} بمبلغ {$formattedAmount} رصيدكم {$formattedBalance}";
 
-        SendSmsNotificationJob::dispatch(
-            phoneNumbers: $phoneNumber,
+        $this->notificationService->sendDirect(
+            userId: $wallet->pos->owner_id,
+            type: NotificationType::TRANSACTION,
+            title: 'حركة مالية',
             message: $message,
-            recipientId: $wallet->network_id,
-            messageType: ($action === 'receipt') ? SmsMessageType::RECEIPT : SmsMessageType::PAYMENT
+            inApp: true,
+            push: true,
+            sms: true,
+            networkId: $wallet->network_id,
+            smsMessageType: ($action === 'receipt') ? SmsMessageType::RECEIPT : SmsMessageType::PAYMENT
         );
     }
 }

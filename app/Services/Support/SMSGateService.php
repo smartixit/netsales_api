@@ -517,8 +517,12 @@ class SMSGateService
             ? $messageType
             : (is_string($messageType) ? SmsMessageType::tryFrom($messageType) : null);
 
+        if ($typeEnum === null) {
+            return false;
+        }
+
         // رموز OTP ورسائل البث الإداري السيادية تمر دائماً لأسباب أمنية وتشغيلية عليا
-        if ($typeEnum?->isSovereign()) {
+        if ($typeEnum->isSovereign()) {
             return true;
         }
 

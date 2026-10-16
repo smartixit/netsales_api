@@ -82,10 +82,8 @@ class NetworkService
             $logo = $request->file('network_profile_logo') ?? $request->file('network_logo');
             $data = [
                 'network_name' => (string) $request->network_name,
-                'network_holder_name' => (string) ($request->network_holder_name ?? $request->network_name),
                 'governorate_id' => (int) $request->governorate_id,
                 'directorate_id' => (int) $request->directorate_id,
-                'network_phone_number' => (string) ($request->network_phone_number),
                 'network_email' => $request->network_email,
                 'network_address' => $request->network_address,
                 'status' => $request->status ?? NetworkStatus::ACTIVE,
@@ -94,6 +92,12 @@ class NetworkService
             $data = $request;
         }
 
+        $ownerId = auth()->id() ?? $data['owner_id'];
+        $owner = $this->userRepository->findById($ownerId);
+        $data['owner_id'] = $owner->user_id;
+        $data['network_phone_number'] = (string) $owner->user_phone_number;
+        // unset($data['network_holder_name']);
+
         return DB::transaction(function () use ($data, $logo) {
             if ($logo) {
                 $data['network_profile_logo'] = $this->fileUploadService->uploadFile($logo, 'networks/logos');
@@ -101,7 +105,7 @@ class NetworkService
 
             $network = $this->networkRepository->create($data);
 
-            return $network->load(['governorate', 'directorate']);
+            return $network->load(['governorate', 'directorate', 'owner']);
         });
     }
 
@@ -122,10 +126,8 @@ class NetworkService
             $logo = $request->file('network_profile_logo') ?? $request->file('network_logo');
             $data = array_filter([
                 'network_name' => $request->network_name,
-                'network_holder_name' => $request->network_holder_name,
                 'governorate_id' => $request->governorate_id !== null ? (int) $request->governorate_id : null,
                 'directorate_id' => $request->directorate_id !== null ? (int) $request->directorate_id : null,
-                'network_phone_number' => $request->network_phone_number,
                 'network_email' => $request->network_email,
                 'network_address' => $request->network_address,
                 'status' => $request->status,
@@ -285,8 +287,8 @@ class NetworkService
             // 3. إنشاء إعدادات الرسائل النصية للشبكة (تفعيل الإشعارات افتراضياً عبر بوابة النظام العامة)
             $this->networkSmsSettingRepository->getOrCreateForNetwork($network->network_id);
 
-            // تفعيل المستخدم والجهاز المرتبط برقم هاتف الشبكة
-            $user = $this->userRepository->findByPhone($network->network_phone_number);
+            // تفعيل المستخدم والجهاز المرتبط بمالك الشبكة
+            $user = $network->owner;
             if ($user) {
                 $this->userRepository->update($user->user_id, ['status' => UserStatus::ACTIVE]);
                 $devices = $this->userDeviceRepository->getDevicesForUser($user->user_id);
@@ -305,11 +307,11 @@ class NetworkService
                     email: true,
                     networkId: $network->network_id,
                     smsMessageType: SmsMessageType::ADMIN_BROADCAST,
-                    emailSubject: 'الموافقة على طلب مزود الشبكة - NetSales'
+                    emailSubject: 'الموافقة على طلب تسجيل الشبكة - NetSales'
                 );
             }
 
-            return $network->load(['governorate', 'directorate']);
+            return $network->load(['governorate', 'directorate', 'owner']);
         });
     }
 
@@ -336,7 +338,7 @@ class NetworkService
 
             $network->refresh();
 
-            $user = $this->userRepository->findByPhone($network->network_phone_number);
+            $user = $network->owner;
             if ($user) {
                 $this->notificationService->sendDirect(
                     userId: (int) $user->user_id,

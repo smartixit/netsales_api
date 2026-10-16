@@ -6,6 +6,7 @@ use App\Enums\NetworkStatus;
 use App\Enums\PaymentType;
 use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
+use App\Enums\UserStatus;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
@@ -61,20 +62,28 @@ class VoucherRequestAndInvoicingTest extends TestCase
 
         $suffix = uniqid();
 
+         $posUser = User::create([
+            'role_id' => $this->user->role_id,
+            'user_full_name' => 'POS Agent '.$suffix,
+            'user_phone_number' => '73'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+
         // 1. Create Network & POS
         $this->network = Network::create([
+            'owner_id' => $this->user->user_id,
             'network_name' => 'Net '.$suffix,
-            'network_holder_name' => 'Net Holder '.$suffix,
-            'network_phone_number' => '77'.rand(1000000, 9999999),
+            'network_phone_number' => '733111222',
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => NetworkStatus::ACTIVE,
         ]);
 
         $this->pos = Pos::create([
+            'owner_id' => $this->user->user_id,
             'pos_name' => 'POS '.$suffix,
-            'pos_holder_name' => 'POS Holder '.$suffix,
-            'pos_phone_number' => '73'.rand(1000000, 9999999),
+            'pos_phone_number' => $posUser->user_phone_number,
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => PosStatus::ACTIVE,

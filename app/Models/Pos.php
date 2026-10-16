@@ -29,10 +29,10 @@ class Pos extends Model
     public $timestamps = true;
 
     protected $fillable = [
+        'owner_id',
         'pos_uuid',
         'pos_name',
         'pos_profile_logo',
-        'pos_holder_name',
         'pos_phone_number',
         'pos_email',
         'pos_address',
@@ -66,6 +66,11 @@ class Pos extends Model
     }
 
     // Relationships
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id', 'user_id');
+    }
+
     public function governorate(): BelongsTo
     {
         return $this->belongsTo(Governorate::class, 'governorate_id', 'governorate_id');

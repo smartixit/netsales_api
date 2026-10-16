@@ -6,6 +6,7 @@ use App\Enums\DeviceType;
 use App\Enums\NotificationType;
 use App\Enums\SmsMessageType;
 use App\Enums\UserDeviceStatus;
+use App\Enums\UserStatus;
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Notification\SendAdminNotificationRequest;
 use App\Http\Requests\API\V1\Notification\StoreNotificationRequest;
@@ -158,7 +159,7 @@ class NotificationService
     public function sendDirect(
         int|array $userId,
         NotificationType|string $type,
-        string $title,
+        ?string $title,
         string $message,
         bool $inApp = true,
         bool $push = true,
@@ -199,7 +200,7 @@ class NotificationService
                 $notification = $this->notificationRepository->create([
                     'user_id' => $user->user_id,
                     'notification_type' => $typeValue,
-                    'notification_title' => $title,
+                    'notification_title' => $title ?? 'إشعار',
                     'notification_message' => $message,
                     'notification_image' => $image,
                     'is_read' => false,
@@ -220,7 +221,7 @@ class NotificationService
 
                 SendFcmNotificationJob::dispatch(
                     userId: $user->user_id,
-                    title: $title,
+                    title: $title ?? config('app.name', 'NetSales'),
                     body: $message,
                     data: $payloadData,
                     image: $image
@@ -229,9 +230,11 @@ class NotificationService
 
             // 3. قناة الرسائل النصية القصيرة (SMS)
             if ($sms && ! empty($user->user_phone_number) && $this->systemSettingService->getBool('sms_enabled', true)) {
+                $smsBody = (! empty($title) && $title !== $message) ? "{$title}\n{$message}" : $message;
+
                 SendSmsNotificationJob::dispatch(
                     phoneNumbers: $user->user_phone_number,
-                    message: "{$title}\n{$message}",
+                    message: $smsBody,
                     priority: 1,
                     recipientId: $networkId,
                     messageType: $smsMessageType ?? SmsMessageType::ADMIN_BROADCAST
@@ -442,32 +445,23 @@ class NotificationService
      */
     protected function resolveNetworkUsers(int $networkId): Collection
     {
-        $network = Network::with('pos')->find($networkId);
+        $network = Network::with(['owner', 'pos.owner'])->find($networkId);
         if (! $network) {
             return new Collection;
         }
 
-        $phones = array_filter([$network->network_phone_number]);
-        $emails = array_filter([$network->network_email]);
+        $users = collect();
+        if ($network->owner->status === UserStatus::ACTIVE->value) {
+            $users->push($network->owner);
+        }
 
         foreach ($network->pos as $pos) {
-            if ($pos->pos_phone_number) {
-                $phones[] = $pos->pos_phone_number;
-            }
-            if ($pos->pos_email) {
-                $emails[] = $pos->pos_email;
+            if ($pos->owner->status === UserStatus::ACTIVE->value) {
+                $users->push($pos->owner);
             }
         }
 
-        return User::where('status', 'ACTIVE')
-            ->where(function ($q) use ($phones, $emails) {
-                if (! empty($phones)) {
-                    $q->whereIn('user_phone_number', array_unique($phones));
-                }
-                if (! empty($emails)) {
-                    $q->orWhereIn('user_email', array_unique($emails));
-                }
-            })->get();
+        return $users->unique('user_id');
     }
 
     /**

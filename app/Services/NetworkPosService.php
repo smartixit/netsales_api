@@ -62,30 +62,31 @@ class NetworkPosService
     {
         if ($request instanceof StoreNetworkPosRequest) {
             $networkId = $request->getNetworkId();
-            $posId = $request->getPosId();
+            $posUuid = $request->getPosUuid();
             $status = $request->getStatus();
         } else {
             $networkId = (int) $request['network_id'];
-            $posId = (int) $request['pos_id'];
+            $posUuid = (int) $request['pos_uuid'];
             $status = isset($request['status']) ? (bool) $request['status'] : true;
         }
 
-        return DB::transaction(function () use ($networkId, $posId, $status) {
+        return DB::transaction(function () use ($networkId, $posUuid, $status) {
+
+            // التحقق من وجود نقطة البيع
+            try {
+                $posId=$this->posRepository->findByUuid($posUuid)->pos_id;
+            } catch (ModelNotFoundException) {
+                throw ValidationException::withMessages([
+                    'pos_id' => ['نقطة البيع المحددة غير موجودة في النظام.'],
+                ]);
+            }
+
             // التحقق من وجود الشبكة
             try {
                 $this->networkRepository->findById($networkId);
             } catch (ModelNotFoundException) {
                 throw ValidationException::withMessages([
                     'network_id' => ['مزود الشبكة المحدد غير موجود في النظام.'],
-                ]);
-            }
-
-            // التحقق من وجود نقطة البيع
-            try {
-                $this->posRepository->findById($posId);
-            } catch (ModelNotFoundException) {
-                throw ValidationException::withMessages([
-                    'pos_id' => ['نقطة البيع المحددة غير موجودة في النظام.'],
                 ]);
             }
 

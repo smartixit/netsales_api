@@ -388,7 +388,6 @@ namespace App\Models{
  * @property-read \App\Models\Directorate|null $directorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Expense> $expenses
  * @property-read int|null $expenses_count
- * @property-read string $network_holder_name
  * @property-read \App\Models\Governorate|null $governorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkPos> $networkPos
  * @property-read int|null $network_pos_count
@@ -746,7 +745,6 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read \App\Models\User|null $approvedBy
  * @property-read \App\Models\Directorate|null $directorate
- * @property-read string $pos_holder_name
  * @property-read \App\Models\Governorate|null $governorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkPos> $networkPos
  * @property-read int|null $network_pos_count
@@ -1543,12 +1541,15 @@ namespace App\Models{
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Expense> $expenses
  * @property-read int|null $expenses_count
  * @property-read string|null $user_profile_logo_url
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Network> $networks
+ * @property-read int|null $networks_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Notification> $notifications
  * @property-read int|null $notifications_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Otp> $otps
  * @property-read int|null $otps_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Permission> $permissions
  * @property-read int|null $permissions_count
+ * @property-read \App\Models\Pos|null $pos
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProviderSubscription> $providerSubscriptions
  * @property-read int|null $provider_subscriptions_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Network> $rejectedNetworks

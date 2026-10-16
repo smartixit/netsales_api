@@ -22,10 +22,8 @@ class RegisterPosRequest extends FormRequest
     {
         $this->merge([
             'pos_name' => is_string($this->pos_name) ? trim($this->pos_name) : $this->pos_name,
-            'pos_holder_name' => is_string($this->pos_holder_name) ? trim($this->pos_holder_name) : $this->pos_holder_name,
-            'pos_phone_number' => is_string($this->pos_phone_number) ? trim($this->pos_phone_number) : $this->pos_phone_number,
-            'user_phone_number' => is_string($this->user_phone_number) ? trim($this->user_phone_number) : ($this->pos_phone_number ? trim($this->pos_phone_number) : null),
-            'user_full_name' => is_string($this->user_full_name) ? trim($this->user_full_name) : ($this->pos_holder_name ? trim($this->pos_holder_name) : null),
+            'user_phone_number' => is_string($this->user_phone_number) ? trim($this->user_phone_number) : $this->user_phone_number,
+            'user_full_name' => is_string($this->user_full_name) ? trim($this->user_full_name) : $this->user_full_name,
         ]);
     }
 
@@ -42,11 +40,6 @@ class RegisterPosRequest extends FormRequest
                 'max:50',
                 Rule::unique('pos', 'pos_name')->whereNull('deleted_at'),
             ],
-            'pos_holder_name' => [
-                'required',
-                'string',
-                'max:50',
-            ],
             'governorate_id' => [
                 'required',
                 'integer',
@@ -60,13 +53,6 @@ class RegisterPosRequest extends FormRequest
                         $query->where('governorate_id', $this->input('governorate_id'));
                     }
                 }),
-            ],
-            'pos_phone_number' => [
-                'required',
-                'string',
-                'min:9',
-                'max:14',
-                'regex:/^[0-9+\-\s()]+$/',
             ],
             'pos_email' => [
                 'nullable',

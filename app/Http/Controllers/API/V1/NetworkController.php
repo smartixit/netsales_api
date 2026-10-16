@@ -106,12 +106,11 @@ class NetworkController extends BaseController
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['network_name', 'governorate_id', 'directorate_id', 'network_phone'],
+                    required: ['network_name', 'governorate_id', 'directorate_id'],
                     properties: [
                     new OA\Property(property: 'network_name', type: 'string'),
                     new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
                     new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'network_phone', type: 'string'),
                     new OA\Property(property: 'network_address', type: 'string'),
                     new OA\Property(property: 'network_logo', type: 'string', format: 'binary'),
                     new OA\Property(property: 'status', type: 'string'),
@@ -158,7 +157,6 @@ class NetworkController extends BaseController
                     new OA\Property(property: 'network_name', type: 'string'),
                     new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
                     new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'network_phone', type: 'string'),
                     new OA\Property(property: 'network_address', type: 'string'),
                     new OA\Property(property: 'network_logo', type: 'string', format: 'binary'),
                     new OA\Property(property: 'status', type: 'string'),

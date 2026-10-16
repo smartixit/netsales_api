@@ -20,7 +20,6 @@ class StoreNetworkRequest extends FormRequest
     {
         $this->merge([
             'network_name' => is_string($this->network_name) ? trim($this->network_name) : $this->network_name,
-            'network_phone' => is_string($this->network_phone) ? trim($this->network_phone) : $this->network_phone,
         ]);
     }
 
@@ -44,13 +43,6 @@ class StoreNetworkRequest extends FormRequest
                 Rule::exists('directorates', 'directorate_id')
                     ->where('governorate_id', $this->governorate_id)
                     ->whereNull('deleted_at'),
-            ],
-            'network_phone' => [
-                'required',
-                'string',
-                'max:20',
-                'regex:/^[0-9+\-\s()]+$/',
-                // Rule::unique('networks', 'network_phone')->whereNull('deleted_at'),
             ],
             'network_address' => [
                 'nullable',

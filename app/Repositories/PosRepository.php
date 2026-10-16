@@ -30,7 +30,7 @@ class PosRepository extends BaseRepository implements PosRepositoryInterface
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('pos_name', 'like', "%{$search}%")
-                    ->orWhere('pos_holder_name', 'like', "%{$search}%")
+                    ->orWhereHas('owner', fn ($ownerQ) => $ownerQ->where('user_full_name', 'like', "%{$search}%"))
                     ->orWhere('pos_phone_number', 'like', "%{$search}%");
             });
         }

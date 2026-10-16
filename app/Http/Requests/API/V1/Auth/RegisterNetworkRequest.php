@@ -6,13 +6,22 @@ use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class RegisterRequest extends FormRequest
+class RegisterNetworkRequest extends FormRequest
 {
     use LoadsCustomValidationMessages;
 
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'network_name' => is_string($this->network_name) ? trim($this->network_name) : $this->network_name,
+            'user_phone_number' => is_string($this->user_phone_number) ? trim($this->user_phone_number) : $this->user_phone_number,
+            'user_full_name' => is_string($this->user_full_name) ? trim($this->user_full_name) : $this->user_full_name,
+        ]);
     }
 
     /**
@@ -28,11 +37,6 @@ class RegisterRequest extends FormRequest
                 'max:50',
                 'unique:networks,network_name',
             ],
-            'network_holder_name' => [
-                'required',
-                'string',
-                'max:50',
-            ],
             'governorate_id' => [
                 'required',
                 'integer',
@@ -46,13 +50,6 @@ class RegisterRequest extends FormRequest
                         $query->where('governorate_id', $this->input('governorate_id'));
                     }
                 }),
-            ],
-            'network_phone_number' => [
-                'required',
-                'string',
-                'min:9',
-                'max:9',
-                'regex:/^7[0-9]{8}$/',
             ],
             'network_email' => [
                 'nullable',
@@ -70,7 +67,7 @@ class RegisterRequest extends FormRequest
                 'max:2048',
             ],
 
-            // User (Network Admin) info
+            // User (Network Owner) info
             'user_full_name' => [
                 'required',
                 'string',

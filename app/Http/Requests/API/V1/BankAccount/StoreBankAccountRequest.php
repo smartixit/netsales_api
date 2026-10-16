@@ -93,7 +93,7 @@ class StoreBankAccountRequest extends FormRequest
 
     public function getAccountCurrency(): string
     {
-        return (string) $this->input('account_currency', 'YER');
+        return (string) $this->input('account_currency', systemSetting('base_currency', 'YER'));
     }
 
     public function getAccountBalance(): ?float

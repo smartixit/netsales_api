@@ -5,13 +5,12 @@ namespace Tests\Feature;
 use App\Enums\BanType;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
-use App\Enums\RequestStatus;
+use App\Enums\UserStatus;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
 use App\Models\Pos;
 use App\Models\PosWallet;
-use App\Models\Request as RequestModel;
 use App\Models\SecurityBan;
 use App\Models\User;
 use App\Models\UserSession;
@@ -38,14 +37,23 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
     use DatabaseTransactions;
 
     protected User $user;
+
     protected UserSession $session;
+
     protected Network $networkA;
+
     protected Network $networkB;
+
     protected Pos $posA;
+
     protected Pos $posB;
+
     protected NetworkWallet $networkWalletA;
+
     protected PosWallet $posWalletA;
+
     protected VoucherPackage $packageA;
+
     protected array $headers;
 
     protected function setUp(): void
@@ -72,9 +80,9 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
 
         // الشبكة A
         $this->networkA = Network::create([
+            'owner_id' => $this->user->user_id,
             'network_name' => 'SecNet A '.$suffix,
-            'network_holder_name' => 'Holder A '.$suffix,
-            'network_phone_number' => '77'.rand(1000000, 9999999),
+            'network_phone_number' => '733111222',
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => NetworkStatus::ACTIVE,
@@ -82,19 +90,35 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
 
         // الشبكة B (شبكة مستقلة لا علاقة لها بالشبكة A)
         $this->networkB = Network::create([
+            'owner_id' => $this->user->user_id,
             'network_name' => 'SecNet B '.$suffix,
-            'network_holder_name' => 'Holder B '.$suffix,
-            'network_phone_number' => '77'.rand(1000000, 9999999),
+            'network_phone_number' => $this->user->user_phone_number,
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => NetworkStatus::ACTIVE,
         ]);
 
+        $posUserA = User::create([
+            'role_id' => $this->user->role_id,
+            'user_full_name' => 'POS Agent A '.$suffix,
+            'user_phone_number' => '73'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+
+        $posUserB = User::create([
+            'role_id' => $this->user->role_id,
+            'user_full_name' => 'POS Agent B '.$suffix,
+            'user_phone_number' => '73'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+
         // نقطة البيع A تابعة للشبكة A
         $this->posA = Pos::create([
+            'owner_id' => $posUserA->user_id,
             'pos_name' => 'SecPOS A '.$suffix,
-            'pos_holder_name' => 'POS Holder A '.$suffix,
-            'pos_phone_number' => '73'.rand(1000000, 9999999),
+            'pos_phone_number' => $posUserA->user_phone_number,
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => PosStatus::ACTIVE,
@@ -108,9 +132,9 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
 
         // نقطة البيع B تابعة حصرياً للشبكة B
         $this->posB = Pos::create([
+            'owner_id' => $posUserB->user_id,
             'pos_name' => 'SecPOS B '.$suffix,
-            'pos_holder_name' => 'POS Holder B '.$suffix,
-            'pos_phone_number' => '73'.rand(1000000, 9999999),
+            'pos_phone_number' => $posUserB->user_phone_number,
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => PosStatus::ACTIVE,

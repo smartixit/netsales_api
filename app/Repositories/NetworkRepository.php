@@ -30,7 +30,7 @@ class NetworkRepository extends BaseRepository implements NetworkRepositoryInter
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('network_name', 'like', "%{$search}%")
-                    ->orWhere('network_holder_name', 'like', "%{$search}%")
+                    ->orWhereHas('owner', fn ($ownerQ) => $ownerQ->where('user_full_name', 'like', "%{$search}%"))
                     ->orWhere('network_phone_number', 'like', "%{$search}%");
             });
         }

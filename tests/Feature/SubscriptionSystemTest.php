@@ -53,8 +53,8 @@ class SubscriptionSystemTest extends TestCase
         $suffix = uniqid();
 
         $this->network = Network::create([
+            'owner_id' => $this->user->user_id,
             'network_name' => 'Net '.$suffix,
-            'network_holder_name' => 'Net Holder '.$suffix,
             'network_phone_number' => '77'.rand(1000000, 9999999),
             'governorate_id' => 1,
             'directorate_id' => 1,
