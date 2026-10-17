@@ -50,11 +50,6 @@ class StoreSubscriptionPlanFeatureRequest extends FormRequest
                 'nullable',
                 'boolean',
             ],
-            'created_by' => [
-                'nullable',
-                'integer',
-                Rule::exists('users', 'user_id')->whereNull('deleted_at'),
-            ],
         ];
     }
 }

@@ -128,7 +128,8 @@ class PosController extends BaseController
     public function store(StorePosRequest $request): JsonResponse
     {
         try {
-            $pos = $this->posService->create($request);
+            $ownerId = $this->currentUserId();
+            $pos = $this->posService->create($request, $ownerId);
 
             return $this->successResponse('تم إنشاء نقطة البيع بنجاح.', new PosResource($pos), 201);
         } catch (ValidationException $e) {

@@ -125,7 +125,7 @@ class ExpenseController extends BaseController
     public function store(StoreExpenseRequest $request): JsonResponse
     {
         try {
-            $userId = (int) ($request->user()?->user_id ?? 1);
+            $userId = $this->currentUserId();
             $expense = $this->expenseService->create($request, $userId);
 
             return $this->successResponse('تم تسجيل المصروف وخصم المبلغ من محفظة الشبكة بنجاح.', new ExpenseResource($expense), 201);
@@ -170,7 +170,7 @@ class ExpenseController extends BaseController
     public function update(UpdateExpenseRequest $request, int $id): JsonResponse
     {
         try {
-            $userId = (int) ($request->user()?->user_id ?? 1);
+            $userId = $this->currentUserId();
             $expense = $this->expenseService->update($id, $request, $userId);
 
             return $this->successResponse('تم تحديث المصروف وتسوية فرق الرصيد بالمحفظة بنجاح.', new ExpenseResource($expense));
@@ -444,7 +444,7 @@ class ExpenseController extends BaseController
     public function addItem(StoreExpenseItemRequest $request, int $id): JsonResponse
     {
         try {
-            $userId = (int) ($request->user()?->user_id ?? 1);
+            $userId = $this->currentUserId();
             $item = $this->expenseService->addItem($id, $request, $userId);
 
             return $this->successResponse('تمت إضافة بند المصروف وخصم المبلغ من محفظة الشبكة بنجاح.', new ExpenseItemResource($item), 201);
@@ -474,7 +474,7 @@ class ExpenseController extends BaseController
     public function deleteItem(int $id, int $itemId, Request $request): JsonResponse
     {
         try {
-            $userId = (int) ($request->user()?->user_id ?? 1);
+            $userId = $this->currentUserId();
             $this->expenseService->deleteItem($id, $itemId, $userId);
 
             return $this->successResponse('تم حذف بند المصروف وإعادة المبلغ لمحفظة الشبكة بنجاح.');

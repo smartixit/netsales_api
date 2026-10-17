@@ -122,7 +122,7 @@ class SaleInvoiceController extends BaseController
     public function store(StoreSaleInvoiceRequest $request): JsonResponse
     {
         try {
-            $userId = (int) ($request->user()?->user_id ?? 1);
+            $userId = $this->currentUserId();
             $record = $this->saleInvoiceService->createDirectInvoice($request, $userId);
 
             return $this->successResponse('تم إنشاء فاتورة المبيعات بنجاح.', new SaleInvoiceResource($record), 201);

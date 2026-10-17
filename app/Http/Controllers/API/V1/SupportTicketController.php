@@ -125,7 +125,7 @@ class SupportTicketController extends BaseController
     public function store(StoreSupportTicketRequest $request): JsonResponse
     {
         try {
-            $userId = (int) $request->user()->user_id;
+            $userId = $this->currentUserId();
             $ticket = $this->ticketService->create($request, $userId);
 
             return $this->successResponse('تم إنشاء تذكرة الدعم الفني بنجاح.', new SupportTicketResource($ticket), 201);
@@ -469,7 +469,7 @@ class SupportTicketController extends BaseController
     public function addMessage(StoreSupportTicketMessageRequest $request, int $id): JsonResponse
     {
         try {
-            $userId = (int) $request->user()->user_id;
+            $userId = $this->currentUserId();
             $message = $this->ticketService->addMessage($request, $id, $userId);
 
             return $this->successResponse('تم إرسال الرسالة بنجاح.', new SupportTicketMessageResource($message), 201);
@@ -498,7 +498,7 @@ class SupportTicketController extends BaseController
     public function markAsRead(Request $request, int $id): JsonResponse
     {
         try {
-            $userId = (int) $request->user()->user_id;
+            $userId = $this->currentUserId();
             $count = $this->ticketService->markAsRead($id, $userId);
 
             return $this->successResponse("تم تمييز [{$count}] رسالة كمقروءة.", ['marked_read_count' => $count]);

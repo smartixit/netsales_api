@@ -125,7 +125,7 @@ class VoucherPackageDiscountController extends BaseController
     public function store(StoreVoucherPackageDiscountRequest $request): JsonResponse
     {
         try {
-            $discount = $this->discountService->create($request, auth()->id() ?? 1);
+            $discount = $this->discountService->create($request, $this->currentUserId());
 
             return $this->successResponse('تم تخصيص الخصم لنقطة البيع بنجاح.', new VoucherPackageDiscountResource($discount), 201);
         } catch (ValidationException $e) {

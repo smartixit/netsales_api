@@ -84,7 +84,7 @@ class NetworkService
     /**
      * إنشاء شبكة جديدة إدارياً.
      */
-    public function create(StoreNetworkRequest|array $request, ?UploadedFile $logo = null): Network
+    public function create(StoreNetworkRequest|array $request, ?int $ownerId = null, ?UploadedFile $logo = null): Network
     {
         if ($request instanceof StoreNetworkRequest) {
             $logo = $request->file('network_profile_logo') ?? $request->file('network_logo');
@@ -100,8 +100,13 @@ class NetworkService
             $data = $request;
         }
 
-        $ownerId = auth()->id() ?? $data['owner_id'];
-        $owner = $this->userRepository->findById($ownerId);
+        $resolvedOwnerId = $ownerId ?? ($data['owner_id'] ?? (auth()->id() ? (int) auth()->id() : null));
+        if (! $resolvedOwnerId) {
+            throw ValidationException::withMessages([
+                'owner_id' => ['تعذر تحديد مالك الشبكة من الجلسة أو الطلب.'],
+            ]);
+        }
+        $owner = $this->userRepository->findById($resolvedOwnerId);
         $data['owner_id'] = $owner->user_id;
         $data['network_phone_number'] = (string) $owner->user_phone_number;
         // unset($data['network_holder_name']);

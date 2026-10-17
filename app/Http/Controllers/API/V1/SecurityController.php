@@ -151,7 +151,8 @@ class SecurityController extends BaseController
     public function banUser(StoreSecurityBanRequest $request): JsonResponse
     {
         try {
-            $ban = $this->securityService->banUser($request);
+            $adminUserId = $this->currentUserId();
+            $ban = $this->securityService->banUser($request, $adminUserId);
 
             return $this->successResponse(
                 'تم تطبيق الحظر الأمني على المستخدم وإبطال كافة جلساته بنجاح.',
@@ -198,7 +199,8 @@ class SecurityController extends BaseController
     public function banDevice(StoreSecurityBanRequest $request): JsonResponse
     {
         try {
-            $ban = $this->securityService->banDevice($request);
+            $adminUserId = $this->currentUserId();
+            $ban = $this->securityService->banDevice($request, $adminUserId);
 
             return $this->successResponse(
                 'تم تطبيق الحظر الأمني على الجهاز بنجاح.',
@@ -230,7 +232,8 @@ class SecurityController extends BaseController
     public function unban(int $id): JsonResponse
     {
         try {
-            $this->securityService->unban($id);
+            $adminUserId = $this->currentUserId();
+            $this->securityService->unban($id, $adminUserId);
 
             return $this->successResponse('تم رفع الحظر الأمني واستعادة النشاط بنجاح.');
         } catch (ValidationException $e) {
@@ -259,7 +262,8 @@ class SecurityController extends BaseController
     public function terminateSession(int $id): JsonResponse
     {
         try {
-            $this->securityService->terminateSession($id);
+            $adminUserId = $this->currentUserId();
+            $this->securityService->terminateSession($id, $adminUserId);
 
             return $this->successResponse('تم إنهاء الجلسة المحددة بنجاح.');
         } catch (ValidationException $e) {

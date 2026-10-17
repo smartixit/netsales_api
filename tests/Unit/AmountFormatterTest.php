@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Helpers\AmountFormatter;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class AmountFormatterTest extends TestCase
 {

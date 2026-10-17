@@ -149,8 +149,8 @@ class NetworkWalletController extends BaseController
     public function store(StoreNetworkWalletRequest $request): JsonResponse
     {
         try {
-            $userId = (int) $request->user()?->user_id;
-            $wallet = $this->networkWalletService->createWallet($request, $userId > 0 ? $userId : null);
+            $userId = $this->currentUserId();
+            $wallet = $this->networkWalletService->createWallet($request, $userId);
 
             return $this->successResponse('تم تدشين محفظة مزود الشبكة بنجاح.', new NetworkWalletResource($wallet), 201);
         } catch (ValidationException $e) {
@@ -232,7 +232,7 @@ class NetworkWalletController extends BaseController
     public function deposit(DepositNetworkWalletRequest $request, int $id): JsonResponse
     {
         try {
-            $userId = (int) $request->user()?->user_id;
+            $userId = $this->currentUserId();
             $result = $this->networkWalletService->deposit($id, $request, $userId);
 
             return $this->successResponse('تم إيداع الرصيد بنجاح وتسجيل القيد في دفتر الأستاذ.', [
@@ -278,7 +278,7 @@ class NetworkWalletController extends BaseController
     public function withdraw(WithdrawNetworkWalletRequest $request, int $id): JsonResponse
     {
         try {
-            $userId = (int) $request->user()?->user_id;
+            $userId = $this->currentUserId();
             $result = $this->networkWalletService->withdraw($id, $request, $userId);
 
             return $this->successResponse('تم سحب الرصيد بنجاح وتسجيل القيد في دفتر الأستاذ.', [

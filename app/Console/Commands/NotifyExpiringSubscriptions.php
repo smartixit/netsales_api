@@ -93,7 +93,7 @@ class NotifyExpiringSubscriptions extends Command
 
             // 2. تسجيل إشعار داخلي في النظام وإرسال push FCM تلقائياً
             $notificationService->sendDirect(
-                userId: (int) ($network->approved_by ?? 1),
+                userId: (int) $network->owner_id,
                 type: NotificationType::WARNING,
                 push: true,
                 sms: true,

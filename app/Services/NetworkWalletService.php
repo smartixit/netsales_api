@@ -357,7 +357,8 @@ class NetworkWalletService
             push: true,
             sms: true,
             networkId: $wallet->network_id,
-            smsMessageType: ($action === 'receipt') ? SmsMessageType::RECEIPT : SmsMessageType::PAYMENT
+            smsMessageType: ($action === 'receipt') ? SmsMessageType::RECEIPT : SmsMessageType::PAYMENT,
+            phoneNumberOverride: $phoneNumber
         );
     }
 }

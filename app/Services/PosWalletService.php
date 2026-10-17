@@ -539,7 +539,7 @@ class PosWalletService
         $formattedAmount = AmountFormatter::formatWithCurrency($amount, systemSetting('base_currency', 'YER'));
         $formattedBalance = AmountFormatter::formatWithCurrency($balance, systemSetting('base_currency', 'YER'));
 
-        $actionText = ($action === 'receipt') ? 'لكم سند قبض' : 'عليكم سند دفع';
+        $actionText = ($action === 'receipt') ? 'لكم سند قبض' : 'عليكم سند صرف';
 
         $message = "نقطة {$posName} - شبكة {$networkName}: {$actionText} بمبلغ {$formattedAmount} رصيدكم {$formattedBalance}";
 
@@ -552,7 +552,8 @@ class PosWalletService
             push: true,
             sms: true,
             networkId: $wallet->network_id,
-            smsMessageType: ($action === 'receipt') ? SmsMessageType::RECEIPT : SmsMessageType::PAYMENT
+            smsMessageType: ($action === 'receipt') ? SmsMessageType::RECEIPT : SmsMessageType::PAYMENT,
+            phoneNumberOverride: $phoneNumber
         );
     }
 }

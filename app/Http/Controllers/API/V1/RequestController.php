@@ -126,7 +126,7 @@ class RequestController extends BaseController
     public function store(StoreRequestRequest $request): JsonResponse
     {
         try {
-            $userId = (int) ($request->user()?->user_id ?? 1);
+            $userId = $this->currentUserId();
             $record = $this->requestService->create($request, $userId);
 
             return $this->successResponse('تم تقديم طلب الكروت بنجاح وهو قيد الانتظار.', new RequestResource($record), 201);
@@ -154,7 +154,7 @@ class RequestController extends BaseController
     public function approve(ApproveRequestRequest $request, int $id): JsonResponse
     {
         try {
-            $reviewedBy = (int) ($request->user()?->user_id ?? 1);
+            $reviewedBy = $this->currentUserId();
             $result = $this->requestService->approve($id, $reviewedBy, $request);
 
             return $this->successResponse('تم اعتماد طلب الكروت وتوليد فاتورة المبيعات وتسوية الرصيد بنجاح.', [
@@ -198,7 +198,7 @@ class RequestController extends BaseController
     public function reject(RejectRequest $request, int $id): JsonResponse
     {
         try {
-            $reviewedBy = (int) ($request->user()?->user_id ?? 1);
+            $reviewedBy = $this->currentUserId();
             $record = $this->requestService->reject($id, $reviewedBy, $request->getReason());
 
             return $this->successResponse('تم رفض طلب الكروت وتوثيق السبب بنجاح.', new RequestResource($record));
@@ -226,7 +226,7 @@ class RequestController extends BaseController
     public function cancel(Request $request, int $id): JsonResponse
     {
         try {
-            $userId = (int) ($request->user()?->user_id ?? 1);
+            $userId = $this->currentUserId();
             $record = $this->requestService->cancel($id, $userId);
 
             return $this->successResponse('تم إلغاء طلب الكروت بنجاح.', new RequestResource($record));

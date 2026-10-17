@@ -77,7 +77,7 @@ class SecurityService
     /**
      * تطبيق حظر أمني على مستخدم مع إبطال كافة جلساته المفتوحة فوراً.
      */
-    public function banUser(StoreSecurityBanRequest $request): SecurityBan
+    public function banUser(StoreSecurityBanRequest $request, ?int $adminUserId = null): SecurityBan
     {
         $userId = (int) $request->user_id;
         $this->ensureUserExists($userId);
@@ -85,7 +85,7 @@ class SecurityService
         $banType = $request->ban_type;
         $reason = (string) ($request->ban_reason ?? 'حظر أمني إداري');
         $endAt = $request->end_at ? new DateTime($request->end_at) : null;
-        $adminUserId = auth()->id() ?? 1;
+        $adminUserId = $adminUserId ?? (auth()->id() ? (int) auth()->id() : 0);
 
         return DB::transaction(function () use ($userId, $adminUserId, $banType, $reason, $endAt) {
             // 1. تسجيل سجل الحظر
@@ -125,7 +125,7 @@ class SecurityService
     /**
      * تطبيق حظر أمني على جهاز محدد.
      */
-    public function banDevice(StoreSecurityBanRequest $request): SecurityBan
+    public function banDevice(StoreSecurityBanRequest $request, ?int $adminUserId = null): SecurityBan
     {
         $deviceId = (int) $request->device_id;
         $this->ensureDeviceExists($deviceId);
@@ -133,7 +133,7 @@ class SecurityService
         $banType = $request->ban_type;
         $reason = (string) ($request->ban_reason ?? 'حظر أمني للجهاز');
         $endAt = $request->end_at ? new DateTime($request->end_at) : null;
-        $adminUserId = auth()->id() ?? 1;
+        $adminUserId = $adminUserId ?? (auth()->id() ? (int) auth()->id() : 0);
 
         return DB::transaction(function () use ($deviceId, $adminUserId, $reason, $endAt) {
             // 1. تسجيل الحظر
@@ -167,7 +167,7 @@ class SecurityService
     /**
      * رفع الحظر الأمني واستعادة الحالة الطبيعية للمستخدم أو الجهاز.
      */
-    public function unban(int $banId): bool
+    public function unban(int $banId, ?int $adminUserId = null): bool
     {
         try {
             $ban = $this->securityBanRepository->findById($banId);
@@ -177,7 +177,7 @@ class SecurityService
             ]);
         }
 
-        $adminUserId = auth()->id() ?? 1;
+        $adminUserId = $adminUserId ?? (auth()->id() ? (int) auth()->id() : 0);
 
         return DB::transaction(function () use ($ban, $banId, $adminUserId) {
             // 1. رفع الحظر عبر المستودع
@@ -213,7 +213,7 @@ class SecurityService
     /**
      * إنهاء جلسة محددة عبر معرفها.
      */
-    public function terminateSession(int $sessionId): bool
+    public function terminateSession(int $sessionId, ?int $adminUserId = null): bool
     {
         try {
             $session = $this->userSessionRepository->findById($sessionId);
@@ -223,7 +223,7 @@ class SecurityService
             ]);
         }
 
-        $adminUserId = auth()->id() ?? 1;
+        $adminUserId = $adminUserId ?? (auth()->id() ? (int) auth()->id() : 0);
 
         $this->sessionValidatorService->invalidateSession($sessionId);
 

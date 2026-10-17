@@ -156,8 +156,8 @@ class PosWalletController extends BaseController
     public function store(StorePosWalletRequest $request): JsonResponse
     {
         try {
-            $userId = (int) $request->user()?->user_id;
-            $wallet = $this->posWalletService->createWallet($request, $userId > 0 ? $userId : null);
+            $userId = $this->currentUserId();
+            $wallet = $this->posWalletService->createWallet($request, $userId);
 
             return $this->successResponse('تم إنشاء وتدشين محفظة نقطة البيع بنجاح.', new PosWalletResource($wallet), 201);
         } catch (ValidationException $e) {
@@ -239,7 +239,7 @@ class PosWalletController extends BaseController
     public function deposit(DepositPosWalletRequest $request, int $id): JsonResponse
     {
         try {
-            $userId = (int) $request->user()?->user_id;
+            $userId = $this->currentUserId();
             $result = $this->posWalletService->deposit($id, $request, $userId);
 
             return $this->successResponse('تم إيداع الرصيد في محفظة نقطة البيع بنجاح.', [
@@ -285,7 +285,7 @@ class PosWalletController extends BaseController
     public function withdraw(WithdrawPosWalletRequest $request, int $id): JsonResponse
     {
         try {
-            $userId = (int) $request->user()?->user_id;
+            $userId = $this->currentUserId();
             $result = $this->posWalletService->withdraw($id, $request, $userId);
 
             return $this->successResponse('تم سحب الرصيد من محفظة نقطة البيع بنجاح.', [
@@ -329,7 +329,7 @@ class PosWalletController extends BaseController
     public function transferFromNetwork(TransferNetworkToPosWalletRequest $request): JsonResponse
     {
         try {
-            $userId = (int) $request->user()?->user_id;
+            $userId = $this->currentUserId();
             $result = $this->posWalletService->transferFromNetwork($request, $userId);
 
             return $this->successResponse('تم تحويل وتغذية الرصيد إلى نقطة البيع بنجاح وتسجيل القيود المالية المزدوجة.', [
@@ -375,7 +375,7 @@ class PosWalletController extends BaseController
     public function transferToNetwork(TransferPosToNetworkWalletRequest $request): JsonResponse
     {
         try {
-            $userId = (int) $request->user()?->user_id;
+            $userId = $this->currentUserId();
             $result = $this->posWalletService->transferToNetwork($request, $userId);
 
             return $this->successResponse('تم استرجاع الرصيد إلى محفظة الشبكة بنجاح وتسجيل القيود المالية المزدوجة.', [

@@ -52,7 +52,7 @@ enum SmsMessageType: string
     {
         return match ($this) {
             self::RECEIPT => 'سند قبض',
-            self::PAYMENT => 'سند دفع / قيد',
+            self::PAYMENT => 'سند دفع / صرف',
             self::POS_WITHDRAW => 'سحب نقطة بيع',
             self::EXPENSE => 'مصروف شبكة',
             self::SALE_INVOICE => 'فاتورة مبيعات',

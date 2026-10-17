@@ -126,7 +126,8 @@ class NetworkController extends BaseController
     public function store(StoreNetworkRequest $request): JsonResponse
     {
         try {
-            $network = $this->networkService->create($request);
+            $ownerId = $this->currentUserId();
+            $network = $this->networkService->create($request, $ownerId);
 
             return $this->successResponse('تم إنشاء الشبكة بنجاح.', new NetworkResource($network), 201);
         } catch (ValidationException $e) {

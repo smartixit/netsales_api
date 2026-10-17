@@ -126,7 +126,7 @@ class SubscriptionPlanController extends BaseController
     public function store(StoreSubscriptionPlanRequest $request): JsonResponse
     {
         try {
-            $userId = (int) ($request->user()?->user_id ?? 1);
+            $userId = $this->currentUserId();
             $plan = $this->subscriptionPlanService->create($request, $userId);
 
             return $this->successResponse('تم إنشاء باقة الاشتراك بنجاح.', new SubscriptionPlanResource($plan), 201);
@@ -175,7 +175,7 @@ class SubscriptionPlanController extends BaseController
     public function update(UpdateSubscriptionPlanRequest $request, int $id): JsonResponse
     {
         try {
-            $userId = (int) ($request->user()?->user_id ?? 1);
+            $userId = $this->currentUserId();
             $plan = $this->subscriptionPlanService->update($id, $request, $userId);
 
             return $this->successResponse('تم تحديث بيانات باقة الاشتراك بنجاح.', new SubscriptionPlanResource($plan));
@@ -247,7 +247,7 @@ class SubscriptionPlanController extends BaseController
     public function attachFeature(AttachPlanFeatureRequest $request, int $id): JsonResponse
     {
         try {
-            $userId = (int) ($request->user()?->user_id ?? 1);
+            $userId = $this->currentUserId();
             $planFeature = $this->subscriptionPlanService->attachFeature($id, $request, $userId);
 
             return $this->successResponse('تم ربط وتحديث الميزة بالباقة بنجاح.', new SubscriptionPlanFeatureResource($planFeature));

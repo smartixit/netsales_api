@@ -210,7 +210,7 @@ class WalletSystemTest extends TestCase
 
         // Debit SMS template:
         // نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: عليكم سند دفع بمبلغ 1,000.00YER رصيدكم 2,000.00YER
-        $expectedPaymentMsg = "نقطة {$this->pos->pos_name} - شبكة {$this->network->network_name}: عليكم سند دفع بمبلغ 1,000.00YER رصيدكم 2,000.00YER";
+        $expectedPaymentMsg = "نقطة {$this->pos->pos_name} - شبكة {$this->network->network_name}: عليكم سند صرف بمبلغ 1,000.00YER رصيدكم 2,000.00YER";
 
         Queue::assertPushed(SendSmsNotificationJob::class, function ($job) use ($expectedPaymentMsg) {
             return $job->phoneNumbers === $this->pos->pos_phone_number && $job->message === $expectedPaymentMsg;

@@ -45,11 +45,6 @@ class StoreProviderSubscriptionRequest extends FormRequest
                 'nullable',
                 Rule::enum(ProviderSubscriptionStatus::class),
             ],
-            'created_by' => [
-                'nullable',
-                'integer',
-                Rule::exists('users', 'user_id')->whereNull('deleted_at'),
-            ],
         ];
     }
 }

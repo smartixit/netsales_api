@@ -70,7 +70,7 @@ class PosService
     /**
      * إنشاء نقطة بيع جديدة إدارياً.
      */
-    public function create(StorePosRequest|array $request, ?UploadedFile $logo = null): Pos
+    public function create(StorePosRequest|array $request, ?int $ownerId = null, ?UploadedFile $logo = null): Pos
     {
         if ($request instanceof StorePosRequest) {
             $logo = $request->file('pos_profile_logo') ?? $request->file('logo');
@@ -86,8 +86,13 @@ class PosService
             $data = $request;
         }
 
-        $ownerId = auth()->id() ?? $data['owner_id'];
-        $owner = $this->userRepository->findById($ownerId);
+        $resolvedOwnerId = $ownerId ?? ($data['owner_id'] ?? (auth()->id() ? (int) auth()->id() : null));
+        if (! $resolvedOwnerId) {
+            throw ValidationException::withMessages([
+                'owner_id' => ['تعذر تحديد مالك نقطة البيع من الجلسة أو الطلب.'],
+            ]);
+        }
+        $owner = $this->userRepository->findById($resolvedOwnerId);
         $data['owner_id'] = $owner->user_id;
         $data['pos_phone_number'] = (string) $owner->user_phone_number;
         // unset($data['pos_holder_name']);

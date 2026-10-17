@@ -59,11 +59,6 @@ class UpdateSubscriptionPlanFeatureRequest extends FormRequest
                 'required',
                 'boolean',
             ],
-            'created_by' => [
-                'nullable',
-                'integer',
-                Rule::exists('users', 'user_id')->whereNull('deleted_at'),
-            ],
         ];
     }
 }

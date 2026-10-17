@@ -34,11 +34,6 @@ class StoreSupportTicketMessageRequest extends FormRequest
                 'integer',
                 Rule::exists('support_tickets', 'ticket_id')->whereNull('deleted_at'),
             ],
-            'sent_by' => [
-                'nullable',
-                'integer',
-                Rule::exists('users', 'user_id')->whereNull('deleted_at'),
-            ],
             'message_body' => [
                 'required',
                 'string',

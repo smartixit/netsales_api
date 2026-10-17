@@ -63,18 +63,27 @@ class NetworkPosService
         if ($request instanceof StoreNetworkPosRequest) {
             $networkId = $request->getNetworkId();
             $posUuid = $request->getPosUuid();
+            $posId = null;
             $status = $request->getStatus();
         } else {
             $networkId = (int) $request['network_id'];
-            $posUuid = (int) $request['pos_uuid'];
+            $posUuid = $request['pos_uuid'] ?? null;
+            $posId = isset($request['pos_id']) ? (int) $request['pos_id'] : null;
             $status = isset($request['status']) ? (bool) $request['status'] : true;
         }
 
-        return DB::transaction(function () use ($networkId, $posUuid, $status) {
+        return DB::transaction(function () use ($networkId, $posUuid, $posId, $status) {
 
             // التحقق من وجود نقطة البيع
             try {
-                $posId=$this->posRepository->findByUuid($posUuid)->pos_id;
+                if ($posId) {
+                    $pos = $this->posRepository->findById($posId);
+                } elseif ($posUuid) {
+                    $pos = $this->posRepository->findByUuid($posUuid);
+                } else {
+                    throw new ModelNotFoundException('لم يتم تحديد نقطة البيع.');
+                }
+                $posId = $pos->pos_id;
             } catch (ModelNotFoundException) {
                 throw ValidationException::withMessages([
                     'pos_id' => ['نقطة البيع المحددة غير موجودة في النظام.'],

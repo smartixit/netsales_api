@@ -170,7 +170,8 @@ class NotificationService
         ?string $emailSubject = null,
         ?string $image = null,
         ?string $actionUrl = null,
-        array $extraData = []
+        array $extraData = [],
+        ?string $phoneNumberOverride = null
     ): Notification|array|null {
         $isSingle = ! is_array($userId);
         $ids = $isSingle ? [$userId] : array_values(array_unique(array_filter($userId)));
@@ -229,11 +230,13 @@ class NotificationService
             }
 
             // 3. قناة الرسائل النصية القصيرة (SMS)
-            if ($sms && ! empty($user->user_phone_number) && $this->systemSettingService->getBool('sms_enabled', true)) {
-                $smsBody = (! empty($title) && $title !== $message) ? "{$title}\n{$message}" : $message;
+            $smsTargetPhone = $phoneNumberOverride ?: $user->user_phone_number;
+            if ($sms && ! empty($smsTargetPhone) && $this->systemSettingService->getBool('sms_enabled', true)) {
+                $isFinancialMovement = $smsMessageType && in_array($smsMessageType, [SmsMessageType::RECEIPT, SmsMessageType::PAYMENT], true);
+                $smsBody = $isFinancialMovement ? $message : ((! empty($title) && $title !== $message) ? "{$title}\n{$message}" : $message);
 
                 SendSmsNotificationJob::dispatch(
-                    phoneNumbers: $user->user_phone_number,
+                    phoneNumbers: $smsTargetPhone,
                     message: $smsBody,
                     priority: 1,
                     recipientId: $networkId,

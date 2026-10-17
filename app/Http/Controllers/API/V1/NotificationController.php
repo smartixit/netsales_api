@@ -81,7 +81,7 @@ class NotificationController extends BaseController
     public function myNotifications(Request $request): JsonResponse
     {
         try {
-            $userId = (int) $request->user()->user_id;
+            $userId = $this->currentUserId();
             $filters = $request->only(['notification_type', 'is_read', 'search', 'per_page', 'all']);
             $notifications = $this->notificationService->getMyNotifications($userId, $filters);
 
@@ -108,7 +108,7 @@ class NotificationController extends BaseController
     public function unreadCount(Request $request): JsonResponse
     {
         try {
-            $userId = (int) $request->user()->user_id;
+            $userId = $this->currentUserId();
             $count = $this->notificationService->getUnreadCount($userId);
 
             return $this->successResponse('تم جلب عدد الإشعارات غير المقروءة بنجاح.', ['unread_count' => $count]);
@@ -487,7 +487,7 @@ class NotificationController extends BaseController
     public function markAsRead(Request $request, int $id): JsonResponse
     {
         try {
-            $userId = (int) $request->user()->user_id;
+            $userId = $this->currentUserId();
             $this->notificationService->markAsRead($id, $userId);
 
             return $this->successResponse('تم تمييز الإشعار كمقروء بنجاح.');
@@ -513,7 +513,7 @@ class NotificationController extends BaseController
     public function markAllRead(Request $request): JsonResponse
     {
         try {
-            $userId = (int) $request->user()->user_id;
+            $userId = $this->currentUserId();
             $count = $this->notificationService->markAllAsRead($userId);
 
             return $this->successResponse("تم تمييز [{$count}] إشعار كمقروء بنجاح.", ['marked_read_count' => $count]);
@@ -556,7 +556,7 @@ class NotificationController extends BaseController
     public function updateFcmToken(UpdateFcmTokenRequest $request): JsonResponse
     {
         try {
-            $userId = (int) $request->user()->user_id;
+            $userId = $this->currentUserId();
             $this->notificationService->updateFcmToken($request, $userId);
 
             return $this->successResponse('تم تسجيل رمز الإشعارات الفورية (FCM Token) للجهاز بنجاح.');

@@ -246,7 +246,7 @@ class BackupController extends BaseController
     public function run(Request $request): JsonResponse
     {
         try {
-            $userId = (int) ($request->user()?->user_id ?? 1);
+            $userId = $this->currentUserId();
             $job = $this->orchestrator->run(BackupType::MANUAL->value, $userId);
 
             $success = $job->status === BackupStatus::SUCCESS->value;

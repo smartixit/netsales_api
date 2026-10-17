@@ -126,7 +126,7 @@ class SubscriptionPlanRequestController extends BaseController
     public function store(StoreSubscriptionPlanRequestRequest $request): JsonResponse
     {
         try {
-            $userId = (int) ($request->user()?->user_id ?? 1);
+            $userId = $this->currentUserId();
             $subRequest = $this->subscriptionRequestService->create($request, $userId);
 
             return $this->successResponse('تم تقديم طلب الاشتراك بنجاح وهو قيد المراجعة والتدقيق.', new SubscriptionPlanRequestResource($subRequest), 201);
@@ -168,7 +168,7 @@ class SubscriptionPlanRequestController extends BaseController
     public function approve(ApproveSubscriptionPlanRequestRequest $request, int $id): JsonResponse
     {
         try {
-            $reviewerId = (int) ($request->user()?->user_id ?? 1);
+            $reviewerId = $this->currentUserId();
             $result = $this->subscriptionRequestService->approve($id, $request, $reviewerId);
 
             return $this->successResponse('تم اعتماد طلب الاشتراك وتفعيل اشتراك الشبكة وتهيئة حصص الميزات بنجاح.', [
@@ -214,7 +214,7 @@ class SubscriptionPlanRequestController extends BaseController
     public function reject(RejectSubscriptionPlanRequestRequest $request, int $id): JsonResponse
     {
         try {
-            $reviewerId = (int) ($request->user()?->user_id ?? 1);
+            $reviewerId = $this->currentUserId();
             $subRequest = $this->subscriptionRequestService->reject($id, $request, $reviewerId);
 
             return $this->successResponse('تم رفض طلب الاشتراك بنجاح.', new SubscriptionPlanRequestResource($subRequest));
@@ -243,7 +243,7 @@ class SubscriptionPlanRequestController extends BaseController
     public function cancel(Request $request, int $id): JsonResponse
     {
         try {
-            $userId = (int) ($request->user()?->user_id ?? 1);
+            $userId = $this->currentUserId();
             $subRequest = $this->subscriptionRequestService->cancel($id, $userId);
 
             return $this->successResponse('تم إلغاء طلب الاشتراك بنجاح.', new SubscriptionPlanRequestResource($subRequest));

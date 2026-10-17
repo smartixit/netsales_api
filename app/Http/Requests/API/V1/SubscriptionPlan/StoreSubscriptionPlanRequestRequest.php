@@ -43,11 +43,6 @@ class StoreSubscriptionPlanRequestRequest extends FormRequest
                 'integer',
                 Rule::exists('subscription_plans', 'plan_id')->whereNull('deleted_at'),
             ],
-            'requested_by' => [
-                'nullable',
-                'integer',
-                Rule::exists('users', 'user_id')->whereNull('deleted_at'),
-            ],
             'request_total_amount' => [
                 'required',
                 'numeric',
@@ -80,11 +75,6 @@ class StoreSubscriptionPlanRequestRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:500',
-            ],
-            'reviewed_by' => [
-                'nullable',
-                'integer',
-                Rule::exists('users', 'user_id')->whereNull('deleted_at'),
             ],
             'review_date' => [
                 'nullable',

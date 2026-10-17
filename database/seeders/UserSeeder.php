@@ -15,6 +15,26 @@ class UserSeeder extends Seeder
     {
         $roles = DB::table('roles')->pluck('role_id', 'role_key');
 
+        // ضمان وجود حساب النظام الآلي (SYSTEM_USER_ID = 0) لعمليات النظام المؤتمتة وحماية قيود المفاتيح الأجنبية
+        $superAdminRoleId = $roles['SUPER_ADMIN'] ?? 1;
+        DB::statement('SET SESSION sql_mode = IFNULL(CONCAT(@@SESSION.sql_mode, ",NO_AUTO_VALUE_ON_ZERO"), "NO_AUTO_VALUE_ON_ZERO")');
+        DB::table('users')->updateOrInsert(
+            ['user_id' => 0],
+            [
+                'role_id' => $superAdminRoleId,
+                'user_full_name' => 'النظام الآلي - System Daemon',
+                'user_phone_number' => '000000000',
+                'user_password' => Hash::make('locked_system_daemon_'.config('app.key')),
+                'user_email' => 'system@netsales.local',
+                'user_profile_logo' => null,
+                'user_2fa_enabled' => false,
+                'user_login_attempts' => 0,
+                'status' => 'ACTIVE',
+                'updated_at' => now('Asia/Aden'),
+                'created_at' => now('Asia/Aden'),
+            ]
+        );
+
         $users = [
             [
                 'role_key' => 'SUPER_ADMIN',

@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Http\JsonResponse;
@@ -88,5 +89,21 @@ trait ApiResponseTrait
             ?? 'عذراً، حدث خطأ في المدخلات المزودة.';
 
         return $this->errorResponse($message, $e->errors(), 422);
+    }
+
+    /**
+     * Unauthorized Error Response (401).
+     */
+    protected function unauthorizedResponse(string $message = 'المستخدم غير مصادق عليه أو انتهت صلاحية الجلسة.'): JsonResponse
+    {
+        return $this->errorResponse($message, [], 401);
+    }
+
+    /**
+     * Authentication Error Response (401).
+     */
+    protected function authenticationErrorResponse(AuthenticationException $e): JsonResponse
+    {
+        return $this->unauthorizedResponse($e->getMessage() ?: 'المستخدم غير مصادق عليه أو انتهت صلاحية الجلسة.');
     }
 }

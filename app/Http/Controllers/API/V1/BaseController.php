@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Models\User;
 use App\Traits\ApiResponseTrait;
+use Illuminate\Auth\AuthenticationException;
 use OpenApi\Attributes as OA;
 
 #[OA\OpenApi(
@@ -69,16 +70,86 @@ class BaseController
 {
     use ApiResponseTrait;
 
-    protected function currentUser(): ?User
+    public const SYSTEM_USER_ID = 0;
+
+    private ?User $resolvedCurrentUser = null;
+
+    private bool $currentUserResolved = false;
+
+    /**
+     * استخراج كائن المستخدم الحالي من الجلسة أو كائن النظام الآلي مع التخزين المؤقت للطلب.
+     */
+    protected function currentUser(bool $fallbackToSystem = false): ?User
     {
+        if ($this->currentUserResolved && $this->resolvedCurrentUser !== null) {
+            return $this->resolvedCurrentUser;
+        }
+
         /** @var User|null $user */
         $user = auth()->user();
+
+        if ($user instanceof User) {
+            $this->resolvedCurrentUser = $user;
+            $this->currentUserResolved = true;
+
+            return $user;
+        }
+
+        if ($fallbackToSystem) {
+            $systemUser = User::find(self::SYSTEM_USER_ID);
+            if ($systemUser instanceof User) {
+                $this->resolvedCurrentUser = $systemUser;
+                $this->currentUserResolved = true;
+
+                return $systemUser;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * استخراج كائن المستخدم الحالي مع اشتراط وجوده أمنياً (رمي استثناء 401 إن لم يكن موثقاً).
+     *
+     * @throws AuthenticationException
+     */
+    protected function requireCurrentUser(bool $fallbackToSystem = false): User
+    {
+        $user = $this->currentUser($fallbackToSystem);
+
+        if (! $user instanceof User) {
+            throw new AuthenticationException('المستخدم غير مصادق عليه أو انتهت صلاحية الجلسة.');
+        }
 
         return $user;
     }
 
-    protected function currentUserId(): ?int
+    /**
+     * استخراج معرّف المستخدم الحالي كرقم صحيح (int) إلزامي دون إرجاع null نهائياً.
+     * في الحالات التي لا يوجد بها جلسة وكان الخيار $fallbackToSystem مفعلاً، يُسند معرف النظام الآلي 0.
+     *
+     * @throws AuthenticationException
+     */
+    protected function currentUserId(bool $fallbackToSystem = true): int
     {
-        return $this->currentUser()?->user_id;
+        $user = auth()->user();
+
+        if ($user instanceof User) {
+            return (int) $user->user_id;
+        }
+
+        if ($fallbackToSystem) {
+            return self::SYSTEM_USER_ID;
+        }
+
+        throw new AuthenticationException('المستخدم غير مصادق عليه أو انتهت صلاحية الجلسة.');
+    }
+
+    /**
+     * التحقق مما إذا كان المستخدم الحالي مديراً عاماً للنظام (Super Admin).
+     */
+    protected function isSuperAdmin(): bool
+    {
+        return (bool) $this->currentUser()?->isSuperAdmin();
     }
 }
