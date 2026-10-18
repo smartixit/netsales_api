@@ -3,9 +3,12 @@
 namespace App\Http\Middleware;
 
 use App\Enums\NetworkStatus;
+use App\Enums\PosStatus;
+use App\Enums\RoleKey;
 use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
 use App\Models\Network;
+use App\Models\Pos;
 use App\Models\SecurityBan;
 use App\Models\User;
 use App\Models\UserDevice;
@@ -115,13 +118,12 @@ class SessionAuthMiddleware
             return $this->errorResponse('حسابك محظور. السبب: '.$reason, [], 403);
         }
 
-        // 3.3 التحقق من حالة الشبكة التابع لها الحساب (إن وُجد ارتباط شبكة)
-        $networkId = $user->network_id ?? null;
-        if (! empty($networkId)) {
-            $network = Network::find($networkId);
+        // 3.3 التحقق من حالة الشبكة أو نقطة البيع التابع لها الحساب
+        if ($user->hasRole(RoleKey::NETWORK_OWNER)) {
+            $network = $user->networks()->first();
 
             if (! $network) {
-                SystemLoggerService::warning('NETWORK_NOT_FOUND', ['network_id' => $networkId], $user->user_id);
+                SystemLoggerService::warning('NETWORK_NOT_FOUND', ['owner_id' => $user->user_id], $user->user_id);
 
                 return $this->errorResponse('لم يتم العثور على مزود الشبكة التابع له الحساب أو تم حذفه.', [], 403);
             }
@@ -144,6 +146,35 @@ class SessionAuthMiddleware
                     ),
                     NetworkStatus::BANNED => $this->errorResponse('مزود الشبكة محظور من قِبل إدارة النظام.', [], 403),
                     default => $this->errorResponse('مزود الشبكة غير مفعّل، يرجى التواصل مع الإدارة.', [], 403),
+                };
+            }
+        } elseif ($user->hasRole(RoleKey::POS_AGENT)) {
+            $pos = $user->pos;
+
+            if (! $pos) {
+                SystemLoggerService::warning('POS_NOT_FOUND', ['owner_id' => $user->user_id], $user->user_id);
+
+                return $this->errorResponse('لم يتم العثور على نقطة البيع التابعة لهذا الحساب أو تم حذفها.', [], 403);
+            }
+
+            $posStatus = $pos->status instanceof PosStatus
+                ? $pos->status
+                : PosStatus::tryFrom((string) $pos->status);
+
+            if ($posStatus !== PosStatus::ACTIVE) {
+                SystemLoggerService::warning('POS_INACTIVE', ['pos_id' => $pos->pos_id, 'status' => $posStatus?->value], $user->user_id);
+
+                return match ($posStatus) {
+                    PosStatus::PENDING => $this->errorResponse('طلب نقطة البيع لا يزال قيد المراجعة والاعتماد من قبل إدارة النظام.', [], 403),
+                    PosStatus::REJECTED => $this->apiResponse(
+                        false,
+                        'تم رفض طلب نقطة البيع.',
+                        ['rejection_reason' => $pos->rejection_reason],
+                        ['rejection_reason' => [$pos->rejection_reason]],
+                        403
+                    ),
+                    PosStatus::BANNED => $this->errorResponse('نقطة البيع محظورة من قِبل إدارة النظام.', [], 403),
+                    default => $this->errorResponse('نقطة البيع غير مفعّلة، يرجى التواصل مع الإدارة.', [], 403),
                 };
             }
         }

@@ -214,9 +214,13 @@ class SaleInvoiceService
             } else {
                 $saleType = SaleType::CREDIT;
                 $totalInvoiceAmount = $creditTotal;
-                $paidAmount = 0.00;
-                $remainingAmount = $creditTotal;
-                $paymentStatus = InvoicePaymentStatus::UNPAID;
+                $existingCredit = max(0.0, (float) $posWallet->wallet_balance);
+                $coveredAmount = min($existingCredit, $totalInvoiceAmount);
+                $paidAmount = round($coveredAmount, 2);
+                $remainingAmount = round($totalInvoiceAmount - $paidAmount, 2);
+                $paymentStatus = ($remainingAmount <= 0.001)
+                    ? InvoicePaymentStatus::PAID
+                    : (($paidAmount > 0.001) ? InvoicePaymentStatus::PARTIALLY_PAID : InvoicePaymentStatus::UNPAID);
                 $itemsData = $creditItemsData;
             }
 
@@ -243,7 +247,9 @@ class SaleInvoiceService
 
             $posStatement = $isCashSale
                 ? "سداد فاتورة مبيعات كروت نقدية (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})"
-                : "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) لعدم كفاية الرصيد النقدي - رصيد مدين على الوكيل: ({$posBalanceAfter}) ناتجة عن الطلب (#{$request->request_uuid})";
+                : ($paidAmount > 0.001
+                    ? "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) مدفوعة جزئياً من الرصيد: ({$paidAmount})، متبقي آجل: ({$remainingAmount}) - رصيد المحفظة الحالي: ({$posBalanceAfter}) ناتجة عن الطلب (#{$request->request_uuid})"
+                    : "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) لعدم كفاية الرصيد النقدي - رصيد مدين على الوكيل: ({$posBalanceAfter}) ناتجة عن الطلب (#{$request->request_uuid})");
 
             $this->posWalletLogRepository->createLog(
                 $posWallet->wallet_id,
@@ -260,7 +266,9 @@ class SaleInvoiceService
 
             $networkStatement = $isCashSale
                 ? "تحصيل مبيعات كروت نقدية (#{$invoice->invoice_uuid}) من نقطة البيع (#{$posId}) ناتجة عن الطلب (#{$request->request_uuid})"
-                : "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$posId}) ناتجة عن الطلب (#{$request->request_uuid})";
+                : ($paidAmount > 0.001
+                    ? "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$posId}) - مسدد من الرصيد: ({$paidAmount})، آجل متبقي: ({$remainingAmount})"
+                    : "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$posId}) ناتجة عن الطلب (#{$request->request_uuid})");
 
             $this->networkWalletLogRepository->createLog(
                 $networkWallet->wallet_id,

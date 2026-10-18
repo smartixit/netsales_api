@@ -25,11 +25,21 @@ interface BaseRepositoryInterface
     public function getFiltered(array $filters = [], array $relations = []);
 
     /**
-     * Find a record by ID (locked with lockForUpdate).
+     * Find a record by ID.
      *
      * @param  int|string  $id
+     * @param  array  $columns
+     * @param  bool  $lock
      */
-    public function findById($id, array $columns = ['*']);
+    public function findById($id, array $columns = ['*'], bool $lock = false);
+
+    /**
+     * Find a record by ID with pessimistic lock (lockForUpdate).
+     *
+     * @param  int|string  $id
+     * @param  array  $columns
+     */
+    public function findByIdForUpdate($id, array $columns = ['*']);
 
     /**
      * Create a new record.
@@ -87,11 +97,13 @@ interface BaseRepositoryInterface
     public function bulkForceDelete(array $ids);
 
     /**
-     * Find a trashed record by ID with pessimistic lock.
+     * Find a trashed record by ID.
      *
      * @param  int|string  $id
+     * @param  array  $columns
+     * @param  bool  $lock
      */
-    public function findTrashedById($id, array $columns = ['*']);
+    public function findTrashedById($id, array $columns = ['*'], bool $lock = false);
 
     /**
      * Get soft-deleted records with cursor pagination.

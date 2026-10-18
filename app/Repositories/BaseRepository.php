@@ -40,9 +40,20 @@ class BaseRepository implements BaseRepositoryInterface
         return $this->model->orderBy($keyName, 'desc')->cursorPaginate($perPage);
     }
 
-    public function findById($id, array $columns = ['*'])
+    public function findById($id, array $columns = ['*'], bool $lock = false)
     {
-        return $this->model->newQuery()->lockForUpdate()->findOrFail($id, $columns);
+        $query = $this->model->newQuery();
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->findOrFail($id, $columns);
+    }
+
+    public function findByIdForUpdate($id, array $columns = ['*'])
+    {
+        return $this->findById($id, $columns, true);
     }
 
     /**
@@ -62,7 +73,7 @@ class BaseRepository implements BaseRepositoryInterface
 
     public function update($id, array $data)
     {
-        $record = $this->findById($id);
+        $record = $this->findByIdForUpdate($id);
         $oldData = $record->toArray();
         $record->update($data);
 
@@ -73,7 +84,7 @@ class BaseRepository implements BaseRepositoryInterface
 
     public function patch($id, array $data)
     {
-        $record = $this->findById($id);
+        $record = $this->findByIdForUpdate($id);
         $oldData = $record->toArray();
 
         $record->update(array_intersect_key($data, array_flip($record->getFillable())));
@@ -85,7 +96,7 @@ class BaseRepository implements BaseRepositoryInterface
 
     public function delete($id)
     {
-        $record = $this->findById($id);
+        $record = $this->findByIdForUpdate($id);
         $oldData = $record->toArray();
         $deleted = $record->delete();
 
@@ -193,13 +204,19 @@ class BaseRepository implements BaseRepositoryInterface
         return $count;
     }
 
-    public function findTrashedById($id, array $columns = ['*'])
+    public function findTrashedById($id, array $columns = ['*'], bool $lock = false)
     {
         if (! $this->usesSoftDeletes()) {
             return null;
         }
 
-        return $this->model->newQuery()->onlyTrashed()->lockForUpdate()->find($id, $columns);
+        $query = $this->model->newQuery()->onlyTrashed();
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->find($id, $columns);
     }
 
     public function getTrashed(int $perPage = 15)
