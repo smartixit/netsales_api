@@ -147,7 +147,16 @@ class SecurityService
             // 2. تحديث حالة الجهاز إلى BANNED
             $this->userDeviceRepository->setDeviceStatus($deviceId, UserDeviceStatus::BANNED);
 
-            // 3. توثيق أمني
+            // 3. تصفير رمز FCM وإبطال كافة الجلسات النشطة المرتبطة بهذا الجهاز فورياً
+            $device = $this->userDeviceRepository->findById($deviceId);
+            if ($device) {
+                $device->clearFcmToken();
+                if (! empty($device->device_uuid)) {
+                    $this->userSessionRepository->revokeSessionsByDeviceUuid($device->device_uuid);
+                }
+            }
+
+            // 4. توثيق أمني
             SystemLoggerService::log(
                 module: 'security',
                 action: 'device_banned',

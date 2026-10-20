@@ -207,6 +207,12 @@ class AuthService
             ]);
         }
 
+        if ($existingDevice && ($existingDevice->status === UserDeviceStatus::INACTIVE->value || $existingDevice->status === UserDeviceStatus::INACTIVE)) {
+            throw ValidationException::withMessages([
+                'device_uuid' => ['تم تعطيل هذا الجهاز من قِبل إدارة النظام. يرجى التواصل مع الدعم الفني.'],
+            ]);
+        }
+
         if ($existingDevice && ($existingDevice->status === UserDeviceStatus::PENDING->value || $existingDevice->status === UserDeviceStatus::PENDING)) {
             throw ValidationException::withMessages([
                 'device_uuid' => ['هذا الجهاز قيد المراجعة والاعتماد من قبل إدارة النظام.'],
@@ -271,10 +277,10 @@ class AuthService
             // إنشاء الجلسة في user_sessions بمدة ديناميكية من إعدادات النظام
             $session = $this->userSessionRepository->createSession(
                 userId: $user->user_id,
+                deviceUuid: $incomingDeviceId,
                 ipAddress: request()->ip(),
                 userAgent: request()->userAgent(),
-                durationHours: $this->getSessionDurationHours(),
-                deviceUuid: (string) ($request->device_uuid ?? $existingDevice->device_uuid)
+                durationHours: $this->getSessionDurationHours()
             );
 
             // تصفير عداد المحاولات وتحديث تاريخ الدخول
@@ -403,10 +409,10 @@ class AuthService
             // إنشاء الجلسة في user_sessions
             $session = $this->userSessionRepository->createSession(
                 userId: $user->user_id,
+                deviceUuid: $incomingDeviceId,
                 ipAddress: request()->ip(),
                 userAgent: request()->userAgent(),
-                durationHours: $this->getSessionDurationHours(),
-                deviceUuid: (string) $incomingDeviceId
+                durationHours: $this->getSessionDurationHours()
             );
 
             // تصفير المحاولات وتحديث تاريخ الدخول
@@ -643,16 +649,19 @@ class AuthService
     }
 
     /**
-     * تسجيل الخروج وإنهاء الجلسة المحددة.
+     * تسجيل الخروج وإنهاء الجلسة المحددة وتصفير رمز FCM للجهاز لضمان الخصوصية والأمان.
      */
-    public function logout(User $user, ?int $sessionId): bool
+    public function logout(User $user, ?int $sessionId, string $deviceUuid): bool
     {
         if ($sessionId) {
             $this->userSessionRepository->revokeSession($sessionId);
         }
 
+        $this->userDeviceRepository->clearFcmTokenForDevice($user->user_id, $deviceUuid);
+
         SystemLoggerService::logAuth('user_logged_out', $user->user_id, [
             'session_id' => $sessionId,
+            'device_uuid' => $deviceUuid,
         ]);
 
         return true;
@@ -870,10 +879,19 @@ class AuthService
     }
 
     /**
-     * إلغاء إقران جهاز محدد للمستخدم.
+     * إلغاء إقران جهاز محدد للمستخدم وتصفير رمزه وإلغاء جلساته النشطة.
      */
     public function disconnectDevice(User $user, int $deviceId): bool
     {
+        $device = $this->userDeviceRepository->findById($deviceId);
+        if (! $device || (int) $device->user_id !== (int) $user->user_id) {
+            return false;
+        }
+
+        if (! empty($device->device_uuid)) {
+            $this->userSessionRepository->revokeSessionsByDeviceUuid($device->device_uuid);
+        }
+
         return $this->userDeviceRepository->disconnectDevice($deviceId, $user->user_id);
     }
 }

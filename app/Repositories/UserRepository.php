@@ -184,4 +184,22 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
             ->orderByDesc('last_used_at')
             ->get();
     }
+
+    /**
+     * جلب المستخدمين النشطين حسب الدور أو المعرفات.
+     */
+    public function getActiveUsers(?int $roleId = null, ?array $userIds = null): Collection
+    {
+        $query = $this->model->newQuery()->active();
+
+        if ($roleId !== null) {
+            $query->where('role_id', $roleId);
+        }
+
+        if (! empty($userIds)) {
+            $query->whereIn('user_id', $userIds);
+        }
+
+        return $query->get();
+    }
 }

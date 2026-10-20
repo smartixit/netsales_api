@@ -86,4 +86,12 @@ interface UserRepositoryInterface extends BaseRepositoryInterface
      * @return Collection<int, UserDevice>
      */
     public function getDevices(int $userId): Collection;
+
+    /**
+     * جلب المستخدمين النشطين حسب الدور أو المعرفات.
+     *
+     * @param  array<int, int>|null  $userIds
+     * @return Collection<int, User>
+     */
+    public function getActiveUsers(?int $roleId = null, ?array $userIds = null): Collection;
 }

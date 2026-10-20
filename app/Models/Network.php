@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\NetworkStatus;
 use App\Services\Support\BusinessIdentifierGenerator;
+use App\Services\Support\FileUploadService;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -209,5 +210,14 @@ class Network extends Model
     public function smsSetting(): HasOne
     {
         return $this->hasOne(NetworkSmsSetting::class, 'network_id', 'network_id');
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (empty($this->network_profile_logo)) {
+            return null;
+        }
+
+        return app(FileUploadService::class)->url($this->network_profile_logo);
     }
 }

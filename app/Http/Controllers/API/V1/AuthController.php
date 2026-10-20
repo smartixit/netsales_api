@@ -169,11 +169,11 @@ class AuthController extends BaseController
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['user_phone_number', 'user_password'],
+                    required: ['user_phone_number', 'user_password', 'device_uuid'],
                     properties: [
                         new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
                         new OA\Property(property: 'user_password', type: 'string', format: 'password', example: 'Admin@123456'),
-                        new OA\Property(property: 'device_uuid', type: 'string', nullable: true, example: 'SPA-251DHS'),
+                        new OA\Property(property: 'device_uuid', type: 'string', example: 'SPA-251DHS'),
                         new OA\Property(property: 'device_name', type: 'string', nullable: true, example: 'Chrome Browser Windows'),
                         new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS', 'MAC'], example: 'ANDROID'),
                     ]
@@ -306,14 +306,25 @@ class AuthController extends BaseController
     )]
     public function logout(Request $request): JsonResponse
     {
-        $user = $this->currentUser();
-        $sessionId = (int) $request->attributes->get('session_id');
+        try {
+            $user = $this->currentUser();
+            $sessionId = (int) $request->attributes->get('session_id');
+            $deviceUuid = (string) ($request->header('X-Device-Uuid') ?: $request->header('X-Device-Id') ?: $request->input('device_uuid'));
 
-        if ($user) {
-            $this->authService->logout($user, $sessionId);
+            if (empty($deviceUuid)) {
+                return $this->errorResponse('معرف الجهاز مطلوب لتسجيل الخروج.', [], 422);
+            }
+
+            if ($user) {
+                $this->authService->logout($user, $sessionId, $deviceUuid);
+            }
+
+            return $this->successResponse('تم تسجيل الخروج بنجاح وإلغاء الجلسة.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل تسجيل الخروج: '.$e->getMessage(), [], 422);
         }
-
-        return $this->successResponse('تم تسجيل الخروج بنجاح وإلغاء الجلسة.');
     }
 
     /**

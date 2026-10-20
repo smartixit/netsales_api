@@ -12,10 +12,10 @@ interface UserSessionRepositoryInterface extends BaseRepositoryInterface
      */
     public function createSession(
         int $userId,
+        string $deviceUuid,
         ?string $ipAddress = null,
         ?string $userAgent = null,
-        ?int $durationHours = null,
-        ?string $deviceUuid = null
+        ?int $durationHours = null
     ): UserSession;
 
     /**
@@ -32,6 +32,11 @@ interface UserSessionRepositoryInterface extends BaseRepositoryInterface
      * Revoke all sessions for a user, optionally keeping one active.
      */
     public function revokeAllUserSessions(int $userId, ?int $exceptSessionId = null): int;
+
+    /**
+     * Revoke all active sessions bound to a specific device UUID.
+     */
+    public function revokeSessionsByDeviceUuid(string $deviceUuid): int;
 
     /**
      * Touch session activity timestamp.

@@ -69,4 +69,9 @@ interface UserDeviceRepositoryInterface extends BaseRepositoryInterface
      * Invalidate/remove an invalid or expired FCM token from all devices.
      */
     public function invalidateFcmToken(string $fcmToken): int;
+
+    /**
+     * Clear FCM push token for a specific device of a user (used upon logout).
+     */
+    public function clearFcmTokenForDevice(int $userId, string $deviceUuid): bool;
 }

@@ -19,9 +19,9 @@ class SessionValidatorService
      * @param  string|int|null  $sessionId  معرف الجلسة المرسل في الترويسة X-Session-Id
      * @return UserSession|null سجل الجلسة الصالحة أو null إذا كانت منتهية أو ملغاة
      */
-    public function validateSession(string|int|null $sessionId, ?string $deviceUuid = null): ?UserSession
+    public function validateSession(string|int|null $sessionId, string $deviceUuid): ?UserSession
     {
-        if (empty($sessionId)) {
+        if (empty($sessionId) || empty($deviceUuid)) {
             return null;
         }
 
@@ -36,11 +36,9 @@ class SessionValidatorService
             ->first();
 
         if ($session) {
-            // إذا كانت الجلسة مقترنة بجهاز محدد، فيلزم تقديم نفس معرف الجهاز ومطابقته بدقة
-            if (! empty($session->device_uuid)) {
-                if (empty($deviceUuid) || $session->device_uuid !== $deviceUuid) {
-                    return null;
-                }
+            // مطابقة الجهاز بدقة تامة: الجلسة المسجلة يجب أن تتطابق مع معرف الجهاز المرسل
+            if (empty($session->device_uuid) || $session->device_uuid !== $deviceUuid) {
+                return null;
             }
 
             // تمديد وقت آخر نشاط بصمت

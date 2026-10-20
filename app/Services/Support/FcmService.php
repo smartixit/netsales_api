@@ -186,6 +186,11 @@ class FcmService
             $stringData[(string) $key] = is_scalar($value) ? (string) $value : json_encode($value, JSON_UNESCAPED_UNICODE);
         }
 
+        // تضمين إجراء النقر الموحد لتطبيقات فلاتر ما لم يتم تخصيصه مسبقاً
+        if (! isset($stringData['click_action'])) {
+            $stringData['click_action'] = 'FLUTTER_NOTIFICATION_CLICK';
+        }
+
         $notification = [
             'title' => $title,
             'body' => $body,
@@ -195,15 +200,19 @@ class FcmService
             $notification['image'] = $image;
         }
 
+        $channelId = $this->systemSettingService->getString('firebase_android_channel_id', 'netsales_high_importance');
+
         $payload = [
             'token' => $token,
             'notification' => $notification,
             'android' => [
                 'priority' => 'HIGH',
                 'notification' => [
+                    'channel_id' => $channelId,
                     'sound' => 'default',
                     'default_sound' => true,
                     'notification_priority' => 'PRIORITY_HIGH',
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
                 ],
             ],
             'apns' => [
@@ -212,16 +221,18 @@ class FcmService
                 ],
                 'payload' => [
                     'aps' => [
+                        'alert' => [
+                            'title' => $title,
+                            'body' => $body,
+                        ],
                         'sound' => 'default',
                         'badge' => 1,
+                        'content-available' => 1,
                     ],
                 ],
             ],
+            'data' => $stringData,
         ];
-
-        if (! empty($stringData)) {
-            $payload['data'] = $stringData;
-        }
 
         return $payload;
     }

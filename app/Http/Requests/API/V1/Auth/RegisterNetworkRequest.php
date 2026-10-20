@@ -97,11 +97,6 @@ class RegisterNetworkRequest extends FormRequest
                 'image',
                 'max:2048',
             ],
-            'profile_picture' => [
-                'nullable',
-                'image',
-                'max:2048',
-            ],
 
             // Device info
             'device_uuid' => [

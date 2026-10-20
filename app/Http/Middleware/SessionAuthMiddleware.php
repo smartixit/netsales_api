@@ -72,15 +72,21 @@ class SessionAuthMiddleware
 
         $deviceUuid = $request->header('X-Device-Uuid') ?? $request->header('X-Device-Id');
 
+        if (empty($deviceUuid)) {
+            RateLimiter::hit($rateLimitKey, 60);
+
+            return $this->errorResponse('غير مصادق عليه. ترويسة معرف الجهاز (X-Device-Uuid) مطلوبة.', [], 401);
+        }
+
         // 3. التحقق من صلاحية وسريان الجلسة ومطابقة الجهاز في جدول user_sessions
-        $session = $this->sessionValidator->validateSession($sessionId, $deviceUuid);
+        $session = $this->sessionValidator->validateSession($sessionId, (string) $deviceUuid);
 
         if (! $session) {
             RateLimiter::hit($rateLimitKey, 60);
 
             return $this->errorResponse(
-                'انتهت صلاحية الجلسة أو أنها غير صالحة.',
-                ['session' => ['الجلسة غير صالحة أو تم إبطالها أو انتهت مدتها.']],
+                'انتهت صلاحية الجلسة أو أنها غير صالحة لهذا الجهاز.',
+                ['session' => ['الجلسة غير صالحة أو تم إبطالها أو لا تتطابق مع هذا الجهاز.']],
                 401
             );
         }
@@ -180,47 +186,49 @@ class SessionAuthMiddleware
         }
 
         // 3.4 التحقق من سلامة وحظر الجهاز المستخدم (X-Device-Uuid)
-        $deviceUuid = $request->header('X-Device-Uuid') ?? $request->header('X-Device-Id');
-        if (! empty($deviceUuid)) {
-            $device = UserDevice::where('user_id', $user->user_id)
-                ->where(function ($q) use ($deviceUuid) {
-                    $q->where('device_uuid', $deviceUuid);
-                    if (is_numeric($deviceUuid)) {
-                        $q->orWhere('device_id', (int) $deviceUuid);
-                    }
-                })
-                ->first();
-
-            if ($device) {
-                $deviceStatus = $device->status instanceof UserDeviceStatus
-                    ? $device->status
-                    : UserDeviceStatus::tryFrom((string) $device->status);
-
-                if ($deviceStatus !== UserDeviceStatus::ACTIVE) {
-                    SystemLoggerService::warning('DEVICE_INACTIVE', ['device_id' => $device->device_id, 'status' => $deviceStatus?->value], $user->user_id);
-
-                    return match ($deviceStatus) {
-                        UserDeviceStatus::PENDING => $this->errorResponse('هذا الجهاز قيد المراجعة والاعتماد من قبل إدارة النظام.', [], 403),
-                        UserDeviceStatus::BANNED => $this->errorResponse('تم حظر هذا الجهاز من الدخول إلى النظام.', [], 403),
-                        default => $this->errorResponse('هذا الجهاز غير مفعّل، يرجى التواصل مع الإدارة.', [], 403),
-                    };
+        $device = UserDevice::where('user_id', $user->user_id)
+            ->where(function ($q) use ($deviceUuid) {
+                $q->where('device_uuid', $deviceUuid);
+                if (is_numeric($deviceUuid)) {
+                    $q->orWhere('device_id', (int) $deviceUuid);
                 }
+            })
+            ->first();
 
-                $activeDeviceBan = SecurityBan::where('device_id', $device->device_id)
-                    ->active()
-                    ->latest('ban_id')
-                    ->first();
+        if (! $device) {
+            SystemLoggerService::warning('DEVICE_NOT_REGISTERED', ['device_uuid' => $deviceUuid], $user->user_id);
 
-                if ($activeDeviceBan) {
-                    $reason = $activeDeviceBan->ban_reason ?: 'تم حظر هذا الجهاز من قِبل الإدارة.';
-                    SystemLoggerService::warning('DEVICE_BANNED', ['device_id' => $device->device_id, 'reason' => $reason], $user->user_id);
-
-                    return $this->errorResponse('هذا الجهاز محظور. السبب: '.$reason, [], 403);
-                }
-
-                $request->attributes->set('device_id', $device->device_id);
-            }
+            return $this->errorResponse('هذا الجهاز غير مسجل بحساب المستخدم.', [], 403);
         }
+
+        $deviceStatus = $device->status instanceof UserDeviceStatus
+            ? $device->status
+            : UserDeviceStatus::tryFrom((string) $device->status);
+
+        if ($deviceStatus !== UserDeviceStatus::ACTIVE) {
+            SystemLoggerService::warning('DEVICE_INACTIVE', ['device_id' => $device->device_id, 'status' => $deviceStatus?->value], $user->user_id);
+
+            return match ($deviceStatus) {
+                UserDeviceStatus::PENDING => $this->errorResponse('هذا الجهاز قيد المراجعة والاعتماد من قبل إدارة النظام.', [], 403),
+                UserDeviceStatus::BANNED => $this->errorResponse('تم حظر هذا الجهاز من الدخول إلى النظام.', [], 403),
+                UserDeviceStatus::INACTIVE => $this->errorResponse('تم تعطيل هذا الجهاز من قِبل إدارة النظام.', [], 403),
+                default => $this->errorResponse('هذا الجهاز غير مفعّل، يرجى التواصل مع الإدارة.', [], 403),
+            };
+        }
+
+        $activeDeviceBan = SecurityBan::where('device_id', $device->device_id)
+            ->active()
+            ->latest('ban_id')
+            ->first();
+
+        if ($activeDeviceBan) {
+            $reason = $activeDeviceBan->ban_reason ?: 'تم حظر هذا الجهاز من قِبل الإدارة.';
+            SystemLoggerService::warning('DEVICE_BANNED', ['device_id' => $device->device_id, 'reason' => $reason], $user->user_id);
+
+            return $this->errorResponse('هذا الجهاز محظور. السبب: '.$reason, [], 403);
+        }
+
+        $request->attributes->set('device_id', $device->device_id);
 
         // 4. تسجيل دخول المستخدم في دورة حياة الطلب وتخزين معرف الجلسة
         Auth::login($user);

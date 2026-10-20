@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BankAccountType;
+use App\Services\Support\FileUploadService;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -80,11 +81,12 @@ class BankAccount extends Model
         return (float) $this->account_balance >= $amount;
     }
 
-    // Accessors
-    // protected function bankLogoUrl(): Attribute
-    // {
-    //     return Attribute::make(
-    //         get: fn (): ?string => $this->bank_logo ? asset("storage/{$this->bank_logo}") : null
-    //     );
-    // }
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (empty($this->bank_logo)) {
+            return null;
+        }
+
+        return app(FileUploadService::class)->url($this->bank_logo);
+    }
 }

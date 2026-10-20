@@ -86,17 +86,28 @@ class UserDeviceRepository extends BaseRepository implements UserDeviceRepositor
     {
         $statusValue = $status instanceof UserDeviceStatus ? $status->value : $status;
 
-        return (bool) $this->model->newQuery()
-            ->where('device_id', $deviceId)
-            ->update(['status' => $statusValue]);
+        $device = $this->model->newQuery()->find($deviceId);
+        if (! $device) {
+            return false;
+        }
+
+        if ($statusValue === UserDeviceStatus::INACTIVE->value || $statusValue === UserDeviceStatus::BANNED->value) {
+            $device->clearFcmToken();
+        }
+
+        return (bool) $device->update(['status' => $statusValue]);
     }
 
     public function disconnectDevice(int $deviceId, int $userId): bool
     {
-        return (bool) $this->model->newQuery()
-            ->forUser($userId)
-            ->where('device_id', $deviceId)
-            ->delete();
+        $device = $this->model->newQuery()->forUser($userId)->where('device_id', $deviceId)->first();
+        if (! $device) {
+            return false;
+        }
+
+        $device->clearFcmToken();
+
+        return (bool) $device->delete();
     }
 
     public function getActiveFcmTokensForUser(int $userId): array
@@ -104,8 +115,8 @@ class UserDeviceRepository extends BaseRepository implements UserDeviceRepositor
         return $this->model->newQuery()
             ->forUser($userId)
             ->active()
-            ->whereNotNull('fcm_token')
-            ->where('fcm_token', '!=', '')
+            ->notBanned()
+            ->withFcmToken()
             ->pluck('fcm_token')
             ->unique()
             ->values()
@@ -117,6 +128,24 @@ class UserDeviceRepository extends BaseRepository implements UserDeviceRepositor
         $device = $this->findByUuid($userId, $deviceUuid);
 
         if ($device) {
+            // حظر أمني: منع حفظ الرمز إذا كان الجهاز محظوراً وتصفير رمزه
+            if ($device->isBanned()) {
+                $device->clearFcmToken();
+
+                return false;
+            }
+
+            // عزل أمني مؤسسي: تصفير نفس الرمز أو نفس معرف الجهاز لأي مستخدم آخر لمنع تسرب الإشعارات
+            if (! empty($fcmToken)) {
+                $this->model->newQuery()
+                    ->forOtherUsers($userId)
+                    ->where(function ($q) use ($fcmToken, $deviceUuid) {
+                        $q->where('fcm_token', $fcmToken)
+                            ->orWhere('device_uuid', $deviceUuid);
+                    })
+                    ->clearFcmToken();
+            }
+
             return (bool) $device->update([
                 'fcm_token' => $fcmToken,
                 'last_used_at' => Carbon::now('Asia/Aden'),
@@ -130,6 +159,13 @@ class UserDeviceRepository extends BaseRepository implements UserDeviceRepositor
     {
         return $this->model->newQuery()
             ->where('fcm_token', $fcmToken)
-            ->update(['fcm_token' => null]);
+            ->clearFcmToken();
+    }
+
+    public function clearFcmTokenForDevice(int $userId, string $deviceUuid): bool
+    {
+        $device = $this->findByUuid($userId, $deviceUuid);
+
+        return $device ? $device->clearFcmToken() : false;
     }
 }

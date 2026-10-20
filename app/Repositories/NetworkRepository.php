@@ -101,4 +101,13 @@ class NetworkRepository extends BaseRepository implements NetworkRepositoryInter
             ->update(['network_phone_number' => $phone]);
     }
 
+    /**
+     * جلب الشبكة مع مالكها ونقاط البيع التابعة لها.
+     */
+    public function findWithStakeholders(int $networkId): ?Network
+    {
+        return $this->model->newQuery()
+            ->with(['owner', 'pos.owner'])
+            ->find($networkId);
+    }
 }

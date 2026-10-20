@@ -42,4 +42,9 @@ interface NetworkRepositoryInterface extends BaseRepositoryInterface
      * التحقق من تفرد اسم الشبكة.
      */
     public function isNameUnique(string $name, ?int $ignoreId = null): bool;
+
+    /**
+     * جلب الشبكة مع مالكها ونقاط البيع التابعة لها.
+     */
+    public function findWithStakeholders(int $networkId): ?Network;
 }

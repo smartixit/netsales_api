@@ -27,10 +27,10 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
      */
     public function createSession(
         int $userId,
+        string $deviceUuid,
         ?string $ipAddress = null,
         ?string $userAgent = null,
-        ?int $durationHours = null,
-        ?string $deviceUuid = null
+        ?int $durationHours = null
     ): UserSession {
         $now = Carbon::now('Asia/Aden');
         $hours = $durationHours ?? max(1, (int) round((int) systemSetting('session_lifetime_minutes', 1440) / 60));
@@ -123,6 +123,20 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
     public function terminateAllOtherSessions(int $userId, int $currentSessionId): int
     {
         return $this->revokeAllUserSessions($userId, $currentSessionId);
+    }
+
+    /**
+     * إلغاء كافة الجلسات النشطة المرتبطة بمعرف جهاز محدد.
+     */
+    public function revokeSessionsByDeviceUuid(string $deviceUuid): int
+    {
+        return $this->model->newQuery()
+            ->where('device_uuid', $deviceUuid)
+            ->whereNull('revoked_at')
+            ->update([
+                'revoked_at' => Carbon::now('Asia/Aden'),
+                'expires_at' => Carbon::now('Asia/Aden'),
+            ]);
     }
 
     /**

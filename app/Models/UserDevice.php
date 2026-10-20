@@ -75,12 +75,42 @@ class UserDevice extends Model
         return $query->where('status', UserDeviceStatus::BANNED);
     }
 
+    public function scopeNotBanned(Builder $query): Builder
+    {
+        return $query->where('status', '!=', UserDeviceStatus::BANNED)
+            ->whereDoesntHave('securityBans', fn (Builder $q) => $q->activeBans());
+    }
+
     public function scopeForUser(Builder $query, int $userId): Builder
     {
         return $query->where('user_id', $userId);
     }
 
+    public function scopeForOtherUsers(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', '!=', $userId);
+    }
+
+    public function scopeDeviceUuid(Builder $query, string $deviceUuid): Builder
+    {
+        return $query->where('device_uuid', $deviceUuid);
+    }
+
+    public function scopeWithFcmToken(Builder $query): Builder
+    {
+        return $query->whereNotNull('fcm_token')->where('fcm_token', '!=', '');
+    }
+
+    public function scopeClearFcmToken(Builder $query): int
+    {
+        return $query->update(['fcm_token' => null]);
+    }
+
     // Checkers & Helpers
+    public function clearFcmToken(): bool
+    {
+        return (bool) $this->update(['fcm_token' => null]);
+    }
     public function isActive(): bool
     {
         return $this->status === UserDeviceStatus::ACTIVE;

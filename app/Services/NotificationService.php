@@ -12,15 +12,14 @@ use App\Http\Requests\API\V1\Notification\SendAdminNotificationRequest;
 use App\Http\Requests\API\V1\Notification\StoreNotificationRequest;
 use App\Http\Requests\API\V1\Notification\UpdateFcmTokenRequest;
 use App\Http\Requests\API\V1\Notification\UpdateNotificationRequest;
+use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\NotificationRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Jobs\SendEmailNotificationJob;
 use App\Jobs\SendFcmNotificationJob;
 use App\Jobs\SendSmsNotificationJob;
-use App\Models\Network;
 use App\Models\Notification;
-use App\Models\User;
 use App\Services\Support\FileUploadService;
 use App\Services\Support\SMSGateService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -45,6 +44,7 @@ class NotificationService
         protected NotificationRepositoryInterface $notificationRepository,
         protected UserRepositoryInterface $userRepository,
         protected UserDeviceRepositoryInterface $userDeviceRepository,
+        protected NetworkRepositoryInterface $networkRepository,
         protected FileUploadService $fileUploadService,
         protected SMSGateService $smsGateService,
         ?SystemSettingService $systemSettingService = null
@@ -189,6 +189,14 @@ class NotificationService
             $user = $this->userRepository->findById((int) $userId);
             if (! $user) {
                 Log::warning("NotificationService::sendDirect: User ID {$userId} not found.");
+                $results[$userId] = null;
+
+                continue;
+            }
+
+            // عزل أمني: تجاهل إرسال الإشعارات التشغيلية للمستخدمين غير النشطين أو المحظورين ما لم يكن إشعاراً أمنياً
+            if (! $user->isActive() && $typeEnum !== NotificationType::SECURITY) {
+                Log::info("NotificationService::sendDirect: Skipping non-security notification for inactive/banned user ID {$userId}");
                 $results[$userId] = null;
 
                 continue;
@@ -436,10 +444,10 @@ class NotificationService
         $type = $audience['type'] ?? 'all';
 
         return match ($type) {
-            'role' => User::where('status', 'ACTIVE')->where('role_id', $audience['role_id'] ?? null)->get(),
+            'role' => $this->userRepository->getActiveUsers(roleId: isset($audience['role_id']) ? (int) $audience['role_id'] : null),
             'network' => $this->resolveNetworkUsers((int) ($audience['network_id'] ?? 0)),
-            'users' => User::where('status', 'ACTIVE')->whereIn('user_id', (array) ($audience['user_ids'] ?? []))->get(),
-            default => User::where('status', 'ACTIVE')->get(),
+            'users' => $this->userRepository->getActiveUsers(userIds: (array) ($audience['user_ids'] ?? [])),
+            default => $this->userRepository->getActiveUsers(),
         };
     }
 
@@ -448,19 +456,21 @@ class NotificationService
      */
     protected function resolveNetworkUsers(int $networkId): Collection
     {
-        $network = Network::with(['owner', 'pos.owner'])->find($networkId);
+        $network = $this->networkRepository->findWithStakeholders($networkId);
         if (! $network) {
             return new Collection;
         }
 
         $users = collect();
-        if ($network->owner->status === UserStatus::ACTIVE->value) {
+        if ($network->owner && $network->owner->isActive()) {
             $users->push($network->owner);
         }
 
-        foreach ($network->pos as $pos) {
-            if ($pos->owner->status === UserStatus::ACTIVE->value) {
-                $users->push($pos->owner);
+        if ($network->relationLoaded('pos')) {
+            foreach ($network->pos as $pos) {
+                if ($pos->owner && $pos->owner->isActive()) {
+                    $users->push($pos->owner);
+                }
             }
         }
 
@@ -481,6 +491,23 @@ class NotificationService
 
             // التأكد من وجود الجهاز أو تسجيله للمستخدم
             $device = $this->userDeviceRepository->findByUuid($userId, $deviceUuid);
+
+            // التحقق الأمني: إذا كان الجهاز مسجلاً وغير مفعّل أو محظور نرفض تسجيل رمز الإشعارات فوراً ونصفّر رمزه
+            if ($device && (! $device->isActive() || $device->isBanned())) {
+                $device->clearFcmToken();
+
+                $message = match ($device->status) {
+                    UserDeviceStatus::BANNED => 'هذا الجهاز محظور أمنياً من قِبل إدارة النظام ولا يمكنه تسجيل أو استلام الإشعارات.',
+                    UserDeviceStatus::PENDING => 'هذا الجهاز قيد المراجعة والاعتماد من قبل إدارة النظام.',
+                    UserDeviceStatus::INACTIVE => 'تم تعطيل هذا الجهاز من قِبل إدارة النظام ولا يمكنه استلام الإشعارات.',
+                    default => 'هذا الجهاز غير مفعّل، يرجى التواصل مع إدارة النظام.',
+                };
+
+                throw ValidationException::withMessages([
+                    'device_uuid' => [$message],
+                ]);
+            }
+
             if (! $device) {
                 $this->userDeviceRepository->registerOrUpdateDevice(
                     userId: $userId,

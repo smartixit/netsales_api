@@ -335,16 +335,6 @@ class User extends Authenticatable
         return array_values(array_unique(array_merge($rolePermissions, $directPermissions)));
     }
 
-    // Accessors
-    // protected function profileLogoUrl(): Attribute
-    // {
-    //     return Attribute::make(
-    //         get: fn (): string => $this->user_profile_logo
-    //             ? Storage::url($this->user_profile_logo)
-    //             : asset('assets/images/default-avatar.png')
-    //     );
-    // }
-
     protected function displayName(): Attribute
     {
         return Attribute::make(

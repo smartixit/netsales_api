@@ -17,6 +17,23 @@ class SendFcmNotificationJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
+     * عدد محاولات إعادة التشغيل في حال فشل الاتصال المؤقت
+     */
+    public int $tries = 3;
+
+    /**
+     * فترات التراجع التدريجي قبل إعادة المحاولة بالثواني
+     *
+     * @var array<int, int>
+     */
+    public array $backoff = [10, 30, 60];
+
+    /**
+     * الحد الأقصى للمهلة الزمنية لتنفيذ الوظيفة بالثواني
+     */
+    public int $timeout = 30;
+
+    /**
      * Create a new job instance.
      *
      * @param array<string, mixed> $data

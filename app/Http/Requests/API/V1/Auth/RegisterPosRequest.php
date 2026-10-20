@@ -105,11 +105,6 @@ class RegisterPosRequest extends FormRequest
                 'image',
                 'max:2048',
             ],
-            'profile_picture' => [
-                'nullable',
-                'image',
-                'max:2048',
-            ],
 
             // بيانات الجهاز
             'device_uuid' => [

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PosStatus;
 use App\Services\Support\BusinessIdentifierGenerator;
+use App\Services\Support\FileUploadService;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -183,13 +184,12 @@ class Pos extends Model
         return $this->networkPos()->where('network_id', $networkId)->where('status', true)->exists();
     }
 
-    // Accessors
-    // protected function logoUrl(): Attribute
-    // {
-    //     return Attribute::make(
-    //         get: fn (): string => $this->pos_profile_logo
-    //             ? asset('storage/' . $this->pos_profile_logo)
-    //             : asset('assets/images/default-pos.png')
-    //     );
-    // }
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (empty($this->pos_profile_logo)) {
+            return null;
+        }
+
+        return app(FileUploadService::class)->url($this->pos_profile_logo);
+    }
 }
