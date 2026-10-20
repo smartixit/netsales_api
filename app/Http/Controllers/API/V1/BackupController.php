@@ -129,7 +129,7 @@ class BackupController extends BaseController
 
                 if (! $isLoopback) {
                     return $this->errorResponse(
-                        'redirect_uri يجب أن يكون عنوان Loopback محلي (http://localhost أو http://127.0.0.1).',
+                        'redirect_uri يجب أن يكون عنوان Loopback محلي (http://localhost أو https://127.0.0.1).',
                         [],
                         422
                     );

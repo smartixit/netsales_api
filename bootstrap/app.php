@@ -89,11 +89,15 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (InvalidArgumentException $e, Request $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
+                $isCrypto = $e->getMessage() === 'خطأ في التشفير.'
+                    || str_contains($e->getMessage(), 'client_public_key')
+                    || str_contains($e->getMessage(), 'Public-Key');
+
                 return response()->json([
                     'success' => false,
                     'message' => $e->getMessage(),
                     'data' => (object) [],
-                    'errors' => ['client_public_key' => [$e->getMessage()]],
+                    'errors' => $isCrypto ? ['client_public_key' => [$e->getMessage()]] : [],
                 ], 422);
             }
         });
