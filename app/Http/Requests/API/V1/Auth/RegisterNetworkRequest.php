@@ -104,6 +104,11 @@ class RegisterNetworkRequest extends FormRequest
                 'string',
                 'max:255',
             ],
+            'fcm_token' => [
+                'required',
+                'string',
+                'max:255',
+            ],
             'device_name' => [
                 'nullable',
                 'string',

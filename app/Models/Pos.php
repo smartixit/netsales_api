@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 
 class Pos extends Model
 {
@@ -138,6 +139,11 @@ class Pos extends Model
         return $query->where('status', PosStatus::ACTIVE);
     }
 
+    public function scopeActive(Builder $query): Builder
+    {
+        return $this->scopeApproved($query);
+    }
+
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', PosStatus::PENDING);
@@ -167,6 +173,20 @@ class Pos extends Model
     public function isApproved(): bool
     {
         return $this->status === PosStatus::ACTIVE;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->isApproved();
+    }
+
+    public function ensureActive(): void
+    {
+        if (! $this->isActive()) {
+            throw ValidationException::withMessages([
+                'pos_id' => ["نقطة البيع [{$this->pos_name}] غير معتمدة أو غير مفعلة حالياً."],
+            ]);
+        }
     }
 
     public function isPending(): bool

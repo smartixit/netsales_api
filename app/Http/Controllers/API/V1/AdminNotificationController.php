@@ -109,7 +109,7 @@ class AdminNotificationController extends BaseController
 
             $this->notificationService->sendDirect(
                 userId: $request->getUserId(),
-                type: NotificationType::INFO,
+                type: NotificationType::SYSTEM_ANNOUNCEMENT,
                 title: $request->getTitle(),
                 message: $request->getBody(),
                 inApp: in_array('in_app', $channels, true),

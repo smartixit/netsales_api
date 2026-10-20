@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class UserDevice extends Model
 {
@@ -65,6 +66,11 @@ class UserDevice extends Model
         return $query->where('status', UserDeviceStatus::ACTIVE);
     }
 
+    public function scopeInactive(Builder $query): Builder
+    {
+        return $query->where('status', UserDeviceStatus::INACTIVE);
+    }
+
     public function scopePrimary(Builder $query): Builder
     {
         return $query->where('is_primary', true);
@@ -114,6 +120,21 @@ class UserDevice extends Model
     public function isActive(): bool
     {
         return $this->status === UserDeviceStatus::ACTIVE;
+    }
+
+    public function ensureActive(): void
+    {
+        if (! $this->isActive()) {
+            throw ValidationException::withMessages([
+                'device_uuid' => ["جهاز المستخدم غير مفعّل أو غير نشط حالياً."],
+            ]);
+        }
+
+        if ($this->isBanned()) {
+            throw ValidationException::withMessages([
+                'device_uuid' => ["هذا الجهاز محظور أمنياً من النظام."],
+            ]);
+        }
     }
 
     public function isPrimary(): bool

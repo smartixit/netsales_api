@@ -82,7 +82,7 @@ class SubscriptionPlanRepository extends BaseRepository implements SubscriptionP
     }
 
     /**
-     * جلب كافة الباقات المفعلة للاشتراك.
+     * جلب كافة الباقات المفعّلة للاشتراك.
      */
     public function getActivePlans(array $relations = ['features', 'planFeatures.feature']): Collection
     {

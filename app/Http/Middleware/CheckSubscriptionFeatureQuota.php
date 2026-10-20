@@ -61,7 +61,7 @@ class CheckSubscriptionFeatureQuota
                 return $this->errorResponse(
                     'عذراً، لا يوجد اشتراك سارٍ ونشط لهذه الشبكة أو أن فترة صلاحية الاشتراك قد انتهت.',
                     [
-                        'subscription' => ['فترة صلاحية الاشتراك منتهية ولا توجد باقة مفعلة.'],
+                        'subscription' => ['فترة صلاحية الاشتراك منتهية ولا توجد باقة مفعّلة.'],
                     ],
                     403
                 );
@@ -93,7 +93,7 @@ class CheckSubscriptionFeatureQuota
 
         $response = $next($request);
 
-        // إذا كان خيار الاستهلاك التلقائي مفعلاً ونجحت العملية (200..299)، يتم قيد الاستهلاك تلقائياً
+        // إذا كان خيار الاستهلاك التلقائي مفعّلاً ونجحت العملية (200..299)، يتم قيد الاستهلاك تلقائياً
         $shouldConsume = ($autoConsume === true || $autoConsume === 'auto_consume' || $autoConsume === '1');
         if ($shouldConsume && $response->isSuccessful()) {
             try {

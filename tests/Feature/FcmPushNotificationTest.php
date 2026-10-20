@@ -142,7 +142,7 @@ class FcmPushNotificationTest extends TestCase
 
         $notification = $service->sendDirect(
             userId: $this->user->user_id,
-            type: NotificationType::INFO,
+            type: NotificationType::GENERAL_INFO,
             title: 'إشعار اختبار فوري',
             message: 'محتوى تجريبي للإشعار الفوري الموجه'
         );

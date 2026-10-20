@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\NetworkStatus;
+use App\Enums\PosStatus;
 use App\Http\Requests\API\V1\Network\StoreNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
 use App\Interfaces\NetworkPosRepositoryInterface;
@@ -96,6 +98,26 @@ class NetworkPosService
             } catch (ModelNotFoundException) {
                 throw ValidationException::withMessages([
                     'network_id' => ['مزود الشبكة المحدد غير موجود في النظام.'],
+                ]);
+            }
+
+            // التحقق من حالة نقطة البيع وحالة الشبكة
+            try {
+                $pos = $this->posRepository->findById($posId);
+                if (! $pos->status == PosStatus::ACTIVE->value) {
+                    throw ValidationException::withMessages([
+                        'pos_id' => ['نقطة البيع المحددة غير مفعلة حالياً.'],
+                    ]);
+                }
+                $networkStatus = $this->networkRepository->findById($networkId)->status;
+                if (! $networkStatus == NetworkStatus::ACTIVE->value) {
+                    throw ValidationException::withMessages([
+                        'network_id' => ['مزود الشبكة المحدد غير مفعّل حالياً.'],
+                    ]);
+                }
+            } catch (ModelNotFoundException) {
+                throw ValidationException::withMessages([
+                    'pos_id' => ['نقطة البيع المحددة غير موجودة في النظام.'],
                 ]);
             }
 

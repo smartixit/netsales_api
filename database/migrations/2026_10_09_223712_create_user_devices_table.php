@@ -19,7 +19,7 @@ return new class extends Migration
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
 
-            $table->string('device_uuid', 150);
+            $table->string('device_uuid', 255);
             $table->string('device_name', 50);
             $table->string('device_type', 50);
             $table->boolean('is_primary')->default(false)->index('idx_user_devices_is_primary');

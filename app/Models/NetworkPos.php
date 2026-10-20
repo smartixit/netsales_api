@@ -6,6 +6,7 @@ use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Validation\ValidationException;
 
 class NetworkPos extends Model
 {
@@ -51,6 +52,11 @@ class NetworkPos extends Model
         return $query->where('status', true);
     }
 
+    public function scopeInactive(Builder $query): Builder
+    {
+        return $query->where('status', false);
+    }
+
     public function scopeForNetwork(Builder $query, int $networkId): Builder
     {
         return $query->where('network_id', $networkId);
@@ -65,5 +71,14 @@ class NetworkPos extends Model
     public function isActive(): bool
     {
         return (bool) $this->status;
+    }
+
+    public function ensureActive(): void
+    {
+        if (! $this->isActive()) {
+            throw ValidationException::withMessages([
+                'network_pos' => ['ارتباط نقطة البيع بالشبكة معطل حالياً.'],
+            ]);
+        }
     }
 }

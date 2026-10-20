@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 
 class Network extends Model
 {
@@ -164,6 +165,11 @@ class Network extends Model
         return $query->where('status', NetworkStatus::ACTIVE);
     }
 
+    public function scopeActive(Builder $query): Builder
+    {
+        return $this->scopeApproved($query);
+    }
+
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', NetworkStatus::PENDING);
@@ -188,6 +194,20 @@ class Network extends Model
     public function isApproved(): bool
     {
         return $this->status === NetworkStatus::ACTIVE;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->isApproved();
+    }
+
+    public function ensureActive(): void
+    {
+        if (! $this->isActive()) {
+            throw ValidationException::withMessages([
+                'network_id' => ["الشبكة [{$this->network_name}] غير مفعلة أو غير معتمدة حالياً."],
+            ]);
+        }
     }
 
     public function isPending(): bool

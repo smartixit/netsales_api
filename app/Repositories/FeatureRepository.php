@@ -81,7 +81,7 @@ class FeatureRepository extends BaseRepository implements FeatureRepositoryInter
     }
 
     /**
-     * جلب كافة الميزات المفعلة في النظام.
+     * جلب كافة الميزات المفعّلة في النظام.
      */
     public function getActiveFeatures(): Collection
     {

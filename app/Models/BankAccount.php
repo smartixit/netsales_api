@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 
 class BankAccount extends Model
 {
@@ -58,6 +59,11 @@ class BankAccount extends Model
         return $query->where('status', true);
     }
 
+    public function scopeInactive(Builder $query): Builder
+    {
+        return $query->where('status', false);
+    }
+
     public function scopeByType(Builder $query, BankAccountType|string $type): Builder
     {
         $val = $type instanceof BankAccountType ? $type->value : $type;
@@ -74,6 +80,15 @@ class BankAccount extends Model
     public function isActive(): bool
     {
         return (bool) $this->status;
+    }
+
+    public function ensureActive(): void
+    {
+        if (! $this->isActive()) {
+            throw ValidationException::withMessages([
+                'account_id' => ["الحساب البنكي المحدد [{$this->bank_name} - {$this->account_number}] معطل حالياً."],
+            ]);
+        }
     }
 
     public function hasSufficientBalance(float $amount): bool

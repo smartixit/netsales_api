@@ -28,7 +28,6 @@ use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
 use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
-use App\Models\NetworkPos;
 use App\Models\Pos;
 use App\Models\Role;
 use App\Models\User;
@@ -125,7 +124,7 @@ class AuthService
             }
         }
 
-        if (! $user || ! Hash::check($password, $user->user_password)) {
+        if (! $user || ! Hash::check($password, $user->getAuthPassword())) {
             if ($user) {
                 $this->userRepository->incrementLoginAttempts($user->user_id);
                 $remaining = max(0, $this->getMaxLoginAttempts() - ($user->user_login_attempts + 1));
@@ -271,7 +270,8 @@ class AuthService
         return DB::transaction(function () use ($user, $request, $existingDevice) {
             $deviceName = (string) ($request->device_name ?? $existingDevice->device_name);
 
-            // تحديث وقت آخر استخدام للجهاز
+            // تحديث وقت آخر استخدام للجهاز وتحديث رمز الإشعارات FCM
+            $this->userDeviceRepository->updateFcmToken($user->user_id, $existingDevice->device_uuid, (string) $request->fcm_token);
             $this->userDeviceRepository->touchLastUsed($existingDevice->device_id);
 
             // إنشاء الجلسة في user_sessions بمدة ديناميكية من إعدادات النظام
@@ -301,7 +301,7 @@ class AuthService
             if (! $existingDevice->is_primary) {
                 $this->notificationService->sendDirect(
                     userId: (int) $user->user_id,
-                    type: NotificationType::SECURITY,
+                    type: NotificationType::SECURITY_LOGIN_ALERT,
                     title: 'تنبيه أمني: دخول من جهاز موثوق',
                     message: $body,
                     inApp: true,
@@ -403,7 +403,8 @@ class AuthService
                 deviceName: $deviceName,
                 deviceType: $deviceTypeEnum,
                 isPrimary: $isFirstDevice,
-                status: UserDeviceStatus::ACTIVE
+                status: UserDeviceStatus::ACTIVE,
+                fcmToken: (string) $request->fcm_token
             );
 
             // إنشاء الجلسة في user_sessions
@@ -433,7 +434,7 @@ class AuthService
 
             $this->notificationService->sendDirect(
                 userId: (int) $user->user_id,
-                type: NotificationType::SECURITY,
+                type: NotificationType::SECURITY_LOGIN_ALERT,
                 title: 'تنبيه أمني: تسجيل دخول من جهاز جديد',
                 message: $smsMessage,
                 inApp: true,
@@ -468,10 +469,10 @@ class AuthService
     public function registerNetwork(RegisterNetworkRequest $request): array
     {
         return DB::transaction(function () use ($request) {
-            // 1. استخراج دور مدير أو مالك الشبكة
-            $role = Role::where('role_key', RoleKey::NETWORK_OWNER->value)->first();
+            // 1. استخراج دور مدير أو مالك الشبكة عبر النطاقات المخصصة
+            $role = Role::byKey(RoleKey::NETWORK_OWNER)->active()->first();
             if (! $role) {
-                throw new RuntimeException('دور مدير أو مالك الشبكة غير معرف في النظام.');
+                throw new RuntimeException('دور مدير أو مالك الشبكة غير معرف في النظام أو غير مفعّل.');
             }
 
             // 2. رفع الصورة الشخصية للمسؤول إن وُجدت
@@ -524,7 +525,8 @@ class AuthService
                 deviceName: (string) ($request->device_name ?? 'جهاز التسجيل الأساسي'),
                 deviceType: $deviceTypeEnum,
                 isPrimary: true,
-                status: UserDeviceStatus::PENDING
+                status: UserDeviceStatus::PENDING,
+                fcmToken: (string) $request->fcm_token
             );
 
             SystemLoggerService::logAuth('network_registered_pending', $user->user_id, [
@@ -549,10 +551,10 @@ class AuthService
     public function registerPos(RegisterPosRequest $request): array
     {
         return DB::transaction(function () use ($request) {
-            // 1. استخراج دور وكيل نقطة البيع
-            $role = Role::where('role_key', RoleKey::POS_AGENT->value)->first();
+            // 1. استخراج دور وكيل نقطة البيع عبر النطاقات المخصصة
+            $role = Role::byKey(RoleKey::POS_AGENT)->active()->first();
             if (! $role) {
-                throw new RuntimeException('دور وكيل نقطة البيع غير معرف في النظام.');
+                throw new RuntimeException('دور وكيل نقطة البيع غير معرف في النظام أو غير مفعّل.');
             }
 
             // 2. رفع الصورة الشخصية للوكيل إن وُجدت
@@ -595,11 +597,10 @@ class AuthService
                 'status' => PosStatus::PENDING,
             ]);
 
-            // ربط النقطة بالشبكة إن حُددت
+            // ربط النقطة بالشبكة إن حُددت عبر علاقة networkPos بالموديل
             if (! empty($request->network_id)) {
-                NetworkPos::create([
+                $pos->networkPos()->create([
                     'network_id' => (int) $request->network_id,
-                    'pos_id' => $pos->pos_id,
                     'status' => false,
                 ]);
             }
@@ -614,7 +615,8 @@ class AuthService
                 deviceName: (string) ($request->device_name ?? 'جهاز التسجيل الأساسي'),
                 deviceType: $deviceTypeEnum,
                 isPrimary: true,
-                status: UserDeviceStatus::PENDING
+                status: UserDeviceStatus::PENDING,
+                fcmToken: (string) $request->fcm_token
             );
 
             SystemLoggerService::logAuth('pos_registered_pending', $user->user_id, [
@@ -795,7 +797,7 @@ class AuthService
 
             $this->notificationService->sendDirect(
                 userId: (int) $user->user_id,
-                type: NotificationType::SECURITY,
+                type: NotificationType::SECURITY_PASSWORD_CHANGED,
                 title: 'إشعار أمني: تم تغيير كلمة المرور',
                 message: $smsMessage,
                 inApp: true,

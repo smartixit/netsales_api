@@ -193,7 +193,7 @@ class ProviderSubscriptionService
                     $planFeature = $this->planFeatureRepository->findByPlanAndFeature($subscription->plan_id, $feature->feature_id);
                     if (! $planFeature || ! $planFeature->status) {
                         throw ValidationException::withMessages([
-                            'feature' => ["الميزة [{$featureName}] غير مشمولة في باقة اشتراكك الجديدة المفعلة مبكراً."],
+                            'feature' => ["الميزة [{$featureName}] غير مشمولة في باقة اشتراكك الجديدة المفعّلة مبكراً."],
                         ]);
                     }
 

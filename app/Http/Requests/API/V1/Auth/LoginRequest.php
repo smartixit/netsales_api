@@ -31,6 +31,7 @@ class LoginRequest extends FormRequest
             ],
             'user_password' => ['required', 'string', 'min:6'],
             'device_uuid' => ['required', 'string', 'max:255'],
+            'fcm_token' => ['required', 'string', 'max:255'],
             'device_name' => ['nullable', 'string', 'max:150'],
             'device_type' => ['nullable', 'string', Rule::enum(DeviceType::class)],
         ];

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('user_sessions', function (Blueprint $table) {
             $table->string('session_token', 64)->unique('idx_user_sessions_session_token')->after('session_id');
-            $table->string('device_uuid', 100)->after('user_agent');
+            $table->string('device_uuid', 255)->after('user_agent');
 
             $table->index('device_uuid', 'idx_user_sessions_device_uuid');
         });

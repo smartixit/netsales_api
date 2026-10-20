@@ -110,7 +110,12 @@ class RegisterPosRequest extends FormRequest
             'device_uuid' => [
                 'required',
                 'string',
-                'max:150',
+                'max:255',
+            ],
+            'fcm_token' => [
+                'required',
+                'string',
+                'max:255',
             ],
             'device_name' => [
                 'nullable',

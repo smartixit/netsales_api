@@ -35,10 +35,10 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
         $now = Carbon::now('Asia/Aden');
         $hours = $durationHours ?? max(1, (int) round((int) systemSetting('session_lifetime_minutes', 1440) / 60));
         $expiresAt = $now->copy()->addHours($hours);
-        $sessionToken = bin2hex(random_bytes(32)); // 64-hex char cryptographic random token (256-bit entropy)
+        // $sessionToken = bin2hex(random_bytes(32)); // 64-hex char cryptographic random token (256-bit entropy)
 
         return $this->create([
-            'session_token' => $sessionToken,
+            // 'session_token' => $sessionToken,
             'user_id' => $userId,
             'ip_address' => $ipAddress,
             'user_agent' => $userAgent,
@@ -67,6 +67,26 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
     }
 
     /**
+     * البحث عن الجلسة بالرمز العشوائي أو المعرف (نشطة أو غير نشطة).
+     */
+    public function findByTokenOrId(string|int $sessionId, bool $lock = false): ?UserSession
+    {
+        $query = $this->model->newQuery()
+            ->where(function ($q) use ($sessionId) {
+                $q->where('session_token', (string) $sessionId);
+                if (is_numeric($sessionId)) {
+                    $q->orWhere('session_id', (int) $sessionId);
+                }
+            });
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->first();
+    }
+
+    /**
      * اسم بديل متطابق مع نتيجتي للبحث عن الجلسة النشطة.
      */
     public function findActive(string|int $sessionId): ?UserSession
@@ -80,7 +100,7 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
     public function revokeSession(int $sessionId): bool
     {
         /** @var UserSession|null $session */
-        $session = $this->model->newQuery()->lockForUpdate()->find($sessionId);
+        $session = $this->findByTokenOrId($sessionId, true);
         if (! $session) {
             return false;
         }

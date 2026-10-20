@@ -31,7 +31,7 @@ class BankAccountService
     }
 
     /**
-     * جلب الحسابات المفعلة لاستقبال المدفوعات.
+     * جلب الحسابات المفعّلة لاستقبال المدفوعات.
      */
     public function getActiveAccounts(array $filters = []): Collection
     {

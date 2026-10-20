@@ -183,7 +183,8 @@
                                     "user_full_name",
                                     "user_phone_number",
                                     "user_password",
-                                    "device_uuid"
+                                    "device_uuid",
+                                    "fcm_token"
                                 ],
                                 "properties": {
                                     "network_name": {
@@ -253,6 +254,11 @@
                                             "WINDOWS",
                                             "MAC"
                                         ]
+                                    },
+                                    "fcm_token": {
+                                        "description": "رمز إشعارات FCM للجهاز",
+                                        "type": "string",
+                                        "example": "fcm_token_example_hash_here"
                                     }
                                 },
                                 "type": "object"
@@ -294,7 +300,8 @@
                                     "user_full_name",
                                     "user_phone_number",
                                     "user_password",
-                                    "device_uuid"
+                                    "device_uuid",
+                                    "fcm_token"
                                 ],
                                 "properties": {
                                     "pos_name": {
@@ -369,6 +376,11 @@
                                             "WINDOWS",
                                             "MAC"
                                         ]
+                                    },
+                                    "fcm_token": {
+                                        "description": "رمز إشعارات FCM للجهاز",
+                                        "type": "string",
+                                        "example": "fcm_token_example_hash_here"
                                     }
                                 },
                                 "type": "object"
@@ -405,7 +417,9 @@
                             "schema": {
                                 "required": [
                                     "user_phone_number",
-                                    "user_password"
+                                    "user_password",
+                                    "device_uuid",
+                                    "fcm_token"
                                 ],
                                 "properties": {
                                     "user_phone_number": {
@@ -419,8 +433,7 @@
                                     },
                                     "device_uuid": {
                                         "type": "string",
-                                        "example": "SPA-251DHS",
-                                        "nullable": true
+                                        "example": "SPA-251DHS"
                                     },
                                     "device_name": {
                                         "type": "string",
@@ -437,6 +450,11 @@
                                             "WINDOWS",
                                             "MAC"
                                         ]
+                                    },
+                                    "fcm_token": {
+                                        "description": "رمز إشعارات FCM للجهاز",
+                                        "type": "string",
+                                        "example": "fcm_token_example_hash_here"
                                     }
                                 },
                                 "type": "object"
@@ -474,7 +492,8 @@
                                 "required": [
                                     "user_phone_number",
                                     "otp",
-                                    "device_uuid"
+                                    "device_uuid",
+                                    "fcm_token"
                                 ],
                                 "properties": {
                                     "user_phone_number": {
@@ -504,6 +523,11 @@
                                             "WINDOWS",
                                             "MAC"
                                         ]
+                                    },
+                                    "fcm_token": {
+                                        "description": "رمز إشعارات FCM للجهاز",
+                                        "type": "string",
+                                        "example": "fcm_token_example_hash_here"
                                     }
                                 },
                                 "type": "object"

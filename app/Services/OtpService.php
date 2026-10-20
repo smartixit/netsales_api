@@ -185,7 +185,7 @@ class OtpService
             // 5. تسجيل إشعار موجه للمستخدم عبر خدمة الإشعارات المركزية
             $this->notificationService->sendDirect(
                 userId: (int) $user->user_id,
-                type: NotificationType::INFO,
+                type: NotificationType::GENERAL_INFO,
                 sms: true,
                 push: true,
                 smsMessageType: SmsMessageType::OTP,

@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Collection;
 interface BankAccountRepositoryInterface extends BaseRepositoryInterface
 {
     /**
-     * جلب الحسابات المفعلة لاستقبال المدفوعات.
+     * جلب الحسابات المفعّلة لاستقبال المدفوعات.
      */
     public function getActiveAccounts(array $filters = []): Collection;
 

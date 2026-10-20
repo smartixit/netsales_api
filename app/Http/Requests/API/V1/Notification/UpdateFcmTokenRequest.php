@@ -24,7 +24,7 @@ class UpdateFcmTokenRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'device_uuid' => ['required', 'string', 'max:150'],
+            'device_uuid' => ['required', 'string', 'max:255'],
             'fcm_token' => ['required', 'string', 'min:10', 'max:1000'],
             'device_name' => ['nullable', 'string', 'max:50'],
             'device_type' => ['nullable', 'string', Rule::in(array_map(fn (DeviceType $t) => $t->value, DeviceType::cases()))],

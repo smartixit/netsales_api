@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 
 class SubscriptionPlan extends Model
 {
@@ -87,10 +88,24 @@ class SubscriptionPlan extends Model
         return $query->where('status', true);
     }
 
+    public function scopeInactive(Builder $query): Builder
+    {
+        return $query->where('status', false);
+    }
+
     // Checkers & Calculations
     public function isActive(): bool
     {
         return (bool) $this->status;
+    }
+
+    public function ensureActive(): void
+    {
+        if (! $this->isActive()) {
+            throw ValidationException::withMessages([
+                'plan_id' => ["خطة الاشتراك [{$this->plan_name}] معطلة حالياً."],
+            ]);
+        }
     }
 
     public function discountAmount(): float

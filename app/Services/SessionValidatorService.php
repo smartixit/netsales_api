@@ -2,21 +2,26 @@
 
 namespace App\Services;
 
+use App\Interfaces\UserSessionRepositoryInterface;
 use App\Models\UserSession;
-use Carbon\Carbon;
 
 /**
  * خدمة التحقق وإدارة صلاحية الجلسات النشطة (Enterprise Session Validator Service).
  *
  * تتولى فحص وتحديث الجلسات في جدول user_sessions والتحقق من سريان مفعولها
- * دون استخدام أي توكنات عشوائية أو وسائط Bearer.
+ * بالاعتماد الحصري على مستودع الجلسات ودوال الموديل المعيارية.
  */
 class SessionValidatorService
 {
+    public function __construct(
+        protected UserSessionRepositoryInterface $userSessionRepository
+    ) {}
+
     /**
      * التحقق من صلاحية معرف الجلسة واسترجاع سجل الجلسة الصالح.
      *
      * @param  string|int|null  $sessionId  معرف الجلسة المرسل في الترويسة X-Session-Id
+     * @param  string  $deviceUuid  معرف الجهاز المرسل في الترويسة X-Device-Uuid
      * @return UserSession|null سجل الجلسة الصالحة أو null إذا كانت منتهية أو ملغاة
      */
     public function validateSession(string|int|null $sessionId, string $deviceUuid): ?UserSession
@@ -25,26 +30,16 @@ class SessionValidatorService
             return null;
         }
 
-        $session = UserSession::where(function ($q) use ($sessionId) {
-                $q->where('session_token', (string) $sessionId);
-                if (is_numeric($sessionId)) {
-                    $q->orWhere('session_id', (int) $sessionId);
-                }
-            })
-            ->whereNull('revoked_at')
-            ->where('expires_at', '>', Carbon::now('Asia/Aden'))
-            ->first();
+        $session = $this->userSessionRepository->findActiveSession($sessionId);
 
-        if ($session) {
+        if ($session && $session->isActive()) {
             // مطابقة الجهاز بدقة تامة: الجلسة المسجلة يجب أن تتطابق مع معرف الجهاز المرسل
             if (empty($session->device_uuid) || $session->device_uuid !== $deviceUuid) {
                 return null;
             }
 
-            // تمديد وقت آخر نشاط بصمت
-            $session->update([
-                'last_activity_at' => Carbon::now('Asia/Aden'),
-            ]);
+            // تمديد وقت آخر نشاط بصمت عبر دالة الموديل المساعدة
+            $session->touchActivity();
 
             return $session;
         }
@@ -59,18 +54,12 @@ class SessionValidatorService
      */
     public function invalidateSession(string|int $sessionId): bool
     {
-        $session = UserSession::where(function ($q) use ($sessionId) {
-            $q->where('session_token', (string) $sessionId);
-            if (is_numeric($sessionId)) {
-                $q->orWhere('session_id', (int) $sessionId);
-            }
-        })->first();
+        $session = $this->userSessionRepository->findByTokenOrId($sessionId, true);
 
         if ($session) {
-            return (bool) $session->update([
-                'revoked_at' => Carbon::now('Asia/Aden'),
-                'expires_at' => Carbon::now('Asia/Aden'),
-            ]);
+            $session->revoke();
+
+            return true;
         }
 
         return false;
@@ -81,16 +70,8 @@ class SessionValidatorService
      */
     public function invalidateAllUserSessions(int $userId, string|int|null $exceptSessionId = null): int
     {
-        $query = UserSession::where('user_id', $userId)
-            ->whereNull('revoked_at');
+        $exceptId = is_numeric($exceptSessionId) ? (int) $exceptSessionId : null;
 
-        if (! empty($exceptSessionId)) {
-            $query->where('session_id', '!=', $exceptSessionId);
-        }
-
-        return $query->update([
-            'revoked_at' => Carbon::now('Asia/Aden'),
-            'expires_at' => Carbon::now('Asia/Aden'),
-        ]);
+        return $this->userSessionRepository->revokeAllUserSessions($userId, $exceptId);
     }
 }

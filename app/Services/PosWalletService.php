@@ -545,7 +545,7 @@ class PosWalletService
 
         $this->notificationService->sendDirect(
             userId: $wallet->pos->owner_id,
-            type: NotificationType::TRANSACTION,
+            type: NotificationType::WALLET_TRANSFER,
             title: 'حركة مالية',
             message: $message,
             inApp: true,

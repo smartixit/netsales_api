@@ -42,6 +42,16 @@ class UserSession extends Model
             'revoked_at' => 'datetime',
         ];
     }
+    
+    // 64-hex char cryptographic random token (256-bit entropy)
+    protected static function booted(): void
+    {
+        static::creating(function (self $session): void {
+            if (empty($session->session_token)) {
+                $session->session_token = bin2hex(random_bytes(32));
+            }
+        });
+    }
 
     // Relationships
     public function user(): BelongsTo

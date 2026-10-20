@@ -48,7 +48,7 @@ class AuthController extends BaseController
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['network_name', 'governorate_id', 'directorate_id', 'user_full_name', 'user_phone_number', 'user_password', 'device_uuid'],
+                    required: ['network_name', 'governorate_id', 'directorate_id', 'user_full_name', 'user_phone_number', 'user_password', 'device_uuid', 'fcm_token'],
                     properties: [
                         new OA\Property(property: 'network_name', type: 'string', example: 'شبكة سمارتكس'),
                         new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
@@ -64,6 +64,7 @@ class AuthController extends BaseController
                         new OA\Property(property: 'device_uuid', type: 'string', example: 'SPA-251DHS'),
                         new OA\Property(property: 'device_name', type: 'string', example: 'Samsung S22'),
                         new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS', 'MAC'], example: 'ANDROID'),
+                        new OA\Property(property: 'fcm_token', type: 'string', example: 'fcm_token_example_hash_here', description: 'رمز إشعارات FCM للجهاز'),
                     ]
                 )
             )
@@ -108,7 +109,7 @@ class AuthController extends BaseController
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['pos_name', 'governorate_id', 'directorate_id', 'user_full_name', 'user_phone_number', 'user_password', 'device_uuid'],
+                    required: ['pos_name', 'governorate_id', 'directorate_id', 'user_full_name', 'user_phone_number', 'user_password', 'device_uuid', 'fcm_token'],
                     properties: [
                         new OA\Property(property: 'pos_name', type: 'string', example: 'نقطة بيع النور'),
                         new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
@@ -125,6 +126,7 @@ class AuthController extends BaseController
                         new OA\Property(property: 'device_uuid', type: 'string', example: 'e5c18495-e224-57e5-b10c-7c7f95e302f1'),
                         new OA\Property(property: 'device_name', type: 'string', example: 'Sunmi V2 POS'),
                         new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS', 'MAC'], example: 'ANDROID'),
+                        new OA\Property(property: 'fcm_token', type: 'string', example: 'fcm_token_example_hash_here', description: 'رمز إشعارات FCM للجهاز'),
                     ]
                 )
             )
@@ -169,13 +171,14 @@ class AuthController extends BaseController
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['user_phone_number', 'user_password', 'device_uuid'],
+                    required: ['user_phone_number', 'user_password', 'device_uuid', 'fcm_token'],
                     properties: [
                         new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
                         new OA\Property(property: 'user_password', type: 'string', format: 'password', example: 'Admin@123456'),
                         new OA\Property(property: 'device_uuid', type: 'string', example: 'SPA-251DHS'),
                         new OA\Property(property: 'device_name', type: 'string', nullable: true, example: 'Chrome Browser Windows'),
                         new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS', 'MAC'], example: 'ANDROID'),
+                        new OA\Property(property: 'fcm_token', type: 'string', example: 'fcm_token_example_hash_here', description: 'رمز إشعارات FCM للجهاز'),
                     ]
                 )
             )
@@ -230,13 +233,14 @@ class AuthController extends BaseController
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['user_phone_number', 'otp', 'device_uuid'],
+                    required: ['user_phone_number', 'otp', 'device_uuid', 'fcm_token'],
                     properties: [
                         new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
                         new OA\Property(property: 'otp', type: 'string', example: '123456'),
                         new OA\Property(property: 'device_uuid', type: 'string', example: 'SPA-251DHS'),
                         new OA\Property(property: 'device_name', type: 'string', nullable: true, example: 'Samsung S22'),
                         new OA\Property(property: 'device_type', type: 'string', enum: ['ANDROID', 'LINUX', 'IOS', 'WINDOWS', 'MAC'], example: 'ANDROID'),
+                        new OA\Property(property: 'fcm_token', type: 'string', example: 'fcm_token_example_hash_here', description: 'رمز إشعارات FCM للجهاز'),
                     ]
                 )
             )

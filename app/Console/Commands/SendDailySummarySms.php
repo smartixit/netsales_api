@@ -25,7 +25,7 @@ class SendDailySummarySms extends Command
                             {--network= : Specific network ID}
                             {--force : Force sending even if already sent today}';
 
-    protected $description = 'يرسل الملخص المالي اليومي للشبكات عبر SMSGate للشبكات المفعلة للميزة';
+    protected $description = 'يرسل الملخص المالي اليومي للشبكات عبر SMSGate للشبكات المفعّلة للميزة';
 
     public function handle(
         SMSGateService $smsGateService,
@@ -54,7 +54,7 @@ class SendDailySummarySms extends Command
         $settings = $settingsQuery->get();
 
         if ($settings->isEmpty()) {
-            $this->info('ℹ️ لا توجد شبكات مفعلة لخاصية الملخص اليومي حالياً.');
+            $this->info('ℹ️ لا توجد شبكات مفعّلة لخاصية الملخص اليومي حالياً.');
 
             return 0;
         }

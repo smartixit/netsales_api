@@ -41,6 +41,7 @@ class SessionSecurityHardeningTest extends TestCase
             'user_phone_number' => $user->user_phone_number,
             'user_password' => 'Hh$2002Hh',
             'device_uuid' => $deviceUuid,
+            'fcm_token' => 'sample_fcm_token_test_123',
         ], [
             'X-Bypass-Encryption' => 'true',
         ]);
@@ -136,6 +137,7 @@ class SessionSecurityHardeningTest extends TestCase
             'user_phone_number' => $user->user_phone_number,
             'user_password' => 'Hh$2002Hh',
             'device_uuid' => $validDeviceUuid,
+            'fcm_token' => 'sample_fcm_token_test_123',
         ], [
             'X-Bypass-Encryption' => 'true',
         ]);

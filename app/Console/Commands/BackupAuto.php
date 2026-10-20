@@ -225,7 +225,7 @@ class BackupAuto extends Command
 
                     $notificationService->sendDirect(
                         userId: $phoneNumbers,
-                        type: NotificationType::WARNING,
+                        type: NotificationType::GENERAL_INFO,
                         push: true,
                         sms: true,
                         email: true,

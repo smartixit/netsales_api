@@ -30,7 +30,8 @@ interface UserDeviceRepositoryInterface extends BaseRepositoryInterface
         ?string $deviceName = null,
         string|DeviceType $deviceType = 'UNKNOWN',
         bool $isPrimary = false,
-        UserDeviceStatus|string $status = 'ACTIVE'
+        UserDeviceStatus|string $status = 'ACTIVE',
+        ?string $fcmToken = null
     ): UserDevice;
 
     /**

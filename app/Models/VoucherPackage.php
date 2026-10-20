@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 
 class VoucherPackage extends Model
 {
@@ -84,6 +85,11 @@ class VoucherPackage extends Model
         return $query->where('status', true);
     }
 
+    public function scopeInactive(Builder $query): Builder
+    {
+        return $query->where('status', false);
+    }
+
     public function scopeForNetwork(Builder $query, int $networkId): Builder
     {
         return $query->where('network_id', $networkId);
@@ -93,6 +99,15 @@ class VoucherPackage extends Model
     public function isActive(): bool
     {
         return (bool) $this->status;
+    }
+
+    public function ensureActive(): void
+    {
+        if (! $this->isActive()) {
+            throw ValidationException::withMessages([
+                'package_id' => ["باقة كروت الإنترنت [{$this->package_name}] معطلة حالياً ولا يمكن استخدامها."],
+            ]);
+        }
     }
 
     // Calculations
@@ -116,19 +131,4 @@ class VoucherPackage extends Model
 
         return max(0.0, round($price - $discountAmount, 2));
     }
-
-    // Accessors
-    // protected function formattedUptime(): Attribute
-    // {
-    //     return Attribute::make(
-    //         get: fn (): string => $this->package_uptime ? "{$this->package_uptime} دقيقة" : 'غير محدد'
-    //     );
-    // }
-
-    // protected function formattedValidity(): Attribute
-    // {
-    //     return Attribute::make(
-    //         get: fn (): string => $this->package_validity ? "{$this->package_validity} يوم" : 'غير محدد'
-    //     );
-    // }
 }

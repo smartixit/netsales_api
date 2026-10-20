@@ -52,7 +52,7 @@ class NotificationSystemTest extends TestCase
     {
         $payload = [
             'user_id' => $this->user->user_id,
-            'notification_type' => NotificationType::SYSTEM->value,
+            'notification_type' => NotificationType::GENERAL_INFO->value,
             'notification_title' => 'إشعار اختبار جديد',
             'notification_message' => 'هذا محتوى الإشعار التجريبي للتأكد من المحرك.',
         ];
@@ -84,14 +84,14 @@ class NotificationSystemTest extends TestCase
 
         $service->sendDirect(
             (int) $this->user->user_id,
-            NotificationType::INFO,
+            NotificationType::GENERAL_INFO,
             'تنبيه رصيد',
             'تم إيداع مبلغ تجريبي في محفظتك.'
         );
 
         $service->sendDirect(
             (int) $this->user->user_id,
-            NotificationType::WARNING,
+            NotificationType::GENERAL_INFO,
             'تنبيه أمان',
             'تم تسجيل دخول جديد من جهاز غير معروف.'
         );
@@ -118,14 +118,14 @@ class NotificationSystemTest extends TestCase
 
         $notif1 = $service->sendDirect(
             (int) $this->user->user_id,
-            NotificationType::INFO,
+            NotificationType::GENERAL_INFO,
             'إشعار مقروء فردي',
             'محتوى الإشعار الفردي.'
         );
 
         $notif2 = $service->sendDirect(
             (int) $this->user->user_id,
-            NotificationType::INFO,
+            NotificationType::GENERAL_INFO,
             'إشعار مقروء جماعي',
             'محتوى الإشعار الثاني.'
         );
@@ -152,7 +152,7 @@ class NotificationSystemTest extends TestCase
 
         $notif = $service->sendDirect(
             (int) $this->user->user_id,
-            NotificationType::SYSTEM,
+            NotificationType::GENERAL_INFO,
             'العنوان الأصلي',
             'النص الأصلي للإشعار.'
         );
@@ -160,7 +160,7 @@ class NotificationSystemTest extends TestCase
         $updatePayload = [
             'notification_title' => 'العنوان المحدث',
             'notification_message' => 'النص المحدث للإشعار.',
-            'notification_type' => NotificationType::WARNING->value,
+            'notification_type' => NotificationType::GENERAL_INFO->value,
         ];
 
         $response = $this->putJson("/api/v1/notifications/{$notif->notification_id}", $updatePayload, $this->headers);
@@ -168,7 +168,7 @@ class NotificationSystemTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.notification_title', 'العنوان المحدث')
-            ->assertJsonPath('data.notification_type', NotificationType::WARNING->value);
+            ->assertJsonPath('data.notification_type', NotificationType::GENERAL_INFO->value);
     }
 
     public function test_can_perform_soft_delete_restore_and_batch_operations(): void
@@ -176,9 +176,9 @@ class NotificationSystemTest extends TestCase
         /** @var NotificationService $service */
         $service = app(NotificationService::class);
 
-        $notif1 = $service->sendDirect((int) $this->user->user_id, NotificationType::INFO, 'إشعار 1', 'محتوى 1');
-        $notif2 = $service->sendDirect((int) $this->user->user_id, NotificationType::INFO, 'إشعار 2', 'محتوى 2');
-        $notif3 = $service->sendDirect((int) $this->user->user_id, NotificationType::INFO, 'إشعار 3', 'محتوى 3');
+        $notif1 = $service->sendDirect((int) $this->user->user_id, NotificationType::GENERAL_INFO, 'إشعار 1', 'محتوى 1');
+        $notif2 = $service->sendDirect((int) $this->user->user_id, NotificationType::GENERAL_INFO, 'إشعار 2', 'محتوى 2');
+        $notif3 = $service->sendDirect((int) $this->user->user_id, NotificationType::GENERAL_INFO, 'إشعار 3', 'محتوى 3');
 
         // 1. Single delete & restore
         $deleteResponse = $this->deleteJson("/api/v1/notifications/{$notif1->notification_id}", [], $this->headers);
@@ -232,7 +232,7 @@ class NotificationSystemTest extends TestCase
 
         $notif = $service->sendDirect(
             userId: (int) $this->user->user_id,
-            type: NotificationType::INFO,
+            type: NotificationType::GENERAL_INFO,
             title: 'إشعار شامل لكافة القنوات',
             message: 'نص الإشعار التجريبي لجميع القنوات المفعلة',
             inApp: true,
@@ -262,7 +262,7 @@ class NotificationSystemTest extends TestCase
         Queue::fake();
         $notif2 = $service->sendDirect(
             userId: (int) $this->user->user_id,
-            type: NotificationType::WARNING,
+            type: NotificationType::GENERAL_INFO,
             title: 'SMS فقط',
             message: 'رسالة نصية فقط دون إشعار داخلي',
             inApp: false,

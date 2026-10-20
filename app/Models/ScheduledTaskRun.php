@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ScheduledTaskType;
 use App\Enums\ScheduledTaskStatus;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -58,5 +59,47 @@ class ScheduledTaskRun extends Model
     public function network(): BelongsTo
     {
         return $this->belongsTo(Network::class, 'network_id', 'network_id');
+    }
+
+    // Scopes
+    public function scopeFailed(Builder $query): Builder
+    {
+        return $query->where('status', ScheduledTaskStatus::FAILED);
+    }
+
+    public function scopeCompleted(Builder $query): Builder
+    {
+        return $query->where('status', ScheduledTaskStatus::COMPLETED);
+    }
+
+    public function scopeSent(Builder $query): Builder
+    {
+        return $query->where('status', ScheduledTaskStatus::SENT);
+    }
+
+    public function scopeForNetwork(Builder $query, int $networkId): Builder
+    {
+        return $query->where('network_id', $networkId);
+    }
+
+    public function scopeTargetDate(Builder $query, string $date): Builder
+    {
+        return $query->whereDate('target_date', $date);
+    }
+
+    // Checkers
+    public function isFailed(): bool
+    {
+        return $this->status === ScheduledTaskStatus::FAILED;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->status === ScheduledTaskStatus::COMPLETED;
+    }
+
+    public function isSent(): bool
+    {
+        return $this->status === ScheduledTaskStatus::SENT;
     }
 }

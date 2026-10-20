@@ -308,7 +308,7 @@ class BackupOrchestratorService
             foreach ($superAdmins as $admin) {
                 $this->notificationService->sendDirect(
                     userId: (int) $admin->user_id,
-                    type: NotificationType::SYSTEM,
+                    type: NotificationType::GENERAL_INFO,
                     push: true,
                     title: $title,
                     message: "النوع: {$type}\n{$body}"
@@ -362,7 +362,7 @@ class BackupOrchestratorService
             foreach ($superAdmins as $admin) {
                 $this->notificationService->sendDirect(
                     userId: (int) $admin->user_id,
-                    type: NotificationType::SYSTEM,
+                    type: NotificationType::GENERAL_INFO,
                     push: true,
                     title: '✅ تم إنشاء النسخة الاحتياطية بنجاح',
                     message: "تم حفظ النسخة الاحتياطية بنجاح على Google Drive.\nالملف: {$fileName}{$sizeFormatted}"

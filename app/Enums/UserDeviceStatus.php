@@ -42,8 +42,8 @@ enum UserDeviceStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::ACTIVE => 'مفعل',
-            self::INACTIVE => 'غير مفعل',
+            self::ACTIVE => 'مفعّل',
+            self::INACTIVE => 'غير مفعّل',
             self::PENDING => 'قيد الانتظار',
             self::BANNED => 'محظور',
         };

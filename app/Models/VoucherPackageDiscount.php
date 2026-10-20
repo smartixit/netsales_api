@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 
 class VoucherPackageDiscount extends Model
 {
@@ -69,9 +70,39 @@ class VoucherPackageDiscount extends Model
         return $query->where('status', true);
     }
 
+    public function scopeInactive(Builder $query): Builder
+    {
+        return $query->where('status', false);
+    }
+
+    public function scopeForNetwork(Builder $query, int $networkId): Builder
+    {
+        return $query->where('network_id', $networkId);
+    }
+
+    public function scopeForPos(Builder $query, int $posId): Builder
+    {
+        return $query->where('pos_id', $posId);
+    }
+
     public function scopeForPackageAndPos(Builder $query, int $packageId, int $posId): Builder
     {
         return $query->where('package_id', $packageId)->where('pos_id', $posId);
+    }
+
+    // Checkers
+    public function isActive(): bool
+    {
+        return (bool) $this->status;
+    }
+
+    public function ensureActive(): void
+    {
+        if (! $this->isActive()) {
+            throw ValidationException::withMessages([
+                'discount' => ['خصم باقة الكروت المحدد معطل حالياً.'],
+            ]);
+        }
     }
 
     // Calculations

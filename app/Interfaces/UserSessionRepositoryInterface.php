@@ -24,6 +24,11 @@ interface UserSessionRepositoryInterface extends BaseRepositoryInterface
     public function findActiveSession(string|int $sessionId): ?UserSession;
 
     /**
+     * Find a session by token or ID (active or inactive).
+     */
+    public function findByTokenOrId(string|int $sessionId, bool $lock = false): ?UserSession;
+
+    /**
      * Revoke a specific session.
      */
     public function revokeSession(int $sessionId): bool;

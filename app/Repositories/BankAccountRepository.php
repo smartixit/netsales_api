@@ -59,7 +59,7 @@ class BankAccountRepository extends BaseRepository implements BankAccountReposit
     }
 
     /**
-     * جلب الحسابات المفعلة لاستقبال المدفوعات.
+     * جلب الحسابات المفعّلة لاستقبال المدفوعات.
      */
     public function getActiveAccounts(array $filters = []): Collection
     {

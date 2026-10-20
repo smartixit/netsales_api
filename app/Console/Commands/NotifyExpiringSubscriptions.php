@@ -73,7 +73,7 @@ class NotifyExpiringSubscriptions extends Command
                 ."باقة الاشتراك ({$planName}) ستنتهي بتاريخ: {$endDate}.\n"
                 ."يرجى تجديد الاشتراك لضمان استمرارية الخدمات دون انقطاع.";
 
-            // 1. فحص إعدادات SMS للشبكة وإرسال الرسالة إن كانت مفعلة
+            // 1. فحص إعدادات SMS للشبكة وإرسال الرسالة إن كانت مفعّلة
             $smsSetting = NetworkSmsSetting::where('network_id', $network->network_id)->first();
             $smsSent = false;
 
@@ -94,7 +94,7 @@ class NotifyExpiringSubscriptions extends Command
             // 2. تسجيل إشعار داخلي في النظام وإرسال push FCM تلقائياً
             $notificationService->sendDirect(
                 userId: (int) $network->owner_id,
-                type: NotificationType::WARNING,
+                type: NotificationType::GENERAL_INFO,
                 push: true,
                 sms: true,
                 title: '⚠️ اقتراب انتهاء اشتراك الشبكة',

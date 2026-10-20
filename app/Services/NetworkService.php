@@ -311,7 +311,7 @@ class NetworkService
 
                 $this->notificationService->sendDirect(
                     userId: (int) $user->user_id,
-                    type: NotificationType::ACCOUNT_APPROVAL,
+                    type: NotificationType::NETWORK_APPROVED,
                     title: 'تمت الموافقة على طلب تسجيل الشبكة',
                     message: "تهانينا! تمت الموافقة على طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام.",
                     inApp: true,
@@ -355,7 +355,7 @@ class NetworkService
             if ($user) {
                 $this->notificationService->sendDirect(
                     userId: (int) $user->user_id,
-                    type: NotificationType::ACCOUNT_REJECTION,
+                    type: NotificationType::NETWORK_REJECTED,
                     title: 'تم رفض طلب تسجيل شبكتكم',
                     message: "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل شبكة {$network->network_name}. السبب: {$reason}",
                     inApp: true,

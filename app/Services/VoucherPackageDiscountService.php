@@ -269,7 +269,7 @@ class VoucherPackageDiscountService
 
     /**
      * احتساب الخصم الفعلي لنقطة بيع محددة على باقة معينة.
-     * يعيد الخصم المخصص إن وُجد وكان مفعلاً، وإلا يعيد الخصم الافتراضي للباقة.
+     * يعيد الخصم المخصص إن وُجد وكان مفعّلاً، وإلا يعيد الخصم الافتراضي للباقة.
      *
      * @return array{discount_cash: float, discount_credit: float, is_custom: bool}
      */

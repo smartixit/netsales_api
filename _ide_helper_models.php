@@ -110,11 +110,13 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read string|null $logo_url
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubscriptionPlanRequest> $subscriptionPlanRequests
  * @property-read int|null $subscription_plan_requests_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount byCurrency(string $currency)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount byType(\App\Enums\BankAccountType|string $type)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount inactive()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount onlyTrashed()
@@ -278,6 +280,7 @@ namespace App\Models{
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubscriptionPlan> $plans
  * @property-read int|null $plans_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature inactive()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature onlyTrashed()
@@ -388,6 +391,7 @@ namespace App\Models{
  * @property-read \App\Models\Directorate|null $directorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Expense> $expenses
  * @property-read int|null $expenses_count
+ * @property-read string|null $logo_url
  * @property-read \App\Models\Governorate|null $governorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkPos> $networkPos
  * @property-read int|null $network_pos_count
@@ -413,6 +417,7 @@ namespace App\Models{
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\VoucherPackage> $voucherPackages
  * @property-read int|null $voucher_packages_count
  * @property-read \App\Models\NetworkWallet|null $wallet
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Network active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network approved()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network inDirectorate(int $directorateId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network inGovernorate(int $governorateId)
@@ -460,6 +465,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos forNetwork(int $networkId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos forPos(int $posId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos inactive()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos query()
@@ -554,6 +560,7 @@ namespace App\Models{
  * @property-read \App\Models\Network|null $network
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet forNetwork(int $networkId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet inactive()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet onlyTrashed()
@@ -745,6 +752,7 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read \App\Models\User|null $approvedBy
  * @property-read \App\Models\Directorate|null $directorate
+ * @property-read string|null $logo_url
  * @property-read \App\Models\Governorate|null $governorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkPos> $networkPos
  * @property-read int|null $network_pos_count
@@ -762,6 +770,7 @@ namespace App\Models{
  * @property-read int|null $voucher_package_discounts_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PosWallet> $wallets
  * @property-read int|null $wallets_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos approved()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos inDirectorate(int $directorateId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos inGovernorate(int $governorateId)
@@ -816,6 +825,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet forNetwork(int $networkId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet forNetworkAndPos(int $networkId, int $posId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet forPos(int $posId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet inactive()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet onlyTrashed()
@@ -1155,9 +1165,14 @@ namespace App\Models{
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  * @property Network|null $network
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun completed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun failed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun forNetwork(int $networkId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun sent()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun targetDate(string $date)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereExtra($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereId($value)
@@ -1234,6 +1249,7 @@ namespace App\Models{
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProviderSubscription> $subscriptions
  * @property-read int|null $subscriptions_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan inactive()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan onlyTrashed()
@@ -1587,6 +1603,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User banned()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User email(string $email)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User forUser(int $userId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User onlyTrashed()
@@ -1635,9 +1652,14 @@ namespace App\Models{
  * @property-read \App\Models\User|null $user
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice banned()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice clearFcmToken()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice deviceUuid(string $deviceUuid)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice forOtherUsers(int $userId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice forUser(int $userId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice inactive()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice notBanned()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice primary()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice query()
@@ -1653,6 +1675,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice whereUserId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice withFcmToken()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserDevice withoutTrashed()
  */
@@ -1685,11 +1708,11 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property int $session_id
- * @property string|null $session_token
+ * @property string $session_token
  * @property int $user_id
  * @property string|null $ip_address
  * @property string|null $user_agent
- * @property string|null $device_uuid
+ * @property string $device_uuid
  * @property \Illuminate\Support\Carbon $logged_at
  * @property \Illuminate\Support\Carbon $last_activity_at
  * @property \Illuminate\Support\Carbon $expires_at
@@ -1746,6 +1769,7 @@ namespace App\Models{
  * @property-read int|null $sale_invoice_items_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackage active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackage forNetwork(int $networkId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackage inactive()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackage newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackage newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackage onlyTrashed()
@@ -1790,7 +1814,10 @@ namespace App\Models{
  * @property-read \App\Models\Pos|null $pos
  * @property-read \App\Models\VoucherPackage|null $voucherPackage
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount forNetwork(int $networkId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount forPackageAndPos(int $packageId, int $posId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount forPos(int $posId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount inactive()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount onlyTrashed()

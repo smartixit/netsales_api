@@ -21,7 +21,7 @@ interface SubscriptionPlanRepositoryInterface extends BaseRepositoryInterface
     public function toggleStatus(int $id): bool;
 
     /**
-     * جلب كافة الباقات المفعلة للاشتراك مع علاقاتها.
+     * جلب كافة الباقات المفعّلة للاشتراك مع علاقاتها.
      */
     public function getActivePlans(array $relations = ['features', 'planFeatures']): Collection;
 }

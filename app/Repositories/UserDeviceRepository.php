@@ -38,7 +38,8 @@ class UserDeviceRepository extends BaseRepository implements UserDeviceRepositor
         ?string $deviceName = null,
         string|DeviceType $deviceType = 'UNKNOWN',
         bool $isPrimary = false,
-        UserDeviceStatus|string $status = 'ACTIVE'
+        UserDeviceStatus|string $status = 'ACTIVE',
+        ?string $fcmToken = null
     ): UserDevice {
         $deviceTypeValue = $deviceType instanceof DeviceType ? $deviceType->value : $deviceType;
         $statusValue = $status instanceof UserDeviceStatus ? $status->value : $status;
@@ -52,10 +53,15 @@ class UserDeviceRepository extends BaseRepository implements UserDeviceRepositor
                 'last_used_at' => Carbon::now('Asia/Aden'),
             ]);
 
+            if ($fcmToken !== null) {
+                $this->updateFcmToken($userId, $deviceUuid, $fcmToken);
+                $existing->refresh();
+            }
+
             return $existing;
         }
 
-        return $this->create([
+        $device = $this->create([
             'user_id' => $userId,
             'device_uuid' => $deviceUuid,
             'device_name' => $deviceName ?: 'Unknown Device',
@@ -64,6 +70,13 @@ class UserDeviceRepository extends BaseRepository implements UserDeviceRepositor
             'status' => $statusValue,
             'last_used_at' => Carbon::now('Asia/Aden'),
         ]);
+
+        if ($fcmToken !== null) {
+            $this->updateFcmToken($userId, $deviceUuid, $fcmToken);
+            $device->refresh();
+        }
+
+        return $device;
     }
 
     public function getPrimaryDevice(int $userId): ?UserDevice

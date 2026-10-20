@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Validation\ValidationException;
 
 class User extends Authenticatable
 {
@@ -106,6 +107,9 @@ class User extends Authenticatable
         return $this->hasMany(UserSession::class, 'user_id', 'user_id');
     }
 
+    /**
+     * @return HasMany<UserDevice, $this>
+     */
     public function devices(): HasMany
     {
         return $this->hasMany(UserDevice::class, 'user_id', 'user_id');
@@ -262,6 +266,11 @@ class User extends Authenticatable
         return $query->where('status', UserStatus::BANNED->value);
     }
 
+    public function scopeForUser(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId);
+    }
+
     public function scopeWithRole(Builder $query, string|RoleKey $roleKey): Builder
     {
         $key = $roleKey instanceof RoleKey ? $roleKey->value : $roleKey;
@@ -273,6 +282,28 @@ class User extends Authenticatable
     public function isActive(): bool
     {
         return $this->status === UserStatus::ACTIVE || $this->status === UserStatus::ACTIVE->value;
+    }
+
+    public function ensureActive(): void
+    {
+        if ($this->isBanned()) {
+            throw ValidationException::withMessages([
+                'user_id' => ['حساب المستخدم محظور أمنياً، لا يمكن تنفيذ هذه العملية.'],
+            ]);
+        }
+
+        if ($this->isPending()) {
+            throw ValidationException::withMessages([
+                'user_id' => ['حساب المستخدم قيد المراجعة حالياً.'],
+            ]);
+        }
+
+        if (! $this->isActive()) {
+            throw ValidationException::withMessages([
+                'user_id' => ['حساب المستخدم غير مفعّل.'],
+            ]);
+        }
+
     }
 
     public function isPending(): bool

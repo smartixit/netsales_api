@@ -180,7 +180,7 @@ class NotificationService
             return $isSingle ? null : [];
         }
 
-        $typeEnum = $type instanceof NotificationType ? $type : (NotificationType::tryFrom((string) $type) ?? NotificationType::INFO);
+        $typeEnum = $type instanceof NotificationType ? $type : (NotificationType::tryFrom((string) $type) ?? NotificationType::GENERAL_INFO);
         $typeValue = $typeEnum->value;
 
         $results = [];
@@ -195,7 +195,7 @@ class NotificationService
             }
 
             // عزل أمني: تجاهل إرسال الإشعارات التشغيلية للمستخدمين غير النشطين أو المحظورين ما لم يكن إشعاراً أمنياً
-            if (! $user->isActive() && $typeEnum !== NotificationType::SECURITY) {
+            if (! $user->isActive() && $typeEnum !== NotificationType::SYSTEM_ANNOUNCEMENT) {
                 Log::info("NotificationService::sendDirect: Skipping non-security notification for inactive/banned user ID {$userId}");
                 $results[$userId] = null;
 
@@ -400,7 +400,7 @@ class NotificationService
         $audience = $request->getAudience();
         $channels = $request->getChannels();
         $categoryStr = $request->getCategory() ?? 'INFO';
-        $type = NotificationType::tryFrom($categoryStr) ?? NotificationType::INFO;
+        $type = NotificationType::tryFrom($categoryStr) ?? NotificationType::SYSTEM_ANNOUNCEMENT;
 
         $title = $request->getTitle();
         $body = $request->getBody();

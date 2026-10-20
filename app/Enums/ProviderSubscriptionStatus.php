@@ -48,7 +48,7 @@ enum ProviderSubscriptionStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::ACTIVE => 'مفعل',
+            self::ACTIVE => 'مفعّل',
             self::QUEUED => 'في الانتظار',
             self::EXPIRED => 'منتهي',
             self::CANCELLED => 'ملغي',

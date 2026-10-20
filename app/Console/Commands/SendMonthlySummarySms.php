@@ -54,7 +54,7 @@ class SendMonthlySummarySms extends Command
         $settings = $settingsQuery->get();
 
         if ($settings->isEmpty()) {
-            $this->info('ℹ️ لا توجد شبكات مفعلة لخاصية الملخص الشهري حالياً.');
+            $this->info('ℹ️ لا توجد شبكات مفعّلة لخاصية الملخص الشهري حالياً.');
 
             return 0;
         }

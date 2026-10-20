@@ -16,6 +16,7 @@ use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Models\Pos;
 use App\Services\Support\FileUploadService;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -257,29 +258,29 @@ class PosService
             $pos->refresh();
 
             // تفعيل ربط الشبكات وإنشاء المحافظ المالية المشتركة إن وُجدت
-            $links = $this->networkPosRepository->getNetworksForPos($pos->pos_id, ['all' => true]);
-            $linkIdsToActivate = [];
-            foreach ($links as $link) {
-                if (! $link->status) {
-                    $linkIdsToActivate[] = (int) $link->network_pos_id;
-                }
+            // $links = $this->networkPosRepository->getNetworksForPos($pos->pos_id, ['all' => true]);
+            // $linkIdsToActivate = [];
+            // foreach ($links as $link) {
+            //     if (! $link->status) {
+            //         $linkIdsToActivate[] = (int) $link->network_pos_id;
+            //     }
 
-                $existingWallet = $this->posWalletRepository->findByNetworkAndPos((int) $link->network_id, (int) $pos->pos_id);
-                if (! $existingWallet) {
-                    $this->posWalletRepository->create([
-                        'network_id' => (int) $link->network_id,
-                        'pos_id' => (int) $pos->pos_id,
-                        'wallet_balance' => 0.00,
-                        'status' => true,
-                    ]);
-                } else {
-                    $this->posWalletRepository->updateStatus((int) $existingWallet->wallet_id, true);
-                }
-            }
+            //     $existingWallet = $this->posWalletRepository->findByNetworkAndPos((int) $link->network_id, (int) $pos->pos_id);
+            //     if (! $existingWallet) {
+            //         $this->posWalletRepository->create([
+            //             'network_id' => (int) $link->network_id,
+            //             'pos_id' => (int) $pos->pos_id,
+            //             'wallet_balance' => 0.00,
+            //             'status' => true,
+            //         ]);
+            //     } else {
+            //         $this->posWalletRepository->updateStatus((int) $existingWallet->wallet_id, true);
+            //     }
+            // }
 
-            if (! empty($linkIdsToActivate)) {
-                $this->networkPosRepository->bulkToggleStatus($linkIdsToActivate, true);
-            }
+            // if (! empty($linkIdsToActivate)) {
+            //     $this->networkPosRepository->bulkToggleStatus($linkIdsToActivate, true);
+            // }
 
             // تفعيل المستخدم والجهاز المرتبط بمالك نقطة البيع
             $user = $pos->owner;
@@ -292,7 +293,7 @@ class PosService
 
                 $this->notificationService->sendDirect(
                     userId: (int) $user->user_id,
-                    type: NotificationType::ACCOUNT_APPROVAL,
+                    type: NotificationType::POS_APPROVED,
                     title: 'تمت الموافقة على طلب تسجيل نقطة البيع',
                     message: "تهانينا! تمت الموافقة على طلب تسجيل نقطة بيع {$pos->pos_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام.",
                     inApp: true,
@@ -336,7 +337,7 @@ class PosService
             if ($user) {
                 $this->notificationService->sendDirect(
                     userId: (int) $user->user_id,
-                    type: NotificationType::ACCOUNT_REJECTION,
+                    type: NotificationType::POS_REJECTED,
                     title: 'تم رفض طلب تسجيل نقطة البيع',
                     message: "نأسف لإبلاغكم بأنه تم رفض طلب تسجيل نقطة بيع {$pos->pos_name}. السبب: {$reason}",
                     inApp: true,

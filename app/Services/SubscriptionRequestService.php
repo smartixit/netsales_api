@@ -131,7 +131,7 @@ class SubscriptionRequestService
                 $account = $this->bankAccountRepository->findById($accountId);
                 if (! $account || ! $account->status) {
                     throw ValidationException::withMessages([
-                        'account_id' => ['الحساب البنكي المحدد غير مفعل أو غير متاح.'],
+                        'account_id' => ['الحساب البنكي المحدد غير مفعّل أو غير متاح.'],
                     ]);
                 }
             }

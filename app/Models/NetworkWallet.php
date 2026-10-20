@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class NetworkWallet extends Model
 {
@@ -69,6 +70,11 @@ class NetworkWallet extends Model
         return $query->where('status', true);
     }
 
+    public function scopeInactive(Builder $query): Builder
+    {
+        return $query->where('status', false);
+    }
+
     public function scopeForNetwork(Builder $query, int $networkId): Builder
     {
         return $query->where('network_id', $networkId);
@@ -78,6 +84,15 @@ class NetworkWallet extends Model
     public function isActive(): bool
     {
         return (bool) $this->status;
+    }
+
+    public function ensureActive(): void
+    {
+        if (! $this->isActive()) {
+            throw ValidationException::withMessages([
+                'network_wallet' => ['محفظة مزود الشبكة مجمدة حالياً، لا يمكن تنفيذ العمليات المالية عليها.'],
+            ]);
+        }
     }
 
     public function hasSufficientBalance(float $amount): bool

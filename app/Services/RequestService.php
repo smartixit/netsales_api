@@ -174,7 +174,7 @@ class RequestService
                 $formattedAmount = number_format($totalAmount, 2);
                 $this->notificationService->sendDirect(
                     userId: (int) $network->approved_by,
-                    type: NotificationType::INFO,
+                    type: NotificationType::VOUCHER_REQUEST_CREATED,
                     push: true,
                     title: '📥 طلب كروت جديد',
                     message: "قمت نقطة بيع ({$posName}) بإنشاء طلب كروت رقم #{$createdRequest->request_uuid} بإجمالي {$formattedAmount} ر.ي."
@@ -238,7 +238,7 @@ class RequestService
                 $invoiceNum = $invoice->invoice_uuid ?? $invoice->invoice_id;
                 $this->notificationService->sendDirect(
                     userId: (int) $request->created_by,
-                    type: NotificationType::INFO,
+                    type: NotificationType::VOUCHER_REQUEST_APPROVED,
                     push: true,
                     title: '✅ تم اعتماد طلب الكروت',
                     message: "تم اعتماد طلب الكروت رقم #{$request->request_uuid} بنجاح، وتوليد فاتورة مبيعات رقم #{$invoiceNum}."
@@ -281,7 +281,7 @@ class RequestService
             if ($request->created_by) {
                 $this->notificationService->sendDirect(
                     userId: (int) $request->created_by,
-                    type: NotificationType::WARNING,
+                    type: NotificationType::GENERAL_INFO,
                     push: true,
                     title: '❌ تم رفض طلب الكروت',
                     message: "تم رفض طلب الكروت رقم #{$request->request_uuid}. سبب الرفض: {$reason}"
@@ -324,7 +324,7 @@ class RequestService
             if ($request->network && $request->network->approved_by) {
                 $this->notificationService->sendDirect(
                     userId: (int) $request->network->approved_by,
-                    type: NotificationType::INFO,
+                    type: NotificationType::VOUCHER_REQUEST_CANCELLED,
                     push: true,
                     title: 'ℹ️ إلغاء طلب كروت',
                     message: "تم إلغاء طلب الكروت رقم #{$request->request_uuid} من قبل مقدم الطلب."

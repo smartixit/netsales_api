@@ -93,27 +93,25 @@ class SessionAuthMiddleware
 
         RateLimiter::clear($rateLimitKey);
 
-        // 3. جلب المستخدم والتحقق من حالته
-        $user = User::find($session->user_id);
+        // 3. جلب المستخدم عبر علاقة الجلسة والتحقق من حالته
+        $session->loadMissing('user.role');
+        /** @var User|null $user */
+        $user = $session->user;
 
         if (! $user) {
             return $this->errorResponse('لم يتم العثور على المستخدم المصادق عليه.', [], 404);
         }
 
-        // 3.1 التحقق من حالة المستخدم (PENDING, ACTIVE, INACTIVE, BANNED)
-        $isActive = ($user->status instanceof UserStatus)
-            ? $user->status === UserStatus::ACTIVE
-            : ($user->status === 'ACTIVE' || $user->status === true);
-
-        if (! $isActive) {
+        // 3.1 التحقق من حالة المستخدم عبر دوال الموديل
+        if (! $user->isActive()) {
             SystemLoggerService::warning('ACCOUNT_INACTIVE', ['status' => $user->status?->value ?? $user->status], $user->user_id);
 
             return $this->errorResponse('حسابك غير مفعّل، يرجى التواصل مع الإدارة.', [], 403);
         }
 
-        // 3.2 التحقق من الحظر الأمني النشط للمستخدم في جدول security_bans
-        $activeBan = SecurityBan::where('user_id', $user->user_id)
-            ->active()
+        // 3.2 التحقق من الحظر الأمني النشط للمستخدم عبر علاقة securityBans
+        $activeBan = $user->securityBans()
+            ->activeBans()
             ->latest('ban_id')
             ->first();
 
@@ -185,8 +183,9 @@ class SessionAuthMiddleware
             }
         }
 
-        // 3.4 التحقق من سلامة وحظر الجهاز المستخدم (X-Device-Uuid)
-        $device = UserDevice::where('user_id', $user->user_id)
+        // 3.4 التحقق من سلامة وحظر الجهاز المستخدم عبر علاقة المستخدم بالأجهزة (devices relation)
+        /** @var UserDevice|null $device */
+        $device = $user->devices()
             ->where(function ($q) use ($deviceUuid) {
                 $q->where('device_uuid', $deviceUuid);
                 if (is_numeric($deviceUuid)) {
@@ -195,7 +194,7 @@ class SessionAuthMiddleware
             })
             ->first();
 
-        if (! $device) {
+        if (! $device instanceof UserDevice) {
             SystemLoggerService::warning('DEVICE_NOT_REGISTERED', ['device_uuid' => $deviceUuid], $user->user_id);
 
             return $this->errorResponse('هذا الجهاز غير مسجل بحساب المستخدم.', [], 403);
@@ -216,8 +215,10 @@ class SessionAuthMiddleware
             };
         }
 
-        $activeDeviceBan = SecurityBan::where('device_id', $device->device_id)
-            ->active()
+        // التحقق من الحظر الأمني النشط للجهاز عبر علاقة securityBans
+        /** @var UserDevice $device */
+        $activeDeviceBan = $device->securityBans()
+            ->activeBans()
             ->latest('ban_id')
             ->first();
 

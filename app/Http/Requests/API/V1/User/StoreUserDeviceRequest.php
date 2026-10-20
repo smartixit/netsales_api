@@ -28,7 +28,7 @@ class StoreUserDeviceRequest extends FormRequest
             'device_uuid' => [
                 'required',
                 'string',
-                'max:100',
+                'max:255',
             ],
             'device_name' => [
                 'nullable',

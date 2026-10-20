@@ -21,7 +21,7 @@ interface FeatureRepositoryInterface extends BaseRepositoryInterface
     public function toggleStatus(int $id): bool;
 
     /**
-     * جلب كافة الميزات المفعلة في النظام.
+     * جلب كافة الميزات المفعّلة في النظام.
      */
     public function getActiveFeatures(): Collection;
 }

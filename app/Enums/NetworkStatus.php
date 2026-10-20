@@ -48,8 +48,8 @@ enum NetworkStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::ACTIVE => 'مفعل',
-            self::INACTIVE => 'غير مفعل',
+            self::ACTIVE => 'مفعّل',
+            self::INACTIVE => 'غير مفعّل',
             self::PENDING => 'قيد الانتظار',
             self::REJECTED => 'تم الرفض',
             self::BANNED => 'محظور',
