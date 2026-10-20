@@ -35,7 +35,7 @@ use OpenApi\Attributes as OA;
     title: 'نظام مبيعات الشبكة | NetSales API',
 )]
 #[OA\Server(
-    url: 'https://127.0.0.1:8000',
+    url: '/',
     description: 'خادم واجهة البرمجة الأساسي (Primary API Server)'
 )]
 #[OA\SecurityScheme(
