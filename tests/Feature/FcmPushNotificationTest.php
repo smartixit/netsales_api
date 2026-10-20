@@ -32,9 +32,22 @@ class FcmPushNotificationTest extends TestCase
         parent::setUp();
 
         $this->user = User::firstOrFail();
+        $deviceUuid = 'test-device-uuid-12345';
+
+        UserDevice::updateOrCreate(
+            ['user_id' => $this->user->user_id, 'device_uuid' => $deviceUuid],
+            [
+                'device_name' => 'Galaxy S25 Ultra',
+                'device_type' => DeviceType::ANDROID,
+                'is_primary' => true,
+                'status' => UserDeviceStatus::ACTIVE,
+            ]
+        );
 
         $this->session = UserSession::create([
+            'session_token' => bin2hex(random_bytes(32)),
             'user_id' => $this->user->user_id,
+            'device_uuid' => $deviceUuid,
             'ip_address' => '127.0.0.1',
             'user_agent' => 'PHPUnit FCM Test',
             'logged_at' => Carbon::now('Asia/Aden'),
@@ -43,7 +56,8 @@ class FcmPushNotificationTest extends TestCase
         ]);
 
         $this->headers = [
-            'X-Session-Id' => (string) $this->session->session_id,
+            'X-Session-Id' => (string) $this->session->session_token,
+            'X-Device-Uuid' => $deviceUuid,
             'X-Bypass-Encryption' => 'true',
         ];
     }

@@ -24,6 +24,7 @@ class UserSessionResource extends JsonResource
             'user_id' => $this->user_id,
             'ip_address' => $this->ip_address,
             'user_agent' => $this->user_agent,
+            'device_uuid' => $this->device_uuid,
             'logged_at' => $this->logged_at ? Carbon::parse($this->logged_at)->toDateTimeString() : null,
             'last_activity_at' => $this->last_activity_at ? Carbon::parse($this->last_activity_at)->toDateTimeString() : null,
             'expires_at' => $this->expires_at ? Carbon::parse($this->expires_at)->toDateTimeString() : null,

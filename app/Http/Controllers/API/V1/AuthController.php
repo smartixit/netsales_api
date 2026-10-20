@@ -206,6 +206,7 @@ class AuthController extends BaseController
 
             return $this->successResponse('تم تسجيل الدخول بنجاح.', [
                 'session_id' => (string) ($session->session_token ?: $session->session_id),
+                'device_uuid' => (string) $session->device_uuid,
                 'user' => new UserResource($user),
                 'permissions' => $result['permissions'],
             ]);
@@ -252,6 +253,7 @@ class AuthController extends BaseController
 
             return $this->successResponse('تم التحقق بنجاح وإنشاء جلسة الدخول.', [
                 'session_id' => (string) ($result['session']->session_token ?: $result['session']->session_id),
+                'device_uuid' => (string) $result['session']->device_uuid,
                 'user' => new UserResource($result['user']),
                 'permissions' => $result['permissions'],
             ]);
@@ -319,7 +321,7 @@ class AuthController extends BaseController
                 $this->authService->logout($user, $sessionId, $deviceUuid);
             }
 
-            return $this->successResponse('تم تسجيل الخروج بنجاح وإلغاء الجلسة.');
+            return $this->successResponse('تم تسجيل الخروج بنجاح.');
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {

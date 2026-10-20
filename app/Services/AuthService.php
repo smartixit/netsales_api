@@ -277,7 +277,7 @@ class AuthService
             // إنشاء الجلسة في user_sessions بمدة ديناميكية من إعدادات النظام
             $session = $this->userSessionRepository->createSession(
                 userId: $user->user_id,
-                deviceUuid: $incomingDeviceId,
+                deviceUuid: $existingDevice->device_uuid,
                 ipAddress: request()->ip(),
                 userAgent: request()->userAgent(),
                 durationHours: $this->getSessionDurationHours()
