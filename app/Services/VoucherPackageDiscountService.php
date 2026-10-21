@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Http\Requests\API\V1\Network\StoreVoucherPackageDiscountRequest;
 use App\Http\Requests\API\V1\Network\UpdateVoucherPackageDiscountRequest;
+use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
@@ -31,7 +32,10 @@ class VoucherPackageDiscountService
         protected NetworkRepositoryInterface $networkRepository,
         protected PosRepositoryInterface $posRepository,
         protected VoucherPackageRepositoryInterface $packageRepository,
-    ) {}
+        protected ?NetworkPosRepositoryInterface $networkPosRepository = null,
+    ) {
+        $this->networkPosRepository = $networkPosRepository ?? app(NetworkPosRepositoryInterface::class);
+    }
 
     /**
      * جلب قائمة الخصومات مع الفلترة والترقيم.
@@ -77,28 +81,40 @@ class VoucherPackageDiscountService
         }
 
         return DB::transaction(function () use ($networkId, $posId, $packageId, $discountCash, $discountCredit, $status, $createdBy) {
-            // التحقق من وجود الشبكة
+            // 1. التحقق من وجود ونشاط الشبكة
             try {
-                $this->networkRepository->findById($networkId);
+                $network = $this->networkRepository->findById($networkId);
+                $network->ensureActive();
             } catch (ModelNotFoundException) {
                 throw ValidationException::withMessages([
                     'network_id' => ['مزود الشبكة المحدد غير موجود في النظام.'],
                 ]);
             }
 
-            // التحقق من وجود نقطة البيع
+            // 2. التحقق من وجود ونشاط نقطة البيع
             try {
-                $this->posRepository->findById($posId);
+                $pos = $this->posRepository->findById($posId);
+                $pos->ensureActive();
             } catch (ModelNotFoundException) {
                 throw ValidationException::withMessages([
                     'pos_id' => ['نقطة البيع المحددة غير موجودة في النظام.'],
                 ]);
             }
 
-            // التحقق من وجود الباقة وانتمائها لنفس الشبكة
+            // 3. التحقق من ارتباط نقطة البيع بالشبكة وتفعيله
+            $link = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId);
+            if (! $link) {
+                throw ValidationException::withMessages([
+                    'pos_id' => ['نقطة البيع المحددة غير مرتبطة بمزود الشبكة هذا.'],
+                ]);
+            }
+            $link->ensureActive();
+
+            // 4. التحقق من وجود ونشاط الباقة وانتمائها لنفس الشبكة
             try {
                 $package = $this->packageRepository->findById($packageId);
-                if ($package->network_id !== $networkId) {
+                $package->ensureActive();
+                if ((int) $package->network_id !== $networkId) {
                     throw ValidationException::withMessages([
                         'package_id' => ['باقة الكروت المحددة لا تنتمي لمزود الشبكة المختار.'],
                     ]);

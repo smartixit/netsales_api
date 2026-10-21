@@ -67,9 +67,10 @@ class NetworkWalletService
     public function getWalletByNetworkId(int $networkId): NetworkWallet
     {
         $wallet = $this->networkWalletRepository->findByNetworkId($networkId);
+        $network = $this->networkRepository->findById($networkId);
 
         if (! $wallet) {
-            throw new Exception("لم يتم العثور على محفظة مخصصة لمزود الشبكة برقم ({$networkId}).");
+            throw new Exception("لم يتم العثور على محفظة مخصصة لمزود الشبكة برقم ({$network->network_name}).");
         }
 
         $wallet->loadMissing(['network']);

@@ -186,7 +186,15 @@ class UserService
      */
     public function forceDelete(int $id): bool
     {
-        $user = User::withTrashed()->find($id);
+        $user = $this->userRepository->findTrashedById($id);
+        if (! $user) {
+            try {
+                $user = $this->userRepository->findById($id);
+            } catch (ModelNotFoundException) {
+                return false;
+            }
+        }
+
         if (! $user) {
             return false;
         }
@@ -280,6 +288,8 @@ class UserService
                 'user_id' => ['المستخدم غير موجود في النظام.'],
             ]);
         }
+
+        $user->ensureActive();
 
         return DB::transaction(function () use ($user, $file) {
             $newPath = $this->fileUploadService->replaceFile(

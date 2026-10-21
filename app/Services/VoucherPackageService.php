@@ -78,9 +78,10 @@ class VoucherPackageService
         }
 
         return DB::transaction(function () use ($networkId, $data) {
-            // التحقق من وجود الشبكة
+            // التحقق من وجود ونشاط الشبكة
             try {
-                $this->networkRepository->findById($networkId);
+                $network = $this->networkRepository->findById($networkId);
+                $network->ensureActive();
             } catch (ModelNotFoundException) {
                 throw ValidationException::withMessages([
                     'network_id' => ['مزود الشبكة المحدد غير موجود في النظام.'],
@@ -254,10 +255,19 @@ class VoucherPackageService
     }
 
     /**
-     * جلب باقات شبكة معينة.
+     * جلب باقات شبكة معينة بعد التحقق من وجود ونشاط الشبكة.
      */
     public function getForNetwork(int $networkId, array $filters = []): Collection|CursorPaginator
     {
+        try {
+            $network = $this->networkRepository->findById($networkId);
+            $network->ensureActive();
+        } catch (ModelNotFoundException) {
+            throw ValidationException::withMessages([
+                'network_id' => ['مزود الشبكة المحدد غير موجود في النظام.'],
+            ]);
+        }
+
         return $this->voucherPackageRepository->getForNetwork($networkId, $filters);
     }
 }

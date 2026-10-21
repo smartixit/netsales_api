@@ -66,11 +66,14 @@ class VoucherPackageRepository extends BaseRepository implements VoucherPackageR
     }
 
     /**
-     * جلب باقات شبكة معينة.
+     * جلب باقات شبكة معينة (افتراضياً الباقات النشطة فقط).
      */
     public function getForNetwork(int $networkId, array $filters = []): Collection|CursorPaginator
     {
         $filters['network_id'] = $networkId;
+        if (! isset($filters['status']) && empty($filters['all_statuses'])) {
+            $filters['status'] = true;
+        }
 
         return $this->getFiltered($filters, ['network']);
     }

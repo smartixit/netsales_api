@@ -107,6 +107,13 @@ class NetworkService
             ]);
         }
         $owner = $this->userRepository->findById($resolvedOwnerId);
+        if (! $owner) {
+            throw ValidationException::withMessages([
+                'owner_id' => ['مالك الشبكة المحدد غير موجود بالنظام.'],
+            ]);
+        }
+        $owner->ensureActive();
+
         $data['owner_id'] = $owner->user_id;
         $data['network_phone_number'] = (string) $owner->user_phone_number;
         // unset($data['network_holder_name']);

@@ -94,6 +94,13 @@ class PosService
             ]);
         }
         $owner = $this->userRepository->findById($resolvedOwnerId);
+        if (! $owner) {
+            throw ValidationException::withMessages([
+                'owner_id' => ['مالك نقطة البيع المحدد غير موجود بالنظام.'],
+            ]);
+        }
+        $owner->ensureActive();
+
         $data['owner_id'] = $owner->user_id;
         $data['pos_phone_number'] = (string) $owner->user_phone_number;
         // unset($data['pos_holder_name']);

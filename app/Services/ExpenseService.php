@@ -171,6 +171,9 @@ class ExpenseService
             /** @var Expense $expense */
             $expense = $this->expenseRepository->findById($expenseId);
 
+            $network = $this->networkRepository->findById($expense->network_id);
+            $network->ensureActive();
+
             $updateData = [];
             if ($request->hasExpenseDate()) {
                 $updateData['expense_date'] = $request->getExpenseDate();
@@ -207,47 +210,52 @@ class ExpenseService
                 $diff = round($newTotal - $oldTotal, 2);
                 if ($diff != 0) {
                     $networkWallet = $this->networkWalletRepository->findByNetworkId($expense->network_id, true);
-                    if ($networkWallet && $networkWallet->isActive()) {
-                        if ($diff > 0) {
-                            // زيادة في المصروف -> خصم إضافي من المحفظة
-                            $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, $diff);
-                            $balanceAfter = round((float) $networkWallet->wallet_balance - $diff, 2);
-                            $this->networkWalletLogRepository->createLog(
-                                $networkWallet->wallet_id,
-                                WalletOperationType::WITHDRAW,
-                                $diff,
-                                "تسوية زيادة مصروفات تشغيلية (#{$expense->expense_uuid})",
-                                $userId
-                            );
+                    if (! $networkWallet) {
+                        throw ValidationException::withMessages([
+                            'network_wallet' => ['لم يتم العثور على محفظة مالية مسجلة للشبكة لتسوية فروق المصروفات.'],
+                        ]);
+                    }
+                    $networkWallet->ensureActive();
 
-                            $this->networkWalletService->sendWalletSms(
-                                $networkWallet,
-                                'payment',
-                                (float) $diff,
-                                $balanceAfter,
-                                'تسوية زيادة مصروف'
-                            );
-                        } else {
-                            // انخفاض في المصروف -> استرداد وإيداع الفائض في المحفظة
-                            $refund = abs($diff);
-                            $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $refund);
-                            $balanceAfter = round((float) $networkWallet->wallet_balance + $refund, 2);
-                            $this->networkWalletLogRepository->createLog(
-                                $networkWallet->wallet_id,
-                                WalletOperationType::DEPOSIT,
-                                $refund,
-                                "استرداد تسوية تخفيض مصروفات تشغيلية (#{$expense->expense_uuid})",
-                                $userId
-                            );
+                    if ($diff > 0) {
+                        // زيادة في المصروف -> خصم إضافي من المحفظة
+                        $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, $diff);
+                        $balanceAfter = round((float) $networkWallet->wallet_balance - $diff, 2);
+                        $this->networkWalletLogRepository->createLog(
+                            $networkWallet->wallet_id,
+                            WalletOperationType::WITHDRAW,
+                            $diff,
+                            "تسوية زيادة مصروفات تشغيلية (#{$expense->expense_uuid})",
+                            $userId
+                        );
 
-                            $this->networkWalletService->sendWalletSms(
-                                $networkWallet,
-                                'receipt',
-                                (float) $refund,
-                                $balanceAfter,
-                                'تسوية استرداد مصروف'
-                            );
-                        }
+                        $this->networkWalletService->sendWalletSms(
+                            $networkWallet,
+                            'payment',
+                            (float) $diff,
+                            $balanceAfter,
+                            'تسوية زيادة مصروف'
+                        );
+                    } else {
+                        // انخفاض في المصروف -> استرداد وإيداع الفائض في المحفظة
+                        $refund = abs($diff);
+                        $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $refund);
+                        $balanceAfter = round((float) $networkWallet->wallet_balance + $refund, 2);
+                        $this->networkWalletLogRepository->createLog(
+                            $networkWallet->wallet_id,
+                            WalletOperationType::DEPOSIT,
+                            $refund,
+                            "استرداد تسوية تخفيض مصروفات تشغيلية (#{$expense->expense_uuid})",
+                            $userId
+                        );
+
+                        $this->networkWalletService->sendWalletSms(
+                            $networkWallet,
+                            'receipt',
+                            (float) $refund,
+                            $balanceAfter,
+                            'تسوية استرداد مصروف'
+                        );
                     }
                 }
             }
@@ -358,6 +366,9 @@ class ExpenseService
             /** @var Expense $expense */
             $expense = $this->expenseRepository->findById($expenseId);
 
+            $network = $this->networkRepository->findById($expense->network_id);
+            $network->ensureActive();
+
             $amount = $request->getItemAmount();
             $statement = $request->getItemStatement();
 
@@ -373,25 +384,30 @@ class ExpenseService
 
             // خصم المبلغ الإضافي من المحفظة
             $networkWallet = $this->networkWalletRepository->findByNetworkId($expense->network_id, true);
-            if ($networkWallet && $networkWallet->isActive()) {
-                $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, $amount);
-                $balanceAfter = round((float) $networkWallet->wallet_balance - $amount, 2);
-                $this->networkWalletLogRepository->createLog(
-                    $networkWallet->wallet_id,
-                    WalletOperationType::WITHDRAW,
-                    $amount,
-                    "إضافة بند مصروف (#{$expense->expense_uuid}): {$statement}",
-                    $userId
-                );
-
-                $this->networkWalletService->sendWalletSms(
-                    $networkWallet,
-                    'payment',
-                    (float) $amount,
-                    $balanceAfter,
-                    'إضافة بند مصروف'
-                );
+            if (! $networkWallet) {
+                throw ValidationException::withMessages([
+                    'network_wallet' => ['لم يتم العثور على محفظة مالية مسجلة للشبكة لإتمام صرف المصروفات.'],
+                ]);
             }
+            $networkWallet->ensureActive();
+
+            $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, $amount);
+            $balanceAfter = round((float) $networkWallet->wallet_balance - $amount, 2);
+            $this->networkWalletLogRepository->createLog(
+                $networkWallet->wallet_id,
+                WalletOperationType::WITHDRAW,
+                $amount,
+                "إضافة بند مصروف (#{$expense->expense_uuid}): {$statement}",
+                $userId
+            );
+
+            $this->networkWalletService->sendWalletSms(
+                $networkWallet,
+                'payment',
+                (float) $amount,
+                $balanceAfter,
+                'إضافة بند مصروف'
+            );
 
             return $item;
         });
@@ -405,6 +421,10 @@ class ExpenseService
         return DB::transaction(function () use ($expenseId, $itemId, $userId): bool {
             /** @var Expense $expense */
             $expense = $this->expenseRepository->findById($expenseId);
+
+            $network = $this->networkRepository->findById($expense->network_id);
+            $network->ensureActive();
+
             /** @var ExpenseItem $item */
             $item = $this->expenseItemRepository->findById($itemId);
 
@@ -418,25 +438,30 @@ class ExpenseService
 
             // استرداد المبلغ إلى المحفظة
             $networkWallet = $this->networkWalletRepository->findByNetworkId($expense->network_id, true);
-            if ($networkWallet && $networkWallet->isActive()) {
-                $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $amount);
-                $balanceAfter = round((float) $networkWallet->wallet_balance + $amount, 2);
-                $this->networkWalletLogRepository->createLog(
-                    $networkWallet->wallet_id,
-                    WalletOperationType::DEPOSIT,
-                    $amount,
-                    "استرداد حذف بند مصروف (#{$expense->expense_uuid}): {$statement}",
-                    $userId
-                );
-
-                $this->networkWalletService->sendWalletSms(
-                    $networkWallet,
-                    'receipt',
-                    (float) $amount,
-                    $balanceAfter,
-                    'استرداد حذف بند مصروف'
-                );
+            if (! $networkWallet) {
+                throw ValidationException::withMessages([
+                    'network_wallet' => ['لم يتم العثور على محفظة مالية مسجلة للشبكة لاسترداد مبلغ البند المحذوف.'],
+                ]);
             }
+            $networkWallet->ensureActive();
+
+            $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $amount);
+            $balanceAfter = round((float) $networkWallet->wallet_balance + $amount, 2);
+            $this->networkWalletLogRepository->createLog(
+                $networkWallet->wallet_id,
+                WalletOperationType::DEPOSIT,
+                $amount,
+                "استرداد حذف بند مصروف (#{$expense->expense_uuid}): {$statement}",
+                $userId
+            );
+
+            $this->networkWalletService->sendWalletSms(
+                $networkWallet,
+                'receipt',
+                (float) $amount,
+                $balanceAfter,
+                'استرداد حذف بند مصروف'
+            );
 
             return true;
         });

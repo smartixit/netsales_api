@@ -150,7 +150,8 @@ class SubscriptionPlanService
     public function attachFeature(int $planId, AttachPlanFeatureRequest $request, int $userId): SubscriptionPlanFeature
     {
         return DB::transaction(function () use ($planId, $request, $userId) {
-            $this->getById($planId); // تأكد من وجود الباقة
+            $plan = $this->getById($planId); // تأكد من وجود الباقة
+            $plan->ensureActive();
             $featureId = $request->getFeatureId();
 
             $feature = $this->featureRepository->findById($featureId);
@@ -159,6 +160,7 @@ class SubscriptionPlanService
                     'feature_id' => ["الميزة برقم [{$featureId}] غير موجودة."],
                 ]);
             }
+            $feature->ensureActive();
 
             $existing = $this->planFeatureRepository->findByPlanAndFeature($planId, $featureId);
             if ($existing) {

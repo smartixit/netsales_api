@@ -98,18 +98,20 @@ class SubscriptionRequestService
             $network = $this->networkRepository->findById($networkId);
             if (! $network) {
                 throw ValidationException::withMessages([
-                    'network_id' => ["شبكة المزود برقم [{$networkId}] غير موجودة."],
+                    'network_id' => ["شبكة المزود برقم [{$network->network_name}] غير موجودة."],
                 ]);
             }
+            $network->ensureActive();
 
             $planId = $request->getPlanId();
             /** @var SubscriptionPlan|null $plan */
             $plan = $this->planRepository->findById($planId);
-            if (! $plan || ! $plan->status) {
+            if (! $plan) {
                 throw ValidationException::withMessages([
-                    'plan_id' => ['باقة الاشتراك المحددة غير متاحة حالياً.'],
+                    'plan_id' => ['باقة الاشتراك المحددة غير موجودة في النظام.'],
                 ]);
             }
+            $plan->ensureActive();
 
             // التحقق من عدم وجود طلب معلق للشبكة
             if ($this->requestRepository->hasPendingRequest($networkId)) {
@@ -129,11 +131,12 @@ class SubscriptionRequestService
 
             if (! empty($accountId)) {
                 $account = $this->bankAccountRepository->findById($accountId);
-                if (! $account || ! $account->status) {
+                if (! $account) {
                     throw ValidationException::withMessages([
-                        'account_id' => ['الحساب البنكي المحدد غير مفعّل أو غير متاح.'],
+                        'account_id' => ['الحساب البنكي المحدد غير موجود في النظام.'],
                     ]);
                 }
+                $account->ensureActive();
             }
 
             // رفع إيصال السداد أو الحوالة إن وجد
@@ -174,6 +177,7 @@ class SubscriptionRequestService
     public function approve(int $id, ApproveSubscriptionPlanRequestRequest $request, int $reviewerId): array
     {
         return DB::transaction(function () use ($id, $request, $reviewerId) {
+            /** @var SubscriptionPlanRequest $subRequest */
             $subRequest = $this->getById($id);
 
             if ($subRequest->status !== RequestStatus::PENDING) {
@@ -182,6 +186,15 @@ class SubscriptionRequestService
                 ]);
             }
 
+            // التحقق من وجود ونشاط الشبكة صاحبة الطلب
+            $network = $this->networkRepository->findById($subRequest->network_id);
+            if (! $network) {
+                throw ValidationException::withMessages([
+                    'network_id' => ['شبكة المزود المرتبطة بالطلب غير موجودة.'],
+                ]);
+            }
+            $network->ensureActive();
+
             /** @var SubscriptionPlan $plan */
             $plan = $this->planRepository->findById($subRequest->plan_id);
             if (! $plan) {
@@ -189,6 +202,7 @@ class SubscriptionRequestService
                     'plan_id' => ['باقة الاشتراك المرتبطة بالطلب غير موجودة.'],
                 ]);
             }
+            $plan->ensureActive();
 
             // 1. تحديث حالة الطلب إلى معتمد
             $updatedRequest = $this->requestRepository->updateStatus(
@@ -201,6 +215,10 @@ class SubscriptionRequestService
 
             // 2. تحديث رصيد الحساب البنكي إذا كان السداد بنكياً
             if ($subRequest->account_id && (float) $subRequest->request_total_amount > 0) {
+                $account = $this->bankAccountRepository->findById($subRequest->account_id);
+                if ($account) {
+                    $account->ensureActive();
+                }
                 $this->bankAccountRepository->updateBalance(
                     $subRequest->account_id,
                     (float) $subRequest->request_total_amount,

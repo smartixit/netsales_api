@@ -12,6 +12,7 @@ use App\Http\Requests\API\V1\Pos\TransferNetworkToPosWalletRequest;
 use App\Http\Requests\API\V1\Pos\TransferPosToNetworkWalletRequest;
 use App\Http\Requests\API\V1\Pos\UpdatePosWalletRequest;
 use App\Http\Requests\API\V1\Pos\WithdrawPosWalletRequest;
+use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
 use App\Interfaces\NetworkWalletRepositoryInterface;
@@ -41,7 +42,10 @@ class PosWalletService
         protected NetworkRepositoryInterface $networkRepository,
         protected PosRepositoryInterface $posRepository,
         protected NotificationService $notificationService,
-    ) {}
+        protected ?NetworkPosRepositoryInterface $networkPosRepository = null,
+    ) {
+        $this->networkPosRepository = $networkPosRepository ?? app(NetworkPosRepositoryInterface::class);
+    }
 
     /**
      * جلب قائمة محافظ نقاط البيع مع الفلاتر والترقيم بالمؤشر.
@@ -77,9 +81,11 @@ class PosWalletService
     public function getWalletByNetworkAndPos(int $networkId, int $posId): PosWallet
     {
         $wallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId);
+        $network=$this->networkRepository->findById($networkId);
+        $pos=$this->posRepository->findById($posId);
 
         if (! $wallet) {
-            throw new Exception("لم يتم العثور على محفظة لنقطة البيع برقم ({$posId}) تابعة للشبكة برقم ({$networkId}).");
+            throw new Exception("لم يتم العثور على محفظة لنقطة البيع ({$pos->pos_name}) تابعة لشبكة ({$network->network_name}).");
         }
 
         $wallet->loadMissing(['network', 'pos']);
@@ -241,6 +247,7 @@ class PosWalletService
         return DB::transaction(function () use ($request, $userId): array {
             $networkId = $request->getNetworkId();
             $posId = $request->getPosId();
+            $pos=$this->posRepository->findById($posId);
             $amount = $request->getAmount();
             $userStatement = $request->getStatement();
 
@@ -258,11 +265,21 @@ class PosWalletService
                 ]);
             }
 
+            // التحقق من ارتباط نقطة البيع بالشبكة وتفعيله
+            $link = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId);
+            if (! $link) {
+                throw ValidationException::withMessages([
+                    'pos_id' => ["نقطة البيع (#{$pos->pos_name}) غير مرتبطة بهذه الشبكة."],
+                ]);
+            }
+            $link->ensureActive();
+
             // قفل محفظة الشبكة والتحقق منها
             $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId, true);
+            $network=$this->networkRepository->findById($networkId);
             if (! $networkWallet) {
                 throw ValidationException::withMessages([
-                    'network_id' => ["لم يتم العثور على محفظة مالية مسجلة للشبكة (#{$networkId})."],
+                    'network_id' => ["لم يتم العثور على محفظة مالية مسجلة للشبكة (#{$network->network_name})."],
                 ]);
             }
             $networkWallet->ensureActive();
@@ -277,7 +294,7 @@ class PosWalletService
             $posWallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId, true);
             if (! $posWallet) {
                 throw ValidationException::withMessages([
-                    'pos_id' => ["لم يتم العثور على محفظة لنقطة البيع (#{$posId}) لدى هذه الشبكة."],
+                    'pos_id' => ["لم يتم العثور على محفظة لنقطة البيع (#{$pos->pos_name}) لدى هذه الشبكة."],
                 ]);
             }
             $posWallet->ensureActive();
@@ -285,7 +302,7 @@ class PosWalletService
             // الخصم من محفظة الشبكة
             $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, $amount);
 
-            $netStatement = "تحويل وتغذية رصيد إلى محفظة نقطة البيع (#{$posId})".($userStatement ? " - {$userStatement}" : '');
+            $netStatement = "تحويل وتغذية رصيد إلى محفظة نقطة البيع (#{$pos->pos_name})".($userStatement ? " - {$userStatement}" : '');
             $networkLog = $this->networkWalletLogRepository->createLog(
                 $networkWallet->wallet_id,
                 WalletOperationType::WITHDRAW->value,
@@ -297,7 +314,7 @@ class PosWalletService
             // الإيداع في محفظة نقطة البيع
             $this->posWalletRepository->incrementBalance($posWallet->wallet_id, $amount);
 
-            $posStatement = "استلام تغذية رصيد من محفظة الشبكة (#{$networkId})".($userStatement ? " - {$userStatement}" : '');
+            $posStatement = "استلام تغذية رصيد من محفظة الشبكة (#{$network->network_name})".($userStatement ? " - {$userStatement}" : '');
             $posLog = $this->posWalletLogRepository->createLog(
                 $posWallet->wallet_id,
                 WalletOperationType::DEPOSIT->value,
@@ -328,15 +345,26 @@ class PosWalletService
     {
         return DB::transaction(function () use ($request, $userId): array {
             $networkId = $request->getNetworkId();
+            $network=$this->networkRepository->findById($networkId);
             $posId = $request->getPosId();
+            $pos=$this->posRepository->findById($posId);
             $amount = $request->getAmount();
             $userStatement = $request->getStatement();
+
+            // التحقق من ارتباط نقطة البيع بالشبكة وتفعيله
+            $link = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId);
+            if (! $link) {
+                throw ValidationException::withMessages([
+                    'pos_id' => ["نقطة البيع (#{$pos->pos_name}) غير مرتبطة بهذه الشبكة."],
+                ]);
+            }
+            $link->ensureActive();
 
             // قفل محفظة نقطة البيع والتحقق منها
             $posWallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId, true);
             if (! $posWallet) {
                 throw ValidationException::withMessages([
-                    'pos_id' => ["لم يتم العثور على محفظة لنقطة البيع (#{$posId}) لدى هذه الشبكة."],
+                    'pos_id' => ["لم يتم العثور على محفظة لنقطة البيع (#{$pos->pos_name}) لدى هذه الشبكة."],
                 ]);
             }
             $posWallet->ensureActive();
@@ -351,7 +379,7 @@ class PosWalletService
             $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId, true);
             if (! $networkWallet) {
                 throw ValidationException::withMessages([
-                    'network_id' => ["لم يتم العثور على محفظة مالية مسجلة للشبكة (#{$networkId})."],
+                    'network_id' => ["لم يتم العثور على محفظة مالية مسجلة للشبكة (#{$network->network_name})."],
                 ]);
             }
             $networkWallet->ensureActive();
@@ -359,7 +387,7 @@ class PosWalletService
             // الخصم من محفظة نقطة البيع
             $this->posWalletRepository->decrementBalance($posWallet->wallet_id, $amount);
 
-            $posStatement = "استرجاع رصيد إلى محفظة الشبكة (#{$networkId})".($userStatement ? " - {$userStatement}" : '');
+            $posStatement = "استرجاع رصيد إلى محفظة الشبكة (#{$network->network_name})".($userStatement ? " - {$userStatement}" : '');
             $posLog = $this->posWalletLogRepository->createLog(
                 $posWallet->wallet_id,
                 WalletOperationType::WITHDRAW->value,
@@ -371,7 +399,7 @@ class PosWalletService
             // الإيداع في محفظة الشبكة
             $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $amount);
 
-            $netStatement = "استلام رصيد مسترجع من نقطة البيع (#{$posId})".($userStatement ? " - {$userStatement}" : '');
+            $netStatement = "استلام رصيد مسترجع من نقطة البيع (#{$pos->pos_name})".($userStatement ? " - {$userStatement}" : '');
             $networkLog = $this->networkWalletLogRepository->createLog(
                 $networkWallet->wallet_id,
                 WalletOperationType::DEPOSIT->value,

@@ -114,6 +114,7 @@ class NotificationService
                     'user_id' => ["المستخدم رقم [{$request->getUserId()}] غير موجود بالنظام."],
                 ]);
             }
+            $user->ensureActive();
 
             $type = $request->getNotificationType();
 
@@ -286,6 +287,7 @@ class NotificationService
                         'user_id' => ["المستخدم رقم [{$request->getUserId()}] غير موجود بالنظام."],
                     ]);
                 }
+                $user->ensureActive();
                 $data['user_id'] = $request->getUserId();
             }
 

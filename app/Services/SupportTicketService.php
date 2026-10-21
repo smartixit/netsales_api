@@ -93,18 +93,20 @@ class SupportTicketService
             $network = $this->networkRepository->findById($networkId);
             if (! $network) {
                 throw ValidationException::withMessages([
-                    'network_id' => ["شبكة المزود برقم [{$networkId}] غير موجودة."],
+                    'network_id' => ["شبكة المزود برقم [{$network->network_name}] غير موجودة."],
                 ]);
             }
+            $network->ensureActive();
 
             $posId = $request->getPosId();
             if ($posId !== null) {
                 $pos = $this->posRepository->findById($posId);
                 if (! $pos) {
                     throw ValidationException::withMessages([
-                        'pos_id' => ["نقطة البيع برقم [{$posId}] غير موجودة."],
+                        'pos_id' => ["نقطة البيع برقم [{$pos->pos_name}] غير موجودة."],
                     ]);
                 }
+                $pos->ensureActive();
             }
 
             $ticketData = [
@@ -155,6 +157,7 @@ class SupportTicketService
                         'network_id' => ['شبكة المزود المحددة غير موجودة.'],
                     ]);
                 }
+                $network->ensureActive();
                 $updateData['network_id'] = $request->getNetworkId();
             }
 
@@ -167,6 +170,7 @@ class SupportTicketService
                             'pos_id' => ['نقطة البيع المحددة غير موجودة.'],
                         ]);
                     }
+                    $pos->ensureActive();
                 }
                 $updateData['pos_id'] = $posId;
             }

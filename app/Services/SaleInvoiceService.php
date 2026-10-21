@@ -101,6 +101,15 @@ class SaleInvoiceService
             $pos = $request->relationLoaded('pos') ? $request->pos : $this->posRepository->findById($posId);
             $pos->ensureActive();
 
+            // التحقق من ارتباط نقطة البيع بالشبكة وتفعيله
+            $link = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId);
+            if (! $link) {
+                throw ValidationException::withMessages([
+                    'pos_id' => ['نقطة البيع المحددة غير مرتبطة بمزود الشبكة هذا.'],
+                ]);
+            }
+            $link->ensureActive();
+
             // 1. استخراج بنود الفاتورة (من التعديل الاختياري أو من بنود الطلب الأصلية دون المساس بالطلب)
             $hasOverrideItems = ! empty($overrideItems);
             $itemsSource = $hasOverrideItems
@@ -142,6 +151,12 @@ class SaleInvoiceService
                     $packageId = (int) $item['package_id'];
                     $voucherCount = (int) $item['voucher_count'];
                     $package = $this->voucherPackageRepository->findById($packageId);
+                    $package->ensureActive();
+                    if ((int) $package->network_id !== $networkId) {
+                        throw ValidationException::withMessages([
+                            'items' => ["الباقة ({$package->package_name}) لا تنتمي لمزود الشبكة المحدد."],
+                        ]);
+                    }
                     $voucherPrice = isset($item['voucher_price']) && (float) $item['voucher_price'] > 0
                         ? (float) $item['voucher_price']
                         : (float) $package->package_voucher_price;
@@ -352,6 +367,11 @@ class SaleInvoiceService
 
             foreach ($items as $item) {
                 $package = $this->voucherPackageRepository->findById($item['package_id']);
+                if ((int) $package->network_id !== $networkId) {
+                    throw ValidationException::withMessages([
+                        'items' => ["الباقة ({$package->package_name}) لا تنتمي لمزود الشبكة المحدد."],
+                    ]);
+                }
                 $package->ensureActive();
                 $price = (float) $item['voucher_price'];
                 $count = (int) $item['voucher_count'];
@@ -403,7 +423,8 @@ class SaleInvoiceService
 
             // 4. التسوية المالية في المحافظ:
             // يُخصم من محفظة نقطة البيع المبلغ المتبقي فقط كمديونية/ذمم مدينة
-            if ($posWallet && $posWallet->isActive() && $remainingAmount > 0.001) {
+            if ($posWallet && $remainingAmount > 0.001) {
+                $posWallet->ensureActive();
                 $this->posWalletRepository->decrementBalance($posWallet->wallet_id, $remainingAmount);
                 $posBalanceAfter = round((float) $posWallet->wallet_balance - $remainingAmount, 2);
 
@@ -436,7 +457,8 @@ class SaleInvoiceService
                 $this->posWalletService->sendWalletSms($posWallet, 'payment', (float) $remainingAmount, $posBalanceAfter);
             }
 
-            if ($networkWallet && $networkWallet->isActive()) {
+            if ($networkWallet) {
+                $networkWallet->ensureActive();
                 // إيداع إجمالي الفاتورة في محفظة الشبكة كاستحقاق مبيعات
                 $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $totalInvoiceAmount);
 
@@ -486,7 +508,14 @@ class SaleInvoiceService
     public function updateSaleType(int $invoiceId, UpdateSaleInvoiceRequest $request): SaleInvoice
     {
         return DB::transaction(function () use ($invoiceId, $request): SaleInvoice {
-            $this->saleInvoiceRepository->findById($invoiceId);
+            $invoice = $this->saleInvoiceRepository->findById($invoiceId);
+
+            $network = $this->networkRepository->findById($invoice->network_id);
+            $network->ensureActive();
+
+            $pos = $this->posRepository->findById($invoice->pos_id);
+            $pos->ensureActive();
+
             $this->saleInvoiceRepository->patch($invoiceId, [
                 'sale_type' => $request->getSaleType(),
             ]);

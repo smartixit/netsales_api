@@ -179,6 +179,7 @@ class NetworkSmsSettingService
                     'network_id' => ['عذراً، الشبكة المحددة غير موجودة في النظام.'],
                 ]);
             }
+            $network->ensureActive();
 
             /** @var NetworkSmsSetting $setting */
             $setting = $this->smsSettingRepository->getOrCreateForNetwork($networkId);
@@ -257,6 +258,7 @@ class NetworkSmsSettingService
                 'network_id' => ['عذراً، الشبكة المحددة غير موجودة في النظام.'],
             ]);
         }
+        $network->ensureActive();
 
         $phone = $request->getPhoneNumber();
         $message = "🔔 رسالة تجريبية من منصة NetSales: تم التحقق من ربط بوابة الرسائل لشبكة ({$network->network_name}) بنجاح! 🚀";
