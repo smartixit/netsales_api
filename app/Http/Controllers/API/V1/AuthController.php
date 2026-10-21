@@ -117,7 +117,6 @@ class AuthController extends BaseController
                         new OA\Property(property: 'pos_email', type: 'string', format: 'email', example: 'pos@example.com'),
                         new OA\Property(property: 'pos_address', type: 'string', example: 'حي الصافية، صنعاء'),
                         new OA\Property(property: 'pos_profile_logo', type: 'string', format: 'binary', description: 'شعار نقطة البيع'),
-                        new OA\Property(property: 'network_id', type: 'integer', nullable: true, example: 1),
                         new OA\Property(property: 'user_full_name', type: 'string', example: 'خالد عبد الله صالح'),
                         new OA\Property(property: 'user_phone_number', type: 'string', example: '771234567'),
                         new OA\Property(property: 'user_password', type: 'string', format: 'password', example: 'Secret@123'),

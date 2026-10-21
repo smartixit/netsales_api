@@ -625,14 +625,6 @@ class AuthService
                 'status' => PosStatus::PENDING,
             ]);
 
-            // ربط النقطة بالشبكة إن حُددت عبر علاقة networkPos بالموديل
-            if (! empty($request->network_id)) {
-                $pos->networkPos()->create([
-                    'network_id' => (int) $request->network_id,
-                    'status' => false,
-                ]);
-            }
-
             // 6. تسجيل الجهاز كجهاز أساسي بحالة PENDING عبر المستودع
             $deviceType = (string) ($request->device_type ?? 'UNKNOWN');
             $deviceTypeEnum = DeviceType::tryFrom(strtoupper($deviceType)) ?? DeviceType::UNKNOWN;

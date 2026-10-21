@@ -69,11 +69,6 @@ class RegisterPosRequest extends FormRequest
                 'image',
                 'max:2048',
             ],
-            'network_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('networks', 'network_id')->whereNull('deleted_at'),
-            ],
 
             // بيانات المستخدم (مسؤول نقطة البيع)
             'user_full_name' => [

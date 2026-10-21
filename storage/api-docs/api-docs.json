@@ -330,11 +330,6 @@
                                         "type": "string",
                                         "format": "binary"
                                     },
-                                    "network_id": {
-                                        "type": "integer",
-                                        "example": 1,
-                                        "nullable": true
-                                    },
                                     "user_full_name": {
                                         "type": "string",
                                         "example": "خالد عبد الله صالح"
