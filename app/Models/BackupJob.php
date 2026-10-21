@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\BackupStatus;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -58,5 +59,28 @@ class BackupJob extends Model
     public function isFinalized(): bool
     {
         return in_array($this->status, [BackupStatus::SUCCESS->value, BackupStatus::FAILED->value], true);
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereIn('status', [BackupStatus::QUEUED->value, BackupStatus::RUNNING->value]);
+    }
+
+    public function scopeSuccessful(Builder $query): Builder
+    {
+        return $query->where('status', BackupStatus::SUCCESS->value);
+    }
+
+    public function scopeStatus(Builder $query, BackupStatus|string $status): Builder
+    {
+        $val = $status instanceof BackupStatus ? $status : BackupStatus::tryFrom((string) $status);
+
+        return $val ? $query->where('status', $val->value) : $query->where('status', $status);
+    }
+
+    public function scopeStale(Builder $query, \DateTimeInterface $threshold): Builder
+    {
+        return $query->whereIn('status', [BackupStatus::QUEUED->value, BackupStatus::RUNNING->value])
+            ->where('started_at', '<', $threshold);
     }
 }

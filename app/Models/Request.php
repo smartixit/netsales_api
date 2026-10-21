@@ -104,6 +104,13 @@ class Request extends Model
         return $query->where('status', RequestStatus::REJECTED);
     }
 
+    public function scopeStatus(Builder $query, RequestStatus|string $status): Builder
+    {
+        $val = $status instanceof RequestStatus ? $status : RequestStatus::tryFrom((string) $status);
+
+        return $val ? $query->where('status', $val) : $query->where('status', $status);
+    }
+
     public function scopeForNetwork(Builder $query, int $networkId): Builder
     {
         return $query->where('network_id', $networkId);

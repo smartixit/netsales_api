@@ -88,15 +88,19 @@ class RequestService
 
             // التحقق من وجود ونشاط الشبكة ونقطة البيع
             $network = $this->networkRepository->findById($networkId);
+            $network->ensureActive();
+
             $pos = $this->posRepository->findById($posId);
+            $pos->ensureActive();
 
             // التحقق من ارتباط نقطة البيع بالشبكة وتفعيله
             $link = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId);
-            if (! $link || ! $link->status) {
+            if (! $link) {
                 throw ValidationException::withMessages([
-                    'pos_id' => ['نقطة البيع غير مرتبطة بهذه الشبكة أو أن الارتباط معطل حالياً.'],
+                    'pos_id' => ['نقطة البيع غير مرتبطة بهذه الشبكة.'],
                 ]);
             }
+            $link->ensureActive();
 
             // التحقق من صحة الباقات وتبعيتها للشبكة واحتساب الإجمالي مع الخصومات المطبقة
             $totalAmount = 0.0;
@@ -114,11 +118,7 @@ class RequestService
                     ]);
                 }
 
-                if (! $package->status) {
-                    throw ValidationException::withMessages([
-                        'items' => ["الباقة ({$package->package_name}) معطلة حالياً ولا يمكن طلبها."],
-                    ]);
-                }
+                $package->ensureActive();
 
                 $voucherPrice = isset($item['voucher_price']) && (float) $item['voucher_price'] > 0
                     ? (float) $item['voucher_price']
@@ -237,10 +237,10 @@ class RequestService
             if ($request->created_by) {
                 $invoiceNum = $invoice->invoice_uuid ?? $invoice->invoice_id;
                 $this->notificationService->sendDirect(
-                    userId: (int) $request->created_by,
+                    userId: $reviewedBy,
                     type: NotificationType::VOUCHER_REQUEST_APPROVED,
                     push: true,
-                    title: '✅ تم اعتماد طلب الكروت',
+                    title: '✅ اعتماد طلب الكروت',
                     message: "تم اعتماد طلب الكروت رقم #{$request->request_uuid} بنجاح، وتوليد فاتورة مبيعات رقم #{$invoiceNum}."
                 );
             }
@@ -280,10 +280,10 @@ class RequestService
             // إشعار صاحب الطلب برفض الطلب عبر الإشعارات وFCM Push
             if ($request->created_by) {
                 $this->notificationService->sendDirect(
-                    userId: (int) $request->created_by,
-                    type: NotificationType::GENERAL_INFO,
+                    userId: $reviewedBy,
+                    type: NotificationType::VOUCHER_REQUEST_REJECTED,
                     push: true,
-                    title: '❌ تم رفض طلب الكروت',
+                    title: '❌ رفض طلب الكروت',
                     message: "تم رفض طلب الكروت رقم #{$request->request_uuid}. سبب الرفض: {$reason}"
                 );
             }
@@ -323,7 +323,7 @@ class RequestService
             // إشعار صاحب الشبكة بإلغاء الطلب عبر الإشعارات وFCM Push
             if ($request->network && $request->network->approved_by) {
                 $this->notificationService->sendDirect(
-                    userId: (int) $request->network->approved_by,
+                    userId: $userId,
                     type: NotificationType::VOUCHER_REQUEST_CANCELLED,
                     push: true,
                     title: 'ℹ️ إلغاء طلب كروت',

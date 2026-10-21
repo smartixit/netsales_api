@@ -50,6 +50,11 @@ class Notification extends Model
     }
 
     // Scopes
+    public function scopeForUser(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId);
+    }
+
     public function scopeUnread(Builder $query): Builder
     {
         return $query->where('is_read', false);

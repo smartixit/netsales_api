@@ -42,7 +42,7 @@ class ScheduledTaskRunRepository extends BaseRepository implements ScheduledTask
             if ($filters['network_id'] === 'null' || $filters['network_id'] === null) {
                 $query->whereNull('network_id');
             } else {
-                $query->where('network_id', (int) $filters['network_id']);
+                $query->forNetwork((int) $filters['network_id']);
             }
         }
 
@@ -51,10 +51,7 @@ class ScheduledTaskRunRepository extends BaseRepository implements ScheduledTask
         }
 
         if (! empty($filters['status'])) {
-            $statusValue = $filters['status'] instanceof ScheduledTaskStatus
-                ? $filters['status']->value
-                : (string) $filters['status'];
-            $query->where('status', $statusValue);
+            $query->status($filters['status']);
         }
 
         $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
@@ -73,12 +70,12 @@ class ScheduledTaskRunRepository extends BaseRepository implements ScheduledTask
     {
         $today = Carbon::now('Asia/Aden')->toDateString();
 
-        $todayTotal = $this->model->newQuery()->whereDate('target_date', $today)->count();
-        $todaySent = $this->model->newQuery()->whereDate('target_date', $today)->whereIn('status', [ScheduledTaskStatus::SENT->value, ScheduledTaskStatus::COMPLETED->value])->count();
-        $todayFailed = $this->model->newQuery()->whereDate('target_date', $today)->where('status', ScheduledTaskStatus::FAILED->value)->count();
+        $todayTotal = $this->model->newQuery()->targetDate($today)->count();
+        $todaySent = $this->model->newQuery()->targetDate($today)->successful()->count();
+        $todayFailed = $this->model->newQuery()->targetDate($today)->failed()->count();
 
         $totalAllTime = $this->model->newQuery()->count();
-        $totalFailedAllTime = $this->model->newQuery()->where('status', ScheduledTaskStatus::FAILED->value)->count();
+        $totalFailedAllTime = $this->model->newQuery()->failed()->count();
 
         return [
             'today_total' => $todayTotal,
@@ -99,11 +96,11 @@ class ScheduledTaskRunRepository extends BaseRepository implements ScheduledTask
 
         $query = $this->model->newQuery()
             ->where('task_type', $taskTypeValue)
-            ->whereDate('target_date', $targetDate)
-            ->whereIn('status', [ScheduledTaskStatus::SENT->value, ScheduledTaskStatus::COMPLETED->value]);
+            ->targetDate($targetDate)
+            ->successful();
 
         if ($networkId !== null) {
-            $query->where('network_id', $networkId);
+            $query->forNetwork($networkId);
         } else {
             $query->whereNull('network_id');
         }

@@ -6,10 +6,8 @@ use App\Enums\ScheduledTaskStatus;
 use App\Enums\ScheduledTaskType;
 use App\Enums\SmsMessageType;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
-use App\Models\Expense;
 use App\Models\Network;
 use App\Models\NetworkSmsSetting;
-use App\Models\SaleInvoice;
 use App\Services\Support\SMSGateService;
 use App\Services\SystemLoggerService;
 use Carbon\Carbon;
@@ -44,8 +42,9 @@ class SendDailySummarySms extends Command
 
         // جلب الشبكات النشطة التي قامت بتفعيل تنبيه الملخص اليومي
         $settingsQuery = NetworkSmsSetting::with('network')
-            ->where('is_enabled', true)
-            ->where('notify_daily_summary', true);
+            ->active()
+            ->where('notify_daily_summary', true)
+            ->whereHas('network', fn ($q) => $q->active());
 
         if ($networkFilter) {
             $settingsQuery->where('network_id', (int) $networkFilter);
@@ -76,24 +75,15 @@ class SendDailySummarySms extends Command
                 continue;
             }
 
-            // تجميع العمليات المالية للشبكة في هذا اليوم
-            $salesTotal = (float) SaleInvoice::where('network_id', $network->network_id)
-                ->whereDate('invoice_date', $targetDate)
-                ->sum('invoice_total_amount');
+            // تجميع العمليات المالية للشبكة في هذا اليوم عبر علاقات Eloquent
+            $salesQuery = $network->saleInvoices()->whereDate('invoice_date', $targetDate);
 
-            $cashCollected = (float) SaleInvoice::where('network_id', $network->network_id)
-                ->whereDate('invoice_date', $targetDate)
-                ->sum('paid_amount');
+            $salesTotal = (float) (clone $salesQuery)->sum('invoice_total_amount');
+            $cashCollected = (float) (clone $salesQuery)->sum('paid_amount');
+            $creditRemaining = (float) (clone $salesQuery)->sum('remaining_amount');
+            $invoicesCount = (clone $salesQuery)->count();
 
-            $creditRemaining = (float) SaleInvoice::where('network_id', $network->network_id)
-                ->whereDate('invoice_date', $targetDate)
-                ->sum('remaining_amount');
-
-            $invoicesCount = SaleInvoice::where('network_id', $network->network_id)
-                ->whereDate('invoice_date', $targetDate)
-                ->count();
-
-            $expensesTotal = (float) Expense::where('network_id', $network->network_id)
+            $expensesTotal = (float) $network->expenses()
                 ->whereDate('expense_date', $targetDate)
                 ->sum('expense_total_amount');
 

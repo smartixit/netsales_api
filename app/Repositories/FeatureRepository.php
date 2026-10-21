@@ -27,7 +27,8 @@ class FeatureRepository extends BaseRepository implements FeatureRepositoryInter
         $query = $this->model->newQuery()->with($relations);
 
         if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
-            $query->where('status', filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN));
+            $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
+            $status ? $query->active() : $query->inactive();
         }
 
         if (! empty($filters['feature_value_type'])) {
@@ -85,6 +86,6 @@ class FeatureRepository extends BaseRepository implements FeatureRepositoryInter
      */
     public function getActiveFeatures(): Collection
     {
-        return $this->model->newQuery()->where('status', true)->orderBy('feature_name', 'asc')->get();
+        return $this->model->newQuery()->active()->orderBy('feature_name', 'asc')->get();
     }
 }

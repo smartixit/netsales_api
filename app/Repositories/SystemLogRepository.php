@@ -189,4 +189,13 @@ class SystemLogRepository extends BaseRepository implements SystemLogRepositoryI
             'logs_by_action' => $actionStats,
         ];
     }
+
+    /**
+     * حذف السجلات القديمة قبل تاريخ محدد
+     */
+    public function pruneOlderThan(\DateTimeInterface $cutoff): int
+    {
+        return $this->model->newQuery()->where('log_date', '<', $cutoff)->delete();
+    }
 }
+

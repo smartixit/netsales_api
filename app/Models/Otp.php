@@ -26,6 +26,7 @@ class Otp extends Model
         'user_id',
         'otp_code',
         'otp_type',
+        'device_uuid',
         'otp_failure_attempts',
         'is_used',
         'expires_at',

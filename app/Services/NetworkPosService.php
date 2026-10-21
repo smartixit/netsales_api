@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\NetworkStatus;
-use App\Enums\PosStatus;
 use App\Http\Requests\API\V1\Network\StoreNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
 use App\Interfaces\NetworkPosRepositoryInterface;
@@ -75,8 +73,7 @@ class NetworkPosService
         }
 
         return DB::transaction(function () use ($networkId, $posUuid, $posId, $status) {
-
-            // التحقق من وجود نقطة البيع
+            // 1. التحقق من وجود نقطة البيع
             try {
                 if ($posId) {
                     $pos = $this->posRepository->findById($posId);
@@ -92,36 +89,20 @@ class NetworkPosService
                 ]);
             }
 
-            // التحقق من وجود الشبكة
+            // 2. التحقق من وجود الشبكة
             try {
-                $this->networkRepository->findById($networkId);
+                $network = $this->networkRepository->findById($networkId);
             } catch (ModelNotFoundException) {
                 throw ValidationException::withMessages([
                     'network_id' => ['مزود الشبكة المحدد غير موجود في النظام.'],
                 ]);
             }
 
-            // التحقق من حالة نقطة البيع وحالة الشبكة
-            try {
-                $pos = $this->posRepository->findById($posId);
-                if (! $pos->status == PosStatus::ACTIVE->value) {
-                    throw ValidationException::withMessages([
-                        'pos_id' => ['نقطة البيع المحددة غير مفعلة حالياً.'],
-                    ]);
-                }
-                $networkStatus = $this->networkRepository->findById($networkId)->status;
-                if (! $networkStatus == NetworkStatus::ACTIVE->value) {
-                    throw ValidationException::withMessages([
-                        'network_id' => ['مزود الشبكة المحدد غير مفعّل حالياً.'],
-                    ]);
-                }
-            } catch (ModelNotFoundException) {
-                throw ValidationException::withMessages([
-                    'pos_id' => ['نقطة البيع المحددة غير موجودة في النظام.'],
-                ]);
-            }
+            // 3. التحقق من نشاط نقطة البيع والشبكة عبر دوال حراسة الحالة في الموديلات
+            $pos->ensureActive();
+            $network->ensureActive();
 
-            // منع تكرار الارتباط
+            // 4. منع تكرار الارتباط
             $existing = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId);
             if ($existing) {
                 throw ValidationException::withMessages([
@@ -192,7 +173,7 @@ class NetworkPosService
         }
 
         return DB::transaction(function () use ($networkPos) {
-            $newStatus = ! (bool) $networkPos->status;
+            $newStatus = ! $networkPos->isActive();
             $this->networkPosRepository->update($networkPos->network_pos_id, [
                 'status' => $newStatus,
             ]);

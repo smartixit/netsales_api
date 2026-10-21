@@ -87,6 +87,18 @@ class ProviderSubscription extends Model
             });
     }
 
+    public function scopeQueued(Builder $query): Builder
+    {
+        return $query->where('status', ProviderSubscriptionStatus::QUEUED);
+    }
+
+    public function scopeStatus(Builder $query, ProviderSubscriptionStatus|string $status): Builder
+    {
+        $val = $status instanceof ProviderSubscriptionStatus ? $status : ProviderSubscriptionStatus::tryFrom((string) $status);
+
+        return $val ? $query->where('status', $val) : $query->where('status', $status);
+    }
+
     public function scopeForNetwork(Builder $query, int $networkId): Builder
     {
         return $query->where('network_id', $networkId);

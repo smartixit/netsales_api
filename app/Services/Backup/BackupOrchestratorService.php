@@ -16,6 +16,7 @@ use App\Services\Support\SMSGateService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Google\Service\Exception as GoogleServiceException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
@@ -191,9 +192,7 @@ class BackupOrchestratorService
      */
     public function assertNoActiveJob(): void
     {
-        $active = BackupJob::whereIn('status', [BackupStatus::QUEUED->value, BackupStatus::RUNNING->value])->exists();
-
-        if ($active) {
+        if ($this->backupJobRepository->hasActiveJob()) {
             throw new BackupException('توجد نسخة احتياطية قيد التنفيذ حالياً — انتظر اكتمالها ثم أعد المحاولة.');
         }
     }
@@ -205,13 +204,7 @@ class BackupOrchestratorService
     {
         $threshold = now('Asia/Aden')->subSeconds($maxAgeSeconds);
 
-        return BackupJob::whereIn('status', [BackupStatus::QUEUED->value, BackupStatus::RUNNING->value])
-            ->where('started_at', '<', $threshold)
-            ->update([
-                'status' => BackupStatus::FAILED->value,
-                'finished_at' => now('Asia/Aden'),
-                'error_message' => 'انقطع تنفيذ النسخة قبل اكتمالها (تجاوز مهلة التشغيل).',
-            ]);
+        return $this->backupJobRepository->markStaleJobsFailed($threshold);
     }
 
     protected function touch(BackupJob $job, array $data): void
@@ -288,16 +281,25 @@ class BackupOrchestratorService
         throw new BackupException('تعذر العثور على مجلد مؤقت صالح وقابل للكتابة لإنشاء ملفات النسخ الاحتياطي.');
     }
 
+    /**
+     * @param  array<string>  $columns
+     * @return Collection<int, User>
+     */
+    protected function getActiveSuperAdmins(array $columns = ['*']): Collection
+    {
+        $roles = Role::byKey(RoleKey::SUPER_ADMIN)
+            ->orWhere('role_id', 1)
+            ->active()
+            ->with(['users' => fn ($q) => $q->active()->select(array_unique(array_merge($columns, ['user_id', 'role_id'])))])
+            ->get();
+
+        return new Collection($roles->flatMap->users->unique('user_id')->all());
+    }
+
     protected function notifyAdmins(string $title, string $body, string $type): void
     {
         try {
-            $roleIds = Role::where('role_name', RoleKey::SUPER_ADMIN->value)
-                ->orWhere('role_id', 1)
-                ->pluck('role_id')
-                ->all();
-
-            $superAdmins = User::whereIn('role_id', $roleIds)
-                ->get(['user_id', 'user_phone_number', 'user_full_name']);
+            $superAdmins = $this->getActiveSuperAdmins(['user_id', 'user_phone_number', 'user_full_name']);
 
             if ($this->settings->shouldEscalateAlert()) {
                 $runtime = $this->settings->runtime();
@@ -348,13 +350,7 @@ class BackupOrchestratorService
     protected function notifyAdminsSuccess(string $fileName, int $sizeBytes): void
     {
         try {
-            $roleIds = Role::where('role_name', RoleKey::SUPER_ADMIN->value)
-                ->orWhere('role_id', 1)
-                ->pluck('role_id')
-                ->all();
-
-            $superAdmins = User::whereIn('role_id', $roleIds)
-                ->get(['user_id']);
+            $superAdmins = $this->getActiveSuperAdmins(['user_id']);
 
             $sizeMb = round($sizeBytes / (1024 * 1024), 2);
             $sizeFormatted = $sizeMb > 0 ? " ({$sizeMb} MB)" : '';

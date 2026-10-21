@@ -54,4 +54,10 @@ interface UserSessionRepositoryInterface extends BaseRepositoryInterface
      * @return Collection<int, UserSession>
      */
     public function getActiveSessionsForUser(int $userId): Collection;
+
+    /**
+     * Delete expired or revoked sessions older than cutoff.
+     */
+    public function deleteExpiredOrRevoked(\DateTimeInterface $cutoff): int;
 }
+

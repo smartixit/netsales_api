@@ -3,13 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Enums\NotificationType;
-use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\ScheduledTaskStatus;
 use App\Enums\ScheduledTaskType;
 use App\Enums\SmsMessageType;
+use App\Interfaces\ProviderSubscriptionRepositoryInterface;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
-use App\Models\NetworkSmsSetting;
-use App\Models\ProviderSubscription;
 use App\Services\NotificationService;
 use App\Services\Support\SMSGateService;
 use Carbon\Carbon;
@@ -29,7 +27,8 @@ class NotifyExpiringSubscriptions extends Command
     public function handle(
         SMSGateService $smsGateService,
         ScheduledTaskRunRepositoryInterface $taskRunRepository,
-        NotificationService $notificationService
+        NotificationService $notificationService,
+        ProviderSubscriptionRepositoryInterface $subscriptionRepository
     ): int {
         $now = Carbon::now('Asia/Aden');
         $defaultDays = (int) systemSetting('subscription_expiry_alert_days', 3);
@@ -41,12 +40,8 @@ class NotifyExpiringSubscriptions extends Command
 
         $threshold = $now->copy()->addDays($days);
 
-        // جلب الاشتراكات النشطة التي تنتهي بين الآن والموعد المحدد
-        $expiringSubs = ProviderSubscription::with(['network', 'plan'])
-            ->where('status', ProviderSubscriptionStatus::ACTIVE)
-            ->whereNotNull('subscription_end_date')
-            ->whereBetween('subscription_end_date', [$now, $threshold])
-            ->get();
+        // جلب الاشتراكات النشطة التي تنتهي بين الآن والموعد المحدد عبر المستودع
+        $expiringSubs = $subscriptionRepository->getExpiringSubscriptions($now, $threshold);
 
         if ($expiringSubs->isEmpty()) {
             $this->info('ℹ️ لا توجد اشتراكات تشارف على الانتهاء خلال هذه الفترة.');
@@ -74,7 +69,7 @@ class NotifyExpiringSubscriptions extends Command
                 ."يرجى تجديد الاشتراك لضمان استمرارية الخدمات دون انقطاع.";
 
             // 1. فحص إعدادات SMS للشبكة وإرسال الرسالة إن كانت مفعّلة
-            $smsSetting = NetworkSmsSetting::where('network_id', $network->network_id)->first();
+            $smsSetting = $network->smsSetting;
             $smsSent = false;
 
             if ($smsSetting?->is_enabled && $smsSetting->notify_subscription_expiry && $network->network_phone_number) {

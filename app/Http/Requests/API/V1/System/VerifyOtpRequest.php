@@ -32,9 +32,14 @@ class VerifyOtpRequest extends FormRequest
                 'min:4',
                 'max:10',
             ],
-            'type' => [
+            'otp_type' => [
                 'nullable',
                 Rule::enum(OtpType::class),
+            ],
+            'device_uuid' => [
+                'nullable',
+                'string',
+                'max:255',
             ],
         ];
     }

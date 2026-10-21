@@ -26,8 +26,9 @@ class ActionTypeRepository extends BaseRepository implements ActionTypeRepositor
             $query->search($filters['search']);
         }
 
-        if (isset($filters['status'])) {
-            $query->where('status', filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN));
+        if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
+            $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
+            $status ? $query->active() : $query->inactive();
         }
 
         $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);

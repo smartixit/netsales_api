@@ -35,7 +35,7 @@ class PosRepository extends BaseRepository implements PosRepositoryInterface
         }
 
         if (! empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+            $query->status($filters['status']);
         }
 
         if (! empty($filters['governorate_id'])) {

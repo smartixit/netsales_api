@@ -182,4 +182,16 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
             ->orderByDesc('last_activity_at')
             ->get();
     }
+
+    /**
+     * Delete expired or revoked sessions older than cutoff.
+     */
+    public function deleteExpiredOrRevoked(\DateTimeInterface $cutoff): int
+    {
+        return $this->model->newQuery()->where(function ($query) use ($cutoff) {
+            $query->where('expires_at', '<', $cutoff)
+                ->orWhere('revoked_at', '<', $cutoff);
+        })->delete();
+    }
 }
+

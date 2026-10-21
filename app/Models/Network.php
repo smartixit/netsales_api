@@ -180,6 +180,13 @@ class Network extends Model
         return $query->where('status', NetworkStatus::REJECTED);
     }
 
+    public function scopeStatus(Builder $query, NetworkStatus|string $status): Builder
+    {
+        $val = $status instanceof NetworkStatus ? $status : NetworkStatus::tryFrom((string) $status);
+
+        return $val ? $query->where('status', $val) : $query->where('status', $status);
+    }
+
     public function scopeInGovernorate(Builder $query, int $governorateId): Builder
     {
         return $query->where('governorate_id', $governorateId);

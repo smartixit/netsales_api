@@ -53,19 +53,9 @@ class SubscriptionQuotaAndFeatureLimitTest extends TestCase
         $this->user = User::firstOrFail();
         $this->subscriptionService = app(ProviderSubscriptionService::class);
 
-        $this->session = UserSession::create([
-            'user_id' => $this->user->user_id,
-            'ip_address' => '127.0.0.1',
-            'user_agent' => 'PHPUnit Subscription Test',
-            'logged_at' => Carbon::now('Asia/Aden'),
-            'last_activity_at' => Carbon::now('Asia/Aden'),
-            'expires_at' => Carbon::now('Asia/Aden')->addHours(24),
-        ]);
-
-        $this->headers = [
-            'X-Session-Id' => (string) $this->session->session_id,
-            'X-Bypass-Encryption' => 'true',
-        ];
+        $auth = $this->createAuthenticatedSession($this->user);
+        $this->session = $auth['session'];
+        $this->headers = $auth['headers'];
 
         $suffix = uniqid();
 

@@ -65,10 +65,12 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read \App\Models\User|null $creator
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob stale(\DateTimeInterface $threshold)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereArchiveSha256($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereBackupJobId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereBackupType($value)
@@ -659,6 +661,7 @@ namespace App\Models{
  * @property int $user_id
  * @property string $otp_code
  * @property \App\Enums\OtpType $otp_type
+ * @property string|null $device_uuid
  * @property int $otp_failure_attempts
  * @property bool $is_used
  * @property \Illuminate\Support\Carbon $expires_at
@@ -672,6 +675,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Otp newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Otp query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Otp whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Otp whereDeviceUuid($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Otp whereExpiresAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Otp whereIsUsed($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Otp whereOtpCode($value)

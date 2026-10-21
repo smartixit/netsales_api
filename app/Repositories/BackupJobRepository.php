@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Enums\BackupStatus;
+use App\Enums\BackupType;
 use App\Interfaces\BackupJobRepositoryInterface;
 use App\Models\BackupJob;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -30,7 +31,7 @@ class BackupJobRepository extends BaseRepository implements BackupJobRepositoryI
         $query = $this->model->newQuery()->with($withRelations);
 
         if (! empty($filters['status'])) {
-            $query->where('status', (string) $filters['status']);
+            $query->status($filters['status']);
         }
 
         if (! empty($filters['backup_type'])) {
@@ -66,7 +67,7 @@ class BackupJobRepository extends BaseRepository implements BackupJobRepositoryI
      */
     public function getLatestSuccessful(?string $type = null): ?BackupJob
     {
-        $query = $this->model->newQuery()->where('status', BackupStatus::SUCCESS->value);
+        $query = $this->model->newQuery()->successful();
 
         if ($type) {
             $query->where('backup_type', $type);
@@ -77,4 +78,42 @@ class BackupJobRepository extends BaseRepository implements BackupJobRepositoryI
 
         return $job;
     }
+
+    /**
+     * التحقق من وجود مهمة نسخ احتياطي نشطة حالياً
+     */
+    public function hasActiveJob(): bool
+    {
+        return $this->model->newQuery()->active()->exists();
+    }
+
+    /**
+     * إنهاء المهام المعلقة التي تجاوزت مهلة التشغيل وتحديث حالتها إلى فشل
+     */
+    public function markStaleJobsFailed(\DateTimeInterface $threshold): int
+    {
+        return $this->model->newQuery()
+            ->stale($threshold)
+            ->update([
+                'status' => BackupStatus::FAILED->value,
+                'finished_at' => now('Asia/Aden'),
+                'error_message' => 'انقطع تنفيذ النسخة قبل اكتمالها (تجاوز مهلة التشغيل).',
+            ]);
+    }
+
+    /**
+     * التحقق من وجود نسخة احتياطية تلقائية ناجحة في تاريخ محدد
+     */
+    public function hasSuccessfulAutoBackupOnDate(string $dateStr): bool
+    {
+        return $this->model->newQuery()
+            ->where('backup_type', BackupType::AUTO->value)
+            ->successful()
+            ->where(function ($q) use ($dateStr) {
+                $q->whereDate('finished_at', $dateStr)
+                    ->orWhereDate('created_at', $dateStr);
+            })
+            ->exists();
+    }
 }
+

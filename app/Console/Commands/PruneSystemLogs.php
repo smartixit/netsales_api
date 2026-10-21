@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\SystemLog;
+use App\Interfaces\SystemLogRepositoryInterface;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
@@ -16,7 +16,7 @@ class PruneSystemLogs extends Command
 
     protected $description = 'يحذف سجلات النظام القديمة للحفاظ على سرعة ورشاقة قاعدة البيانات';
 
-    public function handle(): int
+    public function handle(SystemLogRepositoryInterface $logRepository): int
     {
         $defaultDays = (int) systemSetting('system_logs_retention_days', 60);
         $days = (int) ($this->option('days') ?: $defaultDays);
@@ -24,7 +24,7 @@ class PruneSystemLogs extends Command
 
         $this->info("🚀 بدء تنظيف سجلات النظام الأقدم من {$days} يوماً (قبل {$cutoff->toDateTimeString()})...");
 
-        $deletedCount = SystemLog::where('log_date', '<', $cutoff)->delete();
+        $deletedCount = $logRepository->pruneOlderThan($cutoff);
 
         $this->info("✅ تم تنظيف وحذف {$deletedCount} سجلاً قديماً بنجاح.");
 

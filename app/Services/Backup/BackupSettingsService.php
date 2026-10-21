@@ -2,11 +2,9 @@
 
 namespace App\Services\Backup;
 
-use App\Enums\BackupStatus;
-use App\Enums\BackupType;
 use App\Enums\SettingCategory;
+use App\Interfaces\BackupJobRepositoryInterface;
 use App\Interfaces\SystemSettingRepositoryInterface;
-use App\Models\BackupJob;
 use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Support\Facades\Cache;
@@ -55,8 +53,11 @@ class BackupSettingsService
     public const DEFAULT_SCHEDULE_TIME = '03:00';
 
     public function __construct(
-        protected SystemSettingRepositoryInterface $systemSettingRepository
-    ) {}
+        protected SystemSettingRepositoryInterface $systemSettingRepository,
+        protected ?BackupJobRepositoryInterface $backupJobRepository = null
+    ) {
+        $this->backupJobRepository = $backupJobRepository ?? app(BackupJobRepositoryInterface::class);
+    }
 
     /**
      * قراءة قيمة إعداد نصية مع قيمة افتراضية عند الغياب.
@@ -270,13 +271,7 @@ class BackupSettingsService
         }
 
         try {
-            $completed = BackupJob::where('backup_type', BackupType::AUTO->value)
-                ->where('status', BackupStatus::SUCCESS->value)
-                ->where(function ($q) use ($dateStr) {
-                    $q->whereDate('finished_at', $dateStr)
-                        ->orWhereDate('created_at', $dateStr);
-                })
-                ->exists();
+            $completed = $this->backupJobRepository->hasSuccessfulAutoBackupOnDate($dateStr);
 
             if ($completed) {
                 Cache::put($cacheKey, $dateStr, now('Asia/Aden')->addDays(2));

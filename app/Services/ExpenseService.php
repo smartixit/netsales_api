@@ -82,8 +82,9 @@ class ExpenseService
             $attachments = $request->getAttachments();
             $expenseDate = $request->getExpenseDate() ?? now('Asia/Aden');
 
-            // 1. التحقق من وجود الشبكة
-            $this->networkRepository->findById($networkId);
+            // 1. التحقق من وجود الشبكة ونشاطها
+            $network = $this->networkRepository->findById($networkId);
+            $network->ensureActive();
 
             // 2. التحقق من وجود ونشاط محفظة الشبكة بقفل متشائم للخصم الإلزامي
             $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId, true);
@@ -92,12 +93,7 @@ class ExpenseService
                     'network_wallet' => ['لم يتم العثور على محفظة مالية مسجلة للشبكة لإتمام صرف المصروفات التشغيلية.'],
                 ]);
             }
-
-            if (! $networkWallet->isActive()) {
-                throw ValidationException::withMessages([
-                    'network_wallet' => ['محفظة مزود الشبكة مجمدة حالياً، لا يمكن سداد مبالغ المصروفات منها.'],
-                ]);
-            }
+            $networkWallet->ensureActive();
 
             // 3. احتساب إجمالي مبلغ المصروف من البنود التفصيلية
             $totalAmount = 0.0;

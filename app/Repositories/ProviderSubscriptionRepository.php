@@ -40,7 +40,7 @@ class ProviderSubscriptionRepository extends BaseRepository implements ProviderS
         }
 
         if (! empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+            $query->status($filters['status']);
         }
 
         if (! empty($filters['active_only'])) {
@@ -76,7 +76,7 @@ class ProviderSubscriptionRepository extends BaseRepository implements ProviderS
     {
         $existing = $this->model->newQuery()
             ->forNetwork($networkId)
-            ->where('status', ProviderSubscriptionStatus::ACTIVE)
+            ->active()
             ->lockForUpdate()
             ->get();
 
@@ -127,7 +127,7 @@ class ProviderSubscriptionRepository extends BaseRepository implements ProviderS
         return $this->model->newQuery()
             ->with(['plan.planFeatures.feature', 'consumptions.planFeature.feature'])
             ->forNetwork($networkId)
-            ->where('status', ProviderSubscriptionStatus::QUEUED)
+            ->queued()
             ->orderBy('subscription_id', 'asc')
             ->first();
     }
@@ -163,4 +163,21 @@ class ProviderSubscriptionRepository extends BaseRepository implements ProviderS
 
         return $sub;
     }
+
+    /**
+     * جلب الاشتراكات النشطة التي تشارف على الانتهاء في نطاق زمني محدد مع علاقات الشبكة والباقة.
+     *
+     * @return Collection<int, ProviderSubscription>
+     */
+    public function getExpiringSubscriptions(\DateTimeInterface $from, \DateTimeInterface $to): Collection
+    {
+        return $this->model->newQuery()
+            ->with(['network.smsSetting', 'plan'])
+            ->active()
+            ->whereNotNull('subscription_end_date')
+            ->whereBetween('subscription_end_date', [$from, $to])
+            ->whereHas('network', fn ($q) => $q->active())
+            ->get();
+    }
 }
+

@@ -201,6 +201,7 @@ class FcmService
         }
 
         $channelId = $this->systemSettingService->getString('firebase_android_channel_id', 'netsales_high_importance');
+        $soundName = $this->systemSettingService->getString('firebase_notification_sound', 'netsales_notification');
 
         $payload = [
             'token' => $token,
@@ -209,8 +210,8 @@ class FcmService
                 'priority' => 'HIGH',
                 'notification' => [
                     'channel_id' => $channelId,
-                    'sound' => 'default',
-                    'default_sound' => true,
+                    'sound' => $soundName,
+                    'default_sound' => false,
                     'notification_priority' => 'PRIORITY_HIGH',
                     'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
                 ],
@@ -225,7 +226,7 @@ class FcmService
                             'title' => $title,
                             'body' => $body,
                         ],
-                        'sound' => 'default',
+                        'sound' => "{$soundName}.wav",
                         'badge' => 1,
                         'content-available' => 1,
                     ],

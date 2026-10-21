@@ -113,7 +113,8 @@ class OtpService
      */
     public function generateOtpForUser(
         User $user,
-        OtpType|string $type = OtpType::OTP_2FA,
+        OtpType|string $type,
+        string $deviceUuid,
         ?int $expirationMinutes = null,
         ?int $length = null
     ): array {
@@ -157,7 +158,7 @@ class OtpService
             ]);
         }
 
-        return DB::transaction(function () use ($user, $otpType, $expirationMinutes, $length) {
+        return DB::transaction(function () use ($user, $otpType, $deviceUuid, $expirationMinutes, $length) {
             // 1. إبطال الرموز السابقة لنفس الغرض
             $this->otpRepository->invalidateUserOtps($user->user_id, $otpType);
 
@@ -168,11 +169,12 @@ class OtpService
 
             $expiresAt = Carbon::now('Asia/Aden')->addMinutes($expirationMinutes);
 
-            // 3. حفظ الرمز عبر المستودع
+            // 3. حفظ الرمز عبر المستودع مع ربطه الحتمي بمعرف الجهاز
             $this->otpRepository->createOtp(
                 userId: $user->user_id,
                 code: $plainCode,
                 type: $otpType,
+                deviceUuid: $deviceUuid,
                 expiresInMinutes: $expirationMinutes
             );
 
@@ -190,7 +192,7 @@ class OtpService
                 push: true,
                 smsMessageType: SmsMessageType::OTP,
                 title: "🔐 رمز التحقق (OTP)",
-                message:"🔐 رمز التحقق الخاص بك هو: {$plainCode}",
+                message: "🔐 رمز التحقق الخاص بك هو: {$plainCode}",
             );
 
             // 6. توثيق أمني
@@ -202,6 +204,7 @@ class OtpService
                 newData: [
                     'type' => $otpType->value,
                     'length' => $length,
+                    'device_uuid' => $deviceUuid,
                     'expires_at' => $expiresAt->toDateTimeString(),
                 ],
                 userId: $user->user_id
@@ -221,6 +224,7 @@ class OtpService
      */
     public function generateOtpForPhone(
         string $phone,
+        string $deviceUuid,
         OtpType|string $type = OtpType::RESET_PASSWORD
     ): array {
         $user = $this->userRepository->findByPhone($phone);
@@ -237,19 +241,20 @@ class OtpService
             ]);
         }
 
-        $result = $this->generateOtpForUser($user, $type);
+        $result = $this->generateOtpForUser($user, $type, $deviceUuid);
         $result['user'] = $user;
 
         return $result;
     }
 
     /**
-     * التحقق من صحة رمز OTP المدخل.
+     * التحقق من صحة رمز OTP المدخل ومطابقة الجهاز المنشئ للطلب.
      */
     public function verifyOtp(
         int $userId,
         string $code,
-        OtpType|string $type = OtpType::OTP_2FA,
+        OtpType|string $type,
+        string $deviceUuid,
         ?int $maxAttempts = null
     ): bool {
         $maxAttempts = $maxAttempts ?? $this->getOtpMaxAttempts();
@@ -262,6 +267,19 @@ class OtpService
 
             throw ValidationException::withMessages([
                 'otp' => ['لم يتم العثور على رمز تحقق صالح، يرجى طلب رمز جديد.'],
+            ]);
+        }
+
+        // فحص مطابقة الجهاز المنشئ لطلب التحقق
+        if ($otp->device_uuid !== $deviceUuid) {
+            SystemLoggerService::warning('otp_device_mismatch', [
+                'expected_device' => $otp->device_uuid,
+                'provided_device' => $deviceUuid,
+                'user_id' => $userId,
+            ], $userId);
+
+            throw ValidationException::withMessages([
+                'device_uuid' => ['لا يمكن إتمام عملية التحقق من جهاز يختلف عن الجهاز الذي بدأ تسجيل الدخول.'],
             ]);
         }
 
@@ -297,6 +315,7 @@ class OtpService
             SystemLoggerService::logAuth('otp_verified_successfully', $userId, [
                 'otp_id' => $otp->otp_id,
                 'type' => $otpType->value,
+                'device_uuid' => $deviceUuid,
             ]);
 
             return true;
@@ -325,6 +344,7 @@ class OtpService
     public function verifyOtpForPhone(
         string $phone,
         string $code,
+        string $deviceUuid,
         OtpType|string $type = OtpType::RESET_PASSWORD,
         ?int $maxAttempts = null
     ): bool {
@@ -336,7 +356,7 @@ class OtpService
             ]);
         }
 
-        return $this->verifyOtp($user->user_id, $code, $type, $maxAttempts);
+        return $this->verifyOtp($user->user_id, $code, $type, $deviceUuid, $maxAttempts);
     }
 
     /**
@@ -372,8 +392,9 @@ class OtpService
     {
         $phone = (string) $request->user_phone_number;
         $type = (string) ($request->otp_type ?? OtpType::RESET_PASSWORD->value);
+        $deviceUuid = (string) ($request->device_uuid ?? request()->header('X-Device-Uuid') ?? 'SYSTEM-DEVICE');
 
-        return $this->generateOtpForPhone($phone, $type);
+        return $this->generateOtpForPhone($phone, $deviceUuid, $type);
     }
 
     /**
@@ -384,8 +405,9 @@ class OtpService
         $phone = (string) $request->user_phone_number;
         $code = (string) $request->otp;
         $type = (string) ($request->type ?? $request->otp_type ?? OtpType::RESET_PASSWORD->value);
+        $deviceUuid = (string) ($request->device_uuid ?? request()->header('X-Device-Uuid') ?? 'SYSTEM-DEVICE');
 
-        return $this->verifyOtpForPhone($phone, $code, $type);
+        return $this->verifyOtpForPhone($phone, $code, $deviceUuid, $type);
     }
 
     /**

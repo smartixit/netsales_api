@@ -6,6 +6,7 @@ use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class UserSession extends Model
 {
@@ -43,12 +44,15 @@ class UserSession extends Model
         ];
     }
     
-    // 64-hex char cryptographic random token (256-bit entropy)
+    // 64-hex char cryptographic random token (256-bit entropy) & device_uuid fallback
     protected static function booted(): void
     {
         static::creating(function (self $session): void {
             if (empty($session->session_token)) {
                 $session->session_token = bin2hex(random_bytes(32));
+            }
+            if (empty($session->device_uuid)) {
+                $session->device_uuid = (string) Str::uuid();
             }
         });
     }

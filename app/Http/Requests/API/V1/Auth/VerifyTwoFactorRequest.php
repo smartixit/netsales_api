@@ -22,7 +22,13 @@ class VerifyTwoFactorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_phone_number' => ['required', 'string', 'regex:/^7[0-9]{8}$/'],
+            'user_phone_number' => [
+                'required',
+                'string',
+                'min:9',
+                'max:9',
+                'regex:/^7[0-9]{8}$/',
+            ],
             'otp' => ['required', 'string', 'digits:6'],
             'device_uuid' => ['required', 'string', 'max:255'],
             'fcm_token' => ['required', 'string', 'max:255'],

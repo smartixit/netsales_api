@@ -7,7 +7,6 @@ use App\Enums\ScheduledTaskStatus;
 use App\Enums\ScheduledTaskType;
 use App\Enums\SmsMessageType;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
-use App\Models\NetworkSmsSetting;
 use App\Models\PosWallet;
 use App\Services\NotificationService;
 use App\Services\Support\SMSGateService;
@@ -39,9 +38,11 @@ class CheckLowBalanceAlerts extends Command
 
         $this->info("🚀 فحص أرصدة المحافظ التي تقل عن {$threshold} {$currencySymbol}...");
 
-        $lowWallets = PosWallet::with(['network', 'pos'])
-            ->where('status', true)
+        $lowWallets = PosWallet::with(['network.smsSetting', 'pos'])
+            ->active()
             ->where('wallet_balance', '<=', $threshold)
+            ->whereHas('network', fn ($q) => $q->active())
+            ->whereHas('pos', fn ($q) => $q->active())
             ->get();
 
         if ($lowWallets->isEmpty()) {
@@ -64,7 +65,7 @@ class CheckLowBalanceAlerts extends Command
                 continue;
             }
 
-            $smsSetting = NetworkSmsSetting::where('network_id', $network->network_id)->first();
+            $smsSetting = $network->smsSetting;
             $alertedWallets = [];
 
             foreach ($wallets as $wallet) {

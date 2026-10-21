@@ -98,9 +98,12 @@ class PosWalletService
             $initialBalance = $request->getWalletBalance();
             $status = $request->getStatus();
 
-            // التحقق من وجود الشبكة ونقطة البيع
-            $this->networkRepository->findById($networkId);
-            $this->posRepository->findById($posId);
+            // التحقق من وجود ونشاط الشبكة ونقطة البيع
+            $network = $this->networkRepository->findById($networkId);
+            $network->ensureActive();
+
+            $pos = $this->posRepository->findById($posId);
+            $pos->ensureActive();
 
             // التحقق من عدم وجود محفظة سابقة لنفس الربط
             $existing = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId);
@@ -155,12 +158,7 @@ class PosWalletService
         return DB::transaction(function () use ($walletId, $request, $userId): array {
             /** @var PosWallet $wallet */
             $wallet = $this->posWalletRepository->findById($walletId);
-
-            if (! $wallet->isActive()) {
-                throw ValidationException::withMessages([
-                    'status' => ['المحفظة مجمدة أو معطلة حالياً، لا يمكن إتمام عملية الإيداع.'],
-                ]);
-            }
+            $wallet->ensureActive();
 
             $amount = $request->getAmount();
             $statement = $request->getStatement();
@@ -198,12 +196,7 @@ class PosWalletService
         return DB::transaction(function () use ($walletId, $request, $userId): array {
             /** @var PosWallet $wallet */
             $wallet = $this->posWalletRepository->findById($walletId);
-
-            if (! $wallet->isActive()) {
-                throw ValidationException::withMessages([
-                    'status' => ['المحفظة مجمدة أو معطلة حالياً، لا يمكن إتمام عملية السحب.'],
-                ]);
-            }
+            $wallet->ensureActive();
 
             $amount = $request->getAmount();
 
@@ -272,12 +265,7 @@ class PosWalletService
                     'network_id' => ["لم يتم العثور على محفظة مالية مسجلة للشبكة (#{$networkId})."],
                 ]);
             }
-
-            if (! $networkWallet->isActive()) {
-                throw ValidationException::withMessages([
-                    'network_id' => ['محفظة الشبكة مجمدة أو معطلة حالياً، لا يمكن إجراء التحويل منها.'],
-                ]);
-            }
+            $networkWallet->ensureActive();
 
             if (! $networkWallet->hasSufficientBalance($amount)) {
                 throw ValidationException::withMessages([
@@ -292,12 +280,7 @@ class PosWalletService
                     'pos_id' => ["لم يتم العثور على محفظة لنقطة البيع (#{$posId}) لدى هذه الشبكة."],
                 ]);
             }
-
-            if (! $posWallet->isActive()) {
-                throw ValidationException::withMessages([
-                    'pos_id' => ['محفظة نقطة البيع مجمدة أو معطلة حالياً، لا يمكن استقبال رصيد فيها.'],
-                ]);
-            }
+            $posWallet->ensureActive();
 
             // الخصم من محفظة الشبكة
             $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, $amount);
@@ -356,12 +339,7 @@ class PosWalletService
                     'pos_id' => ["لم يتم العثور على محفظة لنقطة البيع (#{$posId}) لدى هذه الشبكة."],
                 ]);
             }
-
-            if (! $posWallet->isActive()) {
-                throw ValidationException::withMessages([
-                    'pos_id' => ['محفظة نقطة البيع مجمدة أو معطلة حالياً، لا يمكن التحويل منها.'],
-                ]);
-            }
+            $posWallet->ensureActive();
 
             if (! $posWallet->hasSufficientBalance($amount)) {
                 throw ValidationException::withMessages([
@@ -376,12 +354,7 @@ class PosWalletService
                     'network_id' => ["لم يتم العثور على محفظة مالية مسجلة للشبكة (#{$networkId})."],
                 ]);
             }
-
-            if (! $networkWallet->isActive()) {
-                throw ValidationException::withMessages([
-                    'network_id' => ['محفظة الشبكة مجمدة أو معطلة حالياً، لا يمكن استقبال رصيد فيها.'],
-                ]);
-            }
+            $networkWallet->ensureActive();
 
             // الخصم من محفظة نقطة البيع
             $this->posWalletRepository->decrementBalance($posWallet->wallet_id, $amount);

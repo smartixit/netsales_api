@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\UserSession;
+use App\Interfaces\UserSessionRepositoryInterface;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
@@ -16,17 +16,14 @@ class CleanupUserSessions extends Command
 
     protected $description = 'ينظف جلسات المستخدمين المنتهية والمبطلة القديمة من قاعدة البيانات';
 
-    public function handle(): int
+    public function handle(UserSessionRepositoryInterface $sessionRepository): int
     {
         $days = (int) $this->option('days');
         $cutoff = Carbon::now('Asia/Aden')->subDays($days);
 
         $this->info("🚀 بدء تنظيف الجلسات المنتهية قبل {$cutoff->toDateTimeString()}...");
 
-        $deletedCount = UserSession::where(function ($query) use ($cutoff) {
-            $query->where('expires_at', '<', $cutoff)
-                ->orWhere('revoked_at', '<', $cutoff);
-        })->delete();
+        $deletedCount = $sessionRepository->deleteExpiredOrRevoked($cutoff);
 
         $this->info("✅ تم تنظيف وحذف {$deletedCount} جلسة منتهية بنجاح.");
 

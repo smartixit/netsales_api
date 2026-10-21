@@ -3,6 +3,7 @@
 namespace App\Interfaces;
 
 use App\Models\ProviderSubscription;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * واجهة مستودع اشتراكات مزودي الشبكات (Provider Subscription Repository Interface).
@@ -33,4 +34,12 @@ interface ProviderSubscriptionRepositoryInterface extends BaseRepositoryInterfac
      * تفعيل اشتراك مجدول مبكراً وتحديث تواريخه بالقفل المتشائم.
      */
     public function activateQueuedSubscription(int $queuedSubscriptionId): ProviderSubscription;
+
+    /**
+     * جلب الاشتراكات النشطة التي تشارف على الانتهاء في نطاق زمني محدد مع علاقات الشبكة والباقة.
+     *
+     * @return Collection<int, ProviderSubscription>
+     */
+    public function getExpiringSubscriptions(\DateTimeInterface $from, \DateTimeInterface $to): Collection;
 }
+

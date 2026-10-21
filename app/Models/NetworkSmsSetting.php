@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\SmsMessageType;
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -147,5 +148,20 @@ class NetworkSmsSetting extends Model
             'skip_phone_validation' => (bool) ($this->skip_phone_validation ?? false),
             'device_active_within' => (int) ($this->device_active_within ?? 0),
         ];
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_enabled', true);
+    }
+
+    public function scopeInactive(Builder $query): Builder
+    {
+        return $query->where('is_enabled', false);
+    }
+
+    public function scopeForNetwork(Builder $query, int $networkId): Builder
+    {
+        return $query->where('network_id', $networkId);
     }
 }

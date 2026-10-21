@@ -39,7 +39,7 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
 
         if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
             $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
-            $status ? $query->active() : $query->where('status', false);
+            $status ? $query->active() : $query->inactive();
         }
 
         if (isset($filters['min_balance']) && is_numeric($filters['min_balance'])) {

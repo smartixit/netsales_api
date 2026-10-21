@@ -77,6 +77,18 @@ class ScheduledTaskRun extends Model
         return $query->where('status', ScheduledTaskStatus::SENT);
     }
 
+    public function scopeSuccessful(Builder $query): Builder
+    {
+        return $query->whereIn('status', [ScheduledTaskStatus::SENT, ScheduledTaskStatus::COMPLETED]);
+    }
+
+    public function scopeStatus(Builder $query, ScheduledTaskStatus|string $status): Builder
+    {
+        $val = $status instanceof ScheduledTaskStatus ? $status : ScheduledTaskStatus::tryFrom((string) $status);
+
+        return $val ? $query->where('status', $val) : $query->where('status', $status);
+    }
+
     public function scopeForNetwork(Builder $query, int $networkId): Builder
     {
         return $query->where('network_id', $networkId);

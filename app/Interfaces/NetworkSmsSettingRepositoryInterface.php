@@ -12,6 +12,11 @@ interface NetworkSmsSettingRepositoryInterface extends BaseRepositoryInterface
     public function getOrCreateForNetwork(int $networkId): NetworkSmsSetting;
 
     /**
+     * البحث عن إعدادات الرسائل لشبكة معينة عبر معرف الشبكة
+     */
+    public function findByNetworkId(int $networkId): ?NetworkSmsSetting;
+
+    /**
      * تحديث أو إنشاء إعدادات الرسائل لشبكة معينة
      */
     public function updateOrCreateForNetwork(int $networkId, array $data): NetworkSmsSetting;

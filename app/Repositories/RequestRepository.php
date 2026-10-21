@@ -29,7 +29,7 @@ class RequestRepository extends BaseRepository implements RequestRepositoryInter
         parent::applyFilters($query, $filters);
 
         if (! empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+            $query->status($filters['status']);
         }
 
         if (! empty($filters['created_by'])) {

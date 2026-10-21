@@ -6,9 +6,8 @@ use App\Enums\ScheduledTaskStatus;
 use App\Enums\ScheduledTaskType;
 use App\Enums\SmsMessageType;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
-use App\Models\Expense;
+use App\Models\Network;
 use App\Models\NetworkSmsSetting;
-use App\Models\SaleInvoice;
 use App\Services\Support\SMSGateService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -44,8 +43,9 @@ class SendMonthlySummarySms extends Command
         $this->info("🚀 بدء معالجة الملخص المالي الشهري لشهر: {$yearMonth}...");
 
         $settingsQuery = NetworkSmsSetting::with('network')
-            ->where('is_enabled', true)
-            ->where('notify_monthly_summary', true);
+            ->active()
+            ->where('notify_monthly_summary', true)
+            ->whereHas('network', fn ($q) => $q->active());
 
         if ($networkFilter) {
             $settingsQuery->where('network_id', (int) $networkFilter);
@@ -75,27 +75,18 @@ class SendMonthlySummarySms extends Command
                 continue;
             }
 
-            // تجميع الشهر المستهدف
+            // تجميع الشهر المستهدف عبر علاقات Eloquent
             $startOfMonth = $targetMonthDate->copy()->startOfMonth();
             $endOfMonth = $targetMonthDate->copy()->endOfMonth();
 
-            $salesTotal = (float) SaleInvoice::where('network_id', $network->network_id)
-                ->whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
-                ->sum('invoice_total_amount');
+            $salesQuery = $network->saleInvoices()->whereBetween('invoice_date', [$startOfMonth, $endOfMonth]);
 
-            $cashCollected = (float) SaleInvoice::where('network_id', $network->network_id)
-                ->whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
-                ->sum('paid_amount');
+            $salesTotal = (float) (clone $salesQuery)->sum('invoice_total_amount');
+            $cashCollected = (float) (clone $salesQuery)->sum('paid_amount');
+            $creditRemaining = (float) (clone $salesQuery)->sum('remaining_amount');
+            $invoicesCount = (clone $salesQuery)->count();
 
-            $creditRemaining = (float) SaleInvoice::where('network_id', $network->network_id)
-                ->whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
-                ->sum('remaining_amount');
-
-            $invoicesCount = SaleInvoice::where('network_id', $network->network_id)
-                ->whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
-                ->count();
-
-            $expensesTotal = (float) Expense::where('network_id', $network->network_id)
+            $expensesTotal = (float) $network->expenses()
                 ->whereBetween('expense_date', [$startOfMonth, $endOfMonth])
                 ->sum('expense_total_amount');
 

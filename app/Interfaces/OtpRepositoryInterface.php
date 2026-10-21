@@ -14,6 +14,7 @@ interface OtpRepositoryInterface extends BaseRepositoryInterface
         int $userId,
         string $code,
         OtpType|string $type,
+        string $deviceUuid,
         int $expiresInMinutes = 5
     ): Otp;
 
@@ -50,4 +51,10 @@ interface OtpRepositoryInterface extends BaseRepositoryInterface
      * Get count of OTPs requested by a user today for a given type.
      */
     public function getTodayRequestsCount(int $userId, OtpType|string $type): int;
+
+    /**
+     * Delete expired or used OTPs older than cutoff.
+     */
+    public function deleteExpiredOrUsed(\DateTimeInterface $cutoff): int;
 }
+

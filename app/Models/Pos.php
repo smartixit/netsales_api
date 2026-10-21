@@ -154,6 +154,13 @@ class Pos extends Model
         return $query->where('status', PosStatus::REJECTED);
     }
 
+    public function scopeStatus(Builder $query, PosStatus|string $status): Builder
+    {
+        $val = $status instanceof PosStatus ? $status : PosStatus::tryFrom((string) $status);
+
+        return $val ? $query->where('status', $val) : $query->where('status', $status);
+    }
+
     public function scopeInGovernorate(Builder $query, int $governorateId): Builder
     {
         return $query->where('governorate_id', $governorateId);

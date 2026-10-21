@@ -3,8 +3,10 @@
 namespace App\Services\Support;
 
 use App\Enums\SmsMessageType;
+use App\Interfaces\NetworkSmsSettingRepositoryInterface;
+use App\Interfaces\SystemSettingRepositoryInterface;
+use App\Interfaces\UserRepositoryInterface;
 use App\Models\NetworkSmsSetting;
-use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\SystemSettingService;
 use Carbon\Carbon;
@@ -33,9 +35,15 @@ class SMSGateService
 
     public function __construct(
         ?array $customConfig = null,
-        ?SystemSettingService $systemSettingService = null
+        ?SystemSettingService $systemSettingService = null,
+        protected ?NetworkSmsSettingRepositoryInterface $networkSmsSettingRepository = null,
+        protected ?SystemSettingRepositoryInterface $systemSettingRepository = null,
+        protected ?UserRepositoryInterface $userRepository = null,
     ) {
         $this->systemSettingService = $systemSettingService ?? app(SystemSettingService::class);
+        $this->networkSmsSettingRepository = $networkSmsSettingRepository ?? app(NetworkSmsSettingRepositoryInterface::class);
+        $this->systemSettingRepository = $systemSettingRepository ?? app(SystemSettingRepositoryInterface::class);
+        $this->userRepository = $userRepository ?? app(UserRepositoryInterface::class);
         $this->config = $customConfig ?? $this->resolveSystemConfig();
     }
 
@@ -282,7 +290,7 @@ class SMSGateService
         // الرسائل التشغيلية للشبكات: تتطلب حصراً معرف شبكة وإعدادات بوابة خاصة فعالة
         if ($networkId !== null) {
             /** @var NetworkSmsSetting|null $networkSetting */
-            $networkSetting = NetworkSmsSetting::where('network_id', $networkId)->first();
+            $networkSetting = $this->networkSmsSettingRepository->findByNetworkId($networkId);
 
             // إذا كانت الشبكة قد فعّلت بوابة خاصة ولديها توكن أو بيانات مصادقة
             if ($networkSetting && $networkSetting->use_custom_gateway && (! empty($networkSetting->api_token) || ! empty($networkSetting->username))) {
@@ -409,10 +417,10 @@ class SMSGateService
             $settings['token_expires_at'] = $formattedExpiresAt;
         }
 
-        // حفظ التوكن في قاعدة البيانات
+        // حفظ التوكن في قاعدة البيانات عبر المستودعات المخصصة
         if ($tokenOwnerType === 'network' && $tokenOwnerId) {
             try {
-                NetworkSmsSetting::where('network_id', $tokenOwnerId)->update([
+                $this->networkSmsSettingRepository->updateOrCreateForNetwork($tokenOwnerId, [
                     'api_token' => $accessToken,
                     'refresh_token' => $refreshToken,
                     'token_expires_at' => $formattedExpiresAt,
@@ -423,24 +431,24 @@ class SMSGateService
         } else {
             try {
                 if ($accessToken) {
-                    SystemSetting::updateOrCreate(
-                        ['setting_key' => 'smsgate_api_token'],
-                        ['setting_value' => $accessToken, 'setting_category' => 'NOTIFICATION']
-                    );
+                    $this->systemSettingRepository->updateOrCreateByKey('smsgate_api_token', [
+                        'setting_value' => $accessToken,
+                        'setting_category' => 'NOTIFICATION',
+                    ]);
                 }
                 if ($refreshToken) {
-                    SystemSetting::updateOrCreate(
-                        ['setting_key' => 'smsgate_refresh_token'],
-                        ['setting_value' => $refreshToken, 'setting_category' => 'NOTIFICATION']
-                    );
+                    $this->systemSettingRepository->updateOrCreateByKey('smsgate_refresh_token', [
+                        'setting_value' => $refreshToken,
+                        'setting_category' => 'NOTIFICATION',
+                    ]);
                 }
                 if ($formattedExpiresAt) {
-                    SystemSetting::updateOrCreate(
-                        ['setting_key' => 'smsgate_token_expires_at'],
-                        ['setting_value' => $formattedExpiresAt, 'setting_category' => 'NOTIFICATION']
-                    );
+                    $this->systemSettingRepository->updateOrCreateByKey('smsgate_token_expires_at', [
+                        'setting_value' => $formattedExpiresAt,
+                        'setting_category' => 'NOTIFICATION',
+                    ]);
                 }
-                Cache::forget('system_settings_cache_all');
+                $this->systemSettingRepository->clearCache();
             } catch (Exception $e) {
                 Log::error('SMSGate failed to persist system token to DB: '.$e->getMessage());
             }
@@ -471,7 +479,7 @@ class SMSGateService
     public function sendToUser(int $userId, string $title, string $body, int $priority = 0, ?int $networkId = null, SmsMessageType|string|null $messageType = null): bool
     {
         /** @var User|null $user */
-        $user = User::find($userId);
+        $user = $this->userRepository->findById($userId);
         if (! $user) {
             Log::error("SMSGate Send Error: User with ID {$userId} not found.");
 
@@ -537,7 +545,7 @@ class SMSGateService
         }
 
         /** @var NetworkSmsSetting|null $setting */
-        $setting = NetworkSmsSetting::where('network_id', $networkId)->first();
+        $setting = $this->networkSmsSettingRepository->findByNetworkId($networkId);
         if ($setting !== null) {
             return $setting->isMessageTypeEnabled($typeEnum?->value ?? (is_string($messageType) ? $messageType : null));
         }

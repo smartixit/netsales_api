@@ -31,16 +31,17 @@ class OtpController extends BaseController
         summary: 'توليد وإرسال رمز تحقق جديد (OTP)',
         description: 'يولد رمز تحقق مؤقت معتمد ويرسله عبر رسالة نصية SMS إلى رقم الهاتف المسجل مع مراعاة فترات التهدئة.',
         tags: ['OTP'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
-            description: 'بيانات الطلب',
+            description: 'بيانات الطلب ومعرف الجهاز',
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
                     required: ['user_phone_number', 'otp_type'],
                     properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string'),
-                    new OA\Property(property: 'otp_type', type: 'string'),
+                        new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                        new OA\Property(property: 'otp_type', type: 'string', example: 'RESET_PASSWORD'),
+                        new OA\Property(property: 'device_uuid', type: 'string', nullable: true, example: 'd8c47b19-2045-4235-96be-8f35c5c93110', description: 'معرف الجهاز المنشئ لطلب التحقق'),
                     ]
                 )
             )
@@ -82,26 +83,27 @@ class OtpController extends BaseController
     #[OA\Post(
         path: '/api/v1/otp/verify',
         summary: 'التحقق من صحة رمز OTP',
-        description: 'يتحقق من مطابقة الرمز المدخل مع الرمز الصادر والمخزن في النظام وعدم انتهاء صلاحيته أو تجاوز المحاولات.',
+        description: 'يتحقق من مطابقة الرمز المدخل مع الرمز الصادر والمخزن في النظام وعدم انتهاء صلاحيته أو تجاوز المحاولات ومطابقة الجهاز.',
         tags: ['OTP'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
-            description: 'بيانات الطلب',
+            description: 'بيانات الطلب ومعرف الجهاز',
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
                     required: ['user_phone_number', 'otp'],
                     properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string'),
-                    new OA\Property(property: 'otp', type: 'string'),
-                    new OA\Property(property: 'type', type: 'string'),
+                        new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                        new OA\Property(property: 'otp', type: 'string', example: '123456'),
+                        new OA\Property(property: 'type', type: 'string', example: 'RESET_PASSWORD'),
+                        new OA\Property(property: 'device_uuid', type: 'string', nullable: true, example: 'd8c47b19-2045-4235-96be-8f35c5c93110', description: 'معرف الجهاز المنشئ لطلب التحقق'),
                     ]
                 )
             )
         ),
         responses: [
             new OA\Response(response: 200, description: 'تم تأكيد صحة الرمز بنجاح'),
-            new OA\Response(response: 422, description: 'رمز التحقق غير صحيح أو منتهي الصلاحية'),
+            new OA\Response(response: 422, description: 'رمز التحقق غير صحيح أو منتهي الصلاحية أو غير متطابق مع الجهاز'),
             new OA\Response(response: 500, description: 'خطأ داخلي في الخادم'),
         ]
     )]
@@ -126,7 +128,7 @@ class OtpController extends BaseController
         summary: 'إعادة إرسال رمز التحقق (Resend OTP)',
         description: 'إعادة توليد وإرسال رمز تحقق جديد بعد فحص انقضاء فترة التهدئة المحددة.',
         tags: ['OTP'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -134,8 +136,9 @@ class OtpController extends BaseController
                 schema: new OA\Schema(
                     required: ['user_phone_number', 'otp_type'],
                     properties: [
-                    new OA\Property(property: 'user_phone_number', type: 'string'),
-                    new OA\Property(property: 'otp_type', type: 'string'),
+                        new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                        new OA\Property(property: 'otp_type', type: 'string', example: 'RESET_PASSWORD'),
+                        new OA\Property(property: 'device_uuid', type: 'string', nullable: true, example: 'd8c47b19-2045-4235-96be-8f35c5c93110', description: 'معرف الجهاز المنشئ لطلب التحقق'),
                     ]
                 )
             )

@@ -49,6 +49,11 @@ class ActionType extends Model
         return $query->where('status', true);
     }
 
+    public function scopeInactive(Builder $query): Builder
+    {
+        return $query->where('status', false);
+    }
+
     public function scopeByKey(Builder $query, string $key): Builder
     {
         return $query->where('action_type_key', $key);

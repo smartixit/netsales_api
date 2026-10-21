@@ -87,8 +87,9 @@ class NetworkWalletService
             $initialBalance = $request->getWalletBalance();
             $status = $request->getStatus();
 
-            // التحقق من وجود الشبكة
-            $this->networkRepository->findById($networkId);
+            // التحقق من وجود ونشاط الشبكة
+            $network = $this->networkRepository->findById($networkId);
+            $network->ensureActive();
 
             // التحقق من عدم وجود محفظة مسبقة للشبكة
             $existing = $this->networkWalletRepository->findByNetworkId($networkId);
@@ -142,12 +143,7 @@ class NetworkWalletService
         return DB::transaction(function () use ($walletId, $request, $userId): array {
             /** @var NetworkWallet $wallet */
             $wallet = $this->networkWalletRepository->findById($walletId);
-
-            if (! $wallet->isActive()) {
-                throw ValidationException::withMessages([
-                    'status' => ['المحفظة مجمدة أو معطلة حالياً، لا يمكن إتمام عملية الإيداع.'],
-                ]);
-            }
+            $wallet->ensureActive();
 
             $amount = $request->getAmount();
             $statement = $request->getStatement();
@@ -185,12 +181,7 @@ class NetworkWalletService
         return DB::transaction(function () use ($walletId, $request, $userId): array {
             /** @var NetworkWallet $wallet */
             $wallet = $this->networkWalletRepository->findById($walletId);
-
-            if (! $wallet->isActive()) {
-                throw ValidationException::withMessages([
-                    'status' => ['المحفظة مجمدة أو معطلة حالياً، لا يمكن إتمام عملية السحب.'],
-                ]);
-            }
+            $wallet->ensureActive();
 
             $amount = $request->getAmount();
 

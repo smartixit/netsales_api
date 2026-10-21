@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Interfaces\UserRepositoryInterface;
 use App\Models\User;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Auth\AuthenticationException;
@@ -96,7 +97,7 @@ class BaseController
         }
 
         if ($fallbackToSystem) {
-            $systemUser = User::find(self::SYSTEM_USER_ID);
+            $systemUser = app(UserRepositoryInterface::class)->findById(self::SYSTEM_USER_ID);
             if ($systemUser instanceof User) {
                 $this->resolvedCurrentUser = $systemUser;
                 $this->currentUserResolved = true;

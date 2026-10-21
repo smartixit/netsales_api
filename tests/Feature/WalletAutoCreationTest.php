@@ -171,13 +171,10 @@ class WalletAutoCreationTest extends TestCase
         $approvedPos = $this->posService->approve($pos->pos_id, $admin->user_id);
 
         $this->assertEquals(PosStatus::ACTIVE, $approvedPos->status);
-        $link = $this->networkPosRepository->findByNetworkAndPos($network1->network_id, $pos->pos_id);
-        $this->assertTrue((bool) $link->status);
 
+        // وفقاً لمنطق الأعمال المعتمد: لا يتم إنشاء محفظة تلقائياً عند الموافقة على نقطة البيع
         $wallet = $this->posWalletRepository->findByNetworkAndPos($network1->network_id, $pos->pos_id);
-        $this->assertNotNull($wallet);
-        $this->assertEquals(0.00, (float) $wallet->wallet_balance);
-        $this->assertTrue((bool) $wallet->status);
+        $this->assertNull($wallet);
     }
 
     public function test_network_operational_messages_prohibited_from_system_gateway_fallback(): void

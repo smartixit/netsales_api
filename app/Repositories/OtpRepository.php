@@ -18,6 +18,7 @@ class OtpRepository extends BaseRepository implements OtpRepositoryInterface
         int $userId,
         string $code,
         OtpType|string $type,
+        string $deviceUuid,
         int $expiresInMinutes = 5
     ): Otp {
         $typeValue = $type instanceof OtpType ? $type->value : $type;
@@ -27,6 +28,7 @@ class OtpRepository extends BaseRepository implements OtpRepositoryInterface
             'user_id' => $userId,
             'otp_code' => $code,
             'otp_type' => $typeValue,
+            'device_uuid' => $deviceUuid,
             'otp_failure_attempts' => 0,
             'is_used' => false,
             'expires_at' => $now->copy()->addMinutes($expiresInMinutes),
@@ -108,4 +110,19 @@ class OtpRepository extends BaseRepository implements OtpRepositoryInterface
             ->whereDate('created_at', Carbon::today('Asia/Aden'))
             ->count();
     }
+
+    /**
+     * Delete expired or used OTPs older than cutoff.
+     */
+    public function deleteExpiredOrUsed(\DateTimeInterface $cutoff): int
+    {
+        return $this->model->newQuery()->where(function ($query) use ($cutoff) {
+            $query->where('expires_at', '<', $cutoff)
+                ->orWhere(function ($q) use ($cutoff) {
+                    $q->where('is_used', true)
+                        ->where('created_at', '<', $cutoff);
+                });
+        })->delete();
+    }
 }
+

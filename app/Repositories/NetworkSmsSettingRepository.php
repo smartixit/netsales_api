@@ -29,11 +29,11 @@ class NetworkSmsSettingRepository extends BaseRepository implements NetworkSmsSe
         $query = $this->model->newQuery()->with($withRelations);
 
         if (! empty($filters['network_id'])) {
-            $query->where('network_id', (int) $filters['network_id']);
+            $query->forNetwork((int) $filters['network_id']);
         }
 
         if (isset($filters['is_enabled'])) {
-            $query->where('is_enabled', (bool) $filters['is_enabled']);
+            (bool) $filters['is_enabled'] ? $query->active() : $query->inactive();
         }
 
         if (isset($filters['use_custom_gateway'])) {
@@ -80,6 +80,14 @@ class NetworkSmsSettingRepository extends BaseRepository implements NetworkSmsSe
         );
 
         return $setting;
+    }
+
+    /**
+     * البحث عن إعدادات الرسائل لشبكة معينة عبر معرف الشبكة
+     */
+    public function findByNetworkId(int $networkId): ?NetworkSmsSetting
+    {
+        return $this->model->newQuery()->forNetwork($networkId)->first();
     }
 
     /**

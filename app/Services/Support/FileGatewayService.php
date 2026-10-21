@@ -130,10 +130,13 @@ class FileGatewayService
         }
 
         $token = $request->header('X-Session-Id') ?: $request->bearerToken();
-        if ($token) {
-            $session = $this->sessionValidator->validateSession($token);
+        $deviceUuid = (string) ($request->header('X-Device-Uuid') ?? '');
+        if ($token && $deviceUuid) {
+            $session = $this->sessionValidator->validateSession($token, $deviceUuid);
             if ($session) {
-                return User::find($session->user_id);
+                $session->loadMissing('user');
+
+                return $session->user;
             }
         }
 

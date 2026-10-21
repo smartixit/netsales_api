@@ -9,7 +9,6 @@ use App\Models\Network;
 use App\Models\NetworkWallet;
 use App\Models\User;
 use App\Models\UserSession;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
@@ -38,19 +37,9 @@ class ExpenseManagementTest extends TestCase
 
         $this->user = User::firstOrFail();
 
-        $this->session = UserSession::create([
-            'user_id' => $this->user->user_id,
-            'ip_address' => '127.0.0.1',
-            'user_agent' => 'PHPUnit',
-            'logged_at' => Carbon::now('Asia/Aden'),
-            'last_activity_at' => Carbon::now('Asia/Aden'),
-            'expires_at' => Carbon::now('Asia/Aden')->addHours(24),
-        ]);
-
-        $this->headers = [
-            'X-Session-Id' => (string) $this->session->session_id,
-            'X-Bypass-Encryption' => 'true',
-        ];
+        $auth = $this->createAuthenticatedSession($this->user);
+        $this->session = $auth['session'];
+        $this->headers = $auth['headers'];
 
         $suffix = uniqid();
 

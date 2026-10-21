@@ -4,9 +4,8 @@ namespace Tests\Feature;
 
 use App\Enums\InvoicePaymentStatus;
 use App\Enums\NetworkStatus;
-use App\Enums\SaleType;
 use App\Enums\PosStatus;
-use App\Enums\RequestStatus;
+use App\Enums\SaleType;
 use App\Enums\UserStatus;
 use App\Models\Network;
 use App\Models\NetworkPos;
@@ -18,7 +17,6 @@ use App\Models\User;
 use App\Models\UserSession;
 use App\Models\VoucherPackage;
 use App\Models\VoucherPackageDiscount;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -40,12 +38,19 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
     use DatabaseTransactions;
 
     protected User $user;
+
     protected UserSession $session;
+
     protected Network $network;
+
     protected Pos $pos;
+
     protected NetworkWallet $networkWallet;
+
     protected PosWallet $posWallet;
+
     protected VoucherPackage $package;
+
     protected array $headers;
 
     protected function setUp(): void
@@ -54,23 +59,13 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
 
         $this->user = User::firstOrFail();
 
-        $this->session = UserSession::create([
-            'user_id' => $this->user->user_id,
-            'ip_address' => '127.0.0.1',
-            'user_agent' => 'PHPUnit Financial Test',
-            'logged_at' => Carbon::now('Asia/Aden'),
-            'last_activity_at' => Carbon::now('Asia/Aden'),
-            'expires_at' => Carbon::now('Asia/Aden')->addHours(24),
-        ]);
-
-        $this->headers = [
-            'X-Session-Id' => (string) $this->session->session_id,
-            'X-Bypass-Encryption' => 'true',
-        ];
+        $auth = $this->createAuthenticatedSession($this->user);
+        $this->session = $auth['session'];
+        $this->headers = $auth['headers'];
 
         $suffix = uniqid();
 
-         $posUser = User::create([
+        $posUser = User::create([
             'role_id' => $this->user->role_id,
             'user_full_name' => 'POS Agent '.$suffix,
             'user_phone_number' => '73'.rand(1000000, 9999999),

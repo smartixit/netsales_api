@@ -30,6 +30,11 @@ class GenerateOtpRequest extends FormRequest
                 'required',
                 Rule::enum(OtpType::class),
             ],
+            'device_uuid' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
         ];
     }
 }

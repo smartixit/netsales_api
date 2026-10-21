@@ -89,7 +89,7 @@ class NotificationRepository extends BaseRepository implements NotificationRepos
     public function countUnreadForUser(int $userId): int
     {
         return $this->model->newQuery()
-            ->where('user_id', $userId)
+            ->forUser($userId)
             ->unread()
             ->count();
     }
@@ -100,7 +100,7 @@ class NotificationRepository extends BaseRepository implements NotificationRepos
     public function markAllAsReadForUser(int $userId): int
     {
         return $this->model->newQuery()
-            ->where('user_id', $userId)
+            ->forUser($userId)
             ->unread()
             ->update([
                 'is_read' => true,

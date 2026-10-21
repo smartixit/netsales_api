@@ -168,4 +168,74 @@ class SessionSecurityHardeningTest extends TestCase
         ]);
         $stolenSessionWithoutDeviceHeader->assertStatus(401);
     }
+
+    /**
+     * اختبار: كود التحقق الثنائي (2FA OTP) مقيد حتمياً بالجهاز المنشئ ولا يمكن تأكيده من جهاز مختلف.
+     */
+    public function test_otp_2fa_verification_is_strictly_bound_to_initiating_device(): void
+    {
+        $user = User::where('user_phone_number', '772957881')->first();
+        if (! $user) {
+            $this->markTestSkipped('User 772957881 not found');
+        }
+
+        // إزالة الأجهزة السابقة لضمان طلب 2FA كجهاز جديد
+        UserDevice::where('user_id', $user->user_id)->delete();
+
+        $initiatorDeviceUuid = 'INITIATOR-DEVICE-UUID-12345';
+
+        // 1. طلب تسجيل الدخول من الجهاز الأصلي -> يطلب 2FA
+        $loginResponse = $this->postJson('/api/v1/auth/login', [
+            'user_phone_number' => $user->user_phone_number,
+            'user_password' => 'Hh$2002Hh',
+            'device_uuid' => $initiatorDeviceUuid,
+            'device_name' => 'Original Phone',
+            'device_type' => 'ANDROID',
+            'fcm_token' => 'fcm_initiator_token_123',
+        ], [
+            'X-Bypass-Encryption' => 'true',
+        ]);
+
+        $loginResponse->assertStatus(200);
+        $this->assertTrue($loginResponse->json('data.require_2fa'));
+
+        // استخراج رمز الـ OTP المولد
+        $otpRecord = \App\Models\Otp::where('user_id', $user->user_id)
+            ->where('is_used', false)
+            ->latest('otp_id')
+            ->first();
+
+        $this->assertNotNull($otpRecord);
+        $this->assertEquals($initiatorDeviceUuid, $otpRecord->device_uuid);
+
+        // 2. محاولة تأكيد الرمز من جهاز مختلف -> يجب أن تُرفض برمز 422
+        $mismatchResponse = $this->postJson('/api/v1/auth/2fa/verify', [
+            'user_phone_number' => $user->user_phone_number,
+            'otp' => $otpRecord->otp_code,
+            'device_uuid' => 'ATTACKER-DIFFERENT-DEVICE-999',
+            'device_name' => 'Attacker Phone',
+            'device_type' => 'IOS',
+            'fcm_token' => 'fcm_attacker_token_999',
+        ], [
+            'X-Bypass-Encryption' => 'true',
+        ]);
+
+        $mismatchResponse->assertStatus(422);
+        $mismatchResponse->assertJsonValidationErrors(['device_uuid']);
+
+        // 3. تأكيد الرمز من نفس الجهاز الأصلي -> يجب أن ينجح برمز 200
+        $validVerifyResponse = $this->postJson('/api/v1/auth/2fa/verify', [
+            'user_phone_number' => $user->user_phone_number,
+            'otp' => $otpRecord->otp_code,
+            'device_uuid' => $initiatorDeviceUuid,
+            'device_name' => 'Original Phone',
+            'device_type' => 'ANDROID',
+            'fcm_token' => 'fcm_initiator_token_123',
+        ], [
+            'X-Bypass-Encryption' => 'true',
+        ]);
+
+        $validVerifyResponse->assertStatus(200);
+        $this->assertEquals($initiatorDeviceUuid, $validVerifyResponse->json('data.device_uuid'));
+    }
 }

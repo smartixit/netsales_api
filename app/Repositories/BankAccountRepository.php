@@ -29,7 +29,7 @@ class BankAccountRepository extends BaseRepository implements BankAccountReposit
 
         if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
             $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
-            $status ? $query->active() : $query->where('status', false);
+            $status ? $query->active() : $query->inactive();
         }
 
         if (! empty($filters['account_type'])) {

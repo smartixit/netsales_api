@@ -39,7 +39,7 @@ class SubscriptionPlanRequestRepository extends BaseRepository implements Subscr
         }
 
         if (! empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+            $query->status($filters['status']);
         }
 
         if (! empty($filters['request_payment_type'])) {

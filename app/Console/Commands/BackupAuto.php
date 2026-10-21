@@ -8,7 +8,6 @@ use App\Enums\NotificationType;
 use App\Enums\RoleKey;
 use App\Enums\SmsMessageType;
 use App\Models\Role;
-use App\Models\User;
 use App\Services\Backup\BackupOrchestratorService;
 use App\Services\Backup\BackupSettingsService;
 use App\Services\NotificationService;
@@ -197,14 +196,12 @@ class BackupAuto extends Command
     protected function sendFailureAlertsToSuperAdmin(BackupSettingsService $settings, string $reason, Carbon $now): void
     {
         try {
-            $roleIds = Role::where('role_key', RoleKey::SUPER_ADMIN->value)
+            $superAdmins = Role::byKey(RoleKey::SUPER_ADMIN)
                 ->orWhere('role_id', 1)
-                ->pluck('role_id')
-                ->all();
-
-            $superAdmins = User::where('status', 'ACTIVE')
-                ->whereIn('role_id', $roleIds)
-                ->get(['user_id', 'user_phone_number', 'user_full_name']);
+                ->active()
+                ->with(['users' => fn ($q) => $q->active()])
+                ->get()
+                ->flatMap->users;
 
             if ($superAdmins->isEmpty()) {
                 return;

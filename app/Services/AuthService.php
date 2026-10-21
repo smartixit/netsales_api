@@ -223,7 +223,7 @@ class AuthService
 
         // سيناريو أ: المستخدم غير مرتبط بأي جهاز مسبقاً (جهاز أول يتطلب تأكيد OTP)
         if ($userDevices->isEmpty()) {
-            $this->otpService->generateOtpForUser($user, OtpType::OTP_2FA);
+            $this->otpService->generateOtpForUser($user, OtpType::OTP_2FA, $incomingDeviceId);
 
             SystemLoggerService::warning('First device linking OTP sent', ['device_uuid' => $incomingDeviceId], $user->user_id);
 
@@ -238,7 +238,7 @@ class AuthService
 
         // سيناريو ب: المستخدم مرتبط بجهاز آخر (الجهاز الحالي جديد وغير مسجل)
         if (! $existingDevice) {
-            $this->otpService->generateOtpForUser($user, OtpType::OTP_2FA);
+            $this->otpService->generateOtpForUser($user, OtpType::OTP_2FA, $incomingDeviceId);
 
             SystemLoggerService::warning('New device login attempt detected', ['device_uuid' => $incomingDeviceId], $user->user_id);
 
@@ -253,7 +253,7 @@ class AuthService
 
         // سيناريو ج: المصادقة الثنائية 2FA مفعلة وكان الجهاز ثانوي
         if ($user->user_2fa_enabled && ! $existingDevice->is_primary) {
-            $this->otpService->generateOtpForUser($user, OtpType::OTP_2FA);
+            $this->otpService->generateOtpForUser($user, OtpType::OTP_2FA, $incomingDeviceId);
 
             SystemLoggerService::warning('2FA required for secondary device login', ['device_uuid' => $incomingDeviceId], $user->user_id);
 
@@ -384,17 +384,28 @@ class AuthService
             ]);
         }
 
-        // التحقق من كود الـ OTP
-        $this->otpService->verifyOtp($user->user_id, (string) $request->otp, OtpType::OTP_2FA);
+        // 1. التحقق من نشاط وصلاحية المستخدم عبر دالة حراسة الحالة في الموديل
+        $user->ensureActive();
 
-        return DB::transaction(function () use ($user, $request) {
-            $incomingDeviceId = (string) $request->device_uuid;
+        $incomingDeviceId = (string) $request->device_uuid;
+
+        // 2. التحقق من حالة الجهاز عبر دالة حراسة الحالة في الموديل إذا كان مسجلاً مسبقاً
+        $existingDevice = $this->userDeviceRepository->findByUuid($user->user_id, $incomingDeviceId);
+        if ($existingDevice) {
+            $existingDevice->ensureActive();
+        }
+
+        // 3. التحقق من كود الـ OTP ومطابقة معرّف الجهاز المنشئ
+        $this->otpService->verifyOtp($user->user_id, (string) $request->otp, OtpType::OTP_2FA, $incomingDeviceId);
+
+        return DB::transaction(function () use ($user, $request, $incomingDeviceId, $existingDevice) {
             $deviceName = (string) ($request->device_name ?? 'جهاز المستخدم');
             $deviceType = (string) ($request->device_type ?? 'UNKNOWN');
             $deviceTypeEnum = DeviceType::tryFrom(strtoupper($deviceType)) ?? DeviceType::UNKNOWN;
 
             $existingDevices = $this->userDeviceRepository->getDevicesForUser($user->user_id);
             $isFirstDevice = $existingDevices->isEmpty();
+            $isNewDevice = $existingDevice === null;
 
             // تسجيل الجهاز (رئيسي إذا كان الأول، وثانوي إذا كان جديداً)
             $device = $this->userDeviceRepository->registerOrUpdateDevice(
@@ -423,19 +434,30 @@ class AuthService
             $ip = request()->ip();
             $time = now()->format('Y-m-d H:i:s');
 
-            // إشعار المستخدم برسالة SMS عند تسجيل الدخول من جهاز جديد
-            $smsMessage = $isFirstDevice
-                ? "تنبيه أمني: تم ربط جهازك ({$deviceName}) بحسابك في NetSales بنجاح."
-                : "تنبيه أمني: تم تسجيل الدخول الى حسابك من جهاز جديد\n".
-                "تفاصيل المحاولة:\n".
-                "• الجهاز: {$deviceName}\n".
-                "• العنوان (IP): {$ip}\n".
-                "• الوقت: {$time}";
+            // إشعار المستخدم برسالة وتنبيه أمني مخصص بحسب حالة الجهاز
+            if ($isFirstDevice) {
+                $smsTitle = 'تنبيه أمني: ربط جهاز أساسي';
+                $smsMessage = "تنبيه أمني: تم ربط جهازك ({$deviceName}) بحسابك في NetSales بنجاح.";
+            } elseif ($isNewDevice) {
+                $smsTitle = 'تنبيه أمني: تسجيل دخول من جهاز جديد';
+                $smsMessage = "تنبيه أمني: تم تسجيل الدخول الى حسابك من جهاز جديد\n".
+                    "تفاصيل المحاولة:\n".
+                    "• الجهاز: {$deviceName}\n".
+                    "• العنوان (IP): {$ip}\n".
+                    "• الوقت: {$time}";
+            } else {
+                $smsTitle = 'تنبيه أمني: تأكيد الدخول بالتحقق الثنائي';
+                $smsMessage = "تنبيه أمني: تم تأكيد الدخول بالرمز المؤقت إلى حسابك من جهازك ({$deviceName}).\n".
+                    "تفاصيل المحاولة:\n".
+                    "• الجهاز: {$deviceName}\n".
+                    "• العنوان (IP): {$ip}\n".
+                    "• الوقت: {$time}";
+            }
 
             $this->notificationService->sendDirect(
                 userId: (int) $user->user_id,
                 type: NotificationType::SECURITY_LOGIN_ALERT,
-                title: 'تنبيه أمني: تسجيل دخول من جهاز جديد',
+                title: $smsTitle,
                 message: $smsMessage,
                 inApp: true,
                 push: true,
@@ -443,7 +465,7 @@ class AuthService
                 email: true,
                 networkId: null,
                 smsMessageType: SmsMessageType::ADMIN_BROADCAST,
-                emailSubject: 'تنبيه أمني: تسجيل دخول من جهاز جديد'
+                emailSubject: $smsTitle
             );
 
             SystemLoggerService::logAuth('user_logged_in_verified', $user->user_id, [
@@ -697,7 +719,11 @@ class AuthService
             ]);
         }
 
-        $this->otpService->generateOtpForUser($user, OtpType::RESET_PASSWORD);
+        $deviceUuid = $request instanceof RequestPasswordResetRequest
+            ? (string) ($request->device_uuid ?? request()->header('X-Device-Uuid') ?? 'RECOVERY-DEVICE')
+            : 'RECOVERY-DEVICE';
+
+        $this->otpService->generateOtpForUser($user, OtpType::RESET_PASSWORD, $deviceUuid);
 
         return true;
     }
@@ -724,8 +750,12 @@ class AuthService
             ]);
         }
 
-        // 1. التحقق من كود الـ OTP وفحص محاولات الإدخال الخاطئة
-        $this->otpService->verifyOtp($user->user_id, $otp, OtpType::RESET_PASSWORD);
+        $deviceUuid = $request instanceof VerifyResetOtpRequest
+            ? (string) ($request->device_uuid ?? request()->header('X-Device-Uuid') ?? 'RECOVERY-DEVICE')
+            : 'RECOVERY-DEVICE';
+
+        // 1. التحقق من كود الـ OTP وفحص محاولات الإدخال ومطابقة الجهاز
+        $this->otpService->verifyOtp($user->user_id, $otp, OtpType::RESET_PASSWORD, $deviceUuid);
 
         return DB::transaction(function () use ($user) {
             // 2. توليد كلمة مرور عشوائية مؤقتة
@@ -777,8 +807,10 @@ class AuthService
             ]);
         }
 
+        $deviceUuid = (string) (request()->input('device_uuid') ?? request()->header('X-Device-Uuid') ?? 'RECOVERY-DEVICE');
+
         // التحقق من كود الـ OTP
-        $this->otpService->verifyOtp($user->user_id, $otp, OtpType::RESET_PASSWORD);
+        $this->otpService->verifyOtp($user->user_id, $otp, OtpType::RESET_PASSWORD, $deviceUuid);
 
         return DB::transaction(function () use ($user, $newPassword) {
             $finalPassword = ! empty($newPassword)
@@ -856,7 +888,8 @@ class AuthService
         }
 
         if ($enable && $otp) {
-            $this->otpService->verifyOtp($user->user_id, $otp, OtpType::OTP_2FA);
+            $deviceUuid = (string) (request()->header('X-Device-Uuid') ?? request()->input('device_uuid') ?? 'CURRENT-DEVICE');
+            $this->otpService->verifyOtp($user->user_id, $otp, OtpType::OTP_2FA, $deviceUuid);
         }
 
         return DB::transaction(function () use ($user, $enable) {

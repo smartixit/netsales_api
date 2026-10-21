@@ -45,9 +45,22 @@ class VoucherRequestAndInvoicingTest extends TestCase
         parent::setUp();
 
         $this->user = User::firstOrFail();
+        $suffix = uniqid();
+        $deviceUuid = 'TEST-DEVICE-UUID-'.$suffix;
+
+        \App\Models\UserDevice::firstOrCreate([
+            'user_id' => $this->user->user_id,
+            'device_uuid' => $deviceUuid,
+        ], [
+            'device_name' => 'PHPUnit Device',
+            'device_type' => 'ANDROID',
+            'status' => 'ACTIVE',
+            'is_primary' => true,
+        ]);
 
         $this->session = UserSession::create([
             'user_id' => $this->user->user_id,
+            'device_uuid' => $deviceUuid,
             'ip_address' => '127.0.0.1',
             'user_agent' => 'PHPUnit',
             'logged_at' => Carbon::now('Asia/Aden'),
@@ -57,10 +70,9 @@ class VoucherRequestAndInvoicingTest extends TestCase
 
         $this->headers = [
             'X-Session-Id' => (string) $this->session->session_id,
+            'X-Device-Uuid' => $deviceUuid,
             'X-Bypass-Encryption' => 'true',
         ];
-
-        $suffix = uniqid();
 
          $posUser = User::create([
             'role_id' => $this->user->role_id,

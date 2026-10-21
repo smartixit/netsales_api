@@ -39,4 +39,10 @@ interface SystemLogRepositoryInterface extends BaseRepositoryInterface
      * إحصائيات ونشاط سجلات التدقيق.
      */
     public function getStats(array $filters = []): array;
+
+    /**
+     * حذف السجلات القديمة قبل تاريخ محدد
+     */
+    public function pruneOlderThan(\DateTimeInterface $cutoff): int;
 }
+

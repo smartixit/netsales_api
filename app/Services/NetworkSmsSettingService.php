@@ -43,10 +43,7 @@ class NetworkSmsSettingService
             ? filter_var($globalSetting->setting_value, FILTER_VALIDATE_BOOLEAN)
             : true;
 
-        $networks = Network::query()
-            ->with('smsSetting')
-            ->orderBy('network_id')
-            ->get(['network_id', 'network_name', 'status']);
+        $networks = $this->networkRepository->getFiltered(['all' => true], ['smsSetting']);
 
         $networksData = $networks->map(function (Network $network) use ($globalEnabled) {
             /** @var NetworkSmsSetting|null $setting */
