@@ -252,7 +252,8 @@ class AuthService
 
         // سيناريو ج: المصادقة الثنائية 2FA مفعلة وكان الجهاز ثانوي
         if ($user->user_2fa_enabled && ! $existingDevice->is_primary) {
-            $this->otpService->generateOtpForUser($user, OtpType::OTP_2FA, $incomingDeviceId);
+            $appHash = (string) ($request->app_hash ?? request()->header('X-App-Signature') ?? request()->header('X-App-Hash') ?? '');
+            $this->otpService->generateOtpForUser($user, OtpType::OTP_2FA, $incomingDeviceId, appHash: $appHash ?: null);
 
             SystemLoggerService::warning('2FA required for secondary device login', ['device_uuid' => $incomingDeviceId], $user->user_id);
 
@@ -728,7 +729,11 @@ class AuthService
             ? (string) ($request->device_uuid ?? request()->header('X-Device-Uuid') ?? 'RECOVERY-DEVICE')
             : 'RECOVERY-DEVICE';
 
-        $this->otpService->generateOtpForUser($user, OtpType::RESET_PASSWORD, $deviceUuid);
+        $appHash = $request instanceof RequestPasswordResetRequest
+            ? (string) ($request->app_hash ?? request()->header('X-App-Signature') ?? request()->header('X-App-Hash') ?? '')
+            : (string) (request()->header('X-App-Signature') ?? request()->header('X-App-Hash') ?? '');
+
+        $this->otpService->generateOtpForUser($user, OtpType::RESET_PASSWORD, $deviceUuid, appHash: $appHash ?: null);
 
         return true;
     }

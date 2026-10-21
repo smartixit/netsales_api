@@ -34,6 +34,7 @@ class LoginRequest extends FormRequest
             'fcm_token' => ['required', 'string', 'max:255'],
             'device_name' => ['nullable', 'string', 'max:150'],
             'device_type' => ['nullable', 'string', Rule::enum(DeviceType::class)],
+            'app_hash' => ['nullable', 'string', 'max:20'],
         ];
     }
 }

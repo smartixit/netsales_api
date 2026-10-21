@@ -28,6 +28,7 @@ class VerifyResetOtpRequest extends FormRequest
                 'regex:/^7[0-9]{8}$/',
             ],
             'otp' => ['required', 'string', 'digits:6'],
+            'app_hash' => ['nullable', 'string', 'max:20'],
         ];
     }
 }

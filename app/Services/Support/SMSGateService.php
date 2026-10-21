@@ -69,7 +69,7 @@ class SMSGateService
             'sim_number' => $this->systemSettingService->getInt('smsgate_sim_number', (int) ($base['sim_number'] ?? 1)),
             'skip_phone_validation' => $this->systemSettingService->getBool('smsgate_skip_phone_validation', (bool) ($base['skip_phone_validation'] ?? false)),
             'device_active_within' => $this->systemSettingService->getInt('smsgate_device_active_within', (int) ($base['device_active_within'] ?? 0)),
-            'app_hash' => $this->systemSettingService->getString('smsgate_app_hash') ?: ($this->systemSettingService->getString('sms_retriever_app_hash') ?: ($base['app_hash'] ?? null)),
+            'app_hash' => $base['app_hash'] ?? config('services.smsgate.app_hash'),
         ];
     }
 
@@ -461,7 +461,11 @@ class SMSGateService
      */
     public function sendOtp(string $phoneNumber, string $code, ?int $recipientId = null, ?string $appHash = null): bool
     {
-        $resolvedHash = $appHash ?: ($this->resolveSystemConfig()['app_hash'] ?? null);
+        $resolvedHash = $appHash
+            ?: request()->input('app_hash')
+            ?: request()->header('X-App-Signature')
+            ?: request()->header('X-App-Hash')
+            ?: config('services.smsgate.app_hash');
 
         $message = "🔐 رمز التحقق الخاص بك في نظام مبيعات الشبكة هو: {$code}\n⚠️ لا تشارك هذا الرمز مع أي شخص مهما كان السبب.";
 

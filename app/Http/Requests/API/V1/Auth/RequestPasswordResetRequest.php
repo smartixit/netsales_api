@@ -27,6 +27,11 @@ class RequestPasswordResetRequest extends FormRequest
                 'max:9',
                 'regex:/^7[0-9]{8}$/',
             ],
+            'app_hash' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
         ];
     }
 }

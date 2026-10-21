@@ -29,6 +29,7 @@ class ResetPasswordRequest extends FormRequest
             ],
             'otp' => ['required', 'string', 'digits:6'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
+            'app_hash' => ['nullable', 'string', 'max:20'],
         ];
     }
 }

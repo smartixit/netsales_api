@@ -35,6 +35,11 @@ class GenerateOtpRequest extends FormRequest
                 'string',
                 'max:255',
             ],
+            'app_hash' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
         ];
     }
 }

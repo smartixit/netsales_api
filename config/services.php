@@ -48,7 +48,7 @@ return [
         'sim_number' => (int) env('SMSGATE_SIM_NUMBER', 1),
         'skip_phone_validation' => (bool) env('SMSGATE_SKIP_PHONE_VALIDATION', false),
         'device_active_within' => (int) env('SMSGATE_DEVICE_ACTIVE_WITHIN', 0),
-        'app_hash' => env('SMSGATE_APP_HASH', env('SMS_RETRIEVER_APP_HASH')),
+        'app_hash' => env('SMS_RETRIEVER_APP_HASH'),
     ],
 
     'google_drive' => [

@@ -116,7 +116,8 @@ class OtpService
         OtpType|string $type,
         string $deviceUuid,
         ?int $expirationMinutes = null,
-        ?int $length = null
+        ?int $length = null,
+        ?string $appHash = null
     ): array {
         $expirationMinutes = $expirationMinutes ?? $this->getOtpExpirationMinutes();
         $length = $length ?? $this->getOtpLength();
@@ -158,7 +159,7 @@ class OtpService
             ]);
         }
 
-        return DB::transaction(function () use ($user, $otpType, $deviceUuid, $expirationMinutes, $length) {
+        return DB::transaction(function () use ($user, $otpType, $deviceUuid, $expirationMinutes, $length, $appHash) {
             // 1. إبطال الرموز السابقة لنفس الغرض
             $this->otpRepository->invalidateUserOtps($user->user_id, $otpType);
 
@@ -184,15 +185,26 @@ class OtpService
             //     code: $plainCode
             // );
 
-            // 5. تسجيل إشعار موجه للمستخدم عبر خدمة الإشعارات المركزية
+            // 5. تسجيل إشعار موجه للمستخدم عبر خدمة الإشعارات المركزية مع بصمة التطبيق الديناميكية
+            $resolvedHash = $appHash
+                ?: request()->input('app_hash')
+                ?: request()->header('X-App-Signature')
+                ?: request()->header('X-App-Hash')
+                ?: config('services.smsgate.app_hash');
+
+            $smsBody = "🔐 رمز التحقق الخاص بك هو: {$plainCode}";
+            if (! empty($resolvedHash)) {
+                $smsBody .= "\n\n{$resolvedHash}";
+            }
+
             $this->notificationService->sendDirect(
                 userId: (int) $user->user_id,
                 type: NotificationType::GENERAL_INFO,
                 sms: true,
                 push: true,
                 smsMessageType: SmsMessageType::OTP,
-                title: "🔐 رمز التحقق (OTP)",
-                message: "🔐 رمز التحقق الخاص بك هو: {$plainCode}",
+                title: '🔐 رمز التحقق (OTP)',
+                message: $smsBody,
             );
 
             // 6. توثيق أمني
@@ -225,7 +237,8 @@ class OtpService
     public function generateOtpForPhone(
         string $phone,
         string $deviceUuid,
-        OtpType|string $type = OtpType::RESET_PASSWORD
+        OtpType|string $type = OtpType::RESET_PASSWORD,
+        ?string $appHash = null
     ): array {
         $user = $this->userRepository->findByPhone($phone);
 
@@ -241,7 +254,7 @@ class OtpService
             ]);
         }
 
-        $result = $this->generateOtpForUser($user, $type, $deviceUuid);
+        $result = $this->generateOtpForUser($user, $type, $deviceUuid, appHash: $appHash);
         $result['user'] = $user;
 
         return $result;
@@ -393,8 +406,9 @@ class OtpService
         $phone = (string) $request->user_phone_number;
         $type = (string) ($request->otp_type ?? OtpType::RESET_PASSWORD->value);
         $deviceUuid = (string) ($request->device_uuid ?? request()->header('X-Device-Uuid') ?? 'SYSTEM-DEVICE');
+        $appHash = (string) ($request->app_hash ?? request()->header('X-App-Signature') ?? request()->header('X-App-Hash') ?? '');
 
-        return $this->generateOtpForPhone($phone, $deviceUuid, $type);
+        return $this->generateOtpForPhone($phone, $deviceUuid, $type, appHash: $appHash ?: null);
     }
 
     /**

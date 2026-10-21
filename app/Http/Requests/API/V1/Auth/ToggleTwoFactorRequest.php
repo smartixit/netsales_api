@@ -22,6 +22,7 @@ class ToggleTwoFactorRequest extends FormRequest
         return [
             'enable' => ['required', 'boolean'],
             'otp' => ['nullable', 'string', 'digits:6'],
+            'app_hash' => ['nullable', 'string', 'max:20'],
         ];
     }
 }

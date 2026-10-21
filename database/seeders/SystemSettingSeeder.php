@@ -293,13 +293,6 @@ class SystemSettingSeeder extends Seeder
                 'setting_value' => '0',
                 'setting_desc' => 'التحقق من نشاط جهاز الإرسال خلال (بالساعات، 0 = معطل)',
             ],
-            [
-                'setting_category' => 'NOTIFICATION',
-                'setting_key' => 'smsgate_app_hash',
-                'setting_value_type' => 'TEXT',
-                'setting_value' => '',
-                'setting_desc' => 'بصمة توقيع تطبيق أندرويد (11 محرفاً) لتفعيل الاستخراج التلقائي التام لرمز التحقق عبر SMS Retriever API',
-            ],
             // -- Firebase Cloud Messaging (FCM HTTP v1) --
             [
                 'setting_category' => 'NOTIFICATION',
