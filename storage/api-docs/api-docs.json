@@ -5245,7 +5245,7 @@
                 "description": "يولد رمز تحقق مؤقت معتمد ويرسله عبر رسالة نصية SMS إلى رقم الهاتف المسجل مع مراعاة فترات التهدئة.",
                 "operationId": "29e539778bea1376b8419205d04deacd",
                 "requestBody": {
-                    "description": "بيانات الطلب",
+                    "description": "بيانات الطلب ومعرف الجهاز",
                     "required": true,
                     "content": {
                         "multipart/form-data": {
@@ -5256,10 +5256,18 @@
                                 ],
                                 "properties": {
                                     "user_phone_number": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "772957881"
                                     },
                                     "otp_type": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "RESET_PASSWORD"
+                                    },
+                                    "device_uuid": {
+                                        "description": "معرف الجهاز المنشئ لطلب التحقق",
+                                        "type": "string",
+                                        "example": "d8c47b19-2045-4235-96be-8f35c5c93110",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -5286,10 +5294,10 @@
                     "OTP"
                 ],
                 "summary": "التحقق من صحة رمز OTP",
-                "description": "يتحقق من مطابقة الرمز المدخل مع الرمز الصادر والمخزن في النظام وعدم انتهاء صلاحيته أو تجاوز المحاولات.",
+                "description": "يتحقق من مطابقة الرمز المدخل مع الرمز الصادر والمخزن في النظام وعدم انتهاء صلاحيته أو تجاوز المحاولات ومطابقة الجهاز.",
                 "operationId": "5f93d12ff088b4c5d50f1c0b2ee70d1f",
                 "requestBody": {
-                    "description": "بيانات الطلب",
+                    "description": "بيانات الطلب ومعرف الجهاز",
                     "required": true,
                     "content": {
                         "multipart/form-data": {
@@ -5300,13 +5308,22 @@
                                 ],
                                 "properties": {
                                     "user_phone_number": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "772957881"
                                     },
                                     "otp": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "123456"
                                     },
                                     "type": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "RESET_PASSWORD"
+                                    },
+                                    "device_uuid": {
+                                        "description": "معرف الجهاز المنشئ لطلب التحقق",
+                                        "type": "string",
+                                        "example": "d8c47b19-2045-4235-96be-8f35c5c93110",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -5319,7 +5336,7 @@
                         "description": "تم تأكيد صحة الرمز بنجاح"
                     },
                     "422": {
-                        "description": "رمز التحقق غير صحيح أو منتهي الصلاحية"
+                        "description": "رمز التحقق غير صحيح أو منتهي الصلاحية أو غير متطابق مع الجهاز"
                     },
                     "500": {
                         "description": "خطأ داخلي في الخادم"
@@ -5347,10 +5364,18 @@
                                 ],
                                 "properties": {
                                     "user_phone_number": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "772957881"
                                     },
                                     "otp_type": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "RESET_PASSWORD"
+                                    },
+                                    "device_uuid": {
+                                        "description": "معرف الجهاز المنشئ لطلب التحقق",
+                                        "type": "string",
+                                        "example": "d8c47b19-2045-4235-96be-8f35c5c93110",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
