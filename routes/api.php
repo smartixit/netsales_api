@@ -55,7 +55,6 @@ Route::prefix('v1')->group(function () {
             Route::post('login', [AuthController::class, 'login'])->name('api.v1.auth.login');
             Route::post('register-network', [AuthController::class, 'registerNetwork'])->name('api.v1.auth.register_network');
             Route::post('register-pos', [AuthController::class, 'registerPos'])->name('api.v1.auth.register_pos');
-            Route::post('register', [AuthController::class, 'register'])->name('api.v1.auth.register');
         });
 
         Route::middleware('throttle:auth-otp')->group(function () {
@@ -95,6 +94,13 @@ Route::prefix('v1')->group(function () {
         // Protected Files Stream (Public Whitelisted & Private Signed)
         Route::get('files/signed/{path}', [FileController::class, 'showSigned'])->where('path', '.*')->name('api.v1.files.signed');
         Route::get('files/{path}', [FileController::class, 'show'])->where('path', '.*')->name('api.v1.files.show');
+
+        // المحرك الجغرافي المرجعي لعمليات التسجيل العامة (Public Geography Reference)
+        Route::get('governorates', [GovernorateController::class, 'index'])->name('api.v1.governorates.index');
+        Route::get('governorates/{id}', [GovernorateController::class, 'show'])->whereNumber('id')->name('api.v1.governorates.show');
+        Route::get('directorates', [DirectorateController::class, 'index'])->name('api.v1.directorates.index');
+        Route::get('directorates/governorate/{governorateId}', [DirectorateController::class, 'byGovernorate'])->whereNumber('governorateId')->name('api.v1.directorates.by_governorate');
+        Route::get('directorates/{id}', [DirectorateController::class, 'show'])->whereNumber('id')->name('api.v1.directorates.show');
     });
 
     // ==========================================
@@ -569,15 +575,9 @@ Route::prefix('v1')->group(function () {
         // 22. المحرك الجغرافي: المحافظات والمديريات (Geography Engine)
         // ==========================================
         Route::middleware('throttle:api-read')->group(function () {
-            Route::get('governorates', [GovernorateController::class, 'index'])->name('api.v1.governorates.index');
             Route::get('governorates/counts', [GovernorateController::class, 'counts'])->name('api.v1.governorates.counts');
             Route::get('governorates/trashed', [GovernorateController::class, 'trashed'])->name('api.v1.governorates.trashed');
-            Route::get('governorates/{id}', [GovernorateController::class, 'show'])->whereNumber('id')->name('api.v1.governorates.show');
-
-            Route::get('directorates', [DirectorateController::class, 'index'])->name('api.v1.directorates.index');
             Route::get('directorates/trashed', [DirectorateController::class, 'trashed'])->name('api.v1.directorates.trashed');
-            Route::get('directorates/governorate/{governorateId}', [DirectorateController::class, 'byGovernorate'])->whereNumber('governorateId')->name('api.v1.directorates.by_governorate');
-            Route::get('directorates/{id}', [DirectorateController::class, 'show'])->whereNumber('id')->name('api.v1.directorates.show');
         });
 
         Route::middleware('throttle:api-write')->group(function () {
