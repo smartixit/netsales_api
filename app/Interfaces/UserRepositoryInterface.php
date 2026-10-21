@@ -57,6 +57,11 @@ interface UserRepositoryInterface extends BaseRepositoryInterface
     public function updatePassword(int $userId, string $hashedPassword): bool;
 
     /**
+     * تحديد ما إذا كان المستخدم ملزماً بتغيير كلمة المرور فور الدخول.
+     */
+    public function setMustChangePassword(int $userId, bool $mustChange): bool;
+
+    /**
      * تفعيل أو تعطيل المصادقة الثنائية (2FA).
      */
     public function setTwoFactor(int $userId, bool $enabled): bool;

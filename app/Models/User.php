@@ -41,6 +41,7 @@ class User extends Authenticatable
         'user_password',
         'user_email',
         'user_2fa_enabled',
+        'must_change_password',
         'user_login_attempts',
         'last_login_at',
         'status',
@@ -75,6 +76,7 @@ class User extends Authenticatable
         return [
             'status' => UserStatus::class,
             'user_2fa_enabled' => 'boolean',
+            'must_change_password' => 'boolean',
             'user_login_attempts' => 'integer',
             'last_login_at' => 'datetime',
             'user_password' => 'hashed',

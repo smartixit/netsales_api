@@ -26,7 +26,6 @@ use App\Interfaces\SecurityBanRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
-use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
 use App\Models\Pos;
 use App\Models\Role;
@@ -317,11 +316,14 @@ class AuthService
                 'device_id' => $existingDevice->device_id,
             ]);
 
+            $mustChangePassword = (bool) $user->must_change_password;
+
             return [
                 'require_2fa' => false,
+                'require_password_change' => $mustChangePassword,
                 'user' => $user->load(['role']),
                 'session' => $session,
-                'permissions' => $user->getAllPermissions(),
+                'permissions' => $mustChangePassword ? [] : $user->getAllPermissions(),
             ];
         });
     }
@@ -474,11 +476,14 @@ class AuthService
                 'is_primary' => $isFirstDevice,
             ]);
 
+            $mustChangePassword = (bool) $user->must_change_password;
+
             return [
                 'require_2fa' => false,
+                'require_password_change' => $mustChangePassword,
                 'user' => $user->load(['role']),
                 'session' => $session,
-                'permissions' => $user->getAllPermissions(),
+                'permissions' => $mustChangePassword ? [] : $user->getAllPermissions(),
             ];
         });
     }
@@ -761,18 +766,23 @@ class AuthService
             // 2. توليد كلمة مرور عشوائية مؤقتة
             $randomPassword = Str::password(10, letters: true, numbers: true, symbols: false, spaces: false);
 
-            // 3. تحديث كلمة المرور المشفرة للمستخدم عبر المستودع
+            // 3. تحديث كلمة المرور المشفرة للمستخدم عبر المستودع وإلزامه بتغييرها فور الدخول
             $this->userRepository->updatePassword($user->user_id, Hash::make($randomPassword));
+            $this->userRepository->setMustChangePassword($user->user_id, true);
 
             // 4. إلغاء كافة الجلسات النشطة للمستخدم لحماية الحساب
             $this->userSessionRepository->revokeAllUserSessions($user->user_id);
 
             // 5. إرسال كلمة المرور العشوائية وإشعار التغيير للمستخدم عبر رسالة SMS مدمجة
             $smsMessage = "تمت استعادة كلمة المرور لحسابكم في NetSales بنجاح. كلمة المرور المؤقتة الجديدة هي: {$randomPassword} - يرجى تسجيل الدخول وتغييرها فوراً.";
-            SendSmsNotificationJob::dispatch(
-                phoneNumbers: $user->user_phone_number,
+            $this->notificationService->sendDirect(
+                userId: (int) $user->user_id,
+                type: NotificationType::SECURITY_LOGIN_ALERT,
+                title: 'تنبيه أمني: إعادة تعيين كلمة المرور',
                 message: $smsMessage,
-                messageType: SmsMessageType::OTP
+                inApp: true,
+                push: true,
+                sms: true,
             );
 
             SystemLoggerService::logAuth('password_reset_random_dispatched', $user->user_id);
@@ -866,8 +876,15 @@ class AuthService
             ]);
         }
 
+        if (Hash::check($newPassword, $user->user_password)) {
+            throw ValidationException::withMessages([
+                'new_password' => ['يجب أن تكون كلمة المرور الجديدة مختلفة عن كلمة المرور الحالية/المؤقتة.'],
+            ]);
+        }
+
         return DB::transaction(function () use ($user, $newPassword) {
             $this->userRepository->updatePassword($user->user_id, Hash::make($newPassword));
+            $this->userRepository->setMustChangePassword($user->user_id, false);
 
             SystemLoggerService::logAuth('password_updated', $user->user_id);
 

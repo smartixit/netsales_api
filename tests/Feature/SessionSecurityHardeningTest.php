@@ -2,10 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\RoleKey;
+use App\Enums\UserStatus;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\UserDevice;
 use App\Models\UserSession;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
@@ -238,4 +242,91 @@ class SessionSecurityHardeningTest extends TestCase
         $validVerifyResponse->assertStatus(200);
         $this->assertEquals($initiatorDeviceUuid, $validVerifyResponse->json('data.device_uuid'));
     }
+
+    public function test_reset_password_sets_must_change_password_and_forces_change_on_login(): void
+    {
+        $role = Role::byKey(RoleKey::SUPER_ADMIN)->first();
+        $user = User::create([
+            'role_id' => $role->role_id,
+            'user_full_name' => 'Must Change Test User',
+            'user_phone_number' => '773000999',
+            'user_password' => Hash::make('OldSecret@123'),
+            'status' => UserStatus::ACTIVE,
+            'user_2fa_enabled' => false,
+            'must_change_password' => false,
+        ]);
+
+        $deviceUuid = 'TEST-DEVICE-MUST-CHANGE';
+
+        // 1. طلب استعادة كلمة المرور
+        $resetReq = $this->postJson('/api/v1/auth/password/request-reset', [
+            'user_phone_number' => $user->user_phone_number,
+            'device_uuid' => $deviceUuid,
+        ], ['X-Bypass-Encryption' => 'true']);
+        $resetReq->assertStatus(200);
+
+        // جلب كود OTP
+        $otp = \App\Models\Otp::where('user_id', $user->user_id)
+            ->where('is_used', false)
+            ->latest('otp_id')
+            ->first();
+        $this->assertNotNull($otp);
+
+        // 2. التحقق من كود الاستعادة -> يولد كلمة مرور مؤقتة ويضبط must_change_password = true
+        $verifyReq = $this->postJson('/api/v1/auth/password/verify-otp', [
+            'user_phone_number' => $user->user_phone_number,
+            'otp' => $otp->otp_code,
+            'device_uuid' => $deviceUuid,
+        ], ['X-Bypass-Encryption' => 'true']);
+        $verifyReq->assertStatus(200);
+
+        $user->refresh();
+        $this->assertTrue($user->must_change_password);
+
+        // 3. محاولة تسجيل الدخول -> الخادم يرجع require_password_change: true والصلاحيات محجوبة
+        // نسجل جهاز أساسي لتجاوز 2FA للدخول المباشر
+        \App\Models\UserDevice::create([
+            'user_id' => $user->user_id,
+            'device_uuid' => $deviceUuid,
+            'device_name' => 'Device 1',
+            'device_type' => \App\Enums\DeviceType::ANDROID,
+            'is_primary' => true,
+            'status' => \App\Enums\UserDeviceStatus::ACTIVE,
+            'fcm_token' => 'token_1',
+        ]);
+
+        // نغير كلمة المرور لشيء معروف مؤقتاً للاختبار مع بقاء must_change_password = true
+        $tempPassword = 'TempSecretPassword@1';
+        $user->update(['user_password' => Hash::make($tempPassword)]);
+
+        $loginResp = $this->postJson('/api/v1/auth/login', [
+            'user_phone_number' => $user->user_phone_number,
+            'user_password' => $tempPassword,
+            'device_uuid' => $deviceUuid,
+            'device_name' => 'Device 1',
+            'device_type' => 'ANDROID',
+            'fcm_token' => 'token_1',
+        ], ['X-Bypass-Encryption' => 'true']);
+
+        $loginResp->assertStatus(200);
+        $this->assertTrue($loginResp->json('data.require_password_change'));
+        $this->assertEmpty($loginResp->json('data.permissions'));
+
+        // 4. تحديث كلمة المرور عبر الجلسة -> يجب مسح must_change_password
+        $sessionId = $loginResp->json('data.session_id');
+        $updateResp = $this->postJson('/api/v1/auth/update-password', [
+            'current_password' => $tempPassword,
+            'new_password' => 'NewPermanentSecret@2026',
+            'new_password_confirmation' => 'NewPermanentSecret@2026',
+        ], [
+            'X-Bypass-Encryption' => 'true',
+            'X-Session-Id' => $sessionId,
+            'X-Device-Uuid' => $deviceUuid,
+        ]);
+
+        $updateResp->assertStatus(200);
+        $user->refresh();
+        $this->assertFalse($user->must_change_password);
+    }
 }
+

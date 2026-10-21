@@ -123,6 +123,16 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
     }
 
     /**
+     * تحديد ما إذا كان المستخدم ملزماً بتغيير كلمة المرور فور الدخول.
+     */
+    public function setMustChangePassword(int $userId, bool $mustChange): bool
+    {
+        return (bool) $this->model->newQuery()
+            ->where('user_id', $userId)
+            ->update(['must_change_password' => $mustChange]);
+    }
+
+    /**
      * تفعيل أو تعطيل المصادقة الثنائية (2FA).
      */
     public function setTwoFactor(int $userId, bool $enabled): bool

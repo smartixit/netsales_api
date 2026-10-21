@@ -206,13 +206,18 @@ class AuthController extends BaseController
 
             $user = $result['user'];
             $session = $result['session'];
+            $mustChangePassword = ! empty($result['require_password_change']);
 
-            return $this->successResponse('تم تسجيل الدخول بنجاح.', [
-                'session_id' => (string) ($session->session_token ?: $session->session_id),
-                'device_uuid' => (string) $session->device_uuid,
-                'user' => new UserResource($user),
-                'permissions' => $result['permissions'],
-            ]);
+            return $this->successResponse(
+                $mustChangePassword ? 'يرجى تغيير كلمة المرور المؤقتة لمتابعة الدخول.' : 'تم تسجيل الدخول بنجاح.',
+                [
+                    'session_id' => (string) ($session->session_token ?: $session->session_id),
+                    'device_uuid' => (string) $session->device_uuid,
+                    'require_password_change' => $mustChangePassword,
+                    'user' => new UserResource($user),
+                    'permissions' => $result['permissions'],
+                ]
+            );
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -254,13 +259,18 @@ class AuthController extends BaseController
     {
         try {
             $result = $this->authService->verifyTwoFactor($request);
+            $mustChangePassword = ! empty($result['require_password_change']);
 
-            return $this->successResponse('تم التحقق بنجاح وإنشاء جلسة الدخول.', [
-                'session_id' => (string) ($result['session']->session_token ?: $result['session']->session_id),
-                'device_uuid' => (string) $result['session']->device_uuid,
-                'user' => new UserResource($result['user']),
-                'permissions' => $result['permissions'],
-            ]);
+            return $this->successResponse(
+                $mustChangePassword ? 'تم التحقق بنجاح. يرجى تغيير كلمة المرور المؤقتة.' : 'تم التحقق بنجاح وإنشاء جلسة الدخول.',
+                [
+                    'session_id' => (string) ($result['session']->session_token ?: $result['session']->session_id),
+                    'device_uuid' => (string) $result['session']->device_uuid,
+                    'require_password_change' => $mustChangePassword,
+                    'user' => new UserResource($result['user']),
+                    'permissions' => $result['permissions'],
+                ]
+            );
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {

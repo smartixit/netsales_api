@@ -30,6 +30,7 @@ class UserResource extends JsonResource
             'user_phone_number' => $this->user_phone_number,
             'user_email' => $this->user_email,
             'user_2fa_enabled' => (bool) $this->user_2fa_enabled,
+            'must_change_password' => (bool) $this->must_change_password,
             'user_login_attempts' => (int) $this->user_login_attempts,
             'status' => $this->status instanceof UserStatus ? $this->status->value : $this->status,
             'status_label' => $this->status instanceof UserStatus
