@@ -1373,6 +1373,79 @@
                 }
             }
         },
+        "/api/v1/dashboard/overview": {
+            "get": {
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "عرض النظرة العامة والمؤشرات التجميعية للوحة القيادة",
+                "description": "استعلام النظرة العامة والمؤشرات المجمعة للوحة القيادة.",
+                "operationId": "2e1fb8419bc1f583406d8b920f305418",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "description": "النطاق الزمني للمؤشرات (today, yesterday, this_week, this_month, this_year)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "today",
+                            "enum": [
+                                "today",
+                                "yesterday",
+                                "this_week",
+                                "this_month",
+                                "this_year"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "network_id",
+                        "in": "query",
+                        "description": "معرف الشبكة المستهدفة (خاص بمزودي الشبكات المتعددة أو الإدارة)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "pos_id",
+                        "in": "query",
+                        "description": "معرف نقطة البيع المستهدفة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "refresh",
+                        "in": "query",
+                        "description": "إجبار الخادم على تجاوز الكاش وإعادة الحساب فوراً",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع بيانات لوحة القيادة بنجاح"
+                    },
+                    "401": {
+                        "description": "غير مصادق عليه / جلسة غير صالحة"
+                    },
+                    "422": {
+                        "description": "خطأ في معالجة الإحصائيات"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/directorates": {
             "get": {
                 "tags": [
@@ -10023,6 +10096,24 @@
                 }
             }
         },
+        "/api/v1/system-settings/public": {
+            "get": {
+                "tags": [
+                    "SystemSettings"
+                ],
+                "summary": "عرض إعدادات النظام العامة",
+                "description": "جلب إعدادات الهوية العامة وقنوات الدعم الفني دون الحاجة لتسجيل الدخول.",
+                "operationId": "8b6abfe1c9cc4e04167007e614b603b1",
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع إعدادات النظام العامة بنجاح"
+                    },
+                    "500": {
+                        "description": "خطأ في الخادم الداخلي"
+                    }
+                }
+            }
+        },
         "/api/v1/system-settings": {
             "get": {
                 "tags": [
@@ -12220,6 +12311,10 @@
         {
             "name": "Bank Accounts",
             "description": "إدارة الحسابات البنكية والمحافظ المعتمدة للنظام"
+        },
+        {
+            "name": "Dashboard",
+            "description": "لوحة القيادة الموحدة، المؤشرات المالية والتشغيلية، رادار التنبيهات، والعمليات الأخيرة الموحدة لكافة الأدوار"
         },
         {
             "name": "Directorates",
