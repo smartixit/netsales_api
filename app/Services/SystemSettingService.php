@@ -75,6 +75,26 @@ class SystemSettingService
     }
 
     /**
+     * جلب إعدادات النظام العامة المصرح بنشرها للواجهات والتطبيقات دون مصادقة.
+     *
+     * @return array<string, mixed>
+     */
+    public function getPublicSettings(): array
+    {
+        $phone = $this->getString('app_support_phone', '+967772957881');
+        $whatsapp = $this->getString('app_support_whatsapp', preg_replace('/[^\d]/', '', $phone) ?: '967772957881');
+
+        return [
+            'app_name' => $this->getString('app_name', 'NetSales | نظام مبيعات الشبكة'),
+            'app_company_name' => $this->getString('app_company_name', 'Smartix Technology Solutions'),
+            'app_support_phone' => $phone,
+            'app_support_whatsapp' => $whatsapp,
+            'app_support_email' => $this->getString('app_support_email', 'smartixitco@gmail.com'),
+            'default_locale' => $this->getString('default_locale', 'ar'),
+        ];
+    }
+
+    /**
      * جلب قائمة الإعدادات المفلترة مع الترقيم بالمؤشر.
      */
     public function getFiltered(array $filters = []): Collection|CursorPaginator

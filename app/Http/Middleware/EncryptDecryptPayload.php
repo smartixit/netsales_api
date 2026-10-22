@@ -25,6 +25,7 @@ class EncryptDecryptPayload
 
         $bypassEncryption = in_array(strtolower((string) $bypassHeader), ['true', '1', 'yes', 'on'])
             || $request->is('api/v1/security/public-keys')
+            || $request->is('api/v1/system-settings/public')
             || $request->is('api/v1/auth/health-check')
             || $request->is('up');
 

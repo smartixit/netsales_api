@@ -229,4 +229,27 @@ class SystemSettingSystemTest extends TestCase
 
         $this->assertEmpty(SystemSetting::withTrashed()->whereIn('setting_id', $ids)->get());
     }
+
+    public function test_can_fetch_public_settings_without_authentication(): void
+    {
+        $response = $this->getJson('/api/v1/system-settings/public');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonStructure([
+                'success',
+                'message',
+                'data' => [
+                    'app_name',
+                    'app_company_name',
+                    'app_support_phone',
+                    'app_support_whatsapp',
+                    'app_support_email',
+                    'default_locale',
+                ],
+            ]);
+
+        $this->assertNotEmpty($response->json('data.app_support_phone'));
+        $this->assertNotEmpty($response->json('data.app_support_whatsapp'));
+    }
 }

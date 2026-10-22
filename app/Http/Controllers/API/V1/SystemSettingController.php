@@ -30,6 +30,32 @@ class SystemSettingController extends BaseController
     ) {}
 
     /**
+     * عرض إعدادات النظام العامة المصرح بنشرها للواجهات والتطبيقات دون مصادقة.
+     */
+    #[OA\Get(
+        path: '/api/v1/system-settings/public',
+        summary: 'عرض إعدادات النظام العامة',
+        description: 'جلب إعدادات الهوية العامة وقنوات الدعم الفني دون الحاجة لتسجيل الدخول.',
+        tags: ['SystemSettings'],
+        responses: [
+            new OA\Response(response: 200, description: 'تم استرجاع إعدادات النظام العامة بنجاح'),
+            new OA\Response(response: 500, description: 'خطأ في الخادم الداخلي'),
+        ]
+    )]
+    public function publicSettings(Request $request): JsonResponse
+    {
+        try {
+            $publicSettings = $this->settingService->getPublicSettings();
+
+            return $this->successResponse('تم استرجاع إعدادات النظام العامة بنجاح.', $publicSettings);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر جلب إعدادات النظام العامة: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
      * عرض قائمة إعدادات النظام مع الفلترة والترقيم بالمؤشر.
      */
     #[OA\Get(

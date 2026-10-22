@@ -101,6 +101,9 @@ Route::prefix('v1')->group(function () {
         Route::get('directorates', [DirectorateController::class, 'index'])->name('api.v1.directorates.index');
         Route::get('directorates/governorate/{governorateId}', [DirectorateController::class, 'byGovernorate'])->whereNumber('governorateId')->name('api.v1.directorates.by_governorate');
         Route::get('directorates/{id}', [DirectorateController::class, 'show'])->whereNumber('id')->name('api.v1.directorates.show');
+
+        // إعدادات النظام العامة المصرح بنشرها للواجهات والتطبيقات دون مصادقة (Public System Settings)
+        Route::get('system-settings/public', [SystemSettingController::class, 'publicSettings'])->name('api.v1.system_settings.public');
     });
 
     // ==========================================
