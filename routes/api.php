@@ -4,6 +4,7 @@ use App\Http\Controllers\API\V1\AdminNotificationController;
 use App\Http\Controllers\API\V1\AuthController;
 use App\Http\Controllers\API\V1\BackupController;
 use App\Http\Controllers\API\V1\BankAccountController;
+use App\Http\Controllers\API\V1\DashboardController;
 use App\Http\Controllers\API\V1\DirectorateController;
 use App\Http\Controllers\API\V1\ExpenseController;
 use App\Http\Controllers\API\V1\FeatureController;
@@ -110,6 +111,13 @@ Route::prefix('v1')->group(function () {
     // المسارات المحمية بالجلسة (Protected Routes - Session Auth)
     // ==========================================
     Route::middleware('session.auth')->group(function () {
+
+        // ==========================================
+        // 0. لوحة القيادة والمؤشرات التجميعية (Executive Dashboard & Aggregations)
+        // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('dashboard/overview', [DashboardController::class, 'overview'])->name('api.v1.dashboard.overview');
+        });
 
         // ==========================================
         // 1. إدارة المستخدمين (Users Management)

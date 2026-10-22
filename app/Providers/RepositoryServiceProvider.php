@@ -37,11 +37,13 @@ use App\Interfaces\SystemLogRepositoryInterface;
 use App\Interfaces\SystemSettingRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
+use App\Interfaces\DashboardRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
 use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Repositories\BackupJobRepository;
 use App\Repositories\BankAccountRepository;
+use App\Repositories\DashboardRepository;
 use App\Repositories\DirectorateRepository;
 use App\Repositories\ExpenseAttachmentRepository;
 use App\Repositories\ExpenseItemRepository;
@@ -149,6 +151,9 @@ class RepositoryServiceProvider extends ServiceProvider
         NetworkSmsSettingRepositoryInterface::class => NetworkSmsSettingRepository::class,
         BackupJobRepositoryInterface::class => BackupJobRepository::class,
         ScheduledTaskRunRepositoryInterface::class => ScheduledTaskRunRepository::class,
+
+        // Phase 13: Unified Executive Dashboard Aggregations
+        DashboardRepositoryInterface::class => DashboardRepository::class,
     ];
 
     public function register(): void

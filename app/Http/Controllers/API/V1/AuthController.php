@@ -641,7 +641,7 @@ class AuthController extends BaseController
             'isAlive' => true,
             'status' => 'ok',
             'message' => 'الخادم يعمل بشكل صحيح',
-            'timestamp' => now()->toIso8601String(),
+            'timestamp' => now()->toDateTimeString(),
         ], 200);
     }
 }
