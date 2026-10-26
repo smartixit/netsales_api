@@ -66,6 +66,69 @@ class SystemSettingSeeder extends Seeder
                 'setting_value' => 'Asia/Aden',
                 'setting_desc' => 'المنطقة الزمنية المعتمدة للنظام',
             ],
+            [
+                'setting_category' => 'GENERAL',
+                'setting_key' => 'app_company_address',
+                'setting_value_type' => 'TEXT',
+                'setting_value' => 'اليمن - تعز',
+                'setting_desc' => 'عنوان المقر الرئيسي للشركة المشغلة',
+            ],
+            [
+                'setting_category' => 'GENERAL',
+                'setting_key' => 'app_website_url',
+                'setting_value_type' => 'TEXT',
+                'setting_value' => 'https://www.smartixit.com',
+                'setting_desc' => 'رابط الموقع الإلكتروني الرسمي للمنظومة',
+            ],
+            [
+                'setting_category' => 'GENERAL',
+                'setting_key' => 'app_company_logo',
+                'setting_value_type' => 'TEXT',
+                'setting_value' => 'images/company_logo.png',
+                'setting_desc' => 'مسار أو رابط شعار الشركة المطورة',
+            ],
+            [
+                'setting_category' => 'GENERAL',
+                'setting_key' => 'app_logo',
+                'setting_value_type' => 'TEXT',
+                'setting_value' => 'images/brand_logo.png',
+                'setting_desc' => 'مسار أو رابط شعار منظومة NetSales',
+            ],
+            [
+                'setting_category' => 'GENERAL',
+                'setting_key' => 'social_facebook',
+                'setting_value_type' => 'TEXT',
+                'setting_value' => 'https://facebook.com',
+                'setting_desc' => 'رابط صفحة فيسبوك الرسمية',
+            ],
+            [
+                'setting_category' => 'GENERAL',
+                'setting_key' => 'social_twitter',
+                'setting_value_type' => 'TEXT',
+                'setting_value' => 'https://x.com',
+                'setting_desc' => 'رابط حساب نظام X (تويتر) الرسمي',
+            ],
+            [
+                'setting_category' => 'GENERAL',
+                'setting_key' => 'social_instagram',
+                'setting_value_type' => 'TEXT',
+                'setting_value' => 'https://instagram.com',
+                'setting_desc' => 'رابط حساب إنستغرام الرسمي',
+            ],
+            [
+                'setting_category' => 'GENERAL',
+                'setting_key' => 'social_telegram',
+                'setting_value_type' => 'TEXT',
+                'setting_value' => 'https://t.me',
+                'setting_desc' => 'رابط قناة تيليجرام الرسمية',
+            ],
+            [
+                'setting_category' => 'GENERAL',
+                'setting_key' => 'app_inception_year',
+                'setting_value_type' => 'INTEGER',
+                'setting_value' => '2026',
+                'setting_desc' => 'سنة انطلاق وتأسيس المنظومة لحساب نطاق حقوق النشر تلقائياً',
+            ],
 
             // ═══════════════════════════════════════════════════════════════
             // 2. FINANCIAL (السياسات المالية والعملات)
@@ -269,7 +332,7 @@ class SystemSettingSeeder extends Seeder
                 'setting_category' => 'NOTIFICATION',
                 'setting_key' => 'smsgate_device_id',
                 'setting_value_type' => 'TEXT',
-                'setting_value' => 'JG6e0vibLZD9YIMLuTQcG',
+                'setting_value' => 'JG6e0vibLZD9YlMLuTQcG',
                 'setting_desc' => 'معرّف الجهاز المرسل في تطبيق SMSGate',
             ],
             [

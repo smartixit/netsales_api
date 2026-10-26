@@ -261,7 +261,7 @@ class NetworkSmsSettingService
         $network->ensureActive();
 
         $phone = $request->getPhoneNumber();
-        $message = "🔔 رسالة تجريبية من منصة NetSales: تم التحقق من ربط بوابة الرسائل لشبكة ({$network->network_name}) بنجاح! 🚀";
+        $message = "🔔 رسالة تجريبية من نظام NetSales: تم التحقق من ربط بوابة الرسائل لشبكة ({$network->network_name}) بنجاح! 🚀";
 
         $sent = $this->smsGateService->sendSms(
             phoneNumbers: $phone,

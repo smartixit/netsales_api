@@ -119,20 +119,20 @@ class SystemSettingSystemTest extends TestCase
             'setting_key' => 'test_app_title',
             'setting_value_type' => ValueType::TEXT->value,
             'setting_value' => 'NetSales Initial',
-            'setting_desc' => 'اسم المنصة العام',
+            'setting_desc' => 'اسم النظام العام',
         ]);
 
         // Update single setting
         $updatePayload = [
             'setting_value' => 'NetSales Enterprise Platform',
-            'setting_desc' => 'اسم المنصة المحدث',
+            'setting_desc' => 'اسم النظام المحدث',
         ];
 
         $updateResponse = $this->putJson("/api/v1/system-settings/{$setting->setting_id}", $updatePayload, $this->headers);
         $updateResponse->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.setting_value', 'NetSales Enterprise Platform')
-            ->assertJsonPath('data.setting_desc', 'اسم المنصة المحدث');
+            ->assertJsonPath('data.setting_desc', 'اسم النظام المحدث');
 
         // Batch update
         $batchPayload = [
