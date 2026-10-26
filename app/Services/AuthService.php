@@ -753,8 +753,12 @@ class AuthService
         }
 
         $deviceUuid = $request instanceof VerifyResetOtpRequest
-            ? (string) ($request->device_uuid ?? request()->header('X-Device-Uuid') ?? 'RECOVERY-DEVICE')
-            : 'RECOVERY-DEVICE';
+            ? (string) ($request->device_uuid ?? request()->header('X-Device-Uuid') ?? '')
+            : (string) (request()->header('X-Device-Uuid') ?? '');
+
+        if (empty($deviceUuid)) {
+            $deviceUuid = 'RECOVERY-DEVICE';
+        }
 
         // 1. التحقق من كود الـ OTP وفحص محاولات الإدخال ومطابقة الجهاز
         $this->otpService->verifyOtp($user->user_id, $otp, OtpType::RESET_PASSWORD, $deviceUuid);
@@ -780,6 +784,7 @@ class AuthService
                 inApp: true,
                 push: true,
                 sms: true,
+                smsMessageType: SmsMessageType::OTP,
             );
 
             SystemLoggerService::logAuth('password_reset_random_dispatched', $user->user_id);
