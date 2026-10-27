@@ -267,8 +267,8 @@ class SaleInvoiceService
             $posStatement = $isCashSale
                 ? "سداد فاتورة مبيعات كروت نقدية (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})"
                 : ($paidAmount > 0.001
-                    ? "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) مدفوعة جزئياً من الرصيد: ({$paidAmount})، متبقي آجل: ({$remainingAmount}) - رصيد المحفظة الحالي: ({$posBalanceAfter}) ناتجة عن الطلب (#{$request->request_uuid})"
-                    : "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) لعدم كفاية الرصيد النقدي - رصيد مدين على الوكيل: ({$posBalanceAfter}) ناتجة عن الطلب (#{$request->request_uuid})");
+                    ? "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) مدفوعة جزئياً من الرصيد: ({${formatWithCurrency($paidAmount)}})، متبقي آجل: ({${formatWithCurrency($remainingAmount)}}) - رصيد المحفظة الحالي: ({${formatWithCurrency($posBalanceAfter)}}) ناتجة عن الطلب (#{$request->request_uuid})"
+                    : "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) لعدم كفاية الرصيد النقدي - رصيد مدين على الوكيل: ({${formatWithCurrency($posBalanceAfter)}}) ناتجة عن الطلب (#{$request->request_uuid})");
 
             $this->posWalletLogRepository->createLog(
                 $posWallet->wallet_id,
@@ -290,11 +290,7 @@ class SaleInvoiceService
                     : ($paidAmount > 0.001
                         ? 'سداد فاتورة كروت بالبيع الآجل مدفوعة جزئياً'
                         : 'سداد فاتورة كروت بالبيع الآجل لعدم كفاية الرصيد النقدي'),
-                message: $isCashSale
-                    ? "سداد فاتورة مبيعات كروت نقدية (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})"
-                    : ($paidAmount > 0.001
-                        ? "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) مدفوعة جزئياً من الرصيد: ({$paidAmount})، متبقي آجل: ({$remainingAmount}) - رصيد المحفظة الحالي: ({$posBalanceAfter}) ناتجة عن الطلب (#{$request->request_uuid})"
-                        : "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) لعدم كفاية الرصيد النقدي - رصيد مدين على الوكيل: ({$posBalanceAfter}) ناتجة عن الطلب (#{$request->request_uuid})"),
+                message: $posStatement,
             );
 
             $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $totalInvoiceAmount);
@@ -302,7 +298,7 @@ class SaleInvoiceService
             $networkStatement = $isCashSale
                 ? "تحصيل مبيعات كروت نقدية (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"
                 : ($paidAmount > 0.001
-                    ? "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: ({$paidAmount})، آجل متبقي: ({$remainingAmount})"
+                    ? "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: ({${formatWithCurrency($paidAmount)}})، آجل متبقي: ({${formatWithCurrency($remainingAmount)}})"
                     : "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})");
 
             $this->networkWalletLogRepository->createLog(
@@ -324,11 +320,7 @@ class SaleInvoiceService
                 : ($paidAmount > 0.001
                 ? 'تحصيل مبيعات كروت بالبيع الآجل'
                 : 'تحصيل مبيعات كروت بالبيع الآجل'),
-                message: $isCashSale
-                ? "تحصيل مبيعات كروت نقدية (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"
-                : ($paidAmount > 0.001
-                ? "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: ({$paidAmount})، آجل متبقي: ({$remainingAmount})"
-                : "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"),
+                message: $networkStatement,
             );
 
             return $invoice;
@@ -429,8 +421,8 @@ class SaleInvoiceService
                 $posBalanceAfter = round((float) $posWallet->wallet_balance - $remainingAmount, 2);
 
                 $posStatement = $paidAmount > 0.001
-                    ? "سداد فاتورة مبيعات مباشرة مدفوعة جزئياً - إجمالي: ({$totalInvoiceAmount})، مسدد نقداً: ({$paidAmount})، متبقي آجل على المحفظة: ({$remainingAmount}) (رصيد مدين: {$posBalanceAfter})"
-                    : "سداد فاتورة مبيعات مباشرة بالبيع الآجل - ذمم مدينة (رصيد مدين على الوكيل: {$posBalanceAfter})";
+                    ? "سداد فاتورة مبيعات مباشرة مدفوعة جزئياً - إجمالي: ({${formatWithCurrency($totalInvoiceAmount)}})، مسدد نقداً: ({${formatWithCurrency($paidAmount)}})، متبقي آجل على المحفظة: ({${formatWithCurrency($remainingAmount)}}) (رصيد مدين: ({${formatWithCurrency($posBalanceAfter)}}))"
+                    : "سداد فاتورة مبيعات مباشرة بالبيع الآجل - ذمم مدينة (رصيد مدين على الوكيل: ({${formatWithCurrency($posBalanceAfter)}}))";
 
                 $this->posWalletLogRepository->createLog(
                     $posWallet->wallet_id,
@@ -449,9 +441,7 @@ class SaleInvoiceService
                     title: $paidAmount > 0.001
                     ? 'سداد فاتورة مبيعات مباشرة مدفوعة جزئياً'
                     : 'سداد فاتورة مبيعات مباشرة بالبيع الآجل',
-                    message: $paidAmount > 0.001
-                    ? "سداد فاتورة مبيعات مباشرة مدفوعة جزئياً - إجمالي: ({$totalInvoiceAmount})، مسدد نقداً: ({$paidAmount})، متبقي آجل على المحفظة: ({$remainingAmount}) (رصيد مدين: {$posBalanceAfter})"
-                    : "سداد فاتورة مبيعات مباشرة بالبيع الآجل - ذمم مدينة (رصيد مدين على الوكيل: {$posBalanceAfter})",
+                    message: $posStatement,
                 );
 
                 $this->posWalletService->sendWalletSms($posWallet, 'payment', (float) $remainingAmount, $posBalanceAfter);
@@ -462,7 +452,7 @@ class SaleInvoiceService
                 // إيداع إجمالي الفاتورة في محفظة الشبكة كاستحقاق مبيعات
                 $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $totalInvoiceAmount);
 
-                $networkStatement = "تحصيل فاتورة مبيعات مباشرة من نقطة البيع (#{$pos->pos_name}) - إجمالي: ({$totalInvoiceAmount})، نقد محصل: ({$paidAmount})، آجل متبقي: ({$remainingAmount})";
+                $networkStatement = "تحصيل فاتورة مبيعات مباشرة من نقطة البيع (#{$pos->pos_name}) - إجمالي: ({${formatWithCurrency($totalInvoiceAmount)}})، نقد محصل: ({${formatWithCurrency($paidAmount)}})، آجل متبقي: ({${formatWithCurrency($remainingAmount)}})";
 
                 $this->networkWalletLogRepository->createLog(
                     $networkWallet->wallet_id,
@@ -477,7 +467,7 @@ class SaleInvoiceService
                     type: NotificationType::WALLET_DEPOSIT,
                     push: true,
                     title: 'تحصيل فاتورة مبيعات مباشرة',
-                    message: "تحصيل فاتورة مبيعات مباشرة من نقطة البيع (#{$pos->pos_name}) - إجمالي: ({$totalInvoiceAmount})، نقد محصل: ({$paidAmount})، آجل متبقي: ({$remainingAmount})",
+                    message: $networkStatement,
                 );
             }
 

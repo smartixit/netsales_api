@@ -1208,14 +1208,14 @@ return [
 
         'StoreSaleInvoiceItemRequest' => [
             'package_id' => [
-                'required' => 'باقة الكروت المباعة مطلوبة.',
+                'required' => 'باقة الكروت المُباعة مطلوبة.',
             ],
             'voucher_price' => [
                 'required' => 'سعر الكرت المباع مطلوب.',
                 'min' => 'سعر الكرت لا يمكن أن يكون سالباً.',
             ],
             'voucher_count' => [
-                'required' => 'عدد الكروت المباعة مطلوب.',
+                'required' => 'عدد الكروت المُباعة مطلوب.',
                 'min' => 'يجب بيع كرت واحد على الأقل.',
             ],
             'item_discount' => [

@@ -214,6 +214,8 @@ class FcmService
                     'default_sound' => false,
                     'notification_priority' => 'PRIORITY_HIGH',
                     'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    'icon' => 'ic_notification',
+                    'color' => '#003B32',
                 ],
             ],
             'apns' => [
