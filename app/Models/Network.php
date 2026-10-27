@@ -229,7 +229,7 @@ class Network extends Model
 
     public function hasActiveSubscription(): bool
     {
-        return $this->subscriptions()->where(function (Builder $query): void {
+        return $this->subscriptions()->where(function ($query): void {
             $query->whereNull('subscription_end_date')->orWhere('subscription_end_date', '>', now('Asia/Aden'));
         })->exists();
     }

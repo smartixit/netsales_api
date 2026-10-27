@@ -47,6 +47,7 @@ class DashboardOverviewResource extends JsonResource
 
             // موارد الكيانات الموحدة
             'network' => isset($this['network']) && $this['network'] ? new NetworkResource($this['network']) : null,
+            'networks' => (array) ($this['networks'] ?? []),
             'pos' => isset($this['pos']) && $this['pos'] ? new PosResource($this['pos']) : null,
             'network_wallet' => isset($this['network_wallet']) && $this['network_wallet'] ? new NetworkWalletResource($this['network_wallet']) : null,
             'pos_wallet' => isset($this['pos_wallet']) && $this['pos_wallet'] ? new PosWalletResource($this['pos_wallet']) : null,

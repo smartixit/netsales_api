@@ -23,6 +23,12 @@ class SendEmailNotificationJob implements ShouldQueue
 
     public function handle(EmailNotificationService $emailService): void
     {
-        $emailService->sendEmail($this->toEmail, $this->subject, $this->userName, $this->ctaLink, $this->body);
+        $emailService->sendEmail(
+            recipients: $this->toEmail,
+            subject: $this->subject,
+            body: $this->body,
+            userName: $this->userName,
+            ctaLink: $this->ctaLink
+        );
     }
 }

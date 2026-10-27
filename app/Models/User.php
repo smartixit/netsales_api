@@ -315,7 +315,7 @@ class User extends Authenticatable
 
     public function isBanned(): bool
     {
-        return $this->status === UserStatus::BANNED || $this->status === UserStatus::BANNED->value || $this->securityBans()->where(function (Builder $query): void {
+        return $this->status === UserStatus::BANNED || $this->status === UserStatus::BANNED->value || $this->securityBans()->where(function ($query): void {
             $query->whereNull('end_at')->orWhere('end_at', '>', now('Asia/Aden'));
         })->exists();
     }

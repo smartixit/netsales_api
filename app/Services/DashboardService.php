@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\NetworkStatus;
 use App\Enums\RoleKey;
 use App\Helpers\AmountFormatter;
 use App\Http\Requests\API\V1\Dashboard\DashboardOverviewRequest;
@@ -16,6 +17,7 @@ use App\Models\Pos;
 use App\Models\PosWallet;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * خدمة إحصائيات ومؤشرات لوحة القيادة الموحدة (Enterprise Dashboard Service).
@@ -83,12 +85,52 @@ class DashboardService
         $network = null;
         $requestedNetworkId = $request->getNetworkId();
 
+        $allNetworks = $user->networks()->with(['owner', 'wallet'])->get();
+        $networkIds = $allNetworks->pluck('network_id')->toArray();
+
+        $posCounts = ! empty($networkIds)
+            ? DB::table('network_pos')
+                ->whereIn('network_id', $networkIds)
+                ->where('status', 1)
+                ->groupBy('network_id')
+                ->selectRaw('network_id, count(*) as count')
+                ->pluck('count', 'network_id')
+                ->all()
+            : [];
+
+        $pendingCounts = ! empty($networkIds)
+            ? DB::table('requests')
+                ->whereIn('network_id', $networkIds)
+                ->where('status', 'PENDING')
+                ->whereNull('deleted_at')
+                ->groupBy('network_id')
+                ->selectRaw('network_id, count(*) as count')
+                ->pluck('count', 'network_id')
+                ->all()
+            : [];
+
+        $networksSummary = $allNetworks->map(function ($net) use ($posCounts, $pendingCounts) {
+            $statusVal = $net->status instanceof NetworkStatus ? $net->status->value : (string) $net->status;
+
+            return [
+                'network_id' => (int) $net->network_id,
+                'network_uuid' => (string) $net->network_uuid,
+                'network_name' => (string) $net->network_name,
+                'network_profile_logo' => $net->network_profile_logo,
+                'status' => $statusVal,
+                'wallet_balance' => (float) ($net->wallet?->wallet_balance ?? 0.0),
+                'currency' => (string) ($net->wallet?->currency ?? 'YER'),
+                'active_pos_count' => (int) ($posCounts[$net->network_id] ?? 0),
+                'pending_requests_count' => (int) ($pendingCounts[$net->network_id] ?? 0),
+            ];
+        })->values()->all();
+
         if ($requestedNetworkId) {
-            $network = $user->networks()->where('network_id', $requestedNetworkId)->with(['owner', 'wallet'])->first();
+            $network = $allNetworks->firstWhere('network_id', $requestedNetworkId);
         }
 
         if (! $network) {
-            $network = $user->networks()->with(['owner', 'wallet'])->first();
+            $network = $allNetworks->first();
         }
 
         $effectiveRole = $roleKeyEnum ?? RoleKey::NETWORK_OWNER;
@@ -99,6 +141,7 @@ class DashboardService
                 'period' => $period,
                 'context' => [],
                 'network' => null,
+                'networks' => [],
                 'network_wallet' => null,
                 'liquidity' => [
                     'balance' => 0.0,
@@ -128,8 +171,9 @@ class DashboardService
         $recentActivities = $this->dashboardRepository->getRecentActivitiesForNetwork($network->network_id, 5);
 
         // تجهيز رادار التنبيهات التشغيلية اللحظية
+        $actualKpis = $kpis['kpis'] ?? $kpis;
         $alerts = [];
-        $pendingCount = (int) ($kpis['requests']['pending_count'] ?? 0);
+        $pendingCount = (int) ($actualKpis['requests']['pending_count'] ?? 0);
         if ($pendingCount > 0) {
             $alerts[] = [
                 'id' => 'alert_pending_requests',
@@ -163,18 +207,19 @@ class DashboardService
             'period' => $period,
             'context' => [
                 'network_id' => $network->network_id,
+                'network_uuid' => $network->network_uuid,
                 'network_name' => $network->network_name,
-                'network_code' => $network->network_code,
                 'status' => $network->status,
             ],
             'network' => $network,
+            'networks' => $networksSummary,
             'network_wallet' => $network->wallet,
             'liquidity' => [
                 'balance' => (float) ($network->wallet?->wallet_balance ?? 0.0),
                 'currency' => $network->wallet?->currency ?? 'YER',
-                'status' => $network->wallet?->status ?? 'ACTIVE',
+                'status' => ($network->wallet?->status ?? true) ? 'ACTIVE' : 'INACTIVE',
             ],
-            'kpis' => $kpis,
+            'kpis' => $actualKpis,
             'alerts' => $alerts,
             'recent_activities' => $recentActivities,
             'recent_invoices' => $recentInvoices,
@@ -224,6 +269,35 @@ class DashboardService
         }
 
         $targetNetworkId = $request->getNetworkId();
+        $posWallets = $pos->wallets()->with('network')->get();
+
+        $networksSummary = $posWallets->map(function ($wallet) use ($pos) {
+            $net = $wallet->network;
+            if (! $net) {
+                return null;
+            }
+            $pendingCount = DB::table('requests')
+                ->where('pos_id', $pos->pos_id)
+                ->where('network_id', $net->network_id)
+                ->where('status', 'PENDING')
+                ->whereNull('deleted_at')
+                ->count();
+
+            $statusVal = $net->status instanceof NetworkStatus ? $net->status->value : (string) $net->status;
+
+            return [
+                'network_id' => (int) $net->network_id,
+                'network_uuid' => (string) $net->network_uuid,
+                'network_name' => (string) $net->network_name,
+                'network_profile_logo' => $net->network_profile_logo,
+                'status' => $statusVal,
+                'wallet_balance' => (float) ($wallet->wallet_balance ?? 0.0),
+                'currency' => (string) ($wallet->currency ?? 'YER'),
+                'active_pos_count' => 1,
+                'pending_requests_count' => (int) $pendingCount,
+            ];
+        })->filter()->values()->all();
+
         $kpis = $this->dashboardRepository->getPosMetrics($pos->pos_id, $targetNetworkId, $period);
         /** @var PosWallet|null $posWallet */
         $posWallet = $targetNetworkId
@@ -260,7 +334,8 @@ class DashboardService
             ];
         }
 
-        $pendingRequests = (int) ($kpis['requests']['pending_count'] ?? 0);
+        $actualKpis = $kpis['kpis'] ?? $kpis;
+        $pendingRequests = (int) ($actualKpis['requests']['pending_count'] ?? 0);
         if ($pendingRequests > 0) {
             $alerts[] = [
                 'id' => 'alert_pos_pending_requests',
@@ -279,20 +354,21 @@ class DashboardService
             'period' => $period,
             'context' => [
                 'pos_id' => $pos->pos_id,
+                'pos_uuid' => $pos->pos_uuid,
                 'pos_name' => $pos->pos_name,
-                'pos_code' => $pos->pos_code,
                 'status' => $pos->status,
             ],
             'pos' => $pos,
+            'networks' => $networksSummary,
             'pos_wallet' => $posWallet,
             'liquidity' => [
                 'balance' => (float) ($posWallet?->wallet_balance ?? 0.0),
                 'currency' => $posWallet?->currency ?? 'YER',
-                'status' => $posWallet?->status ?? 'ACTIVE',
+                'status' => ($posWallet?->status ?? true) ? 'ACTIVE' : 'INACTIVE',
                 'is_overdrawn' => $posWallet instanceof PosWallet && $posWallet->isOverdrawn(),
                 'debit_amount' => (float) ($posWallet instanceof PosWallet ? $posWallet->getDebitAmount() : 0.0),
             ],
-            'kpis' => $kpis,
+            'kpis' => $actualKpis,
             'alerts' => $alerts,
             'recent_activities' => $recentActivities,
             'recent_invoices' => $recentInvoices,
@@ -327,19 +403,21 @@ class DashboardService
             ];
         }
 
+        $platformVolume = (float) ($kpis['liquidity']['wallet_balance'] ?? ($kpis['kpis']['platform_sales']['current_amount'] ?? 0.0));
+
         return [
             'role_key' => RoleKey::SUPER_ADMIN,
             'period' => $period,
             'context' => [
-                'system_name' => 'NetSales Central Hub',
+                'system_name' => 'منصة NetSales المركزية',
                 'status' => 'ACTIVE',
             ],
             'liquidity' => [
-                'balance' => 0.0,
+                'balance' => $platformVolume,
                 'currency' => 'YER',
                 'status' => 'ACTIVE',
             ],
-            'kpis' => $kpis,
+            'kpis' => $kpis['kpis'] ?? $kpis,
             'alerts' => $alerts,
             'recent_activities' => $recentActivities,
             'recent_invoices' => $recentInvoices,

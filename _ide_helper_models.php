@@ -24,6 +24,7 @@ namespace App\Models{
  * @property-read int|null $permissions_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ActionType active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ActionType byKey(string $key)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ActionType inactive()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ActionType newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ActionType newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ActionType onlyTrashed()
@@ -71,6 +72,8 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob stale(\DateTimeInterface $threshold)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob status(\App\Enums\BackupStatus|string $status)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob successful()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereArchiveSha256($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereBackupJobId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BackupJob whereBackupType($value)
@@ -394,6 +397,7 @@ namespace App\Models{
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Expense> $expenses
  * @property-read int|null $expenses_count
  * @property-read string|null $logo_url
+ * @property-read string $network_code
  * @property-read \App\Models\Governorate|null $governorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkPos> $networkPos
  * @property-read int|null $network_pos_count
@@ -429,6 +433,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network pending()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network rejected()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Network status(\App\Enums\NetworkStatus|string $status)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereApprovedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereApprovedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network whereCreatedAt($value)
@@ -512,6 +517,9 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\Network|null $network
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting forNetwork(int $networkId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting inactive()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting query()
@@ -632,6 +640,7 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read \App\Models\User|null $user
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification forUser(int $userId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification onlyTrashed()
@@ -661,7 +670,7 @@ namespace App\Models{
  * @property int $user_id
  * @property string $otp_code
  * @property \App\Enums\OtpType $otp_type
- * @property string|null $device_uuid
+ * @property string $device_uuid
  * @property int $otp_failure_attempts
  * @property bool $is_used
  * @property \Illuminate\Support\Carbon $expires_at
@@ -757,6 +766,7 @@ namespace App\Models{
  * @property-read \App\Models\User|null $approvedBy
  * @property-read \App\Models\Directorate|null $directorate
  * @property-read string|null $logo_url
+ * @property-read string $pos_code
  * @property-read \App\Models\Governorate|null $governorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkPos> $networkPos
  * @property-read int|null $network_pos_count
@@ -785,6 +795,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos pending()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos rejected()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos status(\App\Enums\PosStatus|string $status)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos whereApprovedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos whereApprovedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos whereCreatedAt($value)
@@ -910,6 +921,8 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription queued()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription status(\App\Enums\ProviderSubscriptionStatus|string $status)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription whereCreatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription whereDeletedAt($value)
@@ -959,6 +972,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request pending()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request rejected()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Request status(\App\Enums\RequestStatus|string $status)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request whereCreatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Request whereDeletedAt($value)
@@ -1176,6 +1190,8 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun sent()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun status(\App\Enums\ScheduledTaskStatus|string $status)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun successful()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun targetDate(string $date)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereExtra($value)
@@ -1372,6 +1388,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest pending()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest rejected()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest status(\App\Enums\RequestStatus|string $status)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereAccountId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereDeletedAt($value)
@@ -1546,6 +1563,7 @@ namespace App\Models{
  * @property string $user_password
  * @property string|null $user_email
  * @property bool $user_2fa_enabled
+ * @property bool $must_change_password
  * @property int $user_login_attempts
  * @property \Illuminate\Support\Carbon|null $last_login_at
  * @property \App\Enums\UserStatus $status
@@ -1619,6 +1637,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereLastLoginAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereMustChangePassword($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRoleId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
