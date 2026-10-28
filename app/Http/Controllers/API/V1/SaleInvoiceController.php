@@ -396,4 +396,34 @@ class SaleInvoiceController extends BaseController
             return $this->errorResponse('تعذر تنفيذ الحذف النهائي المجمع: '.$e->getMessage(), [], 422);
         }
     }
+
+    /**
+     * سلسلة زمنية حقيقية لمبيعات الكروت (للرسم البياني).
+     */
+    #[OA\Get(
+        path: '/api/v1/sale-invoices/trend',
+        summary: 'سلسلة زمنية لمبيعات الكروت',
+        tags: ['Sale Invoices'],
+        parameters: [
+            new OA\Parameter(name: 'period', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['daily', 'weekly', 'monthly'], default: 'daily')),
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'pos_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'OK'),
+        ]
+    )]
+    public function trend(Request $request): JsonResponse
+    {
+        try {
+            $filters = $request->only(['period', 'network_id', 'pos_id', 'from_date', 'to_date']);
+            $data = $this->saleInvoiceService->getSalesTrend($filters);
+
+            return $this->successResponse('OK', $data);
+        } catch (\Exception $e) {
+            return $this->errorResponse('trend error: '.$e->getMessage(), [], 422);
+        }
+    }
 }

@@ -349,7 +349,9 @@ Route::prefix('v1')->group(function () {
         Route::middleware('throttle:api-read')->group(function () {
             Route::get('sale-invoices', [SaleInvoiceController::class, 'index'])->name('api.v1.sale_invoices.index');
             Route::get('sale-invoices/trashed', [SaleInvoiceController::class, 'trashed'])->name('api.v1.sale_invoices.trashed');
-            Route::get('sale-invoices/{id}', [SaleInvoiceController::class, 'show'])->whereNumber('id')->name('api.v1.sale_invoices.show');
+            Route::get('sale-invoices/trend', [SaleInvoiceController::class, 
+'trend'])->name('api.v1.sale_invoices.trend');
+Route::get('sale-invoices/{id}', [SaleInvoiceController::class, 'show'])->whereNumber('id')->name('api.v1.sale_invoices.show');
         });
 
         Route::middleware('throttle:api-write')->group(function () {

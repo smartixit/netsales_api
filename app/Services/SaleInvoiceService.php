@@ -601,4 +601,62 @@ class SaleInvoiceService
             return $this->saleInvoiceRepository->bulkForceDelete($ids);
         });
     }
+
+    /**
+     * اجمالي مبيعات الكروت مجمعة بفترة زمنية (سلسلة زمنية حقيقية).
+     *
+     * @return array<int, array{period: string, total: float, count: int}>
+     */
+    public function getSalesTrend(array $filters = []): array
+    {
+        $period = (string) ($filters['period'] ?? 'daily');
+        $allowed = ['daily', 'weekly', 'monthly'];
+        if (! in_array($period, $allowed, true)) {
+            $period = 'daily';
+        }
+
+        $query = SaleInvoice::query();
+
+        if (! empty($filters['network_id'])) {
+            $query->where('network_id', (int) $filters['network_id']);
+        }
+        if (! empty($filters['pos_id'])) {
+            $query->where('pos_id', (int) $filters['pos_id']);
+        }
+        if (! empty($filters['from_date'])) {
+            $query->whereDate('invoice_date', '>=', $filters['from_date']);
+        }
+        if (! empty($filters['to_date'])) {
+            $query->whereDate('invoice_date', '<=', $filters['to_date']);
+        }
+
+        switch ($period) {
+            case 'weekly':
+                $groupExpr = "DATE_FORMAT(invoice_date, '%x-W%v')";
+                break;
+            case 'monthly':
+                $groupExpr = "DATE_FORMAT(invoice_date, '%Y-%m')";
+                break;
+            default:
+                $groupExpr = "DATE(invoice_date)";
+                break;
+        }
+
+        $rows = $query
+            ->selectRaw("{$groupExpr} as period_label, SUM(invoice_total_amount) as total, COUNT(*) as cnt")
+            ->groupBy('period_label')
+            ->orderBy('period_label')
+            ->get();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[] = [
+                'period' => (string) $row->period_label,
+                'total' => (float) $row->total,
+                'count' => (int) $row->cnt,
+            ];
+        }
+
+        return $result;
+    }
 }
