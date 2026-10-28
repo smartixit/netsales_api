@@ -7126,6 +7126,29 @@
                     }
                 }
             },
+            "put": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "تعديل طلب الكروت قيد الانتظار",
+                "description": "تعديل طلب الكروت (مسموح فقط في حالة قيد الانتظار).",
+                "operationId": "03d2d880b6ba724737ad98d500c126f4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم تعديل الطلب بنجاح"
+                    }
+                }
+            },
             "delete": {
                 "tags": [
                     "Voucher Requests"
@@ -7915,6 +7938,69 @@
                 "responses": {
                     "200": {
                         "description": "تم الحذف النهائي المجمع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/sale-invoices/trend": {
+            "get": {
+                "tags": [
+                    "Sale Invoices"
+                ],
+                "summary": "سلسلة زمنية لمبيعات الكروت",
+                "description": "سلسلة زمنية حقيقية لمبيعات الكروت (للرسم البياني).",
+                "operationId": "93ca49e6abf1399b51793b744e2301e2",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "daily",
+                            "enum": [
+                                "daily",
+                                "weekly",
+                                "monthly"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "network_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "pos_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     }
                 }
             }
