@@ -57,16 +57,7 @@ class StoreRequestRequest extends FormRequest
                 'integer',
                 'min:1',
             ],
-            'items.*.voucher_price' => [
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
-            'items.*.item_discount' => [
-                'nullable',
-                'numeric',
-                'between:0,100',
-            ],
+            // NOTE: voucher_price & item_discount NO LONGER accepted from client (backend uses catalog/effective).
         ];
     }
 

@@ -7,6 +7,7 @@ use App\Enums\RequestStatus;
 use App\Enums\SaleType;
 use App\Http\Requests\API\V1\Request\ApproveRequestRequest;
 use App\Http\Requests\API\V1\Request\StoreRequestRequest;
+use App\Http\Requests\API\V1\Request\UpdateRequestRequest;
 use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
@@ -120,18 +121,12 @@ class RequestService
 
                 $package->ensureActive();
 
-                $voucherPrice = isset($item['voucher_price']) && (float) $item['voucher_price'] > 0
-                    ? (float) $item['voucher_price']
-                    : (float) $package->package_voucher_price;
-
-                if (isset($item['item_discount']) && $item['item_discount'] !== null) {
-                    $discountPercent = (float) $item['item_discount'];
-                } else {
-                    $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $packageId);
-                    $discountPercent = $saleType->isCash()
-                        ? (float) ($discountData['discount_cash'] ?? 0.0)
-                        : (float) ($discountData['discount_credit'] ?? 0.0);
-                }
+                // SECURITY: use catalog price & server effective discount (ignore client inputs)
+                $voucherPrice = (float) $package->package_voucher_price;
+                $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $packageId);
+                $discountPercent = $saleType->isCash()
+                    ? (float) ($discountData['discount_cash'] ?? 0.0)
+                    : (float) ($discountData['discount_credit'] ?? 0.0);
 
                 $itemModel = new RequestItem([
                     'package_id' => $packageId,
@@ -182,6 +177,95 @@ class RequestService
             }
 
             return $createdRequest;
+        });
+    }
+
+    /**
+     * تعديل طلب الكروت قبل اعتماده أو رفضه.
+     * يمنع منعاً باتاً تعديل أي طلب ليس في حالة قيد الانتظار (PENDING).
+     */
+    public function update(int $requestId, UpdateRequestRequest $request, int $userId): RequestModel
+    {
+        return DB::transaction(function () use ($requestId, $request, $userId): RequestModel {
+            /** @var RequestModel $requestModel */
+            $requestModel = $this->requestRepository->findByIdForUpdate($requestId);
+
+            if (! $requestModel->isPending()) {
+                throw ValidationException::withMessages([
+                    'status' => ['لا يمكن تعديل هذا الطلب لأنه ليس في حالة قيد الانتظار (PENDING).'],
+                ]);
+            }
+
+            $updateData = [];
+
+            if ($request->getSaleType()) {
+                $updateData['sale_type'] = $request->getSaleType();
+            }
+
+            if ($request->has('request_note')) {
+                $updateData['request_note'] = $request->getRequestNote();
+            }
+
+            if ($request->hasItems()) {
+                $items = $request->getItems() ?? [];
+                $networkId = (int) $requestModel->network_id;
+                $posId = (int) $requestModel->pos_id;
+                $saleType = $request->getSaleType() ?? $requestModel->sale_type;
+
+                $totalAmount = 0.0;
+                $itemsData = [];
+
+                foreach ($items as $item) {
+                    $packageId = (int) $item['package_id'];
+                    $count = (int) $item['voucher_count'];
+
+                    $package = $this->voucherPackageRepository->findById($packageId);
+
+                    if ((int) $package->network_id !== $networkId) {
+                        throw ValidationException::withMessages([
+                            'items' => ["الباقة ({$package->package_name}) لا تنتمي لمزود الشبكة المحدد."],
+                        ]);
+                    }
+
+                    $package->ensureActive();
+
+                    // SECURITY: use catalog price & server effective discount (ignore client inputs)
+                    $voucherPrice = (float) $package->package_voucher_price;
+                    $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $packageId);
+                    $discountPercent = $saleType->isCash()
+                        ? (float) ($discountData['discount_cash'] ?? 0.0)
+                        : (float) ($discountData['discount_credit'] ?? 0.0);
+
+                    $itemModel = new RequestItem([
+                        'package_id' => $packageId,
+                        'voucher_price' => $voucherPrice,
+                        'voucher_count' => $count,
+                        'item_discount' => $discountPercent,
+                    ]);
+                    $lineTotal = $itemModel->calculateLineTotal();
+
+                    $totalAmount += $lineTotal;
+
+                    $itemsData[] = [
+                        'package_id' => $packageId,
+                        'voucher_price' => $voucherPrice,
+                        'voucher_count' => $count,
+                        'item_discount' => $discountPercent,
+                        'item_total_amount' => $lineTotal,
+                    ];
+                }
+
+                $this->requestItemRepository->deleteByRequestId($requestId);
+                $this->requestItemRepository->createManyForRequest($requestId, $itemsData);
+
+                $updateData['request_total_amount'] = $totalAmount;
+            }
+
+            if (! empty($updateData)) {
+                $this->requestRepository->update($requestId, $updateData);
+            }
+
+            return $this->getById($requestId);
         });
     }
 
@@ -336,11 +420,21 @@ class RequestService
     }
 
     /**
-     * حذف طلب مؤقتاً.
+     * حذف طلب مؤقتاً (Soft Delete).
+     * يمنع منعاً باتاً حذف الطلبات المعتمدة أو المرفوضة للحفاظ على نزاهة التدقيق المالي.
      */
     public function deleteRequest(int $requestId): bool
     {
         return DB::transaction(function () use ($requestId): bool {
+            /** @var RequestModel $request */
+            $request = $this->requestRepository->findByIdForUpdate($requestId);
+
+            if (! $request->isPending() && ! $request->isCancelled()) {
+                throw ValidationException::withMessages([
+                    'status' => ['لا يمكن حذف طلب كروت تم اعتماده أو رفضه مسبقاً.'],
+                ]);
+            }
+
             return (bool) $this->requestRepository->delete($requestId);
         });
     }
@@ -357,10 +451,20 @@ class RequestService
 
     /**
      * الحذف النهائي لطلب.
+     * يمنع منعاً باتاً الحذف النهائي للطلبات المعتمدة أو المرفوضة.
      */
     public function forceDeleteRequest(int $requestId): bool
     {
         return DB::transaction(function () use ($requestId): bool {
+            /** @var RequestModel $request */
+            $request = $this->requestRepository->findTrashedById($requestId);
+
+            if ($request && ! $request->isPending() && ! $request->isCancelled()) {
+                throw ValidationException::withMessages([
+                    'status' => ['لا يمكن الحذف النهائي لطلب كروت تم اعتماده أو رفضه مسبقاً.'],
+                ]);
+            }
+
             $this->requestItemRepository->deleteByRequestId($requestId);
 
             return (bool) $this->requestRepository->forceDelete($requestId);
@@ -368,11 +472,21 @@ class RequestService
     }
 
     /**
-     * الحذف المجمع للطلبات.
+     * الحذف المجمع للطلبات مع فحص الحالات المحظورة.
      */
     public function bulkDelete(array $ids): int
     {
         return DB::transaction(function () use ($ids): int {
+            foreach ($ids as $id) {
+                /** @var RequestModel $request */
+                $request = $this->requestRepository->findByIdForUpdate((int) $id);
+                if (! $request->isPending() && ! $request->isCancelled()) {
+                    throw ValidationException::withMessages([
+                        'ids' => ["الطلب رقم #{$request->request_uuid} تم اعتماده أو رفضه ولا يمكن حذفه."],
+                    ]);
+                }
+            }
+
             return $this->requestRepository->bulkDelete($ids);
         });
     }
@@ -388,11 +502,22 @@ class RequestService
     }
 
     /**
-     * الحذف النهائي المجمع للطلبات.
+     * الحذف النهائي المجمع للطلبات مع فحص الحالات المحظورة.
      */
     public function bulkForceDelete(array $ids): int
     {
         return DB::transaction(function () use ($ids): int {
+            foreach ($ids as $id) {
+                /** @var RequestModel $request */
+                $request = $this->requestRepository->findTrashedById((int) $id);
+                if ($request && ! $request->isPending() && ! $request->isCancelled()) {
+                    throw ValidationException::withMessages([
+                        'ids' => ["الطلب رقم #{$request->request_uuid} تم اعتماده أو رفضه ولا يمكن حذفه نهائياً."],
+                    ]);
+                }
+                $this->requestItemRepository->deleteByRequestId((int) $id);
+            }
+
             return $this->requestRepository->bulkForceDelete($ids);
         });
     }

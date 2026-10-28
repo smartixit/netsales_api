@@ -395,5 +395,112 @@ class VoucherRequestAndInvoicingTest extends TestCase
             ->assertJsonPath('data.items.0.voucher_count', 100) // Untouched!
             ->assertJsonPath('data.items.0.item_total_amount', 45000); // Untouched!
     }
+
+    /**
+     * اختبار إمكانية تعديل طلب الكروت قيد الانتظار وتحديث البنود واحتساب الإجمالي.
+     */
+    public function test_can_update_pending_request(): void
+    {
+        $createResponse = $this->withHeaders($this->headers)
+            ->postJson('/api/v1/requests', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'sale_type' => SaleType::CASH->value,
+                'items' => [
+                    [
+                        'package_id' => $this->package->package_id,
+                        'voucher_count' => 10,
+                    ],
+                ],
+            ]);
+
+        $createResponse->assertStatus(201);
+        $requestId = $createResponse->json('data.request_id');
+
+        // تعديل الكمية إلى 30 وتغيير الملاحظة
+        $updateResponse = $this->withHeaders($this->headers)
+            ->putJson("/api/v1/requests/{$requestId}", [
+                'request_note' => 'تم تعديل الكمية بناء على رغبة نقطة البيع',
+                'items' => [
+                    [
+                        'package_id' => $this->package->package_id,
+                        'voucher_count' => 30,
+                    ],
+                ],
+            ]);
+
+        $updateResponse->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.items.0.voucher_count', 30)
+            ->assertJsonPath('data.request_note', 'تم تعديل الكمية بناء على رغبة نقطة البيع');
+    }
+
+    /**
+     * اختبار حظر تعديل أو حذف أي طلب كروت تم اعتماده أو رفضه مسبقاً لحفظ نزاهة التدقيق المالي.
+     */
+    public function test_cannot_update_or_delete_approved_request(): void
+    {
+        $createResponse = $this->withHeaders($this->headers)
+            ->postJson('/api/v1/requests', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'sale_type' => SaleType::CASH->value,
+                'items' => [
+                    [
+                        'package_id' => $this->package->package_id,
+                        'voucher_count' => 10,
+                    ],
+                ],
+            ]);
+
+        $requestId = $createResponse->json('data.request_id');
+
+        // اعتماد الطلب
+        $this->withHeaders($this->headers)
+            ->postJson("/api/v1/requests/{$requestId}/approve")
+            ->assertStatus(200);
+
+        // محاولة تعديل الطلب المعتمد -> يجب أن ترفض برمز 422
+        $updateResponse = $this->withHeaders($this->headers)
+            ->putJson("/api/v1/requests/{$requestId}", [
+                'request_note' => 'محاولة تعديل غير مصرح بها',
+            ]);
+
+        $updateResponse->assertStatus(422);
+
+        // محاولة حذف الطلب المعتمد -> يجب أن ترفض برمز 422
+        $deleteResponse = $this->withHeaders($this->headers)
+            ->deleteJson("/api/v1/requests/{$requestId}");
+
+        $deleteResponse->assertStatus(422);
+    }
+
+    /**
+     * اختبار إمكانية حذف طلب كروت قيد الانتظار بنجاح.
+     */
+    public function test_can_delete_pending_request(): void
+    {
+        $createResponse = $this->withHeaders($this->headers)
+            ->postJson('/api/v1/requests', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'sale_type' => SaleType::CASH->value,
+                'items' => [
+                    [
+                        'package_id' => $this->package->package_id,
+                        'voucher_count' => 10,
+                    ],
+                ],
+            ]);
+
+        $requestId = $createResponse->json('data.request_id');
+
+        $deleteResponse = $this->withHeaders($this->headers)
+            ->deleteJson("/api/v1/requests/{$requestId}");
+
+        $deleteResponse->assertStatus(200)
+            ->assertJsonPath('success', true);
+    }
 }
+
 

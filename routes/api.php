@@ -331,6 +331,7 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('requests', [RequestController::class, 'store'])->name('api.v1.requests.store');
+            Route::put('requests/{id}', [RequestController::class, 'update'])->whereNumber('id')->name('api.v1.requests.update');
             Route::post('requests/{id}/approve', [RequestController::class, 'approve'])->whereNumber('id')->name('api.v1.requests.approve');
             Route::post('requests/{id}/reject', [RequestController::class, 'reject'])->whereNumber('id')->name('api.v1.requests.reject');
             Route::post('requests/{id}/cancel', [RequestController::class, 'cancel'])->whereNumber('id')->name('api.v1.requests.cancel');

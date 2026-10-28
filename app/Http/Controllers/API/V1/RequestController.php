@@ -6,6 +6,7 @@ use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Common\RejectRequest;
 use App\Http\Requests\API\V1\Request\ApproveRequestRequest;
 use App\Http\Requests\API\V1\Request\StoreRequestRequest;
+use App\Http\Requests\API\V1\Request\UpdateRequestRequest;
 use App\Http\Resources\API\V1\Request\RequestResource;
 use App\Http\Resources\API\V1\SaleInvoice\SaleInvoiceResource;
 use App\Services\RequestService;
@@ -134,6 +135,34 @@ class RequestController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('تعذر تقديم طلب الكروت: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * تعديل طلب الكروت (مسموح فقط في حالة قيد الانتظار).
+     */
+    #[OA\Put(
+        path: '/api/v1/requests/{id}',
+        summary: 'تعديل طلب الكروت قيد الانتظار',
+        tags: ['Voucher Requests'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'تم تعديل الطلب بنجاح'),
+        ]
+    )]
+    public function update(UpdateRequestRequest $request, int $id): JsonResponse
+    {
+        try {
+            $userId = $this->currentUserId();
+            $record = $this->requestService->update($id, $request, $userId);
+
+            return $this->successResponse('تم تعديل طلب الكروت بنجاح.', new RequestResource($record));
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر تعديل طلب الكروت: '.$e->getMessage(), [], 422);
         }
     }
 

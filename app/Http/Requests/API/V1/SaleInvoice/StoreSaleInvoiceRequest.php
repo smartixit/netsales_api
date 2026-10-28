@@ -43,21 +43,13 @@ class StoreSaleInvoiceRequest extends FormRequest
                 'integer',
                 Rule::exists('voucher_packages', 'package_id')->whereNull('deleted_at'),
             ],
-            'items.*.voucher_price' => [
-                'required',
-                'numeric',
-                'min:0',
-            ],
+            // NOTE: voucher_price is NO LONGER accepted from client (backend uses catalog price).
             'items.*.voucher_count' => [
                 'required',
                 'integer',
                 'min:1',
             ],
-            'items.*.item_discount' => [
-                'nullable',
-                'numeric',
-                'between:0,100',
-            ],
+            // NOTE: item_discount is NO LONGER accepted from client (backend uses effective discount).
             'paid_amount' => [
                 'nullable',
                 'numeric',
