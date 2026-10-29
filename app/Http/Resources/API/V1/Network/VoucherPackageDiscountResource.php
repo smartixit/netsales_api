@@ -29,6 +29,23 @@ class VoucherPackageDiscountResource extends JsonResource
             'discount_cash' => (float) $this->discount_cash,
             'discount_credit' => (float) $this->discount_credit,
             'status' => (bool) $this->status,
+            // Server-authoritative derived monetary values (Frontend Display-Only, AGENTS.md §34)
+            // Computed from the linked package's catalog price when it is loaded.
+            'original_package_price' => $this->relationLoaded('voucherPackage') && $this->voucherPackage
+                ? (float) $this->voucherPackage->package_voucher_price
+                : null,
+            'effective_cash_price' => $this->relationLoaded('voucherPackage') && $this->voucherPackage
+                ? round((float) $this->voucherPackage->package_voucher_price - (((float) $this->voucherPackage->package_voucher_price * (float) $this->discount_cash) / 100), 2)
+                : null,
+            'effective_credit_price' => $this->relationLoaded('voucherPackage') && $this->voucherPackage
+                ? round((float) $this->voucherPackage->package_voucher_price - (((float) $this->voucherPackage->package_voucher_price * (float) $this->discount_credit) / 100), 2)
+                : null,
+            'cash_savings' => $this->relationLoaded('voucherPackage') && $this->voucherPackage
+                ? round(((float) $this->voucherPackage->package_voucher_price * (float) $this->discount_cash) / 100, 2)
+                : null,
+            'credit_savings' => $this->relationLoaded('voucherPackage') && $this->voucherPackage
+                ? round(((float) $this->voucherPackage->package_voucher_price * (float) $this->discount_credit) / 100, 2)
+                : null,
             'created_by' => $this->created_by,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,

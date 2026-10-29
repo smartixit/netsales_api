@@ -292,20 +292,39 @@ class VoucherPackageDiscountService
     public function getEffectiveDiscount(int $networkId, int $posId, int $packageId): array
     {
         $custom = $this->discountRepository->findByNetworkPosAndPackage($networkId, $posId, $packageId);
+        $package = $this->packageRepository->findById($packageId);
+        $originalPrice = (float) $package->package_voucher_price;
+
         if ($custom && (bool) $custom->status) {
+            $cashRate = (float) $custom->discount_cash;
+            $creditRate = (float) $custom->discount_credit;
+
             return [
-                'discount_cash' => (float) $custom->discount_cash,
-                'discount_credit' => (float) $custom->discount_credit,
+                'discount_cash' => $cashRate,
+                'discount_credit' => $creditRate,
                 'is_custom' => true,
+                // Server-authoritative derived monetary values (Frontend Display-Only, AGENTS.md §34)
+                'original_package_price' => round($originalPrice, 2),
+                'effective_cash_price' => round($originalPrice - (($originalPrice * $cashRate) / 100), 2),
+                'effective_credit_price' => round($originalPrice - (($originalPrice * $creditRate) / 100), 2),
+                'cash_savings' => round(($originalPrice * $cashRate) / 100, 2),
+                'credit_savings' => round(($originalPrice * $creditRate) / 100, 2),
             ];
         }
 
-        $package = $this->packageRepository->findById($packageId);
+        $cashRate = (float) $package->package_default_cash_discount;
+        $creditRate = (float) $package->package_default_credit_discount;
 
         return [
-            'discount_cash' => (float) $package->package_default_cash_discount,
-            'discount_credit' => (float) $package->package_default_credit_discount,
+            'discount_cash' => $cashRate,
+            'discount_credit' => $creditRate,
             'is_custom' => false,
+            // Server-authoritative derived monetary values (Frontend Display-Only, AGENTS.md §34)
+            'original_package_price' => round($originalPrice, 2),
+            'effective_cash_price' => round($originalPrice - (($originalPrice * $cashRate) / 100), 2),
+            'effective_credit_price' => round($originalPrice - (($originalPrice * $creditRate) / 100), 2),
+            'cash_savings' => round(($originalPrice * $cashRate) / 100, 2),
+            'credit_savings' => round(($originalPrice * $creditRate) / 100, 2),
         ];
     }
 }

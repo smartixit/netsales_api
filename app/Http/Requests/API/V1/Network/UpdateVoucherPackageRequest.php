@@ -29,15 +29,27 @@ class UpdateVoucherPackageRequest extends FormRequest
     {
         $packageId = $this->route('id') ?? ($this->route('voucher_package')?->package_id ?? $this->route('voucher_package'));
 
+        // Scope name uniqueness to the package's own network (consistent with Store rule).
+        $networkId = null;
+        if ($packageId) {
+            $existingPackage = \App\Models\VoucherPackage::find($packageId);
+            $networkId = $existingPackage?->network_id;
+        }
+
+        $uniqueNameRule = Rule::unique('voucher_packages', 'package_name')
+            ->ignore($packageId, 'package_id')
+            ->whereNull('deleted_at');
+        if ($networkId !== null) {
+            $uniqueNameRule = $uniqueNameRule->where('network_id', $networkId);
+        }
+
         return [
             'package_name' => [
                 'sometimes',
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('voucher_packages', 'package_name')
-                    ->ignore($packageId, 'package_id')
-                    ->whereNull('deleted_at'),
+                $uniqueNameRule,
             ],
             'package_color' => [
                 'nullable',

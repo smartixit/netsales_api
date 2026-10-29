@@ -32,6 +32,11 @@ class VoucherPackageResource extends JsonResource
             'package_voucher_price' => (float) $this->package_voucher_price,
             'package_default_cash_discount' => (float) $this->package_default_cash_discount,
             'package_default_credit_discount' => (float) $this->package_default_credit_discount,
+            // Server-authoritative derived monetary values (Frontend Display-Only, AGENTS.md §34)
+            'cash_discount_amount' => round(((float) $this->package_voucher_price * (float) $this->package_default_cash_discount) / 100, 2),
+            'credit_discount_amount' => round(((float) $this->package_voucher_price * (float) $this->package_default_credit_discount) / 100, 2),
+            'effective_cash_price' => round((float) $this->package_voucher_price - (((float) $this->package_voucher_price * (float) $this->package_default_cash_discount) / 100), 2),
+            'effective_credit_price' => round((float) $this->package_voucher_price - (((float) $this->package_voucher_price * (float) $this->package_default_credit_discount) / 100), 2),
             'status' => (bool) $this->status,
             'created_by' => $this->created_by,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
