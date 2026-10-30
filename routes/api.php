@@ -174,47 +174,53 @@ Route::prefix('v1')->group(function () {
         // ==========================================
         // 3. إدارة مزودي الشبكات (Networks Management)
         // ==========================================
-        Route::middleware('throttle:api-read')->group(function () {
+        Route::middleware(['throttle:api-read', 'permission:networks.view'])->group(function () {
             Route::get('networks', [NetworkController::class, 'index'])->name('api.v1.networks.index');
             Route::get('networks/trashed', [NetworkController::class, 'trashed'])->name('api.v1.networks.trashed');
             Route::get('networks/{id}', [NetworkController::class, 'show'])->whereNumber('id')->name('api.v1.networks.show');
         });
 
         Route::middleware('throttle:api-write')->group(function () {
-            Route::post('networks/batch-delete', [NetworkController::class, 'batchDelete'])->name('api.v1.networks.batch_delete');
-            Route::post('networks/batch-restore', [NetworkController::class, 'batchRestore'])->name('api.v1.networks.batch_restore');
-            Route::post('networks/batch-force-delete', [NetworkController::class, 'batchForceDelete'])->name('api.v1.networks.batch_force_delete');
-            Route::post('networks/{id}/restore', [NetworkController::class, 'restore'])->name('api.v1.networks.restore');
-            Route::delete('networks/{id}/force', [NetworkController::class, 'forceDelete'])->name('api.v1.networks.force_delete');
-            Route::post('networks/{id}/approve', [NetworkController::class, 'approve'])->whereNumber('id')->name('api.v1.networks.approve');
-            Route::post('networks/{id}/reject', [NetworkController::class, 'reject'])->whereNumber('id')->name('api.v1.networks.reject');
-            Route::apiResource('networks', NetworkController::class)->parameters(['networks' => 'id'])->except(['index', 'show']);
+            Route::post('networks', [NetworkController::class, 'store'])->name('api.v1.networks.store')->middleware('permission:networks.create');
+            Route::put('networks/{id}', [NetworkController::class, 'update'])->whereNumber('id')->name('api.v1.networks.update')->middleware('permission:networks.edit');
+            Route::delete('networks/{id}', [NetworkController::class, 'destroy'])->whereNumber('id')->name('api.v1.networks.destroy')->middleware('permission:networks.delete');
+            Route::post('networks/batch-delete', [NetworkController::class, 'batchDelete'])->name('api.v1.networks.batch_delete')->middleware('permission:networks.delete');
+            Route::post('networks/batch-restore', [NetworkController::class, 'batchRestore'])->name('api.v1.networks.batch_restore')->middleware('permission:networks.edit');
+            Route::post('networks/batch-force-delete', [NetworkController::class, 'batchForceDelete'])->name('api.v1.networks.batch_force_delete')->middleware('permission:networks.delete');
+            Route::post('networks/{id}/restore', [NetworkController::class, 'restore'])->name('api.v1.networks.restore')->middleware('permission:networks.edit');
+            Route::delete('networks/{id}/force', [NetworkController::class, 'forceDelete'])->name('api.v1.networks.force_delete')->middleware('permission:networks.delete');
+            Route::post('networks/{id}/approve', [NetworkController::class, 'approve'])->whereNumber('id')->name('api.v1.networks.approve')->middleware('permission:networks.approve');
+            Route::post('networks/{id}/reject', [NetworkController::class, 'reject'])->whereNumber('id')->name('api.v1.networks.reject')->middleware('permission:networks.reject');
+            Route::apiResource('networks', NetworkController::class)->parameters(['networks' => 'id'])->except(['index', 'show', 'store', 'update', 'destroy']);
         });
 
         // ==========================================
         // 4. إدارة نقاط البيع والوكلاء (POS Management)
         // ==========================================
-        Route::middleware('throttle:api-read')->group(function () {
+        Route::middleware(['throttle:api-read', 'permission:pos.view'])->group(function () {
             Route::get('pos', [PosController::class, 'index'])->name('api.v1.pos.index');
             Route::get('pos/trashed', [PosController::class, 'trashed'])->name('api.v1.pos.trashed');
             Route::get('pos/{id}', [PosController::class, 'show'])->whereNumber('id')->name('api.v1.pos.show');
         });
 
         Route::middleware('throttle:api-write')->group(function () {
-            Route::post('pos/batch-delete', [PosController::class, 'batchDelete'])->name('api.v1.pos.batch_delete');
-            Route::post('pos/batch-restore', [PosController::class, 'batchRestore'])->name('api.v1.pos.batch_restore');
-            Route::post('pos/batch-force-delete', [PosController::class, 'batchForceDelete'])->name('api.v1.pos.batch_force_delete');
-            Route::post('pos/{id}/restore', [PosController::class, 'restore'])->name('api.v1.pos.restore');
-            Route::delete('pos/{id}/force', [PosController::class, 'forceDelete'])->name('api.v1.pos.force_delete');
-            Route::post('pos/{id}/approve', [PosController::class, 'approve'])->whereNumber('id')->name('api.v1.pos.approve');
-            Route::post('pos/{id}/reject', [PosController::class, 'reject'])->whereNumber('id')->name('api.v1.pos.reject');
-            Route::apiResource('pos', PosController::class)->parameters(['pos' => 'id'])->except(['index', 'show']);
+            Route::post('pos', [PosController::class, 'store'])->name('api.v1.pos.store')->middleware('permission:pos.create');
+            Route::put('pos/{id}', [PosController::class, 'update'])->whereNumber('id')->name('api.v1.pos.update')->middleware('permission:pos.edit');
+            Route::delete('pos/{id}', [PosController::class, 'destroy'])->whereNumber('id')->name('api.v1.pos.destroy')->middleware('permission:pos.delete');
+            Route::post('pos/batch-delete', [PosController::class, 'batchDelete'])->name('api.v1.pos.batch_delete')->middleware('permission:pos.delete');
+            Route::post('pos/batch-restore', [PosController::class, 'batchRestore'])->name('api.v1.pos.batch_restore')->middleware('permission:pos.edit');
+            Route::post('pos/batch-force-delete', [PosController::class, 'batchForceDelete'])->name('api.v1.pos.batch_force_delete')->middleware('permission:pos.delete');
+            Route::post('pos/{id}/restore', [PosController::class, 'restore'])->name('api.v1.pos.restore')->middleware('permission:pos.edit');
+            Route::delete('pos/{id}/force', [PosController::class, 'forceDelete'])->name('api.v1.pos.force_delete')->middleware('permission:pos.delete');
+            Route::post('pos/{id}/approve', [PosController::class, 'approve'])->whereNumber('id')->name('api.v1.pos.approve')->middleware('permission:pos.edit');
+            Route::post('pos/{id}/reject', [PosController::class, 'reject'])->whereNumber('id')->name('api.v1.pos.reject')->middleware('permission:pos.edit');
+            Route::apiResource('pos', PosController::class)->parameters(['pos' => 'id'])->except(['index', 'show', 'store', 'update', 'destroy']);
         });
 
         // ==========================================
         // 5. ربط نقاط البيع بمزودي الشبكات (Network POS Links)
         // ==========================================
-        Route::middleware('throttle:api-read')->group(function () {
+        Route::middleware(['throttle:api-read', 'permission:networks.view'])->group(function () {
             Route::get('network-pos', [NetworkPosController::class, 'index'])->name('api.v1.network_pos.index');
             Route::get('network-pos/{id}', [NetworkPosController::class, 'show'])->whereNumber('id')->name('api.v1.network_pos.show');
             Route::get('networks/{id}/pos', [NetworkPosController::class, 'networkPosList'])->whereNumber('id')->name('api.v1.networks.pos_list');
@@ -222,12 +228,12 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('throttle:api-write')->group(function () {
-            Route::post('network-pos', [NetworkPosController::class, 'store'])->name('api.v1.network_pos.store');
-            Route::put('network-pos/{id}', [NetworkPosController::class, 'update'])->whereNumber('id')->name('api.v1.network_pos.update');
-            Route::delete('network-pos/{id}', [NetworkPosController::class, 'destroy'])->whereNumber('id')->name('api.v1.network_pos.destroy');
-            Route::post('network-pos/{id}/toggle-status', [NetworkPosController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.network_pos.toggle_status');
-            Route::post('network-pos/batch-delete', [NetworkPosController::class, 'batchDelete'])->name('api.v1.network_pos.batch_delete');
-            Route::post('network-pos/batch-status', [NetworkPosController::class, 'batchStatus'])->name('api.v1.network_pos.batch_status');
+            Route::post('network-pos', [NetworkPosController::class, 'store'])->name('api.v1.network_pos.store')->middleware('permission:networks.edit');
+            Route::put('network-pos/{id}', [NetworkPosController::class, 'update'])->whereNumber('id')->name('api.v1.network_pos.update')->middleware('permission:networks.edit');
+            Route::delete('network-pos/{id}', [NetworkPosController::class, 'destroy'])->whereNumber('id')->name('api.v1.network_pos.destroy')->middleware('permission:networks.delete');
+            Route::post('network-pos/{id}/toggle-status', [NetworkPosController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.network_pos.toggle_status')->middleware('permission:networks.edit');
+            Route::post('network-pos/batch-delete', [NetworkPosController::class, 'batchDelete'])->name('api.v1.network_pos.batch_delete')->middleware('permission:networks.delete');
+            Route::post('network-pos/batch-status', [NetworkPosController::class, 'batchStatus'])->name('api.v1.network_pos.batch_status')->middleware('permission:networks.edit');
         });
 
         // ==========================================
