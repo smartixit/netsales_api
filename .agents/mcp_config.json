@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "C:\\php\\php.exe",
+            "args": [
+                "artisan",
+                "boost:mcp"
+            ],
+            "cwd": "D:\\Smartix\\NetSales\\netsales_api"
+        }
+    }
+}

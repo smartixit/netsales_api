@@ -1,0 +1,16 @@
+{
+    "agents": [
+        "antigravity"
+    ],
+    "cloud": false,
+    "packages": [
+        "dedoc/scramble"
+    ],
+    "skills": [
+        "infer-conventions",
+        "laravel-best-practices",
+        "testing-best-practices",
+        "tailwindcss-development",
+        "scramble-development"
+    ]
+}

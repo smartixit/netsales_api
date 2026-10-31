@@ -1,0 +1,11 @@
+# Dependencies and generated build artifacts
+vendor/
+.dart_tool/
+build/
+coverage/
+storage/framework/
+storage/logs/
+bootstrap/cache/
+android/.gradle/
+ios/Pods/
+.git/
