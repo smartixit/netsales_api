@@ -15,8 +15,10 @@ use App\Http\Resources\API\V1\Pos\PosWalletLogResource;
 use App\Http\Resources\API\V1\Pos\PosWalletResource;
 use App\Services\PosWalletService;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
@@ -90,7 +92,14 @@ class PosWalletController extends BaseController
         try {
             $wallet = $this->posWalletService->getWalletById($id);
 
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('view', $wallet)) {
+                return $this->errorResponse('غير مصرح لك بالوصول إلى هذه المحفظة.', [], 403);
+            }
+
             return $this->successResponse('تم استرجاع بيانات محفظة نقطة البيع بنجاح.', new PosWalletResource($wallet));
+        } catch (ModelNotFoundException) {
+            return $this->errorResponse('المحفظة غير موجودة.', [], 404);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -118,7 +127,14 @@ class PosWalletController extends BaseController
         try {
             $wallet = $this->posWalletService->getWalletByNetworkAndPos($networkId, $posId);
 
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('view', $wallet)) {
+                return $this->errorResponse('غير مصرح لك بالوصول إلى هذه المحفظة.', [], 403);
+            }
+
             return $this->successResponse('تم استرجاع محفظة نقطة البيع بنجاح.', new PosWalletResource($wallet));
+        } catch (ModelNotFoundException) {
+            return $this->errorResponse('المحفظة غير موجودة.', [], 404);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -408,10 +424,19 @@ class PosWalletController extends BaseController
     public function logs(Request $request, int $id): JsonResponse
     {
         try {
+            $wallet = $this->posWalletService->getWalletById($id);
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('view', $wallet)) {
+                return $this->errorResponse('غير مصرح لك باستعراض كشف حساب هذه المحفظة.', [], 403);
+            }
+
             $filters = $request->only(['log_operation_type', 'created_by', 'from_date', 'to_date', 'search', 'per_page', 'all']);
             $logs = $this->posWalletService->getLogs($id, $filters);
 
             return $this->successResponse('تم استرجاع كشف حساب وسجلات محفظة نقطة البيع بنجاح.', PosWalletLogResource::collection($logs));
+        } catch (ModelNotFoundException) {
+            return $this->errorResponse('المحفظة غير موجودة.', [], 404);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
