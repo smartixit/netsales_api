@@ -303,7 +303,7 @@ class RequestService
 
             // التحقق من تبعية مراجع الطلب لنفس الشبكة المزودة صاحبة الطلب لمنع هجمات IDOR
             $reviewer = $this->userRepository->findById($reviewedBy);
-            if ($reviewer && ! $reviewer->isSuperAdmin()) {
+            if ($reviewer) {
                 $isAuthorized = ($reviewer->network && (int) $reviewer->network->network_id === (int) $request->network_id)
                     || ($reviewer->networks()->where('networks.network_id', $request->network_id)->exists())
                     || (method_exists($reviewer, 'networkUsers') && $reviewer->networkUsers()->where('network_id', $request->network_id)->where('status', 'ACTIVE')->exists());
@@ -381,7 +381,7 @@ class RequestService
 
             // التحقق من تبعية مراجع الطلب لنفس الشبكة المزودة صاحبة الطلب لمنع هجمات IDOR
             $reviewer = $this->userRepository->findById($reviewedBy);
-            if ($reviewer && ! $reviewer->isSuperAdmin()) {
+            if ($reviewer) {
                 $isAuthorized = ($reviewer->network && (int) $reviewer->network->network_id === (int) $request->network_id)
                     || ($reviewer->networks()->where('networks.network_id', $request->network_id)->exists())
                     || (method_exists($reviewer, 'networkUsers') && $reviewer->networkUsers()->where('network_id', $request->network_id)->where('status', 'ACTIVE')->exists());
@@ -438,7 +438,7 @@ class RequestService
             $isPosAuthorized = $canceller && (($canceller->pos && (int) $canceller->pos->pos_id === (int) $request->pos_id)
                 || (method_exists($canceller, 'posUsers') && $canceller->posUsers()->where('pos_id', $request->pos_id)->where('status', 'ACTIVE')->exists()));
 
-            if (! $isCreator && ! $isPosAuthorized && ! ($canceller && $canceller->isSuperAdmin())) {
+            if (! $isCreator && ! $isPosAuthorized) {
                 throw ValidationException::withMessages([
                     'user' => ['غير مصرح لك بإلغاء هذا الطلب.'],
                 ]);
