@@ -352,13 +352,23 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
         ]);
         $requestId = $createRes->json('data.request_id');
 
-        // اعتماد الطلب مع تعديل الكمية إلى 30 وإضافة 10 من الباقة B
+        // معاينة التعديل لتوليد رمز التسعير للباقة الجديدة B
+        $preview = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/preview-modification", [
+            'items' => [
+                ['package_id' => $this->packageA->package_id, 'voucher_count' => 30],
+                ['package_id' => $this->packageB->package_id, 'voucher_count' => 10],
+            ],
+        ]);
+        $preview->assertStatus(200);
+        $tokenB = $preview->json('data.items.1.pricing_token');
+
+        // اعتماد الطلب مع تعديل الكمية إلى 30 وإضافة 10 من الباقة B الموثقة
         $approveRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/approve", [
             'request_note' => 'تم تعديل الكميات والاعتماد',
             'sale_type' => SaleType::CASH->value,
             'items' => [
                 ['package_id' => $this->packageA->package_id, 'voucher_count' => 30],
-                ['package_id' => $this->packageB->package_id, 'voucher_count' => 10],
+                ['package_id' => $this->packageB->package_id, 'voucher_count' => 10, 'pricing_token' => $tokenB],
             ],
         ]);
 

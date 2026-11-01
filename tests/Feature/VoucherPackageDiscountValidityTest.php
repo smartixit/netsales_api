@@ -20,6 +20,7 @@ use App\Models\VoucherPackageDiscount;
 use App\Services\RequestPricingReviewService;
 use App\Services\VoucherPackageDiscountService;
 use Carbon\Carbon;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -689,7 +690,15 @@ class VoucherPackageDiscountValidityTest extends TestCase
         ]);
 
         $pricingService = app(RequestPricingReviewService::class);
-        $token = $pricingService->generatePricingToken($req->request_id, $packageB->package_id, 500.0, 25.0);
+        $token = $pricingService->generatePricingToken(
+            $req->request_id,
+            $this->network->network_id,
+            $this->pos->pos_id,
+            $packageB->package_id,
+            SaleType::CASH,
+            500.0,
+            25.0
+        );
 
         // Even though catalog effective discount for packageB is 5%, token preserves frozen 25%
         $resolved = $pricingService->resolveItemPricing($req, $packageB->package_id, $token, SaleType::CASH);
@@ -729,5 +738,349 @@ class VoucherPackageDiscountValidityTest extends TestCase
         // 3. Attempting to restore d1 must be rejected to prevent duplicate active records
         $this->expectException(ValidationException::class);
         $this->discountService->restore($d1->discount_id);
+    }
+
+    /**
+     * اختبار قيد التفرد على مستوى قاعدة البيانات: منع أي تكرار لسجل نشط لنفس (الشبكة، نقطة البيع، الباقة).
+     */
+    public function test_database_level_unique_constraint_rejects_duplicate_active_discounts(): void
+    {
+        $d1 = VoucherPackageDiscount::create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'package_id' => $this->package->package_id,
+            'discount_cash' => 10.00,
+            'discount_credit' => 5.00,
+            'status' => true,
+            'created_by' => $this->user->user_id,
+        ]);
+
+        $this->expectException(UniqueConstraintViolationException::class);
+
+        // محاولة إدخال مباشر على مستوى DB متجاوزاً فحص التطبيق
+        VoucherPackageDiscount::create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'package_id' => $this->package->package_id,
+            'discount_cash' => 15.00,
+            'discount_credit' => 8.00,
+            'status' => true,
+            'created_by' => $this->user->user_id,
+        ]);
+    }
+
+    /**
+     * اختبار السماح بإنشاء سجل بديل بعد الحذف المرن والسماح بسجلات محذوفة تاريخية متعددة.
+     */
+    public function test_replacement_can_be_created_after_soft_delete_and_multiple_historical_soft_deletes_allowed(): void
+    {
+        // 1. إنشاء السجل الأول وحذفه مرناً
+        $d1 = VoucherPackageDiscount::create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'package_id' => $this->package->package_id,
+            'discount_cash' => 10.00,
+            'discount_credit' => 5.00,
+            'status' => true,
+            'created_by' => $this->user->user_id,
+        ]);
+        $d1->delete();
+
+        // 2. إنشاء سجل ثانٍ وحذفه أيضاً (سجلان تاريخيان محذوفان)
+        $d2 = VoucherPackageDiscount::create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'package_id' => $this->package->package_id,
+            'discount_cash' => 12.00,
+            'discount_credit' => 6.00,
+            'status' => true,
+            'created_by' => $this->user->user_id,
+        ]);
+        $d2->delete();
+
+        // 3. إنشاء سجل ثالث نشط حالي
+        $d3 = VoucherPackageDiscount::create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'package_id' => $this->package->package_id,
+            'discount_cash' => 18.00,
+            'discount_credit' => 9.00,
+            'status' => true,
+            'created_by' => $this->user->user_id,
+        ]);
+
+        $this->assertNotNull($d3->discount_id);
+        $this->assertEquals(2, VoucherPackageDiscount::onlyTrashed()->count());
+        $this->assertEquals(1, VoucherPackageDiscount::count());
+    }
+
+    /**
+     * اختبار الاستعادة المجمعة: رفض الاستعادة في حال وجود تعارض فريد مع سجل نشط.
+     */
+    public function test_batch_restore_rejects_duplicate_active_combinations(): void
+    {
+        $d1 = VoucherPackageDiscount::create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'package_id' => $this->package->package_id,
+            'discount_cash' => 10.00,
+            'discount_credit' => 5.00,
+            'status' => true,
+            'created_by' => $this->user->user_id,
+        ]);
+        $d1->delete();
+
+        $d2 = VoucherPackageDiscount::create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'package_id' => $this->package->package_id,
+            'discount_cash' => 15.00,
+            'discount_credit' => 8.00,
+            'status' => true,
+            'created_by' => $this->user->user_id,
+        ]);
+
+        $this->expectException(ValidationException::class);
+        $this->discountService->bulkRestore([$d1->discount_id]);
+    }
+
+    /**
+     * اختبار أن التاريخ المجرد لانتهاء الخصم يشمل اليوم كاملاً حتى 23:59:59 وينتهي في 00:00:00 لليوم التالي.
+     */
+    public function test_date_only_expiration_includes_entire_calendar_day(): void
+    {
+        $res = $this->withHeaders($this->headers)->postJson('/api/v1/voucher-package-discounts', [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'package_id' => $this->package->package_id,
+            'discount_cash' => 14.00,
+            'discount_credit' => 7.00,
+            'discount_start_date' => '2026-11-05',
+            'discount_end_date' => '2026-11-10',
+        ]);
+
+        $res->assertStatus(201);
+        $res->assertJsonPath('data.display_end_date', '2026-11-10');
+        $res->assertJsonPath('data.discount_end_date', '2026-11-11 00:00:00');
+
+        $discount = VoucherPackageDiscount::findOrFail($res->json('data.discount_id'));
+
+        // في نهاية يوم 10 نوفمبر الساعة 23:59:59 الخصم ما زال سارياً
+        Carbon::setTestNow(Carbon::parse('2026-11-10 23:59:59', 'Asia/Aden'));
+        $this->assertTrue($discount->isEffectiveNow());
+        $this->assertEquals('EFFECTIVE', $discount->resolveValidityState());
+
+        // في أول ثانية من يوم 11 نوفمبر الساعة 00:00:00 ينتهي الخصم تماماً
+        Carbon::setTestNow(Carbon::parse('2026-11-11 00:00:00', 'Asia/Aden'));
+        $this->assertFalse($discount->isEffectiveNow());
+        $this->assertEquals('EXPIRED', $discount->resolveValidityState());
+    }
+
+    /**
+     * اختبار تمرير null صريح لتاريخ البدء يجعله بدون حد أدنى، بينما تركه فارغاً يجعله يبدأ من الآن.
+     */
+    public function test_explicit_null_start_date_means_no_lower_boundary_and_omitted_defaults_to_now(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-11-02 10:00:00', 'Asia/Aden'));
+
+        // 1. Explicit null start date
+        $res1 = $this->withHeaders($this->headers)->postJson('/api/v1/voucher-package-discounts', [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'package_id' => $this->package->package_id,
+            'discount_cash' => 15.00,
+            'discount_credit' => 10.00,
+            'discount_start_date' => null,
+        ]);
+        $res1->assertStatus(201);
+        $res1->assertJsonPath('data.discount_start_date', null);
+
+        $d1 = VoucherPackageDiscount::find($res1->json('data.discount_id'));
+        $this->assertNull($d1->discount_start_date);
+        $d1->delete();
+
+        // 2. Omitted start date
+        $res2 = $this->withHeaders($this->headers)->postJson('/api/v1/voucher-package-discounts', [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'package_id' => $this->package->package_id,
+            'discount_cash' => 15.00,
+            'discount_credit' => 10.00,
+        ]);
+        $res2->assertStatus(201);
+        $this->assertNotNull($res2->json('data.discount_start_date'));
+        $this->assertEquals('2026-11-02 10:00:00', $res2->json('data.discount_start_date'));
+    }
+
+    /**
+     * اختبار ربط رمز التسعير بكامل سياق التسعير ورفض التلاعب، اختلاف نمط البيع، وانتهاء الصلاحية وتواريخ المستقبل.
+     */
+    public function test_pricing_token_binds_complete_context_and_rejects_tampering_mismatch_and_expiry(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-11-02 12:00:00', 'Asia/Aden'));
+        $pricingService = app(RequestPricingReviewService::class);
+
+        $validToken = $pricingService->generatePricingToken(
+            100,
+            $this->network->network_id,
+            $this->pos->pos_id,
+            $this->package->package_id,
+            SaleType::CASH,
+            1000.0,
+            25.0
+        );
+
+        // 1. رمز صحيح
+        $verified = $pricingService->verifyPricingToken(
+            100,
+            $this->network->network_id,
+            $this->pos->pos_id,
+            $this->package->package_id,
+            SaleType::CASH,
+            $validToken
+        );
+        $this->assertNotNull($verified);
+        $this->assertEquals(25.0, $verified['discount']);
+
+        // 2. رمز مستخدم لطلب آخر (Different Request ID)
+        $this->assertNull($pricingService->verifyPricingToken(
+            999,
+            $this->network->network_id,
+            $this->pos->pos_id,
+            $this->package->package_id,
+            SaleType::CASH,
+            $validToken
+        ));
+
+        // 3. رمز مستخدم لباقة أخرى (Different Package ID)
+        $this->assertNull($pricingService->verifyPricingToken(
+            100,
+            $this->network->network_id,
+            $this->pos->pos_id,
+            999,
+            SaleType::CASH,
+            $validToken
+        ));
+
+        // 4. رمز مستخدم لنمط بيع آخر (Different Sale Type: CREDIT vs CASH)
+        $this->assertNull($pricingService->verifyPricingToken(
+            100,
+            $this->network->network_id,
+            $this->pos->pos_id,
+            $this->package->package_id,
+            SaleType::CREDIT,
+            $validToken
+        ));
+
+        // 5. رمز منتهي الصلاحية (Expired after 8 days)
+        Carbon::setTestNow(Carbon::parse('2026-11-11 12:00:00', 'Asia/Aden'));
+        $this->assertNull($pricingService->verifyPricingToken(
+            100,
+            $this->network->network_id,
+            $this->pos->pos_id,
+            $this->package->package_id,
+            SaleType::CASH,
+            $validToken
+        ));
+
+        // 6. تلاعب بالحمولة المشفرة (Tampered signature)
+        $tampered = $validToken.'xyz';
+        $this->assertNull($pricingService->verifyPricingToken(
+            100,
+            $this->network->network_id,
+            $this->pos->pos_id,
+            $this->package->package_id,
+            SaleType::CASH,
+            $tampered
+        ));
+    }
+
+    /**
+     * اختبار رفض الاعتماد عند غياب رمز التسعير للباقات المضافة أو عدم صلاحيته، مع منع إعادة التسعير الصامت.
+     */
+    public function test_approval_rejects_missing_or_invalid_token_for_new_items_without_silent_repricing(): void
+    {
+        $packageB = VoucherPackage::create([
+            'network_id' => $this->network->network_id,
+            'package_name' => 'باقة جديدة 2000',
+            'package_voucher_price' => 2000.00,
+            'package_default_cash_discount' => 10.00,
+            'package_default_credit_discount' => 5.00,
+            'package_voucher_count' => 100,
+            'status' => true,
+            'created_by' => $this->user->user_id,
+        ]);
+
+        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'sale_type' => SaleType::CASH->value,
+            'items' => [
+                ['package_id' => $this->package->package_id, 'voucher_count' => 5],
+            ],
+        ]);
+        $requestId = $createRes->json('data.request_id');
+
+        // محاولة اعتماد طلب بإضافة باقة جديدة B برمز تسعير غير صالح أو مفقود
+        $approveRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/approve", [
+            'items' => [
+                ['package_id' => $this->package->package_id, 'voucher_count' => 5],
+                ['package_id' => $packageB->package_id, 'voucher_count' => 3, 'pricing_token' => 'invalid-token'],
+            ],
+        ]);
+
+        $approveRes->assertStatus(422);
+        $approveRes->assertJsonValidationErrors(['items']);
+    }
+
+    /**
+     * اختبار تجميد لقطتي الخصم النقدي والآجل في بنود الطلب الأصلي وعدم تأثرهما بتغيير الكتالوج.
+     */
+    public function test_original_request_items_preserve_both_cash_and_credit_discount_snapshots_across_catalog_changes(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-11-02 12:00:00', 'Asia/Aden'));
+
+        // خصم مخصص: كاش 20%، آجل 12%
+        VoucherPackageDiscount::create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'package_id' => $this->package->package_id,
+            'discount_cash' => 20.00,
+            'discount_credit' => 12.00,
+            'status' => true,
+            'created_by' => $this->user->user_id,
+        ]);
+
+        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'sale_type' => SaleType::CASH->value,
+            'items' => [
+                ['package_id' => $this->package->package_id, 'voucher_count' => 10],
+            ],
+        ]);
+        $requestId = $createRes->json('data.request_id');
+        $req = RequestModel::with('items')->findOrFail($requestId);
+
+        $item = $req->items->first();
+        $this->assertEquals(20.00, (float) $item->item_cash_discount);
+        $this->assertEquals(12.00, (float) $item->item_credit_discount);
+
+        // تغيير سعر الباقة وتعديل الخصومات في الكتالوج لاحقاً
+        $this->package->update([
+            'package_voucher_price' => 1500.00,
+            'package_default_cash_discount' => 5.00,
+            'package_default_credit_discount' => 2.00,
+        ]);
+
+        // عند مراجعة البند الأصلي، يظل السعر 1000 والخصم النقدي 20% والآجل 12%
+        $pricingService = app(RequestPricingReviewService::class);
+        $pricingCash = $pricingService->resolveItemPricing($req, $this->package->package_id, null, SaleType::CASH);
+        $this->assertEquals(1000.00, $pricingCash['voucher_price']);
+        $this->assertEquals(20.00, $pricingCash['item_discount']);
+
+        $pricingCredit = $pricingService->resolveItemPricing($req, $this->package->package_id, null, SaleType::CREDIT);
+        $this->assertEquals(1000.00, $pricingCredit['voucher_price']);
+        $this->assertEquals(12.00, $pricingCredit['item_discount']);
     }
 }

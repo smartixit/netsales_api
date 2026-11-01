@@ -63,6 +63,36 @@ class StoreVoucherPackageDiscountRequest extends FormRequest
         ];
     }
 
+    public static function parseDateBoundary(mixed $value, bool $isEndDate): ?Carbon
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if ($value instanceof Carbon) {
+            return $value->copy()->timezone('Asia/Aden');
+        }
+
+        $str = trim((string) $value);
+        if ($str === '') {
+            return null;
+        }
+
+        // فحص ما إذا كانت القيمة تاريخاً مجرداً بصيغة YYYY-MM-DD
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $str)) {
+            $parsed = Carbon::parse($str, 'Asia/Aden');
+
+            if ($isEndDate) {
+                // تاريخ الانتهاء المجرد يشمل اليوم كاملاً حتى نهايته (بداية اليوم التالي كحد استبعادي)
+                return $parsed->addDay()->startOfDay();
+            }
+
+            return $parsed->startOfDay();
+        }
+
+        return Carbon::parse($str, 'Asia/Aden');
+    }
+
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
@@ -71,13 +101,8 @@ class StoreVoucherPackageDiscountRequest extends FormRequest
             }
 
             try {
-                $startDate = $this->filled('discount_start_date')
-                    ? Carbon::parse($this->input('discount_start_date'), 'Asia/Aden')
-                    : now('Asia/Aden');
-
-                $endDate = $this->filled('discount_end_date')
-                    ? Carbon::parse($this->input('discount_end_date'), 'Asia/Aden')
-                    : null;
+                $startDate = $this->getDiscountStartDate();
+                $endDate = $this->getDiscountEndDate();
 
                 if ($startDate && $endDate && $endDate->lte($startDate)) {
                     $validator->errors()->add(
@@ -124,15 +149,32 @@ class StoreVoucherPackageDiscountRequest extends FormRequest
 
     public function getDiscountStartDate(): ?Carbon
     {
-        return $this->filled('discount_start_date')
-            ? Carbon::parse($this->input('discount_start_date'), 'Asia/Aden')
-            : now('Asia/Aden');
+        if (! $this->has('discount_start_date')) {
+            // غير ممرر عند الإنشاء -> افتراضي الوقت الحالي بتوقيت عدن
+            return now('Asia/Aden');
+        }
+
+        $val = $this->input('discount_start_date');
+        if ($val === null || $val === '') {
+            // ممرر صراحة بقيمة null -> سريان فوري بدون حد أدنى
+            return null;
+        }
+
+        return self::parseDateBoundary($val, false);
     }
 
     public function getDiscountEndDate(): ?Carbon
     {
-        return $this->filled('discount_end_date')
-            ? Carbon::parse($this->input('discount_end_date'), 'Asia/Aden')
-            : null;
+        if (! $this->has('discount_end_date')) {
+            // غير ممرر -> مفتوح الصلاحية بدون انتهاء
+            return null;
+        }
+
+        $val = $this->input('discount_end_date');
+        if ($val === null || $val === '') {
+            return null;
+        }
+
+        return self::parseDateBoundary($val, true);
     }
 }

@@ -4,7 +4,6 @@ namespace App\Http\Requests\API\V1\Network;
 
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use App\Models\VoucherPackageDiscount;
-use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateVoucherPackageDiscountRequest extends FormRequest
@@ -60,11 +59,11 @@ class UpdateVoucherPackageDiscountRequest extends FormRequest
                 $existing = $id ? VoucherPackageDiscount::find($id) : null;
 
                 $startDate = $this->has('discount_start_date')
-                    ? ($this->input('discount_start_date') ? Carbon::parse($this->input('discount_start_date'), 'Asia/Aden') : null)
+                    ? StoreVoucherPackageDiscountRequest::parseDateBoundary($this->input('discount_start_date'), false)
                     : $existing?->discount_start_date;
 
                 $endDate = $this->has('discount_end_date')
-                    ? ($this->input('discount_end_date') ? Carbon::parse($this->input('discount_end_date'), 'Asia/Aden') : null)
+                    ? StoreVoucherPackageDiscountRequest::parseDateBoundary($this->input('discount_end_date'), true)
                     : $existing?->discount_end_date;
 
                 if ($startDate && $endDate && $endDate->lte($startDate)) {

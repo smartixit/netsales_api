@@ -141,15 +141,17 @@ class RequestService
                 // SECURITY: use catalog price & server effective discount (ignore client inputs)
                 $voucherPrice = (float) $package->package_voucher_price;
                 $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $packageId);
-                $discountPercent = $saleType->isCash()
-                    ? (float) ($discountData['discount_cash'] ?? 0.0)
-                    : (float) ($discountData['discount_credit'] ?? 0.0);
+                $cashDiscount = (float) ($discountData['discount_cash'] ?? 0.0);
+                $creditDiscount = (float) ($discountData['discount_credit'] ?? 0.0);
+                $discountPercent = $saleType->isCash() ? $cashDiscount : $creditDiscount;
 
                 $itemModel = new RequestItem([
                     'package_id' => $packageId,
                     'voucher_price' => $voucherPrice,
                     'voucher_count' => $count,
                     'item_discount' => $discountPercent,
+                    'item_cash_discount' => $cashDiscount,
+                    'item_credit_discount' => $creditDiscount,
                 ]);
                 $lineTotal = $itemModel->calculateLineTotal();
 
@@ -160,6 +162,8 @@ class RequestService
                     'voucher_price' => $voucherPrice,
                     'voucher_count' => $count,
                     'item_discount' => $discountPercent,
+                    'item_cash_discount' => $cashDiscount,
+                    'item_credit_discount' => $creditDiscount,
                     'item_total_amount' => $lineTotal,
                 ];
             }

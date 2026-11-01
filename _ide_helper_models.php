@@ -1217,6 +1217,8 @@ namespace App\Models{
  * @property numeric $voucher_price
  * @property int $voucher_count
  * @property numeric $item_discount
+ * @property numeric|null $item_cash_discount نسبة خصم النقد المجمدة لحظة تقديم الطلب
+ * @property numeric|null $item_credit_discount نسبة خصم الآجل المجمدة لحظة تقديم الطلب
  * @property numeric $item_total_amount
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -1229,6 +1231,8 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereItemCashDiscount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereItemCreditDiscount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereItemDiscount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereItemId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RequestItem whereItemTotalAmount($value)
@@ -2054,15 +2058,20 @@ namespace App\Models{
  * @property numeric $discount_cash
  * @property numeric $discount_credit
  * @property bool $status
+ * @property \Illuminate\Support\Carbon|null $discount_start_date
+ * @property \Illuminate\Support\Carbon|null $discount_end_date
  * @property int $created_by
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property int|null $active_discriminator مميّز أحادي للسجلات غير المحذوفة فقط لضمان قيد فريد قطعي في MySQL 8
  * @property-read \App\Models\User|null $createdBy
+ * @property-read string $validity_state
  * @property-read \App\Models\Network|null $network
  * @property-read \App\Models\Pos|null $pos
  * @property-read \App\Models\VoucherPackage|null $voucherPackage
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount effective(?\Carbon\CarbonInterface $now = null)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount forNetwork(int $networkId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount forPackageAndPos(int $packageId, int $posId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount forPos(int $posId)
@@ -2071,12 +2080,15 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount whereActiveDiscriminator($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount whereCreatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount whereDiscountCash($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount whereDiscountCredit($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount whereDiscountEndDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount whereDiscountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount whereDiscountStartDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount whereNetworkId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount wherePackageId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount wherePosId($value)

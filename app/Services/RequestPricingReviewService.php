@@ -27,15 +27,27 @@ class RequestPricingReviewService
 
     /**
      * توليد رمز توثيق تسعيري مشفر وموقع ببصمة HMAC لتجميد سعر وخصم الباقة المضافة.
+     * يربط الرمز سياق التسعير الكامل: معرف الطلب، الشبكة، نقطة البيع، الباقة، ونمط البيع (نقد/آجل).
      */
-    public function generatePricingToken(int $requestId, int $packageId, float $price, float $discount): string
-    {
+    public function generatePricingToken(
+        int $requestId,
+        int $networkId,
+        int $posId,
+        int $packageId,
+        SaleType $saleType,
+        float $price,
+        float $discount
+    ): string {
         $payload = [
+            'v' => 1,
             'rid' => $requestId,
+            'nid' => $networkId,
+            'pos' => $posId,
             'pid' => $packageId,
+            'st' => $saleType->value,
             'pr' => round($price, 2),
             'dc' => round($discount, 2),
-            'ts' => time(),
+            'ts' => now('Asia/Aden')->timestamp,
         ];
 
         $json = json_encode($payload, JSON_UNESCAPED_SLASHES);
@@ -47,12 +59,20 @@ class RequestPricingReviewService
 
     /**
      * التحقق من صحة وبصمة رمز التسعير المجمد للباقة المضافة أثناء المراجعة.
+     * يتحقق قطيعاً من سلامة التوقيع، عدم التلاعب، ومطابقة سياق الطلب ونمط البيع، وعدم انتهاء الصلاحية، ورفض تواريخ المستقبل.
      *
      * @return array{price: float, discount: float}|null
      */
-    public function verifyPricingToken(int $requestId, int $packageId, ?string $token): ?array
-    {
-        if (empty($token)) {
+    public function verifyPricingToken(
+        int $requestId,
+        int $networkId,
+        int $posId,
+        int $packageId,
+        SaleType $saleType,
+        ?string $token,
+        int $maxLifetimeSeconds = 604800 // 7 days
+    ): ?array {
+        if (empty($token) || ! is_string($token)) {
             return null;
         }
 
@@ -69,30 +89,64 @@ class RequestPricingReviewService
         $payload = $packet['d'];
         $sig = $packet['s'];
 
-        $expectedSig = hash_hmac('sha256', (string) json_encode($payload, JSON_UNESCAPED_SLASHES), (string) config('app.key'));
-        if (! hash_equals($expectedSig, (string) $sig)) {
+        if (! is_array($payload) || ! is_string($sig)) {
             return null;
         }
 
-        // مطابقة المعرفات وحداثة الرمز (خلال 7 أيام من بدء المراجعة)
+        $expectedSig = hash_hmac('sha256', (string) json_encode($payload, JSON_UNESCAPED_SLASHES), (string) config('app.key'));
+        if (! hash_equals($expectedSig, $sig)) {
+            return null;
+        }
+
+        // مطابقة المعرفات وسياق التسعير الكامل
         if (
             (int) ($payload['rid'] ?? 0) !== $requestId ||
+            (int) ($payload['nid'] ?? 0) !== $networkId ||
+            (int) ($payload['pos'] ?? 0) !== $posId ||
             (int) ($payload['pid'] ?? 0) !== $packageId ||
-            (time() - (int) ($payload['ts'] ?? 0)) > (7 * 86400)
+            (string) ($payload['st'] ?? '') !== $saleType->value
         ) {
             return null;
         }
 
+        // التحقق من صحة وصلاحية الأرقام والنسب
+        if (! isset($payload['pr'], $payload['dc'], $payload['ts'])) {
+            return null;
+        }
+
+        if (! is_numeric($payload['pr']) || ! is_numeric($payload['dc']) || ! is_numeric($payload['ts'])) {
+            return null;
+        }
+
+        $price = (float) $payload['pr'];
+        $discount = (float) $payload['dc'];
+        $timestamp = (int) $payload['ts'];
+        $now = now('Asia/Aden')->timestamp;
+
+        if ($price <= 0 || $discount < 0 || $discount > 100) {
+            return null;
+        }
+
+        // رفض الرموز المصدرة في المستقبل (مع سماحية 60 ثانية لتفاوت الساعات)
+        if ($timestamp > ($now + 60)) {
+            return null;
+        }
+
+        // رفض الرموز منتهية الصلاحية
+        if (($now - $timestamp) > $maxLifetimeSeconds) {
+            return null;
+        }
+
         return [
-            'price' => (float) $payload['pr'],
-            'discount' => (float) $payload['dc'],
+            'price' => $price,
+            'discount' => $discount,
         ];
     }
 
     /**
      * تحديد وحسم التسعير السيادي للبند بناءً على القواعد الصارمة:
      * - البند الأصلي: يستخدم سعره وخصمه المخزنين في تاريخ تقديم الطلب.
-     * - البند المضاف: يستخدم السعر والخصم الملتقطين والمجمدين عبر الرمز أو يلتقطهما لحظياً من الكتالوج.
+     * - البند المضاف: يستخدم السعر والخصم الملتقطين والمجمدين عبر الرمز الموثق، ويحظر إعادة التسعير الصامت عند الاعتماد.
      *
      * @return array{
      *     package: VoucherPackage,
@@ -107,7 +161,8 @@ class RequestPricingReviewService
         RequestModel $request,
         int $packageId,
         ?string $token = null,
-        ?SaleType $effectiveSaleType = null
+        ?SaleType $effectiveSaleType = null,
+        bool $requireValidToken = false
     ): array {
         $networkId = (int) $request->network_id;
         $posId = (int) $request->pos_id;
@@ -138,11 +193,10 @@ class RequestPricingReviewService
             if ($saleType === $request->sale_type) {
                 $itemDiscount = (float) $originalItem->item_discount;
             } else {
-                // إذا قام مراجع الشبكة بتعديل نمط البيع (مثلاً من نقد إلى آجل)، يطبق خصم النمط الجديد
-                $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $packageId);
+                // إذا تم تعديل نمط البيع، نستخدم لقطة الخصم المجمدة المخزنة في البند لحظة إنشاء الطلب (Zero Retrospective Requery)
                 $itemDiscount = $saleType->isCash()
-                    ? (float) ($discountData['discount_cash'] ?? 0.0)
-                    : (float) ($discountData['discount_credit'] ?? 0.0);
+                    ? (float) ($originalItem->item_cash_discount ?? $originalItem->item_discount)
+                    : (float) ($originalItem->item_credit_discount ?? $originalItem->item_discount);
             }
 
             return [
@@ -157,7 +211,20 @@ class RequestPricingReviewService
 
         // 2. البند جديد أو مستبدل (NEW / REPLACEMENT)
         // فحص الرمز المجمد مسبقاً إذا كان ممرراً وصحيحاً
-        $verified = $this->verifyPricingToken($request->request_id, $packageId, $token);
+        $verified = $this->verifyPricingToken(
+            $request->request_id,
+            $networkId,
+            $posId,
+            $packageId,
+            $saleType,
+            $token
+        );
+
+        if ($requireValidToken && $verified === null) {
+            throw ValidationException::withMessages([
+                'items' => ["الباقة المضافة [{$package->package_name}] تفتقر لرمز تسعير معتمد وموقع أو انتهت صلاحية رمز التسعير. يرجى إعادة معاينة الطلب وتأكيده."],
+            ]);
+        }
 
         if ($verified !== null) {
             // قاعدة 2: استخدام السعر والخصم الملتقطين لحظة إضافته للمراجعة وعدم تغييرهما إذا تغير الكتالوج
@@ -172,8 +239,16 @@ class RequestPricingReviewService
                 ? (float) ($discountData['discount_cash'] ?? 0.0)
                 : (float) ($discountData['discount_credit'] ?? 0.0);
 
-            // تجميده فورياً برمز توثيق مشفر
-            $pricingToken = $this->generatePricingToken($request->request_id, $packageId, $voucherPrice, $itemDiscount);
+            // تجميده فورياً برمز توثيق مشفر يربط كامل سياق التسعير
+            $pricingToken = $this->generatePricingToken(
+                $request->request_id,
+                $networkId,
+                $posId,
+                $packageId,
+                $saleType,
+                $voucherPrice,
+                $itemDiscount
+            );
         }
 
         return [

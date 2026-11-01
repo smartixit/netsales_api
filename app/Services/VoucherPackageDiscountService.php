@@ -10,10 +10,10 @@ use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Models\VoucherPackageDiscount;
-use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -82,10 +82,10 @@ class VoucherPackageDiscountService
             $discountCredit = (float) $request['discount_credit'];
             $status = isset($request['status']) ? (bool) $request['status'] : true;
             $discountStartDate = array_key_exists('discount_start_date', $request)
-                ? ($request['discount_start_date'] ? Carbon::parse($request['discount_start_date'], 'Asia/Aden') : null)
+                ? StoreVoucherPackageDiscountRequest::parseDateBoundary($request['discount_start_date'], false)
                 : now('Asia/Aden');
-            $discountEndDate = ! empty($request['discount_end_date'])
-                ? Carbon::parse($request['discount_end_date'], 'Asia/Aden')
+            $discountEndDate = array_key_exists('discount_end_date', $request)
+                ? StoreVoucherPackageDiscountRequest::parseDateBoundary($request['discount_end_date'], true)
                 : null;
         }
 
@@ -142,19 +142,25 @@ class VoucherPackageDiscountService
                 ]);
             }
 
-            $discount = $this->discountRepository->create([
-                'network_id' => $networkId,
-                'pos_id' => $posId,
-                'package_id' => $packageId,
-                'created_by' => $createdBy,
-                'discount_cash' => $discountCash,
-                'discount_credit' => $discountCredit,
-                'status' => $status,
-                'discount_start_date' => $discountStartDate,
-                'discount_end_date' => $discountEndDate,
-            ]);
+            try {
+                $discount = $this->discountRepository->create([
+                    'network_id' => $networkId,
+                    'pos_id' => $posId,
+                    'package_id' => $packageId,
+                    'created_by' => $createdBy,
+                    'discount_cash' => $discountCash,
+                    'discount_credit' => $discountCredit,
+                    'status' => $status,
+                    'discount_start_date' => $discountStartDate,
+                    'discount_end_date' => $discountEndDate,
+                ]);
 
-            return $discount->load(['network', 'pos', 'voucherPackage']);
+                return $discount->load(['network', 'pos', 'voucherPackage']);
+            } catch (UniqueConstraintViolationException) {
+                throw ValidationException::withMessages([
+                    'package_id' => ['يوجد خصم مسجل مسبقاً لنقطة البيع هذه على نفس الباقة.'],
+                ]);
+            }
         });
     }
 
@@ -183,17 +189,31 @@ class VoucherPackageDiscountService
                 $data['status'] = (bool) $request->status;
             }
             if ($request->has('discount_start_date')) {
-                $data['discount_start_date'] = $request->discount_start_date
-                    ? Carbon::parse($request->discount_start_date, 'Asia/Aden')
-                    : null;
+                $data['discount_start_date'] = StoreVoucherPackageDiscountRequest::parseDateBoundary(
+                    $request->input('discount_start_date'),
+                    false
+                );
             }
             if ($request->has('discount_end_date')) {
-                $data['discount_end_date'] = $request->discount_end_date
-                    ? Carbon::parse($request->discount_end_date, 'Asia/Aden')
-                    : null;
+                $data['discount_end_date'] = StoreVoucherPackageDiscountRequest::parseDateBoundary(
+                    $request->input('discount_end_date'),
+                    true
+                );
             }
         } else {
             $data = $request;
+            if (array_key_exists('discount_start_date', $data)) {
+                $data['discount_start_date'] = StoreVoucherPackageDiscountRequest::parseDateBoundary(
+                    $data['discount_start_date'],
+                    false
+                );
+            }
+            if (array_key_exists('discount_end_date', $data)) {
+                $data['discount_end_date'] = StoreVoucherPackageDiscountRequest::parseDateBoundary(
+                    $data['discount_end_date'],
+                    true
+                );
+            }
         }
 
         return DB::transaction(function () use ($discount, $data) {
@@ -250,7 +270,13 @@ class VoucherPackageDiscountService
                 ]);
             }
 
-            return $this->discountRepository->restore($id);
+            try {
+                return $this->discountRepository->restore($id);
+            } catch (UniqueConstraintViolationException) {
+                throw ValidationException::withMessages([
+                    'discount' => ['لا يمكن استعادة هذا الخصم لوجود خصم نشط مسجل مسبقاً لنفس نقطة البيع والباقة.'],
+                ]);
+            }
         });
     }
 
@@ -284,7 +310,39 @@ class VoucherPackageDiscountService
     public function bulkRestore(array $ids): int
     {
         return DB::transaction(function () use ($ids) {
-            return $this->discountRepository->bulkRestore($ids);
+            $trashed = VoucherPackageDiscount::onlyTrashed()->whereIn('discount_id', $ids)->get();
+
+            // فحص التكرار الداخلي بين السجلات المراد استعادتها ضمن نفس الدفعة
+            $grouped = $trashed->groupBy(fn ($d) => "{$d->network_id}_{$d->pos_id}_{$d->package_id}");
+            foreach ($grouped as $group) {
+                if ($group->count() > 1) {
+                    throw ValidationException::withMessages([
+                        'ids' => ['تحتوي القائمة المحددة على أكثر من سجل محذوف لنفس توليفة الشبكة ونقطة البيع والباقة.'],
+                    ]);
+                }
+            }
+
+            // فحص التعارض المسبق مع السجلات النشطة الحالية
+            foreach ($trashed as $discount) {
+                $existing = $this->discountRepository->findByNetworkPosAndPackage(
+                    $discount->network_id,
+                    $discount->pos_id,
+                    $discount->package_id
+                );
+                if ($existing) {
+                    throw ValidationException::withMessages([
+                        'ids' => ["لا يمكن استعادة الخصم رقم [{$discount->discount_id}] لوجود خصم نشط مسجل مسبقاً لنفس نقطة البيع والباقة."],
+                    ]);
+                }
+            }
+
+            try {
+                return $this->discountRepository->bulkRestore($ids);
+            } catch (UniqueConstraintViolationException) {
+                throw ValidationException::withMessages([
+                    'ids' => ['تعذر الاستعادة المجمعة لوجود تعارض فريد مع خصم نشط مسجل مسبقاً لنفس نقطة البيع والباقة.'],
+                ]);
+            }
         });
     }
 

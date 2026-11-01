@@ -120,7 +120,7 @@ class SaleInvoiceService
 
             if (empty($itemsSource) || (is_countable($itemsSource) && count($itemsSource) === 0)) {
                 throw ValidationException::withMessages([
-                    'items' => ['الطلب لا يحتوي على أي باقات أو كروت للفوترة.'],
+                    'items' => ['الطلب لا يحتوي على أي باقات.'],
                 ]);
             }
 
@@ -153,12 +153,13 @@ class SaleInvoiceService
                     $voucherCount = (int) $item['voucher_count'];
                     $token = $item['pricing_token'] ?? null;
 
-                    // حسم التسعير السيادي: البند الأصلي يحتفظ بسعره وخصمه وقت الطلب، والبند الجديد يحتفظ بسعره وخصمه المجمدين
+                    // حسم التسعير السيادي: البند الأصلي يحتفظ بسعره وخصمه وقت الطلب، والبند الجديد يحتفظ بسعره وخصمه المجمدين (مع حظر إعادة التسعير الصامت)
                     $pricing = $this->requestPricingReviewService->resolveItemPricing(
                         $request,
                         $packageId,
                         $token,
-                        $effectiveSaleType
+                        $effectiveSaleType,
+                        requireValidToken: true
                     );
 
                     $package = $pricing['package'];

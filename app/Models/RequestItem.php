@@ -28,6 +28,8 @@ class RequestItem extends Model
         'voucher_price',
         'voucher_count',
         'item_discount',
+        'item_cash_discount',
+        'item_credit_discount',
         'item_total_amount',
     ];
 
@@ -37,6 +39,8 @@ class RequestItem extends Model
             'voucher_price' => 'decimal:2',
             'voucher_count' => 'integer',
             'item_discount' => 'decimal:2',
+            'item_cash_discount' => 'decimal:2',
+            'item_credit_discount' => 'decimal:2',
             'item_total_amount' => 'decimal:2',
         ];
     }

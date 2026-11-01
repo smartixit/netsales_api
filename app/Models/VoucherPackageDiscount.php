@@ -130,6 +130,34 @@ class VoucherPackageDiscount extends Model
         return $started && $notExpired;
     }
 
+    public function resolveValidityState(?CarbonInterface $now = null): string
+    {
+        if ($this->trashed()) {
+            return 'DELETED';
+        }
+
+        if (! $this->isActive()) {
+            return 'DISABLED';
+        }
+
+        $currentTime = $now ?? now('Asia/Aden');
+
+        if ($this->discount_start_date && $currentTime->lt($this->discount_start_date)) {
+            return 'SCHEDULED';
+        }
+
+        if ($this->discount_end_date && $currentTime->gte($this->discount_end_date)) {
+            return 'EXPIRED';
+        }
+
+        return 'EFFECTIVE';
+    }
+
+    public function getValidityStateAttribute(): string
+    {
+        return $this->resolveValidityState();
+    }
+
     public function ensureActive(): void
     {
         if (! $this->isActive()) {
