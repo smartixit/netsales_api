@@ -293,7 +293,7 @@ class RequestService
     {
         return DB::transaction(function () use ($requestId, $reviewedBy, $requestData): array {
             /** @var RequestModel $request */
-            $request = $this->requestRepository->findById($requestId);
+            $request = $this->requestRepository->findById($requestId, ['*'], true);
 
             if (! $request->isPending()) {
                 throw ValidationException::withMessages([
@@ -371,7 +371,7 @@ class RequestService
     {
         return DB::transaction(function () use ($requestId, $reviewedBy, $reason): RequestModel {
             /** @var RequestModel $request */
-            $request = $this->requestRepository->findById($requestId);
+            $request = $this->requestRepository->findById($requestId, ['*'], true);
 
             if (! $request->isPending()) {
                 throw ValidationException::withMessages([
@@ -425,7 +425,7 @@ class RequestService
     {
         return DB::transaction(function () use ($requestId, $userId): RequestModel {
             /** @var RequestModel $request */
-            $request = $this->requestRepository->findById($requestId);
+            $request = $this->requestRepository->findById($requestId, ['*'], true);
 
             if (! $request->isPending()) {
                 throw ValidationException::withMessages([
