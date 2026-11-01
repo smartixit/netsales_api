@@ -66,7 +66,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'subscription.active' => CheckSubscriptionFeatureQuota::class,
             'idempotency' => IdempotencyMiddleware::class,
             'operational.scope' => EnsureOperationalWorkspaceScope::class,
-            'operational.scope' => \App\Http\Middleware\EnsureOperationalWorkspaceScope::class,
+            'operational.scope' => EnsureOperationalWorkspaceScope::class,
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {

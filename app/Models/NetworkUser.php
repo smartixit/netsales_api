@@ -54,4 +54,3 @@ class NetworkUser extends Model
         return $this->status === 'ACTIVE';
     }
 }
-

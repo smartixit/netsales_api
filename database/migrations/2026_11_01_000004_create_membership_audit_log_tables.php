@@ -73,4 +73,3 @@ return new class extends Migration
         Schema::dropIfExists('network_membership_audit_logs');
     }
 };
-

@@ -52,4 +52,3 @@ class NetworkMembershipAuditLog extends Model
         return $this->belongsTo(User::class, 'actor_id', 'user_id');
     }
 }
-

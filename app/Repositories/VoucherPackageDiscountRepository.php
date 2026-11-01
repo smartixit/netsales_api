@@ -81,6 +81,19 @@ class VoucherPackageDiscountRepository extends BaseRepository implements Voucher
     }
 
     /**
+     * البحث عن الخصم الفعلي الساري حالياً لنقطة بيع على باقة معينة لشبكة محددة وفق قيود الصلاحية الزمنية.
+     */
+    public function findEffectiveDiscount(int $networkId, int $posId, int $packageId): ?VoucherPackageDiscount
+    {
+        return $this->model->newQuery()
+            ->forNetwork($networkId)
+            ->forPackageAndPos($packageId, $posId)
+            ->effective()
+            ->orderBy('discount_id', 'desc')
+            ->first();
+    }
+
+    /**
      * جلب كافة خصومات نقطة بيع محددة.
      */
     public function getDiscountsForPos(int $posId, array $filters = []): Collection|CursorPaginator

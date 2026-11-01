@@ -54,4 +54,3 @@ class PosUser extends Model
         return $this->status === 'ACTIVE';
     }
 }
-

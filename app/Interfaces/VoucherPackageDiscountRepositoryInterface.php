@@ -26,6 +26,11 @@ interface VoucherPackageDiscountRepositoryInterface extends BaseRepositoryInterf
     public function findByNetworkPosAndPackage(int $networkId, int $posId, int $packageId): ?VoucherPackageDiscount;
 
     /**
+     * البحث عن الخصم الفعلي الساري حالياً لنقطة بيع على باقة معينة لشبكة محددة وفق قيود الصلاحية الزمنية.
+     */
+    public function findEffectiveDiscount(int $networkId, int $posId, int $packageId): ?VoucherPackageDiscount;
+
+    /**
      * جلب كافة خصومات نقطة بيع محددة.
      *
      * @param  array<string, mixed>  $filters

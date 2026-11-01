@@ -113,6 +113,8 @@ class VoucherPackageDiscountController extends BaseController
                         new OA\Property(property: 'discount_cash', type: 'number', example: 100.5),
                         new OA\Property(property: 'discount_credit', type: 'number', example: 100.5),
                         new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'discount_start_date', type: 'string', format: 'date-time', nullable: true, description: 'تاريخ بدء سريان الخصم (اختياري - الافتراضي هو الوقت الحالي)'),
+                        new OA\Property(property: 'discount_end_date', type: 'string', format: 'date-time', nullable: true, description: 'تاريخ انتهاء سريان الخصم (اختياري - فارغ يعني غير محدد الأجل)'),
                     ]
                 )
             )
@@ -156,6 +158,8 @@ class VoucherPackageDiscountController extends BaseController
                         new OA\Property(property: 'discount_cash', type: 'number', example: 100.5),
                         new OA\Property(property: 'discount_credit', type: 'number', example: 100.5),
                         new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'discount_start_date', type: 'string', format: 'date-time', nullable: true, description: 'تاريخ بدء سريان الخصم (اختياري - الافتراضي هو الوقت الحالي)'),
+                        new OA\Property(property: 'discount_end_date', type: 'string', format: 'date-time', nullable: true, description: 'تاريخ انتهاء سريان الخصم (اختياري - فارغ يعني غير محدد الأجل)'),
                     ]
                 )
             )

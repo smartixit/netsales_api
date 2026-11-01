@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\ExactDateSerialization;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,6 +33,8 @@ class VoucherPackageDiscount extends Model
         'discount_cash',
         'discount_credit',
         'status',
+        'discount_start_date',
+        'discount_end_date',
     ];
 
     protected function casts(): array
@@ -40,6 +43,8 @@ class VoucherPackageDiscount extends Model
             'discount_cash' => 'decimal:2',
             'discount_credit' => 'decimal:2',
             'status' => 'boolean',
+            'discount_start_date' => 'datetime',
+            'discount_end_date' => 'datetime',
         ];
     }
 
@@ -90,10 +95,39 @@ class VoucherPackageDiscount extends Model
         return $query->where('package_id', $packageId)->where('pos_id', $posId);
     }
 
+    public function scopeEffective(Builder $query, ?CarbonInterface $now = null): Builder
+    {
+        $currentTime = $now ?? now('Asia/Aden');
+
+        return $query->where('status', true)
+            ->where(function (Builder $q) use ($currentTime): void {
+                $q->whereNull('discount_start_date')
+                    ->orWhere('discount_start_date', '<=', $currentTime);
+            })
+            ->where(function (Builder $q) use ($currentTime): void {
+                $q->whereNull('discount_end_date')
+                    ->orWhere('discount_end_date', '>', $currentTime);
+            });
+    }
+
     // Checkers
     public function isActive(): bool
     {
         return (bool) $this->status;
+    }
+
+    public function isEffectiveNow(?CarbonInterface $now = null): bool
+    {
+        if (! $this->isActive() || $this->trashed()) {
+            return false;
+        }
+
+        $currentTime = $now ?? now('Asia/Aden');
+
+        $started = $this->discount_start_date === null || $currentTime->gte($this->discount_start_date);
+        $notExpired = $this->discount_end_date === null || $currentTime->lt($this->discount_end_date);
+
+        return $started && $notExpired;
     }
 
     public function ensureActive(): void

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\API\V1\Network;
 
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -51,7 +52,44 @@ class StoreVoucherPackageDiscountRequest extends FormRequest
                 'nullable',
                 'boolean',
             ],
+            'discount_start_date' => [
+                'nullable',
+                'date',
+            ],
+            'discount_end_date' => [
+                'nullable',
+                'date',
+            ],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if ($validator->errors()->has('discount_start_date') || $validator->errors()->has('discount_end_date')) {
+                return;
+            }
+
+            try {
+                $startDate = $this->filled('discount_start_date')
+                    ? Carbon::parse($this->input('discount_start_date'), 'Asia/Aden')
+                    : now('Asia/Aden');
+
+                $endDate = $this->filled('discount_end_date')
+                    ? Carbon::parse($this->input('discount_end_date'), 'Asia/Aden')
+                    : null;
+
+                if ($startDate && $endDate && $endDate->lte($startDate)) {
+                    $validator->errors()->add(
+                        'discount_end_date',
+                        'تاريخ نهاية الخصم يجب أن يكون لاحقاً لتاريخ البداية.'
+                    );
+                }
+            } catch (\Throwable) {
+                // Let the 'date' rule handle any parsing failures
+                return;
+            }
+        });
     }
 
     public function getNetworkId(): int
@@ -82,5 +120,19 @@ class StoreVoucherPackageDiscountRequest extends FormRequest
     public function getStatus(): bool
     {
         return $this->has('status') ? (bool) $this->status : true;
+    }
+
+    public function getDiscountStartDate(): ?Carbon
+    {
+        return $this->filled('discount_start_date')
+            ? Carbon::parse($this->input('discount_start_date'), 'Asia/Aden')
+            : now('Asia/Aden');
+    }
+
+    public function getDiscountEndDate(): ?Carbon
+    {
+        return $this->filled('discount_end_date')
+            ? Carbon::parse($this->input('discount_end_date'), 'Asia/Aden')
+            : null;
     }
 }

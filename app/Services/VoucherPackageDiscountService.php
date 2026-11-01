@@ -10,6 +10,7 @@ use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Models\VoucherPackageDiscount;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -71,6 +72,8 @@ class VoucherPackageDiscountService
             $discountCash = $request->getDiscountCash();
             $discountCredit = $request->getDiscountCredit();
             $status = $request->getStatus();
+            $discountStartDate = $request->getDiscountStartDate();
+            $discountEndDate = $request->getDiscountEndDate();
         } else {
             $networkId = (int) $request['network_id'];
             $posId = (int) $request['pos_id'];
@@ -78,9 +81,15 @@ class VoucherPackageDiscountService
             $discountCash = (float) $request['discount_cash'];
             $discountCredit = (float) $request['discount_credit'];
             $status = isset($request['status']) ? (bool) $request['status'] : true;
+            $discountStartDate = array_key_exists('discount_start_date', $request)
+                ? ($request['discount_start_date'] ? Carbon::parse($request['discount_start_date'], 'Asia/Aden') : null)
+                : now('Asia/Aden');
+            $discountEndDate = ! empty($request['discount_end_date'])
+                ? Carbon::parse($request['discount_end_date'], 'Asia/Aden')
+                : null;
         }
 
-        return DB::transaction(function () use ($networkId, $posId, $packageId, $discountCash, $discountCredit, $status, $createdBy) {
+        return DB::transaction(function () use ($networkId, $posId, $packageId, $discountCash, $discountCredit, $status, $discountStartDate, $discountEndDate, $createdBy) {
             // 1. التحقق من وجود ونشاط الشبكة
             try {
                 $network = $this->networkRepository->findById($networkId);
@@ -141,6 +150,8 @@ class VoucherPackageDiscountService
                 'discount_cash' => $discountCash,
                 'discount_credit' => $discountCredit,
                 'status' => $status,
+                'discount_start_date' => $discountStartDate,
+                'discount_end_date' => $discountEndDate,
             ]);
 
             return $discount->load(['network', 'pos', 'voucherPackage']);
@@ -161,11 +172,26 @@ class VoucherPackageDiscountService
         }
 
         if ($request instanceof UpdateVoucherPackageDiscountRequest) {
-            $data = array_filter([
-                'discount_cash' => $request->discount_cash !== null ? (float) $request->discount_cash : null,
-                'discount_credit' => $request->discount_credit !== null ? (float) $request->discount_credit : null,
-                'status' => $request->status !== null ? (bool) $request->status : null,
-            ], fn ($val) => $val !== null);
+            $data = [];
+            if ($request->has('discount_cash')) {
+                $data['discount_cash'] = (float) $request->discount_cash;
+            }
+            if ($request->has('discount_credit')) {
+                $data['discount_credit'] = (float) $request->discount_credit;
+            }
+            if ($request->has('status')) {
+                $data['status'] = (bool) $request->status;
+            }
+            if ($request->has('discount_start_date')) {
+                $data['discount_start_date'] = $request->discount_start_date
+                    ? Carbon::parse($request->discount_start_date, 'Asia/Aden')
+                    : null;
+            }
+            if ($request->has('discount_end_date')) {
+                $data['discount_end_date'] = $request->discount_end_date
+                    ? Carbon::parse($request->discount_end_date, 'Asia/Aden')
+                    : null;
+            }
         } else {
             $data = $request;
         }
@@ -208,6 +234,22 @@ class VoucherPackageDiscountService
     public function restore(int $id): bool
     {
         return DB::transaction(function () use ($id) {
+            $discount = $this->discountRepository->findTrashedById($id);
+            if (! $discount) {
+                return false;
+            }
+
+            $existing = $this->discountRepository->findByNetworkPosAndPackage(
+                $discount->network_id,
+                $discount->pos_id,
+                $discount->package_id
+            );
+            if ($existing) {
+                throw ValidationException::withMessages([
+                    'discount' => ['لا يمكن استعادة هذا الخصم لوجود خصم نشط مسجل مسبقاً لنفس نقطة البيع والباقة.'],
+                ]);
+            }
+
             return $this->discountRepository->restore($id);
         });
     }
@@ -291,11 +333,11 @@ class VoucherPackageDiscountService
      */
     public function getEffectiveDiscount(int $networkId, int $posId, int $packageId): array
     {
-        $custom = $this->discountRepository->findByNetworkPosAndPackage($networkId, $posId, $packageId);
+        $custom = $this->discountRepository->findEffectiveDiscount($networkId, $posId, $packageId);
         $package = $this->packageRepository->findById($packageId);
         $originalPrice = (float) $package->package_voucher_price;
 
-        if ($custom && (bool) $custom->status) {
+        if ($custom) {
             $cashRate = (float) $custom->discount_cash;
             $creditRate = (float) $custom->discount_credit;
 

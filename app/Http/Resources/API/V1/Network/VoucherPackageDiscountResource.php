@@ -29,6 +29,9 @@ class VoucherPackageDiscountResource extends JsonResource
             'discount_cash' => (float) $this->discount_cash,
             'discount_credit' => (float) $this->discount_credit,
             'status' => (bool) $this->status,
+            'discount_start_date' => $this->discount_start_date ? Carbon::parse($this->discount_start_date)->toDateTimeString() : null,
+            'discount_end_date' => $this->discount_end_date ? Carbon::parse($this->discount_end_date)->toDateTimeString() : null,
+            'is_effective_now' => $this->isEffectiveNow(),
             // Server-authoritative derived monetary values (Frontend Display-Only, AGENTS.md §34)
             // Computed from the linked package's catalog price when it is loaded.
             'original_package_price' => $this->relationLoaded('voucherPackage') && $this->voucherPackage

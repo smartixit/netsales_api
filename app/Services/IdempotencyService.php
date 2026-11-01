@@ -189,4 +189,3 @@ class IdempotencyService
         return $array;
     }
 }
-

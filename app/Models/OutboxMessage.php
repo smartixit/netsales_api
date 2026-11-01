@@ -56,4 +56,3 @@ class OutboxMessage extends Model
         return $this->status === 'PUBLISHED';
     }
 }
-

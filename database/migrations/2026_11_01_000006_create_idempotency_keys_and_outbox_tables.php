@@ -67,4 +67,3 @@ return new class extends Migration
         Schema::dropIfExists('idempotency_keys');
     }
 };
-

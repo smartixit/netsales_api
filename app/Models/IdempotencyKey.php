@@ -51,4 +51,3 @@ class IdempotencyKey extends Model
         return $this->lease_expires_at->isPast();
     }
 }
-
