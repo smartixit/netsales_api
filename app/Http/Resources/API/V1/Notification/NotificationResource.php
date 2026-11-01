@@ -35,7 +35,6 @@ class NotificationResource extends JsonResource
             'read_at' => $this->read_at ? Carbon::parse($this->read_at)->toDateTimeString() : null,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
-            
 
             // Eager Loaded Relationships
             'user' => $this->whenLoaded('user', fn () => new UserResource($this->user)),

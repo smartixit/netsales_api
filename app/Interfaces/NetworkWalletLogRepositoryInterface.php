@@ -33,5 +33,5 @@ interface NetworkWalletLogRepositoryInterface extends BaseRepositoryInterface
     /**
      * إنشاء قيد مالي جديد في دفتر أستاذ محفظة الشبكة.
      */
-    public function createLog(int $walletId, WalletOperationType|string $operation, float $amount, string $statement, ?int $createdBy = null, ?string $date = null): NetworkWalletLog;
+    public function createLog(int $walletId, WalletOperationType|string $operation, float $amount, string $statement, ?int $createdBy = null, ?string $date = null, ?int $transferId = null): NetworkWalletLog;
 }

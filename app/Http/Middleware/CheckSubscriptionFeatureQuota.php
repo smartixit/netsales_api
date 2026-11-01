@@ -46,11 +46,11 @@ class CheckSubscriptionFeatureQuota
 
         if (! $networkId) {
             return $this->errorResponse(
-                'عذراً، لم يتم تحديد شبكة المزود المرتبطة بالعملية للتحقق من حصة الاشتراك.',
+                'عذراً، لم يتم تحديد شبكة المزود المرتبطة بالعملية أو غير مصرح لك بالوصول لحصة هذه الشبكة.',
                 [
-                    'network_id' => ['معرف شبكة المزود مفقود في سياق الطلب الحالي.'],
+                    'network_id' => ['معرف شبكة المزود غير صالح أو غير مصرح لك بالوصول إليه.'],
                 ],
-                422
+                403
             );
         }
 
@@ -107,28 +107,45 @@ class CheckSubscriptionFeatureQuota
     }
 
     /**
-     * استخراج معرف الشبكة الموثوقة من سياق الطلب والمستخدم.
+     * استخراج معرف الشبكة الموثوقة من سياق الطلب والمستخدم مع التحقق من العزل والصلاحية.
      */
     protected function resolveNetworkId(Request $request, $user): ?int
     {
-        // 1. إذا كان المستخدم يحمل معرف شبكة صريحاً
-        if (! empty($user->network_id)) {
-            return (int) $user->network_id;
-        }
+        $targetNetworkId = null;
 
-        // 2. إذا كان المسار يحتوي على معامل الشبكة {network_id}
+        // 1. إذا كان المسار يحتوي على معامل الشبكة {network_id} أو {networkId}
         if ($request->route('network_id')) {
-            return (int) $request->route('network_id');
+            $targetNetworkId = (int) $request->route('network_id');
+        } elseif ($request->route('networkId')) {
+            $targetNetworkId = (int) $request->route('networkId');
+        } elseif ($request->filled('network_id')) {
+            $targetNetworkId = (int) $request->input('network_id');
+        } elseif ($request->filled('networkId')) {
+            $targetNetworkId = (int) $request->input('networkId');
+        } elseif (! empty($user->network_id)) {
+            $targetNetworkId = (int) $user->network_id;
         }
 
-        // 3. إذا كان المسار يحتوي على {networkId}
-        if ($request->route('networkId')) {
-            return (int) $request->route('networkId');
+        if (! $targetNetworkId) {
+            return null;
         }
 
-        // 4. قراءة الحقل من جسم الطلب
-        if ($request->filled('network_id')) {
-            return (int) $request->input('network_id');
+        // إذا كان مسؤول النظام فله الصلاحية الكاملة على جميع الشبكات
+        if ($user->isSuperAdmin()) {
+            return $targetNetworkId;
+        }
+
+        // التحقق من ملكية أو عضوية المستخدم في الشبكة
+        $isNetworkMember = $user->networks()->where('networks.network_id', $targetNetworkId)->exists()
+            || (method_exists($user, 'networkUsers') && $user->networkUsers()->where('network_id', $targetNetworkId)->exists());
+
+        if ($isNetworkMember) {
+            return $targetNetworkId;
+        }
+
+        // إذا كان مستخدم نقطة بيع مرتبطة بالشبكة
+        if ($user->pos && method_exists($user->pos, 'networks') && $user->pos->networks()->where('networks.network_id', $targetNetworkId)->exists()) {
+            return $targetNetworkId;
         }
 
         return null;

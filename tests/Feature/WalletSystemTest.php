@@ -7,10 +7,12 @@ use App\Enums\PosStatus;
 use App\Enums\UserStatus;
 use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
+use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
 use App\Models\Pos;
 use App\Models\PosWallet;
 use App\Models\User;
+use App\Models\UserDevice;
 use App\Models\UserSession;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -38,7 +40,7 @@ class WalletSystemTest extends TestCase
         $this->user = User::firstOrFail();
 
         $deviceUuid = 'TEST-DEVICE-WALLET-'.uniqid();
-        \App\Models\UserDevice::create([
+        UserDevice::create([
             'user_id' => $this->user->user_id,
             'device_uuid' => $deviceUuid,
             'device_name' => 'PHPUnit Wallet Device',
@@ -89,6 +91,12 @@ class WalletSystemTest extends TestCase
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => PosStatus::ACTIVE,
+        ]);
+
+        NetworkPos::create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'is_active' => true,
         ]);
     }
 

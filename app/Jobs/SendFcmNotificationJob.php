@@ -36,8 +36,8 @@ class SendFcmNotificationJob implements ShouldQueue
     /**
      * Create a new job instance.
      *
-     * @param array<string, mixed> $data
-     * @param array<int, string>|string|null $tokens
+     * @param  array<string, mixed>  $data
+     * @param  array<int, string>|string|null  $tokens
      */
     public function __construct(
         public ?int $userId,

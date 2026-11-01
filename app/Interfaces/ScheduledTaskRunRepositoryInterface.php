@@ -2,8 +2,8 @@
 
 namespace App\Interfaces;
 
-use App\Enums\ScheduledTaskType;
 use App\Enums\ScheduledTaskStatus;
+use App\Enums\ScheduledTaskType;
 use App\Models\ScheduledTaskRun;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;

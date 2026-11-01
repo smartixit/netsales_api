@@ -12,7 +12,6 @@ use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\RequestRepositoryInterface;
 use App\Interfaces\SaleInvoiceRepositoryInterface;
 use App\Models\Network;
-use App\Models\NetworkWallet;
 use App\Models\Pos;
 use App\Models\PosWallet;
 use App\Models\User;
@@ -45,11 +44,27 @@ class DashboardService
         $period = $request->getPeriod();
         $isForceRefresh = $request->boolean('refresh', false);
 
-        $roleKey = $user->role?->role_key instanceof RoleKey
-            ? $user->role->role_key
-            : RoleKey::tryFrom((string) ($user->role?->role_key ?? ''));
+        if ($user->isSuperAdmin()) {
+            $roleKeyEnum = RoleKey::SUPER_ADMIN;
+        } elseif ($user->hasRole(RoleKey::POS_AGENT)) {
+            $roleKeyEnum = RoleKey::POS_AGENT;
+        } elseif ($user->hasRole(RoleKey::POS_USER)) {
+            $roleKeyEnum = RoleKey::POS_USER;
+        } elseif ($user->hasRole(RoleKey::POS_ACCOUNTANT)) {
+            $roleKeyEnum = RoleKey::POS_ACCOUNTANT;
+        } elseif ($user->hasRole(RoleKey::NETWORK_OWNER)) {
+            $roleKeyEnum = RoleKey::NETWORK_OWNER;
+        } elseif ($user->hasRole(RoleKey::NETWORK_USER)) {
+            $roleKeyEnum = RoleKey::NETWORK_USER;
+        } elseif ($user->hasRole(RoleKey::NETWORK_ACCOUNTANT)) {
+            $roleKeyEnum = RoleKey::NETWORK_ACCOUNTANT;
+        } else {
+            $roleKey = $user->role?->role_key instanceof RoleKey
+                ? $user->role->role_key
+                : RoleKey::tryFrom((string) ($user->role?->role_key ?? ''));
+            $roleKeyEnum = $roleKey ?? RoleKey::SUPER_ADMIN;
+        }
 
-        $roleKeyEnum = $roleKey ?? RoleKey::SUPER_ADMIN;
         $roleKeyValue = $roleKeyEnum->value;
 
         // توليد مفتاح كاش ذكي بحسب المستخدم والدور والفترة

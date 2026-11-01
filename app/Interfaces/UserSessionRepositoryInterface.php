@@ -60,4 +60,3 @@ interface UserSessionRepositoryInterface extends BaseRepositoryInterface
      */
     public function deleteExpiredOrRevoked(\DateTimeInterface $cutoff): int;
 }
-

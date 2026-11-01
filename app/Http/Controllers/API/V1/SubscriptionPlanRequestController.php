@@ -36,7 +36,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Get(
         path: '/api/v1/subscription-plan-requests',
         summary: 'عرض قائمة طلبات الاشتراك',
-        
+
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -70,7 +70,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Get(
         path: '/api/v1/subscription-plan-requests/{id}',
         summary: 'عرض تفاصيل طلب اشتراك',
-        
+
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -98,9 +98,9 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests',
         summary: 'تقديم طلب اشتراك جديد',
-        
+
         tags: ['Subscription Plan Requests'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -108,13 +108,13 @@ class SubscriptionPlanRequestController extends BaseController
                 schema: new OA\Schema(
                     required: ['network_id', 'plan_id', 'request_payment_type'],
                     properties: [
-                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'plan_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'request_payment_type', type: 'string'),
-                    new OA\Property(property: 'account_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'transaction_reference', type: 'string'),
-                    new OA\Property(property: 'transaction_receipt', type: 'string', format: 'binary'),
-                    new OA\Property(property: 'request_note', type: 'string'),
+                        new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'plan_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'request_payment_type', type: 'string'),
+                        new OA\Property(property: 'account_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'transaction_reference', type: 'string'),
+                        new OA\Property(property: 'transaction_receipt', type: 'string', format: 'binary'),
+                        new OA\Property(property: 'request_note', type: 'string'),
                     ]
                 )
             )
@@ -143,12 +143,12 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/{id}/approve',
         summary: 'اعتماد طلب الاشتراك',
-        
+
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -156,7 +156,7 @@ class SubscriptionPlanRequestController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'request_note', type: 'string'),
+                        new OA\Property(property: 'request_note', type: 'string'),
                     ]
                 )
             )
@@ -188,12 +188,12 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/{id}/reject',
         summary: 'رفض طلب الاشتراك',
-        
+
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -201,8 +201,8 @@ class SubscriptionPlanRequestController extends BaseController
                 schema: new OA\Schema(
                     required: ['rejection_reason'],
                     properties: [
-                    new OA\Property(property: 'rejection_reason', type: 'string'),
-                    new OA\Property(property: 'request_note', type: 'string'),
+                        new OA\Property(property: 'rejection_reason', type: 'string'),
+                        new OA\Property(property: 'request_note', type: 'string'),
                     ]
                 )
             )
@@ -231,7 +231,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/{id}/cancel',
         summary: 'إلغاء طلب اشتراك معلق',
-        
+
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -260,7 +260,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Delete(
         path: '/api/v1/subscription-plan-requests/{id}',
         summary: 'حذف طلب اشتراك ناعماً',
-        
+
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -288,7 +288,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Get(
         path: '/api/v1/subscription-plan-requests/trashed',
         summary: 'عرض طلبات الاشتراك المحذوفة ناعماً',
-        
+
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -321,7 +321,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/{id}/restore',
         summary: 'استعادة طلب اشتراك محذوف',
-        
+
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -349,7 +349,7 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Delete(
         path: '/api/v1/subscription-plan-requests/{id}/force',
         summary: 'حذف نهائي لطلب الاشتراك',
-        
+
         tags: ['Subscription Plan Requests'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -377,9 +377,9 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/batch-delete',
         summary: 'حذف مجمع للطلبات',
-        
+
         tags: ['Subscription Plan Requests'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -387,7 +387,7 @@ class SubscriptionPlanRequestController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -415,9 +415,9 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/batch-restore',
         summary: 'استعادة مجمعة للطلبات',
-        
+
         tags: ['Subscription Plan Requests'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -425,7 +425,7 @@ class SubscriptionPlanRequestController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -453,9 +453,9 @@ class SubscriptionPlanRequestController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plan-requests/batch-force-delete',
         summary: 'حذف نهائي مجمع للطلبات',
-        
+
         tags: ['Subscription Plan Requests'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -463,7 +463,7 @@ class SubscriptionPlanRequestController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )

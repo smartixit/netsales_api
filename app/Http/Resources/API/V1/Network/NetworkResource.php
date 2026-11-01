@@ -46,7 +46,6 @@ class NetworkResource extends JsonResource
                 : (NetworkStatus::tryFrom((string) $this->status)?->label()),
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
-            
 
             // Eager Loaded Relationships
             'owner' => $this->whenLoaded('owner', fn () => new UserResource($this->owner)),

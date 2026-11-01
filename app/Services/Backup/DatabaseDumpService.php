@@ -98,7 +98,7 @@ class DatabaseDumpService
         $footer = "\n/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;\n"
             ."/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;\n"
             ."/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;\n"
-            ."-- Dump completed successfully at ".date('Y-m-d H:i:s')."\n";
+            .'-- Dump completed successfully at '.date('Y-m-d H:i:s')."\n";
 
         $writer($footer);
         fclose($handle);

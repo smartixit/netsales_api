@@ -33,5 +33,5 @@ interface PosWalletLogRepositoryInterface extends BaseRepositoryInterface
     /**
      * إنشاء قيد مالي جديد في دفتر أستاذ محفظة نقطة البيع.
      */
-    public function createLog(int $walletId, WalletOperationType|string $operationType, float $amount, string $statement, ?int $createdBy = null, ?string $date = null): PosWalletLog;
+    public function createLog(int $walletId, WalletOperationType|string $operationType, float $amount, string $statement, ?int $createdBy = null, ?string $date = null, ?int $transferId = null): PosWalletLog;
 }

@@ -36,7 +36,7 @@ class ExpenseController extends BaseController
     #[OA\Get(
         path: '/api/v1/expenses',
         summary: 'عرض قائمة المصروفات التشغيلية',
-        
+
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -70,7 +70,7 @@ class ExpenseController extends BaseController
     #[OA\Get(
         path: '/api/v1/expenses/{id}',
         summary: 'عرض تفاصيل مصروف محدد',
-        
+
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -99,9 +99,9 @@ class ExpenseController extends BaseController
     #[OA\Post(
         path: '/api/v1/expenses',
         summary: 'تسجيل مصروف تشغيلي جديد',
-        
+
         tags: ['Expenses'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -109,10 +109,10 @@ class ExpenseController extends BaseController
                 schema: new OA\Schema(
                     required: ['network_id', 'items'],
                     properties: [
-                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'expense_date', type: 'string', format: 'date', example: '2026-01-01'),
-                    new OA\Property(property: 'items[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
-                    new OA\Property(property: 'attachments[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                        new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'expense_date', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'items[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                        new OA\Property(property: 'attachments[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
                     ]
                 )
             )
@@ -142,12 +142,12 @@ class ExpenseController extends BaseController
     #[OA\Put(
         path: '/api/v1/expenses/{id}',
         summary: 'تحديث بيانات مصروف قائم',
-        
+
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -155,9 +155,9 @@ class ExpenseController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'expense_date', type: 'string', format: 'date', example: '2026-01-01'),
-                    new OA\Property(property: 'items[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
-                    new OA\Property(property: 'attachments[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                        new OA\Property(property: 'expense_date', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'items[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                        new OA\Property(property: 'attachments[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
                     ]
                 )
             )
@@ -187,7 +187,7 @@ class ExpenseController extends BaseController
     #[OA\Delete(
         path: '/api/v1/expenses/{id}',
         summary: 'حذف مصروف ناعماً',
-        
+
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -215,7 +215,7 @@ class ExpenseController extends BaseController
     #[OA\Get(
         path: '/api/v1/expenses/trashed',
         summary: 'عرض المصروفات المحذوفة ناعماً',
-        
+
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -248,7 +248,7 @@ class ExpenseController extends BaseController
     #[OA\Post(
         path: '/api/v1/expenses/{id}/restore',
         summary: 'استعادة مصروف محذوف',
-        
+
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -276,7 +276,7 @@ class ExpenseController extends BaseController
     #[OA\Delete(
         path: '/api/v1/expenses/{id}/force',
         summary: 'حذف نهائي للمصروف',
-        
+
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -304,9 +304,9 @@ class ExpenseController extends BaseController
     #[OA\Post(
         path: '/api/v1/expenses/batch-delete',
         summary: 'حذف مجمع للمصروفات',
-        
+
         tags: ['Expenses'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -314,7 +314,7 @@ class ExpenseController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -342,9 +342,9 @@ class ExpenseController extends BaseController
     #[OA\Post(
         path: '/api/v1/expenses/batch-restore',
         summary: 'استعادة مجمعة للمصروفات',
-        
+
         tags: ['Expenses'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -352,7 +352,7 @@ class ExpenseController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -380,9 +380,9 @@ class ExpenseController extends BaseController
     #[OA\Post(
         path: '/api/v1/expenses/batch-force-delete',
         summary: 'حذف نهائي مجمع للمصروفات',
-        
+
         tags: ['Expenses'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -390,7 +390,7 @@ class ExpenseController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -418,12 +418,12 @@ class ExpenseController extends BaseController
     #[OA\Post(
         path: '/api/v1/expenses/{id}/items',
         summary: 'إضافة بند منفرد للمصروف',
-        
+
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -431,8 +431,8 @@ class ExpenseController extends BaseController
                 schema: new OA\Schema(
                     required: ['item_statement', 'item_amount'],
                     properties: [
-                    new OA\Property(property: 'item_statement', type: 'string'),
-                    new OA\Property(property: 'item_amount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'item_statement', type: 'string'),
+                        new OA\Property(property: 'item_amount', type: 'number', example: 100.5),
                     ]
                 )
             )
@@ -461,7 +461,7 @@ class ExpenseController extends BaseController
     #[OA\Delete(
         path: '/api/v1/expenses/{id}/items/{itemId}',
         summary: 'حذف بند منفرد من المصروف',
-        
+
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -491,7 +491,7 @@ class ExpenseController extends BaseController
     #[OA\Delete(
         path: '/api/v1/expenses/{id}/attachments/{attachmentId}',
         summary: 'حذف مرفق منفرد من المصروف',
-        
+
         tags: ['Expenses'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),

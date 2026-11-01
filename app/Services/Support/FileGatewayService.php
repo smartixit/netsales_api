@@ -2,6 +2,8 @@
 
 namespace App\Services\Support;
 
+use App\Models\ExpenseAttachment;
+use App\Models\SubscriptionPlanRequest;
 use App\Models\User;
 use App\Services\SessionValidatorService;
 use App\Services\SystemLoggerService;
@@ -115,9 +117,40 @@ class FileGatewayService
     protected function enforceMultiTenantIsolation(Request $request, string $cleanPath): void
     {
         $user = $this->resolveAuthenticatedUser($request);
+        if (! $user) {
+            throw new HttpException(401, 'يجب تسجيل الدخول للوصول إلى هذا الملف المحمي.');
+        }
 
-        // التدقيق في التوقيع الرقمي للملفات الخاصة الموقعة
-        // التوقيع الرقمي HMAC-SHA256 يضمن سلامة وصلاحية الوصول
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+
+        // عزل ملفات مرفقات المصروفات
+        if (str_starts_with($cleanPath, 'expenses/')) {
+            $attachment = ExpenseAttachment::where('file_path', $cleanPath)->with('expense')->first();
+            if ($attachment && $attachment->expense) {
+                $networkId = $attachment->expense->network_id;
+                $hasAccess = $user->networks()->where('networks.network_id', $networkId)->exists()
+                    || (method_exists($user, 'networkUsers') && $user->networkUsers()->where('network_id', $networkId)->exists());
+
+                if (! $hasAccess) {
+                    throw new HttpException(403, 'غير مصرح لك بالوصول إلى مرفقات مصروفات هذه الشبكة.');
+                }
+            }
+        }
+
+        // عزل ملفات إيصالات سداد الاشتراكات
+        if (str_starts_with($cleanPath, 'subscription_receipts/')) {
+            $planRequest = SubscriptionPlanRequest::where('payment_receipt', $cleanPath)->first();
+            if ($planRequest) {
+                $hasAccess = (int) $planRequest->requested_by === (int) $user->user_id
+                    || $user->networks()->where('networks.network_id', $planRequest->network_id)->exists();
+
+                if (! $hasAccess) {
+                    throw new HttpException(403, 'غير مصرح لك بالوصول إلى إيصال سداد هذا الاشتراك.');
+                }
+            }
+        }
     }
 
     /**

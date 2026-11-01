@@ -3,6 +3,7 @@
 namespace App\Http\Requests\API\V1\Network;
 
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
+use App\Models\VoucherPackage;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -32,7 +33,7 @@ class UpdateVoucherPackageRequest extends FormRequest
         // Scope name uniqueness to the package's own network (consistent with Store rule).
         $networkId = null;
         if ($packageId) {
-            $existingPackage = \App\Models\VoucherPackage::find($packageId);
+            $existingPackage = VoucherPackage::find($packageId);
             $networkId = $existingPackage?->network_id;
         }
 

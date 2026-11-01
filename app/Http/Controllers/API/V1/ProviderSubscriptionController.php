@@ -34,7 +34,7 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Get(
         path: '/api/v1/provider-subscriptions',
         summary: 'عرض قائمة اشتراكات المزودين',
-        
+
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -67,7 +67,7 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Get(
         path: '/api/v1/provider-subscriptions/{id}',
         summary: 'عرض تفاصيل اشتراك مزود',
-        
+
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -95,7 +95,7 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Get(
         path: '/api/v1/provider-subscriptions/network/{networkId}/active',
         summary: 'عرض الاشتراك النشط للشبكة',
-        
+
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -126,12 +126,12 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Post(
         path: '/api/v1/provider-subscriptions/{id}/extend',
         summary: 'تمديد فترة صلاحية الاشتراك',
-        
+
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -139,7 +139,7 @@ class ProviderSubscriptionController extends BaseController
                 schema: new OA\Schema(
                     required: ['additional_days'],
                     properties: [
-                    new OA\Property(property: 'additional_days', type: 'integer', example: 1),
+                        new OA\Property(property: 'additional_days', type: 'integer', example: 1),
                     ]
                 )
             )
@@ -167,7 +167,7 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Get(
         path: '/api/v1/provider-subscriptions/{id}/consumptions',
         summary: 'عرض استهلاك ميزات الاشتراك',
-        
+
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -195,12 +195,12 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Post(
         path: '/api/v1/provider-subscriptions/network/{networkId}/consume',
         summary: 'تسجيل استهلاك ميزة للشبكة',
-        
+
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -208,8 +208,8 @@ class ProviderSubscriptionController extends BaseController
                 schema: new OA\Schema(
                     required: ['feature_name'],
                     properties: [
-                    new OA\Property(property: 'feature_name', type: 'string'),
-                    new OA\Property(property: 'amount', type: 'integer', example: 1),
+                        new OA\Property(property: 'feature_name', type: 'string'),
+                        new OA\Property(property: 'amount', type: 'integer', example: 1),
                     ]
                 )
             )
@@ -241,7 +241,7 @@ class ProviderSubscriptionController extends BaseController
     #[OA\Post(
         path: '/api/v1/provider-subscriptions/network/{networkId}/activate-early',
         summary: 'تفعيل الاشتراك المجدول مبكراً',
-        
+
         tags: ['Provider Subscriptions'],
         parameters: [
             new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),

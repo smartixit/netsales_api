@@ -12,7 +12,6 @@ use App\Models\User;
 use App\Models\UserSession;
 use App\Services\NotificationService;
 use App\Services\Support\SMSGateService;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;

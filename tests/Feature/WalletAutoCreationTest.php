@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Enums\SmsMessageType;
 use App\Enums\UserStatus;
 use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
@@ -13,11 +14,13 @@ use App\Interfaces\PosWalletRepositoryInterface;
 use App\Models\Directorate;
 use App\Models\Governorate;
 use App\Models\Network;
+use App\Models\NetworkSmsSetting;
 use App\Models\Pos;
 use App\Models\User;
 use App\Services\NetworkPosService;
 use App\Services\NetworkService;
 use App\Services\PosService;
+use App\Services\Support\SMSGateService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -26,12 +29,19 @@ class WalletAutoCreationTest extends TestCase
     use DatabaseTransactions;
 
     protected NetworkService $networkService;
+
     protected PosService $posService;
+
     protected NetworkPosService $networkPosService;
+
     protected NetworkWalletRepositoryInterface $networkWalletRepository;
+
     protected PosWalletRepositoryInterface $posWalletRepository;
+
     protected NetworkRepositoryInterface $networkRepository;
+
     protected PosRepositoryInterface $posRepository;
+
     protected NetworkPosRepositoryInterface $networkPosRepository;
 
     protected function setUp(): void
@@ -74,7 +84,7 @@ class WalletAutoCreationTest extends TestCase
         $this->assertEquals(0.00, (float) $wallet->wallet_balance);
         $this->assertTrue((bool) $wallet->status);
 
-        $smsSetting = \App\Models\NetworkSmsSetting::where('network_id', $network->network_id)->first();
+        $smsSetting = NetworkSmsSetting::where('network_id', $network->network_id)->first();
         $this->assertNotNull($smsSetting);
         $this->assertFalse((bool) $smsSetting->is_enabled);
         $this->assertFalse((bool) $smsSetting->use_custom_gateway);
@@ -192,31 +202,31 @@ class WalletAutoCreationTest extends TestCase
             'status' => NetworkStatus::ACTIVE,
         ]);
 
-        /** @var \App\Services\Support\SMSGateService $smsGateService */
-        $smsGateService = app(\App\Services\Support\SMSGateService::class);
+        /** @var SMSGateService $smsGateService */
+        $smsGateService = app(SMSGateService::class);
 
         // 1. System OTP or Admin broadcast ALWAYS uses system gateway (even with network ID)
-        [$otpConfig, $ownerType] = $smsGateService->resolveGatewaySettings($network->network_id, messageType: \App\Enums\SmsMessageType::OTP);
+        [$otpConfig, $ownerType] = $smsGateService->resolveGatewaySettings($network->network_id, messageType: SmsMessageType::OTP);
         $this->assertNotNull($otpConfig);
         $this->assertEquals('system', $ownerType);
 
-        [$adminConfig, $adminOwner] = $smsGateService->resolveGatewaySettings($network->network_id, messageType: \App\Enums\SmsMessageType::ADMIN_BROADCAST);
+        [$adminConfig, $adminOwner] = $smsGateService->resolveGatewaySettings($network->network_id, messageType: SmsMessageType::ADMIN_BROADCAST);
         $this->assertNotNull($adminConfig);
         $this->assertEquals('system', $adminOwner);
 
         // 2. Network operational messages without custom gateway are blocked (return null)
-        [$operationalConfig, $ownerTypeOp] = $smsGateService->resolveGatewaySettings($network->network_id, messageType: \App\Enums\SmsMessageType::RECEIPT);
+        [$operationalConfig, $ownerTypeOp] = $smsGateService->resolveGatewaySettings($network->network_id, messageType: SmsMessageType::RECEIPT);
         $this->assertNull($operationalConfig);
         $this->assertEquals('none', $ownerTypeOp);
 
         // 3. Un-attributed message without networkId and not sovereign is also blocked (no system fallback)
-        [$nullConfig, $nullOwner] = $smsGateService->resolveGatewaySettings(null, messageType: \App\Enums\SmsMessageType::RECEIPT);
+        [$nullConfig, $nullOwner] = $smsGateService->resolveGatewaySettings(null, messageType: SmsMessageType::RECEIPT);
         $this->assertNull($nullConfig);
         $this->assertEquals('none', $nullOwner);
 
         // 4. Policy check verifies that operational messages without custom gateway are prohibited
-        $this->assertFalse($smsGateService->smsAllowedFor(null, \App\Enums\SmsMessageType::RECEIPT));
-        $this->assertTrue($smsGateService->smsAllowedFor(null, \App\Enums\SmsMessageType::OTP));
-        $this->assertTrue($smsGateService->smsAllowedFor(null, \App\Enums\SmsMessageType::ADMIN_BROADCAST));
+        $this->assertFalse($smsGateService->smsAllowedFor(null, SmsMessageType::RECEIPT));
+        $this->assertTrue($smsGateService->smsAllowedFor(null, SmsMessageType::OTP));
+        $this->assertTrue($smsGateService->smsAllowedFor(null, SmsMessageType::ADMIN_BROADCAST));
     }
 }

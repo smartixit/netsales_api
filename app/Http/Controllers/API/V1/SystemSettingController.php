@@ -61,7 +61,7 @@ class SystemSettingController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-settings',
         summary: 'عرض قائمة إعدادات النظام',
-        
+
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'setting_category', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
@@ -94,7 +94,7 @@ class SystemSettingController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-settings/category/{category}',
         summary: 'عرض إعدادات تصنيف محدد',
-        
+
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'category', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
@@ -122,7 +122,7 @@ class SystemSettingController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-settings/key/{key}',
         summary: 'عرض إعداد محدد عبر المفتاح',
-        
+
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'key', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
@@ -150,7 +150,7 @@ class SystemSettingController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-settings/{id}',
         summary: 'عرض تفاصيل إعداد محدد',
-        
+
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -178,9 +178,9 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings',
         summary: 'إنشاء إعداد نظام جديد',
-        
+
         tags: ['SystemSettings'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -188,11 +188,11 @@ class SystemSettingController extends BaseController
                 schema: new OA\Schema(
                     required: ['setting_category', 'setting_key', 'setting_value_type'],
                     properties: [
-                    new OA\Property(property: 'setting_category', type: 'string'),
-                    new OA\Property(property: 'setting_key', type: 'string'),
-                    new OA\Property(property: 'setting_value_type', type: 'string'),
-                    new OA\Property(property: 'setting_value', type: 'string'),
-                    new OA\Property(property: 'setting_desc', type: 'string'),
+                        new OA\Property(property: 'setting_category', type: 'string'),
+                        new OA\Property(property: 'setting_key', type: 'string'),
+                        new OA\Property(property: 'setting_value_type', type: 'string'),
+                        new OA\Property(property: 'setting_value', type: 'string'),
+                        new OA\Property(property: 'setting_desc', type: 'string'),
                     ]
                 )
             )
@@ -220,12 +220,12 @@ class SystemSettingController extends BaseController
     #[OA\Put(
         path: '/api/v1/system-settings/{id}',
         summary: 'تحديث بيانات إعداد نظام',
-        
+
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -233,11 +233,11 @@ class SystemSettingController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'setting_category', type: 'string'),
-                    new OA\Property(property: 'setting_key', type: 'string'),
-                    new OA\Property(property: 'setting_value_type', type: 'string'),
-                    new OA\Property(property: 'setting_value', type: 'string'),
-                    new OA\Property(property: 'setting_desc', type: 'string'),
+                        new OA\Property(property: 'setting_category', type: 'string'),
+                        new OA\Property(property: 'setting_key', type: 'string'),
+                        new OA\Property(property: 'setting_value_type', type: 'string'),
+                        new OA\Property(property: 'setting_value', type: 'string'),
+                        new OA\Property(property: 'setting_desc', type: 'string'),
                     ]
                 )
             )
@@ -265,9 +265,9 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings/batch-update',
         summary: 'تحديث مجمع لقيم إعدادات النظام',
-        
+
         tags: ['SystemSettings'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -275,7 +275,7 @@ class SystemSettingController extends BaseController
                 schema: new OA\Schema(
                     required: ['settings'],
                     properties: [
-                    new OA\Property(property: 'settings[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                        new OA\Property(property: 'settings[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
                     ]
                 )
             )
@@ -303,7 +303,7 @@ class SystemSettingController extends BaseController
     #[OA\Delete(
         path: '/api/v1/system-settings/{id}',
         summary: 'حذف إعداد نظام ناعماً',
-        
+
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -331,7 +331,7 @@ class SystemSettingController extends BaseController
     #[OA\Get(
         path: '/api/v1/system-settings/trashed',
         summary: 'عرض الإعدادات المحذوفة ناعماً',
-        
+
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'setting_category', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
@@ -363,7 +363,7 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings/{id}/restore',
         summary: 'استعادة إعداد نظام محذوف ناعماً',
-        
+
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -391,7 +391,7 @@ class SystemSettingController extends BaseController
     #[OA\Delete(
         path: '/api/v1/system-settings/{id}/force-delete',
         summary: 'الحذف النهائي لإعداد نظام',
-        
+
         tags: ['SystemSettings'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -419,9 +419,9 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings/batch-delete',
         summary: 'الحذف المجمع للإعدادات ناعماً',
-        
+
         tags: ['SystemSettings'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -429,7 +429,7 @@ class SystemSettingController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -457,9 +457,9 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings/batch-restore',
         summary: 'الاستعادة المجمعة للإعدادات',
-        
+
         tags: ['SystemSettings'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -467,7 +467,7 @@ class SystemSettingController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -495,9 +495,9 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings/batch-force-delete',
         summary: 'الحذف النهائي المجمع للإعدادات',
-        
+
         tags: ['SystemSettings'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -505,7 +505,7 @@ class SystemSettingController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -533,7 +533,7 @@ class SystemSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/system-settings/clear-cache',
         summary: 'تفريغ كاش إعدادات النظام',
-        
+
         tags: ['SystemSettings'],
         responses: [
             new OA\Response(response: 200, description: 'تم تفريغ كاش إعدادات النظام بنجاح'),

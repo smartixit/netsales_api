@@ -70,4 +70,3 @@ if (config('queue.default') !== 'sync') {
         ->everyMinute()
         ->withoutOverlapping();
 }
-

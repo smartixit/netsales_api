@@ -69,7 +69,7 @@ enum NotificationType: string
             self::VOUCHER_REQUEST_CREATED => 'طلب كروت إنترنت جديد',
             self::VOUCHER_REQUEST_APPROVED => 'تمت الموافقة على طلب الكروت',
             self::VOUCHER_REQUEST_REJECTED => 'تم رفض طلب الكروت',
-            self::VOUCHER_REQUEST_CANCELLED=> 'تم إلغاء طلب الكروت',
+            self::VOUCHER_REQUEST_CANCELLED => 'تم إلغاء طلب الكروت',
 
             self::WALLET_DEPOSIT => 'إيداع في المحفظة',
             self::WALLET_WITHDRAWAL => 'سحب من المحفظة',

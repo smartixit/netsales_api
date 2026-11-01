@@ -21,10 +21,13 @@ use Illuminate\Support\Facades\Log;
 class FcmService
 {
     protected const FCM_ENDPOINT_TEMPLATE = 'https://fcm.googleapis.com/v1/projects/%s/messages:send';
+
     protected const FCM_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
+
     protected const TOKEN_CACHE_KEY = 'fcm_v1_access_token';
 
     protected HttpClient $httpClient;
+
     protected SystemSettingService $systemSettingService;
 
     public function __construct(
@@ -39,7 +42,7 @@ class FcmService
     /**
      * إرسال إشعار فوري لجميع الأجهزة النشطة المرتبطة بمستخدم محدد.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array{sent: int, failed: int, total: int}
      */
     public function sendToUser(
@@ -63,8 +66,8 @@ class FcmService
     /**
      * إرسال إشعار فوري لمجموعة رموز أجهزة (Tokens).
      *
-     * @param array<int, string> $tokens
-     * @param array<string, mixed> $data
+     * @param  array<int, string>  $tokens
+     * @param  array<string, mixed>  $data
      * @return array{sent: int, failed: int, total: int}
      */
     public function sendToTokens(
@@ -96,7 +99,7 @@ class FcmService
     /**
      * إرسال إشعار فوري لجهاز فردي عبر رمزه (FCM Device Token).
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function sendToToken(
         string $token,
@@ -154,7 +157,7 @@ class FcmService
             // التحقق مما إذا كان الرمز منتهي الصلاحية أو غير مسجل لإلغائه وتنظيف جدول الأجهزة
             if ($this->isUnregisteredTokenError($statusCode, $responseBody)) {
                 $this->userDeviceRepository->invalidateFcmToken($token);
-                Log::info("FcmService: Invalidated dead FCM token [".substr($token, 0, 15)."...] from user_devices.");
+                Log::info('FcmService: Invalidated dead FCM token ['.substr($token, 0, 15).'...] from user_devices.');
             }
 
             return false;
@@ -170,7 +173,7 @@ class FcmService
     /**
      * بناء هيكل الرسالة المتوافق مع معايير FCM HTTP v1.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     protected function buildMessagePayload(
@@ -296,7 +299,7 @@ class FcmService
             }
 
             try {
-                $client = new Client();
+                $client = new Client;
                 $client->setAuthConfig($credentialsPath);
                 $client->addScope($this->getFcmScope());
 

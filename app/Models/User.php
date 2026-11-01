@@ -94,9 +94,19 @@ class User extends Authenticatable
         return $this->hasMany(Network::class, 'owner_id', 'user_id');
     }
 
+    public function networkUsers(): HasMany
+    {
+        return $this->hasMany(NetworkUser::class, 'user_id', 'user_id');
+    }
+
     public function pos(): HasOne
     {
         return $this->hasOne(Pos::class, 'owner_id', 'user_id');
+    }
+
+    public function posUsers(): HasMany
+    {
+        return $this->hasMany(PosUser::class, 'user_id', 'user_id');
     }
 
     public function expenses(): HasMany
@@ -325,14 +335,34 @@ class User extends Authenticatable
         return $this->hasRole(RoleKey::SUPER_ADMIN);
     }
 
-    public function hasRole(string|RoleKey $roleKey): bool
+    public function hasRole(string|RoleKey $roleKey, ?int $tenantId = null): bool
     {
         $key = $roleKey instanceof RoleKey ? $roleKey->value : $roleKey;
 
-        return $this->role?->role_key === $key;
+        if ($this->role?->role_key === $key) {
+            return true;
+        }
+
+        $netQuery = $this->networkUsers()->whereHas('role', fn ($q) => $q->where('role_key', $key))->where('status', 'ACTIVE');
+        if ($tenantId) {
+            $netQuery->where('network_id', $tenantId);
+        }
+        if ($netQuery->exists()) {
+            return true;
+        }
+
+        $posQuery = $this->posUsers()->whereHas('role', fn ($q) => $q->where('role_key', $key))->where('status', 'ACTIVE');
+        if ($tenantId) {
+            $posQuery->where('pos_id', $tenantId);
+        }
+        if ($posQuery->exists()) {
+            return true;
+        }
+
+        return false;
     }
 
-    public function hasPermission(string $permissionKey): bool
+    public function hasPermission(string $permissionKey, ?int $tenantId = null): bool
     {
         if ($this->isSuperAdmin()) {
             return true;
@@ -346,9 +376,31 @@ class User extends Authenticatable
             return true;
         }
 
-        return $this->role?->permissions()->where(function ($q) use ($upperKey, $permissionKey) {
+        if ($this->role?->permissions()->where(function ($q) use ($upperKey, $permissionKey) {
             $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
-        })->exists() ?? false;
+        })->exists()) {
+            return true;
+        }
+
+        $hasNetPerm = $this->networkUsers()
+            ->where('status', 'ACTIVE')
+            ->when($tenantId, fn ($q) => $q->where('network_id', $tenantId))
+            ->whereHas('role.permissions', function ($q) use ($upperKey, $permissionKey) {
+                $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
+            })->exists();
+
+        if ($hasNetPerm) {
+            return true;
+        }
+
+        $hasPosPerm = $this->posUsers()
+            ->where('status', 'ACTIVE')
+            ->when($tenantId, fn ($q) => $q->where('pos_id', $tenantId))
+            ->whereHas('role.permissions', function ($q) use ($upperKey, $permissionKey) {
+                $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
+            })->exists();
+
+        return $hasPosPerm;
     }
 
     /**

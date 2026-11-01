@@ -11,6 +11,8 @@ enum RoleKey: string
     case POS_USER = 'POS_USER';
     case SUPPORT_AGENT = 'SUPPORT_AGENT';
     case ACCOUNTANT = 'ACCOUNTANT';
+    case NETWORK_ACCOUNTANT = 'NETWORK_ACCOUNTANT';
+    case POS_ACCOUNTANT = 'POS_ACCOUNTANT';
 
     public static function values(): array
     {
@@ -32,6 +34,8 @@ enum RoleKey: string
             self::POS_USER => 'مستخدم نقطة بيع',
             self::SUPPORT_AGENT => 'دعم فني',
             self::ACCOUNTANT => 'محاسب',
+            self::NETWORK_ACCOUNTANT => 'محاسب شبكة',
+            self::POS_ACCOUNTANT => 'محاسب نقطة بيع',
         };
     }
 
@@ -45,6 +49,8 @@ enum RoleKey: string
             self::POS_USER->value => self::POS_USER->label(),
             self::SUPPORT_AGENT->value => self::SUPPORT_AGENT->label(),
             self::ACCOUNTANT->value => self::ACCOUNTANT->label(),
+            self::NETWORK_ACCOUNTANT->value => self::NETWORK_ACCOUNTANT->label(),
+            self::POS_ACCOUNTANT->value => self::POS_ACCOUNTANT->label(),
         ];
     }
 }

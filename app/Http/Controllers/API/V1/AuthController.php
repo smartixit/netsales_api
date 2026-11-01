@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Http\Requests\API\V1\Auth\LoginRequest;
-use App\Http\Requests\API\V1\Auth\RegisterPosRequest;
 use App\Http\Requests\API\V1\Auth\RegisterNetworkRequest;
+use App\Http\Requests\API\V1\Auth\RegisterPosRequest;
 use App\Http\Requests\API\V1\Auth\RequestPasswordResetRequest;
 use App\Http\Requests\API\V1\Auth\ResetPasswordRequest;
 use App\Http\Requests\API\V1\Auth\ToggleTwoFactorRequest;

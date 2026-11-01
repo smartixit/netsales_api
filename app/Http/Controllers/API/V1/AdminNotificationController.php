@@ -30,7 +30,7 @@ class AdminNotificationController extends BaseController
         summary: 'إرسال إشعار إداري للجمهور عبر القنوات المحددة',
         security: [['sessionAuth' => [], 'deviceAuth' => []]],
         tags: ['Admin Notifications'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -38,16 +38,16 @@ class AdminNotificationController extends BaseController
                 schema: new OA\Schema(
                     required: ['audience', 'audience.type', 'channels', 'title', 'body'],
                     properties: [
-                    new OA\Property(property: 'audience[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
-                    new OA\Property(property: 'audience.type', type: 'string'),
-                    new OA\Property(property: 'audience.role_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'audience.network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'audience.user_ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
-                    new OA\Property(property: 'channels[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
-                    new OA\Property(property: 'category', type: 'string'),
-                    new OA\Property(property: 'title', type: 'string'),
-                    new OA\Property(property: 'body', type: 'string'),
-                    new OA\Property(property: 'image', type: 'string', format: 'binary'),
+                        new OA\Property(property: 'audience[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                        new OA\Property(property: 'audience.type', type: 'string'),
+                        new OA\Property(property: 'audience.role_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'audience.network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'audience.user_ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'channels[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                        new OA\Property(property: 'category', type: 'string'),
+                        new OA\Property(property: 'title', type: 'string'),
+                        new OA\Property(property: 'body', type: 'string'),
+                        new OA\Property(property: 'image', type: 'string', format: 'binary'),
                     ]
                 )
             )

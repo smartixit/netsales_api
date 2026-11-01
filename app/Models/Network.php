@@ -7,7 +7,6 @@ use App\Services\Support\BusinessIdentifierGenerator;
 use App\Services\Support\FileUploadService;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -97,6 +96,21 @@ class Network extends Model
     public function wallet(): HasOne
     {
         return $this->hasOne(NetworkWallet::class, 'network_id', 'network_id');
+    }
+
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(NetworkUser::class, 'network_id', 'network_id');
+    }
+
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'network_users',
+            'network_id',
+            'user_id'
+        )->withPivot(['role_id', 'status', 'last_event_seq'])->withTimestamps();
     }
 
     public function networkPos(): HasMany

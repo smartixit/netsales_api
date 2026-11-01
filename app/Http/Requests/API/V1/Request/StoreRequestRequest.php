@@ -14,7 +14,29 @@ class StoreRequestRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        $posId = (int) $this->input('pos_id');
+        if (! $posId) {
+            return true;
+        }
+
+        if ($user->pos && (int) $user->pos->pos_id === $posId) {
+            return true;
+        }
+
+        if (method_exists($user, 'posUsers') && $user->posUsers()->where('pos_id', $posId)->exists()) {
+            return true;
+        }
+
+        return false;
     }
 
     public function rules(): array

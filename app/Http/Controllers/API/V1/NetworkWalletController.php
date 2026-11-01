@@ -127,7 +127,7 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets',
         summary: 'إنشاء محفظة جديدة لمزود شبكة',
         tags: ['Network Wallets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -135,9 +135,9 @@ class NetworkWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['network_id'],
                     properties: [
-                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'wallet_balance', type: 'number', example: 100.5),
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'wallet_balance', type: 'number', example: 100.5),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )
@@ -170,7 +170,7 @@ class NetworkWalletController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -178,7 +178,7 @@ class NetworkWalletController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )
@@ -210,7 +210,7 @@ class NetworkWalletController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -218,9 +218,9 @@ class NetworkWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['amount', 'statement'],
                     properties: [
-                    new OA\Property(property: 'amount', type: 'number', example: 100.5),
-                    new OA\Property(property: 'statement', type: 'string'),
-                    new OA\Property(property: 'log_date', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'amount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'statement', type: 'string'),
+                        new OA\Property(property: 'log_date', type: 'string', format: 'date', example: '2026-01-01'),
                     ]
                 )
             )
@@ -256,7 +256,7 @@ class NetworkWalletController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -264,9 +264,9 @@ class NetworkWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['amount', 'statement'],
                     properties: [
-                    new OA\Property(property: 'amount', type: 'number', example: 100.5),
-                    new OA\Property(property: 'statement', type: 'string'),
-                    new OA\Property(property: 'log_date', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'amount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'statement', type: 'string'),
+                        new OA\Property(property: 'log_date', type: 'string', format: 'date', example: '2026-01-01'),
                     ]
                 )
             )
@@ -439,7 +439,7 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/batch-delete',
         summary: 'حذف مجمع لمحافظ الشبكات',
         tags: ['Network Wallets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -447,7 +447,7 @@ class NetworkWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -476,7 +476,7 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/batch-restore',
         summary: 'استعادة مجمعة لمحافظ الشبكات',
         tags: ['Network Wallets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -484,7 +484,7 @@ class NetworkWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -513,7 +513,7 @@ class NetworkWalletController extends BaseController
         path: '/api/v1/network-wallets/batch-force-delete',
         summary: 'حذف نهائي مجمع لمحافظ الشبكات',
         tags: ['Network Wallets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -521,7 +521,7 @@ class NetworkWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )

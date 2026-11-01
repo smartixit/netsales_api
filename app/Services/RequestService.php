@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\NotificationType;
 use App\Enums\RequestStatus;
-use App\Enums\SaleType;
 use App\Http\Requests\API\V1\Request\ApproveRequestRequest;
 use App\Http\Requests\API\V1\Request\StoreRequestRequest;
 use App\Http\Requests\API\V1\Request\UpdateRequestRequest;
@@ -13,12 +12,11 @@ use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\RequestItemRepositoryInterface;
 use App\Interfaces\RequestRepositoryInterface;
+use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Models\Request as RequestModel;
 use App\Models\RequestItem;
 use App\Models\SaleInvoice;
-use App\Services\NotificationService;
-use App\Services\VoucherPackageDiscountService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -38,8 +36,11 @@ class RequestService
         protected NetworkPosRepositoryInterface $networkPosRepository,
         protected SaleInvoiceService $saleInvoiceService,
         protected NotificationService $notificationService,
-        protected VoucherPackageDiscountService $voucherPackageDiscountService
-    ) {}
+        protected VoucherPackageDiscountService $voucherPackageDiscountService,
+        protected ?UserRepositoryInterface $userRepository = null
+    ) {
+        $this->userRepository = $userRepository ?? app(UserRepositoryInterface::class);
+    }
 
     /**
      * جلب قائمة الطلبات مع الفلترة والترقيم بالمؤشر.
@@ -93,6 +94,19 @@ class RequestService
 
             $pos = $this->posRepository->findById($posId);
             $pos->ensureActive();
+
+            // التحقق من صلاحية المستخدم على نقطة البيع
+            $user = $this->userRepository->findById($userId);
+            if ($user && ! $user->isSuperAdmin()) {
+                $isAuthorized = ($user->pos && (int) $user->pos->pos_id === (int) $posId)
+                    || (method_exists($user, 'posUsers') && $user->posUsers()->where('pos_id', $posId)->exists());
+
+                if (! $isAuthorized) {
+                    throw ValidationException::withMessages([
+                        'pos_id' => ['غير مصرح لك بإنشاء طلب باسم نقطة البيع المحددة.'],
+                    ]);
+                }
+            }
 
             // التحقق من ارتباط نقطة البيع بالشبكة وتفعيله
             $link = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId);
@@ -186,7 +200,7 @@ class RequestService
      */
     public function update(int $requestId, UpdateRequestRequest $request, int $userId): RequestModel
     {
-        return DB::transaction(function () use ($requestId, $request, $userId): RequestModel {
+        return DB::transaction(function () use ($requestId, $request): RequestModel {
             /** @var RequestModel $requestModel */
             $requestModel = $this->requestRepository->findByIdForUpdate($requestId);
 

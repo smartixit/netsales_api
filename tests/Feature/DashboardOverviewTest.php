@@ -7,13 +7,13 @@ use App\Enums\PosStatus;
 use App\Enums\RoleKey;
 use App\Enums\UserStatus;
 use App\Models\Network;
+use App\Models\NetworkUser;
 use App\Models\NetworkWallet;
 use App\Models\Pos;
+use App\Models\PosUser;
 use App\Models\PosWallet;
 use App\Models\Role;
 use App\Models\User;
-use App\Models\UserSession;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -75,7 +75,7 @@ class DashboardOverviewTest extends TestCase
         $ownerRole = Role::where('role_key', RoleKey::NETWORK_OWNER->value)->firstOrFail();
 
         $owner = User::create([
-            'role_id' => $ownerRole->role_id,
+            'role_id' => null,
             'user_full_name' => 'Network Owner '.$suffix,
             'user_phone_number' => '77'.rand(1000000, 9999999),
             'user_password' => bcrypt('password'),
@@ -89,6 +89,13 @@ class DashboardOverviewTest extends TestCase
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => NetworkStatus::ACTIVE,
+        ]);
+
+        NetworkUser::create([
+            'network_id' => $network->network_id,
+            'user_id' => $owner->user_id,
+            'role_id' => $ownerRole->role_id,
+            'status' => 'ACTIVE',
         ]);
 
         NetworkWallet::create([
@@ -120,7 +127,7 @@ class DashboardOverviewTest extends TestCase
         $posRole = Role::where('role_key', RoleKey::POS_AGENT->value)->firstOrFail();
 
         $posAgent = User::create([
-            'role_id' => $posRole->role_id,
+            'role_id' => null,
             'user_full_name' => 'POS Agent '.$suffix,
             'user_phone_number' => '73'.rand(1000000, 9999999),
             'user_password' => bcrypt('password'),
@@ -134,6 +141,13 @@ class DashboardOverviewTest extends TestCase
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => PosStatus::ACTIVE,
+        ]);
+
+        PosUser::create([
+            'pos_id' => $pos->pos_id,
+            'user_id' => $posAgent->user_id,
+            'role_id' => $posRole->role_id,
+            'status' => 'ACTIVE',
         ]);
 
         $network = Network::first() ?? Network::create([

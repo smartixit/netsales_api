@@ -194,4 +194,3 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
         })->delete();
     }
 }
-

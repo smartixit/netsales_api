@@ -276,7 +276,6 @@ class SaleInvoiceService
 
             $formattedPaidAmount = formatWithCurrency($paidAmount);
             $formattedRemainingAmount = formatWithCurrency($remainingAmount);
-            $formattedTotalInvoiceAmount = formatWithCurrency($totalInvoiceAmount);
             $formattedPosBalanceAfter = formatWithCurrency($posBalanceAfter);
 
             $posWallet->refresh();
@@ -638,7 +637,7 @@ class SaleInvoiceService
                 $groupExpr = "DATE_FORMAT(invoice_date, '%Y-%m')";
                 break;
             default:
-                $groupExpr = "DATE(invoice_date)";
+                $groupExpr = 'DATE(invoice_date)';
                 break;
         }
 

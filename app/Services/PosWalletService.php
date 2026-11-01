@@ -23,10 +23,12 @@ use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
 use App\Models\PosWallet;
 use App\Models\PosWalletLog;
+use App\Models\WalletTransfer;
 use Exception;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -81,8 +83,8 @@ class PosWalletService
     public function getWalletByNetworkAndPos(int $networkId, int $posId): PosWallet
     {
         $wallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId);
-        $network=$this->networkRepository->findById($networkId);
-        $pos=$this->posRepository->findById($posId);
+        $network = $this->networkRepository->findById($networkId);
+        $pos = $this->posRepository->findById($posId);
 
         if (! $wallet) {
             throw new Exception("لم يتم العثور على محفظة لنقطة البيع ({$pos->pos_name}) تابعة لشبكة ({$network->network_name}).");
@@ -247,7 +249,7 @@ class PosWalletService
         return DB::transaction(function () use ($request, $userId): array {
             $networkId = $request->getNetworkId();
             $posId = $request->getPosId();
-            $pos=$this->posRepository->findById($posId);
+            $pos = $this->posRepository->findById($posId);
             $amount = $request->getAmount();
             $userStatement = $request->getStatement();
 
@@ -276,7 +278,7 @@ class PosWalletService
 
             // قفل محفظة الشبكة والتحقق منها
             $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId, true);
-            $network=$this->networkRepository->findById($networkId);
+            $network = $this->networkRepository->findById($networkId);
             if (! $networkWallet) {
                 throw ValidationException::withMessages([
                     'network_id' => ["لم يتم العثور على محفظة مالية مسجلة للشبكة (#{$network->network_name})."],
@@ -299,6 +301,17 @@ class PosWalletService
             }
             $posWallet->ensureActive();
 
+            // إنشاء سجل الحوالة المالية المركزية
+            $transfer = WalletTransfer::create([
+                'transfer_uuid' => (string) Str::uuid(),
+                'network_wallet_id' => $networkWallet->wallet_id,
+                'pos_wallet_id' => $posWallet->wallet_id,
+                'amount' => $amount,
+                'direction' => 'NET_TO_POS',
+                'statement' => $userStatement,
+                'created_by' => $userId,
+            ]);
+
             // الخصم من محفظة الشبكة
             $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, $amount);
 
@@ -308,7 +321,9 @@ class PosWalletService
                 WalletOperationType::WITHDRAW->value,
                 $amount,
                 $netStatement,
-                $userId
+                $userId,
+                null,
+                $transfer->transfer_id
             );
 
             // الإيداع في محفظة نقطة البيع
@@ -320,7 +335,9 @@ class PosWalletService
                 WalletOperationType::DEPOSIT->value,
                 $amount,
                 $posStatement,
-                $userId
+                $userId,
+                null,
+                $transfer->transfer_id
             );
 
             $posWallet->refresh()->load(['network', 'pos']);
@@ -328,6 +345,7 @@ class PosWalletService
             $this->sendWalletSms($posWallet, 'receipt', (float) $amount);
 
             return [
+                'transfer' => $transfer,
                 'network_wallet' => $networkWallet->refresh()->load('network'),
                 'pos_wallet' => $posWallet,
                 'network_log' => $networkLog,
@@ -345,9 +363,9 @@ class PosWalletService
     {
         return DB::transaction(function () use ($request, $userId): array {
             $networkId = $request->getNetworkId();
-            $network=$this->networkRepository->findById($networkId);
+            $network = $this->networkRepository->findById($networkId);
             $posId = $request->getPosId();
-            $pos=$this->posRepository->findById($posId);
+            $pos = $this->posRepository->findById($posId);
             $amount = $request->getAmount();
             $userStatement = $request->getStatement();
 
@@ -360,7 +378,16 @@ class PosWalletService
             }
             $link->ensureActive();
 
-            // قفل محفظة نقطة البيع والتحقق منها
+            // قفل محفظة الشبكة أولاً وفق ترتيب الأقفال العالمي الموحد لمنع التعارض الحبيبي (Deadlock Prevention)
+            $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId, true);
+            if (! $networkWallet) {
+                throw ValidationException::withMessages([
+                    'network_id' => ["لم يتم العثور على محفظة مالية مسجلة للشبكة (#{$network->network_name})."],
+                ]);
+            }
+            $networkWallet->ensureActive();
+
+            // قفل محفظة نقطة البيع ثانياً والتحقق من كفاية الرصيد
             $posWallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId, true);
             if (! $posWallet) {
                 throw ValidationException::withMessages([
@@ -375,14 +402,16 @@ class PosWalletService
                 ]);
             }
 
-            // قفل محفظة الشبكة والتحقق منها
-            $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId, true);
-            if (! $networkWallet) {
-                throw ValidationException::withMessages([
-                    'network_id' => ["لم يتم العثور على محفظة مالية مسجلة للشبكة (#{$network->network_name})."],
-                ]);
-            }
-            $networkWallet->ensureActive();
+            // إنشاء سجل الحوالة المالية المركزية
+            $transfer = WalletTransfer::create([
+                'transfer_uuid' => (string) Str::uuid(),
+                'network_wallet_id' => $networkWallet->wallet_id,
+                'pos_wallet_id' => $posWallet->wallet_id,
+                'amount' => $amount,
+                'direction' => 'POS_TO_NET',
+                'statement' => $userStatement,
+                'created_by' => $userId,
+            ]);
 
             // الخصم من محفظة نقطة البيع
             $this->posWalletRepository->decrementBalance($posWallet->wallet_id, $amount);
@@ -393,7 +422,9 @@ class PosWalletService
                 WalletOperationType::WITHDRAW->value,
                 $amount,
                 $posStatement,
-                $userId
+                $userId,
+                null,
+                $transfer->transfer_id
             );
 
             // الإيداع في محفظة الشبكة
@@ -405,7 +436,9 @@ class PosWalletService
                 WalletOperationType::DEPOSIT->value,
                 $amount,
                 $netStatement,
-                $userId
+                $userId,
+                null,
+                $transfer->transfer_id
             );
 
             $posWallet->refresh()->load(['network', 'pos']);
@@ -413,10 +446,143 @@ class PosWalletService
             $this->sendWalletSms($posWallet, 'payment', (float) $amount);
 
             return [
+                'transfer' => $transfer,
                 'pos_wallet' => $posWallet,
                 'network_wallet' => $networkWallet->refresh()->load('network'),
                 'pos_log' => $posLog,
                 'network_log' => $networkLog,
+            ];
+        });
+    }
+
+    /**
+     * عكس عملية تحويل مالي بين محفظة الشبكة ومحفظة نقطة البيع ذرياً مع منع عكس العمليات العكسية.
+     *
+     * @return array{original_transfer: WalletTransfer, reversal_transfer: WalletTransfer, network_wallet: NetworkWallet, pos_wallet: PosWallet, network_log: NetworkWalletLog, pos_log: PosWalletLog}
+     */
+    public function reverseTransfer(int $transferId, int $userId): array
+    {
+        return DB::transaction(function () use ($transferId, $userId): array {
+            /** @var WalletTransfer $origTransfer */
+            $origTransfer = WalletTransfer::lockForUpdate()->findOrFail($transferId);
+
+            if ($origTransfer->isReversal()) {
+                throw ValidationException::withMessages([
+                    'transfer_id' => ['لا يمكن عكس عملية هي بالأصل عملية عكسية.'],
+                ]);
+            }
+
+            if ($origTransfer->isReversed()) {
+                throw ValidationException::withMessages([
+                    'transfer_id' => ['تم عكس هذه العملية مسبقاً ولا يمكن عكسها مرة أخرى.'],
+                ]);
+            }
+
+            // قفل المحافظ بالترتيب الموحد دائماً: الشبكة ثم نقطة البيع
+            $networkWallet = $this->networkWalletRepository->findByIdForUpdate($origTransfer->network_wallet_id);
+            $networkWallet->ensureActive();
+
+            $posWallet = $this->posWalletRepository->findByIdForUpdate($origTransfer->pos_wallet_id);
+            $posWallet->ensureActive();
+
+            $amount = (float) $origTransfer->amount;
+
+            if ($origTransfer->direction === 'NET_TO_POS') {
+                if (! $posWallet->hasSufficientBalance($amount)) {
+                    throw ValidationException::withMessages([
+                        'amount' => ['رصيد محفظة نقطة البيع الحالي غير كافٍ لعكس عملية التغذية.'],
+                    ]);
+                }
+
+                $reversalDirection = 'POS_TO_NET';
+                $reversalStatement = "عكس عملية تحويل #{$origTransfer->transfer_id}";
+
+                $reversalTransfer = WalletTransfer::create([
+                    'transfer_uuid' => (string) Str::uuid(),
+                    'network_wallet_id' => $networkWallet->wallet_id,
+                    'pos_wallet_id' => $posWallet->wallet_id,
+                    'amount' => $amount,
+                    'direction' => $reversalDirection,
+                    'original_transfer_id' => $origTransfer->transfer_id,
+                    'statement' => $reversalStatement,
+                    'created_by' => $userId,
+                ]);
+
+                $this->posWalletRepository->decrementBalance($posWallet->wallet_id, $amount);
+                $posLog = $this->posWalletLogRepository->createLog(
+                    $posWallet->wallet_id,
+                    WalletOperationType::WITHDRAW->value,
+                    $amount,
+                    $reversalStatement,
+                    $userId,
+                    null,
+                    $reversalTransfer->transfer_id
+                );
+
+                $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $amount);
+                $netLog = $this->networkWalletLogRepository->createLog(
+                    $networkWallet->wallet_id,
+                    WalletOperationType::DEPOSIT->value,
+                    $amount,
+                    $reversalStatement,
+                    $userId,
+                    null,
+                    $reversalTransfer->transfer_id
+                );
+            } else {
+                if (! $networkWallet->hasSufficientBalance($amount)) {
+                    throw ValidationException::withMessages([
+                        'amount' => ['رصيد محفظة الشبكة الحالي غير كافٍ لعكس عملية الاسترجاع.'],
+                    ]);
+                }
+
+                $reversalDirection = 'NET_TO_POS';
+                $reversalStatement = "عكس عملية استرجاع #{$origTransfer->transfer_id}";
+
+                $reversalTransfer = WalletTransfer::create([
+                    'transfer_uuid' => (string) Str::uuid(),
+                    'network_wallet_id' => $networkWallet->wallet_id,
+                    'pos_wallet_id' => $posWallet->wallet_id,
+                    'amount' => $amount,
+                    'direction' => $reversalDirection,
+                    'original_transfer_id' => $origTransfer->transfer_id,
+                    'statement' => $reversalStatement,
+                    'created_by' => $userId,
+                ]);
+
+                $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, $amount);
+                $netLog = $this->networkWalletLogRepository->createLog(
+                    $networkWallet->wallet_id,
+                    WalletOperationType::WITHDRAW->value,
+                    $amount,
+                    $reversalStatement,
+                    $userId,
+                    null,
+                    $reversalTransfer->transfer_id
+                );
+
+                $this->posWalletRepository->incrementBalance($posWallet->wallet_id, $amount);
+                $posLog = $this->posWalletLogRepository->createLog(
+                    $posWallet->wallet_id,
+                    WalletOperationType::DEPOSIT->value,
+                    $amount,
+                    $reversalStatement,
+                    $userId,
+                    null,
+                    $reversalTransfer->transfer_id
+                );
+            }
+
+            $origTransfer->status = 'REVERSED';
+            $origTransfer->save();
+
+            return [
+                'original_transfer' => $origTransfer,
+                'reversal_transfer' => $reversalTransfer->refresh(),
+                'network_wallet' => $networkWallet->refresh(),
+                'pos_wallet' => $posWallet->refresh(),
+                'network_log' => $netLog,
+                'pos_log' => $posLog,
             ];
         });
     }

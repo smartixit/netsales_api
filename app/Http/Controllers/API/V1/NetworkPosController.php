@@ -100,7 +100,7 @@ class NetworkPosController extends BaseController
         path: '/api/v1/network-pos',
         summary: 'ربط نقطة بيع بمزود شبكة',
         tags: ['Network POS'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -108,9 +108,9 @@ class NetworkPosController extends BaseController
                 schema: new OA\Schema(
                     required: ['network_id', 'pos_id'],
                     properties: [
-                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )
@@ -143,7 +143,7 @@ class NetworkPosController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -151,7 +151,7 @@ class NetworkPosController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )
@@ -240,7 +240,7 @@ class NetworkPosController extends BaseController
         path: '/api/v1/network-pos/batch-delete',
         summary: 'فك ارتباط مجمع لنقاط البيع بالشبكات',
         tags: ['Network POS'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -248,7 +248,7 @@ class NetworkPosController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -278,7 +278,7 @@ class NetworkPosController extends BaseController
         path: '/api/v1/network-pos/batch-status',
         summary: 'تغيير حالة مجمعة لارتباطات نقاط البيع بالشبكات',
         tags: ['Network POS'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -286,8 +286,8 @@ class NetworkPosController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids', 'status'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )

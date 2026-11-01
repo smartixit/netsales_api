@@ -125,4 +125,3 @@ class OtpRepository extends BaseRepository implements OtpRepositoryInterface
         })->delete();
     }
 }
-

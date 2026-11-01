@@ -42,4 +42,3 @@ interface ProviderSubscriptionRepositoryInterface extends BaseRepositoryInterfac
      */
     public function getExpiringSubscriptions(\DateTimeInterface $from, \DateTimeInterface $to): Collection;
 }
-

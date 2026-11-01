@@ -103,7 +103,7 @@ class RequestController extends BaseController
         path: '/api/v1/requests',
         summary: 'تقديم طلب كروت جديد',
         tags: ['Voucher Requests'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -111,11 +111,11 @@ class RequestController extends BaseController
                 schema: new OA\Schema(
                     required: ['network_id', 'pos_id'],
                     properties: [
-                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'request_note', type: 'string'),
-                    new OA\Property(property: 'status', type: 'string'),
-                    new OA\Property(property: 'items[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                        new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'request_note', type: 'string'),
+                        new OA\Property(property: 'status', type: 'string'),
+                        new OA\Property(property: 'items[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
                     ]
                 )
             )
@@ -207,7 +207,7 @@ class RequestController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -215,7 +215,7 @@ class RequestController extends BaseController
                 schema: new OA\Schema(
                     required: ['rejection_reason'],
                     properties: [
-                    new OA\Property(property: 'rejection_reason', type: 'string'),
+                        new OA\Property(property: 'rejection_reason', type: 'string'),
                     ]
                 )
             )
@@ -386,7 +386,7 @@ class RequestController extends BaseController
         path: '/api/v1/requests/batch-delete',
         summary: 'حذف مجمع لطلبات الكروت',
         tags: ['Voucher Requests'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -394,7 +394,7 @@ class RequestController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -423,7 +423,7 @@ class RequestController extends BaseController
         path: '/api/v1/requests/batch-restore',
         summary: 'استعادة مجمعة لطلبات الكروت',
         tags: ['Voucher Requests'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -431,7 +431,7 @@ class RequestController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -460,7 +460,7 @@ class RequestController extends BaseController
         path: '/api/v1/requests/batch-force-delete',
         summary: 'حذف نهائي مجمع لطلبات الكروت',
         tags: ['Voucher Requests'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -468,7 +468,7 @@ class RequestController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )

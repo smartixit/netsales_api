@@ -36,7 +36,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Get(
         path: '/api/v1/subscription-plans',
         summary: 'عرض قائمة باقات الاشتراك',
-        
+
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
@@ -68,7 +68,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Get(
         path: '/api/v1/subscription-plans/{id}',
         summary: 'عرض تفاصيل باقة اشتراك',
-        
+
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -97,9 +97,9 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans',
         summary: 'إنشاء باقة اشتراك جديدة',
-        
+
         tags: ['Subscription Plans'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -107,13 +107,13 @@ class SubscriptionPlanController extends BaseController
                 schema: new OA\Schema(
                     required: ['plan_name', 'plan_price', 'plan_validity'],
                     properties: [
-                    new OA\Property(property: 'plan_name', type: 'string'),
-                    new OA\Property(property: 'plan_price', type: 'number', example: 100.5),
-                    new OA\Property(property: 'plan_discount', type: 'number', example: 100.5),
-                    new OA\Property(property: 'plan_validity', type: 'integer', example: 1),
-                    new OA\Property(property: 'plan_desc', type: 'string'),
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
-                    new OA\Property(property: 'features[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                        new OA\Property(property: 'plan_name', type: 'string'),
+                        new OA\Property(property: 'plan_price', type: 'number', example: 100.5),
+                        new OA\Property(property: 'plan_discount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'plan_validity', type: 'integer', example: 1),
+                        new OA\Property(property: 'plan_desc', type: 'string'),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'features[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
                     ]
                 )
             )
@@ -143,12 +143,12 @@ class SubscriptionPlanController extends BaseController
     #[OA\Put(
         path: '/api/v1/subscription-plans/{id}',
         summary: 'تحديث بيانات باقة اشتراك',
-        
+
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -156,13 +156,13 @@ class SubscriptionPlanController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'plan_name', type: 'string'),
-                    new OA\Property(property: 'plan_price', type: 'number', example: 100.5),
-                    new OA\Property(property: 'plan_discount', type: 'number', example: 100.5),
-                    new OA\Property(property: 'plan_validity', type: 'integer', example: 1),
-                    new OA\Property(property: 'plan_desc', type: 'string'),
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
-                    new OA\Property(property: 'features[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                        new OA\Property(property: 'plan_name', type: 'string'),
+                        new OA\Property(property: 'plan_price', type: 'number', example: 100.5),
+                        new OA\Property(property: 'plan_discount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'plan_validity', type: 'integer', example: 1),
+                        new OA\Property(property: 'plan_desc', type: 'string'),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'features[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
                     ]
                 )
             )
@@ -192,7 +192,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans/{id}/toggle-status',
         summary: 'تبديل حالة تفعيل باقة الاشتراك',
-        
+
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -220,12 +220,12 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans/{id}/features',
         summary: 'ربط أو تحديث ميزة بالباقة',
-        
+
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -233,9 +233,9 @@ class SubscriptionPlanController extends BaseController
                 schema: new OA\Schema(
                     required: ['feature_id', 'plan_feature_value'],
                     properties: [
-                    new OA\Property(property: 'feature_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'plan_feature_value', type: 'string'),
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'feature_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'plan_feature_value', type: 'string'),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )
@@ -264,7 +264,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Delete(
         path: '/api/v1/subscription-plans/{id}/features/{featureId}',
         summary: 'إزالة ميزة من الباقة',
-        
+
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -293,7 +293,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Delete(
         path: '/api/v1/subscription-plans/{id}',
         summary: 'حذف باقة اشتراك ناعماً',
-        
+
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -321,7 +321,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Get(
         path: '/api/v1/subscription-plans/trashed',
         summary: 'عرض باقات الاشتراك المحذوفة ناعماً',
-        
+
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
@@ -352,7 +352,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans/{id}/restore',
         summary: 'استعادة باقة اشتراك محذوفة',
-        
+
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -380,7 +380,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Delete(
         path: '/api/v1/subscription-plans/{id}/force',
         summary: 'حذف نهائي لباقة الاشتراك',
-        
+
         tags: ['Subscription Plans'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -408,9 +408,9 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans/batch-delete',
         summary: 'حذف مجمع للباقات',
-        
+
         tags: ['Subscription Plans'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -418,7 +418,7 @@ class SubscriptionPlanController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -446,9 +446,9 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans/batch-restore',
         summary: 'استعادة مجمعة للباقات',
-        
+
         tags: ['Subscription Plans'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -456,7 +456,7 @@ class SubscriptionPlanController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -484,9 +484,9 @@ class SubscriptionPlanController extends BaseController
     #[OA\Post(
         path: '/api/v1/subscription-plans/batch-force-delete',
         summary: 'حذف نهائي مجمع للباقات',
-        
+
         tags: ['Subscription Plans'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -494,7 +494,7 @@ class SubscriptionPlanController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )

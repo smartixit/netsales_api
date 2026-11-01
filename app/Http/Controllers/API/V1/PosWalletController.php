@@ -133,7 +133,7 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets',
         summary: 'إنشاء محفظة جديدة لنقطة بيع',
         tags: ['POS Wallets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -141,10 +141,10 @@ class PosWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['network_id', 'pos_id'],
                     properties: [
-                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'wallet_balance', type: 'number', example: 100.5),
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'wallet_balance', type: 'number', example: 100.5),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )
@@ -177,7 +177,7 @@ class PosWalletController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -185,7 +185,7 @@ class PosWalletController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )
@@ -217,7 +217,7 @@ class PosWalletController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -225,9 +225,9 @@ class PosWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['amount', 'statement'],
                     properties: [
-                    new OA\Property(property: 'amount', type: 'number', example: 100.5),
-                    new OA\Property(property: 'statement', type: 'string'),
-                    new OA\Property(property: 'log_date', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'amount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'statement', type: 'string'),
+                        new OA\Property(property: 'log_date', type: 'string', format: 'date', example: '2026-01-01'),
                     ]
                 )
             )
@@ -263,7 +263,7 @@ class PosWalletController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -271,9 +271,9 @@ class PosWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['amount', 'statement'],
                     properties: [
-                    new OA\Property(property: 'amount', type: 'number', example: 100.5),
-                    new OA\Property(property: 'statement', type: 'string'),
-                    new OA\Property(property: 'log_date', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'amount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'statement', type: 'string'),
+                        new OA\Property(property: 'log_date', type: 'string', format: 'date', example: '2026-01-01'),
                     ]
                 )
             )
@@ -306,7 +306,7 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/transfer-from-network',
         summary: 'تحويل وتغذية رصيد من محفظة الشبكة إلى محفظة نقطة البيع',
         tags: ['POS Wallets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -314,10 +314,10 @@ class PosWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['network_id', 'pos_id', 'amount'],
                     properties: [
-                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'amount', type: 'number', example: 100.5),
-                    new OA\Property(property: 'statement', type: 'string'),
+                        new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'amount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'statement', type: 'string'),
                     ]
                 )
             )
@@ -352,7 +352,7 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/transfer-to-network',
         summary: 'استرجاع أو تحويل رصيد من محفظة نقطة البيع إلى محفظة الشبكة',
         tags: ['POS Wallets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -360,10 +360,10 @@ class PosWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['network_id', 'pos_id', 'amount'],
                     properties: [
-                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'amount', type: 'number', example: 100.5),
-                    new OA\Property(property: 'statement', type: 'string'),
+                        new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'amount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'statement', type: 'string'),
                     ]
                 )
             )
@@ -539,7 +539,7 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/batch-delete',
         summary: 'حذف مجمع لمحافظ نقاط البيع',
         tags: ['POS Wallets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -547,7 +547,7 @@ class PosWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -576,7 +576,7 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/batch-restore',
         summary: 'استعادة مجمعة لمحافظ نقاط البيع',
         tags: ['POS Wallets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -584,7 +584,7 @@ class PosWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -613,7 +613,7 @@ class PosWalletController extends BaseController
         path: '/api/v1/pos-wallets/batch-force-delete',
         summary: 'حذف نهائي مجمع لمحافظ نقاط البيع',
         tags: ['POS Wallets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -621,7 +621,7 @@ class PosWalletController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )

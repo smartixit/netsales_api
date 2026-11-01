@@ -45,4 +45,3 @@ interface SystemLogRepositoryInterface extends BaseRepositoryInterface
      */
     public function pruneOlderThan(\DateTimeInterface $cutoff): int;
 }
-

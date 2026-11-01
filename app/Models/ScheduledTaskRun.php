@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use App\Enums\ScheduledTaskType;
 use App\Enums\ScheduledTaskStatus;
+use App\Enums\ScheduledTaskType;
 use App\Traits\ExactDateSerialization;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,12 +14,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property ScheduledTaskType|string $task_type
  * @property int|null $network_id
- * @property \Carbon\Carbon $target_date
+ * @property Carbon $target_date
  * @property ScheduledTaskStatus|string $status
  * @property array|null $extra
- * @property \Carbon\Carbon|null $sent_at
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon|null $sent_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property Network|null $network
  */
 class ScheduledTaskRun extends Model

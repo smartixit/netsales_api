@@ -34,7 +34,7 @@ class DirectorateController extends BaseController
     #[OA\Get(
         path: '/api/v1/directorates',
         summary: 'عرض قائمة المديريات',
-        
+
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'governorate_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -66,7 +66,7 @@ class DirectorateController extends BaseController
     #[OA\Get(
         path: '/api/v1/directorates/governorate/{governorateId}',
         summary: 'مديريات محافظة محددة',
-        
+
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'governorateId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -94,7 +94,7 @@ class DirectorateController extends BaseController
     #[OA\Get(
         path: '/api/v1/directorates/{id}',
         summary: 'عرض تفاصيل مديرية محددة',
-        
+
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -122,9 +122,9 @@ class DirectorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/directorates',
         summary: 'إنشاء مديرية جديدة',
-        
+
         tags: ['Directorates'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -132,8 +132,8 @@ class DirectorateController extends BaseController
                 schema: new OA\Schema(
                     required: ['governorate_id', 'directorate_name'],
                     properties: [
-                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'directorate_name', type: 'string'),
+                        new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'directorate_name', type: 'string'),
                     ]
                 )
             )
@@ -161,12 +161,12 @@ class DirectorateController extends BaseController
     #[OA\Put(
         path: '/api/v1/directorates/{id}',
         summary: 'تحديث بيانات مديرية',
-        
+
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -174,8 +174,8 @@ class DirectorateController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'directorate_name', type: 'string'),
+                        new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'directorate_name', type: 'string'),
                     ]
                 )
             )
@@ -203,7 +203,7 @@ class DirectorateController extends BaseController
     #[OA\Delete(
         path: '/api/v1/directorates/{id}',
         summary: 'حذف مديرية ناعماً',
-        
+
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -231,7 +231,7 @@ class DirectorateController extends BaseController
     #[OA\Get(
         path: '/api/v1/directorates/trashed',
         summary: 'عرض المديريات المحذوفة ناعماً',
-        
+
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'governorate_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -263,7 +263,7 @@ class DirectorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/directorates/{id}/restore',
         summary: 'استعادة مديرية محذوفة ناعماً',
-        
+
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -291,7 +291,7 @@ class DirectorateController extends BaseController
     #[OA\Delete(
         path: '/api/v1/directorates/{id}/force',
         summary: 'الحذف النهائي لمديرية',
-        
+
         tags: ['Directorates'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -319,9 +319,9 @@ class DirectorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/directorates/batch-delete',
         summary: 'الحذف المجمع للمديريات ناعماً',
-        
+
         tags: ['Directorates'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -329,7 +329,7 @@ class DirectorateController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -357,9 +357,9 @@ class DirectorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/directorates/batch-restore',
         summary: 'الاستعادة المجمعة للمديريات',
-        
+
         tags: ['Directorates'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -367,7 +367,7 @@ class DirectorateController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -395,9 +395,9 @@ class DirectorateController extends BaseController
     #[OA\Post(
         path: '/api/v1/directorates/batch-force-delete',
         summary: 'الحذف النهائي المجمع للمديريات',
-        
+
         tags: ['Directorates'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -405,7 +405,7 @@ class DirectorateController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )

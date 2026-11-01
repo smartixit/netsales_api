@@ -150,7 +150,7 @@ class UserController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المستخدم', schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -158,14 +158,14 @@ class UserController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'role_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'user_full_name', type: 'string'),
-                    new OA\Property(property: 'user_phone_number', type: 'string'),
-                    new OA\Property(property: 'user_password', type: 'string'),
-                    new OA\Property(property: 'user_email', type: 'string', format: 'email', example: 'user@example.com'),
-                    new OA\Property(property: 'user_profile_logo', type: 'string', format: 'binary'),
-                    new OA\Property(property: 'user_2fa_enabled', type: 'boolean', example: true),
-                    new OA\Property(property: 'status', type: 'string'),
+                        new OA\Property(property: 'role_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'user_full_name', type: 'string'),
+                        new OA\Property(property: 'user_phone_number', type: 'string'),
+                        new OA\Property(property: 'user_password', type: 'string'),
+                        new OA\Property(property: 'user_email', type: 'string', format: 'email', example: 'user@example.com'),
+                        new OA\Property(property: 'user_profile_logo', type: 'string', format: 'binary'),
+                        new OA\Property(property: 'user_2fa_enabled', type: 'boolean', example: true),
+                        new OA\Property(property: 'status', type: 'string'),
                     ]
                 )
             )
@@ -324,7 +324,7 @@ class UserController extends BaseController
         summary: 'حذف مجمع للمستخدمين (Batch Delete)',
         description: 'حذف مؤقت لمجموعة من المستخدمين عبر إرسال مصفوفة من المعرفات (ids).',
         tags: ['Users'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -332,7 +332,7 @@ class UserController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -363,7 +363,7 @@ class UserController extends BaseController
         summary: 'استعادة مجمعة للمستخدمين (Batch Restore)',
         description: 'استعادة مجموعة من المستخدمين المحذوفين مؤقتاً دفعة واحدة.',
         tags: ['Users'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -371,7 +371,7 @@ class UserController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -402,7 +402,7 @@ class UserController extends BaseController
         summary: 'حذف نهائي مجمع للمستخدمين (Batch Force Delete)',
         description: 'الحذف النهائي الدائم لمجموعة مستخدمين دفعة واحدة.',
         tags: ['Users'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -410,7 +410,7 @@ class UserController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -444,7 +444,7 @@ class UserController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المستخدم', schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -452,7 +452,7 @@ class UserController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'permissions[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'permissions[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )

@@ -6,7 +6,6 @@ use App\Enums\DeviceType;
 use App\Enums\NotificationType;
 use App\Enums\SmsMessageType;
 use App\Enums\UserDeviceStatus;
-use App\Enums\UserStatus;
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Notification\SendAdminNotificationRequest;
 use App\Http\Requests\API\V1\Notification\StoreNotificationRequest;

@@ -31,4 +31,3 @@ interface BackupJobRepositoryInterface extends BaseRepositoryInterface
      */
     public function hasSuccessfulAutoBackupOnDate(string $dateStr): bool;
 }
-

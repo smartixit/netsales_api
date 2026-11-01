@@ -6,7 +6,6 @@ use App\Models\SystemLog;
 use App\Models\User;
 use App\Models\UserSession;
 use App\Services\SystemLoggerService;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 

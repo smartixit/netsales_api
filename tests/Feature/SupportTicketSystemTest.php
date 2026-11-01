@@ -11,7 +11,6 @@ use App\Models\SupportTicket;
 use App\Models\SupportTicketMessage;
 use App\Models\User;
 use App\Models\UserSession;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -41,7 +40,7 @@ class SupportTicketSystemTest extends TestCase
 
         $suffix = uniqid();
 
-         $posUser = User::create([
+        $posUser = User::create([
             'role_id' => $this->user->role_id,
             'user_full_name' => 'POS Agent '.$suffix,
             'user_phone_number' => '73'.rand(1000000, 9999999),

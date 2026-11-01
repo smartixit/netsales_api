@@ -86,10 +86,11 @@ class PosWalletLogRepository extends BaseRepository implements PosWalletLogRepos
     /**
      * إنشاء قيد مالي جديد في دفتر أستاذ محفظة نقطة البيع.
      */
-    public function createLog(int $walletId, WalletOperationType|string $operationType, float $amount, string $statement, ?int $createdBy = null, ?string $date = null): PosWalletLog
+    public function createLog(int $walletId, WalletOperationType|string $operationType, float $amount, string $statement, ?int $createdBy = null, ?string $date = null, ?int $transferId = null): PosWalletLog
     {
         return $this->create([
             'wallet_id' => $walletId,
+            'transfer_id' => $transferId,
             'log_operation_type' => $operationType instanceof WalletOperationType ? $operationType->value : $operationType,
             'log_amount' => $amount,
             'log_statement' => $statement,

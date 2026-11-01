@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureSwaggerAllowed;
 use L5Swagger\Generator;
 use OpenApi\scan;
 
@@ -19,11 +20,11 @@ return [
 
                 'middleware' => [
                     'api' => [
-                        \App\Http\Middleware\EnsureSwaggerAllowed::class,
+                        EnsureSwaggerAllowed::class,
                     ],
                     'asset' => [],
                     'docs' => [
-                        \App\Http\Middleware\EnsureSwaggerAllowed::class,
+                        EnsureSwaggerAllowed::class,
                     ],
                     'oauth2_callback' => [],
                 ],
@@ -80,11 +81,11 @@ return [
              */
             'middleware' => [
                 'api' => [
-                    \App\Http\Middleware\EnsureSwaggerAllowed::class,
+                    EnsureSwaggerAllowed::class,
                 ],
                 'asset' => [],
                 'docs' => [
-                    \App\Http\Middleware\EnsureSwaggerAllowed::class,
+                    EnsureSwaggerAllowed::class,
                 ],
                 'oauth2_callback' => [],
             ],

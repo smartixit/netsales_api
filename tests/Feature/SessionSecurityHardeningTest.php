@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\DeviceType;
 use App\Enums\RoleKey;
+use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
+use App\Models\Otp;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserDevice;
-use App\Models\UserSession;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
@@ -204,7 +206,7 @@ class SessionSecurityHardeningTest extends TestCase
         $this->assertTrue($loginResponse->json('data.require_2fa'));
 
         // استخراج رمز الـ OTP المولد
-        $otpRecord = \App\Models\Otp::where('user_id', $user->user_id)
+        $otpRecord = Otp::where('user_id', $user->user_id)
             ->where('is_used', false)
             ->latest('otp_id')
             ->first();
@@ -266,7 +268,7 @@ class SessionSecurityHardeningTest extends TestCase
         $resetReq->assertStatus(200);
 
         // جلب كود OTP
-        $otp = \App\Models\Otp::where('user_id', $user->user_id)
+        $otp = Otp::where('user_id', $user->user_id)
             ->where('is_used', false)
             ->latest('otp_id')
             ->first();
@@ -285,13 +287,13 @@ class SessionSecurityHardeningTest extends TestCase
 
         // 3. محاولة تسجيل الدخول -> الخادم يرجع require_password_change: true والصلاحيات محجوبة
         // نسجل جهاز أساسي لتجاوز 2FA للدخول المباشر
-        \App\Models\UserDevice::create([
+        UserDevice::create([
             'user_id' => $user->user_id,
             'device_uuid' => $deviceUuid,
             'device_name' => 'Device 1',
-            'device_type' => \App\Enums\DeviceType::ANDROID,
+            'device_type' => DeviceType::ANDROID,
             'is_primary' => true,
-            'status' => \App\Enums\UserDeviceStatus::ACTIVE,
+            'status' => UserDeviceStatus::ACTIVE,
             'fcm_token' => 'token_1',
         ]);
 
@@ -329,4 +331,3 @@ class SessionSecurityHardeningTest extends TestCase
         $this->assertFalse($user->must_change_password);
     }
 }
-

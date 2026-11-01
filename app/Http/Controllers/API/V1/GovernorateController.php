@@ -67,7 +67,7 @@ class GovernorateController extends BaseController
         summary: 'المحافظات مع أعداد المديريات والشبكات',
 
         tags: ['Governorates'],
-        
+
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع إحصائيات المحافظات بنجاح'),
         ]
@@ -119,7 +119,7 @@ class GovernorateController extends BaseController
         summary: 'إنشاء محافظة جديدة',
 
         tags: ['Governorates'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -127,7 +127,7 @@ class GovernorateController extends BaseController
                 schema: new OA\Schema(
                     required: ['governorate_name'],
                     properties: [
-                    new OA\Property(property: 'governorate_name', type: 'string'),
+                        new OA\Property(property: 'governorate_name', type: 'string'),
                     ]
                 )
             )
@@ -160,7 +160,7 @@ class GovernorateController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -168,7 +168,7 @@ class GovernorateController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'governorate_name', type: 'string'),
+                        new OA\Property(property: 'governorate_name', type: 'string'),
                     ]
                 )
             )
@@ -313,7 +313,7 @@ class GovernorateController extends BaseController
         summary: 'الحذف المجمع للمحافظات ناعماً',
 
         tags: ['Governorates'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -321,7 +321,7 @@ class GovernorateController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -351,7 +351,7 @@ class GovernorateController extends BaseController
         summary: 'الاستعادة المجمعة للمحافظات',
 
         tags: ['Governorates'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -359,7 +359,7 @@ class GovernorateController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -389,7 +389,7 @@ class GovernorateController extends BaseController
         summary: 'الحذف النهائي المجمع للمحافظات',
 
         tags: ['Governorates'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -397,7 +397,7 @@ class GovernorateController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )

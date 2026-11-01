@@ -100,7 +100,7 @@ class NetworkController extends BaseController
         path: '/api/v1/networks',
         summary: 'إضافة شبكة جديدة إدارياً',
         tags: ['Networks'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -108,12 +108,12 @@ class NetworkController extends BaseController
                 schema: new OA\Schema(
                     required: ['network_name', 'governorate_id', 'directorate_id'],
                     properties: [
-                    new OA\Property(property: 'network_name', type: 'string'),
-                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'network_address', type: 'string'),
-                    new OA\Property(property: 'network_logo', type: 'string', format: 'binary'),
-                    new OA\Property(property: 'status', type: 'string'),
+                        new OA\Property(property: 'network_name', type: 'string'),
+                        new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'network_address', type: 'string'),
+                        new OA\Property(property: 'network_logo', type: 'string', format: 'binary'),
+                        new OA\Property(property: 'status', type: 'string'),
                     ]
                 )
             )
@@ -147,7 +147,7 @@ class NetworkController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -155,12 +155,12 @@ class NetworkController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'network_name', type: 'string'),
-                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'network_address', type: 'string'),
-                    new OA\Property(property: 'network_logo', type: 'string', format: 'binary'),
-                    new OA\Property(property: 'status', type: 'string'),
+                        new OA\Property(property: 'network_name', type: 'string'),
+                        new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'network_address', type: 'string'),
+                        new OA\Property(property: 'network_logo', type: 'string', format: 'binary'),
+                        new OA\Property(property: 'status', type: 'string'),
                     ]
                 )
             )
@@ -314,7 +314,7 @@ class NetworkController extends BaseController
         path: '/api/v1/networks/batch-delete',
         summary: 'حذف مجمع للشبكات (Batch Delete)',
         tags: ['Networks'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -322,7 +322,7 @@ class NetworkController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -352,7 +352,7 @@ class NetworkController extends BaseController
         path: '/api/v1/networks/batch-restore',
         summary: 'استعادة مجمعة للشبكات (Batch Restore)',
         tags: ['Networks'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -360,7 +360,7 @@ class NetworkController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -390,7 +390,7 @@ class NetworkController extends BaseController
         path: '/api/v1/networks/batch-force-delete',
         summary: 'حذف نهائي مجمع للشبكات (Batch Force Delete)',
         tags: ['Networks'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -398,7 +398,7 @@ class NetworkController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -460,7 +460,7 @@ class NetworkController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -468,7 +468,7 @@ class NetworkController extends BaseController
                 schema: new OA\Schema(
                     required: ['rejection_reason'],
                     properties: [
-                    new OA\Property(property: 'rejection_reason', type: 'string'),
+                        new OA\Property(property: 'rejection_reason', type: 'string'),
                     ]
                 )
             )

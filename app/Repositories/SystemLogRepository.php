@@ -198,4 +198,3 @@ class SystemLogRepository extends BaseRepository implements SystemLogRepositoryI
         return $this->model->newQuery()->where('log_date', '<', $cutoff)->delete();
     }
 }
-

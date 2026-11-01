@@ -66,7 +66,7 @@ class NotifyExpiringSubscriptions extends Command
             $planName = $sub->plan?->plan_name ?? 'الأساسية';
             $message = "⚠️ تنبيه اشتراك شبكة ({$network->network_name}):\n"
                 ."باقة الاشتراك ({$planName}) ستنتهي بتاريخ: {$endDate}.\n"
-                ."يرجى تجديد الاشتراك لضمان استمرارية الخدمات دون انقطاع.";
+                .'يرجى تجديد الاشتراك لضمان استمرارية الخدمات دون انقطاع.';
 
             // 1. فحص إعدادات SMS للشبكة وإرسال الرسالة إن كانت مفعّلة
             $smsSetting = $network->smsSetting;

@@ -76,7 +76,7 @@ class ProviderSubscriptionRepository extends BaseRepository implements ProviderS
     {
         $existing = $this->model->newQuery()
             ->forNetwork($networkId)
-            ->active()
+            ->where('status', ProviderSubscriptionStatus::ACTIVE)
             ->lockForUpdate()
             ->get();
 
@@ -180,4 +180,3 @@ class ProviderSubscriptionRepository extends BaseRepository implements ProviderS
             ->get();
     }
 }
-

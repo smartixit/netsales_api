@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\PaymentType;
+use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\ValueType;
 use App\Models\Feature;
 use App\Models\Network;
@@ -14,7 +14,6 @@ use App\Models\SubscriptionPlanRequest;
 use App\Models\User;
 use App\Models\UserSession;
 use App\Services\ProviderSubscriptionService;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -36,14 +35,23 @@ class SubscriptionQuotaAndFeatureLimitTest extends TestCase
     use DatabaseTransactions;
 
     protected User $user;
+
     protected UserSession $session;
+
     protected Network $network;
+
     protected SubscriptionPlan $basicPlan;
+
     protected SubscriptionPlan $proPlan;
+
     protected Feature $posQuotaFeature;
+
     protected SubscriptionPlanFeature $basicPosFeature;
+
     protected SubscriptionPlanFeature $proPosFeature;
+
     protected ProviderSubscriptionService $subscriptionService;
+
     protected array $headers;
 
     protected function setUp(): void

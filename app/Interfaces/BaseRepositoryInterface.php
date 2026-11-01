@@ -28,8 +28,6 @@ interface BaseRepositoryInterface
      * Find a record by ID.
      *
      * @param  int|string  $id
-     * @param  array  $columns
-     * @param  bool  $lock
      */
     public function findById($id, array $columns = ['*'], bool $lock = false);
 
@@ -37,7 +35,6 @@ interface BaseRepositoryInterface
      * Find a record by ID with pessimistic lock (lockForUpdate).
      *
      * @param  int|string  $id
-     * @param  array  $columns
      */
     public function findByIdForUpdate($id, array $columns = ['*']);
 
@@ -100,8 +97,6 @@ interface BaseRepositoryInterface
      * Find a trashed record by ID.
      *
      * @param  int|string  $id
-     * @param  array  $columns
-     * @param  bool  $lock
      */
     public function findTrashedById($id, array $columns = ['*'], bool $lock = false);
 

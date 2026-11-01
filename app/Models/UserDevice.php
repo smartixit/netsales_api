@@ -117,6 +117,7 @@ class UserDevice extends Model
     {
         return (bool) $this->update(['fcm_token' => null]);
     }
+
     public function isActive(): bool
     {
         return $this->status === UserDeviceStatus::ACTIVE;
@@ -126,13 +127,13 @@ class UserDevice extends Model
     {
         if (! $this->isActive()) {
             throw ValidationException::withMessages([
-                'device_uuid' => ["جهاز المستخدم غير مفعّل أو غير نشط حالياً."],
+                'device_uuid' => ['جهاز المستخدم غير مفعّل أو غير نشط حالياً.'],
             ]);
         }
 
         if ($this->isBanned()) {
             throw ValidationException::withMessages([
-                'device_uuid' => ["هذا الجهاز محظور أمنياً من النظام."],
+                'device_uuid' => ['هذا الجهاز محظور أمنياً من النظام.'],
             ]);
         }
     }

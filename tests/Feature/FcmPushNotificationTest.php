@@ -12,7 +12,6 @@ use App\Models\UserDevice;
 use App\Models\UserSession;
 use App\Services\NotificationService;
 use App\Services\Support\FcmService;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -33,7 +32,7 @@ class FcmPushNotificationTest extends TestCase
 
         $this->user = User::firstOrFail();
 
-       $auth = $this->createAuthenticatedSession($this->user);
+        $auth = $this->createAuthenticatedSession($this->user);
         $this->session = $auth['session'];
         $this->headers = $auth['headers'];
     }

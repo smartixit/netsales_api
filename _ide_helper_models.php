@@ -339,6 +339,15 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey query()
+ */
+	class IdempotencyKey extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
  * @property int $module_id
  * @property string $module_key
  * @property string $module_name
@@ -397,8 +406,9 @@ namespace App\Models{
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Expense> $expenses
  * @property-read int|null $expenses_count
  * @property-read string|null $logo_url
- * @property-read string $network_code
  * @property-read \App\Models\Governorate|null $governorate
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkUser> $memberships
+ * @property-read int|null $memberships_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkPos> $networkPos
  * @property-read int|null $network_pos_count
  * @property-read \App\Models\User|null $owner
@@ -418,6 +428,8 @@ namespace App\Models{
  * @property-read int|null $subscriptions_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SupportTicket> $supportTickets
  * @property-read int|null $support_tickets_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
+ * @property-read int|null $users_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\VoucherPackageDiscount> $voucherPackageDiscounts
  * @property-read int|null $voucher_package_discounts_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\VoucherPackage> $voucherPackages
@@ -457,6 +469,18 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Network withoutTrashed()
  */
 	class Network extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property-read \App\Models\User|null $actor
+ * @property-read \App\Models\Network|null $network
+ * @property-read \App\Models\User|null $user
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog query()
+ */
+	class NetworkMembershipAuditLog extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -507,7 +531,7 @@ namespace App\Models{
  * @property string $auth_type
  * @property string|null $api_token
  * @property string|null $refresh_token
- * @property \Carbon\Carbon|null $token_expires_at
+ * @property Carbon|null $token_expires_at
  * @property string|null $username
  * @property string|null $password
  * @property string|null $device_id
@@ -557,6 +581,20 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkMembershipAuditLog> $auditLogs
+ * @property-read int|null $audit_logs_count
+ * @property-read \App\Models\Network|null $network
+ * @property-read \App\Models\Role|null $role
+ * @property-read \App\Models\User|null $user
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser query()
+ */
+	class NetworkUser extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
  * @property int $wallet_id
  * @property int $network_id
  * @property string $wallet_uuid
@@ -602,6 +640,7 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read \App\Models\User|null $createdBy
+ * @property-read \App\Models\WalletTransfer|null $transfer
  * @property-read \App\Models\NetworkWallet|null $wallet
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog deposits()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog forWallet(int $walletId)
@@ -699,6 +738,15 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage query()
+ */
+	class OutboxMessage extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
  * @property int $permission_id
  * @property int $module_id
  * @property int $action_type_id
@@ -766,8 +814,9 @@ namespace App\Models{
  * @property-read \App\Models\User|null $approvedBy
  * @property-read \App\Models\Directorate|null $directorate
  * @property-read string|null $logo_url
- * @property-read string $pos_code
  * @property-read \App\Models\Governorate|null $governorate
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PosUser> $memberships
+ * @property-read int|null $memberships_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkPos> $networkPos
  * @property-read int|null $network_pos_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Network> $networks
@@ -780,6 +829,8 @@ namespace App\Models{
  * @property-read int|null $sale_invoices_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SupportTicket> $supportTickets
  * @property-read int|null $support_tickets_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
+ * @property-read int|null $users_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\VoucherPackageDiscount> $voucherPackageDiscounts
  * @property-read int|null $voucher_package_discounts_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PosWallet> $wallets
@@ -819,6 +870,32 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pos withoutTrashed()
  */
 	class Pos extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property-read \App\Models\User|null $actor
+ * @property-read \App\Models\Pos|null $pos
+ * @property-read \App\Models\User|null $user
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog query()
+ */
+	class PosMembershipAuditLog extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PosMembershipAuditLog> $auditLogs
+ * @property-read int|null $audit_logs_count
+ * @property-read \App\Models\Pos|null $pos
+ * @property-read \App\Models\Role|null $role
+ * @property-read \App\Models\User|null $user
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser query()
+ */
+	class PosUser extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -873,6 +950,7 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read \App\Models\User|null $createdBy
+ * @property-read \App\Models\WalletTransfer|null $transfer
  * @property-read \App\Models\PosWallet|null $wallet
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog deposits()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog forWallet(int $walletId)
@@ -1176,12 +1254,12 @@ namespace App\Models{
  * @property int $id
  * @property ScheduledTaskType|string $task_type
  * @property int|null $network_id
- * @property \Carbon\Carbon $target_date
+ * @property Carbon $target_date
  * @property ScheduledTaskStatus|string $status
  * @property array|null $extra
- * @property \Carbon\Carbon|null $sent_at
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon|null $sent_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property Network|null $network
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun completed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun failed()
@@ -1588,6 +1666,8 @@ namespace App\Models{
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Expense> $expenses
  * @property-read int|null $expenses_count
  * @property-read string|null $user_profile_logo_url
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkUser> $networkUsers
+ * @property-read int|null $network_users_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Network> $networks
  * @property-read int|null $networks_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Notification> $notifications
@@ -1597,6 +1677,8 @@ namespace App\Models{
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Permission> $permissions
  * @property-read int|null $permissions_count
  * @property-read \App\Models\Pos|null $pos
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PosUser> $posUsers
+ * @property-read int|null $pos_users_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProviderSubscription> $providerSubscriptions
  * @property-read int|null $provider_subscriptions_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Network> $rejectedNetworks
@@ -1860,5 +1942,23 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|VoucherPackageDiscount withoutTrashed()
  */
 	class VoucherPackageDiscount extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property-read \App\Models\User|null $creator
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkWalletLog> $networkLogs
+ * @property-read int|null $network_logs_count
+ * @property-read \App\Models\NetworkWallet|null $networkWallet
+ * @property-read WalletTransfer|null $originalTransfer
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PosWalletLog> $posLogs
+ * @property-read int|null $pos_logs_count
+ * @property-read \App\Models\PosWallet|null $posWallet
+ * @property-read WalletTransfer|null $reversal
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer query()
+ */
+	class WalletTransfer extends \Eloquent {}
 }
 

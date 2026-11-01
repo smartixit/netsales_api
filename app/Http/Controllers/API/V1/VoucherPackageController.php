@@ -97,7 +97,7 @@ class VoucherPackageController extends BaseController
         path: '/api/v1/voucher-packages',
         summary: 'إنشاء باقة كروت جديدة',
         tags: ['Voucher Packages'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -105,17 +105,17 @@ class VoucherPackageController extends BaseController
                 schema: new OA\Schema(
                     required: ['network_id', 'package_name', 'package_voucher_price', 'package_default_cash_discount', 'package_default_credit_discount'],
                     properties: [
-                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'package_name', type: 'string'),
-                    new OA\Property(property: 'package_color', type: 'string'),
-                    new OA\Property(property: 'package_balance', type: 'string'),
-                    new OA\Property(property: 'package_uptime', type: 'string'),
-                    new OA\Property(property: 'package_validity', type: 'string'),
-                    new OA\Property(property: 'package_voucher_count', type: 'integer', example: 1),
-                    new OA\Property(property: 'package_voucher_price', type: 'number', example: 100.5),
-                    new OA\Property(property: 'package_default_cash_discount', type: 'number', example: 100.5),
-                    new OA\Property(property: 'package_default_credit_discount', type: 'number', example: 100.5),
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'package_name', type: 'string'),
+                        new OA\Property(property: 'package_color', type: 'string'),
+                        new OA\Property(property: 'package_balance', type: 'string'),
+                        new OA\Property(property: 'package_uptime', type: 'string'),
+                        new OA\Property(property: 'package_validity', type: 'string'),
+                        new OA\Property(property: 'package_voucher_count', type: 'integer', example: 1),
+                        new OA\Property(property: 'package_voucher_price', type: 'number', example: 100.5),
+                        new OA\Property(property: 'package_default_cash_discount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'package_default_credit_discount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )
@@ -148,7 +148,7 @@ class VoucherPackageController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -156,16 +156,16 @@ class VoucherPackageController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'package_name', type: 'string'),
-                    new OA\Property(property: 'package_color', type: 'string'),
-                    new OA\Property(property: 'package_balance', type: 'string'),
-                    new OA\Property(property: 'package_uptime', type: 'string'),
-                    new OA\Property(property: 'package_validity', type: 'string'),
-                    new OA\Property(property: 'package_voucher_count', type: 'integer', example: 1),
-                    new OA\Property(property: 'package_voucher_price', type: 'number', example: 100.5),
-                    new OA\Property(property: 'package_default_cash_discount', type: 'number', example: 100.5),
-                    new OA\Property(property: 'package_default_credit_discount', type: 'number', example: 100.5),
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'package_name', type: 'string'),
+                        new OA\Property(property: 'package_color', type: 'string'),
+                        new OA\Property(property: 'package_balance', type: 'string'),
+                        new OA\Property(property: 'package_uptime', type: 'string'),
+                        new OA\Property(property: 'package_validity', type: 'string'),
+                        new OA\Property(property: 'package_voucher_count', type: 'integer', example: 1),
+                        new OA\Property(property: 'package_voucher_price', type: 'number', example: 100.5),
+                        new OA\Property(property: 'package_default_cash_discount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'package_default_credit_discount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )
@@ -318,7 +318,7 @@ class VoucherPackageController extends BaseController
         path: '/api/v1/voucher-packages/batch-delete',
         summary: 'حذف مجمع لباقات الكروت',
         tags: ['Voucher Packages'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -326,7 +326,7 @@ class VoucherPackageController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -356,7 +356,7 @@ class VoucherPackageController extends BaseController
         path: '/api/v1/voucher-packages/batch-restore',
         summary: 'استعادة مجمعة لباقات الكروت',
         tags: ['Voucher Packages'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -364,7 +364,7 @@ class VoucherPackageController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -394,7 +394,7 @@ class VoucherPackageController extends BaseController
         path: '/api/v1/voucher-packages/batch-force-delete',
         summary: 'حذف نهائي مجمع لباقات الكروت',
         tags: ['Voucher Packages'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -402,7 +402,7 @@ class VoucherPackageController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )

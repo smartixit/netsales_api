@@ -86,10 +86,11 @@ class NetworkWalletLogRepository extends BaseRepository implements NetworkWallet
     /**
      * إنشاء قيد مالي جديد في دفتر أستاذ محفظة الشبكة.
      */
-    public function createLog(int $walletId, WalletOperationType|string $operation, float $amount, string $statement, ?int $createdBy = null, ?string $date = null): NetworkWalletLog
+    public function createLog(int $walletId, WalletOperationType|string $operation, float $amount, string $statement, ?int $createdBy = null, ?string $date = null, ?int $transferId = null): NetworkWalletLog
     {
         return $this->create([
             'wallet_id' => $walletId,
+            'transfer_id' => $transferId,
             'log_operation' => $operation instanceof WalletOperationType ? $operation->value : $operation,
             'log_amount' => $amount,
             'log_statement' => $statement,

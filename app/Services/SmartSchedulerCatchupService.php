@@ -6,9 +6,7 @@ use App\Enums\ScheduledTaskStatus;
 use App\Enums\ScheduledTaskType;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
 use App\Interfaces\SystemSettingRepositoryInterface;
-use App\Models\ScheduledTaskRun;
 use App\Services\Backup\BackupSettingsService;
-use App\Services\SystemLoggerService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -280,8 +278,7 @@ class SmartSchedulerCatchupService
         Carbon $now,
         ScheduledTaskStatus|string $status = ScheduledTaskStatus::COMPLETED,
         ?array $extra = null
-    ): void
-    {
+    ): void {
         $frequency = $config['frequency'];
         $targetDate = $now->toDateString();
 

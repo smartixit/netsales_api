@@ -101,7 +101,7 @@ class PosController extends BaseController
         path: '/api/v1/pos',
         summary: 'إضافة نقطة بيع جديدة إدارياً',
         tags: ['POS'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -109,13 +109,13 @@ class PosController extends BaseController
                 schema: new OA\Schema(
                     required: ['pos_name', 'governorate_id', 'directorate_id'],
                     properties: [
-                    new OA\Property(property: 'pos_name', type: 'string'),
-                    new OA\Property(property: 'pos_email', type: 'string', format: 'email', example: 'user@example.com'),
-                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_address', type: 'string'),
-                    new OA\Property(property: 'pos_profile_logo', type: 'string', format: 'binary'),
-                    new OA\Property(property: 'status', type: 'string'),
+                        new OA\Property(property: 'pos_name', type: 'string'),
+                        new OA\Property(property: 'pos_email', type: 'string', format: 'email', example: 'user@example.com'),
+                        new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'pos_address', type: 'string'),
+                        new OA\Property(property: 'pos_profile_logo', type: 'string', format: 'binary'),
+                        new OA\Property(property: 'status', type: 'string'),
                     ]
                 )
             )
@@ -149,7 +149,7 @@ class PosController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -157,13 +157,13 @@ class PosController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'pos_name', type: 'string'),
-                    new OA\Property(property: 'pos_email', type: 'string', format: 'email', example: 'user@example.com'),
-                    new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_address', type: 'string'),
-                    new OA\Property(property: 'pos_profile_logo', type: 'string', format: 'binary'),
-                    new OA\Property(property: 'status', type: 'string'),
+                        new OA\Property(property: 'pos_name', type: 'string'),
+                        new OA\Property(property: 'pos_email', type: 'string', format: 'email', example: 'user@example.com'),
+                        new OA\Property(property: 'governorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'pos_address', type: 'string'),
+                        new OA\Property(property: 'pos_profile_logo', type: 'string', format: 'binary'),
+                        new OA\Property(property: 'status', type: 'string'),
                     ]
                 )
             )
@@ -316,7 +316,7 @@ class PosController extends BaseController
         path: '/api/v1/pos/batch-delete',
         summary: 'حذف مجمع لنقاط البيع (Batch Delete)',
         tags: ['POS'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -324,7 +324,7 @@ class PosController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -354,7 +354,7 @@ class PosController extends BaseController
         path: '/api/v1/pos/batch-restore',
         summary: 'استعادة مجمعة لنقاط البيع (Batch Restore)',
         tags: ['POS'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -362,7 +362,7 @@ class PosController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -392,7 +392,7 @@ class PosController extends BaseController
         path: '/api/v1/pos/batch-force-delete',
         summary: 'حذف نهائي مجمع لنقاط البيع (Batch Force Delete)',
         tags: ['POS'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -400,7 +400,7 @@ class PosController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -461,7 +461,7 @@ class PosController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -469,7 +469,7 @@ class PosController extends BaseController
                 schema: new OA\Schema(
                     required: ['rejection_reason'],
                     properties: [
-                    new OA\Property(property: 'rejection_reason', type: 'string'),
+                        new OA\Property(property: 'rejection_reason', type: 'string'),
                     ]
                 )
             )

@@ -91,6 +91,7 @@ class NetworkRepository extends BaseRepository implements NetworkRepositoryInter
 
         return ! $query->exists();
     }
+
     /**
      * synchronize phone number for all networks of a given owner
      */

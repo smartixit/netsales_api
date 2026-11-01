@@ -57,4 +57,3 @@ interface OtpRepositoryInterface extends BaseRepositoryInterface
      */
     public function deleteExpiredOrUsed(\DateTimeInterface $cutoff): int;
 }
-

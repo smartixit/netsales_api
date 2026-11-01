@@ -7,6 +7,7 @@ use App\Enums\RequestStatus;
 use App\Interfaces\DashboardRepositoryInterface;
 use App\Models\SaleInvoice;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -255,7 +256,7 @@ class DashboardRepository extends BaseRepository implements DashboardRepositoryI
             $ranges['prev_start'], $ranges['prev_end'],
             $ranges['cur_start'], $ranges['cur_end'],
         ])
-        ->first();
+            ->first();
 
         // 3. طلبات كروت نقطة البيع من الشبكة
         $requestsQuery = DB::table('requests')
@@ -275,7 +276,7 @@ class DashboardRepository extends BaseRepository implements DashboardRepositoryI
             $ranges['cur_start'], $ranges['cur_end'],
             $ranges['cur_start'], $ranges['cur_end'],
         ])
-        ->first();
+            ->first();
 
         $curSales = (float) ($salesData->current_sales ?? 0.0);
         $prevSales = (float) ($salesData->previous_sales ?? 0.0);
@@ -543,8 +544,8 @@ class DashboardRepository extends BaseRepository implements DashboardRepositoryI
     /**
      * دمج وترتيب الحركات الأخيرة وتنسيق التسميات.
      *
-     * @param  \Illuminate\Support\Collection<int, mixed>  $invoices
-     * @param  \Illuminate\Support\Collection<int, mixed>  $requests
+     * @param  Collection<int, mixed>  $invoices
+     * @param  Collection<int, mixed>  $requests
      * @return array<int, array<string, mixed>>
      */
     protected function mergeAndSortActivities($invoices, $requests, int $limit): array

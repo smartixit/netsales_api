@@ -75,7 +75,7 @@ class CheckLowBalanceAlerts extends Command
 
                 $message = "⚠️ تنبيه انخفاض الرصيد:\n"
                     ."رصيد المحفظة لدى ({$posName}) في شبكة ({$network->network_name}) قد انخفض إلى: {$balanceFormatted} {$currencySymbol}.\n"
-                    ."يرجى تغذية المحفظة لضمان استمرار مبيعات الكروت.";
+                    .'يرجى تغذية المحفظة لضمان استمرار مبيعات الكروت.';
 
                 $smsSent = false;
                 if ($smsSetting?->is_enabled && $smsSetting->notify_low_balance && $network->network_phone_number) {

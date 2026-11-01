@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Enums\BankAccountType;
 use App\Enums\NetworkStatus;
-use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\PaymentType;
+use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\RequestStatus;
 use App\Enums\ValueType;
 use App\Models\BankAccount;
@@ -14,7 +14,6 @@ use App\Models\Network;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Models\UserSession;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 

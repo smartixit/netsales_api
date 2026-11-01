@@ -34,7 +34,7 @@ class FeatureController extends BaseController
     #[OA\Get(
         path: '/api/v1/features',
         summary: 'عرض قائمة ميزات النظام',
-        
+
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
@@ -66,7 +66,7 @@ class FeatureController extends BaseController
     #[OA\Get(
         path: '/api/v1/features/{id}',
         summary: 'عرض تفاصيل ميزة',
-        
+
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -94,9 +94,9 @@ class FeatureController extends BaseController
     #[OA\Post(
         path: '/api/v1/features',
         summary: 'إضافة ميزة جديدة',
-        
+
         tags: ['Features'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -104,11 +104,11 @@ class FeatureController extends BaseController
                 schema: new OA\Schema(
                     required: ['feature_name', 'feature_value_type'],
                     properties: [
-                    new OA\Property(property: 'feature_name', type: 'string'),
-                    new OA\Property(property: 'feature_value_type', type: 'string'),
-                    new OA\Property(property: 'feature_value', type: 'string'),
-                    new OA\Property(property: 'feature_desc', type: 'string'),
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'feature_name', type: 'string'),
+                        new OA\Property(property: 'feature_value_type', type: 'string'),
+                        new OA\Property(property: 'feature_value', type: 'string'),
+                        new OA\Property(property: 'feature_desc', type: 'string'),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )
@@ -136,12 +136,12 @@ class FeatureController extends BaseController
     #[OA\Put(
         path: '/api/v1/features/{id}',
         summary: 'تحديث بيانات ميزة',
-        
+
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -149,11 +149,11 @@ class FeatureController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'feature_name', type: 'string'),
-                    new OA\Property(property: 'feature_value_type', type: 'string'),
-                    new OA\Property(property: 'feature_value', type: 'string'),
-                    new OA\Property(property: 'feature_desc', type: 'string'),
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'feature_name', type: 'string'),
+                        new OA\Property(property: 'feature_value_type', type: 'string'),
+                        new OA\Property(property: 'feature_value', type: 'string'),
+                        new OA\Property(property: 'feature_desc', type: 'string'),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )
@@ -181,7 +181,7 @@ class FeatureController extends BaseController
     #[OA\Post(
         path: '/api/v1/features/{id}/toggle-status',
         summary: 'تبديل حالة تفعيل الميزة',
-        
+
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -209,7 +209,7 @@ class FeatureController extends BaseController
     #[OA\Delete(
         path: '/api/v1/features/{id}',
         summary: 'حذف ميزة ناعماً',
-        
+
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -237,7 +237,7 @@ class FeatureController extends BaseController
     #[OA\Get(
         path: '/api/v1/features/trashed',
         summary: 'عرض الميزات المحذوفة ناعماً',
-        
+
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
@@ -268,7 +268,7 @@ class FeatureController extends BaseController
     #[OA\Post(
         path: '/api/v1/features/{id}/restore',
         summary: 'استعادة ميزة محذوفة',
-        
+
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -296,7 +296,7 @@ class FeatureController extends BaseController
     #[OA\Delete(
         path: '/api/v1/features/{id}/force',
         summary: 'حذف نهائي للميزة',
-        
+
         tags: ['Features'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -324,9 +324,9 @@ class FeatureController extends BaseController
     #[OA\Post(
         path: '/api/v1/features/batch-delete',
         summary: 'حذف مجمع للميزات',
-        
+
         tags: ['Features'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -334,7 +334,7 @@ class FeatureController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -362,9 +362,9 @@ class FeatureController extends BaseController
     #[OA\Post(
         path: '/api/v1/features/batch-restore',
         summary: 'استعادة مجمعة للميزات',
-        
+
         tags: ['Features'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -372,7 +372,7 @@ class FeatureController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -400,9 +400,9 @@ class FeatureController extends BaseController
     #[OA\Post(
         path: '/api/v1/features/batch-force-delete',
         summary: 'حذف نهائي مجمع للميزات',
-        
+
         tags: ['Features'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -410,7 +410,7 @@ class FeatureController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )

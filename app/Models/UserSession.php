@@ -43,7 +43,7 @@ class UserSession extends Model
             'revoked_at' => 'datetime',
         ];
     }
-    
+
     // 64-hex char cryptographic random token (256-bit entropy) & device_uuid fallback
     protected static function booted(): void
     {

@@ -124,7 +124,7 @@ class SecurityController extends BaseController
         summary: 'تطبيق حظر أمني على مستخدم',
         description: 'يفرض حظراً أمنياً دائماً أو مؤقتاً على المستخدم مع إبطال كافة جلساته المفتوحة وتحديث حالته إلى BANNED.',
         tags: ['Security'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -132,12 +132,12 @@ class SecurityController extends BaseController
                 schema: new OA\Schema(
                     required: ['ban_type'],
                     properties: [
-                    new OA\Property(property: 'user_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'device_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'ban_type', type: 'string'),
-                    new OA\Property(property: 'ban_reason', type: 'string'),
-                    new OA\Property(property: 'start_at', type: 'string', format: 'date', example: '2026-01-01'),
-                    new OA\Property(property: 'end_at', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'user_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'device_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'ban_type', type: 'string'),
+                        new OA\Property(property: 'ban_reason', type: 'string'),
+                        new OA\Property(property: 'start_at', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'end_at', type: 'string', format: 'date', example: '2026-01-01'),
                     ]
                 )
             )
@@ -173,7 +173,7 @@ class SecurityController extends BaseController
         summary: 'تطبيق حظر أمني على جهاز',
         description: 'يفرض حظراً أمنياً على معرف جهاز محدد ويغير حالته إلى BANNED لمنع أي محاولة دخول لاحقة عبره.',
         tags: ['Security'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -181,12 +181,12 @@ class SecurityController extends BaseController
                 schema: new OA\Schema(
                     required: ['ban_type'],
                     properties: [
-                    new OA\Property(property: 'user_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'device_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'ban_type', type: 'string'),
-                    new OA\Property(property: 'ban_reason', type: 'string'),
-                    new OA\Property(property: 'start_at', type: 'string', format: 'date', example: '2026-01-01'),
-                    new OA\Property(property: 'end_at', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'user_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'device_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'ban_type', type: 'string'),
+                        new OA\Property(property: 'ban_reason', type: 'string'),
+                        new OA\Property(property: 'start_at', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'end_at', type: 'string', format: 'date', example: '2026-01-01'),
                     ]
                 )
             )

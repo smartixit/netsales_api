@@ -36,7 +36,7 @@ class SupportTicketController extends BaseController
     #[OA\Get(
         path: '/api/v1/support-tickets',
         summary: 'عرض قائمة التذاكر',
-        
+
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -68,7 +68,7 @@ class SupportTicketController extends BaseController
     #[OA\Get(
         path: '/api/v1/support-tickets/trashed',
         summary: 'عرض التذاكر المحذوفة',
-        
+
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -100,9 +100,9 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets',
         summary: 'إنشاء تذكرة دعم فني جديدة',
-        
+
         tags: ['Support Tickets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -110,10 +110,10 @@ class SupportTicketController extends BaseController
                 schema: new OA\Schema(
                     required: ['network_id', 'ticket_subject'],
                     properties: [
-                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'ticket_subject', type: 'string'),
-                    new OA\Property(property: 'message_body', type: 'string'),
+                        new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'ticket_subject', type: 'string'),
+                        new OA\Property(property: 'message_body', type: 'string'),
                     ]
                 )
             )
@@ -142,7 +142,7 @@ class SupportTicketController extends BaseController
     #[OA\Get(
         path: '/api/v1/support-tickets/{id}',
         summary: 'عرض تفاصيل تذكرة',
-        
+
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -170,12 +170,12 @@ class SupportTicketController extends BaseController
     #[OA\Put(
         path: '/api/v1/support-tickets/{id}',
         summary: 'تحديث بيانات تذكرة',
-        
+
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -183,9 +183,9 @@ class SupportTicketController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'ticket_subject', type: 'string'),
+                        new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'ticket_subject', type: 'string'),
                     ]
                 )
             )
@@ -213,7 +213,7 @@ class SupportTicketController extends BaseController
     #[OA\Delete(
         path: '/api/v1/support-tickets/{id}',
         summary: 'حذف تذكرة ناعماً',
-        
+
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -241,7 +241,7 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets/{id}/restore',
         summary: 'استعادة تذكرة محذوفة',
-        
+
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -269,7 +269,7 @@ class SupportTicketController extends BaseController
     #[OA\Delete(
         path: '/api/v1/support-tickets/{id}/force',
         summary: 'الحذف النهائي لتذكرة',
-        
+
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -297,9 +297,9 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets/batch-delete',
         summary: 'الحذف المجمع للتذاكر',
-        
+
         tags: ['Support Tickets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -307,7 +307,7 @@ class SupportTicketController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -335,9 +335,9 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets/batch-restore',
         summary: 'الاستعادة المجمعة للتذاكر',
-        
+
         tags: ['Support Tickets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -345,7 +345,7 @@ class SupportTicketController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -373,9 +373,9 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets/batch-force-delete',
         summary: 'الحذف النهائي المجمع للتذاكر',
-        
+
         tags: ['Support Tickets'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -383,7 +383,7 @@ class SupportTicketController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -411,7 +411,7 @@ class SupportTicketController extends BaseController
     #[OA\Get(
         path: '/api/v1/support-tickets/{id}/messages',
         summary: 'عرض رسائل التذكرة',
-        
+
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -439,12 +439,12 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets/{id}/messages',
         summary: 'إرسال رسالة في التذكرة',
-        
+
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -452,12 +452,12 @@ class SupportTicketController extends BaseController
                 schema: new OA\Schema(
                     required: ['ticket_id', 'message_body'],
                     properties: [
-                    new OA\Property(property: 'ticket_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'sent_by', type: 'integer', example: 1),
-                    new OA\Property(property: 'message_body', type: 'string'),
-                    new OA\Property(property: 'sent_at', type: 'string', format: 'date', example: '2026-01-01'),
-                    new OA\Property(property: 'is_read', type: 'boolean', example: true),
-                    new OA\Property(property: 'read_at', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'ticket_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'sent_by', type: 'integer', example: 1),
+                        new OA\Property(property: 'message_body', type: 'string'),
+                        new OA\Property(property: 'sent_at', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'is_read', type: 'boolean', example: true),
+                        new OA\Property(property: 'read_at', type: 'string', format: 'date', example: '2026-01-01'),
                     ]
                 )
             )
@@ -486,7 +486,7 @@ class SupportTicketController extends BaseController
     #[OA\Post(
         path: '/api/v1/support-tickets/{id}/read',
         summary: 'تمييز رسائل التذكرة كمقروءة',
-        
+
         tags: ['Support Tickets'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),

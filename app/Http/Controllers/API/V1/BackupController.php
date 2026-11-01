@@ -9,7 +9,6 @@ use App\Http\Requests\API\V1\Backup\DriveTokenRequest;
 use App\Http\Requests\API\V1\Backup\UpdateBackupConfigRequest;
 use App\Http\Resources\API\V1\Backup\BackupJobResource;
 use App\Interfaces\BackupJobRepositoryInterface;
-use App\Models\BackupJob;
 use App\Services\Backup\BackupOrchestratorService;
 use App\Services\Backup\BackupSettingsService;
 use App\Services\Backup\GoogleDriveService;

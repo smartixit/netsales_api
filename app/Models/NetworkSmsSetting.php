@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\SmsMessageType;
 use App\Traits\ExactDateSerialization;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $auth_type
  * @property string|null $api_token
  * @property string|null $refresh_token
- * @property \Carbon\Carbon|null $token_expires_at
+ * @property Carbon|null $token_expires_at
  * @property string|null $username
  * @property string|null $password
  * @property string|null $device_id

@@ -26,6 +26,7 @@ class PosWalletLog extends Model
 
     protected $fillable = [
         'wallet_id',
+        'transfer_id',
         'log_operation_type',
         'log_amount',
         'log_statement',
@@ -46,6 +47,11 @@ class PosWalletLog extends Model
     public function wallet(): BelongsTo
     {
         return $this->belongsTo(PosWallet::class, 'wallet_id', 'wallet_id');
+    }
+
+    public function transfer(): BelongsTo
+    {
+        return $this->belongsTo(WalletTransfer::class, 'transfer_id', 'transfer_id');
     }
 
     public function createdBy(): BelongsTo

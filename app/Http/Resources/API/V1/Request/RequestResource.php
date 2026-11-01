@@ -45,7 +45,6 @@ class RequestResource extends JsonResource
             'request_note' => $this->request_note,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
-            
 
             // Eager Loaded Relationships
             'network' => $this->whenLoaded('network', fn () => new NetworkResource($this->network)),

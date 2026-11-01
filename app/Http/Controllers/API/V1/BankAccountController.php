@@ -34,7 +34,7 @@ class BankAccountController extends BaseController
     #[OA\Get(
         path: '/api/v1/bank-accounts',
         summary: 'عرض قائمة الحسابات البنكية',
-        
+
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
@@ -67,7 +67,7 @@ class BankAccountController extends BaseController
     #[OA\Get(
         path: '/api/v1/bank-accounts/active',
         summary: 'عرض الحسابات البنكية النشطة',
-        
+
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'account_currency', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
@@ -97,7 +97,7 @@ class BankAccountController extends BaseController
     #[OA\Get(
         path: '/api/v1/bank-accounts/{id}',
         summary: 'عرض تفاصيل حساب بنكي',
-        
+
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -125,9 +125,9 @@ class BankAccountController extends BaseController
     #[OA\Post(
         path: '/api/v1/bank-accounts',
         summary: 'إنشاء حساب بنكي جديد',
-        
+
         tags: ['Bank Accounts'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -135,14 +135,14 @@ class BankAccountController extends BaseController
                 schema: new OA\Schema(
                     required: ['bank_name', 'account_holder_name', 'account_number', 'account_type', 'account_currency'],
                     properties: [
-                    new OA\Property(property: 'bank_name', type: 'string'),
-                    new OA\Property(property: 'account_holder_name', type: 'string'),
-                    new OA\Property(property: 'account_number', type: 'string'),
-                    new OA\Property(property: 'account_type', type: 'string'),
-                    new OA\Property(property: 'account_currency', type: 'string'),
-                    new OA\Property(property: 'account_balance', type: 'number', example: 100.5),
-                    new OA\Property(property: 'bank_logo', type: 'string', format: 'binary'),
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'bank_name', type: 'string'),
+                        new OA\Property(property: 'account_holder_name', type: 'string'),
+                        new OA\Property(property: 'account_number', type: 'string'),
+                        new OA\Property(property: 'account_type', type: 'string'),
+                        new OA\Property(property: 'account_currency', type: 'string'),
+                        new OA\Property(property: 'account_balance', type: 'number', example: 100.5),
+                        new OA\Property(property: 'bank_logo', type: 'string', format: 'binary'),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )
@@ -170,12 +170,12 @@ class BankAccountController extends BaseController
     #[OA\Put(
         path: '/api/v1/bank-accounts/{id}',
         summary: 'تحديث بيانات حساب بنكي',
-        
+
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -183,14 +183,14 @@ class BankAccountController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'bank_name', type: 'string'),
-                    new OA\Property(property: 'account_holder_name', type: 'string'),
-                    new OA\Property(property: 'account_number', type: 'string'),
-                    new OA\Property(property: 'account_type', type: 'string'),
-                    new OA\Property(property: 'account_currency', type: 'string'),
-                    new OA\Property(property: 'account_balance', type: 'number', example: 100.5),
-                    new OA\Property(property: 'bank_logo', type: 'string', format: 'binary'),
-                    new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'bank_name', type: 'string'),
+                        new OA\Property(property: 'account_holder_name', type: 'string'),
+                        new OA\Property(property: 'account_number', type: 'string'),
+                        new OA\Property(property: 'account_type', type: 'string'),
+                        new OA\Property(property: 'account_currency', type: 'string'),
+                        new OA\Property(property: 'account_balance', type: 'number', example: 100.5),
+                        new OA\Property(property: 'bank_logo', type: 'string', format: 'binary'),
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
                     ]
                 )
             )
@@ -218,7 +218,7 @@ class BankAccountController extends BaseController
     #[OA\Post(
         path: '/api/v1/bank-accounts/{id}/toggle-status',
         summary: 'تبديل حالة تفعيل الحساب البنكي',
-        
+
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -246,7 +246,7 @@ class BankAccountController extends BaseController
     #[OA\Delete(
         path: '/api/v1/bank-accounts/{id}',
         summary: 'حذف حساب بنكي ناعماً',
-        
+
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -274,7 +274,7 @@ class BankAccountController extends BaseController
     #[OA\Get(
         path: '/api/v1/bank-accounts/trashed',
         summary: 'عرض الحسابات البنكية المحذوفة ناعماً',
-        
+
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
@@ -305,7 +305,7 @@ class BankAccountController extends BaseController
     #[OA\Post(
         path: '/api/v1/bank-accounts/{id}/restore',
         summary: 'استعادة حساب بنكي محذوف',
-        
+
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -333,7 +333,7 @@ class BankAccountController extends BaseController
     #[OA\Delete(
         path: '/api/v1/bank-accounts/{id}/force',
         summary: 'حذف نهائي للحساب البنكي',
-        
+
         tags: ['Bank Accounts'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -361,9 +361,9 @@ class BankAccountController extends BaseController
     #[OA\Post(
         path: '/api/v1/bank-accounts/batch-delete',
         summary: 'حذف مجمع للحسابات',
-        
+
         tags: ['Bank Accounts'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -371,7 +371,7 @@ class BankAccountController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -399,9 +399,9 @@ class BankAccountController extends BaseController
     #[OA\Post(
         path: '/api/v1/bank-accounts/batch-restore',
         summary: 'استعادة مجمعة للحسابات',
-        
+
         tags: ['Bank Accounts'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -409,7 +409,7 @@ class BankAccountController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -437,9 +437,9 @@ class BankAccountController extends BaseController
     #[OA\Post(
         path: '/api/v1/bank-accounts/batch-force-delete',
         summary: 'حذف نهائي مجمع للحسابات',
-        
+
         tags: ['Bank Accounts'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -447,7 +447,7 @@ class BankAccountController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )

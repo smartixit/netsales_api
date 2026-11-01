@@ -6,7 +6,6 @@ use App\Models\Directorate;
 use App\Models\Governorate;
 use App\Models\User;
 use App\Models\UserSession;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 

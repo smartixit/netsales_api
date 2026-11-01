@@ -22,8 +22,9 @@ interface NetworkRepositoryInterface extends BaseRepositoryInterface
 
     /**
      * تحديث رقم الهاتف لجميع الشبكات التي يمتلكها المستخدم (owner_id).
-     * @param int $ownerId معرف المستخدم.
-     * @param string $phone رقم الهاتف الجديد.
+     *
+     * @param  int  $ownerId  معرف المستخدم.
+     * @param  string  $phone  رقم الهاتف الجديد.
      * @return int عدد السجلات المعدلة.
      */
     public function syncPhoneForUser(int $ownerId, string $phone): int;

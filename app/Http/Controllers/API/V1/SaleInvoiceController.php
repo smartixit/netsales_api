@@ -8,8 +8,10 @@ use App\Http\Requests\API\V1\SaleInvoice\UpdateSaleInvoiceRequest;
 use App\Http\Resources\API\V1\SaleInvoice\SaleInvoiceResource;
 use App\Services\SaleInvoiceService;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
@@ -54,6 +56,22 @@ class SaleInvoiceController extends BaseController
     {
         try {
             $filters = $request->only(['network_id', 'pos_id', 'sale_type', 'created_by', 'from_date', 'to_date', 'search', 'per_page', 'all']);
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! $currentUser->isSuperAdmin()) {
+                if ($currentUser->pos) {
+                    $filters['pos_id'] = $currentUser->pos->pos_id;
+                } elseif ($currentUser->networks()->exists()) {
+                    $userNetworkIds = $currentUser->networks()->pluck('networks.network_id')->toArray();
+                    if (! empty($filters['network_id']) && ! in_array((int) $filters['network_id'], $userNetworkIds, true)) {
+                        return $this->errorResponse('غير مصرح لك باستعراض فواتير هذه الشبكة.', [], 403);
+                    }
+                    if (empty($filters['network_id'])) {
+                        $filters['network_ids'] = $userNetworkIds;
+                    }
+                }
+            }
+
             $invoices = $this->saleInvoiceService->getFiltered($filters);
 
             return $this->successResponse('تم استرجاع قائمة فواتير المبيعات بنجاح.', SaleInvoiceResource::collection($invoices));
@@ -84,7 +102,14 @@ class SaleInvoiceController extends BaseController
         try {
             $record = $this->saleInvoiceService->getById($id);
 
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('view', $record)) {
+                return $this->errorResponse('غير مصرح لك بالوصول إلى هذه الفاتورة.', [], 403);
+            }
+
             return $this->successResponse('تم استرجاع تفاصيل الفاتورة بنجاح.', new SaleInvoiceResource($record));
+        } catch (ModelNotFoundException) {
+            return $this->errorResponse('الفاتورة غير موجودة.', [], 404);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -99,7 +124,7 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices',
         summary: 'إنشاء فاتورة مبيعات مباشرة',
         tags: ['Sale Invoices'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -107,10 +132,10 @@ class SaleInvoiceController extends BaseController
                 schema: new OA\Schema(
                     required: ['network_id', 'pos_id', 'items'],
                     properties: [
-                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'items[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
-                    new OA\Property(property: 'paid_amount', type: 'number', example: 100.5),
+                        new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'items[]', type: 'array', items: new OA\Items(type: 'string', example: 1)),
+                        new OA\Property(property: 'paid_amount', type: 'number', example: 100.5),
                     ]
                 )
             )
@@ -143,7 +168,7 @@ class SaleInvoiceController extends BaseController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -151,7 +176,7 @@ class SaleInvoiceController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'sale_type', type: 'string'),
+                        new OA\Property(property: 'sale_type', type: 'string'),
                     ]
                 )
             )
@@ -293,7 +318,7 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices/batch-delete',
         summary: 'حذف مجمع لفواتير المبيعات',
         tags: ['Sale Invoices'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -301,7 +326,7 @@ class SaleInvoiceController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -330,7 +355,7 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices/batch-restore',
         summary: 'استعادة مجمعة لفواتير المبيعات',
         tags: ['Sale Invoices'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -338,7 +363,7 @@ class SaleInvoiceController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -367,7 +392,7 @@ class SaleInvoiceController extends BaseController
         path: '/api/v1/sale-invoices/batch-force-delete',
         summary: 'حذف نهائي مجمع لفواتير المبيعات',
         tags: ['Sale Invoices'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -375,7 +400,7 @@ class SaleInvoiceController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -422,7 +447,7 @@ class SaleInvoiceController extends BaseController
             $data = $this->saleInvoiceService->getSalesTrend($filters);
 
             return $this->successResponse('OK', $data);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->errorResponse('trend error: '.$e->getMessage(), [], 422);
         }
     }

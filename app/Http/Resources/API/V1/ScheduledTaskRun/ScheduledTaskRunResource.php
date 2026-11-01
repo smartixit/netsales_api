@@ -31,8 +31,8 @@ class ScheduledTaskRunResource extends JsonResource
             'status' => $this->status instanceof ScheduledTaskStatus ? $this->status->value : $this->status,
             'status_label' => $this->status instanceof ScheduledTaskStatus ? $this->status->label() : (ScheduledTaskStatus::tryFrom((string) $this->status)?->label()),
             'extra' => $this->extra,
-            'sent_at' => $this->sent_at ? Carbon::parse($this->sent_at)->toDateTimeString() : null, 
-            'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null, 
+            'sent_at' => $this->sent_at ? Carbon::parse($this->sent_at)->toDateTimeString() : null,
+            'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
         ];
     }

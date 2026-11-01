@@ -35,7 +35,7 @@ class NotificationController extends BaseController
     #[OA\Get(
         path: '/api/v1/notifications',
         summary: 'عرض قائمة الإشعارات العامة',
-        
+
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'user_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -68,7 +68,7 @@ class NotificationController extends BaseController
     #[OA\Get(
         path: '/api/v1/notifications/my',
         summary: 'عرض إشعارات المستخدم الحالي',
-        
+
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'is_read', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
@@ -99,7 +99,7 @@ class NotificationController extends BaseController
     #[OA\Get(
         path: '/api/v1/notifications/unread-count',
         summary: 'عدد الإشعارات غير المقروءة',
-        
+
         tags: ['Notifications'],
         responses: [
             new OA\Response(response: 200, description: 'تم جلب عدد الإشعارات غير المقروءة بنجاح'),
@@ -125,7 +125,7 @@ class NotificationController extends BaseController
     #[OA\Get(
         path: '/api/v1/notifications/trashed',
         summary: 'عرض الإشعارات المحذوفة',
-        
+
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'user_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -158,9 +158,9 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications',
         summary: 'إنشاء وإرسال إشعار جديد',
-        
+
         tags: ['Notifications'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -168,13 +168,13 @@ class NotificationController extends BaseController
                 schema: new OA\Schema(
                     required: ['user_id', 'notification_type', 'notification_title', 'notification_message'],
                     properties: [
-                    new OA\Property(property: 'user_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'notification_type', type: 'string'),
-                    new OA\Property(property: 'notification_title', type: 'string'),
-                    new OA\Property(property: 'notification_message', type: 'string'),
-                    new OA\Property(property: 'notification_image', type: 'string'),
-                    new OA\Property(property: 'is_read', type: 'boolean', example: true),
-                    new OA\Property(property: 'read_at', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'user_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'notification_type', type: 'string'),
+                        new OA\Property(property: 'notification_title', type: 'string'),
+                        new OA\Property(property: 'notification_message', type: 'string'),
+                        new OA\Property(property: 'notification_image', type: 'string'),
+                        new OA\Property(property: 'is_read', type: 'boolean', example: true),
+                        new OA\Property(property: 'read_at', type: 'string', format: 'date', example: '2026-01-01'),
                     ]
                 )
             )
@@ -202,7 +202,7 @@ class NotificationController extends BaseController
     #[OA\Get(
         path: '/api/v1/notifications/{id}',
         summary: 'عرض تفاصيل إشعار',
-        
+
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -230,12 +230,12 @@ class NotificationController extends BaseController
     #[OA\Put(
         path: '/api/v1/notifications/{id}',
         summary: 'تحديث بيانات إشعار',
-        
+
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -243,13 +243,13 @@ class NotificationController extends BaseController
                 schema: new OA\Schema(
                     required: [],
                     properties: [
-                    new OA\Property(property: 'user_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'notification_type', type: 'string'),
-                    new OA\Property(property: 'notification_title', type: 'string'),
-                    new OA\Property(property: 'notification_message', type: 'string'),
-                    new OA\Property(property: 'notification_image', type: 'string'),
-                    new OA\Property(property: 'is_read', type: 'boolean', example: true),
-                    new OA\Property(property: 'read_at', type: 'string', format: 'date', example: '2026-01-01'),
+                        new OA\Property(property: 'user_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'notification_type', type: 'string'),
+                        new OA\Property(property: 'notification_title', type: 'string'),
+                        new OA\Property(property: 'notification_message', type: 'string'),
+                        new OA\Property(property: 'notification_image', type: 'string'),
+                        new OA\Property(property: 'is_read', type: 'boolean', example: true),
+                        new OA\Property(property: 'read_at', type: 'string', format: 'date', example: '2026-01-01'),
                     ]
                 )
             )
@@ -277,7 +277,7 @@ class NotificationController extends BaseController
     #[OA\Delete(
         path: '/api/v1/notifications/{id}',
         summary: 'حذف إشعار ناعماً',
-        
+
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -305,7 +305,7 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications/{id}/restore',
         summary: 'استعادة إشعار محذوف',
-        
+
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -333,7 +333,7 @@ class NotificationController extends BaseController
     #[OA\Delete(
         path: '/api/v1/notifications/{id}/force',
         summary: 'الحذف النهائي لإشعار',
-        
+
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -361,9 +361,9 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications/batch-delete',
         summary: 'الحذف المجمع للإشعارات',
-        
+
         tags: ['Notifications'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -371,7 +371,7 @@ class NotificationController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -399,9 +399,9 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications/batch-restore',
         summary: 'الاستعادة المجمعة للإشعارات',
-        
+
         tags: ['Notifications'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -409,7 +409,7 @@ class NotificationController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -437,9 +437,9 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications/batch-force-delete',
         summary: 'الحذف النهائي المجمع للإشعارات',
-        
+
         tags: ['Notifications'],
-                requestBody: new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
             content: new OA\MediaType(
@@ -447,7 +447,7 @@ class NotificationController extends BaseController
                 schema: new OA\Schema(
                     required: ['ids'],
                     properties: [
-                    new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     ]
                 )
             )
@@ -475,7 +475,7 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications/{id}/read',
         summary: 'تمييز إشعار كمقروء',
-        
+
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -504,7 +504,7 @@ class NotificationController extends BaseController
     #[OA\Post(
         path: '/api/v1/notifications/mark-all-read',
         summary: 'تمييز كافة الإشعارات كمقروءة',
-        
+
         tags: ['Notifications'],
         responses: [
             new OA\Response(response: 200, description: 'تم تمييز جميع الإشعارات كمقروءة بنجاح'),

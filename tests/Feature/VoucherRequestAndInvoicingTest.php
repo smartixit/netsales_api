@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
-use App\Enums\SaleType;
 use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
+use App\Enums\SaleType;
 use App\Enums\UserStatus;
 use App\Models\Network;
 use App\Models\NetworkPos;
@@ -13,6 +13,7 @@ use App\Models\NetworkWallet;
 use App\Models\Pos;
 use App\Models\PosWallet;
 use App\Models\User;
+use App\Models\UserDevice;
 use App\Models\UserSession;
 use App\Models\VoucherPackage;
 use App\Models\VoucherPackageDiscount;
@@ -48,7 +49,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
         $suffix = uniqid();
         $deviceUuid = 'TEST-DEVICE-UUID-'.$suffix;
 
-        \App\Models\UserDevice::firstOrCreate([
+        UserDevice::firstOrCreate([
             'user_id' => $this->user->user_id,
             'device_uuid' => $deviceUuid,
         ], [
@@ -74,7 +75,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
             'X-Bypass-Encryption' => 'true',
         ];
 
-         $posUser = User::create([
+        $posUser = User::create([
             'role_id' => $this->user->role_id,
             'user_full_name' => 'POS Agent '.$suffix,
             'user_phone_number' => '73'.rand(1000000, 9999999),
@@ -273,7 +274,6 @@ class VoucherRequestAndInvoicingTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.invoice.sale_type', SaleType::CREDIT->value)
             ->assertJsonPath('data.invoice.invoice_total_amount', 46000);
-
 
         // 4. التحقق من تسوية المحفظة بالرصيد السالب (مديونية على الوكيل)
         $refreshedPosWallet = $this->posWallet->fresh();
@@ -502,5 +502,3 @@ class VoucherRequestAndInvoicingTest extends TestCase
             ->assertJsonPath('success', true);
     }
 }
-
-

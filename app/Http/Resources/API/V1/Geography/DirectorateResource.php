@@ -25,7 +25,6 @@ class DirectorateResource extends JsonResource
             'directorate_name' => $this->directorate_name,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
-            
 
             // Eager Loaded Relationships
             'governorate' => $this->whenLoaded('governorate', fn () => new GovernorateResource($this->governorate)),
