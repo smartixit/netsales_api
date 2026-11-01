@@ -11,8 +11,10 @@ use App\Http\Resources\API\V1\Request\RequestResource;
 use App\Http\Resources\API\V1\SaleInvoice\SaleInvoiceResource;
 use App\Services\RequestService;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
@@ -58,6 +60,27 @@ class RequestController extends BaseController
     {
         try {
             $filters = $request->only(['network_id', 'pos_id', 'status', 'created_by', 'reviewed_by', 'from_date', 'to_date', 'search', 'per_page', 'all']);
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! $currentUser->isSuperAdmin()) {
+                if ($currentUser->pos) {
+                    $filters['pos_id'] = $currentUser->pos->pos_id;
+                } elseif (method_exists($currentUser, 'posUsers') && $currentUser->posUsers()->exists()) {
+                    $filters['pos_id'] = $currentUser->posUsers()->value('pos_id');
+                } elseif ($currentUser->networks()->exists() || (method_exists($currentUser, 'networkUsers') && $currentUser->networkUsers()->exists())) {
+                    $userNetworkIds = $currentUser->networks()->pluck('networks.network_id')->toArray();
+                    if (method_exists($currentUser, 'networkUsers')) {
+                        $userNetworkIds = array_unique(array_merge($userNetworkIds, $currentUser->networkUsers()->pluck('network_id')->toArray()));
+                    }
+                    if (! empty($filters['network_id']) && ! in_array((int) $filters['network_id'], $userNetworkIds, true)) {
+                        return $this->errorResponse('غير مصرح لك باستعراض طلبات هذه الشبكة.', [], 403);
+                    }
+                    if (empty($filters['network_id'])) {
+                        $filters['network_ids'] = $userNetworkIds;
+                    }
+                }
+            }
+
             $requests = $this->requestService->getFiltered($filters);
 
             return $this->successResponse('تم استرجاع قائمة الطلبات بنجاح.', RequestResource::collection($requests));
@@ -88,7 +111,14 @@ class RequestController extends BaseController
         try {
             $record = $this->requestService->getById($id);
 
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('view', $record)) {
+                return $this->errorResponse('غير مصرح لك بالوصول إلى هذا الطلب.', [], 403);
+            }
+
             return $this->successResponse('تم استرجاع تفاصيل الطلب بنجاح.', new RequestResource($record));
+        } catch (ModelNotFoundException) {
+            return $this->errorResponse('الطلب غير موجود.', [], 404);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
