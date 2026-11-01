@@ -11,12 +11,14 @@ use App\Http\Controllers\API\V1\FeatureController;
 use App\Http\Controllers\API\V1\FileController;
 use App\Http\Controllers\API\V1\GovernorateController;
 use App\Http\Controllers\API\V1\NetworkController;
+use App\Http\Controllers\API\V1\NetworkMembershipController;
 use App\Http\Controllers\API\V1\NetworkPosController;
 use App\Http\Controllers\API\V1\NetworkSmsSettingController;
 use App\Http\Controllers\API\V1\NetworkWalletController;
 use App\Http\Controllers\API\V1\NotificationController;
 use App\Http\Controllers\API\V1\OtpController;
 use App\Http\Controllers\API\V1\PosController;
+use App\Http\Controllers\API\V1\PosMembershipController;
 use App\Http\Controllers\API\V1\PosWalletController;
 use App\Http\Controllers\API\V1\ProviderSubscriptionController;
 use App\Http\Controllers\API\V1\RequestController;
@@ -194,6 +196,17 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('networks', NetworkController::class)->parameters(['networks' => 'id'])->except(['index', 'show', 'store', 'update', 'destroy']);
         });
 
+        // 3.1. إدارة أعضاء وموظفي الشبكة (Scoped Network Memberships)
+        Route::middleware(['throttle:api-read', 'operational.scope'])->group(function () {
+            Route::get('networks/{networkId}/members', [NetworkMembershipController::class, 'index'])->whereNumber('networkId')->name('api.v1.networks.members.index');
+        });
+        Route::middleware(['throttle:api-write', 'operational.scope'])->group(function () {
+            Route::post('networks/{networkId}/members', [NetworkMembershipController::class, 'store'])->whereNumber('networkId')->name('api.v1.networks.members.store');
+            Route::put('networks/{networkId}/members/{userId}/role', [NetworkMembershipController::class, 'updateRole'])->whereNumber('networkId')->whereNumber('userId')->name('api.v1.networks.members.update_role');
+            Route::put('networks/{networkId}/members/{userId}/status', [NetworkMembershipController::class, 'updateStatus'])->whereNumber('networkId')->whereNumber('userId')->name('api.v1.networks.members.update_status');
+            Route::delete('networks/{networkId}/members/{userId}', [NetworkMembershipController::class, 'destroy'])->whereNumber('networkId')->whereNumber('userId')->name('api.v1.networks.members.destroy');
+        });
+
         // ==========================================
         // 4. إدارة نقاط البيع والوكلاء (POS Management)
         // ==========================================
@@ -215,6 +228,17 @@ Route::prefix('v1')->group(function () {
             Route::post('pos/{id}/approve', [PosController::class, 'approve'])->whereNumber('id')->name('api.v1.pos.approve')->middleware('permission:pos.edit');
             Route::post('pos/{id}/reject', [PosController::class, 'reject'])->whereNumber('id')->name('api.v1.pos.reject')->middleware('permission:pos.edit');
             Route::apiResource('pos', PosController::class)->parameters(['pos' => 'id'])->except(['index', 'show', 'store', 'update', 'destroy']);
+        });
+
+        // 4.1. إدارة أعضاء وموظفي نقاط البيع (Scoped POS Memberships)
+        Route::middleware(['throttle:api-read', 'operational.scope'])->group(function () {
+            Route::get('pos/{posId}/members', [PosMembershipController::class, 'index'])->whereNumber('posId')->name('api.v1.pos.members.index');
+        });
+        Route::middleware(['throttle:api-write', 'operational.scope'])->group(function () {
+            Route::post('pos/{posId}/members', [PosMembershipController::class, 'store'])->whereNumber('posId')->name('api.v1.pos.members.store');
+            Route::put('pos/{posId}/members/{userId}/role', [PosMembershipController::class, 'updateRole'])->whereNumber('posId')->whereNumber('userId')->name('api.v1.pos.members.update_role');
+            Route::put('pos/{posId}/members/{userId}/status', [PosMembershipController::class, 'updateStatus'])->whereNumber('posId')->whereNumber('userId')->name('api.v1.pos.members.update_status');
+            Route::delete('pos/{posId}/members/{userId}', [PosMembershipController::class, 'destroy'])->whereNumber('posId')->whereNumber('userId')->name('api.v1.pos.members.destroy');
         });
 
         // ==========================================

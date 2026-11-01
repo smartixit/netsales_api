@@ -20,6 +20,7 @@ use App\Http\Middleware\CheckMaintenanceMode;
 use App\Http\Middleware\CheckSubscriptionFeatureQuota;
 use App\Http\Middleware\EncryptDecryptPayload;
 use App\Http\Middleware\EnsureAppAdmin;
+use App\Http\Middleware\EnsureOperationalWorkspaceScope;
 use App\Http\Middleware\EnsurePermissionMiddleware;
 use App\Http\Middleware\IdempotencyMiddleware;
 use App\Http\Middleware\InputSanitization;
@@ -64,6 +65,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'subscription.quota' => CheckSubscriptionFeatureQuota::class,
             'subscription.active' => CheckSubscriptionFeatureQuota::class,
             'idempotency' => IdempotencyMiddleware::class,
+            'operational.scope' => EnsureOperationalWorkspaceScope::class,
+            'operational.scope' => \App\Http\Middleware\EnsureOperationalWorkspaceScope::class,
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {
