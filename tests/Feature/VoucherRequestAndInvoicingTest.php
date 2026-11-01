@@ -250,6 +250,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
             ->postJson('/api/v1/requests', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
+                'sale_type' => SaleType::CREDIT->value,
                 'request_note' => 'طلب كروت بالآجل لعدم توفر رصيد',
                 'items' => [
                     [
@@ -262,11 +263,10 @@ class VoucherRequestAndInvoicingTest extends TestCase
         $createResponse->assertStatus(201);
         $requestId = $createResponse->json('data.request_id');
 
-        // 3. اعتماد الطلب:
-        // لعدم كفاية الرصيد النقدي، يجب أن يتحول البيع آلياً إلى آجل (CREDIT)
-        // مع تطبيق نسبة خصم الآجل (8% = 4,000) فيكون الصافي = 46,000
+        // 3. اعتماد الطلب بالبيع الآجل وفق التسهيل الائتماني
         $approveResponse = $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$requestId}/approve", [
+                'sale_type' => SaleType::CREDIT->value,
                 'request_note' => 'تم الاعتماد بالبيع الآجل وفق التسهيل الائتماني',
             ]);
 

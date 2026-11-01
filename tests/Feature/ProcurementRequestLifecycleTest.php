@@ -9,9 +9,12 @@ use App\Enums\SaleType;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
+use App\Models\NetworkWalletLog;
 use App\Models\Pos;
 use App\Models\PosWallet;
+use App\Models\PosWalletLog;
 use App\Models\Request as RequestModel;
+use App\Models\SaleInvoice;
 use App\Models\User;
 use App\Models\UserDevice;
 use App\Models\UserSession;
@@ -140,12 +143,61 @@ class ProcurementRequestLifecycleTest extends TestCase
         ]);
     }
 
+    /**
+     * إثبات اعتماد طلب التوريد وتوليد الفاتورة المرتبطة وتسوية الرصيد بنجاح بعد فتح البوابة الرسمية
+     */
+    public function test_approval_gate_allows_authorized_network_approval_and_generates_linked_sale_invoice(): void
+    {
+        // 1. إنشاء طلب معلق
+        $createResponse = $this->withHeaders($this->headers)
+            ->postJson('/api/v1/requests', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'items' => [
+                    [
+                        'package_id' => $this->package->package_id,
+                        'voucher_count' => 50,
+                    ],
+                ],
+            ]);
+
+        $createResponse->assertStatus(201);
+        $requestId = $createResponse->json('data.request_id');
+
+        $initialPosBalance = (float) $this->posWallet->fresh()->wallet_balance;
+        $initialNetworkBalance = (float) $this->networkWallet->fresh()->wallet_balance;
+
+        // 2. الاعتماد الرسمي وتوليد الفاتورة
+        $approveResponse = $this->withHeaders($this->headers)
+            ->postJson("/api/v1/requests/{$requestId}/approve", [
+                'request_note' => 'اعتماد وتوليد الفاتورة الرسمية',
+            ]);
+
+        $approveResponse->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.request.status', RequestStatus::APPROVED->value)
+            ->assertJsonPath('data.invoice.request_id', $requestId);
+
+        $invoiceId = $approveResponse->json('data.invoice.invoice_id');
+        $invoice = SaleInvoice::find($invoiceId);
+        $this->assertNotNull($invoice);
+        $this->assertEquals($requestId, $invoice->request_id);
+
+        // 3. التحقق من تسوية المحافظ
+        $invoiceTotal = (float) $invoice->invoice_total_amount;
+        $this->assertEquals($initialPosBalance - $invoiceTotal, (float) $this->posWallet->fresh()->wallet_balance);
+        $this->assertEquals($initialNetworkBalance + $invoiceTotal, (float) $this->networkWallet->fresh()->wallet_balance);
+    }
+
     public function test_authorized_pos_can_create_procurement_request_with_server_authoritative_pricing(): void
     {
         $initialPosBalance = (float) $this->posWallet->fresh()->wallet_balance;
         $initialNetworkBalance = (float) $this->networkWallet->fresh()->wallet_balance;
+        $initialInvoicesCount = SaleInvoice::count();
+        $initialPosLogsCount = PosWalletLog::count();
+        $initialNetworkLogsCount = NetworkWalletLog::count();
 
-        // العميل يرسل فقط معرف الباقة والكمية (مع محاولة تزوير سعر وخصم محلي لاختبار رفضها من الخادم)
+        // العميل يرسل فقط معرف الباقة والكمية (مع محاولة تزوير سعر وخصم محلي لاختبار تجاهلها من الخادم)
         $payload = [
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
@@ -155,7 +207,6 @@ class ProcurementRequestLifecycleTest extends TestCase
                 [
                     'package_id' => $this->package->package_id,
                     'voucher_count' => 50,
-                    // الحقول التالية يجب أن يتجاهلها الخادم كلياً ويستخدم الكتالوج والخصم الفعال
                     'voucher_price' => 1.00,
                     'item_discount' => 99.00,
                 ],
@@ -185,6 +236,97 @@ class ProcurementRequestLifecycleTest extends TestCase
         // تأكيد انعدام أي أثر مالي على المحافظ (Non-Financial Lifecycle)
         $this->assertEquals($initialPosBalance, (float) $this->posWallet->fresh()->wallet_balance);
         $this->assertEquals($initialNetworkBalance, (float) $this->networkWallet->fresh()->wallet_balance);
+        $this->assertEquals($initialInvoicesCount, SaleInvoice::count());
+        $this->assertEquals($initialPosLogsCount, PosWalletLog::count());
+        $this->assertEquals($initialNetworkLogsCount, NetworkWalletLog::count());
+    }
+
+    /**
+     * إثبات عمل وسيط عدم التكرار (Idempotency) لنفس المفتاح ونفس البيانات
+     */
+    public function test_idempotency_same_key_same_payload_replays_cached_response_without_duplicate_records(): void
+    {
+        $idempotencyKey = 'vouch-test-'.uniqid();
+        $headersWithKey = array_merge($this->headers, [
+            'X-Idempotency-Key' => $idempotencyKey,
+        ]);
+
+        $payload = [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'sale_type' => 'CASH',
+            'items' => [
+                [
+                    'package_id' => $this->package->package_id,
+                    'voucher_count' => 15,
+                ],
+            ],
+        ];
+
+        // 1. الطلب الأول
+        $firstResponse = $this->withHeaders($headersWithKey)->postJson('/api/v1/requests', $payload);
+        $firstResponse->assertStatus(201);
+        $firstUuid = $firstResponse->json('data.request_uuid');
+
+        $requestsCountAfterFirst = RequestModel::where('network_id', $this->network->network_id)
+            ->where('pos_id', $this->pos->pos_id)
+            ->count();
+
+        // 2. تكرار نفس الطلب بذات المفتاح ونفس البيانات (إعادة المحاولة بسبب انقطاع شبكة)
+        $replayResponse = $this->withHeaders($headersWithKey)->postJson('/api/v1/requests', $payload);
+        $replayResponse->assertStatus(201);
+        $replayResponse->assertHeader('X-Idempotency-Hit', 'true');
+        $this->assertEquals($firstUuid, $replayResponse->json('data.request_uuid'));
+
+        // 3. التحقق من عدم إنشاء أي سجل إضافي في قاعدة البيانات
+        $requestsCountAfterReplay = RequestModel::where('network_id', $this->network->network_id)
+            ->where('pos_id', $this->pos->pos_id)
+            ->count();
+
+        $this->assertEquals($requestsCountAfterFirst, $requestsCountAfterReplay, 'لا يجوز تكرار إنشاء الطلب عند تكرار نفس المفتاح');
+    }
+
+    /**
+     * إثبات رفض استخدام نفس مفتاح عدم التكرار مع بيانات مختلفة (Conflict Detection)
+     */
+    public function test_idempotency_same_key_different_payload_is_rejected_as_conflict(): void
+    {
+        $idempotencyKey = 'vouch-conflict-'.uniqid();
+        $headersWithKey = array_merge($this->headers, [
+            'X-Idempotency-Key' => $idempotencyKey,
+        ]);
+
+        $payloadOriginal = [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'sale_type' => 'CASH',
+            'items' => [
+                [
+                    'package_id' => $this->package->package_id,
+                    'voucher_count' => 10,
+                ],
+            ],
+        ];
+
+        $payloadDifferent = [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'sale_type' => 'CREDIT', // تغيير نمط البيع مع نفس المفتاح
+            'items' => [
+                [
+                    'package_id' => $this->package->package_id,
+                    'voucher_count' => 50,
+                ],
+            ],
+        ];
+
+        // 1. الطلب الأصلي
+        $this->withHeaders($headersWithKey)->postJson('/api/v1/requests', $payloadOriginal)->assertStatus(201);
+
+        // 2. الطلب المعارض بذات المفتاح ومحتوى مختلف
+        $conflictResponse = $this->withHeaders($headersWithKey)->postJson('/api/v1/requests', $payloadDifferent);
+        $conflictResponse->assertStatus(422)
+            ->assertJsonPath('success', false);
     }
 
     public function test_request_creation_denied_for_unlinked_network_pos(): void
@@ -224,7 +366,7 @@ class ProcurementRequestLifecycleTest extends TestCase
             ->assertJsonValidationErrors(['pos_id']);
     }
 
-    public function test_pos_user_can_cancel_pending_request(): void
+    public function test_pos_user_can_cancel_pending_request_with_zero_financial_effects(): void
     {
         // 1. إنشاء طلب معلق
         $createResponse = $this->withHeaders($this->headers)
@@ -243,6 +385,10 @@ class ProcurementRequestLifecycleTest extends TestCase
         $requestId = $createResponse->json('data.request_id');
 
         $initialPosBalance = (float) $this->posWallet->fresh()->wallet_balance;
+        $initialNetworkBalance = (float) $this->networkWallet->fresh()->wallet_balance;
+        $initialInvoicesCount = SaleInvoice::count();
+        $initialPosLogsCount = PosWalletLog::count();
+        $initialNetworkLogsCount = NetworkWalletLog::count();
 
         // 2. إلغاء الطلب من قبل نقطة البيع
         $cancelResponse = $this->withHeaders($this->headers)
@@ -253,7 +399,13 @@ class ProcurementRequestLifecycleTest extends TestCase
             ->assertJsonPath('data.status', 'CANCELLED');
 
         $this->assertEquals(RequestStatus::CANCELLED, RequestModel::findOrFail($requestId)->status);
+
+        // إثبات عدم حدوث أي تغييرات مالية عند الإلغاء
         $this->assertEquals($initialPosBalance, (float) $this->posWallet->fresh()->wallet_balance);
+        $this->assertEquals($initialNetworkBalance, (float) $this->networkWallet->fresh()->wallet_balance);
+        $this->assertEquals($initialInvoicesCount, SaleInvoice::count());
+        $this->assertEquals($initialPosLogsCount, PosWalletLog::count());
+        $this->assertEquals($initialNetworkLogsCount, NetworkWalletLog::count());
 
         // 3. محاولة إلغاء طلب تم إلغاؤه مسبقاً يجب أن تفشل (حالة نهائية)
         $reCancelResponse = $this->withHeaders($this->headers)
@@ -263,7 +415,7 @@ class ProcurementRequestLifecycleTest extends TestCase
             ->assertJsonValidationErrors(['status']);
     }
 
-    public function test_network_owner_can_reject_pending_request_with_reason(): void
+    public function test_network_owner_can_reject_pending_request_with_reason_and_zero_financial_effects(): void
     {
         // 1. إنشاء طلب معلق
         $createResponse = $this->withHeaders($this->headers)
@@ -281,6 +433,12 @@ class ProcurementRequestLifecycleTest extends TestCase
         $createResponse->assertStatus(201);
         $requestId = $createResponse->json('data.request_id');
 
+        $initialPosBalance = (float) $this->posWallet->fresh()->wallet_balance;
+        $initialNetworkBalance = (float) $this->networkWallet->fresh()->wallet_balance;
+        $initialInvoicesCount = SaleInvoice::count();
+        $initialPosLogsCount = PosWalletLog::count();
+        $initialNetworkLogsCount = NetworkWalletLog::count();
+
         // 2. رفض الطلب مع توثيق سبب الرفض
         $rejectResponse = $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$requestId}/reject", [
@@ -295,6 +453,13 @@ class ProcurementRequestLifecycleTest extends TestCase
         $this->assertEquals(RequestStatus::REJECTED, $request->status);
         $this->assertStringContainsString('نفاد مخزون السيريال', $request->request_note);
 
+        // إثبات عدم حدوث أي تغييرات مالية عند الرفض
+        $this->assertEquals($initialPosBalance, (float) $this->posWallet->fresh()->wallet_balance);
+        $this->assertEquals($initialNetworkBalance, (float) $this->networkWallet->fresh()->wallet_balance);
+        $this->assertEquals($initialInvoicesCount, SaleInvoice::count());
+        $this->assertEquals($initialPosLogsCount, PosWalletLog::count());
+        $this->assertEquals($initialNetworkLogsCount, NetworkWalletLog::count());
+
         // 3. محاولة رفض طلب مرفوض مسبقاً تفشل
         $reRejectResponse = $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$requestId}/reject", [
@@ -305,9 +470,12 @@ class ProcurementRequestLifecycleTest extends TestCase
             ->assertJsonValidationErrors(['status']);
     }
 
-    public function test_cancelled_or_rejected_request_cannot_be_approved(): void
+    /**
+     * اختبار حالات التزامن وتداخل الحالات (Concurrency & Cross-State Integrity)
+     */
+    public function test_lifecycle_concurrency_repeated_and_cross_state_transitions_rejected(): void
     {
-        // 1. طلب ملغى
+        // 1. طلب ملغى: لا يمكن رفضه
         $cancelledReq = RequestModel::create([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
@@ -317,13 +485,15 @@ class ProcurementRequestLifecycleTest extends TestCase
             'created_by' => $this->user->user_id,
         ]);
 
-        $approveResponse = $this->withHeaders($this->headers)
-            ->postJson("/api/v1/requests/{$cancelledReq->request_id}/approve");
+        $rejectCancelledResponse = $this->withHeaders($this->headers)
+            ->postJson("/api/v1/requests/{$cancelledReq->request_id}/reject", [
+                'rejection_reason' => 'محاولة رفض طلب ملغى',
+            ]);
 
-        $approveResponse->assertStatus(422)
+        $rejectCancelledResponse->assertStatus(422)
             ->assertJsonValidationErrors(['status']);
 
-        // 2. طلب مرفوض
+        // 2. طلب مرفوض: لا يمكن إلغاؤه
         $rejectedReq = RequestModel::create([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
@@ -333,10 +503,17 @@ class ProcurementRequestLifecycleTest extends TestCase
             'created_by' => $this->user->user_id,
         ]);
 
-        $approveRejectedResponse = $this->withHeaders($this->headers)
-            ->postJson("/api/v1/requests/{$rejectedReq->request_id}/approve");
+        $cancelRejectedResponse = $this->withHeaders($this->headers)
+            ->postJson("/api/v1/requests/{$rejectedReq->request_id}/cancel");
 
-        $approveRejectedResponse->assertStatus(422)
+        $cancelRejectedResponse->assertStatus(422)
+            ->assertJsonValidationErrors(['status']);
+
+        // 3. محاولة اعتماد طلب ملغى أو مرفوض تُرفض تماماً لأن الطلب ليس PENDING
+        $approveCancelledResponse = $this->withHeaders($this->headers)
+            ->postJson("/api/v1/requests/{$cancelledReq->request_id}/approve");
+
+        $approveCancelledResponse->assertStatus(422)
             ->assertJsonValidationErrors(['status']);
     }
 }

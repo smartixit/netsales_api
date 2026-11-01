@@ -30,6 +30,7 @@ class SaleInvoice extends Model
     protected $fillable = [
         'network_id',
         'pos_id',
+        'request_id',
         'invoice_uuid',
         'sale_type',
         'invoice_total_amount',
@@ -43,6 +44,7 @@ class SaleInvoice extends Model
     protected function casts(): array
     {
         return [
+            'request_id' => 'integer',
             'sale_type' => SaleType::class,
             'invoice_total_amount' => 'decimal:2',
             'paid_amount' => 'decimal:2',
@@ -71,6 +73,11 @@ class SaleInvoice extends Model
     public function pos(): BelongsTo
     {
         return $this->belongsTo(Pos::class, 'pos_id', 'pos_id');
+    }
+
+    public function request(): BelongsTo
+    {
+        return $this->belongsTo(Request::class, 'request_id', 'request_id');
     }
 
     public function createdBy(): BelongsTo

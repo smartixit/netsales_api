@@ -60,6 +60,23 @@ class RequestPolicy
         return $this->view($user, $request);
     }
 
+    public function review(User $user, RequestModel $request): bool
+    {
+        if ($user->networks()->where('networks.network_id', $request->network_id)->exists()) {
+            return true;
+        }
+        if (method_exists($user, 'networkUsers') && $user->networkUsers()->where('network_id', $request->network_id)->exists()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function approve(User $user, RequestModel $request): bool
+    {
+        return $this->review($user, $request);
+    }
+
     public function delete(User $user, RequestModel $request): bool
     {
         return false;

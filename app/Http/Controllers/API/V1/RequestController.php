@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API\V1;
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Common\RejectRequest;
 use App\Http\Requests\API\V1\Request\ApproveRequestRequest;
+use App\Http\Requests\API\V1\Request\PreviewRequestModificationRequest;
 use App\Http\Requests\API\V1\Request\StoreRequestRequest;
 use App\Http\Requests\API\V1\Request\UpdateRequestRequest;
 use App\Http\Resources\API\V1\Request\RequestResource;
@@ -193,6 +194,39 @@ class RequestController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('تعذر تعديل طلب الكروت: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * احتساب ومعاينة تعديلات المراجعة والتسعير السيادي لطلب التوريد قبل الاعتماد.
+     */
+    #[OA\Post(
+        path: '/api/v1/requests/{id}/preview-modification',
+        summary: 'معاينة واحتساب التعديلات والتسعير السيادي قبل الاعتماد',
+        tags: ['Voucher Requests'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'تم احتساب المعاينة بنجاح'),
+        ]
+    )]
+    public function previewModification(PreviewRequestModificationRequest $request, int $id): JsonResponse
+    {
+        try {
+            $userId = $this->currentUserId();
+            $result = $this->requestService->previewModification(
+                $id,
+                $userId,
+                $request->getItems(),
+                $request->getSaleType()
+            );
+
+            return $this->successResponse('تم احتساب معاينة تعديلات الطلب والتسعير السيادي بنجاح.', $result);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر احتساب معاينة التعديلات: '.$e->getMessage(), [], 422);
         }
     }
 

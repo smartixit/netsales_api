@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\NotificationType;
 use App\Enums\RequestStatus;
+use App\Enums\SaleType;
 use App\Http\Requests\API\V1\Request\ApproveRequestRequest;
 use App\Http\Requests\API\V1\Request\StoreRequestRequest;
 use App\Http\Requests\API\V1\Request\UpdateRequestRequest;
@@ -37,9 +38,11 @@ class RequestService
         protected SaleInvoiceService $saleInvoiceService,
         protected NotificationService $notificationService,
         protected VoucherPackageDiscountService $voucherPackageDiscountService,
-        protected ?UserRepositoryInterface $userRepository = null
+        protected ?UserRepositoryInterface $userRepository = null,
+        protected ?RequestPricingReviewService $pricingReviewService = null
     ) {
         $this->userRepository = $userRepository ?? app(UserRepositoryInterface::class);
+        $this->pricingReviewService = $pricingReviewService ?? app(RequestPricingReviewService::class);
     }
 
     /**
@@ -284,6 +287,46 @@ class RequestService
     }
 
     /**
+     * احتساب ومعاينة تعديلات المراجعة والتسعير السيادي دون توليد فواتير أو تعديل الطلب الأصلي أو المساس بالأرصدة.
+     *
+     * @param  array<int, array{package_id: int, voucher_count: int, pricing_token?: string|null}>  $items
+     * @return array<string, mixed>
+     */
+    public function previewModification(int $requestId, int $userId, array $items, ?SaleType $saleType = null): array
+    {
+        /** @var RequestModel $request */
+        $request = $this->requestRepository->findById($requestId);
+
+        if (! $request->isPending()) {
+            throw ValidationException::withMessages([
+                'status' => ['لا يمكن معاينة تعديل هذا الطلب لأنه ليس في حالة قيد الانتظار (PENDING).'],
+            ]);
+        }
+
+        // التحقق من صلاحية مراجع الطلب وتبعيته لمزود الشبكة
+        $reviewer = $this->userRepository->findById($userId);
+        if ($reviewer && ! $reviewer->isSuperAdmin()) {
+            $isAuthorized = ($reviewer->network && (int) $reviewer->network->network_id === (int) $request->network_id)
+                || ($reviewer->networks()->where('networks.network_id', $request->network_id)->exists())
+                || (method_exists($reviewer, 'networkUsers') && $reviewer->networkUsers()->where('network_id', $request->network_id)->where('status', 'ACTIVE')->exists());
+
+            if (! $isAuthorized) {
+                throw ValidationException::withMessages([
+                    'network_id' => ['غير مصرح لك بمراجعة وتعديل طلبات كروت لا تنتمي لمزود الشبكة الخاص بك.'],
+                ]);
+            }
+        }
+
+        if (empty($items)) {
+            throw ValidationException::withMessages([
+                'items' => ['يجب تحديد باقة واحدة على الأقل لمعاينة التعديلات.'],
+            ]);
+        }
+
+        return $this->pricingReviewService->calculatePreview($request, $items, $saleType);
+    }
+
+    /**
      * اعتماد طلب الكروت وتوليد فاتورة المبيعات وتسوية الرصيد آلياً بالنمط المرن.
      * يدعم تمرير تعديلات اختيارية على نوع البيع والبنود دون تعديل سجل الطلب الأصلي.
      *
@@ -293,7 +336,18 @@ class RequestService
     {
         return DB::transaction(function () use ($requestId, $reviewedBy, $requestData): array {
             /** @var RequestModel $request */
-            $request = $this->requestRepository->findById($requestId, ['*'], true);
+            $request = $this->requestRepository->findByIdForUpdate($requestId);
+
+            // الحماية من التكرار والتزامن (Idempotency check): إذا كان معتمداً ولديه فاتورة مسبقاً، إعادة النتيجة المخزنة
+            if ($request->isApproved()) {
+                $existingInvoice = $request->invoice ?? SaleInvoice::where('request_id', $requestId)->first();
+                if ($existingInvoice) {
+                    return [
+                        'request' => $request->load(['network', 'pos', 'createdBy', 'reviewedBy', 'items.voucherPackage']),
+                        'invoice' => $existingInvoice->load(['network', 'pos', 'createdBy', 'items.voucherPackage']),
+                    ];
+                }
+            }
 
             if (! $request->isPending()) {
                 throw ValidationException::withMessages([
@@ -303,7 +357,7 @@ class RequestService
 
             // التحقق من تبعية مراجع الطلب لنفس الشبكة المزودة صاحبة الطلب لمنع هجمات IDOR
             $reviewer = $this->userRepository->findById($reviewedBy);
-            if ($reviewer) {
+            if ($reviewer && ! $reviewer->isSuperAdmin()) {
                 $isAuthorized = ($reviewer->network && (int) $reviewer->network->network_id === (int) $request->network_id)
                     || ($reviewer->networks()->where('networks.network_id', $request->network_id)->exists())
                     || (method_exists($reviewer, 'networkUsers') && $reviewer->networkUsers()->where('network_id', $request->network_id)->where('status', 'ACTIVE')->exists());
@@ -327,6 +381,15 @@ class RequestService
                 $note = $requestData;
             }
 
+            // جمع بيانات البنود الأصلية لسجل التدقيق الأمني
+            $originalItemsSummary = $request->items()->get()->map(fn ($item) => [
+                'package_id' => $item->package_id,
+                'voucher_count' => $item->voucher_count,
+                'voucher_price' => (float) $item->voucher_price,
+                'item_discount' => (float) $item->item_discount,
+                'item_total_amount' => (float) $item->item_total_amount,
+            ])->toArray();
+
             // توليد الفاتورة والخصم من محفظة الوكيل والإيداع في محفظة الشبكة ذرياً (دون تعديل بنود الطلب الأصلي)
             $invoice = $this->saleInvoiceService->generateFromRequest(
                 $request,
@@ -335,7 +398,7 @@ class RequestService
                 $overrideItems
             );
 
-            // تحديث حالة الطلب الأصلي إلى معتمد (APPROVED) وتوثيق ملاحظة المراجعة مع بقاء بنوده كما طُلبت
+            // تحديث حالة الطلب الأصلي إلى معتمد (APPROVED) وتوثيق تاريخ وملاحظة المراجعة مع بقاء بنوده كما طُلبت دون تغيير
             $this->requestRepository->updateStatus(
                 $requestId,
                 RequestStatus::APPROVED,
@@ -344,6 +407,36 @@ class RequestService
             );
 
             $request->refresh()->load(['network', 'pos', 'createdBy', 'reviewedBy', 'items.voucherPackage']);
+
+            // توثيق سجل التدقيق الشامل في system_logs
+            $finalItemsSummary = $invoice->items()->get()->map(fn ($item) => [
+                'package_id' => $item->package_id,
+                'voucher_count' => $item->voucher_count,
+                'voucher_price' => (float) $item->voucher_price,
+                'item_discount' => (float) $item->item_discount,
+                'item_total_amount' => (float) $item->item_total_amount,
+            ])->toArray();
+
+            SystemLoggerService::log(
+                module: 'voucher_requests',
+                action: 'approved',
+                entityType: 'Request',
+                entityId: $request->request_id,
+                oldData: [
+                    'request_total_amount' => (float) $request->request_total_amount,
+                    'sale_type' => $request->sale_type->value,
+                    'items' => $originalItemsSummary,
+                ],
+                newData: [
+                    'invoice_id' => $invoice->invoice_id,
+                    'invoice_uuid' => $invoice->invoice_uuid,
+                    'invoice_total_amount' => (float) $invoice->invoice_total_amount,
+                    'sale_type' => $invoice->sale_type->value,
+                    'items' => $finalItemsSummary,
+                    'has_overrides' => ! empty($overrideItems) || $overrideSaleType !== null,
+                ],
+                userId: $reviewedBy
+            );
 
             // إشعار صاحب الطلب (نقطة البيع) باعتماد الطلب وتوليد الفاتورة عبر الإشعارات وFCM Push
             if ($request->created_by) {

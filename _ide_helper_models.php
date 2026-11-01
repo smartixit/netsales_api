@@ -339,9 +339,39 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property int $id
+ * @property int $user_id
+ * @property string $tenant_type
+ * @property int $tenant_id
+ * @property string $endpoint
+ * @property string $idempotency_key
+ * @property string $request_hash
+ * @property string $status
+ * @property int|null $response_code
+ * @property array<array-key, mixed>|null $response_body
+ * @property array<array-key, mixed>|null $response_headers
+ * @property int $fencing_token
+ * @property \Illuminate\Support\Carbon $lease_expires_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereEndpoint($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereFencingToken($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereIdempotencyKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereLeaseExpiresAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereRequestHash($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereResponseBody($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereResponseCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereResponseHeaders($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereTenantId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereTenantType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereUserId($value)
  */
 	class IdempotencyKey extends \Eloquent {}
 }
@@ -473,12 +503,30 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property int $audit_id
+ * @property int $network_id
+ * @property int $user_id
+ * @property int $event_seq
+ * @property string $action
+ * @property int $actor_id
+ * @property array<array-key, mixed>|null $old_state
+ * @property array<array-key, mixed>|null $new_state
+ * @property \Illuminate\Support\Carbon $created_at
  * @property-read \App\Models\User|null $actor
  * @property-read \App\Models\Network|null $network
  * @property-read \App\Models\User|null $user
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog whereAction($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog whereActorId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog whereAuditId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog whereEventSeq($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog whereNewState($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog whereOldState($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkMembershipAuditLog whereUserId($value)
  */
 	class NetworkMembershipAuditLog extends \Eloquent {}
 }
@@ -581,6 +629,15 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property int $id
+ * @property int $network_id
+ * @property int $user_id
+ * @property int $role_id
+ * @property string|null $role_scope
+ * @property string $status
+ * @property int $last_event_seq
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkMembershipAuditLog> $auditLogs
  * @property-read int|null $audit_logs_count
  * @property-read \App\Models\Network|null $network
@@ -589,6 +646,15 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser whereLastEventSeq($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser whereRoleId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser whereRoleScope($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkUser whereUserId($value)
  */
 	class NetworkUser extends \Eloquent {}
 }
@@ -631,6 +697,7 @@ namespace App\Models{
 /**
  * @property int $log_id
  * @property int $wallet_id
+ * @property int|null $transfer_id
  * @property \App\Enums\WalletOperationType $log_operation
  * @property numeric $log_amount
  * @property string $log_statement
@@ -656,6 +723,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereLogId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereLogOperation($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereLogStatement($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereTransferId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereWalletId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog withTrashed(bool $withTrashed = true)
@@ -738,9 +806,39 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property int $id
+ * @property string $message_uuid
+ * @property string $aggregate_type
+ * @property int $aggregate_id
+ * @property string $event_type
+ * @property array<array-key, mixed> $payload
+ * @property array<array-key, mixed>|null $headers
+ * @property string $status
+ * @property int $retry_count
+ * @property int $max_retries
+ * @property string|null $lease_token
+ * @property \Illuminate\Support\Carbon|null $lease_expires_at
+ * @property string|null $last_error
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
  * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereAggregateId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereAggregateType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereEventType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereHeaders($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereLastError($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereLeaseExpiresAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereLeaseToken($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereMaxRetries($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereMessageUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage wherePayload($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereRetryCount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OutboxMessage whereUpdatedAt($value)
  */
 	class OutboxMessage extends \Eloquent {}
 }
@@ -874,18 +972,45 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property int $audit_id
+ * @property int $pos_id
+ * @property int $user_id
+ * @property int $event_seq
+ * @property string $action
+ * @property int $actor_id
+ * @property array<array-key, mixed>|null $old_state
+ * @property array<array-key, mixed>|null $new_state
+ * @property \Illuminate\Support\Carbon $created_at
  * @property-read \App\Models\User|null $actor
  * @property-read \App\Models\Pos|null $pos
  * @property-read \App\Models\User|null $user
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog whereAction($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog whereActorId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog whereAuditId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog whereEventSeq($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog whereNewState($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog whereOldState($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog wherePosId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosMembershipAuditLog whereUserId($value)
  */
 	class PosMembershipAuditLog extends \Eloquent {}
 }
 
 namespace App\Models{
 /**
+ * @property int $id
+ * @property int $pos_id
+ * @property int $user_id
+ * @property int $role_id
+ * @property string|null $role_scope
+ * @property string $status
+ * @property int $last_event_seq
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PosMembershipAuditLog> $auditLogs
  * @property-read int|null $audit_logs_count
  * @property-read \App\Models\Pos|null $pos
@@ -894,6 +1019,15 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser whereLastEventSeq($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser wherePosId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser whereRoleId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser whereRoleScope($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosUser whereUserId($value)
  */
 	class PosUser extends \Eloquent {}
 }
@@ -941,6 +1075,7 @@ namespace App\Models{
 /**
  * @property int $log_id
  * @property int $wallet_id
+ * @property int|null $transfer_id
  * @property \App\Enums\WalletOperationType $log_operation_type
  * @property numeric $log_amount
  * @property string $log_statement
@@ -966,6 +1101,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereLogId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereLogOperationType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereLogStatement($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereTransferId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereWalletId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog withTrashed(bool $withTrashed = true)
@@ -1035,6 +1171,7 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read \App\Models\User|null $createdBy
+ * @property-read \App\Models\SaleInvoice|null $invoice
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\RequestItem> $items
  * @property-read int|null $items_count
  * @property-read \App\Models\Network|null $network
@@ -1111,6 +1248,7 @@ namespace App\Models{
  * @property int $role_id
  * @property string $role_key
  * @property string $role_name
+ * @property string $scope
  * @property string|null $role_desc
  * @property bool $is_system
  * @property bool $status
@@ -1137,6 +1275,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Role whereRoleId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Role whereRoleKey($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Role whereRoleName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Role whereScope($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Role whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Role whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Role withTrashed(bool $withTrashed = true)
@@ -1173,6 +1312,7 @@ namespace App\Models{
  * @property int $invoice_id
  * @property int $network_id
  * @property int $pos_id
+ * @property int|null $request_id
  * @property string $invoice_uuid
  * @property \App\Enums\SaleType $sale_type
  * @property numeric $invoice_total_amount
@@ -1189,6 +1329,7 @@ namespace App\Models{
  * @property-read int|null $items_count
  * @property-read \App\Models\Network|null $network
  * @property-read \App\Models\Pos|null $pos
+ * @property-read \App\Models\Request|null $request
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice forNetwork(int $networkId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice forPos(int $posId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice newModelQuery()
@@ -1207,6 +1348,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice wherePaymentStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice wherePosId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereRemainingAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereRequestId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereSaleType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice withTrashed(bool $withTrashed = true)
@@ -1634,7 +1776,8 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property int $user_id
- * @property int $role_id
+ * @property int|null $role_id
+ * @property string|null $role_scope
  * @property string $user_full_name
  * @property string|null $user_profile_logo
  * @property string $user_phone_number
@@ -1721,6 +1864,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereLastLoginAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereMustChangePassword($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRoleId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRoleScope($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUser2faEnabled($value)
@@ -1946,6 +2090,20 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property int $transfer_id
+ * @property string $transfer_uuid
+ * @property int $network_wallet_id
+ * @property int $pos_wallet_id
+ * @property numeric $amount
+ * @property string $direction
+ * @property int|null $original_transfer_id
+ * @property bool|null $is_reversal
+ * @property int|null $target_is_reversal
+ * @property string $status
+ * @property string|null $statement
+ * @property int $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\User|null $creator
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkWalletLog> $networkLogs
  * @property-read int|null $network_logs_count
@@ -1958,6 +2116,20 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer whereAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer whereDirection($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer whereIsReversal($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer whereNetworkWalletId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer whereOriginalTransferId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer wherePosWalletId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer whereStatement($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer whereTargetIsReversal($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer whereTransferId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer whereTransferUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WalletTransfer whereUpdatedAt($value)
  */
 	class WalletTransfer extends \Eloquent {}
 }

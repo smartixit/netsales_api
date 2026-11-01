@@ -21,15 +21,19 @@ return new class extends Migration
             // Already dropped
         }
 
-        // 2. Set role_id = NULL for all non-PLATFORM tenant users
+        // 2. Make role_id nullable FIRST so rows can be updated to null
+        Schema::table('users', function (Blueprint $table) {
+            $table->unsignedBigInteger('role_id')->nullable()->change();
+        });
+
+        // 3. Set role_id = NULL for all non-PLATFORM tenant users
         $tenantRoleIds = DB::table('roles')->where('scope', '!=', 'PLATFORM')->pluck('role_id')->toArray();
         if (! empty($tenantRoleIds)) {
             DB::table('users')->whereIn('role_id', $tenantRoleIds)->update(['role_id' => null]);
         }
 
-        // 3. Make role_id nullable and add stored role_scope generated column with composite FK
+        // 4. Add stored role_scope generated column with composite FK
         Schema::table('users', function (Blueprint $table) {
-            $table->unsignedBigInteger('role_id')->nullable()->change();
             $table->string('role_scope', 20)
                 ->storedAs("CASE WHEN role_id IS NOT NULL THEN 'PLATFORM' ELSE NULL END")
                 ->after('role_id');

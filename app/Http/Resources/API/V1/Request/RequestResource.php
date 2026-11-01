@@ -43,6 +43,40 @@ class RequestResource extends JsonResource
             'reviewed_by' => $this->reviewed_by,
             'review_date' => $this->review_date ? Carbon::parse($this->review_date)->toDateTimeString() : null,
             'request_note' => $this->request_note,
+            'invoice_id' => $this->invoice?->invoice_id,
+            'invoice_uuid' => $this->invoice?->invoice_uuid,
+            'modifications_summary' => $this->when($this->relationLoaded('invoice') || $this->invoice !== null, function () {
+                $invoice = $this->invoice;
+                if (! $invoice) {
+                    return null;
+                }
+                $invoiceItems = $invoice->relationLoaded('items') ? $invoice->items : $invoice->items()->get();
+                $originalItems = $this->relationLoaded('items') ? $this->items : $this->items()->get();
+
+                $origMap = $originalItems->keyBy('package_id');
+                $invMap = $invoiceItems->keyBy('package_id');
+
+                $hasChanges = round((float) $invoice->invoice_total_amount, 2) !== round((float) $this->request_total_amount, 2)
+                    || $originalItems->count() !== $invoiceItems->count();
+
+                if (! $hasChanges) {
+                    foreach ($originalItems as $orig) {
+                        $inv = $invMap->get($orig->package_id);
+                        if (! $inv || (int) $inv->voucher_count !== (int) $orig->voucher_count) {
+                            $hasChanges = true;
+                            break;
+                        }
+                    }
+                }
+
+                return [
+                    'has_modifications' => $hasChanges,
+                    'original_total' => (float) $this->request_total_amount,
+                    'approved_total' => (float) $invoice->invoice_total_amount,
+                    'original_items_count' => $originalItems->count(),
+                    'approved_items_count' => $invoiceItems->count(),
+                ];
+            }),
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
 

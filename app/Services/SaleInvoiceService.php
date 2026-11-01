@@ -45,9 +45,11 @@ class SaleInvoiceService
         protected PosRepositoryInterface $posRepository,
         protected PosWalletService $posWalletService,
         protected NotificationService $notificationService,
-        protected ?NetworkPosRepositoryInterface $networkPosRepository = null
+        protected ?NetworkPosRepositoryInterface $networkPosRepository = null,
+        protected ?RequestPricingReviewService $requestPricingReviewService = null
     ) {
         $this->networkPosRepository = $networkPosRepository ?? app(NetworkPosRepositoryInterface::class);
+        $this->requestPricingReviewService = $requestPricingReviewService ?? app(RequestPricingReviewService::class);
     }
 
     /**
@@ -140,95 +142,81 @@ class SaleInvoiceService
             }
             $networkWallet->ensureActive();
 
-            // 4. احتساب أسعار وخصومات الباقات بنمطي البيع بالاعتماد الصريح على دوال موديل SaleInvoiceItem المساعدة
-            $cashItemsData = [];
-            $cashTotal = 0.0;
-            $creditItemsData = [];
-            $creditTotal = 0.0;
+            // 4. احتساب أسعار وخصومات الباقات وحسم التسعير السيادي
+            $effectiveSaleType = $overrideSaleType ?? $request->sale_type ?? SaleType::CASH;
+            $itemsData = [];
+            $totalInvoiceAmount = 0.0;
 
             foreach ($itemsSource as $item) {
                 if ($hasOverrideItems) {
                     $packageId = (int) $item['package_id'];
                     $voucherCount = (int) $item['voucher_count'];
-                    $package = $this->voucherPackageRepository->findById($packageId);
-                    $package->ensureActive();
-                    if ((int) $package->network_id !== $networkId) {
-                        throw ValidationException::withMessages([
-                            'items' => ["الباقة ({$package->package_name}) لا تنتمي لمزود الشبكة المحدد."],
-                        ]);
-                    }
-                    // SECURITY: use catalog price (ignore client input)
-                    $voucherPrice = (float) $package->package_voucher_price;
+                    $token = $item['pricing_token'] ?? null;
 
-                    $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $packageId);
-                    // SECURITY: use server effective discount (ignore client input)
-                    $cashDiscPercent = (float) ($discountData['discount_cash'] ?? 0.0);
-                    $creditDiscPercent = (float) ($discountData['discount_credit'] ?? 0.0);
+                    // حسم التسعير السيادي: البند الأصلي يحتفظ بسعره وخصمه وقت الطلب، والبند الجديد يحتفظ بسعره وخصمه المجمدين
+                    $pricing = $this->requestPricingReviewService->resolveItemPricing(
+                        $request,
+                        $packageId,
+                        $token,
+                        $effectiveSaleType
+                    );
+
+                    $package = $pricing['package'];
+                    $voucherPrice = $pricing['voucher_price'];
+                    $itemDiscount = $pricing['item_discount'];
                 } else {
                     /** @var RequestItem $item */
                     $package = $item->voucherPackage ?? $this->voucherPackageRepository->findById($item->package_id);
                     $package->ensureActive();
                     $voucherCount = (int) $item->voucher_count;
+                    // الاحتفاظ بالأسعار والخصومات الملتقطة عند إنشاء الطلب الأصلي
                     $voucherPrice = (float) (($item->voucher_price ?? 0) > 0 ? $item->voucher_price : $package->package_voucher_price);
-
-                    $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $package->package_id);
-                    $cashDiscPercent = $item->item_discount !== null && $request->isCash()
-                        ? (float) $item->item_discount
-                        : (float) ($discountData['discount_cash'] ?? 0.0);
-                    $creditDiscPercent = $item->item_discount !== null && $request->isCredit()
-                        ? (float) $item->item_discount
-                        : (float) ($discountData['discount_credit'] ?? 0.0);
+                    $itemDiscount = (float) ($item->item_discount ?? 0.0);
                 }
 
-                // احتساب الصافي النقدي عبر دالة calculateLineTotal بالموديل
-                $cashItemModel = new SaleInvoiceItem([
+                $itemModel = new SaleInvoiceItem([
                     'package_id' => $package->package_id,
                     'voucher_price' => $voucherPrice,
                     'voucher_count' => $voucherCount,
-                    'item_discount' => $cashDiscPercent,
+                    'item_discount' => $itemDiscount,
                 ]);
-                $cashNetAmount = $cashItemModel->calculateLineTotal();
-                $cashTotal += $cashNetAmount;
-                $cashItemsData[] = [
-                    'package_id' => $package->package_id,
-                    'voucher_price' => $voucherPrice,
-                    'voucher_count' => $voucherCount,
-                    'item_discount' => $cashDiscPercent,
-                    'item_total_amount' => $cashNetAmount,
-                ];
+                $netAmount = $itemModel->calculateLineTotal();
+                $totalInvoiceAmount += $netAmount;
 
-                // احتساب الصافي الآجل عبر دالة calculateLineTotal بالموديل
-                $creditItemModel = new SaleInvoiceItem([
+                $itemsData[] = [
                     'package_id' => $package->package_id,
                     'voucher_price' => $voucherPrice,
                     'voucher_count' => $voucherCount,
-                    'item_discount' => $creditDiscPercent,
-                ]);
-                $creditNetAmount = $creditItemModel->calculateLineTotal();
-                $creditTotal += $creditNetAmount;
-                $creditItemsData[] = [
-                    'package_id' => $package->package_id,
-                    'voucher_price' => $voucherPrice,
-                    'voucher_count' => $voucherCount,
-                    'item_discount' => $creditDiscPercent,
-                    'item_total_amount' => $creditNetAmount,
+                    'item_discount' => $itemDiscount,
+                    'item_total_amount' => $netAmount,
                 ];
             }
 
-            // 5. تطبيق المنطق المحاسبي للبرامج الكبرى:
-            $effectiveSaleType = $overrideSaleType ?? $request->sale_type ?? SaleType::CASH;
-            $isCashSale = ($effectiveSaleType === SaleType::CASH) && $posWallet->hasSufficientBalance($cashTotal);
+            // 5. تطبيق المنطق المحاسبي الصارم ومنع التحويل التلقائي الصامت
+            $totalInvoiceAmount = round($totalInvoiceAmount, 2);
 
-            if ($isCashSale) {
+            if ($effectiveSaleType === SaleType::CASH) {
+                if (! $posWallet->hasSufficientBalance($totalInvoiceAmount)) {
+                    throw ValidationException::withMessages([
+                        'pos_wallet' => ['رصيد محفظة نقطة البيع غير كافٍ لسداد قيمة الفاتورة النقدية. يرجى شحن الرصيد أو اختيار البيع الآجل.'],
+                    ]);
+                }
                 $saleType = SaleType::CASH;
-                $totalInvoiceAmount = $cashTotal;
-                $paidAmount = $cashTotal;
+                $paidAmount = $totalInvoiceAmount;
                 $remainingAmount = 0.00;
                 $paymentStatus = InvoicePaymentStatus::PAID;
-                $itemsData = $cashItemsData;
+                $isCashSale = true;
             } else {
                 $saleType = SaleType::CREDIT;
-                $totalInvoiceAmount = $creditTotal;
+                if (isset($posWallet->overdraft_limit) && $posWallet->overdraft_limit !== null && (float) $posWallet->overdraft_limit > 0) {
+                    $maxOverdraft = (float) $posWallet->overdraft_limit;
+                    $newBalance = (float) $posWallet->wallet_balance - $totalInvoiceAmount;
+                    if ($newBalance < (-$maxOverdraft - 0.001)) {
+                        throw ValidationException::withMessages([
+                            'pos_wallet' => ['تجاوزت هذه الفاتورة الحد الأقصى لسقف السحب على المكشوف لمحفظة نقطة البيع.'],
+                        ]);
+                    }
+                }
                 $existingCredit = max(0.0, (float) $posWallet->wallet_balance);
                 $coveredAmount = min($existingCredit, $totalInvoiceAmount);
                 $paidAmount = round($coveredAmount, 2);
@@ -236,7 +224,7 @@ class SaleInvoiceService
                 $paymentStatus = ($remainingAmount <= 0.001)
                     ? InvoicePaymentStatus::PAID
                     : (($paidAmount > 0.001) ? InvoicePaymentStatus::PARTIALLY_PAID : InvoicePaymentStatus::UNPAID);
-                $itemsData = $creditItemsData;
+                $isCashSale = false;
             }
 
             // 6. إنشاء فاتورة المبيعات الرسمية
@@ -244,6 +232,7 @@ class SaleInvoiceService
             $invoice = $this->saleInvoiceRepository->create([
                 'network_id' => $networkId,
                 'pos_id' => $posId,
+                'request_id' => $request->request_id,
                 'sale_type' => $saleType,
                 'invoice_total_amount' => $totalInvoiceAmount,
                 'paid_amount' => $paidAmount,

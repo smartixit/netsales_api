@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Request extends Model
@@ -86,6 +87,11 @@ class Request extends Model
     public function items(): HasMany
     {
         return $this->hasMany(RequestItem::class, 'request_id', 'request_id');
+    }
+
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(SaleInvoice::class, 'request_id', 'request_id');
     }
 
     // Scopes

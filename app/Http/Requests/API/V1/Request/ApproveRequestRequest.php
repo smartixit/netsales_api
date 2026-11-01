@@ -43,15 +43,18 @@ class ApproveRequestRequest extends FormRequest
                 'integer',
                 'min:1',
             ],
-            'items.*.voucher_price' => [
+            'items.*.pricing_token' => [
                 'nullable',
-                'numeric',
-                'min:0',
+                'string',
+            ],
+            'items.*.voucher_price' => [
+                'prohibited',
             ],
             'items.*.item_discount' => [
-                'nullable',
-                'numeric',
-                'between:0,100',
+                'prohibited',
+            ],
+            'items.*.item_total_amount' => [
+                'prohibited',
             ],
         ];
     }
@@ -74,7 +77,7 @@ class ApproveRequestRequest extends FormRequest
     }
 
     /**
-     * @return array<int, array{package_id: int, voucher_count: int, voucher_price?: float, item_discount?: float}>
+     * @return array<int, array{package_id: int, voucher_count: int, pricing_token?: string|null}>
      */
     public function getItems(): array
     {

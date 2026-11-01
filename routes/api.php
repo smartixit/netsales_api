@@ -368,6 +368,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('requests', [RequestController::class, 'store'])->name('api.v1.requests.store')->middleware('permission:requests.create');
             Route::put('requests/{id}', [RequestController::class, 'update'])->whereNumber('id')->name('api.v1.requests.update')->middleware('permission:requests.edit');
+            Route::post('requests/{id}/preview-modification', [RequestController::class, 'previewModification'])->whereNumber('id')->name('api.v1.requests.preview_modification')->middleware('permission:requests.approve');
             Route::post('requests/{id}/approve', [RequestController::class, 'approve'])->whereNumber('id')->name('api.v1.requests.approve')->middleware('permission:requests.approve');
             Route::post('requests/{id}/reject', [RequestController::class, 'reject'])->whereNumber('id')->name('api.v1.requests.reject')->middleware('permission:requests.reject');
             Route::post('requests/{id}/cancel', [RequestController::class, 'cancel'])->whereNumber('id')->name('api.v1.requests.cancel')->middleware('permission:requests.edit');

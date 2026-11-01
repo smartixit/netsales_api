@@ -28,6 +28,8 @@ class SaleInvoiceResource extends JsonResource
             'invoice_id' => $this->invoice_id,
             'network_id' => $this->network_id,
             'pos_id' => $this->pos_id,
+            'request_id' => $this->request_id,
+            'request_uuid' => $this->request?->request_uuid,
             'invoice_uuid' => $this->invoice_uuid,
             'sale_type' => $this->sale_type instanceof SaleType ? $this->sale_type->value : $this->sale_type,
             'sale_type_label' => $this->sale_type instanceof SaleType
