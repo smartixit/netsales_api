@@ -279,8 +279,8 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->assertEquals('DEBIT', $refreshedPos->getAccountingStatus());
         $this->assertEquals(47500.00, $refreshedPos->getDebitAmount());
 
-        // رصيد الشبكة زاد بكامل قيمة المبيعات
-        $this->assertEquals(47500.00, (float) $this->networkWallet->fresh()->wallet_balance);
+        // رصيد الشبكة المتاح لا يزداد بالذمم غير المحصلة بل يظل 0.00 حتى يتم التحصيل الفعلي
+        $this->assertEquals(0.00, (float) $this->networkWallet->fresh()->wallet_balance);
     }
 
     /**
@@ -319,7 +319,8 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $refreshedPos = $this->posWallet->fresh();
         $this->assertEquals(-27500.00, (float) $refreshedPos->wallet_balance);
         $this->assertEquals(27500.00, $refreshedPos->getDebitAmount());
-        $this->assertEquals(47500.00, (float) $this->networkWallet->fresh()->wallet_balance);
+        // رصيد الشبكة المتاح يزداد فقط بالمبلغ المسدد/المغطى فعلياً من رصيد الوكيل (20000)
+        $this->assertEquals(20000.00, (float) $this->networkWallet->fresh()->wallet_balance);
     }
 
     /**
@@ -1007,8 +1008,8 @@ class Milestone4BFinancialApprovalTest extends TestCase
 
         // قيد السداد الفوري (DEPOSIT)
         $depositLog = $logs->firstWhere('log_operation_type', WalletOperationType::DEPOSIT->value);
-        $this->assertNotNull($depositLog, 'يجب تسجيل قيد سداد نقدي كاش (DEPOSIT) في سجل كشف حساب محفظة الوكيل');
+        $this->assertNotNull($depositLog, 'يجب تسجيل قيد سداد نقدي فوري (DEPOSIT) في سجل كشف حساب محفظة الوكيل');
         $this->assertEquals(45000.00, (float) $depositLog->log_amount);
-        $this->assertStringContainsString('سداد نقدي كاش', $depositLog->log_statement);
+        $this->assertStringContainsString('سداد نقدي فوري', $depositLog->log_statement);
     }
 }

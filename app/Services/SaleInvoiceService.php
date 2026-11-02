@@ -46,10 +46,12 @@ class SaleInvoiceService
         protected PosWalletService $posWalletService,
         protected NotificationService $notificationService,
         protected ?NetworkPosRepositoryInterface $networkPosRepository = null,
-        protected ?RequestPricingReviewService $requestPricingReviewService = null
+        protected ?RequestPricingReviewService $requestPricingReviewService = null,
+        protected ?OutboxService $outboxService = null
     ) {
         $this->networkPosRepository = $networkPosRepository ?? app(NetworkPosRepositoryInterface::class);
         $this->requestPricingReviewService = $requestPricingReviewService ?? app(RequestPricingReviewService::class);
+        $this->outboxService = $outboxService ?? app(OutboxService::class);
     }
 
     /**
@@ -130,16 +132,7 @@ class SaleInvoiceService
                 ]);
             }
 
-            // 2. التحقق من محفظة الوكيل بقفل متشائم
-            $posWallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId, true);
-            if (! $posWallet) {
-                throw ValidationException::withMessages([
-                    'pos_wallet' => ['لا توجد محفظة مالية لنقطة البيع لدى هذه الشبكة لإتمام السداد والفوترة.'],
-                ]);
-            }
-            $posWallet->ensureActive();
-
-            // 3. التحقق من محفظة الشبكة بقفل متشائم
+            // 2. التحقق من محفظة الشبكة أولاً وفق ترتيب الأقفال العالمي الموحد لمنع التعارض الحبيبي (Deadlock Prevention: Request -> NetworkWallet -> PosWallet)
             $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId, true);
             if (! $networkWallet) {
                 throw ValidationException::withMessages([
@@ -147,6 +140,15 @@ class SaleInvoiceService
                 ]);
             }
             $networkWallet->ensureActive();
+
+            // 3. التحقق من محفظة نقطة البيع ثانياً بقفل متشائم
+            $posWallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId, true);
+            if (! $posWallet) {
+                throw ValidationException::withMessages([
+                    'pos_wallet' => ['لا توجد محفظة مالية لنقطة البيع لدى هذه الشبكة لإتمام السداد والفوترة.'],
+                ]);
+            }
+            $posWallet->ensureActive();
 
             // 4. احتساب أسعار وخصومات الباقات وحسم التسعير السيادي وفق نوع البيع الأصلي للطلب
             $effectiveSaleType = $request->sale_type ?? SaleType::CASH;
@@ -277,12 +279,12 @@ class SaleInvoiceService
                     $userId
                 );
 
-                // 2. قيد سداد نقدي كاش / سند قبض (DEPOSIT)
+                // 2. قيد سداد نقدي فوري / سند قبض (DEPOSIT)
                 $this->posWalletLogRepository->createLog(
                     $posWallet->wallet_id,
                     WalletOperationType::DEPOSIT,
                     $totalInvoiceAmount,
-                    "سداد نقدي كاش للفاتورة (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})",
+                    "سداد نقدي فوري للفاتورة (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})",
                     $userId
                 );
             } else {
@@ -302,20 +304,43 @@ class SaleInvoiceService
                 );
             }
 
-            $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $totalInvoiceAmount);
+            // إيداع المبلغ المحصل فعلياً فقط في محفظة الشبكة كسيولة نقدية متاحة وقابلة للسحب
+            // في البيع النقدي: كامل إجمالي الفاتورة مسدد نقداً.
+            // في البيع الآجل: المبلغ المغطى فقط من رصيد المحفظة الدائن ($paidAmount)، والمتبقي الآجل لا يدخل في رصيد الشبكة القابل للسحب حتى يتم تحصيله وسداده لاحقاً.
+            $networkCashCollected = $isCashSale ? $totalInvoiceAmount : $paidAmount;
 
-            $networkStatement = $isCashSale
-            ? "تحصيل مبيعات كروت نقدية (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"
-            : ($paidAmount > 0.001
-                ? "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: ({$paidAmount})، آجل متبقي: ({$remainingAmount})"
-                : "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})");
+            if ($networkCashCollected > 0.001) {
+                $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $networkCashCollected);
 
-            $this->networkWalletLogRepository->createLog(
-                $networkWallet->wallet_id,
-                WalletOperationType::DEPOSIT,
-                $totalInvoiceAmount,
-                $networkStatement,
-                $userId
+                $networkStatement = $isCashSale
+                    ? "تحصيل مبيعات كروت نقدية (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"
+                    : "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: ({$paidAmount})، آجل متبقي: ({$remainingAmount})";
+
+                $this->networkWalletLogRepository->createLog(
+                    $networkWallet->wallet_id,
+                    WalletOperationType::DEPOSIT,
+                    $networkCashCollected,
+                    $networkStatement,
+                    $userId
+                );
+            }
+
+            // تسجيل رسالة الأحداث المالية في صندوق الإرسال اللحظي (Transactional Outbox)
+            $this->outboxService->record(
+                'SALE_INVOICE',
+                $invoice->invoice_id,
+                'INVOICE_GENERATED',
+                [
+                    'invoice_id' => $invoice->invoice_id,
+                    'invoice_uuid' => $invoice->invoice_uuid,
+                    'network_id' => $networkId,
+                    'pos_id' => $posId,
+                    'sale_type' => $saleType->value,
+                    'invoice_total_amount' => $totalInvoiceAmount,
+                    'paid_amount' => $paidAmount,
+                    'remaining_amount' => $remainingAmount,
+                    'payment_status' => $paymentStatus->value,
+                ]
             );
 
             $invoice->load(['network', 'pos', 'createdBy', 'items.voucherPackage']);
@@ -456,39 +481,36 @@ class SaleInvoiceService
                 ];
             }
 
-            // 2. التحقق من وجود ونشاط المحافظ المالية بقفل متشائم
-            $posWallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId, true);
+            // 2. التحقق من وجود ونشاط المحافظ المالية وفق ترتيب الأقفال العالمي (NetworkWallet -> PosWallet)
             $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId, true);
-
-            // 3. احتساب المبالغ وحالة السداد:
-            $paidAmountInput = $request->getPaidAmount();
-            if ($paidAmountInput !== null) {
-                $paidAmount = min($totalInvoiceAmount, max(0.0, (float) $paidAmountInput));
-            } else {
-                $paidAmount = ($saleType === SaleType::CASH) ? $totalInvoiceAmount : 0.00;
+            if (! $networkWallet) {
+                throw ValidationException::withMessages([
+                    'network_id' => ['لم يتم العثور على محفظة مالية مسجلة للشبكة.'],
+                ]);
             }
+            $networkWallet->ensureActive();
 
-            $remainingAmount = max(0.0, round($totalInvoiceAmount - $paidAmount, 2));
+            $posWallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId, true);
+            if (! $posWallet) {
+                throw ValidationException::withMessages([
+                    'pos_id' => ['لم يتم العثور على محفظة مالية لنقطة البيع المرتبطة بهذه الشبكة.'],
+                ]);
+            }
+            $posWallet->ensureActive();
 
-            if ($remainingAmount <= 0.001) {
+            $totalInvoiceAmount = round($totalInvoiceAmount, 2);
+
+            // 3. تطبيق المنطق المحاسبي الموحد وفق توجيهات النزاهة المالية
+            if ($saleType === SaleType::CASH) {
+                // البيع النقدي المباشر: تم تسليم كامل المبلغ نقداً يداً بيد
+                $paidAmount = $totalInvoiceAmount;
+                $remainingAmount = 0.00;
                 $paymentStatus = InvoicePaymentStatus::PAID;
-                $saleType = SaleType::CASH;
-            } elseif ($paidAmount > 0.001) {
-                $paymentStatus = InvoicePaymentStatus::PARTIALLY_PAID;
-                $saleType = SaleType::CREDIT;
+                $isCashSale = true;
             } else {
-                $paymentStatus = InvoicePaymentStatus::UNPAID;
-                $saleType = SaleType::CREDIT;
-            }
-
-            // 4. التسوية المالية في المحافظ:
-            // يُخصم من محفظة نقطة البيع المبلغ المتبقي فقط كمديونية/ذمم مدينة
-            $posBalanceAfter = null;
-            if ($posWallet && $remainingAmount > 0.001) {
-                $posWallet->ensureActive();
-
+                // البيع الآجل: يُستهلك الرصيد الإيجابي المتاح أولاً، وما زاد عنه يصبح ذمة مدينة ضمن السقف الائتماني
                 $posBalance = (float) $posWallet->wallet_balance;
-                $projectedBalance = round($posBalance - $remainingAmount, 2);
+                $projectedBalance = round($posBalance - $totalInvoiceAmount, 2);
 
                 if ($projectedBalance < 0) {
                     if ($posWallet->credit_limit === null) {
@@ -506,38 +528,17 @@ class SaleInvoiceService
                     }
                 }
 
-                $this->posWalletRepository->decrementBalance($posWallet->wallet_id, $remainingAmount);
-                $posBalanceAfter = $projectedBalance;
-
-                $posStatement = $paidAmount > 0.001
-                    ? "سداد فاتورة مبيعات مباشرة مدفوعة جزئياً - إجمالي: ({$totalInvoiceAmount})، مسدد نقداً: ({$paidAmount})، متبقي آجل على المحفظة: ({$remainingAmount}) (رصيد مدين: {$posBalanceAfter})"
-                    : "سداد فاتورة مبيعات مباشرة بالبيع الآجل - ذمم مدينة (رصيد مدين على الوكيل: {$posBalanceAfter})";
-
-                $this->posWalletLogRepository->createLog(
-                    $posWallet->wallet_id,
-                    WalletOperationType::WITHDRAW,
-                    $remainingAmount,
-                    $posStatement,
-                    $userId
-                );
+                $existingCredit = max(0.0, $posBalance);
+                $coveredAmount = min($existingCredit, $totalInvoiceAmount);
+                $paidAmount = round($coveredAmount, 2);
+                $remainingAmount = round($totalInvoiceAmount - $paidAmount, 2);
+                $paymentStatus = ($remainingAmount <= 0.001)
+                    ? InvoicePaymentStatus::PAID
+                    : (($paidAmount > 0.001) ? InvoicePaymentStatus::PARTIALLY_PAID : InvoicePaymentStatus::UNPAID);
+                $isCashSale = false;
             }
 
-            if ($networkWallet) {
-                $networkWallet->ensureActive();
-                // إيداع إجمالي الفاتورة في محفظة الشبكة كاستحقاق مبيعات
-                $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $totalInvoiceAmount);
-
-                $networkStatement = "تحصيل فاتورة مبيعات مباشرة من نقطة البيع (#{$pos->pos_name}) - إجمالي: ({$totalInvoiceAmount})، نقد محصل: ({$paidAmount})، آجل متبقي: ({$remainingAmount})";
-
-                $this->networkWalletLogRepository->createLog(
-                    $networkWallet->wallet_id,
-                    WalletOperationType::DEPOSIT,
-                    $totalInvoiceAmount,
-                    $networkStatement,
-                    $userId
-                );
-            }
-
+            // 4. إنشاء فاتورة المبيعات الرسمية
             /** @var SaleInvoice $invoice */
             $invoice = $this->saleInvoiceRepository->create([
                 'network_id' => $networkId,
@@ -553,43 +554,99 @@ class SaleInvoiceService
 
             $this->saleInvoiceItemRepository->createManyForInvoice($invoice->invoice_id, $itemsData);
 
-            if ($posWallet && $paidAmount > 0.001) {
-                // قيد مزدوج محاسبي لتوثيق الجزء المسدد نقداً كاش في سجل كشف حساب محفظة الوكيل:
+            // 5. التسوية المالية في المحافظ:
+            if ($isCashSale) {
+                // البيع النقدي: محفظة نقطة البيع لا يتغير رصيدها، ويسجل قيدان مزدوجان للتوثيق المحاسبي
                 $this->posWalletLogRepository->createLog(
                     $posWallet->wallet_id,
                     WalletOperationType::WITHDRAW,
-                    $paidAmount,
-                    "استحقاق فاتورة مبيعات مباشرة مسددة نقداً (#{$invoice->invoice_uuid})",
+                    $totalInvoiceAmount,
+                    "استحقاق فاتورة مبيعات مباشرة نقدية (#{$invoice->invoice_uuid})",
                     $userId
                 );
 
                 $this->posWalletLogRepository->createLog(
                     $posWallet->wallet_id,
                     WalletOperationType::DEPOSIT,
-                    $paidAmount,
+                    $totalInvoiceAmount,
                     "سداد نقدي كاش للفاتورة المباشرة (#{$invoice->invoice_uuid})",
                     $userId
                 );
-            }
 
-            if ($posWallet && $paidAmount > 0.001) {
-                // قيد مزدوج محاسبي لتوثيق الجزء المسدد نقداً كاش في سجل كشف حساب محفظة الوكيل:
+                // إيداع النقد المقبوض فعلياً كاملاً في محفظة الشبكة كسيولة متاحة
+                $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $totalInvoiceAmount);
+                $this->networkWalletLogRepository->createLog(
+                    $networkWallet->wallet_id,
+                    WalletOperationType::DEPOSIT,
+                    $totalInvoiceAmount,
+                    "تحصيل مبيعات كروت مباشرة نقدية (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name})",
+                    $userId
+                );
+            } else {
+                // البيع الآجل: خصم كامل قيمة الفاتورة من محفظة الوكيل
+                $this->posWalletRepository->decrementBalance($posWallet->wallet_id, $totalInvoiceAmount);
+                $posBalanceAfter = round((float) $posWallet->wallet_balance - $totalInvoiceAmount, 2);
+
+                $formattedPosBalanceAfter = formatWithCurrency(abs($posBalanceAfter));
+                $posStatement = $paidAmount > 0.001
+                    ? "سداد فاتورة مبيعات مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) - مسدد من الرصيد: (".formatWithCurrency($paidAmount).')، آجل متبقي: ('.formatWithCurrency($remainingAmount).") (رصيد مدين: {$formattedPosBalanceAfter})"
+                    : "سداد فاتورة مبيعات مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) - ذمم مدينة (رصيد مدين: {$formattedPosBalanceAfter})";
+
+                $formattedPosBalanceAfter = formatWithCurrency(abs($posBalanceAfter));
+                $posStatement = $paidAmount > 0.001
+                    ? "سداد فاتورة مبيعات مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) - مسدد من الرصيد: (".formatWithCurrency($paidAmount).")، آجل متبقي: (".formatWithCurrency($remainingAmount).") (رصيد مدين: {$formattedPosBalanceAfter})"
+                    : "سداد فاتورة مبيعات مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) - ذمم مدينة (رصيد مدين: {$formattedPosBalanceAfter})";
+
                 $this->posWalletLogRepository->createLog(
                     $posWallet->wallet_id,
                     WalletOperationType::WITHDRAW,
-                    $paidAmount,
-                    "استحقاق فاتورة مبيعات مباشرة مسددة نقداً (#{$invoice->invoice_uuid})",
+                    $totalInvoiceAmount,
+                    $posStatement,
                     $userId
                 );
 
-                $this->posWalletLogRepository->createLog(
-                    $posWallet->wallet_id,
-                    WalletOperationType::DEPOSIT,
-                    $paidAmount,
-                    "سداد نقدي كاش للفاتورة المباشرة (#{$invoice->invoice_uuid})",
-                    $userId
-                );
+                // زيادة سيولة الشبكة فقط بالمبلغ المغطى برصيد إيجابي فعلي (إن وجد)
+                if ($paidAmount > 0.001) {
+                    $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $paidAmount);
+                    $this->networkWalletLogRepository->createLog(
+                        $networkWallet->wallet_id,
+                        WalletOperationType::DEPOSIT,
+                        $paidAmount,
+                        "تحصيل مبيعات كروت مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: (".formatWithCurrency($paidAmount).')، آجل متبقي: ('.formatWithCurrency($remainingAmount).')',
+                        $userId
+                    );
+                }
+
+                // زيادة سيولة الشبكة فقط بالمبلغ المغطى برصيد إيجابي فعلي (إن وجد)
+                if ($paidAmount > 0.001) {
+                    $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $paidAmount);
+                    $this->networkWalletLogRepository->createLog(
+                        $networkWallet->wallet_id,
+                        WalletOperationType::DEPOSIT,
+                        $paidAmount,
+                        "تحصيل مبيعات كروت مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: (".formatWithCurrency($paidAmount).")، آجل متبقي: (".formatWithCurrency($remainingAmount).")",
+                        $userId
+                    );
+                }
             }
+
+            // تسجيل رسالة الأحداث المالية في صندوق الإرسال اللحظي (Transactional Outbox)
+            $this->outboxService->record(
+                'SALE_INVOICE',
+                $invoice->invoice_id,
+                'DIRECT_INVOICE_GENERATED',
+                [
+                    'invoice_id' => $invoice->invoice_id,
+                    'invoice_uuid' => $invoice->invoice_uuid,
+                    'network_id' => $networkId,
+                    'pos_id' => $posId,
+                    'sale_type' => $saleType->value,
+                    'invoice_total_amount' => $totalInvoiceAmount,
+                    'paid_amount' => $paidAmount,
+                    'remaining_amount' => $remainingAmount,
+                    'payment_status' => $paymentStatus->value,
+                ]
+            );
 
             $invoice->load(['network', 'pos', 'createdBy', 'items.voucherPackage']);
 

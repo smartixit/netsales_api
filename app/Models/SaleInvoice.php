@@ -90,6 +90,11 @@ class SaleInvoice extends Model
         return $this->hasMany(SaleInvoiceItem::class, 'invoice_id', 'invoice_id');
     }
 
+    public function repaymentAllocations(): HasMany
+    {
+        return $this->hasMany(PosRepaymentAllocation::class, 'invoice_id', 'invoice_id');
+    }
+
     // Scopes
     public function scopeForPos(Builder $query, int $posId): Builder
     {

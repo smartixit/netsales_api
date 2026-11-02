@@ -144,6 +144,8 @@ class IdempotencyMiddleware
             'api/v1/pos-wallets/transfer-from-network',       // تحويل رصيد من الشبكة للوكيل
             'api/v1/pos-wallets/transfer-to-network',         // تحويل رصيد من الوكيل للشبكة
             'api/v1/expenses',                               // تسجيل مصروف تشغيلي مخصوم من المحفظة
+            'api/v1/pos-debts/repayments',                   // تحصيل سداد مديونية نقطة البيع
+            'api/v1/pos-debts/repayments/*/reverse',         // عكس سند سداد مديونية نقطة البيع
         ];
 
         foreach ($criticalPatterns as $pattern) {

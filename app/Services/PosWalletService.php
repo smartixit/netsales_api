@@ -157,6 +157,50 @@ class PosWalletService
     }
 
     /**
+     * تحديث أو إلغاء السقف الائتماني المعتمد لنقطة البيع مع الحماية الصارمة من التخفيض غير الآمن.
+     */
+    public function updateCreditLimit(int $walletId, ?float $newCreditLimit, int $userId): PosWallet
+    {
+        return DB::transaction(function () use ($walletId, $newCreditLimit, $userId): PosWallet {
+            /** @var PosWallet $wallet */
+            $wallet = $this->posWalletRepository->findByIdForUpdate($walletId);
+            $wallet->ensureActive();
+
+            if ($wallet->wallet_balance < 0) {
+                $currentDebt = abs((float) $wallet->wallet_balance);
+                $formattedDebt = formatWithCurrency($currentDebt);
+
+                if ($newCreditLimit === null) {
+                    throw ValidationException::withMessages([
+                        'credit_limit' => ["لا يمكن إلغاء السقف الائتماني لوجود مديونية قائمة على المحفظة ({$formattedDebt})."],
+                    ]);
+                }
+
+                if ($newCreditLimit < ($currentDebt - 0.001)) {
+                    $formattedNewLimit = formatWithCurrency($newCreditLimit);
+                    throw ValidationException::withMessages([
+                        'credit_limit' => ["لا يمكن تخفيض السقف الائتماني إلى ({$formattedNewLimit}) وهو أقل من إجمالي المديونية القائمة حالياً ({$formattedDebt})."],
+                    ]);
+                }
+            }
+
+            $wallet->credit_limit = $newCreditLimit;
+            $wallet->save();
+
+            $limitText = $newCreditLimit !== null ? formatWithCurrency($newCreditLimit) : 'بدون سقف ائتماني';
+            $this->posWalletLogRepository->createLog(
+                $wallet->wallet_id,
+                WalletOperationType::DEPOSIT,
+                0.00,
+                "تحديث السقف الائتماني للمحفظة إلى: ({$limitText})",
+                $userId
+            );
+
+            return $wallet->fresh(['network', 'pos']);
+        });
+    }
+
+    /**
      * إيداع رصيد مالي مباشر في محفظة نقطة البيع.
      *
      * @return array{wallet: PosWallet, log: PosWalletLog}

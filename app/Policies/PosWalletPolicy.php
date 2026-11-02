@@ -61,4 +61,27 @@ class PosWalletPolicy
     {
         return false;
     }
+
+    public function manageCreditLimit(User $user, PosWallet $wallet): bool
+    {
+        // 1. POS users can NEVER manage or modify their own credit limit
+        if ($user->pos && (int) $user->pos->pos_id === (int) $wallet->pos_id) {
+            return false;
+        }
+        if (method_exists($user, 'posUsers') && $user->posUsers()->where('pos_id', $wallet->pos_id)->exists()) {
+            return false;
+        }
+
+        // 2. Network owner of the associated Network can manage credit limit
+        if ($user->networks()->where('networks.network_id', $wallet->network_id)->exists()) {
+            return true;
+        }
+
+        // 3. Network user with pos_wallets.manage permission
+        if (method_exists($user, 'networkUsers') && $user->networkUsers()->where('network_id', $wallet->network_id)->exists()) {
+            return $user->hasPermission('pos_wallets.manage');
+        }
+
+        return false;
+    }
 }

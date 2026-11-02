@@ -64,6 +64,9 @@ Schedule::command('system:prune-logs')->weeklyOn(0, '04:00')->timezone('Asia/Ade
 // 10. محرك الاستدراك والتعويض الذكي للمهام الفائتة (يعمل كل 15 دقيقة)
 Schedule::command('schedule:catchup')->everyFifteenMinutes();
 
+// 11. معالجة أحداث صندوق الإرسال اللحظي المالي (Transactional Outbox Processor كل دقيقة)
+Schedule::command('outbox:process')->everyMinute()->withoutOverlapping();
+
 // 11. تصريف ومعالجة طوابير النظام تلقائياً عند تشغيل الجدولة القياسية
 if (config('queue.default') !== 'sync') {
     Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')

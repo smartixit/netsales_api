@@ -7,6 +7,7 @@ use App\Http\Requests\API\V1\Pos\DepositPosWalletRequest;
 use App\Http\Requests\API\V1\Pos\StorePosWalletRequest;
 use App\Http\Requests\API\V1\Pos\TransferNetworkToPosWalletRequest;
 use App\Http\Requests\API\V1\Pos\TransferPosToNetworkWalletRequest;
+use App\Http\Requests\API\V1\Pos\UpdateCreditLimitRequest;
 use App\Http\Requests\API\V1\Pos\UpdatePosWalletRequest;
 use App\Http\Requests\API\V1\Pos\WithdrawPosWalletRequest;
 use App\Http\Resources\API\V1\Network\NetworkWalletLogResource;
@@ -220,6 +221,55 @@ class PosWalletController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('تعذر تحديث محفظة نقطة البيع: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * تحديث أو ضبط السقف الائتماني لمحفظة نقطة البيع.
+     */
+    #[OA\Put(
+        path: '/api/v1/pos-wallets/{id}/credit-limit',
+        summary: 'تحديث السقف الائتماني لمحفظة نقطة البيع',
+        tags: ['POS Wallets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'السقف الائتماني الجديد أو null لإلغاء التسهيل الائتماني',
+            content: new OA\MediaType(
+                mediaType: 'application/json',
+                schema: new OA\Schema(
+                    properties: [
+                        new OA\Property(property: 'credit_limit', type: 'number', nullable: true, example: 50000.0),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'تم تحديث السقف الائتماني بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح'),
+            new OA\Response(response: 422, description: 'خطأ في التحقق من البيانات أو محاولة تخفيض غير آمنة'),
+        ]
+    )]
+    public function updateCreditLimit(UpdateCreditLimitRequest $request, int $id): JsonResponse
+    {
+        try {
+            $wallet = $this->posWalletService->getWalletById($id);
+            $currentUser = $request->user();
+
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('manageCreditLimit', $wallet)) {
+                return $this->errorResponse('غير مصرح لك بإدارة أو تعديل السقف الائتماني لنقطة البيع هذه.', [], 403);
+            }
+
+            $userId = (int) ($currentUser?->user_id ?? 0);
+            $updatedWallet = $this->posWalletService->updateCreditLimit($id, $request->getCreditLimit(), $userId);
+
+            return $this->successResponse('تم تحديث السقف الائتماني لنقطة البيع بنجاح.', new PosWalletResource($updatedWallet));
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر تحديث السقف الائتماني: '.$e->getMessage(), [], 422);
         }
     }
 

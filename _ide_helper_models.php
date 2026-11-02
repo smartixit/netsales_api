@@ -1002,6 +1002,93 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property int $repayment_id
+ * @property string $repayment_uuid
+ * @property int $network_id
+ * @property int $pos_id
+ * @property numeric $amount
+ * @property string $payment_method
+ * @property string|null $reference_number
+ * @property string|null $notes
+ * @property \Illuminate\Support\Carbon $repayment_date
+ * @property string $status
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon|null $reversed_at
+ * @property int|null $reversed_by
+ * @property string|null $reversal_reason
+ * @property int|null $reversal_repayment_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PosRepaymentAllocation> $allocations
+ * @property-read int|null $allocations_count
+ * @property-read \App\Models\User|null $createdBy
+ * @property-read \App\Models\Network|null $network
+ * @property-read \App\Models\Pos|null $pos
+ * @property-read \App\Models\User|null $reversedBy
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereNotes($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment wherePaymentMethod($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment wherePosId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereReferenceNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereRepaymentDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereRepaymentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereRepaymentUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereReversalReason($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereReversalRepaymentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereReversedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereReversedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepayment withoutTrashed()
+ */
+	class PosRepayment extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $allocation_id
+ * @property int $repayment_id
+ * @property int $invoice_id
+ * @property int $network_id
+ * @property int $pos_id
+ * @property numeric $allocated_amount
+ * @property string $status
+ * @property \Illuminate\Support\Carbon $allocated_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\SaleInvoice|null $invoice
+ * @property-read \App\Models\Network|null $network
+ * @property-read \App\Models\Pos|null $pos
+ * @property-read \App\Models\PosRepayment|null $repayment
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepaymentAllocation newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepaymentAllocation newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepaymentAllocation query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepaymentAllocation whereAllocatedAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepaymentAllocation whereAllocatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepaymentAllocation whereAllocationId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepaymentAllocation whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepaymentAllocation whereInvoiceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepaymentAllocation whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepaymentAllocation wherePosId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepaymentAllocation whereRepaymentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepaymentAllocation whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosRepaymentAllocation whereUpdatedAt($value)
+ */
+	class PosRepaymentAllocation extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
  * @property int $id
  * @property int $pos_id
  * @property int $user_id
@@ -1039,6 +1126,7 @@ namespace App\Models{
  * @property int $pos_id
  * @property string $wallet_uuid
  * @property numeric $wallet_balance
+ * @property numeric|null $credit_limit
  * @property bool $status
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -1057,6 +1145,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet whereCreditLimit($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet whereNetworkId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet wherePosId($value)
@@ -1333,6 +1422,8 @@ namespace App\Models{
  * @property-read int|null $items_count
  * @property-read \App\Models\Network|null $network
  * @property-read \App\Models\Pos|null $pos
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PosRepaymentAllocation> $repaymentAllocations
+ * @property-read int|null $repayment_allocations_count
  * @property-read \App\Models\Request|null $request
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice forNetwork(int $networkId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SaleInvoice forPos(int $posId)
@@ -2066,6 +2157,7 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property int|null $active_discriminator مميّز أحادي للسجلات غير المحذوفة فقط لضمان قيد فريد قطعي في MySQL 8
  * @property-read \App\Models\User|null $createdBy
+ * @property-read string|null $display_end_date
  * @property-read string $validity_state
  * @property-read \App\Models\Network|null $network
  * @property-read \App\Models\Pos|null $pos

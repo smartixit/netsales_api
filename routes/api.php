@@ -5,6 +5,7 @@ use App\Http\Controllers\API\V1\AuthController;
 use App\Http\Controllers\API\V1\BackupController;
 use App\Http\Controllers\API\V1\BankAccountController;
 use App\Http\Controllers\API\V1\DashboardController;
+use App\Http\Controllers\API\V1\DebtRepaymentController;
 use App\Http\Controllers\API\V1\DirectorateController;
 use App\Http\Controllers\API\V1\ExpenseController;
 use App\Http\Controllers\API\V1\FeatureController;
@@ -344,6 +345,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('pos-wallets', [PosWalletController::class, 'store'])->name('api.v1.pos_wallets.store');
             Route::put('pos-wallets/{id}', [PosWalletController::class, 'update'])->whereNumber('id')->name('api.v1.pos_wallets.update');
+            Route::put('pos-wallets/{id}/credit-limit', [PosWalletController::class, 'updateCreditLimit'])->whereNumber('id')->name('api.v1.pos_wallets.update_credit_limit');
             Route::delete('pos-wallets/{id}', [PosWalletController::class, 'destroy'])->whereNumber('id')->name('api.v1.pos_wallets.destroy');
             Route::post('pos-wallets/{id}/deposit', [PosWalletController::class, 'deposit'])->whereNumber('id')->name('api.v1.pos_wallets.deposit');
             Route::post('pos-wallets/{id}/withdraw', [PosWalletController::class, 'withdraw'])->whereNumber('id')->name('api.v1.pos_wallets.withdraw');
@@ -354,6 +356,21 @@ Route::prefix('v1')->group(function () {
             Route::post('pos-wallets/batch-delete', [PosWalletController::class, 'batchDelete'])->name('api.v1.pos_wallets.batch_delete');
             Route::post('pos-wallets/batch-restore', [PosWalletController::class, 'batchRestore'])->name('api.v1.pos_wallets.batch_restore');
             Route::post('pos-wallets/batch-force-delete', [PosWalletController::class, 'batchForceDelete'])->name('api.v1.pos_wallets.batch_force_delete');
+        });
+
+        // ==========================================
+        // 9.1 إدارة الديون وسداد الفواتير الآجلة وتحليل الأعمار (Debt Tracking, Repayments & Aging)
+        // ==========================================
+        Route::middleware(['throttle:api-read'])->group(function () {
+            Route::get('pos-debts/summary', [DebtRepaymentController::class, 'summary'])->name('api.v1.pos_debts.summary');
+            Route::get('pos-debts/invoices', [DebtRepaymentController::class, 'outstandingInvoices'])->name('api.v1.pos_debts.invoices');
+            Route::get('pos-debts/repayments', [DebtRepaymentController::class, 'repayments'])->name('api.v1.pos_debts.repayments');
+            Route::get('pos-debts/repayments/{id}', [DebtRepaymentController::class, 'showRepayment'])->whereNumber('id')->name('api.v1.pos_debts.repayment_detail');
+        });
+
+        Route::middleware(['throttle:api-write'])->group(function () {
+            Route::post('pos-debts/repayments', [DebtRepaymentController::class, 'collect'])->name('api.v1.pos_debts.collect');
+            Route::post('pos-debts/repayments/{id}/reverse', [DebtRepaymentController::class, 'reverse'])->whereNumber('id')->name('api.v1.pos_debts.reverse');
         });
 
         // ==========================================
