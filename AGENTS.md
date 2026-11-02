@@ -1,3 +1,36 @@
+# NETSALES — CONSTITUTIONAL INVARIANTS & PERMANENT AGENT GOVERNANCE
+
+## 1. Product Identity and Non-Negotiable Boundaries
+- NetSales is an enterprise **B2B Network and Point-of-Sale (POS) Sales Management Platform**.
+- It manages wholesale procurement, contractual package pricing, merchant links, wallets, invoices, credit facilities, debt aging, and repayment settlements.
+- **Explicit Anti-Definitions:**
+  - **NOT** a voucher-card inventory management system (no card vaults, serial numbers, or physical warehouse stock).
+  - **NOT** a consumer-facing retail POS (no retail sales to end-user citizens).
+  - **NOT** an ISP gateway or RADIUS router management portal.
+
+## 2. Platform Scope vs. Mobile/Tablet Scope
+- `SUPER_ADMIN` and Platform SaaS licensing belong exclusively to the **Platform Scope** (reserved for the standalone Windows desktop application).
+- Mobile and tablet clients are strictly restricted to the **Network Workspace** and **POS Workspace**.
+- Do not introduce Platform Workspace navigation or `SUPER_ADMIN` functionality into the mobile application.
+
+## 3. Financial and Accounting Authority
+- The Laravel API backend is the **sole authoritative entity** for all pricing, line discounts, package tariffs, order totals, credit limits, debt balances, wallet operations, FIFO repayment allocations, and accounting ledger records.
+- Flutter clients are presentation-only consumers. Flutter must never calculate, persist, or claim authoritative financial balances.
+- All database mutations to financial balances and repayments must be executed within database transactions under appropriate row-level locking (`lockForUpdate`).
+
+## 4. Authorization and Tenant Isolation Boundary
+- The Laravel API backend is the **sole security and authorization boundary**.
+- Client-side role checks, workspace selectors, and `role_scope` are UX presentation aids, **never** security enforcement.
+- Every protected API endpoint must authorize requests using server-validated user identity, tenant context, active membership, and effective permissions.
+- Do not assume that global permissions grant access across tenant boundaries.
+
+## 5. Milestone Approval and Decision Discipline
+- Never implement code for a new milestone without explicit user approval of the preceding milestone.
+- Agent recommendations, generated reports, or proposed architectural designs **never** constitute user approval.
+- Approved decisions are recorded in `docs/project/DECISION_LOG.md` and must be preserved. When a requirement conflicts with an approved decision, halt and document the conflict for user resolution.
+
+---
+
 <laravel-boost-guidelines>
 === foundation rules ===
 
