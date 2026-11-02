@@ -263,10 +263,9 @@ class VoucherRequestAndInvoicingTest extends TestCase
         $createResponse->assertStatus(201);
         $requestId = $createResponse->json('data.request_id');
 
-        // 3. اعتماد الطلب بالبيع الآجل وفق التسهيل الائتماني
+        // 3. اعتماد الطلب بالبيع الآجل وفق التسهيل الائتماني (نوع البيع يظل محفوظاً من الطلب الأصلي)
         $approveResponse = $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$requestId}/approve", [
-                'sale_type' => SaleType::CREDIT->value,
                 'request_note' => 'تم الاعتماد بالبيع الآجل وفق التسهيل الائتماني',
             ]);
 
@@ -338,7 +337,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
             ->assertJsonPath('data.invoice.invoice_total_amount', 46000);
     }
 
-    public function test_flexible_approval_with_override_items_and_sale_type_leaves_original_request_untouched(): void
+    public function test_flexible_approval_with_override_items_leaves_original_request_untouched(): void
     {
         // 1. Submit original request for 100 vouchers (CASH, Net 45,000)
         $createResponse = $this->withHeaders($this->headers)
@@ -359,15 +358,13 @@ class VoucherRequestAndInvoicingTest extends TestCase
         $requestId = $createResponse->json('data.request_id');
 
         // 2. Approve with overrides:
-        // - Change sale_type to CREDIT
-        // - Change quantity to 50 vouchers instead of 100
+        // - Change quantity to 50 vouchers instead of 100 (sale_type remains CASH from original request)
         // Expected for Invoice:
         // Gross: 50 * 500 = 25,000
-        // Credit discount (8%) = 2,000 -> Net: 23,000
+        // Cash discount (10%) = 2,500 -> Net: 22,500
         $approveResponse = $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$requestId}/approve", [
-                'request_note' => 'اعتماد جزئي لـ 50 كرت فقط بالبيع الآجل',
-                'sale_type' => SaleType::CREDIT->value,
+                'request_note' => 'اعتماد جزئي لـ 50 كرت فقط',
                 'items' => [
                     [
                         'package_id' => $this->package->package_id,
@@ -378,11 +375,11 @@ class VoucherRequestAndInvoicingTest extends TestCase
 
         $approveResponse->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.invoice.sale_type', SaleType::CREDIT->value)
-            ->assertJsonPath('data.invoice.invoice_total_amount', 23000)
+            ->assertJsonPath('data.invoice.sale_type', SaleType::CASH->value)
+            ->assertJsonPath('data.invoice.invoice_total_amount', 22500)
             ->assertJsonPath('data.invoice.items.0.voucher_count', 50)
-            ->assertJsonPath('data.invoice.items.0.item_discount', 8)
-            ->assertJsonPath('data.invoice.items.0.item_total_amount', 23000);
+            ->assertJsonPath('data.invoice.items.0.item_discount', 10)
+            ->assertJsonPath('data.invoice.items.0.item_total_amount', 22500);
 
         // 3. Verify that the ORIGINAL Request and its items were NOT modified in the database
         $originalRequestResponse = $this->withHeaders($this->headers)

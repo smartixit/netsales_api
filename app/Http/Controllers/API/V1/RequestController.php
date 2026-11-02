@@ -218,8 +218,7 @@ class RequestController extends BaseController
             $result = $this->requestService->previewModification(
                 $id,
                 $userId,
-                $request->getItems(),
-                $request->getSaleType()
+                $request->getItems()
             );
 
             return $this->successResponse('تم احتساب معاينة تعديلات الطلب والتسعير السيادي بنجاح.', $result);

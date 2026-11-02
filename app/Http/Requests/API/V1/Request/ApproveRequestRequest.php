@@ -25,8 +25,7 @@ class ApproveRequestRequest extends FormRequest
                 'max:150',
             ],
             'sale_type' => [
-                'nullable',
-                Rule::enum(SaleType::class),
+                'prohibited',
             ],
             'items' => [
                 'nullable',

@@ -20,8 +20,7 @@ class PreviewRequestModificationRequest extends FormRequest
     {
         return [
             'sale_type' => [
-                'nullable',
-                Rule::enum(SaleType::class),
+                'prohibited',
             ],
             'request_note' => [
                 'nullable',

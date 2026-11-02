@@ -865,15 +865,38 @@ class VoucherPackageDiscountValidityTest extends TestCase
 
         $discount = VoucherPackageDiscount::findOrFail($res->json('data.discount_id'));
 
-        // في نهاية يوم 10 نوفمبر الساعة 23:59:59 الخصم ما زال سارياً
+        // في نهاية يوم 10 نوفمبر الساعة 23:59:59 الخصم ما زال سارياً في الذاكرة وفي استعلامات قاعدة البيانات
         Carbon::setTestNow(Carbon::parse('2026-11-10 23:59:59', 'Asia/Aden'));
         $this->assertTrue($discount->isEffectiveNow());
         $this->assertEquals('EFFECTIVE', $discount->resolveValidityState());
+        $this->assertTrue(VoucherPackageDiscount::effective()->where('discount_id', $discount->discount_id)->exists());
+        $service = app(VoucherPackageDiscountService::class);
+        $effectiveAtNight = $service->getEffectiveDiscount($this->network->network_id, $this->pos->pos_id, $this->package->package_id);
+        $this->assertEquals(14.00, $effectiveAtNight['discount_cash']);
 
-        // في أول ثانية من يوم 11 نوفمبر الساعة 00:00:00 ينتهي الخصم تماماً
+        // في أول ثانية من يوم 11 نوفمبر الساعة 00:00:00 ينتهي الخصم تماماً في الذاكرة وفي قاعدة البيانات
         Carbon::setTestNow(Carbon::parse('2026-11-11 00:00:00', 'Asia/Aden'));
         $this->assertFalse($discount->isEffectiveNow());
         $this->assertEquals('EXPIRED', $discount->resolveValidityState());
+        $this->assertFalse(VoucherPackageDiscount::effective()->where('discount_id', $discount->discount_id)->exists());
+        $fallbackAtMorning = $service->getEffectiveDiscount($this->network->network_id, $this->pos->pos_id, $this->package->package_id);
+        $this->assertEquals((float) $this->package->package_default_cash_discount, $fallbackAtMorning['discount_cash']);
+
+        // التحقق من توافقية التنسيق القديم بصيغة YYYY-MM-DD 23:59:59 وتحويله لنفس الحد الاستبعادي
+        Carbon::setTestNow(Carbon::parse('2026-11-02 12:00:00', 'Asia/Aden'));
+        $discount->delete();
+        $legacyRes = $this->withHeaders($this->headers)->postJson('/api/v1/voucher-package-discounts', [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'package_id' => $this->package->package_id,
+            'discount_cash' => 16.00,
+            'discount_credit' => 9.00,
+            'discount_start_date' => '2026-11-05 00:00:00',
+            'discount_end_date' => '2026-11-10 23:59:59',
+        ]);
+        $legacyRes->assertStatus(201);
+        $legacyRes->assertJsonPath('data.display_end_date', '2026-11-10');
+        $legacyRes->assertJsonPath('data.discount_end_date', '2026-11-11 00:00:00');
     }
 
     /**
@@ -972,7 +995,48 @@ class VoucherPackageDiscountValidityTest extends TestCase
             $validToken
         ));
 
-        // 5. رمز منتهي الصلاحية (Expired after 8 days)
+        // 5. رمز مستخدم لشبكة أخرى (Different Network ID)
+        $this->assertNull($pricingService->verifyPricingToken(
+            100,
+            9999,
+            $this->pos->pos_id,
+            $this->package->package_id,
+            SaleType::CASH,
+            $validToken
+        ));
+
+        // 6. رمز مستخدم لنقطة بيع أخرى (Different POS ID)
+        $this->assertNull($pricingService->verifyPricingToken(
+            100,
+            $this->network->network_id,
+            9999,
+            $this->package->package_id,
+            SaleType::CASH,
+            $validToken
+        ));
+
+        // 7. رمز بإصدار مفقود أو غير مدعوم (Missing or Unsupported Version)
+        $rawPacket = json_decode(base64_decode(strtr($validToken, '-_', '+/')), true);
+        $payloadNoVersion = $rawPacket['d'];
+        unset($payloadNoVersion['v']);
+        $sigNoVersion = hash_hmac('sha256', (string) json_encode($payloadNoVersion, JSON_UNESCAPED_SLASHES), (string) config('app.key'));
+        $tokenNoVersion = rtrim(strtr(base64_encode(json_encode(['d' => $payloadNoVersion, 's' => $sigNoVersion])), '+/', '-_'), '=');
+        $this->assertNull($pricingService->verifyPricingToken(100, $this->network->network_id, $this->pos->pos_id, $this->package->package_id, SaleType::CASH, $tokenNoVersion));
+
+        $payloadV2 = $rawPacket['d'];
+        $payloadV2['v'] = 2;
+        $sigV2 = hash_hmac('sha256', (string) json_encode($payloadV2, JSON_UNESCAPED_SLASHES), (string) config('app.key'));
+        $tokenV2 = rtrim(strtr(base64_encode(json_encode(['d' => $payloadV2, 's' => $sigV2])), '+/', '-_'), '=');
+        $this->assertNull($pricingService->verifyPricingToken(100, $this->network->network_id, $this->pos->pos_id, $this->package->package_id, SaleType::CASH, $tokenV2));
+
+        // 8. رمز مصدر في المستقبل وتجاوز سماحية الوقت (Future Token > now + 60s)
+        $payloadFuture = $rawPacket['d'];
+        $payloadFuture['ts'] = now('Asia/Aden')->timestamp + 120;
+        $sigFuture = hash_hmac('sha256', (string) json_encode($payloadFuture, JSON_UNESCAPED_SLASHES), (string) config('app.key'));
+        $tokenFuture = rtrim(strtr(base64_encode(json_encode(['d' => $payloadFuture, 's' => $sigFuture])), '+/', '-_'), '=');
+        $this->assertNull($pricingService->verifyPricingToken(100, $this->network->network_id, $this->pos->pos_id, $this->package->package_id, SaleType::CASH, $tokenFuture));
+
+        // 9. رمز منتهي الصلاحية (Expired after 8 days)
         Carbon::setTestNow(Carbon::parse('2026-11-11 12:00:00', 'Asia/Aden'));
         $this->assertNull($pricingService->verifyPricingToken(
             100,
@@ -983,7 +1047,7 @@ class VoucherPackageDiscountValidityTest extends TestCase
             $validToken
         ));
 
-        // 6. تلاعب بالحمولة المشفرة (Tampered signature)
+        // 10. تلاعب بالحمولة المشفرة (Tampered signature)
         $tampered = $validToken.'xyz';
         $this->assertNull($pricingService->verifyPricingToken(
             100,
@@ -1031,6 +1095,16 @@ class VoucherPackageDiscountValidityTest extends TestCase
 
         $approveRes->assertStatus(422);
         $approveRes->assertJsonValidationErrors(['items']);
+
+        // محاولة معاينة بإضافة باقة B برمز غير صالح -> يجب أن تفشل بدلاً من إعادة التسعير الصامت من الكتالوج
+        $previewRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/preview-modification", [
+            'items' => [
+                ['package_id' => $this->package->package_id, 'voucher_count' => 5],
+                ['package_id' => $packageB->package_id, 'voucher_count' => 3, 'pricing_token' => 'tampered-invalid-token'],
+            ],
+        ]);
+        $previewRes->assertStatus(422);
+        $previewRes->assertJsonValidationErrors(['items']);
     }
 
     /**

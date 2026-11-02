@@ -321,13 +321,19 @@ class RequestService
             }
         }
 
+        if ($saleType !== null && $saleType !== $request->sale_type) {
+            throw ValidationException::withMessages([
+                'sale_type' => ['لا يُسمح بتعديل نوع البيع (كاش/آجل) المتفق عليه في الطلب الأصلي من قِبل الشبكة.'],
+            ]);
+        }
+
         if (empty($items)) {
             throw ValidationException::withMessages([
                 'items' => ['يجب تحديد باقة واحدة على الأقل لمعاينة التعديلات.'],
             ]);
         }
 
-        return $this->pricingReviewService->calculatePreview($request, $items, $saleType);
+        return $this->pricingReviewService->calculatePreview($request, $items, $request->sale_type);
     }
 
     /**
@@ -374,12 +380,15 @@ class RequestService
             }
 
             $note = null;
-            $overrideSaleType = null;
             $overrideItems = null;
 
             if ($requestData instanceof ApproveRequestRequest) {
+                if ($requestData->has('sale_type')) {
+                    throw ValidationException::withMessages([
+                        'sale_type' => ['لا يُسمح بتعديل نوع البيع (كاش/آجل) المتفق عليه في الطلب الأصلي من قِبل الشبكة.'],
+                    ]);
+                }
                 $note = $requestData->getRequestNote();
-                $overrideSaleType = $requestData->getSaleType();
                 $overrideItems = $requestData->hasItems() ? $requestData->getItems() : null;
             } elseif (is_string($requestData)) {
                 $note = $requestData;
@@ -394,11 +403,11 @@ class RequestService
                 'item_total_amount' => (float) $item->item_total_amount,
             ])->toArray();
 
-            // توليد الفاتورة والخصم من محفظة الوكيل والإيداع في محفظة الشبكة ذرياً (دون تعديل بنود الطلب الأصلي)
+            // توليد الفاتورة والخصم من محفظة الوكيل والإيداع في محفظة الشبكة ذرياً (دون تعديل بنود الطلب الأصلي وبنفس نمط البيع المتفق عليه)
             $invoice = $this->saleInvoiceService->generateFromRequest(
                 $request,
                 $reviewedBy,
-                $overrideSaleType,
+                null,
                 $overrideItems
             );
 
@@ -437,7 +446,7 @@ class RequestService
                     'invoice_total_amount' => (float) $invoice->invoice_total_amount,
                     'sale_type' => $invoice->sale_type->value,
                     'items' => $finalItemsSummary,
-                    'has_overrides' => ! empty($overrideItems) || $overrideSaleType !== null,
+                    'has_overrides' => ! empty($overrideItems),
                 ],
                 userId: $reviewedBy
             );

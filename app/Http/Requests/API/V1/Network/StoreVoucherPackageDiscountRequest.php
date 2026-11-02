@@ -90,7 +90,14 @@ class StoreVoucherPackageDiscountRequest extends FormRequest
             return $parsed->startOfDay();
         }
 
-        return Carbon::parse($str, 'Asia/Aden');
+        $parsed = Carbon::parse($str, 'Asia/Aden');
+
+        // التوافقية مع العملاء القدامى الذين يرسلون 23:59:59 كنهاية لليوم
+        if ($isEndDate && $parsed->format('H:i:s') === '23:59:59') {
+            return $parsed->addSecond(); // يصبح بداية اليوم التالي 00:00:00 كحد استبعادي
+        }
+
+        return $parsed;
     }
 
     public function withValidator($validator): void

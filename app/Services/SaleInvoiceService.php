@@ -93,6 +93,12 @@ class SaleInvoiceService
         ?array $overrideItems = null
     ): SaleInvoice {
         return DB::transaction(function () use ($request, $userId, $overrideSaleType, $overrideItems): SaleInvoice {
+            if ($overrideSaleType !== null && $overrideSaleType !== $request->sale_type) {
+                throw ValidationException::withMessages([
+                    'sale_type' => ['لا يُسمح بتعديل نوع البيع (كاش/آجل) المتفق عليه في الطلب الأصلي من قِبل الشبكة.'],
+                ]);
+            }
+
             $networkId = (int) $request->network_id;
             $posId = (int) $request->pos_id;
 
@@ -142,8 +148,8 @@ class SaleInvoiceService
             }
             $networkWallet->ensureActive();
 
-            // 4. احتساب أسعار وخصومات الباقات وحسم التسعير السيادي
-            $effectiveSaleType = $overrideSaleType ?? $request->sale_type ?? SaleType::CASH;
+            // 4. احتساب أسعار وخصومات الباقات وحسم التسعير السيادي وفق نوع البيع الأصلي للطلب
+            $effectiveSaleType = $request->sale_type ?? SaleType::CASH;
             $itemsData = [];
             $totalInvoiceAmount = 0.0;
 

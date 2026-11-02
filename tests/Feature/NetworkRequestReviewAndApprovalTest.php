@@ -20,8 +20,10 @@ use App\Models\User;
 use App\Models\UserDevice;
 use App\Models\UserSession;
 use App\Models\VoucherPackage;
+use App\Services\RequestService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class NetworkRequestReviewAndApprovalTest extends TestCase
@@ -168,7 +170,6 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
 
         // 2. استدعاء المعاينة لتعديل الكمية إلى 50 وإضافة الباقة B بعدد 20
         $previewRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/preview-modification", [
-            'sale_type' => SaleType::CASH->value,
             'items' => [
                 ['package_id' => $this->packageA->package_id, 'voucher_count' => 50],
                 ['package_id' => $this->packageB->package_id, 'voucher_count' => 20],
@@ -238,7 +239,6 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
 
         // 3. صاحب الشبكة يقوم بمعاينة الطلب وتعديل الكمية إلى 20
         $previewRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/preview-modification", [
-            'sale_type' => SaleType::CASH->value,
             'items' => [
                 ['package_id' => $this->packageA->package_id, 'voucher_count' => 20],
             ],
@@ -365,7 +365,6 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
         // اعتماد الطلب مع تعديل الكمية إلى 30 وإضافة 10 من الباقة B الموثقة
         $approveRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/approve", [
             'request_note' => 'تم تعديل الكميات والاعتماد',
-            'sale_type' => SaleType::CASH->value,
             'items' => [
                 ['package_id' => $this->packageA->package_id, 'voucher_count' => 30],
                 ['package_id' => $this->packageB->package_id, 'voucher_count' => 10, 'pricing_token' => $tokenB],
@@ -425,9 +424,7 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
         $requestId = $createRes->json('data.request_id');
 
         // محاولة الاعتماد نقداً مع رصيد 100 ريال فقط بينما القيمة 9,000 ريال
-        $approveRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/approve", [
-            'sale_type' => SaleType::CASH->value,
-        ]);
+        $approveRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/approve", []);
 
         $approveRes->assertStatus(422)
             ->assertJsonValidationErrors(['pos_wallet']);
@@ -684,5 +681,79 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
         $approveRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/approve");
         $approveRes->assertStatus(422)
             ->assertJsonValidationErrors(['status']);
+    }
+
+    /**
+     * اختبار الرفض الصارم لأي محاولة لتمرير نوع البيع في المعاينة أو الاعتماد من قِبل الشبكة
+     */
+    public function test_sale_type_override_is_strictly_prohibited_in_preview_and_approval(): void
+    {
+        // 1. إنشاء طلب كاش
+        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'sale_type' => SaleType::CASH->value,
+            'items' => [
+                ['package_id' => $this->packageA->package_id, 'voucher_count' => 10],
+            ],
+        ]);
+        $requestId = $createRes->json('data.request_id');
+
+        // 2. محاولة تمرير sale_type في المعاينة -> 422
+        $previewRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/preview-modification", [
+            'sale_type' => SaleType::CREDIT->value,
+            'items' => [
+                ['package_id' => $this->packageA->package_id, 'voucher_count' => 10],
+            ],
+        ]);
+        $previewRes->assertStatus(422)
+            ->assertJsonValidationErrors(['sale_type']);
+
+        // 3. محاولة تمرير sale_type في الاعتماد -> 422
+        $approveRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/approve", [
+            'sale_type' => SaleType::CREDIT->value,
+        ]);
+        $approveRes->assertStatus(422)
+            ->assertJsonValidationErrors(['sale_type']);
+
+        // 4. الاعتماد بدون sale_type ينجح ويحافظ على نوع البيع الأصلي للكاش في الفاتورة والطلب
+        $validApprove = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/approve", [
+            'request_note' => 'معتمد بدون تعديل نمط البيع',
+        ]);
+        $validApprove->assertStatus(200);
+
+        $invoiceId = $validApprove->json('data.invoice.invoice_id');
+        $invoice = SaleInvoice::find($invoiceId);
+        $this->assertEquals(SaleType::CASH, $invoice->sale_type);
+
+        $request = RequestModel::find($requestId);
+        $this->assertEquals(SaleType::CASH, $request->sale_type);
+    }
+
+    /**
+     * اختبار الرفض على مستوى الخدمات الداخلية المباشرة لأي محاولة لتعديل نوع البيع
+     */
+    public function test_internal_service_calls_reject_sale_type_overrides(): void
+    {
+        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'sale_type' => SaleType::CREDIT->value,
+            'items' => [
+                ['package_id' => $this->packageA->package_id, 'voucher_count' => 5],
+            ],
+        ]);
+        $requestId = $createRes->json('data.request_id');
+
+        $requestService = app(RequestService::class);
+
+        // محاولة المعاينة بنوع بيع مختلف عبر الخدمة مباشرة
+        $this->expectException(ValidationException::class);
+        $requestService->previewModification(
+            $requestId,
+            $this->user->user_id,
+            [['package_id' => $this->packageA->package_id, 'voucher_count' => 5]],
+            SaleType::CASH
+        );
     }
 }

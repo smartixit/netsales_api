@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\ExactDateSerialization;
+use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -156,6 +157,19 @@ class VoucherPackageDiscount extends Model
     public function getValidityStateAttribute(): string
     {
         return $this->resolveValidityState();
+    }
+
+    public function getDisplayEndDateAttribute(): ?string
+    {
+        if (! $this->discount_end_date) {
+            return null;
+        }
+
+        $end = Carbon::parse($this->discount_end_date)->timezone('Asia/Aden');
+
+        return $end->format('H:i:s') === '00:00:00'
+            ? $end->copy()->subDay()->toDateString()
+            : $end->toDateString();
     }
 
     public function ensureActive(): void

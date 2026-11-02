@@ -98,6 +98,11 @@ class RequestPricingReviewService
             return null;
         }
 
+        // التحقق من رقم إصدار الرمز (Version 1 مطلوب بدقة)
+        if (! isset($payload['v']) || ! is_int($payload['v']) || $payload['v'] !== 1) {
+            return null;
+        }
+
         // مطابقة المعرفات وسياق التسعير الكامل
         if (
             (int) ($payload['rid'] ?? 0) !== $requestId ||
@@ -220,19 +225,27 @@ class RequestPricingReviewService
             $token
         );
 
-        if ($requireValidToken && $verified === null) {
-            throw ValidationException::withMessages([
-                'items' => ["الباقة المضافة [{$package->package_name}] تفتقر لرمز تسعير معتمد وموقع أو انتهت صلاحية رمز التسعير. يرجى إعادة معاينة الطلب وتأكيده."],
-            ]);
-        }
+        if ($token !== null && $token !== '') {
+            // في حال تم تمرير رمز تسعير مسبق لكنه غير صالح أو منتهي أو متلاعب به، نرفض العملية فوراً حتى في المعاينة (منع إعادة التسعير الصامتة)
+            if ($verified === null) {
+                throw ValidationException::withMessages([
+                    'items' => ["رمز التسعير للباقة [{$package->package_name}] غير صالح أو منتهي الصلاحية أو تم التلاعب به. يرجى طلب معاينة تسعير جديدة."],
+                ]);
+            }
 
-        if ($verified !== null) {
-            // قاعدة 2: استخدام السعر والخصم الملتقطين لحظة إضافته للمراجعة وعدم تغييرهما إذا تغير الكتالوج
+            // استخدام السعر والخصم المعتمدين والمجمدين بالرمز
             $voucherPrice = $verified['price'];
             $itemDiscount = $verified['discount'];
             $pricingToken = $token;
         } else {
-            // التقاط السعر والخصم لأول مرة من محرك التسعير والكتالوج الحالي
+            // في حال عدم تمرير رمز، يجب رفض الاعتماد إذا كان يتطلب توكناً صالحاً
+            if ($requireValidToken) {
+                throw ValidationException::withMessages([
+                    'items' => ["الباقة المضافة [{$package->package_name}] تفتقر لرمز تسعير معتمد وموقع. يرجى إعادة معاينة الطلب وتأكيده."],
+                ]);
+            }
+
+            // التقاط السعر والخصم لأول مرة من محرك التسعير والكتالوج الحالي (Initial Preview)
             $voucherPrice = (float) $package->package_voucher_price;
             $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $packageId);
             $itemDiscount = $saleType->isCash()
@@ -272,7 +285,13 @@ class RequestPricingReviewService
         array $requestedItems,
         ?SaleType $overrideSaleType = null
     ): array {
-        $effectiveSaleType = $overrideSaleType ?? $request->sale_type ?? SaleType::CASH;
+        if ($overrideSaleType !== null && $overrideSaleType !== $request->sale_type) {
+            throw ValidationException::withMessages([
+                'sale_type' => ['لا يُسمح بتعديل نوع البيع (كاش/آجل) المتفق عليه في الطلب الأصلي من قِبل الشبكة.'],
+            ]);
+        }
+
+        $effectiveSaleType = $request->sale_type ?? SaleType::CASH;
         $originalItems = $request->relationLoaded('items')
             ? $request->items
             : $request->items()->with('voucherPackage')->get();
@@ -282,10 +301,6 @@ class RequestPricingReviewService
         $totalGrossAmount = 0.0;
         $processedPackageIds = [];
         $hasModifications = false;
-
-        if ($effectiveSaleType !== $request->sale_type) {
-            $hasModifications = true;
-        }
 
         foreach ($requestedItems as $itemInput) {
             $packageId = (int) $itemInput['package_id'];
