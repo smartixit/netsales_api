@@ -285,24 +285,6 @@ class SaleInvoiceService
                     "سداد نقدي كاش للفاتورة (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})",
                     $userId
                 );
-
-                // 1. قيد استحقاق الفاتورة / صرف الكروت (WITHDRAW)
-                $this->posWalletLogRepository->createLog(
-                    $posWallet->wallet_id,
-                    WalletOperationType::WITHDRAW,
-                    $totalInvoiceAmount,
-                    "استحقاق فاتورة مبيعات كروت نقدية (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})",
-                    $userId
-                );
-
-                // 2. قيد سداد نقدي فوري كاش / سند قبض (DEPOSIT)
-                $this->posWalletLogRepository->createLog(
-                    $posWallet->wallet_id,
-                    WalletOperationType::DEPOSIT,
-                    $totalInvoiceAmount,
-                    "سداد نقدي فوري كاش للفاتورة (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})",
-                    $userId
-                );
             } else {
                 $this->posWalletRepository->decrementBalance($posWallet->wallet_id, $totalInvoiceAmount);
                 $posBalanceAfter = round((float) $posWallet->wallet_balance - $totalInvoiceAmount, 2);
@@ -604,7 +586,7 @@ class SaleInvoiceService
                     $posWallet->wallet_id,
                     WalletOperationType::DEPOSIT,
                     $paidAmount,
-                    "سداد نقدي فوري كاش للفاتورة المباشرة (#{$invoice->invoice_uuid})",
+                    "سداد نقدي كاش للفاتورة المباشرة (#{$invoice->invoice_uuid})",
                     $userId
                 );
             }

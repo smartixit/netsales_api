@@ -991,14 +991,13 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->refresh();
         $this->assertEquals($initialPosBalance, (float) $this->posWallet->wallet_balance);
 
-        // التحقق من تسجيل القيدين المزدوجين في دفتر أستاذ محفظة نقطة البيع
+        // التحقق من تسجيل القيدين المزدوجين فقط في دفتر أستاذ محفظة نقطة البيع
         $logs = DB::table('pos_wallet_logs')
             ->where('wallet_id', $this->posWallet->wallet_id)
             ->latest('log_id')
-            ->take(2)
             ->get();
 
-        $this->assertCount(2, $logs);
+        $this->assertCount($initialLogsCount + 2, $logs, 'يجب تسجيل قيدين مزدوجين فقط (استحقاق وسداد فوري) دون أي تكرار');
 
         // قيد الاستحقاق (WITHDRAW)
         $withdrawLog = $logs->firstWhere('log_operation_type', WalletOperationType::WITHDRAW->value);
@@ -1011,70 +1010,5 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->assertNotNull($depositLog, 'يجب تسجيل قيد سداد نقدي كاش (DEPOSIT) في سجل كشف حساب محفظة الوكيل');
         $this->assertEquals(45000.00, (float) $depositLog->log_amount);
         $this->assertStringContainsString('سداد نقدي كاش', $depositLog->log_statement);
-    }
-
-    /**
-     * 20. التحقق من القيد المزدوج في سجل محفظة نقطة البيع عند البيع النقدي (CASH Sale Double-Entry Logging):
-     * عند اعتماد بيع نقدي، يُسجل قيدان متقابلان (استحقاق ثم سداد فوري) في سجل كشف حساب المحفظة
-     * لتوثيق حركة الفاتورة كاملاً، مع بقاء صافي رصيد المحفظة ثابتاً دون أي تغيير (Net Zero Impact).
-     */
-    public function test_cash_sale_records_double_entry_logs_in_pos_wallet_with_zero_net_balance_impact(): void
-    {
-        $initialPosBalance = 1500.00;
-        $this->posWallet->wallet_balance = $initialPosBalance;
-        $this->posWallet->save();
-
-        $initialLogsCount = DB::table('pos_wallet_logs')->where('wallet_id', $this->posWallet->wallet_id)->count();
-
-        // إنشاء طلب بيع نقدي
-        $reqRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
-            'network_id' => $this->network->network_id,
-            'pos_id' => $this->pos->pos_id,
-            'sale_type' => SaleType::CASH->value,
-            'items' => [
-                [
-                    'package_id' => $this->packageA->package_id,
-                    'voucher_count' => 50, // 50 * 100 = 5000 - 10% = 4500
-                ],
-            ],
-        ]);
-        $reqRes->assertStatus(201);
-        $reqId = $reqRes->json('data.request_id');
-
-        // اعتماد الطلب من قبل الشبكة
-        $approveRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$reqId}/approve");
-        $approveRes->assertStatus(200);
-
-        $invoiceData = $approveRes->json('data.invoice');
-        $this->assertEquals(SaleType::CASH->value, $invoiceData['sale_type']);
-        $this->assertEquals(45000.00, (float) $invoiceData['invoice_total_amount']);
-        $this->assertEquals(45000.00, (float) $invoiceData['paid_amount']);
-        $this->assertEquals(0.00, (float) $invoiceData['remaining_amount']);
-        $this->assertEquals(InvoicePaymentStatus::PAID->value, $invoiceData['payment_status']);
-
-        // التحقق من ثبات رصيد المحفظة دون أي تأثر (Net Zero Impact)
-        $this->posWallet->refresh();
-        $this->assertEquals($initialPosBalance, (float) $this->posWallet->wallet_balance);
-
-        // التحقق من تسجيل القيدين المزدوجين في دفتر أستاذ محفظة نقطة البيع
-        $logs = DB::table('pos_wallet_logs')
-            ->where('wallet_id', $this->posWallet->wallet_id)
-            ->latest('log_id')
-            ->take(2)
-            ->get();
-
-        $this->assertCount(2, $logs);
-
-        // قيد الاستحقاق (WITHDRAW)
-        $withdrawLog = $logs->firstWhere('log_operation_type', WalletOperationType::WITHDRAW->value);
-        $this->assertNotNull($withdrawLog, 'يجب تسجيل قيد استحقاق (WITHDRAW) في سجل كشف حساب محفظة الوكيل');
-        $this->assertEquals(45000.00, (float) $withdrawLog->log_amount);
-        $this->assertStringContainsString('استحقاق فاتورة مبيعات كروت نقدية', $withdrawLog->log_statement);
-
-        // قيد السداد الفوري (DEPOSIT)
-        $depositLog = $logs->firstWhere('log_operation_type', WalletOperationType::DEPOSIT->value);
-        $this->assertNotNull($depositLog, 'يجب تسجيل قيد سداد نقدي فوري كاش (DEPOSIT) في سجل كشف حساب محفظة الوكيل');
-        $this->assertEquals(45000.00, (float) $depositLog->log_amount);
-        $this->assertStringContainsString('سداد نقدي فوري كاش', $depositLog->log_statement);
     }
 }
