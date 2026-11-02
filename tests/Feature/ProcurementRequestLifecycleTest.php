@@ -183,9 +183,9 @@ class ProcurementRequestLifecycleTest extends TestCase
         $this->assertNotNull($invoice);
         $this->assertEquals($requestId, $invoice->request_id);
 
-        // 3. التحقق من تسوية المحافظ
+        // 3. التحقق من تسوية المحافظ: رصيد الوكيل لم يمس لأن الدفع كاش يداً بيد ورصيد الشبكة زاد بقيمة الفاتورة
         $invoiceTotal = (float) $invoice->invoice_total_amount;
-        $this->assertEquals($initialPosBalance - $invoiceTotal, (float) $this->posWallet->fresh()->wallet_balance);
+        $this->assertEquals($initialPosBalance, (float) $this->posWallet->fresh()->wallet_balance);
         $this->assertEquals($initialNetworkBalance + $invoiceTotal, (float) $this->networkWallet->fresh()->wallet_balance);
     }
 

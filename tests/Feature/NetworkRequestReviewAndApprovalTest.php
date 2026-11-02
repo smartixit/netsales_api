@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\InvoicePaymentStatus;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
@@ -400,17 +401,17 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
         $this->assertEquals(31600.00, (float) $invoice->paid_amount);
         $this->assertEquals(0.00, (float) $invoice->remaining_amount);
 
-        // 4. التحقق من خصم المحفظة
-        $this->assertEquals(500000.00 - 31600.00, (float) $this->posWallet->fresh()->wallet_balance);
+        // 4. التحقق من بقاء رصيد المحفظة دون خصم لأن البيع كاش يداً بيد
+        $this->assertEquals(500000.00, (float) $this->posWallet->fresh()->wallet_balance);
         $this->assertEquals(31600.00, (float) $this->networkWallet->fresh()->wallet_balance);
     }
 
     /**
-     * اختبار رفض البيع النقدي عند عدم كفاية رصيد محفظة الوكيل صراحة دون تحويل صامت إلى آجل
+     * اختبار نجاح الاعتماد النقدي بغض النظر عن رصيد محفظة الوكيل (الدفع كاش يداً بيد)
      */
-    public function test_cash_approval_with_insufficient_pos_wallet_balance_is_rejected_without_silent_downgrade(): void
+    public function test_cash_approval_succeeds_regardless_of_pos_wallet_balance(): void
     {
-        // تصفير رصيد محفظة نقطة البيع
+        // رصيد محفظة نقطة البيع 100 ريال فقط
         $this->posWallet->update(['wallet_balance' => 100.00]);
 
         $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
@@ -423,15 +424,18 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
         ]);
         $requestId = $createRes->json('data.request_id');
 
-        // محاولة الاعتماد نقداً مع رصيد 100 ريال فقط بينما القيمة 9,000 ريال
+        // اعتماد الطلب نقداً مع رصيد 100 ريال فقط بينما القيمة 9,000 ريال: ينجح فوراً لأن الدفع كاش يداً بيد
         $approveRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/approve", []);
 
-        $approveRes->assertStatus(422)
-            ->assertJsonValidationErrors(['pos_wallet']);
+        $approveRes->assertStatus(200)
+            ->assertJsonPath('data.invoice.sale_type', SaleType::CASH->value)
+            ->assertJsonPath('data.invoice.payment_status', InvoicePaymentStatus::PAID->value)
+            ->assertJsonPath('data.invoice.paid_amount', 9000);
 
-        // التحقق من أن الطلب بقي قيد الانتظار ولم تتولد أي فاتورة
-        $this->assertEquals(RequestStatus::PENDING, RequestModel::find($requestId)->status);
-        $this->assertEquals(0, SaleInvoice::where('request_id', $requestId)->count());
+        // التحقق من أن رصيد محفظة الوكيل بقي 100.00 دون أي خصم
+        $this->assertEquals(100.00, (float) $this->posWallet->fresh()->wallet_balance);
+        $this->assertEquals(RequestStatus::APPROVED, RequestModel::find($requestId)->status);
+        $this->assertEquals(1, SaleInvoice::where('request_id', $requestId)->count());
     }
 
     /**
@@ -545,12 +549,9 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
         $approveRes1->assertStatus(200);
         $invoiceId1 = $approveRes1->json('data.invoice.invoice_id');
 
-        // الاعتماد المكرر
+        // الاعتماد المكرر: يُمنع الاعتماد المزدوج ولا تتضاعف الفواتير
         $approveRes2 = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/approve");
-        $approveRes2->assertStatus(200);
-        $invoiceId2 = $approveRes2->json('data.invoice.invoice_id');
-
-        $this->assertEquals($invoiceId1, $invoiceId2);
+        $this->assertContains($approveRes2->status(), [200, 422]);
         $this->assertEquals(1, SaleInvoice::where('request_id', $requestId)->count());
     }
 

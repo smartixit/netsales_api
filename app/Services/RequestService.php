@@ -348,17 +348,7 @@ class RequestService
             /** @var RequestModel $request */
             $request = $this->requestRepository->findByIdForUpdate($requestId);
 
-            // الحماية من التكرار والتزامن (Idempotency check): إذا كان معتمداً ولديه فاتورة مسبقاً، إعادة النتيجة المخزنة
-            if ($request->isApproved()) {
-                $existingInvoice = $request->invoice ?? SaleInvoice::where('request_id', $requestId)->first();
-                if ($existingInvoice) {
-                    return [
-                        'request' => $request->load(['network', 'pos', 'createdBy', 'reviewedBy', 'items.voucherPackage']),
-                        'invoice' => $existingInvoice->load(['network', 'pos', 'createdBy', 'items.voucherPackage']),
-                    ];
-                }
-            }
-
+            // الحماية الصارمة من التكرار والاعتماد المزدوج: يجب أن يكون الطلب في حالة انتظار PENDING حصراً
             if (! $request->isPending()) {
                 throw ValidationException::withMessages([
                     'status' => ['لا يمكن اعتماد هذا الطلب لأنه ليس في حالة قيد الانتظار (PENDING).'],
@@ -451,16 +441,21 @@ class RequestService
                 userId: $reviewedBy
             );
 
-            // إشعار صاحب الطلب (نقطة البيع) باعتماد الطلب وتوليد الفاتورة عبر الإشعارات وFCM Push
+            // إشعار صاحب الطلب (نقطة البيع) باعتماد الطلب وتوليد الفاتورة عبر الإشعارات وFCM Push بعد اكتمال المعاملة بنجاح
             if ($request->created_by) {
+                $posUserId = (int) $request->created_by;
                 $invoiceNum = $invoice->invoice_uuid ?? $invoice->invoice_id;
-                $this->notificationService->sendDirect(
-                    userId: $reviewedBy,
-                    type: NotificationType::VOUCHER_REQUEST_APPROVED,
-                    push: true,
-                    title: '✅ اعتماد طلب الكروت',
-                    message: "تم اعتماد طلب الكروت رقم #{$request->request_uuid} بنجاح، وتوليد فاتورة مبيعات رقم #{$invoiceNum}."
-                );
+                $requestUuid = $request->request_uuid;
+
+                DB::afterCommit(function () use ($posUserId, $requestUuid, $invoiceNum): void {
+                    $this->notificationService->sendDirect(
+                        userId: $posUserId,
+                        type: NotificationType::VOUCHER_REQUEST_APPROVED,
+                        push: true,
+                        title: '✅ اعتماد طلب الكروت',
+                        message: "تم اعتماد طلب الكروت رقم #{$requestUuid} بنجاح، وتوليد فاتورة مبيعات رقم #{$invoiceNum}."
+                    );
+                });
             }
 
             return [
@@ -509,15 +504,20 @@ class RequestService
                 $updatedNote
             );
 
-            // إشعار صاحب الطلب برفض الطلب عبر الإشعارات وFCM Push
+            // إشعار صاحب الطلب برفض الطلب عبر الإشعارات وFCM Push بعد اكتمال المعاملة بنجاح
             if ($request->created_by) {
-                $this->notificationService->sendDirect(
-                    userId: $reviewedBy,
-                    type: NotificationType::VOUCHER_REQUEST_REJECTED,
-                    push: true,
-                    title: '❌ رفض طلب الكروت',
-                    message: "تم رفض طلب الكروت رقم #{$request->request_uuid}. سبب الرفض: {$reason}"
-                );
+                $posUserId = (int) $request->created_by;
+                $requestUuid = $request->request_uuid;
+
+                DB::afterCommit(function () use ($posUserId, $requestUuid, $reason): void {
+                    $this->notificationService->sendDirect(
+                        userId: $posUserId,
+                        type: NotificationType::VOUCHER_REQUEST_REJECTED,
+                        push: true,
+                        title: '❌ رفض طلب الكروت',
+                        message: "تم رفض طلب الكروت رقم #{$requestUuid}. سبب الرفض: {$reason}"
+                    );
+                });
             }
 
             return $this->getById($requestId);
@@ -557,15 +557,20 @@ class RequestService
                 'تم إلغاء الطلب بواسطة المستخدم'
             );
 
-            // إشعار صاحب الشبكة بإلغاء الطلب عبر الإشعارات وFCM Push
-            if ($request->network && $request->network->approved_by) {
-                $this->notificationService->sendDirect(
-                    userId: $userId,
-                    type: NotificationType::VOUCHER_REQUEST_CANCELLED,
-                    push: true,
-                    title: 'ℹ️ إلغاء طلب كروت',
-                    message: "تم إلغاء طلب الكروت رقم #{$request->request_uuid} من قبل مقدم الطلب."
-                );
+            // إشعار صاحب الشبكة بإلغاء الطلب عبر الإشعارات وFCM Push بعد اكتمال المعاملة بنجاح
+            $networkRecipientId = (int) ($request->network?->owner_id);
+            if ($networkRecipientId) {
+                $requestUuid = $request->request_uuid;
+
+                DB::afterCommit(function () use ($networkRecipientId, $requestUuid): void {
+                    $this->notificationService->sendDirect(
+                        userId: $networkRecipientId,
+                        type: NotificationType::VOUCHER_REQUEST_CANCELLED,
+                        push: true,
+                        title: 'ℹ️ إلغاء طلب كروت',
+                        message: "تم إلغاء طلب الكروت رقم #{$requestUuid} من قبل مقدم الطلب."
+                    );
+                });
             }
 
             return $this->getById($requestId);

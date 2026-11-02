@@ -192,8 +192,8 @@ class VoucherRequestAndInvoicingTest extends TestCase
         $this->posWallet->refresh();
         $this->networkWallet->refresh();
 
-        // POS Wallet should be 100,000 - 45,000 = 55,000
-        $this->assertEquals(55000.00, (float) $this->posWallet->wallet_balance);
+        // POS Wallet balance remains 100,000 because payment is cash in hand
+        $this->assertEquals(100000.00, (float) $this->posWallet->wallet_balance);
 
         // Network Wallet should be 0 + 45,000 = 45,000
         $this->assertEquals(45000.00, (float) $this->networkWallet->wallet_balance);
@@ -241,8 +241,9 @@ class VoucherRequestAndInvoicingTest extends TestCase
 
     public function test_credit_sale_and_negative_balance_handling_when_insufficient_wallet_balance(): void
     {
-        // 1. تصفير رصيد محفظة الوكيل لمحاكاة عدم توفر رصيد نقدي كافٍ
+        // 1. تصفير رصيد محفظة الوكيل مع منح سقف ائتماني لمحاكاة التسهيل الائتماني
         $this->posWallet->wallet_balance = 0.00;
+        $this->posWallet->credit_limit = 100000.00;
         $this->posWallet->save();
 
         // 2. إرسال طلب كروت جديد (100 كرت × 500 = 50,000 إجمالي قبل الخصم)

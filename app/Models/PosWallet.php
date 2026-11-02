@@ -33,6 +33,7 @@ class PosWallet extends Model
         'pos_id',
         'wallet_uuid',
         'wallet_balance',
+        'credit_limit',
         'status',
     ];
 
@@ -40,6 +41,7 @@ class PosWallet extends Model
     {
         return [
             'wallet_balance' => 'decimal:2',
+            'credit_limit' => 'decimal:2',
             'status' => 'boolean',
         ];
     }
@@ -169,6 +171,37 @@ class PosWallet extends Model
         $balance = (float) $this->wallet_balance;
 
         return $balance > 0 ? $balance : 0.0;
+    }
+
+    /**
+     * هل تم منح سقف ائتماني معتمد لمحفظة نقطة البيع؟
+     */
+    public function hasCreditLimit(): bool
+    {
+        return $this->credit_limit !== null;
+    }
+
+    /**
+     * السقف الائتماني المعتمد الممنوح للمحفظة.
+     */
+    public function getCreditLimit(): ?float
+    {
+        return $this->credit_limit !== null ? (float) $this->credit_limit : null;
+    }
+
+    /**
+     * القدرة الائتمانية المتبقية للسحب على المكشوف.
+     */
+    public function getAvailableOverdraftCapacity(): float
+    {
+        if ($this->credit_limit === null) {
+            return 0.0;
+        }
+
+        $limit = (float) $this->credit_limit;
+        $balance = (float) $this->wallet_balance;
+
+        return max(0.0, $limit + $balance);
     }
 
     // Operations
