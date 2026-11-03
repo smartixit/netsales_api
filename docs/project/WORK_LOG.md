@@ -309,4 +309,36 @@ This log documents all executed tasks, code changes, and verification command ou
   - Laravel commercial feature tests (`php artisan test --filter=CommercialEntitiesAndRelationshipsTest`): **23 passed (37 assertions, 100% pass rate)**.
 - **Task Status:** Complete — Presentation Component Decomposition & Widget Placement Standard Enforced.
 
+---
+
+## [2026-11-03] Task: Project-Wide Custom Widget Compliance Audit & Remediation
+- **Authorized Scope:** Complete project audit across Flutter client (`netsales`) to eliminate raw/standard Flutter widgets (`IconButton`, `FloatingActionButton`, `Clipboard`, `SnackBar`, `showModalBottomSheet`, etc.) in favor of established enterprise custom widgets in `lib/widgets/` and services in `lib/core/`.
+- **Strict Invariants Preserved:** Zero `StatefulWidget` or `setState()` in commercial feature, zero direct HTTP calls in presentation/controllers, Clean Architecture layer separation, zero destructive Git operations.
+- **Audit Findings & Remediations:**
+  - **`IconButton` Elimination (100% Replaced with `CustomButton.icon`):**
+    - `lib/features/commercial/presentation/screens/network_pos_directory_screen.dart`: Network details action button replaced with `CustomButton.icon`.
+    - `lib/features/commercial/presentation/screens/pos_linked_networks_screen.dart`: POS details action button replaced with `CustomButton.icon`.
+    - `lib/features/commercial/presentation/widgets/network_pos_search_filter_header.dart`: Clear search suffix button replaced with `CustomButton.icon`.
+    - `lib/features/commercial/presentation/widgets/pos_linked_networks_search_filter_header.dart`: Clear search suffix button replaced with `CustomButton.icon`.
+    - `lib/features/commercial/presentation/widgets/network_pos_card.dart`: Copy UUID button replaced with `CustomButton.icon`.
+    - `lib/features/commercial/presentation/widgets/pos_details_bottom_sheet.dart`: Copy UUID button replaced with `CustomButton.icon`.
+    - `lib/features/workspace/presentation/widgets/workspace_app_bar.dart`: Active sessions and Logout action buttons replaced with `CustomButton.icon`.
+    - `lib/widgets/inputs/custom_text_field.dart`: Password visibility toggle button replaced with `CustomButton.icon`.
+    - `lib/widgets/inputs/custom_dropdown.dart`: Search clear button and QR scanner button replaced with `CustomButton.icon`.
+  - **`FloatingActionButton` Elimination:**
+    - `lib/features/commercial/presentation/screens/network_pos_directory_screen.dart`: Replaced `FloatingActionButton.extended` with `CustomButton.primary(shape: AppButtonShape.pill, shadow: AppElevation.level4(context), ...)`.
+  - **`Clipboard` Delegation (100% Delegated to `UrlLauncherService.copyToClipboard`):**
+    - `network_pos_card.dart` and `pos_details_bottom_sheet.dart`: Eliminated raw `Clipboard.setData` in favor of `UrlLauncherService.copyToClipboard(...)`.
+  - **Feedback & Overlays (100% Compliant):**
+    - `CustomSnackbar` used for notifications and error reporting.
+    - `CustomAnimationOverlay` used with `finally` blocks for transactional mutations (loading, success, auto-hide).
+    - `CustomSkeletonFeed` with shimmer cards used for all loading state placeholders.
+- **Verification Commands & Outcomes:**
+  - Full Flutter static analysis (`flutter analyze`): **No issues found! (0 errors, 0 warnings, 0 infos across entire project)**.
+  - Full Flutter test suite (`flutter test`): **35 passed (0 failures, 100% pass rate)**.
+  - Laravel API Pint formatting (`vendor/bin/pint --format agent`): Clean.
+  - Laravel API commercial test suite (`php artisan test --filter=CommercialEntitiesAndRelationshipsTest`): **23 passed (37 assertions, 100% pass rate)**.
+  - Governance script (`powershell -ExecutionPolicy Bypass -File scripts/verify-project-governance.ps1`): **GOVERNANCE VERIFICATION PASSED**.
+
+
 

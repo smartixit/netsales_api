@@ -85,4 +85,3 @@ class PosPolicy
         return $user->isSuperAdmin();
     }
 }
-
