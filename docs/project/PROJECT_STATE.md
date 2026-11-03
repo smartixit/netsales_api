@@ -1,7 +1,7 @@
 # NetSales — Current Project State & Authorization Snapshot
 
 **Last Verified Date:** 2026-11-03  
-**Active Working Tree Status:** Milestone 2 Foundation Complete & Verified  
+**Active Working Tree Status:** Milestone 2 Foundation Delivered & Reconciled  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
 
@@ -13,9 +13,10 @@
 |---|---|---|
 | **Milestone 1:** Product Discovery & Blueprint | `ACCEPTED AS WORKING BASELINE` | Accepted with known limitations for forward progress. |
 | **Governance Foundation:** Persistent Memory & Rules | `COMPLETED & VERIFIED` | User approved; full invariant rules, skills, and doc suite active. |
-| **Milestone 2:** Shell Navigation & Workspace Isolation | `COMPLETED & VERIFIED` | **USER APPROVED — IMPLEMENT MILESTONE 2**. Implemented, tested, and verified. |
-| **Milestone 3:** Procurement Requests Lifecycle | `NOT STARTED` | Pending explicit user approval to begin Milestone 3. |
-| **Milestone 4:** Invoicing, Wallets & Debt Settlements | `NOT STARTED` | Pending Milestone 3 completion & approval. |
+| **Milestone 2:** Clean Flutter Foundation, GetX Architecture, Workspace Isolation & Adaptive Navigation | `IMPLEMENTATION DELIVERED` | Implemented, tested, and reconciled. Visual QA marked NOT VERIFIED (no live emulator/device running). |
+| **Milestone 3:** Identity & Access Foundation | `NOT STARTED` | Pending explicit user approval to begin Milestone 3. |
+| **Milestone 4:** Procurement Requests Lifecycle | `NOT STARTED` | Scheduled after Milestone 3 completion & approval. |
+| **Milestone 5:** Invoicing, Wallets & Debt Settlements | `NOT STARTED` | Scheduled after Milestone 4 completion & approval. |
 
 ---
 
@@ -27,8 +28,9 @@
   - Working Tree: Clean (Preserved with zero backend modifications)
 - **`netsales` (Flutter Client):**
   - Branch: `main`
-  - HEAD Commit: `b9e1f33ede30fd6852d1555d763db4133a51a61d`
-  - Working Tree: Milestone 2 files implemented and verified (`flutter analyze` and `flutter test` passing with 0 errors).
+  - Current Local HEAD Commit: `8742ef9b2787bebab287d34604f813b2e3f796dc`
+  - Tracking: `origin/main` (Local commits include Milestone 2 feature implementation `7f9ddf93132344d8686b66dcbc379ed2d082c6bd`)
+  - Working Tree: Clean (`nothing to commit, working tree clean`)
 
 ---
 
@@ -43,14 +45,13 @@ All architectural and business decisions requiring future implementation approva
 
 ---
 
-## 4. Known Project Limitations (Preserved from Baseline)
-1. `RoleResource` currently omits `scope` field; `AuthService::me()` omits `role_scope`.
-2. `RolePermissionSeeder` omits explicit assignments for `NETWORK_ACCOUNTANT` and `POS_ACCOUNTANT`.
-3. `CollectRepaymentRequest` validates `payment_method` as an unconstrained string, not using `Rule::enum(PaymentType::class)`.
-4. No FIFO repayment preview endpoint currently exists in the Laravel API.
-5. In Flutter, old components `dashboard_trend_window.dart` and `custom_pos_selector_field.dart` were permanently removed per user directives.
+## 4. Known Project Limitations & Verification Status
+1. `WorkspaceGuard` and `WorkspaceService` provide client-side workspace routing and presentation only; the authoritative security boundary remains 100% on the Laravel API.
+2. Visual QA for live rendered UI is marked **NOT VERIFIED — REQUIRES ACTIVE EMULATOR/DEVICE** as no running Android emulator or mobile device was connected during execution.
+3. In `main.dart`, global orientation is locked to portrait (`portraitUp`, `portraitDown`), so tablet landscape rendering is not enabled by default.
+4. Pre-existing non-workspace compilation issues in `lib/core/services/app_crypto_service.dart`, `lib/features/auth/`, and `lib/features/onboarding/` exist outside the Milestone 2 workspace feature.
 
 ---
 
 ## 5. Next Authorized Action
-Halt at the Milestone 2 approval boundary. Present the complete Milestone 2 handoff report to the user and await explicit authorization before starting **Milestone 3 (Procurement Requests Lifecycle)**.
+Halt at the Milestone 2 closeout boundary. Present the final reconciliation report and await user authorization before starting **Milestone 3 (Identity & Access Foundation)**.
