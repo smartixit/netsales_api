@@ -223,3 +223,48 @@ This log documents all executed tasks, code changes, and verification command ou
   - `vendor/bin/pint ...`: **PASS (Cleanly formatted)**.
   - Full Laravel suite failure classification: `3 unrelated-scope failures; pre-existing status not established.`
 - **Task Status:** Complete — Milestone 3 Final Acceptance Verified & Closed. Halting at Milestone 3 boundary.
+
+---
+
+## [2026-11-03 18:10] Task: Milestone 4 — Architecture Compliance Recovery & Permanent Governance Enforcement
+- **Authorized Scope:** USER DIRECTED — ARCHITECTURE COMPLIANCE RECOVERY. Full inspection and resolution of architecture violations in Milestone 4 (Commercial Entities: Networks, POS, Relationships) across Flutter (`netsales`) and Laravel API (`netsales_api`). Enforcement of permanent engineering invariants to prevent recurrence in all future milestones.
+- **Strict Compliance Invariants:**
+  1. Feature-First 3-layer Clean Architecture (`data`, `domain`, `presentation`).
+  2. Dependency direction: `Presentation → Domain ← Data`.
+  3. GetX exclusive state management: **Zero `StatefulWidget` or `setState()` in feature presentation code** (`StatelessWidget` / `GetView<T>` with `Rx`/`Obx`).
+  4. Controllers must delegate to Use Cases; **zero direct calls to `ApiService`, `package:http`, or `package:dio`** in controllers or presentation.
+  5. 100% server-side financial authority (Laravel); Flutter is an operational presentation consumer.
+  6. Zero implementation of M5–M8 (catalogs, contractual pricing, procurement requests, invoices, wallets, debts, repayments).
+  7. Mandatory reuse of `lib/widgets/` and `lib/core/` (`CustomSnackbar`, `CustomAnimationOverlay` safely closed in `finally`, `CustomSkeletonFeed`, `CustomDialog`, `CustomBottomSheet`, `CustomSegmentedBar`, `CustomTextField`, `CustomButton`, `CustomCachedImage`).
+  8. Zero destructive Git operations (`git reset`, `git clean` prohibited; all local work preserved).
+- **Files Modified / Implemented:**
+  - **Flutter Client (`netsales`):**
+    - `lib/features/commercial/data/datasources/commercial_remote_data_source.dart`: Added `getMyNetworks()` and `getMyPos()`.
+    - `lib/features/commercial/data/datasources/commercial_remote_data_source_impl.dart`: Implemented `getMyNetworks()` and `getMyPos()`.
+    - `lib/features/commercial/domain/repositories/commercial_repository.dart`: Added `getMyNetworks()` and `getMyPos()` contracts.
+    - `lib/features/commercial/data/repositories/commercial_repository_impl.dart`: Implemented repository methods with domain mapping.
+    - `lib/features/commercial/domain/usecases/get_my_networks_use_case.dart`: Created pure domain use case.
+    - `lib/features/commercial/domain/usecases/get_my_pos_use_case.dart`: Created pure domain use case.
+    - `lib/features/commercial/presentation/controllers/commercial_directory_controller.dart`: Removed all `ApiService` calls; injected use cases; moved `searchController`, `posIdentifierController`, and `linkStatusInitial` into controller; properly wrapped `CustomAnimationOverlay` with `finally` block; used `CustomSnackbar` for errors.
+    - `lib/features/commercial/presentation/bindings/commercial_binding.dart`: Registered new use cases and updated controller dependency injection.
+    - `lib/features/commercial/presentation/screens/network_pos_directory_screen.dart`: **Converted completely to `StatelessWidget` (`GetView<CommercialDirectoryController>`)**; eliminated `StatefulWidget`, `State`, `initState`, `dispose`, and local state; integrated `CustomSkeletonFeed` shimmer, `CustomSegmentedBar`, `CustomDialog.danger`.
+    - `lib/features/commercial/presentation/screens/pos_linked_networks_screen.dart`: **Converted completely to `StatelessWidget` (`GetView<CommercialDirectoryController>`)**; eliminated `StatefulWidget` and local controllers.
+    - `lib/features/commercial/presentation/screens/link_pos_dialog.dart`: Converted to pure `StatelessWidget` bottom sheet using controller reactive state; zero `StatefulWidget` and zero `setState`.
+    - `test/commercial/commercial_entities_test.dart`: Updated mock repository and use case tests (9/9 passed).
+    - `test/architecture/architecture_compliance_test.dart`: Created automated architectural invariant test suite asserting:
+      - Zero `StatefulWidget` or `setState()` in `lib/features/commercial/` (PASS).
+      - Zero `ApiService` or HTTP primitives in `lib/features/commercial/presentation/` (PASS).
+      - Pure domain dependency rule (PASS).
+    - `netsales/AGENTS.md`: Strengthened rules with absolute prohibition of `StatefulWidget`/`setState` in feature code, direct API calls in controllers, and mandatory `lib/widgets/` reuse.
+    - `netsales/.agents/rules/flutter-architecture-and-getx.md`: Removed ambiguous exceptions, strictly enforcing `StatelessWidget` and GetX reactive state.
+  - **Laravel API (`netsales_api`):**
+    - `docs/project/ARCHITECTURE.md`: Updated architecture diagram to reflect Clean Architecture Use Case delegation; codified permanent Flutter/Laravel architectural invariants.
+    - `docs/project/WORK_LOG.md`: Logged all architectural recovery activities.
+- **Verification Commands & Outcomes:**
+  - Flutter tests (`flutter test test/commercial/ test/architecture/`): **12 passed (0 failures, 100% pass rate)**.
+  - Flutter analysis (`flutter analyze lib/features/commercial/ test/commercial/ test/architecture/`): **No issues found (0 warnings, 0 errors)**.
+  - Dart formatting (`dart format ...`): **Cleanly formatted**.
+  - Laravel commercial feature tests (`php artisan test --filter=CommercialEntitiesAndRelationshipsTest`): **23 passed (37 assertions, 100% pass rate)**.
+  - Laravel Pint (`vendor/bin/pint --format agent`): **PASS (0 style violations)**.
+- **Task Status:** Complete — Architectural Compliance Recovered, Automated Guardrails Enforced, Ready for Resumption.
+

@@ -85,3 +85,4 @@ class NetworkPolicy
         return $user->isSuperAdmin();
     }
 }
+

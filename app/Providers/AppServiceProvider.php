@@ -60,6 +60,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Pos::class, PosPolicy::class);
         Gate::policy(NetworkPos::class, NetworkPosPolicy::class);
 
+        \Illuminate\Support\Facades\Gate::policy(\App\Models\Network::class, \App\Policies\NetworkPolicy::class);
+        \Illuminate\Support\Facades\Gate::policy(\App\Models\Pos::class, \App\Policies\PosPolicy::class);
+        \Illuminate\Support\Facades\Gate::policy(\App\Models\NetworkPos::class, \App\Policies\NetworkPosPolicy::class);
+
         $this->configureRateLimiting();
     }
 

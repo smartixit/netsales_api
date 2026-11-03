@@ -8,15 +8,24 @@ NetSales decouples presentation and business logic across two isolated tiers:
 ```mermaid
 graph TD
     subgraph "Flutter Client (netsales)"
-        UI["Presentation Layer (Views & Widgets)"]
-        CTRL["GetX Controllers (GetxController)"]
+        UI["Presentation Layer (StatelessWidget / GetView)"]
+        CTRL["GetX Controllers (UI State & Form Management)"]
         BIND["Dependency Bindings (Bindings)"]
-        DS["Remote Data Sources (HTTP/Dio)"]
-        CORE["Core Infrastructure (Themes, Formatters, Routing)"]
+        UC["Domain Use Cases (Clean Architecture Operations)"]
+        REPO["Repository Contracts & Impls"]
+        DS["Remote Data Sources (JSON Serialization)"]
+        API["Core ApiService (HTTP Client)"]
+        CORE["Design Tokens & Widgets (lib/widgets/)"]
 
         UI --> CTRL
-        CTRL --> DS
+        CTRL --> UC
+        UC --> REPO
+        REPO --> DS
+        DS --> API
         BIND --> CTRL
+        BIND --> UC
+        BIND --> REPO
+        BIND --> DS
         UI --> CORE
     end
 
@@ -25,19 +34,19 @@ graph TD
         REQ["FormRequests (Validation & Authorization)"]
         CONTROLLER["API Controllers (Thin HTTP)"]
         SERVICE["Domain Services (Business Logic Authority)"]
-        REPO["Repositories (Wallet/Ledger Queries)"]
+        LREPO["Repositories (Tenant-Scoped Data Access)"]
         MODEL["Eloquent Models & DB Transactions"]
         RES["API Resources (dedoc/scramble Serialization)"]
 
         ROUTE --> REQ
         REQ --> CONTROLLER
         CONTROLLER --> SERVICE
-        SERVICE --> REPO
+        SERVICE --> LREPO
         SERVICE --> MODEL
         CONTROLLER --> RES
     end
 
-    DS -->|HTTPS / Bearer Token| ROUTE
+    API -->|HTTPS / Bearer Token| ROUTE
     RES -->|JSON Wire Contract| DS
 ```
 
@@ -56,26 +65,37 @@ graph TD
 
 ## 3. Flutter Client Architecture
 
-### 3.1 Feature Clean Architecture Structure
-The Flutter application follows a 3-tier Clean Architecture structure within each feature:
+### 3.1 Feature Clean Architecture Structure & State Management
+The Flutter application follows a strict 3-tier Clean Architecture structure within each feature:
 ```text
 lib/features/<feature_name>/
 ├── data/
-│   ├── datasources/     # Remote API datasources (Dio/HTTP API calls)
+│   ├── datasources/     # Remote API datasources (JSON Serialization, ApiService)
 │   ├── models/          # Data transfer models (fromJson/toJson mapping)
 │   └── repositories/    # Repository implementations (implements domain contracts)
 │
 ├── domain/
-│   ├── entities/        # Pure immutable business entities
+│   ├── entities/        # Pure immutable business entities (Pure Dart, zero framework imports)
 │   ├── repositories/    # Abstract repository interfaces/contracts
 │   └── usecases/        # Domain use cases orchestrating business actions
 │
 └── presentation/
-    ├── screens/         # Responsive screen layouts and views
-    ├── widgets/         # Feature-specific atomic UI components
-    ├── controllers/     # GetxControllers (view state & use case delegation)
-    └── bindings/        # GetX Bindings (lazy dependency registration)
+    ├── screens/         # Responsive screen layouts (StatelessWidget / GetView exclusively)
+    ├── widgets/         # Feature-specific atomic UI components (StatelessWidget exclusively)
+    ├── controllers/     # GetxControllers (Reactive state, form controllers, use case delegation)
+    └── bindings/        # GetX Bindings (Lazy dependency registration)
 ```
+
+#### Permanent Architectural Invariants (Zero Exceptions)
+1. **Zero `StatefulWidget` or `setState()` in Feature Presentation:** All screens, widgets, modal sheets, and dialogs must extend `StatelessWidget` or `GetView<T>`. All mutable states (text controllers, focus nodes, active filters, search queries, validation states) must reside in `GetxController` and be observed reactively via `Obx(...)`.
+2. **Zero Direct HTTP Calls in Controllers:** `GetxController` classes must delegate exclusively to Domain Use Cases. Controllers are strictly forbidden from importing or calling `ApiService`, `package:http`, or `package:dio` directly.
+3. **Pure Domain Layer:** The `domain/` directory must be 100% pure Dart. Zero imports from `data/`, `presentation/`, `GetX`, or `flutter/material.dart`.
+4. **Mandatory Foundation Reuse:**
+   - **Errors & Exceptions:** Always displayed using `CustomSnackbar.show(..., type: SnackType.error)`.
+   - **Action Loading & Success:** Mutating actions must trigger `CustomAnimationOverlay.showLoading()` / `CustomAnimationOverlay.showSuccess()`, always wrapped in `finally { if (CustomAnimationOverlay.isShowing) await CustomAnimationOverlay.hide(); }`.
+   - **Feed & Shimmer Loading:** Asynchronous loading states must display `CustomSkeletonFeed` or `CustomSkeletonShimmer`.
+   - **Dialogs & Confirmations:** Unlinking, deleting, or critical actions must use `CustomDialog.danger` or `CustomDialog.confirmation`.
+   - **Bottom Sheets:** Modal interactions must use `CustomBottomSheet.show(...)`.
 
 ### 3.2 Foundation & Shared Infrastructure Reuse
 The application provides an extensive foundation in `lib/core/` and `lib/widgets/` that must be reused without duplication:
