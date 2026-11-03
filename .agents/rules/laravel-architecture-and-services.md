@@ -14,8 +14,10 @@ description: Laravel 12 backend architecture, service boundaries, FormRequest va
 
 ## 2. Domain-Aware Enum Usage
 - Always use backed PHP Enums (`app/Enums/`).
+- Enums must implement `label(): string` returning authoritative Arabic text.
 - Validate incoming enum requests using `Rule::enum(MyEnum::class)`.
 - Cast Eloquent model attributes to their respective Enum class via model `casts()` method.
+- API Resources returning enum attributes must expose the raw backed value and companion translated `*_label` (e.g. `'status' => $this->status?->value, 'status_label' => $this->status?->label()`).
 - Never introduce arbitrary magic strings for fields that map to backed Enums.
 
 ## 3. Formatting, Analysis, and Testing Standards

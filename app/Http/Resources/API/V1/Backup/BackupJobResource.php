@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources\API\V1\Backup;
 
+use App\Enums\BackupStatus;
+use App\Enums\BackupType;
 use App\Models\BackupJob;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -20,8 +22,14 @@ class BackupJobResource extends JsonResource
         return [
             'id' => $this->backup_job_id,
             'job_uuid' => $this->job_uuid,
-            'backup_type' => $this->backup_type,
-            'status' => $this->status,
+            'backup_type' => $this->backup_type instanceof BackupType ? $this->backup_type->value : $this->backup_type,
+            'backup_type_label' => $this->backup_type instanceof BackupType
+                ? $this->backup_type->label()
+                : (BackupType::tryFrom((string) $this->backup_type)?->label()),
+            'status' => $this->status instanceof BackupStatus ? $this->status->value : $this->status,
+            'status_label' => $this->status instanceof BackupStatus
+                ? $this->status->label()
+                : (BackupStatus::tryFrom((string) $this->status)?->label()),
             'stage' => $this->stage,
             'file_name' => $this->file_name,
             'file_size_bytes' => $this->file_size_bytes,

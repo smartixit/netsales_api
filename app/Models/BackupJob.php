@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BackupStatus;
+use App\Enums\BackupType;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -41,6 +42,8 @@ class BackupJob extends Model
     protected function casts(): array
     {
         return [
+            'backup_type' => BackupType::class,
+            'status' => BackupStatus::class,
             'file_size_bytes' => 'integer',
             'manifest_summary' => 'array',
             'extra' => 'array',

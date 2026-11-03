@@ -15,7 +15,7 @@ The 24 backed PHP Enums (`app/Enums/`) have the following exact canonical wire v
 | 4 | `UserDeviceStatus` | `string` | `'ACTIVE'`, `'INACTIVE'`, `'PENDING'`, `'BANNED'` | UPPERCASE |
 | 5 | `DeviceType` | `string` | `'ANDROID'`, `'IOS'`, `'WEB'`, `'WINDOWS'`, `'LINUX'`, `'MAC'`, `'UNKNOWN'` | UPPERCASE |
 | 6 | `BanType` | `string` | `'TEMPORARY'`, `'PERMANENT'` | UPPERCASE |
-| 7 | `OtpType` | `string` | `'EMAIL_VERIFICATION'`, `'PHONE_VERIFICATION'`, `'PASSWORD_RESET'`, `'LOGIN_2FA'` | UPPERCASE |
+| 7 | `OtpType` | `string` | `'RESET_PASSWORD'`, `'OTP_2FA'`, `'VERIFY_EMAIL'`, `'VERIFY_PHONE'` | UPPERCASE |
 | 8 | `NetworkStatus` | `string` | `'ACTIVE'`, `'INACTIVE'`, `'PENDING'`, `'REJECTED'`, `'BANNED'` | UPPERCASE |
 | 9 | `PosStatus` | `string` | `'ACTIVE'`, `'INACTIVE'`, `'PENDING'`, `'REJECTED'`, `'BANNED'` | UPPERCASE |
 | 10 | `RequestStatus` | `string` | `'PENDING'`, `'APPROVED'`, `'REJECTED'`, `'CANCELLED'` | UPPERCASE |
@@ -47,14 +47,15 @@ The 24 backed PHP Enums (`app/Enums/`) have the following exact canonical wire v
 | `NetworkResource` | `status` | `string` | `NetworkStatus` | Yes (`status_label`) | True Status Badge |
 | `PosResource` | `status` | `string` | `PosStatus` | Yes (`status_label`) | True Status Badge |
 | `RoleResource` | `role_key` | `string` | `RoleKey` | Yes (`role_key_label`) | Role Identifier (No scope field) |
-| `NetworkWalletLogResource` | `log_operation_type` | `string` | `WalletOperationType` | Yes (`log_operation_type_label`) | Direction Indicator |
+| `NetworkWalletLogResource` | `log_operation` | `string` | `WalletOperationType` | Yes (`log_operation_label`) | Direction Indicator |
 | `PosWalletLogResource` | `log_operation_type` | `string` | `WalletOperationType` | Yes (`log_operation_type_label`) | Direction Indicator |
 | `PosWalletResource` | `accounting_status` | `string` | **None** (Model Method) | Yes (`accounting_status_label`) | Accounting Computed Status |
 | `PosRepaymentResource` | `status` | `string` | **None** (Plain `'ACTIVE'`/`'REVERSED'`) | **No** | String Flag |
 | `PosRepaymentResource` | `payment_method` | `string` | **None** (Plain string, e.g. `'CASH'`) | **No** | String Flag (DEC-03 proposed) |
 | `BankAccountResource` | `status` | `boolean` | **None** (Cast as `(bool) $this->status`) | **No** | Boolean Active Flag |
 | `NetworkPosResource` | `status` | `boolean` | **None** (Cast as `(bool) $this->status`) | **No** | Boolean Link Status |
-| `BackupJobResource` | `status` | `string` | `BackupStatus` | **No** | Backup Status Badge |
+| `BackupJobResource` | `status` | `string` | `BackupStatus` | Yes (`status_label`) | Backup Status Badge |
+| `BackupJobResource` | `backup_type` | `string` | `BackupType` | Yes (`backup_type_label`) | Contextual Chip |
 
 ---
 

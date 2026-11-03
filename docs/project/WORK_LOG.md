@@ -340,5 +340,47 @@ This log documents all executed tasks, code changes, and verification command ou
   - Laravel API commercial test suite (`php artisan test --filter=CommercialEntitiesAndRelationshipsTest`): **23 passed (37 assertions, 100% pass rate)**.
   - Governance script (`powershell -ExecutionPolicy Bypass -File scripts/verify-project-governance.ps1`): **GOVERNANCE VERIFICATION PASSED**.
 
+---
+
+## [2026-11-03] Task: Centralized Enum Contract & Semantic Badge Presentation System
+- **Authorized Scope:** Cross-repository backend Enum audit, API contract parity, Flutter typed wire parsing, centralized semantic badge presentation layer, and migration of existing status indicators.
+- **Repositories:** `smartixit/netsales_api` (Laravel) & `smartixit/netsales` (Flutter).
+- **Backend Audit & Remediation (`netsales_api`):**
+  - Inspected all 24 backed PHP Enums (`app/Enums/`). Found 21 UPPERCASE, 2 lowercase, 1 snake_case.
+  - Added enum casts (`backup_type` => `BackupType::class`, `status` => `BackupStatus::class`) to `app/Models/BackupJob.php`.
+  - Added additive `backup_type_label` and `status_label` to `BackupJobResource.php`.
+  - Reconciled `docs/project/API_CONTRACTS.md` with canonical backend values (`OtpType` cases, `NetworkWalletLogResource` vs `PosWalletLogResource` field asymmetry).
+  - Created automated parity test suite: `tests/Feature/EnumContractParityTest.php` (5 tests, 656 assertions, 100% pass).
+  - Code formatted with Pint: `vendor/bin/pint --format agent`.
+- **Flutter Client Implementation (`netsales`):**
+  - Created client typed Enums with strict `fromWire(String? raw)` parsing and `unknown` fallback:
+    - `lib/core/enums/device_type.dart`, `user_device_status.dart`, `user_status.dart`, `role_key.dart`, `role_scope.dart`, `sale_type.dart`, `request_status.dart`, `invoice_payment_status.dart`, `wallet_operation_type.dart`, `provider_subscription_status.dart`, `backup_status.dart`.
+    - Updated `notification_type.dart` to add `unknown` case, remove dangerous `generalInfo` default and `.toUpperCase()`.
+    - Feature domain entities: `network_status.dart`, `pos_status.dart`.
+  - Integrated typed enum accessors in domain entities and models (`NetworkEntity`, `PosEntity`, `UserDeviceEntity`, `UserModel`).
+  - Created Centralized Presentation Layer:
+    - `lib/core/presentation/enums/semantic_tone.dart` (`SemanticTone`: `success`, `warning`, `danger`, `info`, `neutral`, `primary`).
+    - `lib/core/presentation/enums/enum_presentation.dart` (`EnumPresentation`: label, icon, semantic tone).
+    - `lib/core/presentation/enums/enum_presentation_registry.dart` (`EnumPresentationRegistry`: maps all enums and boolean link status with server label priority and localized fallback).
+  - Created Shared Presentation Components:
+    - `lib/widgets/badges/custom_status_badge.dart` (`CustomStatusBadge`).
+    - `lib/widgets/badges/custom_chip.dart` (`CustomChip`).
+  - Migrated UI components:
+    - `network_pos_card.dart`, `pos_linked_network_card.dart`, `network_details_bottom_sheet.dart`, `pos_details_bottom_sheet.dart`, `active_sessions_screen.dart`.
+  - Created automated test suites:
+    - `test/core/enums/enum_contract_parity_test.dart` (11 tests).
+    - `test/widgets/badges/custom_status_badge_test.dart` (5 widget tests).
+- **Permanent Governance Updates:**
+  - `netsales/AGENTS.md` and `netsales/.agents/rules/flutter-architecture-and-getx.md`
+  - `netsales_api/AGENTS.md`, `netsales_api/.agents/rules/laravel-architecture-and-services.md`, and `docs/project/ARCHITECTURE.md`
+- **Verification Commands & Outcomes:**
+  - Laravel Enum Parity Feature Test (`php artisan test --filter=EnumContractParityTest`): **5 passed (656 assertions, 100% pass rate)**.
+  - Laravel Commercial Feature Test (`php artisan test --filter=CommercialEntitiesAndRelationshipsTest`): **23 passed (37 assertions, 100% pass rate)**.
+  - Flutter Analysis (`flutter analyze`): **No issues found (0 errors, 0 warnings, 0 infos across entire project)**.
+  - Flutter Unit & Widget Tests (`flutter test`): **51 passed (0 failures, 100% pass rate)**.
+  - Project Governance Script (`powershell -ExecutionPolicy Bypass -File scripts/verify-project-governance.ps1`): **GOVERNANCE VERIFICATION PASSED**.
+- **Task Status:** Complete — Cross-repository Enum parity, presentation registry, and badge system fully established.
+
+
 
 

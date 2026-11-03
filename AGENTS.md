@@ -29,6 +29,17 @@
 - Agent recommendations, generated reports, or proposed architectural designs **never** constitute user approval.
 - Approved decisions are recorded in `docs/project/DECISION_LOG.md` and must be preserved. When a requirement conflicts with an approved decision, halt and document the conflict for user resolution.
 
+## 6. Enum Authority and API Resource Label Invariants
+- The Laravel API backend is the **sole authority for Enum definitions and their localized labels**.
+- All backed Enums must reside under `app/Enums/` and implement the `label(): string` method returning authoritative Arabic strings.
+- Eloquent models must cast enum columns using the `casts()` method (e.g. `'status' => NetworkStatus::class`).
+- API Resources returning Enum attributes must expose:
+  1. The raw backed value (e.g. `'status' => $this->status?->value ?? $this->status`).
+  2. The translated companion field (e.g. `'status_label' => $this->status?->label()`).
+- FormRequests must validate Enum parameters using `Rule::enum(MyEnum::class)`.
+- Never modify existing wire values without explicit cross-repository schema versioning and user approval.
+
+
 ---
 
 <laravel-boost-guidelines>

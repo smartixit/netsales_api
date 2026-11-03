@@ -106,6 +106,7 @@ lib/features/<feature_name>/
 The application provides an extensive foundation in `lib/core/` and `lib/widgets/` that must be reused without duplication:
 
 1. **Shared Widgets (`lib/widgets/`):**
+   - **Badges & Chips (`lib/widgets/badges/`):** `CustomStatusBadge`, `CustomChip`.
    - **Dialogs (`lib/widgets/dialogs/`):** `CustomDialog`, `CustomAnimationOverlay`, `DialogActionBar`, `DialogBodyContent`, `DialogIconHeader`.
    - **Sheets (`lib/widgets/sheets/`):** `CustomBottomSheet`, `InvoicePrintFormatSheet`.
    - **Buttons (`lib/widgets/buttons/`):** `CustomButton`, `CustomThemeToggleButton`.
@@ -152,3 +153,24 @@ NetSales is an enterprise B2B sales management platform. Functional correctness 
 | Wallet Debits & Credits | Laravel (`PosWalletLogRepository`) | Read-only ledger statement display |
 | FIFO Repayment Allocation | Laravel (`DebtRepaymentService`) | Input amount; displays authoritative allocation |
 | Debt Aging Buckets | Laravel (`PosDebtQueryService`) | Renders returned aging summary tiers |
+| Enum Definitions & Translations | Laravel (`app/Enums/`) | Consumes wire strings, displays `*_label`, uses `EnumPresentationRegistry` |
+
+---
+
+## 5. Centralized Enum Contract & Semantic Badge System
+
+### 5.1 Backend Enum Authority
+1. **Backed Enums:** All business enums in Laravel are backed PHP enums residing under `app/Enums/`.
+2. **Wire Casing:** Casing is strictly defined per enum (majority UPPERCASE, scheduled tasks lowercase/snake_case).
+3. **Labels:** Each backed enum implements `label(): string` providing canonical Arabic translations.
+4. **API Resources:** Must serialize both the wire value (`status`) and translated companion (`status_label`).
+
+### 5.2 Flutter Client Consumption & Presentation
+1. **Typed Parsing:** Dart enums provide `fromWire(String? raw)` with exact casing matches and `unknown` safe fallbacks.
+2. **Domain Entities:** Expose typed getters (e.g. `NetworkStatus get typedStatus => NetworkStatus.fromWire(status);`) while keeping wire fields for serialization.
+3. **Presentation Registry:** `EnumPresentationRegistry` centrally resolves `EnumPresentation` (label, icon, `SemanticTone`). Server-provided `*_label` takes precedence, falling back to local translations when null.
+4. **Visual Components:**
+   - `CustomStatusBadge`: Renders a semantic badge with dot/icon and theme-aware contrast.
+   - `CustomChip`: Renders a compact or interactive semantic chip.
+   - Ad-hoc color/status switches in presentation code are strictly prohibited.
+
