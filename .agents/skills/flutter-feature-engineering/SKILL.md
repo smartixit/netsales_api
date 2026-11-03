@@ -38,21 +38,31 @@ lib/features/<feature_name>/
 
 ---
 
-## 2. Layer Responsibilities & Data Flow
+## 2. Layer Responsibilities & Component Placement
 
-1. **Presentation Layer:**
-   - **Screens:** Render responsive views using `AppBreakpoints`.
-   - **Widgets:** Feature-scoped UI components. Reuses core components from `lib/widgets/`.
-   - **Controllers:** Subclasses of `GetxController`. Exposes reactive state (`Rx`, `.obs`) to UI and delegates actions to domain Use Cases.
-   - **Bindings:** Extends `Bindings` to inject controllers, use cases, and repositories lazily via `Get.lazyPut(...)` and binds them to `AppPages` routes.
-2. **Domain Layer:**
+1. **Presentation Layer (`presentation/`):**
+   - **Screens (`presentation/screens/`):**
+     - Responsible exclusively for **page-level composition**: arranging layout, integrating feature-specific and shared widgets, and connecting the view to its `GetxController`.
+     - **Strict Prohibition:** Screen files must NOT become containers for full widget implementations. Do not embed list items, cards, multi-field search bars, or dialogs inline within screen files.
+   - **Feature-Specific Widgets (`presentation/widgets/`):**
+     - Default location for widgets with meaning tied to the feature (e.g. `network_pos_card.dart`, `network_pos_search_filter_header.dart`, `link_pos_bottom_sheet.dart`).
+     - Do NOT move feature-specific components into global `lib/widgets/`.
+   - **Controllers (`presentation/controllers/`):**
+     - Subclasses of `GetxController`. Sole owner of mutable presentation state (`Rx`, `.obs`, text controllers). Delegates business operations to Domain Use Cases. Prohibited from calling `ApiService` directly.
+   - **Bindings (`presentation/bindings/`):**
+     - Extends `Bindings` to inject controllers, use cases, and repositories lazily via `Get.lazyPut(...)` and binds them to `AppPages` routes.
+2. **Domain Layer (`domain/`):**
    - **Entities:** Pure Dart classes representing core business data structures. Free of JSON serialization dependencies.
    - **Repositories (Interfaces):** Abstract contracts defining data operations required by use cases.
    - **Use Cases:** Granular, single-responsibility business operations (e.g. `GetProcurementRequestsUseCase`).
-3. **Data Layer:**
+3. **Data Layer (`data/`):**
    - **Models:** Extends or maps to domain entities, containing `fromJson` and `toJson` serialization matching Laravel API resources.
    - **Data Sources:** Handle raw network calls (`ApiClient`), headers, and query parameters.
    - **Repositories (Implementations):** Implements domain repository interfaces, coordinating data sources and converting models to domain entities.
+4. **Global Generic Widgets (`lib/widgets/`):**
+   - Genuinely shared, domain-independent UI primitives (`CustomButton`, `CustomTextField`, `CustomDialog`, `CustomEmptyState`).
+5. **Shared Infrastructure (`lib/core/`):**
+   - Application services, utilities, themes, exceptions, and configuration. Never presentation widgets.
 
 ---
 

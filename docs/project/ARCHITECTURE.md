@@ -96,6 +96,11 @@ lib/features/<feature_name>/
    - **Feed & Shimmer Loading:** Asynchronous loading states must display `CustomSkeletonFeed` or `CustomSkeletonShimmer`.
    - **Dialogs & Confirmations:** Unlinking, deleting, or critical actions must use `CustomDialog.danger` or `CustomDialog.confirmation`.
    - **Bottom Sheets:** Modal interactions must use `CustomBottomSheet.show(...)`.
+5. **Component Placement & Screen Composition Separation:**
+   - **`presentation/screens/`:** Responsible exclusively for page-level composition (arranging layout, coordinating feature widgets, connecting to GetX controller). Screen files must NOT contain large custom widget classes, complex list cards, or inline multi-section trees.
+   - **`presentation/widgets/`:** Default location for feature-specific widgets tied to the feature's business domain (e.g. `network_pos_card.dart`, `network_pos_search_filter_header.dart`, `link_pos_bottom_sheet.dart`).
+   - **`lib/widgets/`:** Exclusively for genuinely shared, business-agnostic components (no Network, POS, voucher, or domain entities).
+   - **`lib/core/`:** Shared infrastructure, services, configuration, and utilities. Never presentation widgets.
 
 ### 3.2 Foundation & Shared Infrastructure Reuse
 The application provides an extensive foundation in `lib/core/` and `lib/widgets/` that must be reused without duplication:

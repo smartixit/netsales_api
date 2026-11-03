@@ -268,3 +268,45 @@ This log documents all executed tasks, code changes, and verification command ou
   - Laravel Pint (`vendor/bin/pint --format agent`): **PASS (0 style violations)**.
 - **Task Status:** Complete — Architectural Compliance Recovered, Automated Guardrails Enforced, Ready for Resumption.
 
+---
+
+## [2026-11-03 18:25] Task: Milestone 4 — Presentation Component Decomposition & Widget Placement Enforcement
+- **Authorized Scope:** USER DIRECTED — PRESENTATION COMPONENT DECOMPOSITION & WIDGET PLACEMENT ENFORCEMENT. Decomposing monolithic screen files in Milestone 4, establishing strict 4-tier component placement rules (`features/<feature>/presentation/screens/`, `features/<feature>/presentation/widgets/`, `lib/widgets/`, `lib/core/`), extracting feature-specific cards, search headers, and modal sheets, updating permanent governance documentation, and enforcing compliance via automated architecture tests.
+- **Strict Compliance Invariants:**
+  1. Screens are page composition only (layout, arrange widgets, connect to GetX controller). Monolithic embedded widget classes prohibited.
+  2. Feature-specific widgets live in `features/<feature>/presentation/widgets/`.
+  3. Genuinely shared, domain-independent UI primitives live in `lib/widgets/`.
+  4. Core services, utilities, and infrastructure live in `lib/core/`.
+  5. 100% GetX reactive state (`StatelessWidget` / `GetView` exclusively).
+  6. Zero destructive Git operations.
+- **Files Modified / Implemented:**
+  - **Flutter Client (`netsales`):**
+    - `lib/features/commercial/presentation/widgets/network_pos_search_filter_header.dart`: Extracted top search field and 3-tab segmented filter bar (`CustomSegmentedBar`).
+    - `lib/features/commercial/presentation/widgets/network_pos_card.dart`: Extracted individual POS card with logo, phone, status badge, UUID copy, toggle button, and unlinking danger dialog.
+    - `lib/features/commercial/presentation/widgets/pos_linked_networks_search_filter_header.dart`: Extracted supplier networks search and segmented filter bar.
+    - `lib/features/commercial/presentation/widgets/pos_linked_network_card.dart`: Extracted supplier network card with logo, phone, address, and status badge.
+    - `lib/features/commercial/presentation/widgets/link_pos_bottom_sheet.dart`: Extracted modal bottom sheet for POS linking via `CustomBottomSheet.show(...)`.
+    - `lib/features/commercial/presentation/widgets/link_pos_dialog.dart`: Preserved backwards-compatible export/typedef.
+    - `lib/features/commercial/presentation/screens/link_pos_dialog.dart`: Deleted from `screens/` directory.
+    - `lib/features/commercial/presentation/screens/network_pos_directory_screen.dart`: Refactored to pure page composition (reduced from 444 lines to 115 lines).
+    - `lib/features/commercial/presentation/screens/pos_linked_networks_screen.dart`: Refactored to pure page composition (reduced from 363 lines to 87 lines).
+    - `test/architecture/architecture_compliance_test.dart`: Added automated tests verifying:
+      - Screens directory contains only `*_screen.dart` files (0 non-screen files).
+      - Feature widgets directory exists with decomposed components.
+      - Screens are non-monolithic (<= 160 lines).
+    - `netsales/AGENTS.md`: Codified permanent 4-tier component placement rules and decomposition standards.
+    - `netsales/.agents/rules/flutter-architecture-and-getx.md`: Added Section 4 detailing component placement, screen responsibilities, and extraction rules.
+    - `netsales/.agents/skills/flutter-feature-engineering/SKILL.md`: Updated layer responsibilities and component placement guidelines.
+  - **Laravel API (`netsales_api`):**
+    - `netsales_api/.agents/skills/flutter-feature-engineering/SKILL.md`: Synchronized component placement standards.
+    - `docs/project/ARCHITECTURE.md`: Documented screen composition vs feature widget separation.
+    - `docs/project/WORK_LOG.md`: Logged all component decomposition activities.
+- **Verification Commands & Outcomes:**
+  - Governance script (`powershell -ExecutionPolicy Bypass -File scripts/verify-project-governance.ps1`): **GOVERNANCE VERIFICATION PASSED (All contracts verified)**.
+  - Flutter analysis (`flutter analyze lib/features/commercial/ test/commercial/ test/architecture/`): **No issues found (0 warnings, 0 errors)**.
+  - Flutter tests (`flutter test test/commercial/ test/architecture/`): **14 passed (0 failures, 100% pass rate)**.
+  - Dart formatting (`dart format ...`): **Cleanly formatted**.
+  - Laravel commercial feature tests (`php artisan test --filter=CommercialEntitiesAndRelationshipsTest`): **23 passed (37 assertions, 100% pass rate)**.
+- **Task Status:** Complete — Presentation Component Decomposition & Widget Placement Standard Enforced.
+
+
