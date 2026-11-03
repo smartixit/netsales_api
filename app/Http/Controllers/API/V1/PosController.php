@@ -7,10 +7,12 @@ use App\Http\Requests\API\V1\Common\RejectRequest;
 use App\Http\Requests\API\V1\Pos\StorePosRequest;
 use App\Http\Requests\API\V1\Pos\UpdatePosRequest;
 use App\Http\Resources\API\V1\Pos\PosResource;
+use App\Models\NetworkPos;
 use App\Services\PosService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
@@ -52,6 +54,21 @@ class PosController extends BaseController
     {
         try {
             $filters = $request->only(['search', 'status', 'governorate_id', 'directorate_id', 'per_page', 'all']);
+            $user = $this->currentUser();
+            if ($user && ! $user->isSuperAdmin()) {
+                $posIds = $user->pos()->pluck('pos.pos_id')
+                    ->merge($user->posUsers()->pluck('pos_id'))
+                    ->unique()->values()->toArray();
+
+                $networkIds = $user->networks()->pluck('networks.network_id')
+                    ->merge($user->networkUsers()->pluck('network_id'))
+                    ->unique()->values()->toArray();
+                if (! empty($networkIds)) {
+                    $linkedPosIds = NetworkPos::whereIn('network_id', $networkIds)->pluck('pos_id')->toArray();
+                    $posIds = array_unique(array_merge($posIds, $linkedPosIds));
+                }
+                $filters['pos_ids'] = $posIds;
+            }
             $posList = $this->posService->getFiltered($filters);
 
             return $this->successResponse('تم استرجاع قائمة نقاط البيع بنجاح.', PosResource::collection($posList));
@@ -75,6 +92,7 @@ class PosController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع بيانات نقطة البيع بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بالوصول إلى بيانات نقطة البيع'),
             new OA\Response(response: 404, description: 'نقطة البيع غير موجودة'),
         ]
     )]
@@ -84,6 +102,11 @@ class PosController extends BaseController
             $pos = $this->posService->findById($id);
             if (! $pos) {
                 return $this->errorResponse('نقطة البيع غير موجودة في النظام.', [], 404);
+            }
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('view', $pos)) {
+                return $this->errorResponse('غير مصرح لك بالوصول إلى بيانات نقطة البيع هذه.', [], 403);
             }
 
             return $this->successResponse('تم جلب بيانات نقطة البيع بنجاح.', new PosResource($pos));
@@ -177,6 +200,16 @@ class PosController extends BaseController
     public function update(UpdatePosRequest $request, int $id): JsonResponse
     {
         try {
+            $pos = $this->posService->findById($id);
+            if (! $pos) {
+                return $this->errorResponse('نقطة البيع غير موجودة في النظام.', [], 404);
+            }
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('update', $pos)) {
+                return $this->errorResponse('غير مصرح لك بتعديل بيانات نقطة البيع هذه.', [], 403);
+            }
+
             $pos = $this->posService->update($id, $request);
 
             return $this->successResponse('تم تحديث بيانات نقطة البيع بنجاح.', new PosResource($pos));
@@ -199,12 +232,23 @@ class PosController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم نقل نقطة البيع لسلة المحذوفات بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بحذف نقطة البيع'),
             new OA\Response(response: 404, description: 'نقطة البيع غير موجودة'),
         ]
     )]
     public function destroy(int $id): JsonResponse
     {
         try {
+            $pos = $this->posService->findById($id);
+            if (! $pos) {
+                return $this->errorResponse('نقطة البيع غير موجودة في النظام.', [], 404);
+            }
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('delete', $pos)) {
+                return $this->errorResponse('غير مصرح لك بحذف نقطة البيع هذه.', [], 403);
+            }
+
             $deleted = $this->posService->delete($id);
             if (! $deleted) {
                 return $this->errorResponse('نقطة البيع غير موجودة أو تعذر حذفها.', [], 404);
@@ -441,6 +485,11 @@ class PosController extends BaseController
     public function approve(int $id): JsonResponse
     {
         try {
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! $currentUser->isSuperAdmin()) {
+                return $this->errorResponse('عملية الاعتماد محصورة بإدارة المنصة.', [], 403);
+            }
+
             $pos = $this->posService->approve($id, (int) $this->currentUserId());
 
             return $this->successResponse('تمت الموافقة على طلب نقطة البيع وتفعيل حسابها بنجاح.', new PosResource($pos));
@@ -482,6 +531,11 @@ class PosController extends BaseController
     public function reject(RejectRequest $request, int $id): JsonResponse
     {
         try {
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! $currentUser->isSuperAdmin()) {
+                return $this->errorResponse('عملية الرفض محصورة بإدارة المنصة.', [], 403);
+            }
+
             $pos = $this->posService->reject($id, (int) $this->currentUserId(), (string) $request->reason);
 
             return $this->successResponse('تم رفض طلب نقطة البيع بنجاح.', new PosResource($pos));

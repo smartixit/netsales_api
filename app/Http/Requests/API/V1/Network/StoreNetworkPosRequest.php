@@ -23,17 +23,17 @@ class StoreNetworkPosRequest extends FormRequest
                 'integer',
                 Rule::exists('networks', 'network_id')->whereNull('deleted_at'),
             ],
+            'pos_id' => [
+                'required_without:pos_uuid',
+                'nullable',
+                'integer',
+                Rule::exists('pos', 'pos_id')->whereNull('deleted_at'),
+            ],
             'pos_uuid' => [
-                'required',
+                'required_without:pos_id',
+                'nullable',
                 'string',
                 Rule::exists('pos', 'pos_uuid')->whereNull('deleted_at'),
-                Rule::unique('network_pos', 'pos_id')
-                    ->where('pos_id', function ($query) {
-                        $query->select('pos_id')
-                            ->from('pos')
-                            ->where('pos_uuid', $this->pos_uuid);
-                    })
-                    ->where('network_id', $this->network_id),
             ],
             'status' => [
                 'nullable',
@@ -47,9 +47,14 @@ class StoreNetworkPosRequest extends FormRequest
         return (int) $this->network_id;
     }
 
-    public function getPosUuid(): string
+    public function getPosId(): ?int
     {
-        return (int) $this->pos_uuid;
+        return $this->filled('pos_id') ? (int) $this->pos_id : null;
+    }
+
+    public function getPosUuid(): ?string
+    {
+        return $this->filled('pos_uuid') ? (string) $this->pos_uuid : null;
     }
 
     public function getStatus(): bool

@@ -56,4 +56,3 @@ class CollectRepaymentRequest extends FormRequest
         return $this->input('notes');
     }
 }
-

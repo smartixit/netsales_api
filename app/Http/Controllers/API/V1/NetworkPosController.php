@@ -7,10 +7,14 @@ use App\Http\Requests\API\V1\Common\BatchStatusRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
 use App\Http\Resources\API\V1\Network\NetworkPosResource;
+use App\Models\Network;
+use App\Models\NetworkPos;
+use App\Models\Pos;
 use App\Services\NetworkPosService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
@@ -52,6 +56,18 @@ class NetworkPosController extends BaseController
     {
         try {
             $filters = $request->only(['network_id', 'pos_id', 'status', 'search', 'per_page', 'all']);
+            $user = $this->currentUser();
+            if ($user && ! $user->isSuperAdmin()) {
+                $networkIds = $user->networks()->pluck('networks.network_id')
+                    ->merge($user->networkUsers()->pluck('network_id'))
+                    ->unique()->values()->toArray();
+                $posIds = $user->pos()->pluck('pos.pos_id')
+                    ->merge($user->posUsers()->pluck('pos_id'))
+                    ->unique()->values()->toArray();
+
+                $filters['scoped_network_ids'] = $networkIds;
+                $filters['scoped_pos_ids'] = $posIds;
+            }
             $links = $this->networkPosService->getFiltered($filters);
 
             return $this->successResponse('تم استرجاع قائمة ارتباطات نقاط البيع بالشبكات بنجاح.', NetworkPosResource::collection($links));
@@ -74,6 +90,7 @@ class NetworkPosController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع تفاصيل الارتباط بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بالوصول إلى سجل الارتباط'),
             new OA\Response(response: 404, description: 'سجل الارتباط غير موجود'),
         ]
     )]
@@ -83,6 +100,11 @@ class NetworkPosController extends BaseController
             $link = $this->networkPosService->findById($id);
             if (! $link) {
                 return $this->errorResponse('سجل ارتباط نقطة البيع بالشبكة غير موجود.', [], 404);
+            }
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('view', $link)) {
+                return $this->errorResponse('غير مصرح لك بالوصول إلى سجل الارتباط هذا.', [], 403);
             }
 
             return $this->successResponse('تم جلب تفاصيل الارتباط بنجاح.', new NetworkPosResource($link));
@@ -117,12 +139,19 @@ class NetworkPosController extends BaseController
         ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء الارتباط بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بربط نقاط بيع بهذه الشبكة'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة أو الارتباط موجود مسبقاً'),
         ]
     )]
     public function store(StoreNetworkPosRequest $request): JsonResponse
     {
         try {
+            $currentUser = $this->currentUser();
+            $networkId = $request->getNetworkId();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('create', [NetworkPos::class, $networkId])) {
+                return $this->errorResponse('غير مصرح لك بربط نقاط بيع بهذه الشبكة.', [], 403);
+            }
+
             $link = $this->networkPosService->create($request);
 
             return $this->successResponse('تم ربط نقطة البيع بالشبكة بنجاح.', new NetworkPosResource($link), 201);
@@ -164,6 +193,16 @@ class NetworkPosController extends BaseController
     public function update(UpdateNetworkPosRequest $request, int $id): JsonResponse
     {
         try {
+            $link = $this->networkPosService->findById($id);
+            if (! $link) {
+                return $this->errorResponse('سجل ارتباط نقطة البيع بالشبكة غير موجود.', [], 404);
+            }
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('update', $link)) {
+                return $this->errorResponse('غير مصرح لك بتعديل هذا الارتباط.', [], 403);
+            }
+
             $link = $this->networkPosService->update($id, $request);
 
             return $this->successResponse('تم تحديث حالة الارتباط بنجاح.', new NetworkPosResource($link));
@@ -186,12 +225,23 @@ class NetworkPosController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم تبديل حالة الارتباط بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بتعديل حالة هذا الارتباط'),
             new OA\Response(response: 422, description: 'سجل الارتباط غير موجود'),
         ]
     )]
     public function toggleStatus(int $id): JsonResponse
     {
         try {
+            $link = $this->networkPosService->findById($id);
+            if (! $link) {
+                return $this->errorResponse('سجل الارتباط غير موجود.', [], 404);
+            }
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('update', $link)) {
+                return $this->errorResponse('غير مصرح لك بتعديل حالة هذا الارتباط.', [], 403);
+            }
+
             $link = $this->networkPosService->toggleStatus($id);
 
             return $this->successResponse('تم تبديل حالة الارتباط بنجاح.', new NetworkPosResource($link));
@@ -214,12 +264,23 @@ class NetworkPosController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم فك الارتباط بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بفك هذا الارتباط'),
             new OA\Response(response: 404, description: 'سجل الارتباط غير موجود'),
         ]
     )]
     public function destroy(int $id): JsonResponse
     {
         try {
+            $link = $this->networkPosService->findById($id);
+            if (! $link) {
+                return $this->errorResponse('سجل ارتباط نقطة البيع بالشبكة غير موجود أو تعذر حذفه.', [], 404);
+            }
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('delete', $link)) {
+                return $this->errorResponse('غير مصرح لك بفك هذا الارتباط.', [], 403);
+            }
+
             $deleted = $this->networkPosService->delete($id);
             if (! $deleted) {
                 return $this->errorResponse('سجل ارتباط نقطة البيع بالشبكة غير موجود أو تعذر حذفه.', [], 404);
@@ -261,6 +322,20 @@ class NetworkPosController extends BaseController
     {
         try {
             $ids = $request->getIds();
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! $currentUser->isSuperAdmin()) {
+                $unauthorized = NetworkPos::whereIn('network_pos_id', $ids)
+                    ->whereDoesntHave('network', function ($q) use ($currentUser) {
+                        $q->where('owner_id', $currentUser->user_id)
+                            ->orWhereHas('memberships', fn ($m) => $m->where('user_id', $currentUser->user_id));
+                    })->exists();
+
+                if ($unauthorized) {
+                    return $this->errorResponse('غير مصرح لك بفك ارتباطات لا تتبع لشبكاتك.', [], 403);
+                }
+            }
+
             $count = $this->networkPosService->bulkDelete($ids);
 
             return $this->successResponse("تم فك ارتباط {$count} من نقاط البيع بالشبكات بنجاح.");
@@ -301,6 +376,20 @@ class NetworkPosController extends BaseController
         try {
             $ids = $request->getIds();
             $status = $request->getStatus();
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! $currentUser->isSuperAdmin()) {
+                $unauthorized = NetworkPos::whereIn('network_pos_id', $ids)
+                    ->whereDoesntHave('network', function ($q) use ($currentUser) {
+                        $q->where('owner_id', $currentUser->user_id)
+                            ->orWhereHas('memberships', fn ($m) => $m->where('user_id', $currentUser->user_id));
+                    })->exists();
+
+                if ($unauthorized) {
+                    return $this->errorResponse('غير مصرح لك بتعديل ارتباطات لا تتبع لشبكاتك.', [], 403);
+                }
+            }
+
             $count = $this->networkPosService->bulkToggleStatus($ids, $status);
 
             $statusText = $status ? 'تفعيل' : 'تعطيل';
@@ -330,6 +419,16 @@ class NetworkPosController extends BaseController
     public function networkPosList(int $id, Request $request): JsonResponse
     {
         try {
+            $network = Network::find($id);
+            if (! $network) {
+                return $this->errorResponse('الشبكة غير موجودة.', [], 404);
+            }
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('view', $network)) {
+                return $this->errorResponse('غير مصرح لك بعرض نقاط البيع لهذه الشبكة.', [], 403);
+            }
+
             $filters = $request->only(['status', 'search', 'per_page', 'all']);
             $list = $this->networkPosService->getPosForNetwork($id, $filters);
 
@@ -358,6 +457,16 @@ class NetworkPosController extends BaseController
     public function posNetworksList(int $id, Request $request): JsonResponse
     {
         try {
+            $pos = Pos::find($id);
+            if (! $pos) {
+                return $this->errorResponse('نقطة البيع غير موجودة.', [], 404);
+            }
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('view', $pos)) {
+                return $this->errorResponse('غير مصرح لك بعرض الشبكات المرتبطة بنقطة البيع هذه.', [], 403);
+            }
+
             $filters = $request->only(['status', 'search', 'per_page', 'all']);
             $list = $this->networkPosService->getNetworksForPos($id, $filters);
 

@@ -26,4 +26,3 @@ class ReverseRepaymentRequest extends FormRequest
         return (string) $this->input('reversal_reason');
     }
 }
-

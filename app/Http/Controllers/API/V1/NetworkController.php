@@ -11,6 +11,7 @@ use App\Services\NetworkService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
@@ -51,6 +52,13 @@ class NetworkController extends BaseController
     {
         try {
             $filters = $request->only(['search', 'status', 'governorate_id', 'per_page']);
+            $user = $this->currentUser();
+            if ($user && ! $user->isSuperAdmin()) {
+                $networkIds = $user->networks()->pluck('networks.network_id')
+                    ->merge($user->networkUsers()->pluck('network_id'))
+                    ->unique()->values()->toArray();
+                $filters['network_ids'] = $networkIds;
+            }
             $networks = $this->networkService->getFiltered($filters);
 
             return $this->successResponse('تم استرجاع قائمة الشبكات بنجاح.', NetworkResource::collection($networks));
@@ -74,6 +82,7 @@ class NetworkController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع بيانات الشبكة بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بالوصول إلى بيانات هذه الشبكة'),
             new OA\Response(response: 404, description: 'الشبكة غير موجودة'),
         ]
     )]
@@ -83,6 +92,11 @@ class NetworkController extends BaseController
             $network = $this->networkService->findById($id);
             if (! $network) {
                 return $this->errorResponse('الشبكة غير موجودة في النظام.', [], 404);
+            }
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('view', $network)) {
+                return $this->errorResponse('غير مصرح لك بالوصول إلى بيانات هذه الشبكة.', [], 403);
             }
 
             return $this->successResponse('تم جلب بيانات الشبكة بنجاح.', new NetworkResource($network));
@@ -174,6 +188,16 @@ class NetworkController extends BaseController
     public function update(UpdateNetworkRequest $request, int $id): JsonResponse
     {
         try {
+            $network = $this->networkService->findById($id);
+            if (! $network) {
+                return $this->errorResponse('الشبكة غير موجودة في النظام.', [], 404);
+            }
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('update', $network)) {
+                return $this->errorResponse('غير مصرح لك بتعديل بيانات هذه الشبكة.', [], 403);
+            }
+
             $network = $this->networkService->update($id, $request);
 
             return $this->successResponse('تم تحديث بيانات الشبكة بنجاح.', new NetworkResource($network));
@@ -196,15 +220,26 @@ class NetworkController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم حذف الشبكة بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بحذف هذه الشبكة'),
             new OA\Response(response: 404, description: 'الشبكة غير موجودة'),
         ]
     )]
     public function destroy(int $id): JsonResponse
     {
         try {
+            $network = $this->networkService->findById($id);
+            if (! $network) {
+                return $this->errorResponse('الشبكة غير موجودة في النظام.', [], 404);
+            }
+
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('delete', $network)) {
+                return $this->errorResponse('غير مصرح لك بحذف هذه الشبكة.', [], 403);
+            }
+
             $deleted = $this->networkService->delete($id);
             if (! $deleted) {
-                return $this->errorResponse('الشبكة غير موجودة أو تعذر حذفها.', [], 404);
+                return $this->errorResponse('تعذر حذف الشبكة.', [], 404);
             }
 
             return $this->successResponse('تم حذف الشبكة بنجاح.');
@@ -440,6 +475,11 @@ class NetworkController extends BaseController
     public function approve(int $id): JsonResponse
     {
         try {
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! $currentUser->isSuperAdmin()) {
+                return $this->errorResponse('عملية الاعتماد محصورة بإدارة المنصة.', [], 403);
+            }
+
             $network = $this->networkService->approve($id, (int) $this->currentUserId());
 
             return $this->successResponse('تمت الموافقة على طلب مزود الشبكة وتفعيل حسابه بنجاح.', new NetworkResource($network));
@@ -482,6 +522,11 @@ class NetworkController extends BaseController
     public function reject(RejectRequest $request, int $id): JsonResponse
     {
         try {
+            $currentUser = $this->currentUser();
+            if ($currentUser && ! $currentUser->isSuperAdmin()) {
+                return $this->errorResponse('عملية الرفض محصورة بإدارة المنصة.', [], 403);
+            }
+
             $network = $this->networkService->reject($id, (int) $this->currentUserId(), $request->getReason());
 
             return $this->successResponse('تم رفض طلب مزود الشبكة وتوثيق السبب بنجاح.', new NetworkResource($network));

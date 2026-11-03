@@ -72,4 +72,3 @@ class PosRepaymentAllocation extends Model
         return $this->status === 'REVERSED';
     }
 }
-

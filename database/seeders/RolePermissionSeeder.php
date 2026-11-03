@@ -117,6 +117,7 @@ class RolePermissionSeeder extends Seeder
             'POS_AGENT' => $allPermissions->filter(function ($perm) {
                 return in_array($perm->permission_key, [
                     'pos.view',
+                    'pos.edit',
                     'pos_wallets.view',
                     'pos_wallets.report',
                     'voucher_packages.view',

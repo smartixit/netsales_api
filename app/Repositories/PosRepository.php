@@ -49,6 +49,10 @@ class PosRepository extends BaseRepository implements PosRepositoryInterface
         if (! empty($filters['network_id'])) {
             $query->linkedToNetwork((int) $filters['network_id']);
         }
+
+        if (isset($filters['pos_ids'])) {
+            $query->whereIn('pos.pos_id', $filters['pos_ids']);
+        }
     }
 
     /**

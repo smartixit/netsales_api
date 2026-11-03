@@ -101,4 +101,3 @@ class PosRepaymentPolicy
         return false;
     }
 }
-

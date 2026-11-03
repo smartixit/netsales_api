@@ -29,7 +29,7 @@ class PosResource extends JsonResource
             'pos_uuid' => $this->pos_uuid,
             'pos_name' => $this->pos_name,
             'pos_profile_logo' => $this->pos_profile_logo,
-            'pos_holder_name' => $this->owner->user_full_name,
+            'pos_holder_name' => $this->owner?->user_full_name,
             'pos_phone_number' => $this->pos_phone_number,
             'pos_email' => $this->pos_email,
             'governorate_id' => $this->governorate_id,

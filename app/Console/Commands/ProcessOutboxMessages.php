@@ -63,4 +63,3 @@ class ProcessOutboxMessages extends Command
         return self::SUCCESS;
     }
 }
-

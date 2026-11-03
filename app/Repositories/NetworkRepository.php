@@ -45,6 +45,10 @@ class NetworkRepository extends BaseRepository implements NetworkRepositoryInter
         if (! empty($filters['directorate_id'])) {
             $query->inDirectorate((int) $filters['directorate_id']);
         }
+
+        if (isset($filters['network_ids'])) {
+            $query->whereIn('networks.network_id', $filters['network_ids']);
+        }
     }
 
     /**

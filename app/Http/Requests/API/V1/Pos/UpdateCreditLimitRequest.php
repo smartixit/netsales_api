@@ -36,4 +36,3 @@ class UpdateCreditLimitRequest extends FormRequest
         return round((float) $value, 2);
     }
 }
-

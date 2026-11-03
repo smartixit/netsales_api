@@ -2,10 +2,17 @@
 
 namespace App\Providers;
 
+use App\Models\Network;
+use App\Models\NetworkPos;
+use App\Models\Pos;
+use App\Policies\NetworkPolicy;
+use App\Policies\NetworkPosPolicy;
+use App\Policies\PosPolicy;
 use App\Services\Support\FileUploadService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -48,6 +55,10 @@ class AppServiceProvider extends ServiceProvider
         if (app()->isProduction() || request()->isSecure() || request()->headers->get('X-Forwarded-Proto') === 'https') {
             URL::forceScheme('https');
         }
+
+        Gate::policy(Network::class, NetworkPolicy::class);
+        Gate::policy(Pos::class, PosPolicy::class);
+        Gate::policy(NetworkPos::class, NetworkPosPolicy::class);
 
         $this->configureRateLimiting();
     }

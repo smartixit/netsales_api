@@ -30,4 +30,3 @@ class PosRepaymentAllocationResource extends JsonResource
         ];
     }
 }
-

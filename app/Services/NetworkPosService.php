@@ -63,7 +63,7 @@ class NetworkPosService
         if ($request instanceof StoreNetworkPosRequest) {
             $networkId = $request->getNetworkId();
             $posUuid = $request->getPosUuid();
-            $posId = null;
+            $posId = $request->getPosId();
             $status = $request->getStatus();
         } else {
             $networkId = (int) $request['network_id'];

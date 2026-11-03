@@ -34,6 +34,29 @@ class NetworkPosRepository extends BaseRepository implements NetworkPosRepositor
             $query->forPos((int) $filters['pos_id']);
         }
 
+        if (isset($filters['scoped_network_ids']) || isset($filters['scoped_pos_ids'])) {
+            $scopedNetworks = $filters['scoped_network_ids'] ?? [];
+            $scopedPos = $filters['scoped_pos_ids'] ?? [];
+            $query->where(function ($q) use ($scopedNetworks, $scopedPos) {
+                $hasCondition = false;
+                if (! empty($scopedNetworks)) {
+                    $q->whereIn('network_pos.network_id', $scopedNetworks);
+                    $hasCondition = true;
+                }
+                if (! empty($scopedPos)) {
+                    if ($hasCondition) {
+                        $q->orWhereIn('network_pos.pos_id', $scopedPos);
+                    } else {
+                        $q->whereIn('network_pos.pos_id', $scopedPos);
+                    }
+                    $hasCondition = true;
+                }
+                if (! $hasCondition) {
+                    $q->whereRaw('0 = 1');
+                }
+            });
+        }
+
         if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
             $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
             $status ? $query->active() : $query->inactive();

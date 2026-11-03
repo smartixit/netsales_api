@@ -594,7 +594,7 @@ class SaleInvoiceService
 
                 $formattedPosBalanceAfter = formatWithCurrency(abs($posBalanceAfter));
                 $posStatement = $paidAmount > 0.001
-                    ? "سداد فاتورة مبيعات مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) - مسدد من الرصيد: (".formatWithCurrency($paidAmount).")، آجل متبقي: (".formatWithCurrency($remainingAmount).") (رصيد مدين: {$formattedPosBalanceAfter})"
+                    ? "سداد فاتورة مبيعات مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) - مسدد من الرصيد: (".formatWithCurrency($paidAmount).')، آجل متبقي: ('.formatWithCurrency($remainingAmount).") (رصيد مدين: {$formattedPosBalanceAfter})"
                     : "سداد فاتورة مبيعات مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) - ذمم مدينة (رصيد مدين: {$formattedPosBalanceAfter})";
 
                 $this->posWalletLogRepository->createLog(
@@ -624,7 +624,7 @@ class SaleInvoiceService
                         $networkWallet->wallet_id,
                         WalletOperationType::DEPOSIT,
                         $paidAmount,
-                        "تحصيل مبيعات كروت مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: (".formatWithCurrency($paidAmount).")، آجل متبقي: (".formatWithCurrency($remainingAmount).")",
+                        "تحصيل مبيعات كروت مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: (".formatWithCurrency($paidAmount).')، آجل متبقي: ('.formatWithCurrency($remainingAmount).')',
                         $userId
                     );
                 }
