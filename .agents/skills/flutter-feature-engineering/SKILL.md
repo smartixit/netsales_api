@@ -78,6 +78,10 @@ lib/features/<feature_name>/
   - Radii & Spacing: Reuse `AppRadius.full`, `AppRadius.chip`, `AppRadius.card`, `AppSpacing`.
   - Elevation & Motion: Reuse `AppElevation`, `AppGradients`, `AppMotion`, `AppThemes`.
   - Breakpoints: Strictly adapt using `AppBreakpoints` (`mobileSmallMax: 360`, `mobileMax: 600`, `tabletMax: 900`, `desktopMax: 1240`).
+- **Permanent Premium UI/UX Standard (Mandatory):**
+  - Follow the dedicated `flutter-premium-ui-ux` skill for information architecture, visual hierarchy, and distinct screen composition.
+  - Strict prohibition against generic screen templates (e.g., repeating identical card stacks across different business features).
+  - Explicit multi-form factor design for mobile (< 600dp) and tablet (≥ 600dp) using `AppBreakpoints`.
 - **Zero Financial Calculations:**
   - Never compute invoice line sums, discount subtotals, or repayment allocations on the client.
   - Display financial amounts originating directly from authoritative Laravel API responses.

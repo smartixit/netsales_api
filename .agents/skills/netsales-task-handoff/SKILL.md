@@ -20,8 +20,9 @@ Ensures that all completed engineering tasks are rigorously verified, cleanly lo
 2. **Inspect Working Tree Diff:**
    - Run `git status --short` and `git diff --stat`.
    - Confirm only files within the authorized scope were modified.
-3. **Run Real Verification Commands:**
+3. **Run Real Verification Commands & Visual QA:**
    - Flutter: Run `flutter analyze` and relevant unit/widget tests.
+   - UI Review: When UI code was changed, verify visual quality, absence of overflow exceptions, responsive layout (mobile & tablet), RTL flow, and dark/light palettes per `flutter-premium-ui-ux`.
    - Laravel: Run `vendor/bin/pint --format agent` and `vendor/bin/phpunit`.
    - Governance: Run `powershell -ExecutionPolicy Bypass -File scripts/verify-project-governance.ps1`.
 4. **Report Actual Command Outcomes:**

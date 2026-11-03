@@ -105,6 +105,16 @@ The application provides an extensive foundation in `lib/core/` and `lib/widgets
    - Elevation, Gradients & Motion: `AppElevation`, `AppGradients`, `AppMotion`, `AppThemes`.
    - Breakpoints: `AppBreakpoints` (`mobileSmallMax: 360`, `mobileMax: 600`, `tabletMax: 900`, `desktopMax: 1240`).
 
+### 3.3 Permanent Premium UI/UX Engineering Standard
+NetSales is an enterprise B2B sales management platform. Functional correctness alone is not sufficient for UI acceptance:
+1. **Information Architecture First:** Establish hierarchy, workflow, and progressive disclosure before writing widget code.
+2. **Anti-Repetition:** Do not build every screen using a generic template (title -> identical summary cards -> search field -> card list).
+3. **No Over-Cardification:** Use cards only when physical boundaries genuinely aid comprehension; avoid nested container clutter.
+4. **Data-Dense Clarity:** Highlight financial totals, make transaction signs clear, and prefer structured lists/tables over card clutter.
+5. **Adaptive Multi-Form Factor:** Design explicitly for mobile (< 600dp, floating nav bar) and tablet (≥ 600dp, navigation rail and multi-column).
+6. **First-Class Arabic & RTL:** Flawless reading order, correct icon direction, and complete state coverage (loading, empty, error, success).
+7. **Visual Quality Gate:** Visual inspection across viewports and themes is mandatory prior to marking any UI feature complete.
+
 ---
 
 ## 4. Cross-Repository Authority Boundaries
