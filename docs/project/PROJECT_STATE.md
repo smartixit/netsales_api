@@ -27,13 +27,13 @@
 
 - **`netsales_api` (Laravel Backend):**
   - Branch: `main` (tracking `origin/main`)
-  - HEAD Commit: `87afb29f9fe6f8078e220ee020832988d82611f3` (Parent: `181464867fada7ab5a468cd6ff47f746d52257cf`)
-  - Commit Message: `Fix issues of session_token` (2026-11-03 16:38:50 +0300)
-  - Working Tree: 4 files modified locally (`app/Http/Controllers/API/V1/AuthController.php`, `app/Models/UserSession.php`, `app/Repositories/UserSessionRepository.php`, `tests/Feature/IdentityAndAccessFoundationTest.php`).
+  - HEAD Commit: `c79877c53edbbcafb709f514b515054ed54f1340`
+  - Commit Message: `docs: log custom widget audit and apply Pint formatting fixes` (2026-11-03 20:05:59 +0300)
+  - Working Tree: Clean (`nothing to commit, working tree clean`).
 - **`netsales` (Flutter Client):**
   - Branch: `main` (tracking `origin/main`)
-  - Current Local HEAD Commit: `2cfd45b39534a109317d1a1198f659d8d8e3c1fa` (Parent: `60ef551ef6586de76a9963224b0114d05fae646a`)
-  - Commit Message: `Final Closeout Reconciliation` (2026-11-03 16:10:20 +0300)
+  - Current Local HEAD Commit: `23bff7b3288cb09b09bb93315698e711f54cf170`
+  - Commit Message: `feat(commercial): complete M4 commercial entities & enforce project-wide custom widget compliance` (2026-11-03 20:07:26 +0300)
   - Working Tree: Clean (`nothing to commit, working tree clean`).
 
 ---
