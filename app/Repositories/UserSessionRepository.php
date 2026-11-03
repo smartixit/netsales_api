@@ -35,10 +35,12 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
         $now = Carbon::now('Asia/Aden');
         $hours = $durationHours ?? max(1, (int) round((int) systemSetting('session_lifetime_minutes', 1440) / 60));
         $expiresAt = $now->copy()->addHours($hours);
-        // $sessionToken = bin2hex(random_bytes(32)); // 64-hex char cryptographic random token (256-bit entropy)
+        $rawToken = bin2hex(random_bytes(32));
+        $hashedToken = UserSession::hashToken($rawToken);
 
-        return $this->create([
-            // 'session_token' => $sessionToken,
+        /** @var UserSession $session */
+        $session = $this->create([
+            'session_token' => $hashedToken,
             'user_id' => $userId,
             'ip_address' => $ipAddress,
             'user_agent' => $userAgent,
@@ -48,6 +50,10 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
             'expires_at' => $expiresAt,
             'revoked_at' => null,
         ]);
+
+        $session->plain_token = $rawToken;
+
+        return $session;
     }
 
     /**
@@ -55,9 +61,17 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
      */
     public function findActiveSession(string|int $sessionId): ?UserSession
     {
+        $hash = is_string($sessionId) && ! is_numeric($sessionId)
+            ? UserSession::hashToken($sessionId)
+            : null;
+
         return $this->model->newQuery()
-            ->where(function ($q) use ($sessionId) {
-                $q->where('session_token', $sessionId);
+            ->where(function ($q) use ($sessionId, $hash) {
+                if ($hash !== null) {
+                    $q->where('session_token', $hash);
+                } else {
+                    $q->where('session_token', $sessionId);
+                }
                 if (is_numeric($sessionId)) {
                     $q->orWhere('session_id', (int) $sessionId);
                 }
@@ -71,9 +85,17 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
      */
     public function findByTokenOrId(string|int $sessionId, bool $lock = false): ?UserSession
     {
+        $hash = is_string($sessionId) && ! is_numeric($sessionId)
+            ? UserSession::hashToken($sessionId)
+            : null;
+
         $query = $this->model->newQuery()
-            ->where(function ($q) use ($sessionId) {
-                $q->where('session_token', (string) $sessionId);
+            ->where(function ($q) use ($sessionId, $hash) {
+                if ($hash !== null) {
+                    $q->where('session_token', $hash);
+                } else {
+                    $q->where('session_token', (string) $sessionId);
+                }
                 if (is_numeric($sessionId)) {
                     $q->orWhere('session_id', (int) $sessionId);
                 }

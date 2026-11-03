@@ -157,3 +157,44 @@ This log documents all executed tasks, code changes, and verification command ou
   - `flutter test` in `netsales`: **19 tests passed!** (Exit code 0, 100% pass rate).
   - `php artisan test --filter=IdentityAndAccessFoundationTest`: **4 passed (15 assertions)** (Exit code 0).
   - `powershell -File .\scripts\verify-project-governance.ps1`: **GOVERNANCE VERIFICATION PASSED** (Exit code 0).
+
+---
+
+## [2026-11-03 16:30] Task: Milestone 3 — Security Hardening & Final Acceptance
+- **Authorized Scope:** USER DIRECTED — M3 SECURITY HARDENING & FINAL ACCEPTANCE ONLY. Deterministic session token SHA-256 hashing at rest, session revocation migration, device UUID validation enforcement, multi-tenant isolation testing, absolute session expiration verification, canonical documentation alignment, and comprehensive closeout reconciliation.
+- **Strict Boundaries:**
+  - Zero start of Milestone 4 (no commercial entities scaffolding).
+  - DEC-01 through DEC-04 preserved strictly as `PROPOSED`.
+  - Zero git reset, clean, or destructive commands.
+  - Zero communication or inspection of remote GitHub repositories.
+- **Repositories & Commit Authority:**
+  - `netsales_api`: branch `main` (tracking `origin/main`), HEAD `181464867fada7ab5a468cd6ff47f746d52257cf` (Parent: `28fbc7b318655518e286d4ac4dd1a8cc625eec60`).
+  - `netsales`: branch `main` (tracking `origin/main`), HEAD `2cfd45b39534a109317d1a1198f659d8d8e3c1fa` (Parent: `60ef551ef6586de76a9963224b0114d05fae646a`).
+- **Files Modified / Implemented:**
+  - Laravel API (`netsales_api`):
+    - `app/Models/UserSession.php`: Added `plain_token` transient property, `hashToken(string $rawToken): string` static helper, and automatic deterministic SHA-256 hashing in `creating` Eloquent event.
+    - `app/Repositories/UserSessionRepository.php`: Updated `createSession()` to hash raw token with SHA-256 before persistence and attach `plain_token`; updated `findActiveSession()` and `findByTokenOrId()` to hash lookup keys before database querying.
+    - `app/Http/Controllers/API/V1/AuthController.php`: Updated `login()` and `verifyTwoFactor()` to return `$session->plain_token ?? $session->session_token` as `'session_id'`.
+    - `database/migrations/2026_11_03_162325_hash_existing_session_tokens_in_user_sessions_table.php`: Executed safe database migration marking unhashed historical sessions as REVOKED.
+    - `tests/Feature/IdentityAndAccessFoundationTest.php`: Expanded from 4 to 10 comprehensive feature tests covering:
+      1. Rejection of unauthenticated requests.
+      2. Prohibition against disconnecting another user's device.
+      3. Complete session revocation on logout.
+      4. Termination of all other sessions via logout-other-devices.
+      5. SHA-256 token hashing at rest and authentication verification.
+      6. Immediate rejection of expired and revoked sessions.
+      7. Device UUID validation and rejection of missing/mismatched devices.
+      8. Cross-tenant POS wallet isolation and boundary enforcement.
+      9. Cross-tenant Network wallet and members isolation.
+      10. Absolute session expiration semantics (activity updates `last_activity_at` only).
+    - `docs/project/PROJECT_STATE.md`: Aligned canonical M1-M8 roadmap and Git authority.
+    - `docs/project/WORK_LOG.md`: Logged all security hardening activities.
+  - Flutter Client (`netsales`):
+    - `lib/widgets/feedback/custom_error_state.dart`: Refactored to pure `StatelessWidget`, clean `ExpansionTile` technical accordion, `UrlLauncherService.copyToClipboard`, `AppException.sanitizeMessage`, zero custom regexes.
+    - `lib/features/auth/presentation/screens/active_sessions_screen.dart`: Refactored to use `CustomButton.icon` and `CustomEmptyState.boxed`.
+    - `lib/core/exceptions/app_exception.dart`: Verified clean baseline.
+- **Verification Commands & Outcomes:**
+  - `php artisan test --filter=IdentityAndAccessFoundationTest`: **10 passed (48 assertions)** (Exit code 0, 100% pass rate).
+  - `vendor/bin/pint app/Http/Controllers/API/V1/AuthController.php app/Models/UserSession.php app/Repositories/UserSessionRepository.php database/migrations/2026_11_03_162325_hash_existing_session_tokens_in_user_sessions_table.php tests/Feature/IdentityAndAccessFoundationTest.php --format agent`: **PASS (Cleanly formatted)**.
+  - Full Laravel test suite: **229 passed, 3 failed** (The 3 failures belong to pre-existing Phase 4 financial debt and pricing logic, outside M3).
+- **Task Status:** Complete — Milestone 3 hardened, verified, and reconciled. Awaiting user authorization for Milestone 4.

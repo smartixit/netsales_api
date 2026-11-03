@@ -22,6 +22,12 @@ class UserSession extends Model
 
     public $timestamps = true;
 
+    /**
+     * The unhashed raw session token returned once to the client upon creation.
+     * Never persisted to the database.
+     */
+    public ?string $plain_token = null;
+
     protected $fillable = [
         'session_token',
         'user_id',
@@ -44,12 +50,27 @@ class UserSession extends Model
         ];
     }
 
-    // 64-hex char cryptographic random token (256-bit entropy) & device_uuid fallback
+    /**
+     * Calculate the deterministic SHA-256 hash of a high-entropy raw session token.
+     */
+    public static function hashToken(string $rawToken): string
+    {
+        return hash('sha256', $rawToken);
+    }
+
+    // 64-hex char cryptographic random token (256-bit entropy) hashed with SHA-256 at rest & device_uuid fallback
     protected static function booted(): void
     {
         static::creating(function (self $session): void {
             if (empty($session->session_token)) {
-                $session->session_token = bin2hex(random_bytes(32));
+                $rawToken = bin2hex(random_bytes(32));
+                $session->session_token = self::hashToken($rawToken);
+                $session->plain_token = $rawToken;
+            } elseif ($session->plain_token === null) {
+                // If a raw token was provided explicitly, hash it for database storage and preserve raw in plain_token
+                $rawToken = $session->session_token;
+                $session->plain_token = $rawToken;
+                $session->session_token = self::hashToken($rawToken);
             }
             if (empty($session->device_uuid)) {
                 $session->device_uuid = (string) Str::uuid();

@@ -1,7 +1,7 @@
 # NetSales — Current Project State & Authorization Snapshot
 
 **Last Verified Date:** 2026-11-03  
-**Active Working Tree Status:** Milestone 2 Foundation Delivered & Reconciled  
+**Active Working Tree Status:** Milestone 3 Security Hardened & Fully Reconciled  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
 
@@ -14,8 +14,8 @@
 | **Milestone 1:** Product Discovery & Blueprint | `ACCEPTED AS WORKING BASELINE` | Accepted with known limitations for forward progress. |
 | **Governance Foundation:** Persistent Memory & Rules | `COMPLETED & VERIFIED` | User approved; full invariant rules, skills, and doc suite active. |
 | **Milestone 2:** Clean Flutter Foundation, GetX Architecture, Workspace Isolation & Adaptive Navigation | `ACCEPTED AS WORKING BASELINE` | Implemented, tested, and reconciled. Client routing only; server remains sole security boundary. |
-| **Milestone 3:** Identity & Access Foundation | `IN PROGRESS` | User authorized. Establishing unified session lifecycle, devices management, and test suite. |
-| **Milestone 4:** Commercial Entities — Networks, POS, Relationships | `NOT STARTED` | Scheduled after Milestone 3 completion & approval. |
+| **Milestone 3:** Identity & Access Foundation | `COMPLETED & VERIFIED (WITH LIMITATIONS)` | Completed with security hardening (SHA-256 session token hashing at rest, device UUID enforcement, session revocation, absolute expiration). Multi-tenant active workspace context switching is bounded by DEC-01 (`PROPOSED`). |
+| **Milestone 4:** Commercial Entities — Networks, POS, Relationships | `NOT STARTED` | Scheduled after Milestone 3 completion & approval. Strict boundary: NO credit limits or contractual pricing. |
 | **Milestone 5:** Packages & Contractual Pricing | `NOT STARTED` | Scheduled after Milestone 4 completion & approval. |
 | **Milestone 6:** Procurement Requests Lifecycle | `NOT STARTED` | Scheduled after Milestone 5 completion & approval. |
 | **Milestone 7:** Invoicing & Accounting | `NOT STARTED` | Scheduled after Milestone 6 completion & approval. |
@@ -26,13 +26,14 @@
 ## 2. Git Authority References
 
 - **`netsales_api` (Laravel Backend):**
-  - Branch: `main`
-  - HEAD Commit: `1e182ce9c2c805ecd62218586a13ae5cfa60fed1`
-  - Working Tree: Clean (Preserved with zero backend modifications)
+  - Branch: `main` (tracking `origin/main`)
+  - HEAD Commit: `181464867fada7ab5a468cd6ff47f746d52257cf` (Parent: `28fbc7b318655518e286d4ac4dd1a8cc625eec60`)
+  - Commit Message: `Identity & Access Foundation` (2026-11-03 15:32:12 +0300)
+  - Working Tree: Security hardening changes applied locally (Deterministic SHA-256 token hashing at rest, safe migration, 10-method feature test suite passed).
 - **`netsales` (Flutter Client):**
-  - Branch: `main`
-  - Current Local HEAD Commit: `8742ef9b2787bebab287d34604f813b2e3f796dc`
-  - Tracking: `origin/main` (Local commits include Milestone 2 feature implementation `7f9ddf93132344d8686b66dcbc379ed2d082c6bd`)
+  - Branch: `main` (tracking `origin/main`)
+  - Current Local HEAD Commit: `2cfd45b39534a109317d1a1198f659d8d8e3c1fa` (Parent: `60ef551ef6586de76a9963224b0114d05fae646a`)
+  - Commit Message: `Final Closeout Reconciliation` (2026-11-03 16:10:20 +0300)
   - Working Tree: Clean (`nothing to commit, working tree clean`)
 
 ---
@@ -49,12 +50,13 @@ All architectural and business decisions requiring future implementation approva
 ---
 
 ## 4. Known Project Limitations & Verification Status
-1. `WorkspaceGuard` and `WorkspaceService` provide client-side workspace routing and presentation only; the authoritative security boundary remains 100% on the Laravel API.
-2. Visual QA for live rendered UI is marked **NOT VERIFIED — REQUIRES ACTIVE EMULATOR/DEVICE** as no running Android emulator or mobile device was connected during execution.
-3. In `main.dart`, global orientation is locked to portrait (`portraitUp`, `portraitDown`), so tablet landscape rendering is not enabled by default.
-4. Pre-existing non-workspace compilation issues in `lib/core/services/app_crypto_service.dart`, `lib/features/auth/`, and `lib/features/onboarding/` exist outside the Milestone 2 workspace feature.
+
+1. **Multi-Tenant Context Switching Boundary:** Active tenant and workspace context switching remains bounded by DEC-01 (`PROPOSED`). Current backend isolates tenants strictly at the route policy and membership level (`NetworkWalletPolicy`, `PosWalletPolicy`, `NetworkMembershipService`), but does not have a global tenant-context header.
+2. **Visual QA Status:** Visual QA for live rendered UI is marked **NOT VERIFIED — REQUIRES ACTIVE EMULATOR/DEVICE** due to zero running emulators during automated headless runs.
+3. **Pre-Existing Backend Test Failures:** Full Laravel test suite passes 229 tests, with 3 failures belonging to Phase 4 financial debit balances and pricing approval logic (`Milestone4CConcurrencyAndDirectInvoiceDebtTest`, `NetworkRequestReviewAndApprovalTest`, `VoucherRequestAndInvoicingTest`), completely outside Milestone 3 identity scope.
+4. **Absolute Session Expiration:** Session expiration is absolute from creation time; activity tracking updates `last_activity_at` for auditing but intentionally does not slide or extend `expires_at`.
 
 ---
 
 ## 5. Next Authorized Action
-Halt at the Milestone 2 closeout boundary. Present the final reconciliation report and await user authorization before starting **Milestone 3 (Identity & Access Foundation)**.
+Halt at the Milestone 3 closeout boundary. Present the final 13-section security-hardening and reconciliation report and await explicit user authorization before starting **Milestone 4 (Commercial Entities — Networks, POS, Relationships)**.
