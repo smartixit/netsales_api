@@ -58,22 +58,47 @@ class UserSession extends Model
         return hash('sha256', $rawToken);
     }
 
-    // 64-hex char cryptographic random token (256-bit entropy) hashed with SHA-256 at rest & device_uuid fallback
+    /**
+     * Set a raw token on the session instance:
+     * - Preserves the raw token in transient memory ($plain_token)
+     * - Authoritatively computes the deterministic SHA-256 digest for database persistence ($session_token)
+     */
+    public function setRawToken(string $rawToken): self
+    {
+        $this->plain_token = $rawToken;
+        $this->attributes['session_token'] = self::hashToken($rawToken);
+
+        return $this;
+    }
+
+    /**
+     * Eloquent lifecycle hooks ensuring session tokens are hashed at rest without exception.
+     */
     protected static function booted(): void
     {
         static::creating(function (self $session): void {
-            if (empty($session->session_token)) {
+            if (empty($session->attributes['session_token'])) {
+                // If no token was provided, generate a fresh high-entropy raw token and hash it
                 $rawToken = bin2hex(random_bytes(32));
-                $session->session_token = self::hashToken($rawToken);
-                $session->plain_token = $rawToken;
+                $session->setRawToken($rawToken);
             } elseif ($session->plain_token === null) {
-                // If a raw token was provided explicitly, hash it for database storage and preserve raw in plain_token
-                $rawToken = $session->session_token;
-                $session->plain_token = $rawToken;
-                $session->session_token = self::hashToken($rawToken);
+                // If a token was supplied explicitly without plain_token, treat it as a raw token:
+                // set plain_token for transient access and hash it for DB persistence.
+                $rawToken = (string) $session->attributes['session_token'];
+                $session->setRawToken($rawToken);
             }
+            // If $session->plain_token !== null, setRawToken() was already called and the token is already hashed.
+            // Do NOT hash again.
+
             if (empty($session->device_uuid)) {
                 $session->device_uuid = (string) Str::uuid();
+            }
+        });
+
+        static::updating(function (self $session): void {
+            // Guard against any direct update attempting to persist a plaintext token
+            if ($session->isDirty('session_token') && $session->plain_token !== null) {
+                $session->attributes['session_token'] = self::hashToken($session->plain_token);
             }
         });
     }

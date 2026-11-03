@@ -24,6 +24,7 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
 
     /**
      * إنشاء جلسة مصادقة نشطة للمستخدم في جدول user_sessions.
+     * يتم حفظ هاش SHA-256 حصرياً في قاعدة البيانات، مع إبقاء الرمز الخام في الذاكرة المؤقتة $plain_token.
      */
     public function createSession(
         int $userId,
@@ -36,44 +37,33 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
         $hours = $durationHours ?? max(1, (int) round((int) systemSetting('session_lifetime_minutes', 1440) / 60));
         $expiresAt = $now->copy()->addHours($hours);
         $rawToken = bin2hex(random_bytes(32));
-        $hashedToken = UserSession::hashToken($rawToken);
 
-        /** @var UserSession $session */
-        $session = $this->create([
-            'session_token' => $hashedToken,
-            'user_id' => $userId,
-            'ip_address' => $ipAddress,
-            'user_agent' => $userAgent,
-            'device_uuid' => $deviceUuid,
-            'logged_at' => $now,
-            'last_activity_at' => $now,
-            'expires_at' => $expiresAt,
-            'revoked_at' => null,
-        ]);
-
-        $session->plain_token = $rawToken;
+        $session = new UserSession;
+        $session->user_id = $userId;
+        $session->device_uuid = $deviceUuid;
+        $session->ip_address = $ipAddress;
+        $session->user_agent = $userAgent;
+        $session->logged_at = $now;
+        $session->last_activity_at = $now;
+        $session->expires_at = $expiresAt;
+        $session->revoked_at = null;
+        $session->setRawToken($rawToken);
+        $session->save();
 
         return $session;
     }
 
     /**
-     * البحث عن الجلسة النشطة الصالحة وغير المنتهية بالرمز العشوائي أو المعرف.
+     * البحث عن الجلسة النشطة الصالحة وغير المنتهية بالرمز العشوائي (مجزأ بـ SHA-256) أو بالمعرف الرقمي.
      */
     public function findActiveSession(string|int $sessionId): ?UserSession
     {
-        $hash = is_string($sessionId) && ! is_numeric($sessionId)
-            ? UserSession::hashToken($sessionId)
-            : null;
-
         return $this->model->newQuery()
-            ->where(function ($q) use ($sessionId, $hash) {
-                if ($hash !== null) {
-                    $q->where('session_token', $hash);
+            ->where(function ($q) use ($sessionId) {
+                if (is_numeric($sessionId) && strlen((string) $sessionId) < 20) {
+                    $q->where('session_id', (int) $sessionId);
                 } else {
-                    $q->where('session_token', $sessionId);
-                }
-                if (is_numeric($sessionId)) {
-                    $q->orWhere('session_id', (int) $sessionId);
+                    $q->where('session_token', UserSession::hashToken((string) $sessionId));
                 }
             })
             ->active()
@@ -81,23 +71,16 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
     }
 
     /**
-     * البحث عن الجلسة بالرمز العشوائي أو المعرف (نشطة أو غير نشطة).
+     * البحث عن الجلسة بالرمز العشوائي (مجزأ بـ SHA-256) أو بالمعرف الرقمي (نشطة أو غير نشطة).
      */
     public function findByTokenOrId(string|int $sessionId, bool $lock = false): ?UserSession
     {
-        $hash = is_string($sessionId) && ! is_numeric($sessionId)
-            ? UserSession::hashToken($sessionId)
-            : null;
-
         $query = $this->model->newQuery()
-            ->where(function ($q) use ($sessionId, $hash) {
-                if ($hash !== null) {
-                    $q->where('session_token', $hash);
+            ->where(function ($q) use ($sessionId) {
+                if (is_numeric($sessionId) && strlen((string) $sessionId) < 20) {
+                    $q->where('session_id', (int) $sessionId);
                 } else {
-                    $q->where('session_token', (string) $sessionId);
-                }
-                if (is_numeric($sessionId)) {
-                    $q->orWhere('session_id', (int) $sessionId);
+                    $q->where('session_token', UserSession::hashToken((string) $sessionId));
                 }
             });
 

@@ -207,10 +207,14 @@ class AuthController extends BaseController
             $session = $result['session'];
             $mustChangePassword = ! empty($result['require_password_change']);
 
+            if (empty($session->plain_token)) {
+                throw new \RuntimeException('Session authentication token could not be issued securely.');
+            }
+
             return $this->successResponse(
                 $mustChangePassword ? 'يرجى تغيير كلمة المرور المؤقتة لمتابعة الدخول.' : 'تم تسجيل الدخول بنجاح.',
                 [
-                    'session_id' => (string) $session->plain_token,
+                    'session_id' => $session->plain_token,
                     'device_uuid' => (string) $session->device_uuid,
                     'require_password_change' => $mustChangePassword,
                     'user' => new UserResource($user),
@@ -258,13 +262,18 @@ class AuthController extends BaseController
     {
         try {
             $result = $this->authService->verifyTwoFactor($request);
+            $session = $result['session'];
             $mustChangePassword = ! empty($result['require_password_change']);
+
+            if (empty($session->plain_token)) {
+                throw new \RuntimeException('Session authentication token could not be issued securely.');
+            }
 
             return $this->successResponse(
                 $mustChangePassword ? 'تم التحقق بنجاح. يرجى تغيير كلمة المرور المؤقتة.' : 'تم التحقق بنجاح وإنشاء جلسة الدخول.',
                 [
-                    'session_id' => (string) ($result['session']->plain_token ?? $result['session']->session_token ?: $result['session']->session_id),
-                    'device_uuid' => (string) $result['session']->device_uuid,
+                    'session_id' => $session->plain_token,
+                    'device_uuid' => (string) $session->device_uuid,
                     'require_password_change' => $mustChangePassword,
                     'user' => new UserResource($result['user']),
                     'permissions' => $result['permissions'],

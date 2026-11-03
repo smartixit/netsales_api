@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Interfaces\UserSessionRepositoryInterface;
 use App\Models\Network;
 use App\Models\NetworkWallet;
 use App\Models\Pos;
@@ -307,6 +308,24 @@ class IdentityAndAccessFoundationTest extends TestCase
             'X-Bypass-Encryption' => 'true',
         ]);
         $hashReplayResponse->assertStatus(401);
+
+        // 6. التحقق من إنشاء الجلسة عبر المستودع وعدم حدوث تجزئة مزدوجة (Single SHA-256 Hashing Invariant)
+        $sessionRepo = app(UserSessionRepositoryInterface::class);
+        $repoSession = $sessionRepo->createSession($user->user_id, $device->device_uuid);
+        $this->assertNotNull($repoSession->plain_token);
+        $this->assertEquals(64, strlen($repoSession->plain_token));
+        $storedHash = $repoSession->fresh()->session_token;
+        $this->assertEquals(hash('sha256', $repoSession->plain_token), $storedHash, 'Stored token must be exactly single SHA-256 hash');
+        $this->assertNotEquals(hash('sha256', $storedHash), $storedHash, 'Stored token must not be double hashed');
+
+        // 7. التحقق من دوال البحث في المستودع: البحث بالرمز الخام وبالمعرف الرقمي
+        $foundByToken = $sessionRepo->findActiveSession($repoSession->plain_token);
+        $this->assertNotNull($foundByToken);
+        $this->assertEquals($repoSession->session_id, $foundByToken->session_id);
+
+        $foundById = $sessionRepo->findByTokenOrId($repoSession->session_id);
+        $this->assertNotNull($foundById);
+        $this->assertEquals($repoSession->session_id, $foundById->session_id);
     }
 
     /**
@@ -531,6 +550,81 @@ class IdentityAndAccessFoundationTest extends TestCase
         ]);
         $membersResp->assertStatus(422);
         $this->assertStringContainsString('غير مصرح لك بإدارة موظفي وعضويات هذه الشبكة', $membersResp->json('message'));
+    }
+
+    /**
+     * اختبار: عزل الشبكات ضد بعضها البعض (Network-to-Network Tenant Isolation)
+     * مالك الشبكة أ يمكنه عرض محفظة شبكته، ويُمنع بـ 403 تماماً من عرض محفظة الشبكة ب أو سجلاتها.
+     */
+    public function test_network_owner_a_cannot_access_network_b_resources(): void
+    {
+        $networkWalletA = NetworkWallet::first();
+        $this->assertNotNull($networkWalletA);
+        $networkA = Network::find($networkWalletA->network_id);
+        $this->assertNotNull($networkA);
+        $userA = User::find($networkA->owner_id);
+        $this->assertNotNull($userA);
+
+        // العثور على محفظة شبكة ب لا ينتمي إليها المستخدم أ إطلاقاً
+        $userANetworkIds = $userA->networks()->pluck('networks.network_id')->toArray();
+        $networkWalletB = NetworkWallet::whereNotIn('network_id', $userANetworkIds)->first();
+        $this->assertNotNull($networkWalletB);
+        $networkB = Network::find($networkWalletB->network_id);
+        $this->assertNotNull($networkB);
+
+        $deviceA = UserDevice::firstOrCreate(
+            ['user_id' => $userA->user_id, 'device_uuid' => 'NET-A-OWNER-DEVICE-UUID'],
+            [
+                'device_name' => 'Net A Owner Phone',
+                'device_type' => 'ANDROID',
+                'is_primary' => true,
+                'status' => 'ACTIVE',
+            ]
+        );
+
+        $rawTokenA = bin2hex(random_bytes(32));
+        UserSession::create([
+            'user_id' => $userA->user_id,
+            'device_uuid' => $deviceA->device_uuid,
+            'session_token' => $rawTokenA,
+            'ip_address' => '127.0.0.1',
+            'last_activity_at' => now(),
+            'expires_at' => now()->addDays(1),
+            'status' => 'ACTIVE',
+        ]);
+
+        // 1. المستخدم أ يمكنه استعراض محفظة شبكته أ بنجاح (200)
+        $respOwn = $this->getJson("/api/v1/network-wallets/{$networkWalletA->wallet_id}", [
+            'X-Session-Id' => $rawTokenA,
+            'X-Device-Uuid' => $deviceA->device_uuid,
+            'X-Bypass-Encryption' => 'true',
+        ]);
+        $respOwn->assertStatus(200);
+
+        // 2. المستخدم أ يُمنع بـ 403 عند محاولة استعراض محفظة الشبكة ب (Network-to-Network Isolation)
+        $respOther = $this->getJson("/api/v1/network-wallets/{$networkWalletB->wallet_id}", [
+            'X-Session-Id' => $rawTokenA,
+            'X-Device-Uuid' => $deviceA->device_uuid,
+            'X-Bypass-Encryption' => 'true',
+        ]);
+        $respOther->assertStatus(403);
+        $this->assertStringContainsString('غير مصرح لك بالوصول إلى هذه المحفظة', $respOther->json('message'));
+
+        // 3. المستخدم أ يُمنع بـ 403 عند محاولة استعراض محفظة الشبكة ب عبر معرف الشبكة
+        $respByNetwork = $this->getJson("/api/v1/network-wallets/network/{$networkB->network_id}", [
+            'X-Session-Id' => $rawTokenA,
+            'X-Device-Uuid' => $deviceA->device_uuid,
+            'X-Bypass-Encryption' => 'true',
+        ]);
+        $respByNetwork->assertStatus(403);
+
+        // 4. المستخدم أ يُمنع بـ 422 عند محاولة استعراض أعضاء الشبكة ب
+        $respMembers = $this->getJson("/api/v1/networks/{$networkB->network_id}/members", [
+            'X-Session-Id' => $rawTokenA,
+            'X-Device-Uuid' => $deviceA->device_uuid,
+            'X-Bypass-Encryption' => 'true',
+        ]);
+        $respMembers->assertStatus(422);
     }
 
     /**

@@ -198,3 +198,28 @@ This log documents all executed tasks, code changes, and verification command ou
   - `vendor/bin/pint app/Http/Controllers/API/V1/AuthController.php app/Models/UserSession.php app/Repositories/UserSessionRepository.php database/migrations/2026_11_03_162325_hash_existing_session_tokens_in_user_sessions_table.php tests/Feature/IdentityAndAccessFoundationTest.php --format agent`: **PASS (Cleanly formatted)**.
   - Full Laravel test suite: **229 passed, 3 failed** (The 3 failures belong to pre-existing Phase 4 financial debt and pricing logic, outside M3).
 - **Task Status:** Complete — Milestone 3 hardened, verified, and reconciled. Awaiting user authorization for Milestone 4.
+
+---
+
+## [2026-11-03 16:55] Task: Milestone 3 — Final Acceptance Check & Invariant Verification
+- **Authorized Scope:** USER DIRECTED — FINAL TARGETED VERIFICATION. Removal of ambiguous length-based hashing checks, elimination of double-hashing risks, fail-safe token responses in `login` and `verifyTwoFactor`, clean primary-key vs token lookups in `UserSessionRepository`, verification of Network-to-Network isolation, security terminology alignment, and consolidated final acceptance report.
+- **Strict Boundaries:**
+  - Zero start of Milestone 4.
+  - Zero changes to Git branches or remotes; no git reset or clean.
+  - DEC-01 through DEC-04 preserved strictly as `PROPOSED`.
+- **Repositories & Commit Authority:**
+  - `netsales_api`: branch `main` (tracking `origin/main`), HEAD `87afb29f9fe6f8078e220ee020832988d82611f3` (Parent: `181464867fada7ab5a468cd6ff47f746d52257cf`).
+  - `netsales`: branch `main` (tracking `origin/main`), HEAD `2cfd45b39534a109317d1a1198f659d8d8e3c1fa` (Parent: `60ef551ef6586de76a9963224b0114d05fae646a`).
+- **Files Modified:**
+  - `app/Models/UserSession.php`: Added `setRawToken()` helper; refactored `booted()` hooks to eliminate length-based token detection and prevent double hashing.
+  - `app/Repositories/UserSessionRepository.php`: Refactored `createSession()` to use `setRawToken()`; refactored `findActiveSession()` and `findByTokenOrId()` to cleanly partition numeric IDs from 64-char token hashes with zero plaintext fallbacks.
+  - `app/Http/Controllers/API/V1/AuthController.php`: Updated `login()` and `verifyTwoFactor()` to fail safely with `RuntimeException` if `plain_token` is missing, eliminating fallback to database token digests.
+  - `tests/Feature/IdentityAndAccessFoundationTest.php`: Expanded to 11 tests covering single-hash invariant, repository lookup partitioning, and explicit Network-to-Network isolation (`test_network_owner_a_cannot_access_network_b_resources`).
+  - `docs/project/PROJECT_STATE.md`: Aligned with final verified invariants and failure classifications.
+  - `docs/project/WORK_LOG.md`: Recorded final verification details.
+- **Verification Commands & Outcomes:**
+  - `php artisan test --filter=IdentityAndAccessFoundationTest`: **11 passed (66 assertions)** (Exit code 0, 100% pass rate).
+  - `php artisan test --filter=WalletSecurityAndTenantIsolationTest`: **4 passed (16 assertions)** (Exit code 0, 100% pass rate).
+  - `vendor/bin/pint ...`: **PASS (Cleanly formatted)**.
+  - Full Laravel suite failure classification: `3 unrelated-scope failures; pre-existing status not established.`
+- **Task Status:** Complete — Milestone 3 Final Acceptance Verified & Closed. Halting at Milestone 3 boundary.
