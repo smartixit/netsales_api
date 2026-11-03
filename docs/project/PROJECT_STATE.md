@@ -13,10 +13,13 @@
 |---|---|---|
 | **Milestone 1:** Product Discovery & Blueprint | `ACCEPTED AS WORKING BASELINE` | Accepted with known limitations for forward progress. |
 | **Governance Foundation:** Persistent Memory & Rules | `COMPLETED & VERIFIED` | User approved; full invariant rules, skills, and doc suite active. |
-| **Milestone 2:** Clean Flutter Foundation, GetX Architecture, Workspace Isolation & Adaptive Navigation | `IMPLEMENTATION DELIVERED` | Implemented, tested, and reconciled. Visual QA marked NOT VERIFIED (no live emulator/device running). |
-| **Milestone 3:** Identity & Access Foundation | `NOT STARTED` | Pending explicit user approval to begin Milestone 3. |
-| **Milestone 4:** Procurement Requests Lifecycle | `NOT STARTED` | Scheduled after Milestone 3 completion & approval. |
-| **Milestone 5:** Invoicing, Wallets & Debt Settlements | `NOT STARTED` | Scheduled after Milestone 4 completion & approval. |
+| **Milestone 2:** Clean Flutter Foundation, GetX Architecture, Workspace Isolation & Adaptive Navigation | `ACCEPTED AS WORKING BASELINE` | Implemented, tested, and reconciled. Client routing only; server remains sole security boundary. |
+| **Milestone 3:** Identity & Access Foundation | `IN PROGRESS` | User authorized. Establishing unified session lifecycle, devices management, and test suite. |
+| **Milestone 4:** Commercial Entities — Networks, POS, Relationships | `NOT STARTED` | Scheduled after Milestone 3 completion & approval. |
+| **Milestone 5:** Packages & Contractual Pricing | `NOT STARTED` | Scheduled after Milestone 4 completion & approval. |
+| **Milestone 6:** Procurement Requests Lifecycle | `NOT STARTED` | Scheduled after Milestone 5 completion & approval. |
+| **Milestone 7:** Invoicing & Accounting | `NOT STARTED` | Scheduled after Milestone 6 completion & approval. |
+| **Milestone 8:** Wallets, Credit, Debts & Repayments | `NOT STARTED` | Scheduled after Milestone 7 completion & approval. |
 
 ---
 
