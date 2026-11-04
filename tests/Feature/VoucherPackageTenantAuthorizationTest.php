@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Http\Controllers\API\V1\BaseController;
 use App\Models\Directorate;
 use App\Models\Governorate;
 use App\Models\Network;
@@ -51,6 +52,8 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
     protected Pos $posB;
 
     protected VoucherPackage $packageA;
+
+    protected VoucherPackage $packageAInactive;
 
     protected VoucherPackage $packageB;
 
@@ -169,6 +172,16 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
             'package_default_cash_discount' => 10.0,
             'package_default_credit_discount' => 5.0,
             'status' => true,
+        ]);
+
+        $this->packageAInactive = VoucherPackage::create([
+            'network_id' => $this->networkA->network_id,
+            'created_by' => $this->networkOwnerA->user_id,
+            'package_name' => 'باقة معطلة لشبكة A '.$suffix,
+            'package_voucher_price' => 1500.00,
+            'package_default_cash_discount' => 10.0,
+            'package_default_credit_discount' => 5.0,
+            'status' => false,
         ]);
 
         $this->packageB = VoucherPackage::create([
@@ -469,5 +482,301 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
                 'discount_credit' => 10.0,
             ]);
         $res->assertStatus(422);
+    }
+
+    #[Test]
+    public function pos_user_receives_only_active_packages_and_cannot_see_inactive_packages_in_general_or_network_list()
+    {
+        // 1. POS A general package list: receives active packageA, but NOT inactive packageAInactive, nor unlinked packageB
+        $res = $this->withHeaders($this->headersPosA)->getJson('/api/v1/voucher-packages');
+        $res->assertOk();
+        $ids = collect($res->json('data'))->pluck('package_id')->toArray();
+        $this->assertContains($this->packageA->package_id, $ids);
+        $this->assertNotContains($this->packageAInactive->package_id, $ids);
+        $this->assertNotContains($this->packageB->package_id, $ids);
+
+        // 2. POS A network-specific list: receives active packageA, but NOT inactive packageAInactive
+        $res = $this->withHeaders($this->headersPosA)->getJson("/api/v1/networks/{$this->networkA->network_id}/voucher-packages");
+        $res->assertOk();
+        $netIds = collect($res->json('data'))->pluck('package_id')->toArray();
+        $this->assertContains($this->packageA->package_id, $netIds);
+        $this->assertNotContains($this->packageAInactive->package_id, $netIds);
+
+        // 3. POS A explicitly requesting status=0: MUST NOT receive inactive package
+        $res = $this->withHeaders($this->headersPosA)->getJson("/api/v1/networks/{$this->networkA->network_id}/voucher-packages?status=0");
+        $res->assertOk();
+        $filteredIds = collect($res->json('data'))->pluck('package_id')->toArray();
+        $this->assertNotContains($this->packageAInactive->package_id, $filteredIds);
+
+        // 4. Authorized Network Owner A: can see both active and inactive packages
+        $resOwner = $this->withHeaders($this->headersNetA)->getJson('/api/v1/voucher-packages');
+        $resOwner->assertOk();
+        $ownerIds = collect($resOwner->json('data'))->pluck('package_id')->toArray();
+        $this->assertContains($this->packageA->package_id, $ownerIds);
+        $this->assertContains($this->packageAInactive->package_id, $ownerIds);
+
+        // 5. Authorized Network Owner A explicitly filtering status=0: gets inactive package
+        $resOwnerInactive = $this->withHeaders($this->headersNetA)->getJson("/api/v1/networks/{$this->networkA->network_id}/voucher-packages?status=0");
+        $resOwnerInactive->assertOk();
+        $ownerInactiveIds = collect($resOwnerInactive->json('data'))->pluck('package_id')->toArray();
+        $this->assertContains($this->packageAInactive->package_id, $ownerInactiveIds);
+        $this->assertNotContains($this->packageA->package_id, $ownerInactiveIds);
+
+        // 6. POS A cannot see unlinked Network B packages
+        $resUnlinked = $this->withHeaders($this->headersPosA)->getJson("/api/v1/networks/{$this->networkB->network_id}/voucher-packages");
+        $resUnlinked->assertStatus(403);
+    }
+
+    #[Test]
+    public function pos_user_can_list_discounts_only_while_commercial_relationship_is_active()
+    {
+        // 1. While relationship is active: POS A receives discountPosA
+        $res = $this->withHeaders($this->headersPosA)->getJson('/api/v1/voucher-package-discounts');
+        $res->assertOk();
+        $ids = collect($res->json('data'))->pluck('discount_id')->toArray();
+        $this->assertContains($this->discountPosA->discount_id, $ids);
+
+        // 2. Disable commercial relationship (status = false)
+        NetworkPos::where('network_id', $this->networkA->network_id)
+            ->where('pos_id', $this->posA->pos_id)
+            ->update(['status' => false]);
+
+        // POS A can no longer retrieve discount through list endpoint
+        $resDisabled = $this->withHeaders($this->headersPosA)->getJson('/api/v1/voucher-package-discounts');
+        $resDisabled->assertOk();
+        $disabledIds = collect($resDisabled->json('data'))->pluck('discount_id')->toArray();
+        $this->assertNotContains($this->discountPosA->discount_id, $disabledIds);
+
+        // 3. Soft-delete the discount
+        $this->discountPosA->delete();
+
+        // POS A cannot retrieve trashed discount while relationship is disabled
+        $resTrashedPos = $this->withHeaders($this->headersPosA)->getJson('/api/v1/voucher-package-discounts/trashed');
+        $resTrashedPos->assertOk();
+        $trashedPosIds = collect($resTrashedPos->json('data'))->pluck('discount_id')->toArray();
+        $this->assertNotContains($this->discountPosA->discount_id, $trashedPosIds);
+
+        // 4. Network Owner retains access to historical records even when POS link is inactive
+        $resTrashedOwner = $this->withHeaders($this->headersNetA)->getJson('/api/v1/voucher-package-discounts/trashed');
+        $resTrashedOwner->assertOk();
+        $trashedOwnerIds = collect($resTrashedOwner->json('data'))->pluck('discount_id')->toArray();
+        $this->assertContains($this->discountPosA->discount_id, $trashedOwnerIds);
+
+        // 5. Restore relationship: POS A can see it in trash again
+        NetworkPos::where('network_id', $this->networkA->network_id)
+            ->where('pos_id', $this->posA->pos_id)
+            ->update(['status' => true]);
+
+        $resTrashedRestored = $this->withHeaders($this->headersPosA)->getJson('/api/v1/voucher-package-discounts/trashed');
+        $resTrashedRestored->assertOk();
+        $trashedRestoredIds = collect($resTrashedRestored->json('data'))->pluck('discount_id')->toArray();
+        $this->assertContains($this->discountPosA->discount_id, $trashedRestoredIds);
+
+        $this->discountPosA->restore();
+    }
+
+    #[Test]
+    public function explicit_filters_cannot_bypass_pos_authorization_scope()
+    {
+        // 1. POS A cannot query other POS discounts via pos_id filter -> 403
+        $res = $this->withHeaders($this->headersPosA)
+            ->getJson("/api/v1/voucher-package-discounts?pos_id={$this->posB->pos_id}");
+        $res->assertStatus(403);
+
+        // 2. POS A cannot query unlinked network discounts via network_id filter -> 403
+        $res = $this->withHeaders($this->headersPosA)
+            ->getJson("/api/v1/voucher-package-discounts?network_id={$this->networkB->network_id}");
+        $res->assertStatus(403);
+
+        // 3. POS A filtering by package_id of foreign network returns empty (no access bypass)
+        $res = $this->withHeaders($this->headersPosA)
+            ->getJson("/api/v1/voucher-package-discounts?package_id={$this->packageB->package_id}");
+        $res->assertOk();
+        $this->assertEmpty($res->json('data'));
+    }
+
+    #[Test]
+    public function mixed_user_retains_network_visibility_and_pos_relationship_restrictions()
+    {
+        $suffix = uniqid();
+        [$mixedUser, $mixedHeaders] = $this->createUserWithSession('mixed_user_'.$suffix);
+
+        // Network B membership (Network-side access)
+        $netUserRoleId = Role::where('role_key', 'NETWORK_USER')->value('role_id');
+        NetworkUser::create([
+            'network_id' => $this->networkB->network_id,
+            'user_id' => $mixedUser->user_id,
+            'role_id' => $netUserRoleId,
+            'status' => 'ACTIVE',
+        ]);
+
+        $packageBInactive = VoucherPackage::create([
+            'network_id' => $this->networkB->network_id,
+            'created_by' => $this->networkOwnerB->user_id,
+            'package_name' => 'باقة معطلة لشبكة B '.$suffix,
+            'package_voucher_price' => 2500.00,
+            'package_default_cash_discount' => 10.0,
+            'package_default_credit_discount' => 5.0,
+            'status' => false,
+        ]);
+
+        // POS A membership (POS-side access, linked to Network A)
+        $posUserRoleId = Role::where('role_key', 'POS_USER')->value('role_id');
+        PosUser::create([
+            'pos_id' => $this->posA->pos_id,
+            'user_id' => $mixedUser->user_id,
+            'role_id' => $posUserRoleId,
+            'status' => 'ACTIVE',
+        ]);
+
+        // Discount for Network B
+        $discountNetB = VoucherPackageDiscount::create([
+            'network_id' => $this->networkB->network_id,
+            'pos_id' => $this->posB->pos_id,
+            'package_id' => $this->packageB->package_id,
+            'created_by' => $this->networkOwnerB->user_id,
+            'discount_cash' => 5.0,
+            'discount_credit' => 2.0,
+            'status' => true,
+        ]);
+
+        // Mixed user lists packages:
+        // From Network B: sees active packageB AND inactive packageBInactive
+        // From Network A: sees active packageA, but NEVER inactive packageAInactive
+        $resPackages = $this->withHeaders($mixedHeaders)->getJson('/api/v1/voucher-packages');
+        $resPackages->assertOk();
+        $pkgIds = collect($resPackages->json('data'))->pluck('package_id')->toArray();
+        $this->assertContains($this->packageB->package_id, $pkgIds);
+        $this->assertContains($packageBInactive->package_id, $pkgIds);
+        $this->assertContains($this->packageA->package_id, $pkgIds);
+        $this->assertNotContains($this->packageAInactive->package_id, $pkgIds);
+
+        // Mixed user lists discounts:
+        $resDiscounts = $this->withHeaders($mixedHeaders)->getJson('/api/v1/voucher-package-discounts');
+        $resDiscounts->assertOk();
+        $discIds = collect($resDiscounts->json('data'))->pluck('discount_id')->toArray();
+        $this->assertContains($discountNetB->discount_id, $discIds);
+        $this->assertContains($this->discountPosA->discount_id, $discIds);
+
+        // Disable Network A - POS A relationship:
+        NetworkPos::where('network_id', $this->networkA->network_id)
+            ->where('pos_id', $this->posA->pos_id)
+            ->update(['status' => false]);
+
+        // In active discount list: Network B discount remains visible, but POS A discount disappears
+        $resDiscountsAfter = $this->withHeaders($mixedHeaders)->getJson('/api/v1/voucher-package-discounts');
+        $resDiscountsAfter->assertOk();
+        $discIdsAfter = collect($resDiscountsAfter->json('data'))->pluck('discount_id')->toArray();
+        $this->assertContains($discountNetB->discount_id, $discIdsAfter);
+        $this->assertNotContains($this->discountPosA->discount_id, $discIdsAfter);
+
+        // Restore link
+        NetworkPos::where('network_id', $this->networkA->network_id)
+            ->where('pos_id', $this->posA->pos_id)
+            ->update(['status' => true]);
+    }
+
+    #[Test]
+    public function stateless_current_user_does_not_leak_across_requests_on_reused_controller_instance()
+    {
+        $controller = new class extends BaseController
+        {
+            public function resolveUser(bool $fallback = false): ?User
+            {
+                return $this->currentUser($fallback);
+            }
+        };
+
+        // 1. Authenticated context resolves user
+        auth()->login($this->networkOwnerA);
+        $u1 = $controller->resolveUser(false);
+        $this->assertNotNull($u1);
+        $this->assertEquals($this->networkOwnerA->user_id, $u1->user_id);
+
+        // 2. Subsequent unauthenticated call on SAME controller instance MUST NOT return previous user
+        auth()->logout();
+        $u2 = $controller->resolveUser(false);
+        $this->assertNull($u2);
+
+        // 3. Fallback to system returns system user
+        $sysUser = $controller->resolveUser(true);
+        $this->assertNotNull($sysUser);
+        $this->assertEquals(0, $sysUser->user_id);
+
+        // 4. Subsequent unauthenticated call without fallback MUST NOT return system user
+        $u3 = $controller->resolveUser(false);
+        $this->assertNull($u3);
+    }
+
+    #[Test]
+    public function batch_operations_fail_atomically_for_remaining_package_and_discount_endpoints()
+    {
+        // 1. Package batch-restore:
+        $this->packageA->delete();
+        $this->packageB->delete();
+
+        $resPkgRestore = $this->withHeaders($this->headersNetA)
+            ->postJson('/api/v1/voucher-packages/batch-restore', [
+                'ids' => [$this->packageA->package_id, $this->packageB->package_id],
+            ]);
+        $resPkgRestore->assertStatus(403);
+        $this->assertNotNull($this->packageA->fresh()->deleted_at);
+        $this->assertNotNull($this->packageB->fresh()->deleted_at);
+
+        // 2. Package batch-force-delete:
+        $resPkgForce = $this->withHeaders($this->headersNetA)
+            ->postJson('/api/v1/voucher-packages/batch-force-delete', [
+                'ids' => [$this->packageA->package_id, $this->packageB->package_id],
+            ]);
+        $resPkgForce->assertStatus(403);
+        $this->assertDatabaseHas('voucher_packages', ['package_id' => $this->packageA->package_id]);
+        $this->assertDatabaseHas('voucher_packages', ['package_id' => $this->packageB->package_id]);
+
+        $this->packageA->restore();
+        $this->packageB->restore();
+
+        // 3. Create a discount for Network B
+        $discountNetB = VoucherPackageDiscount::create([
+            'network_id' => $this->networkB->network_id,
+            'pos_id' => $this->posB->pos_id,
+            'package_id' => $this->packageB->package_id,
+            'created_by' => $this->networkOwnerB->user_id,
+            'discount_cash' => 10.0,
+            'discount_credit' => 5.0,
+            'status' => true,
+        ]);
+
+        // 4. Discount batch-delete:
+        $resDiscDel = $this->withHeaders($this->headersNetA)
+            ->postJson('/api/v1/voucher-package-discounts/batch-delete', [
+                'ids' => [$this->discountPosA->discount_id, $discountNetB->discount_id],
+            ]);
+        $resDiscDel->assertStatus(403);
+        $this->assertNull($this->discountPosA->fresh()->deleted_at);
+        $this->assertNull($discountNetB->fresh()->deleted_at);
+
+        // 5. Discount batch-restore:
+        $this->discountPosA->delete();
+        $discountNetB->delete();
+
+        $resDiscRestore = $this->withHeaders($this->headersNetA)
+            ->postJson('/api/v1/voucher-package-discounts/batch-restore', [
+                'ids' => [$this->discountPosA->discount_id, $discountNetB->discount_id],
+            ]);
+        $resDiscRestore->assertStatus(403);
+        $this->assertNotNull($this->discountPosA->fresh()->deleted_at);
+        $this->assertNotNull($discountNetB->fresh()->deleted_at);
+
+        // 6. Discount batch-force-delete:
+        $resDiscForce = $this->withHeaders($this->headersNetA)
+            ->postJson('/api/v1/voucher-package-discounts/batch-force-delete', [
+                'ids' => [$this->discountPosA->discount_id, $discountNetB->discount_id],
+            ]);
+        $resDiscForce->assertStatus(403);
+        $this->assertDatabaseHas('voucher_package_discounts', ['discount_id' => $this->discountPosA->discount_id]);
+        $this->assertDatabaseHas('voucher_package_discounts', ['discount_id' => $discountNetB->discount_id]);
+
+        $this->discountPosA->restore();
+        $discountNetB->restore();
     }
 }

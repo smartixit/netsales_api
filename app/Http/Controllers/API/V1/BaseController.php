@@ -73,35 +73,21 @@ class BaseController
 
     public const SYSTEM_USER_ID = 0;
 
-    private ?User $resolvedCurrentUser = null;
-
-    private bool $currentUserResolved = false;
-
     /**
-     * استخراج كائن المستخدم الحالي من الجلسة أو كائن النظام الآلي مع التخزين المؤقت للطلب.
+     * استخراج كائن المستخدم الحالي من الجلسة أو كائن النظام الآلي بشكل عديم الحالة (Stateless).
      */
     protected function currentUser(bool $fallbackToSystem = false): ?User
     {
         /** @var User|null $user */
-        $user = auth()->user();
+        $user = auth()->user() ?? request()?->user();
 
         if ($user instanceof User) {
-            $this->resolvedCurrentUser = $user;
-            $this->currentUserResolved = true;
-
             return $user;
-        }
-
-        if ($this->currentUserResolved && $this->resolvedCurrentUser !== null) {
-            return $this->resolvedCurrentUser;
         }
 
         if ($fallbackToSystem) {
             $systemUser = app(UserRepositoryInterface::class)->findById(self::SYSTEM_USER_ID);
             if ($systemUser instanceof User) {
-                $this->resolvedCurrentUser = $systemUser;
-                $this->currentUserResolved = true;
-
                 return $systemUser;
             }
         }

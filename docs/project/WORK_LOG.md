@@ -511,6 +511,35 @@ This log documents all executed tasks, code changes, and verification command ou
   - `php artisan test --filter=VoucherPackageDiscountValidityTest`: **23 passed (134 assertions, 100% pass rate)**.
 - **Task Status:** Complete — Targeted backend security remediation concluded and verified. Halting before M5 implementation.
 
+---
+
+## [2026-11-04 20:00] Task: Final Targeted Security Fix & Closure: M5 Voucher Packages & Contractual Discounts
+- **Authorized Scope:** USER REQUESTED — Final targeted security fix addressing confirmed authorization and tenant isolation defects:
+  1. POS users receiving inactive packages through list endpoints (`GET /api/v1/voucher-packages` and `GET /api/v1/networks/{id}/voucher-packages`).
+  2. POS discount lists ignoring active commercial relationships (`NetworkPos->status = true`) in `GET /api/v1/voucher-package-discounts` and trashed list.
+  3. Finalizing stateless `BaseController::currentUser()` without request identity bleeding.
+  4. Adding regression tests for all 12 scenario items and batch operations (restore & force-delete).
+- **Strict Compliance Invariants:**
+  1. Zero currency management (no currency models, tables, columns, or parameters).
+  2. Zero Flutter changes.
+  3. Zero git commits or pushes; preserved all untracked and modified files.
+  4. Preserved existing DEC statuses and business rules.
+- **Files Modified / Implemented:**
+  - `app/Http/Controllers/API/V1/BaseController.php`: Made `currentUser()` completely stateless, eliminating `$resolvedCurrentUser` and `$currentUserResolved` instance variables.
+  - `app/Services/TenantAuthorizationService.php`: Added `getPackageVisibilityScope()` and `getDiscountVisibilityScope()`.
+  - `app/Repositories/VoucherPackageRepository.php`: Enhanced `getFiltered()` with `visibility_scope` enforcing `status = true` for POS-linked packages while allowing all statuses for network personnel and mixed users.
+  - `app/Repositories/VoucherPackageDiscountRepository.php`: Enhanced `getFiltered()` and `getTrashed()` with `discount_visibility_scope` adding `WHERE EXISTS (SELECT 1 FROM network_pos WHERE network_pos.network_id = voucher_package_discounts.network_id AND network_pos.pos_id = voucher_package_discounts.pos_id AND network_pos.status = true)` for POS access while preserving full historical records for network personnel.
+  - `app/Http/Controllers/API/V1/VoucherPackageController.php`: Hardened `index` and `networkPackages` to enforce active status on POS-linked networks and validate network visibility.
+  - `app/Http/Controllers/API/V1/VoucherPackageDiscountController.php`: Hardened `index` and `trashed` to pass `discount_visibility_scope` and validate explicit `network_id` and `pos_id` filters.
+  - `tests/Feature/VoucherPackageTenantAuthorizationTest.php`: Expanded from 8 to 14 feature tests (103 assertions) covering package visibility, inactive package protection, active commercial link enforcement, explicit filter tampering rejection, mixed-context users, stateless controller resolution, and atomic batch failures for restore and force-delete endpoints.
+- **Verification Commands & Outcomes:**
+  - `vendor/bin/pint --dirty --format agent`: **PASS (Cleanly formatted modified PHP files)**.
+  - `php artisan test --filter=VoucherPackageTenantAuthorizationTest`: **14 passed (103 assertions, 100% pass rate)**.
+  - `php artisan test --filter=VoucherPackageDiscountValidityTest`: **23 passed (134 assertions, 100% pass rate)**.
+  - `php artisan test --filter="CommercialEntitiesAndRelationshipsTest|NetworkPosLinkingChallengeTest"`: **40 passed (119 assertions, 100% pass rate)**.
+- **Task Status:** Complete — Final Targeted Security Fix and Closure concluded. All defects resolved and verified. Ready for next authorized task.
+
+
 
 
 

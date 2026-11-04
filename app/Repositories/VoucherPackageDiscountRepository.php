@@ -26,13 +26,52 @@ class VoucherPackageDiscountRepository extends BaseRepository implements Voucher
     {
         $query = $this->model->newQuery()->with($relations);
 
-        if (isset($filters['network_ids'])) {
+        if (isset($filters['discount_visibility_scope'])) {
+            $managedNetworkIds = (array) ($filters['discount_visibility_scope']['managed_network_ids'] ?? []);
+            $posIds = (array) ($filters['discount_visibility_scope']['pos_ids'] ?? []);
+
+            $query->where(function ($q) use ($managedNetworkIds, $posIds) {
+                $hasManaged = ! empty($managedNetworkIds);
+                $hasPos = ! empty($posIds);
+
+                if ($hasManaged && $hasPos) {
+                    $q->whereIn('network_id', $managedNetworkIds)
+                        ->orWhere(function ($sub) use ($posIds) {
+                            $sub->whereIn('pos_id', $posIds)
+                                ->whereExists(function ($ex) {
+                                    $ex->selectRaw(1)
+                                        ->from('network_pos')
+                                        ->whereColumn('network_pos.network_id', 'voucher_package_discounts.network_id')
+                                        ->whereColumn('network_pos.pos_id', 'voucher_package_discounts.pos_id')
+                                        ->where('network_pos.status', true);
+                                });
+                        });
+                } elseif ($hasManaged) {
+                    $q->whereIn('network_id', $managedNetworkIds);
+                } elseif ($hasPos) {
+                    $q->whereIn('pos_id', $posIds)
+                        ->whereExists(function ($ex) {
+                            $ex->selectRaw(1)
+                                ->from('network_pos')
+                                ->whereColumn('network_pos.network_id', 'voucher_package_discounts.network_id')
+                                ->whereColumn('network_pos.pos_id', 'voucher_package_discounts.pos_id')
+                                ->where('network_pos.status', true);
+                        });
+                } else {
+                    $q->whereRaw('1 = 0');
+                }
+            });
+        } elseif (isset($filters['network_ids'])) {
             $query->whereIn('network_id', (array) $filters['network_ids']);
         } elseif (! empty($filters['network_id'])) {
             $query->forNetwork((int) $filters['network_id']);
         }
 
-        if (isset($filters['pos_ids'])) {
+        if (! empty($filters['network_id']) && isset($filters['discount_visibility_scope'])) {
+            $query->forNetwork((int) $filters['network_id']);
+        }
+
+        if (isset($filters['pos_ids']) && ! isset($filters['discount_visibility_scope'])) {
             $query->whereIn('pos_id', (array) $filters['pos_ids']);
         } elseif (! empty($filters['package_id']) && ! empty($filters['pos_id'])) {
             $query->forPackageAndPos((int) $filters['package_id'], (int) $filters['pos_id']);
@@ -125,16 +164,59 @@ class VoucherPackageDiscountRepository extends BaseRepository implements Voucher
         $perPage = min(max(1, $perPage), 50);
         $query = $this->model->newQuery()->onlyTrashed()->with(['network', 'pos', 'voucherPackage']);
 
-        if (isset($filters['network_ids'])) {
+        if (isset($filters['discount_visibility_scope'])) {
+            $managedNetworkIds = (array) ($filters['discount_visibility_scope']['managed_network_ids'] ?? []);
+            $posIds = (array) ($filters['discount_visibility_scope']['pos_ids'] ?? []);
+
+            $query->where(function ($q) use ($managedNetworkIds, $posIds) {
+                $hasManaged = ! empty($managedNetworkIds);
+                $hasPos = ! empty($posIds);
+
+                if ($hasManaged && $hasPos) {
+                    $q->whereIn('network_id', $managedNetworkIds)
+                        ->orWhere(function ($sub) use ($posIds) {
+                            $sub->whereIn('pos_id', $posIds)
+                                ->whereExists(function ($ex) {
+                                    $ex->selectRaw(1)
+                                        ->from('network_pos')
+                                        ->whereColumn('network_pos.network_id', 'voucher_package_discounts.network_id')
+                                        ->whereColumn('network_pos.pos_id', 'voucher_package_discounts.pos_id')
+                                        ->where('network_pos.status', true);
+                                });
+                        });
+                } elseif ($hasManaged) {
+                    $q->whereIn('network_id', $managedNetworkIds);
+                } elseif ($hasPos) {
+                    $q->whereIn('pos_id', $posIds)
+                        ->whereExists(function ($ex) {
+                            $ex->selectRaw(1)
+                                ->from('network_pos')
+                                ->whereColumn('network_pos.network_id', 'voucher_package_discounts.network_id')
+                                ->whereColumn('network_pos.pos_id', 'voucher_package_discounts.pos_id')
+                                ->where('network_pos.status', true);
+                        });
+                } else {
+                    $q->whereRaw('1 = 0');
+                }
+            });
+        } elseif (isset($filters['network_ids'])) {
             $query->whereIn('network_id', (array) $filters['network_ids']);
         } elseif (! empty($filters['network_id'])) {
             $query->forNetwork((int) $filters['network_id']);
         }
 
-        if (isset($filters['pos_ids'])) {
+        if (! empty($filters['network_id']) && isset($filters['discount_visibility_scope'])) {
+            $query->forNetwork((int) $filters['network_id']);
+        }
+
+        if (isset($filters['pos_ids']) && ! isset($filters['discount_visibility_scope'])) {
             $query->whereIn('pos_id', (array) $filters['pos_ids']);
         } elseif (! empty($filters['pos_id'])) {
             $query->forPos((int) $filters['pos_id']);
+        }
+
+        if (! empty($filters['package_id'])) {
+            $query->where('package_id', (int) $filters['package_id']);
         }
 
         return $query->orderBy($this->model->getKeyName(), 'desc')->cursorPaginate($perPage);

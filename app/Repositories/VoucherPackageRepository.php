@@ -26,15 +26,53 @@ class VoucherPackageRepository extends BaseRepository implements VoucherPackageR
     {
         $query = $this->model->newQuery()->with($relations);
 
-        if (isset($filters['network_ids'])) {
+        if (isset($filters['visibility_scope'])) {
+            $managed = (array) ($filters['visibility_scope']['managed_network_ids'] ?? []);
+            $posLinked = (array) ($filters['visibility_scope']['pos_linked_network_ids'] ?? []);
+
+            $query->where(function ($q) use ($managed, $posLinked, $filters) {
+                $hasManaged = ! empty($managed);
+                $hasPosLinked = ! empty($posLinked);
+
+                if ($hasManaged && $hasPosLinked) {
+                    $q->where(function ($sub) use ($managed, $filters) {
+                        $sub->whereIn('network_id', $managed);
+                        if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
+                            $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
+                            $status ? $sub->active() : $sub->inactive();
+                        }
+                    })->orWhere(function ($sub) use ($posLinked) {
+                        $sub->whereIn('network_id', $posLinked)->active();
+                    });
+                } elseif ($hasManaged) {
+                    $q->whereIn('network_id', $managed);
+                    if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
+                        $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
+                        $status ? $q->active() : $q->inactive();
+                    }
+                } elseif ($hasPosLinked) {
+                    $q->whereIn('network_id', $posLinked)->active();
+                } else {
+                    $q->whereRaw('1 = 0');
+                }
+            });
+        } elseif (isset($filters['network_ids'])) {
             $query->whereIn('network_id', (array) $filters['network_ids']);
+            if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
+                $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
+                $status ? $query->active() : $query->inactive();
+            }
         } elseif (! empty($filters['network_id'])) {
             $query->forNetwork((int) $filters['network_id']);
-        }
-
-        if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
-            $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
-            $status ? $query->active() : $query->inactive();
+            if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
+                $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
+                $status ? $query->active() : $query->inactive();
+            }
+        } else {
+            if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
+                $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN);
+                $status ? $query->active() : $query->inactive();
+            }
         }
 
         if (! empty($filters['search'])) {

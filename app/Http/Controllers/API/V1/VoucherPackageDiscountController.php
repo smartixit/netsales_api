@@ -60,40 +60,33 @@ class VoucherPackageDiscountController extends BaseController
             $filters = $request->only(['network_id', 'pos_id', 'package_id', 'status', 'search', 'per_page', 'all']);
 
             if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
-                $authorizedNetworkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
-                $authorizedPosIds = $this->tenantAuth->getUserAuthorizedPosIds($user, 'voucher_packages.view') ?? [];
+                $scope = $this->tenantAuth->getDiscountVisibilityScope($user);
+                $authorizedNetworkIds = $scope['managed_network_ids'] ?? [];
+                $authorizedPosIds = $scope['pos_ids'] ?? [];
+                $linkedNetworkIds = $this->tenantAuth->getUserLinkedNetworkIdsForPos($user);
 
-                if (empty($authorizedNetworkIds) && ! empty($authorizedPosIds)) {
-                    $filters['pos_ids'] = $authorizedPosIds;
-                    if ($request->filled('pos_id')) {
-                        $requestedPosId = (int) $request->input('pos_id');
-                        if (! in_array($requestedPosId, $authorizedPosIds, true)) {
-                            return $this->errorResponse('عذراً، لا يمكنك عرض خصومات نقطة بيع أخرى.', [], 403);
-                        }
-                    }
-                } elseif (! empty($authorizedNetworkIds) && empty($authorizedPosIds)) {
-                    $filters['network_ids'] = $authorizedNetworkIds;
-                    if ($request->filled('network_id')) {
-                        $requestedNetId = (int) $request->input('network_id');
-                        if (! in_array($requestedNetId, $authorizedNetworkIds, true)) {
-                            return $this->errorResponse('عذراً، ليس لديك الصلاحية لعرض خصومات هذه الشبكة.', [], 403);
-                        }
-                    }
-                } elseif (! empty($authorizedNetworkIds) && ! empty($authorizedPosIds)) {
-                    if ($request->filled('network_id')) {
-                        $requestedNetId = (int) $request->input('network_id');
-                        if (! in_array($requestedNetId, $authorizedNetworkIds, true)) {
-                            return $this->errorResponse('عذراً، ليس لديك الصلاحية لعرض خصومات هذه الشبكة.', [], 403);
-                        }
-                        $filters['network_ids'] = [$requestedNetId];
-                    } elseif ($request->filled('pos_id') && in_array((int) $request->input('pos_id'), $authorizedPosIds, true)) {
-                        $filters['pos_ids'] = [(int) $request->input('pos_id')];
-                    } else {
-                        $filters['network_ids'] = $authorizedNetworkIds;
-                    }
-                } else {
+                if (empty($authorizedNetworkIds) && empty($authorizedPosIds)) {
                     return $this->errorResponse('عذراً، ليس لديك صلاحية عرض الخصومات.', [], 403);
                 }
+
+                if ($request->filled('pos_id')) {
+                    $requestedPosId = (int) $request->input('pos_id');
+                    if (empty($authorizedNetworkIds) && ! in_array($requestedPosId, $authorizedPosIds, true)) {
+                        return $this->errorResponse('عذراً، لا يمكنك عرض خصومات نقطة بيع أخرى.', [], 403);
+                    }
+                    $filters['pos_id'] = $requestedPosId;
+                }
+
+                if ($request->filled('network_id')) {
+                    $requestedNetId = (int) $request->input('network_id');
+                    $allAllowedNetIds = array_values(array_unique(array_merge($authorizedNetworkIds, $linkedNetworkIds)));
+                    if (! in_array($requestedNetId, $allAllowedNetIds, true)) {
+                        return $this->errorResponse('عذراً، ليس لديك الصلاحية لعرض خصومات هذه الشبكة.', [], 403);
+                    }
+                    $filters['network_id'] = $requestedNetId;
+                }
+
+                $filters['discount_visibility_scope'] = $scope;
             }
 
             $discounts = $this->discountService->getFiltered($filters);
@@ -315,19 +308,36 @@ class VoucherPackageDiscountController extends BaseController
     {
         try {
             $user = $this->currentUser();
-            $filters = [];
+            $filters = $request->only(['network_id', 'pos_id', 'package_id', 'search', 'per_page', 'all']);
 
             if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
-                $authorizedNetworkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
-                $authorizedPosIds = $this->tenantAuth->getUserAuthorizedPosIds($user, 'voucher_packages.view') ?? [];
+                $scope = $this->tenantAuth->getDiscountVisibilityScope($user);
+                $authorizedNetworkIds = $scope['managed_network_ids'] ?? [];
+                $authorizedPosIds = $scope['pos_ids'] ?? [];
+                $linkedNetworkIds = $this->tenantAuth->getUserLinkedNetworkIdsForPos($user);
 
-                if (! empty($authorizedNetworkIds)) {
-                    $filters['network_ids'] = $authorizedNetworkIds;
-                } elseif (! empty($authorizedPosIds)) {
-                    $filters['pos_ids'] = $authorizedPosIds;
-                } else {
+                if (empty($authorizedNetworkIds) && empty($authorizedPosIds)) {
                     return $this->errorResponse('عذراً، ليس لديك صلاحية عرض المحذوفات.', [], 403);
                 }
+
+                if ($request->filled('pos_id')) {
+                    $requestedPosId = (int) $request->input('pos_id');
+                    if (empty($authorizedNetworkIds) && ! in_array($requestedPosId, $authorizedPosIds, true)) {
+                        return $this->errorResponse('عذراً، لا يمكنك عرض محذوفات نقطة بيع أخرى.', [], 403);
+                    }
+                    $filters['pos_id'] = $requestedPosId;
+                }
+
+                if ($request->filled('network_id')) {
+                    $requestedNetId = (int) $request->input('network_id');
+                    $allAllowedNetIds = array_values(array_unique(array_merge($authorizedNetworkIds, $linkedNetworkIds)));
+                    if (! in_array($requestedNetId, $allAllowedNetIds, true)) {
+                        return $this->errorResponse('عذراً، ليس لديك الصلاحية لعرض محذوفات هذه الشبكة.', [], 403);
+                    }
+                    $filters['network_id'] = $requestedNetId;
+                }
+
+                $filters['discount_visibility_scope'] = $scope;
             }
 
             $perPage = (int) $request->input('per_page', 15);

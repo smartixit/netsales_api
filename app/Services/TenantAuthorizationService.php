@@ -134,6 +134,49 @@ class TenantAuthorizationService
     }
 
     /**
+     * استخراج نطاق رؤية الباقات للمستخدم (شبكات الإدارة وشبكات نقاط البيع المرتبطة).
+     * يعيد null لمدير النظام العام.
+     *
+     * @return array{managed_network_ids: array<int>, pos_linked_network_ids: array<int>}|null
+     */
+    public function getPackageVisibilityScope(User $user): ?array
+    {
+        if ($this->isSuperAdmin($user)) {
+            return null;
+        }
+
+        $managedNetworks = $this->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
+        $linkedNetworks = $this->getUserLinkedNetworkIdsForPos($user);
+        $posLinkedOnly = array_values(array_diff($linkedNetworks, $managedNetworks));
+
+        return [
+            'managed_network_ids' => $managedNetworks,
+            'pos_linked_network_ids' => $posLinkedOnly,
+        ];
+    }
+
+    /**
+     * استخراج نطاق رؤية الخصومات التعاقدية للمستخدم.
+     * يعيد null لمدير النظام العام.
+     *
+     * @return array{managed_network_ids: array<int>, pos_ids: array<int>}|null
+     */
+    public function getDiscountVisibilityScope(User $user): ?array
+    {
+        if ($this->isSuperAdmin($user)) {
+            return null;
+        }
+
+        $managedNetworks = $this->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
+        $authorizedPosIds = $this->getUserAuthorizedPosIds($user, 'voucher_packages.view') ?? [];
+
+        return [
+            'managed_network_ids' => $managedNetworks,
+            'pos_ids' => $authorizedPosIds,
+        ];
+    }
+
+    /**
      * هل المستخدم مخول بعرض باقات شبكة محددة؟
      */
     public function canViewNetworkPackages(User $user, int $networkId): bool
@@ -332,4 +375,3 @@ class TenantAuthorizationService
         }
     }
 }
-
