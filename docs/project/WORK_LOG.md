@@ -482,6 +482,36 @@ This log documents all executed tasks, code changes, and verification command ou
   - `flutter analyze lib/widgets/qr/ lib/features/commercial/ test/commercial/`: **No issues found (0 warnings, 0 errors)**.
 - **Task Status:** Complete — Focused Final Verification concluded. Halting at M4 enhancement boundary.
 
+---
+
+## [2026-11-04 18:40] Task: Targeted Backend Security Remediation: M5 Tenant Isolation & Authorization
+- **Authorized Scope:** USER REQUESTED — Targeted security remediation addressing authorization weaknesses affecting Voucher Packages (`voucher_packages`) and Voucher Package Discounts (`voucher_package_discounts`). Generic permission middleware previously checked only global/primary role permissions without enforcing tenant boundaries. Implemented comprehensive server-side tenant isolation, active membership verification, POS privacy protection, accountant least-privilege, and atomic batch operation rejection across all endpoints.
+- **Strict Compliance Invariants:**
+  1. Zero currency management (no currency models, tables, columns, or parameters added).
+  2. Zero Flutter client modifications.
+  3. Zero git commits or pushes; preserved all untracked and modified files across both repositories.
+  4. Preserved existing DEC-01 through DEC-04 statuses and role seeder configurations.
+  5. Halted before starting full Milestone 5 implementation.
+- **Files Created / Implemented:**
+  - `app/Services/TenantAuthorizationService.php`: Created authoritative multi-tenant domain authorization engine managing tenant scoping, active membership checks, commercial relationship link verification (`network_pos`), cross-POS privacy rules, and accountant capability restrictions.
+  - `app/Policies/VoucherPackagePolicy.php`: Created Laravel policy delegating `viewAny`, `view`, `create`, `update`, `delete`, `restore`, and `forceDelete` to `TenantAuthorizationService`.
+  - `app/Policies/VoucherPackageDiscountPolicy.php`: Created Laravel policy enforcing tenant authorization on discounts.
+  - `app/Providers/AppServiceProvider.php`: Registered both policies with `Gate::policy(...)`.
+  - `app/Interfaces/VoucherPackageRepositoryInterface.php` & `app/Repositories/VoucherPackageRepository.php`: Enhanced `getFiltered()` with multi-network array scoping (`network_ids`) and updated `getTrashed()` signature to accept filtering.
+  - `app/Interfaces/VoucherPackageDiscountRepositoryInterface.php` & `app/Repositories/VoucherPackageDiscountRepository.php`: Enhanced `getFiltered()` with multi-network (`network_ids`) and multi-POS (`pos_ids`) array scoping and updated `getTrashed()`.
+  - `app/Services/VoucherPackageService.php` & `app/Services/VoucherPackageDiscountService.php`: Propagated tenant filtering down to repository layer for both active and trashed queries.
+  - `app/Http/Controllers/API/V1/VoucherPackageController.php`: Refactored all endpoints (`index`, `show`, `store`, `update`, `destroy`, `trashed`, `restore`, `forceDelete`, `batchDelete`, `batchRestore`, `batchForceDelete`, `toggleStatus`, `networkPackages`) to enforce `Gate::forUser($user)->allows(...)` and tenant scoping.
+  - `app/Http/Controllers/API/V1/VoucherPackageDiscountController.php`: Refactored all endpoints to enforce tenant scoping, strict POS privacy, and atomic batch failure on cross-tenant input.
+  - `app/Http/Controllers/API/V1/BaseController.php`: Resolved cached user resolution bug in `currentUser()` so `auth()->user()` takes precedence in multi-request execution flows.
+  - `tests/Feature/VoucherPackageTenantAuthorizationTest.php`: Created comprehensive feature test suite covering 8 isolation scenarios (41 assertions).
+  - `tests/Feature/VoucherPackageDiscountValidityTest.php`: Maintained and verified complete compatibility across pricing token, validity periods, and soft-delete semantics (23 tests, 134 assertions).
+- **Verification Commands & Outcomes:**
+  - `vendor/bin/pint --dirty --format agent`: **PASS (Cleanly formatted all modified and newly created files)**.
+  - `php artisan test --filter=VoucherPackageTenantAuthorizationTest`: **8 passed (41 assertions, 100% pass rate)**.
+  - `php artisan test --filter=VoucherPackageDiscountValidityTest`: **23 passed (134 assertions, 100% pass rate)**.
+- **Task Status:** Complete — Targeted backend security remediation concluded and verified. Halting before M5 implementation.
+
+
 
 
 

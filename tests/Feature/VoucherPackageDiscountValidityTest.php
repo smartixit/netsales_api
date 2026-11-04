@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Enums\SaleType;
+use App\Models\Directorate;
+use App\Models\Governorate;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
@@ -77,12 +79,16 @@ class VoucherPackageDiscountValidityTest extends TestCase
             'X-Bypass-Encryption' => 'true',
         ];
 
+        $gov = Governorate::first() ?? Governorate::create(['governorate_name' => 'Sanaa']);
+        $dir = Directorate::where('governorate_id', $gov->governorate_id)->first()
+            ?? Directorate::create(['governorate_id' => $gov->governorate_id, 'directorate_name' => 'Main']);
+
         $this->network = Network::create([
             'owner_id' => $this->user->user_id,
             'network_name' => 'شبكة التخفيضات '.$suffix,
             'network_phone_number' => '77'.rand(1000000, 9999999),
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $gov->governorate_id,
+            'directorate_id' => $dir->directorate_id,
             'status' => NetworkStatus::ACTIVE,
         ]);
 
@@ -90,8 +96,8 @@ class VoucherPackageDiscountValidityTest extends TestCase
             'owner_id' => $this->user->user_id,
             'pos_name' => 'نقطة الأفق '.$suffix,
             'pos_phone_number' => '73'.rand(1000000, 9999999),
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $gov->governorate_id,
+            'directorate_id' => $dir->directorate_id,
             'status' => PosStatus::ACTIVE,
         ]);
 

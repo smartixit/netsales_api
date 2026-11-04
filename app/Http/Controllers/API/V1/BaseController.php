@@ -82,10 +82,6 @@ class BaseController
      */
     protected function currentUser(bool $fallbackToSystem = false): ?User
     {
-        if ($this->currentUserResolved && $this->resolvedCurrentUser !== null) {
-            return $this->resolvedCurrentUser;
-        }
-
         /** @var User|null $user */
         $user = auth()->user();
 
@@ -94,6 +90,10 @@ class BaseController
             $this->currentUserResolved = true;
 
             return $user;
+        }
+
+        if ($this->currentUserResolved && $this->resolvedCurrentUser !== null) {
+            return $this->resolvedCurrentUser;
         }
 
         if ($fallbackToSystem) {

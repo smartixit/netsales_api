@@ -6,10 +6,13 @@ use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Network\StoreVoucherPackageRequest;
 use App\Http\Requests\API\V1\Network\UpdateVoucherPackageRequest;
 use App\Http\Resources\API\V1\Network\VoucherPackageResource;
+use App\Models\VoucherPackage;
+use App\Services\TenantAuthorizationService;
 use App\Services\VoucherPackageService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
@@ -18,14 +21,16 @@ use OpenApi\Attributes as OA;
  *
  * متحكم نحيف (Lean Controller) يلتزم بالمعايير الصارمة:
  * 1. استقبال الـ FormRequest وتمريره مباشرة إلى VoucherPackageService.
- * 2. تغليف النتيجة عبر ApiResponseTrait ومورد VoucherPackageResource.
- * 3. خالٍ تماماً من الاستعلامات المباشرة، شروط الأعمال، أو DB::transaction.
+ * 2. التحقق الصارم من سياسات وعزل المستأجرين (Tenant Isolation & Authorization).
+ * 3. تغليف النتيجة عبر ApiResponseTrait ومورد VoucherPackageResource.
+ * 4. خالٍ تماماً من الاستعلامات المباشرة، شروط الأعمال، أو DB::transaction.
  */
 #[OA\Tag(name: 'Voucher Packages', description: 'إدارة باقات كروت الإنترنت، الأسعار، نسب الخصم الافتراضية، والعمليات الإدارية والمجمعة')]
 class VoucherPackageController extends BaseController
 {
     public function __construct(
         protected VoucherPackageService $voucherPackageService,
+        protected TenantAuthorizationService $tenantAuth,
     ) {}
 
     /**
@@ -48,7 +53,22 @@ class VoucherPackageController extends BaseController
     public function index(Request $request): JsonResponse
     {
         try {
+            $user = $this->currentUser();
             $filters = $request->only(['network_id', 'status', 'search', 'per_page', 'all']);
+
+            if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
+                $viewableNetworkIds = $this->tenantAuth->getViewableNetworkIdsForPackages($user) ?? [];
+
+                if ($request->filled('network_id')) {
+                    $requestedNetworkId = (int) $request->input('network_id');
+                    if (! in_array($requestedNetworkId, $viewableNetworkIds, true)) {
+                        return $this->errorResponse('عذراً، ليس لديك الصلاحية لعرض باقات هذه الشبكة.', [], 403);
+                    }
+                }
+
+                $filters['network_ids'] = $viewableNetworkIds;
+            }
+
             $packages = $this->voucherPackageService->getFiltered($filters);
 
             return $this->successResponse('تم استرجاع قائمة باقات الكروت بنجاح.', VoucherPackageResource::collection($packages));
@@ -71,6 +91,7 @@ class VoucherPackageController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع بيانات الباقة بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بالوصول'),
             new OA\Response(response: 404, description: 'الباقة غير موجودة'),
         ]
     )]
@@ -80,6 +101,11 @@ class VoucherPackageController extends BaseController
             $package = $this->voucherPackageService->findById($id);
             if (! $package) {
                 return $this->errorResponse('باقة الكروت غير موجودة في النظام.', [], 404);
+            }
+
+            $user = $this->currentUser();
+            if ($user && ! Gate::forUser($user)->allows('view', $package)) {
+                return $this->errorResponse('عذراً، غير مصرح لك بعرض هذه الباقة.', [], 403);
             }
 
             return $this->successResponse('تم جلب بيانات الباقة بنجاح.', new VoucherPackageResource($package));
@@ -122,12 +148,20 @@ class VoucherPackageController extends BaseController
         ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء الباقة بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بإنشاء باقة في هذه الشبكة'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
         ]
     )]
     public function store(StoreVoucherPackageRequest $request): JsonResponse
     {
         try {
+            $user = $this->currentUser();
+            $networkId = (int) $request->getNetworkId();
+
+            if ($user && ! Gate::forUser($user)->allows('create', [VoucherPackage::class, $networkId])) {
+                return $this->errorResponse('عذراً، غير مصرح لك بإنشاء باقات في هذه الشبكة.', [], 403);
+            }
+
             $package = $this->voucherPackageService->create($request, $this->currentUserId());
 
             return $this->successResponse('تم إنشاء باقة الكروت بنجاح.', new VoucherPackageResource($package), 201);
@@ -172,6 +206,7 @@ class VoucherPackageController extends BaseController
         ),
         responses: [
             new OA\Response(response: 200, description: 'تم تحديث بيانات الباقة بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بتعديل هذه الباقة'),
             new OA\Response(response: 404, description: 'الباقة غير موجودة'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
         ]
@@ -179,6 +214,16 @@ class VoucherPackageController extends BaseController
     public function update(UpdateVoucherPackageRequest $request, int $id): JsonResponse
     {
         try {
+            $package = $this->voucherPackageService->findById($id);
+            if (! $package) {
+                return $this->errorResponse('باقة الكروت غير موجودة في النظام.', [], 404);
+            }
+
+            $user = $this->currentUser();
+            if ($user && ! Gate::forUser($user)->allows('update', $package)) {
+                return $this->errorResponse('عذراً، غير مصرح لك بتعديل هذه الباقة.', [], 403);
+            }
+
             $package = $this->voucherPackageService->update($id, $request);
 
             return $this->successResponse('تم تحديث بيانات باقة الكروت بنجاح.', new VoucherPackageResource($package));
@@ -201,12 +246,23 @@ class VoucherPackageController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم نقل الباقة لسلة المحذوفات بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بحذف هذه الباقة'),
             new OA\Response(response: 404, description: 'الباقة غير موجودة'),
         ]
     )]
     public function destroy(int $id): JsonResponse
     {
         try {
+            $package = $this->voucherPackageService->findById($id);
+            if (! $package) {
+                return $this->errorResponse('باقة الكروت غير موجودة أو تعذر حذفها.', [], 404);
+            }
+
+            $user = $this->currentUser();
+            if ($user && ! Gate::forUser($user)->allows('delete', $package)) {
+                return $this->errorResponse('عذراً، غير مصرح لك بحذف هذه الباقة.', [], 403);
+            }
+
             $deleted = $this->voucherPackageService->delete($id);
             if (! $deleted) {
                 return $this->errorResponse('باقة الكروت غير موجودة أو تعذر حذفها.', [], 404);
@@ -239,8 +295,16 @@ class VoucherPackageController extends BaseController
     public function trashed(Request $request): JsonResponse
     {
         try {
+            $user = $this->currentUser();
+            $filters = [];
+
+            if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
+                $authorizedNetworkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
+                $filters['network_ids'] = $authorizedNetworkIds;
+            }
+
             $perPage = (int) $request->input('per_page', 15);
-            $trashed = $this->voucherPackageService->getTrashed($perPage);
+            $trashed = $this->voucherPackageService->getTrashed($perPage, $filters);
 
             return $this->successResponse('تم استرجاع سلة محذوفات الباقات بنجاح.', VoucherPackageResource::collection($trashed));
         } catch (ValidationException $e) {
@@ -262,12 +326,23 @@ class VoucherPackageController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تمت استعادة الباقة بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح باستعادة هذه الباقة'),
             new OA\Response(response: 404, description: 'الباقة غير موجودة في المحذوفات'),
         ]
     )]
     public function restore(int $id): JsonResponse
     {
         try {
+            $package = VoucherPackage::onlyTrashed()->find($id);
+            if (! $package) {
+                return $this->errorResponse('تعذر استعادة الباقة، قد لا تكون في سلة المحذوفات.', [], 404);
+            }
+
+            $user = $this->currentUser();
+            if ($user && ! Gate::forUser($user)->allows('restore', $package)) {
+                return $this->errorResponse('عذراً، غير مصرح لك باستعادة هذه الباقة.', [], 403);
+            }
+
             $restored = $this->voucherPackageService->restore($id);
             if (! $restored) {
                 return $this->errorResponse('تعذر استعادة الباقة، قد لا تكون في سلة المحذوفات.', [], 404);
@@ -293,11 +368,23 @@ class VoucherPackageController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بالحذف النهائي لهذه الباقة'),
+            new OA\Response(response: 404, description: 'الباقة غير موجودة'),
         ]
     )]
     public function forceDelete(int $id): JsonResponse
     {
         try {
+            $package = VoucherPackage::withTrashed()->find($id);
+            if (! $package) {
+                return $this->errorResponse('باقة الكروت غير موجودة.', [], 404);
+            }
+
+            $user = $this->currentUser();
+            if ($user && ! Gate::forUser($user)->allows('forceDelete', $package)) {
+                return $this->errorResponse('عذراً، غير مصرح لك بالحذف النهائي لهذه الباقة.', [], 403);
+            }
+
             $deleted = $this->voucherPackageService->forceDelete($id);
             if (! $deleted) {
                 return $this->errorResponse('تعذر الحذف النهائي لباقة الكروت.', [], 422);
@@ -333,12 +420,29 @@ class VoucherPackageController extends BaseController
         ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف المجمع بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بحذف بعض الباقات المحددة'),
+            new OA\Response(response: 404, description: 'بعض الباقات غير موجودة'),
         ]
     )]
     public function batchDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
             $ids = $request->getIds();
+            $user = $this->currentUser();
+
+            $packages = VoucherPackage::whereIn('package_id', $ids)->get();
+            if ($packages->count() !== count(array_unique($ids))) {
+                return $this->errorResponse('بعض الباقات المحددة غير موجودة في النظام.', [], 404);
+            }
+
+            if ($user && ! $user->isSuperAdmin()) {
+                foreach ($packages as $pkg) {
+                    if (! Gate::forUser($user)->allows('delete', $pkg)) {
+                        return $this->errorResponse('عذراً، غير مصرح لك بحذف بعض الباقات المحددة.', [], 403);
+                    }
+                }
+            }
+
             $count = $this->voucherPackageService->bulkDelete($ids);
 
             return $this->successResponse("تم نقل {$count} باقة كروت إلى سلة المحذوفات بنجاح.");
@@ -371,12 +475,29 @@ class VoucherPackageController extends BaseController
         ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح باستعادة بعض الباقات'),
+            new OA\Response(response: 404, description: 'بعض الباقات غير موجودة في سلة المحذوفات'),
         ]
     )]
     public function batchRestore(BatchIdsRequest $request): JsonResponse
     {
         try {
             $ids = $request->getIds();
+            $user = $this->currentUser();
+
+            $packages = VoucherPackage::onlyTrashed()->whereIn('package_id', $ids)->get();
+            if ($packages->count() !== count(array_unique($ids))) {
+                return $this->errorResponse('بعض الباقات المحددة غير موجودة في سلة المحذوفات.', [], 404);
+            }
+
+            if ($user && ! $user->isSuperAdmin()) {
+                foreach ($packages as $pkg) {
+                    if (! Gate::forUser($user)->allows('restore', $pkg)) {
+                        return $this->errorResponse('عذراً، غير مصرح لك باستعادة بعض الباقات المحددة.', [], 403);
+                    }
+                }
+            }
+
             $count = $this->voucherPackageService->bulkRestore($ids);
 
             return $this->successResponse("تمت استعادة {$count} باقة كروت بنجاح.");
@@ -409,12 +530,29 @@ class VoucherPackageController extends BaseController
         ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بالحذف النهائي لبعض الباقات'),
+            new OA\Response(response: 404, description: 'بعض الباقات غير موجودة'),
         ]
     )]
     public function batchForceDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
             $ids = $request->getIds();
+            $user = $this->currentUser();
+
+            $packages = VoucherPackage::withTrashed()->whereIn('package_id', $ids)->get();
+            if ($packages->count() !== count(array_unique($ids))) {
+                return $this->errorResponse('بعض الباقات المحددة غير موجودة في النظام.', [], 404);
+            }
+
+            if ($user && ! $user->isSuperAdmin()) {
+                foreach ($packages as $pkg) {
+                    if (! Gate::forUser($user)->allows('forceDelete', $pkg)) {
+                        return $this->errorResponse('عذراً، غير مصرح لك بالحذف النهائي لبعض الباقات المحددة.', [], 403);
+                    }
+                }
+            }
+
             $count = $this->voucherPackageService->bulkForceDelete($ids);
 
             return $this->successResponse("تم الحذف النهائي لـ {$count} باقة كروت من النظام بنجاح.");
@@ -437,11 +575,23 @@ class VoucherPackageController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم تبديل الحالة بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بتعديل هذه الباقة'),
+            new OA\Response(response: 404, description: 'الباقة غير موجودة'),
         ]
     )]
     public function toggleStatus(int $id): JsonResponse
     {
         try {
+            $package = $this->voucherPackageService->findById($id);
+            if (! $package) {
+                return $this->errorResponse('باقة الكروت المحددة غير موجودة.', [], 404);
+            }
+
+            $user = $this->currentUser();
+            if ($user && ! Gate::forUser($user)->allows('update', $package)) {
+                return $this->errorResponse('عذراً، غير مصرح لك بتعديل حالة هذه الباقة.', [], 403);
+            }
+
             $package = $this->voucherPackageService->toggleStatus($id);
 
             return $this->successResponse('تم تبديل حالة تفعيل الباقة بنجاح.', new VoucherPackageResource($package));
@@ -464,11 +614,17 @@ class VoucherPackageController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع باقات الشبكة بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بعرض باقات هذه الشبكة'),
         ]
     )]
     public function networkPackages(int $id, Request $request): JsonResponse
     {
         try {
+            $user = $this->currentUser();
+            if ($user && ! $this->tenantAuth->canViewNetworkPackages($user, $id)) {
+                return $this->errorResponse('عذراً، ليس لديك الصلاحية لعرض باقات هذه الشبكة.', [], 403);
+            }
+
             $filters = $request->only(['status', 'search', 'per_page', 'all']);
             $packages = $this->voucherPackageService->getForNetwork($id, $filters);
 

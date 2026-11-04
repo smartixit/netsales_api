@@ -243,9 +243,9 @@ class VoucherPackageDiscountService
     /**
      * استرجاع قائمة الخصومات المحذوفة مؤقتاً.
      */
-    public function getTrashed(int $perPage = 15): CursorPaginator
+    public function getTrashed(int $perPage = 15, array $filters = []): CursorPaginator
     {
-        return $this->discountRepository->getTrashed($perPage);
+        return $this->discountRepository->getTrashed($perPage, $filters);
     }
 
     /**

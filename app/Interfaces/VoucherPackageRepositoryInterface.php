@@ -32,4 +32,11 @@ interface VoucherPackageRepositoryInterface extends BaseRepositoryInterface
      * @return Collection<int, VoucherPackage>|CursorPaginator
      */
     public function getForNetwork(int $networkId, array $filters = []): Collection|CursorPaginator;
+
+    /**
+     * جلب قائمة الباقات المحذوفة مؤقتاً مع الفلترة والترقيم بالمؤشر.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public function getTrashed(int $perPage = 15, array $filters = []): CursorPaginator;
 }

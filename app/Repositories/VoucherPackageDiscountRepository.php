@@ -26,11 +26,15 @@ class VoucherPackageDiscountRepository extends BaseRepository implements Voucher
     {
         $query = $this->model->newQuery()->with($relations);
 
-        if (! empty($filters['network_id'])) {
+        if (isset($filters['network_ids'])) {
+            $query->whereIn('network_id', (array) $filters['network_ids']);
+        } elseif (! empty($filters['network_id'])) {
             $query->forNetwork((int) $filters['network_id']);
         }
 
-        if (! empty($filters['package_id']) && ! empty($filters['pos_id'])) {
+        if (isset($filters['pos_ids'])) {
+            $query->whereIn('pos_id', (array) $filters['pos_ids']);
+        } elseif (! empty($filters['package_id']) && ! empty($filters['pos_id'])) {
             $query->forPackageAndPos((int) $filters['package_id'], (int) $filters['pos_id']);
         } else {
             if (! empty($filters['pos_id'])) {
@@ -111,5 +115,28 @@ class VoucherPackageDiscountRepository extends BaseRepository implements Voucher
         $filters['package_id'] = $packageId;
 
         return $this->getFiltered($filters, ['network', 'pos']);
+    }
+
+    /**
+     * جلب قائمة الخصومات المحذوفة مؤقتاً مع الفلترة والترقيم بالمؤشر.
+     */
+    public function getTrashed(int $perPage = 15, array $filters = []): CursorPaginator
+    {
+        $perPage = min(max(1, $perPage), 50);
+        $query = $this->model->newQuery()->onlyTrashed()->with(['network', 'pos', 'voucherPackage']);
+
+        if (isset($filters['network_ids'])) {
+            $query->whereIn('network_id', (array) $filters['network_ids']);
+        } elseif (! empty($filters['network_id'])) {
+            $query->forNetwork((int) $filters['network_id']);
+        }
+
+        if (isset($filters['pos_ids'])) {
+            $query->whereIn('pos_id', (array) $filters['pos_ids']);
+        } elseif (! empty($filters['pos_id'])) {
+            $query->forPos((int) $filters['pos_id']);
+        }
+
+        return $query->orderBy($this->model->getKeyName(), 'desc')->cursorPaginate($perPage);
     }
 }

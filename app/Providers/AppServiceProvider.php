@@ -5,9 +5,13 @@ namespace App\Providers;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\Pos;
+use App\Models\VoucherPackage;
+use App\Models\VoucherPackageDiscount;
 use App\Policies\NetworkPolicy;
 use App\Policies\NetworkPosPolicy;
 use App\Policies\PosPolicy;
+use App\Policies\VoucherPackageDiscountPolicy;
+use App\Policies\VoucherPackagePolicy;
 use App\Services\Support\FileUploadService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -59,10 +63,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Network::class, NetworkPolicy::class);
         Gate::policy(Pos::class, PosPolicy::class);
         Gate::policy(NetworkPos::class, NetworkPosPolicy::class);
-
-        Gate::policy(Network::class, NetworkPolicy::class);
-        Gate::policy(Pos::class, PosPolicy::class);
-        Gate::policy(NetworkPos::class, NetworkPosPolicy::class);
+        Gate::policy(VoucherPackage::class, VoucherPackagePolicy::class);
+        Gate::policy(VoucherPackageDiscount::class, VoucherPackageDiscountPolicy::class);
 
         $this->configureRateLimiting();
     }

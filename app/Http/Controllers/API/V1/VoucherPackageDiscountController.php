@@ -6,10 +6,14 @@ use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Network\StoreVoucherPackageDiscountRequest;
 use App\Http\Requests\API\V1\Network\UpdateVoucherPackageDiscountRequest;
 use App\Http\Resources\API\V1\Network\VoucherPackageDiscountResource;
+use App\Models\VoucherPackageDiscount;
+use App\Services\TenantAuthorizationService;
 use App\Services\VoucherPackageDiscountService;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
@@ -18,14 +22,16 @@ use OpenApi\Attributes as OA;
  *
  * متحكم نحيف (Lean Controller) يلتزم بالمعايير الصارمة:
  * 1. استقبال الـ FormRequest وتمريره مباشرة إلى VoucherPackageDiscountService.
- * 2. تغليف النتيجة عبر ApiResponseTrait ومورد VoucherPackageDiscountResource.
- * 3. خالٍ تماماً من الاستعلامات المباشرة، شروط الأعمال، أو DB::transaction.
+ * 2. التحقق الصارم من سياسات وعزل المستأجرين (Tenant Isolation & Authorization).
+ * 3. تغليف النتيجة عبر ApiResponseTrait ومورد VoucherPackageDiscountResource.
+ * 4. خالٍ تماماً من الاستعلامات المباشرة، شروط الأعمال، أو DB::transaction.
  */
 #[OA\Tag(name: 'Package Discounts', description: 'إدارة وتخصيص نسب الخصم الاستثنائية لنقاط البيع على باقات الكروت والعمليات المجمعة')]
 class VoucherPackageDiscountController extends BaseController
 {
     public function __construct(
         protected VoucherPackageDiscountService $discountService,
+        protected TenantAuthorizationService $tenantAuth,
     ) {}
 
     /**
@@ -50,7 +56,46 @@ class VoucherPackageDiscountController extends BaseController
     public function index(Request $request): JsonResponse
     {
         try {
+            $user = $this->currentUser();
             $filters = $request->only(['network_id', 'pos_id', 'package_id', 'status', 'search', 'per_page', 'all']);
+
+            if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
+                $authorizedNetworkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
+                $authorizedPosIds = $this->tenantAuth->getUserAuthorizedPosIds($user, 'voucher_packages.view') ?? [];
+
+                if (empty($authorizedNetworkIds) && ! empty($authorizedPosIds)) {
+                    $filters['pos_ids'] = $authorizedPosIds;
+                    if ($request->filled('pos_id')) {
+                        $requestedPosId = (int) $request->input('pos_id');
+                        if (! in_array($requestedPosId, $authorizedPosIds, true)) {
+                            return $this->errorResponse('عذراً، لا يمكنك عرض خصومات نقطة بيع أخرى.', [], 403);
+                        }
+                    }
+                } elseif (! empty($authorizedNetworkIds) && empty($authorizedPosIds)) {
+                    $filters['network_ids'] = $authorizedNetworkIds;
+                    if ($request->filled('network_id')) {
+                        $requestedNetId = (int) $request->input('network_id');
+                        if (! in_array($requestedNetId, $authorizedNetworkIds, true)) {
+                            return $this->errorResponse('عذراً، ليس لديك الصلاحية لعرض خصومات هذه الشبكة.', [], 403);
+                        }
+                    }
+                } elseif (! empty($authorizedNetworkIds) && ! empty($authorizedPosIds)) {
+                    if ($request->filled('network_id')) {
+                        $requestedNetId = (int) $request->input('network_id');
+                        if (! in_array($requestedNetId, $authorizedNetworkIds, true)) {
+                            return $this->errorResponse('عذراً، ليس لديك الصلاحية لعرض خصومات هذه الشبكة.', [], 403);
+                        }
+                        $filters['network_ids'] = [$requestedNetId];
+                    } elseif ($request->filled('pos_id') && in_array((int) $request->input('pos_id'), $authorizedPosIds, true)) {
+                        $filters['pos_ids'] = [(int) $request->input('pos_id')];
+                    } else {
+                        $filters['network_ids'] = $authorizedNetworkIds;
+                    }
+                } else {
+                    return $this->errorResponse('عذراً، ليس لديك صلاحية عرض الخصومات.', [], 403);
+                }
+            }
+
             $discounts = $this->discountService->getFiltered($filters);
 
             return $this->successResponse('تم استرجاع قائمة الخصومات المخصصة بنجاح.', VoucherPackageDiscountResource::collection($discounts));
@@ -73,6 +118,7 @@ class VoucherPackageDiscountController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع بيانات الخصم بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بعرض هذا الخصم'),
             new OA\Response(response: 404, description: 'الخصم غير موجود'),
         ]
     )]
@@ -82,6 +128,11 @@ class VoucherPackageDiscountController extends BaseController
             $discount = $this->discountService->findById($id);
             if (! $discount) {
                 return $this->errorResponse('سجل الخصم المحدد غير موجود.', [], 404);
+            }
+
+            $user = $this->currentUser();
+            if ($user && ! Gate::forUser($user)->allows('view', $discount)) {
+                return $this->errorResponse('عذراً، غير مصرح لك بعرض هذا الخصم.', [], 403);
             }
 
             return $this->successResponse('تم جلب بيانات الخصم بنجاح.', new VoucherPackageDiscountResource($discount));
@@ -121,12 +172,22 @@ class VoucherPackageDiscountController extends BaseController
         ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء الخصم بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بتخصيص خصم في هذه الشبكة'),
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
         ]
     )]
     public function store(StoreVoucherPackageDiscountRequest $request): JsonResponse
     {
         try {
+            $user = $this->currentUser();
+            $networkId = (int) $request->getNetworkId();
+            $posId = (int) $request->getPosId();
+            $packageId = (int) $request->getPackageId();
+
+            if ($user && ! $this->tenantAuth->canCreateDiscount($user, $networkId, $posId, $packageId)) {
+                return $this->errorResponse('عذراً، ليس لديك الصلاحية لتخصيص خصم في هذه الشبكة.', [], 403);
+            }
+
             $discount = $this->discountService->create($request, $this->currentUserId());
 
             return $this->successResponse('تم تخصيص الخصم لنقطة البيع بنجاح.', new VoucherPackageDiscountResource($discount), 201);
@@ -173,6 +234,16 @@ class VoucherPackageDiscountController extends BaseController
     public function update(UpdateVoucherPackageDiscountRequest $request, int $id): JsonResponse
     {
         try {
+            $discount = $this->discountService->findById($id);
+            if (! $discount) {
+                return $this->errorResponse('سجل الخصم المحدد غير موجود في النظام.', [], 404);
+            }
+
+            $user = $this->currentUser();
+            if ($user && ! Gate::forUser($user)->allows('update', $discount)) {
+                return $this->errorResponse('عذراً، غير مصرح لك بتعديل هذا الخصم.', [], 403);
+            }
+
             $discount = $this->discountService->update($id, $request);
 
             return $this->successResponse('تم تحديث بيانات الخصم بنجاح.', new VoucherPackageDiscountResource($discount));
@@ -201,6 +272,16 @@ class VoucherPackageDiscountController extends BaseController
     public function destroy(int $id): JsonResponse
     {
         try {
+            $discount = $this->discountService->findById($id);
+            if (! $discount) {
+                return $this->errorResponse('سجل الخصم غير موجود أو تعذر حذفه.', [], 404);
+            }
+
+            $user = $this->currentUser();
+            if ($user && ! Gate::forUser($user)->allows('delete', $discount)) {
+                return $this->errorResponse('عذراً، غير مصرح لك بحذف هذا الخصم.', [], 403);
+            }
+
             $deleted = $this->discountService->delete($id);
             if (! $deleted) {
                 return $this->errorResponse('سجل الخصم غير موجود أو تعذر حذفه.', [], 404);
@@ -233,8 +314,24 @@ class VoucherPackageDiscountController extends BaseController
     public function trashed(Request $request): JsonResponse
     {
         try {
+            $user = $this->currentUser();
+            $filters = [];
+
+            if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
+                $authorizedNetworkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
+                $authorizedPosIds = $this->tenantAuth->getUserAuthorizedPosIds($user, 'voucher_packages.view') ?? [];
+
+                if (! empty($authorizedNetworkIds)) {
+                    $filters['network_ids'] = $authorizedNetworkIds;
+                } elseif (! empty($authorizedPosIds)) {
+                    $filters['pos_ids'] = $authorizedPosIds;
+                } else {
+                    return $this->errorResponse('عذراً، ليس لديك صلاحية عرض المحذوفات.', [], 403);
+                }
+            }
+
             $perPage = (int) $request->input('per_page', 15);
-            $trashed = $this->discountService->getTrashed($perPage);
+            $trashed = $this->discountService->getTrashed($perPage, $filters);
 
             return $this->successResponse('تم استرجاع سلة محذوفات الخصومات بنجاح.', VoucherPackageDiscountResource::collection($trashed));
         } catch (ValidationException $e) {
@@ -262,6 +359,16 @@ class VoucherPackageDiscountController extends BaseController
     public function restore(int $id): JsonResponse
     {
         try {
+            $discount = VoucherPackageDiscount::onlyTrashed()->find($id);
+            if (! $discount) {
+                return $this->errorResponse('تعذر استعادة الخصم، قد لا يكون في سلة المحذوفات.', [], 404);
+            }
+
+            $user = $this->currentUser();
+            if ($user && ! Gate::forUser($user)->allows('restore', $discount)) {
+                return $this->errorResponse('عذراً، غير مصرح لك باستعادة هذا الخصم.', [], 403);
+            }
+
             $restored = $this->discountService->restore($id);
             if (! $restored) {
                 return $this->errorResponse('تعذر استعادة الخصم، قد لا يكون في سلة المحذوفات.', [], 404);
@@ -287,11 +394,23 @@ class VoucherPackageDiscountController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بالحذف النهائي لهذا الخصم'),
+            new OA\Response(response: 404, description: 'الخصم غير موجود'),
         ]
     )]
     public function forceDelete(int $id): JsonResponse
     {
         try {
+            $discount = VoucherPackageDiscount::withTrashed()->find($id);
+            if (! $discount) {
+                return $this->errorResponse('سجل الخصم غير موجود.', [], 404);
+            }
+
+            $user = $this->currentUser();
+            if ($user && ! Gate::forUser($user)->allows('forceDelete', $discount)) {
+                return $this->errorResponse('عذراً، غير مصرح لك بالحذف النهائي لهذا الخصم.', [], 403);
+            }
+
             $deleted = $this->discountService->forceDelete($id);
             if (! $deleted) {
                 return $this->errorResponse('تعذر الحذف النهائي لسجل الخصم.', [], 422);
@@ -333,6 +452,21 @@ class VoucherPackageDiscountController extends BaseController
     {
         try {
             $ids = $request->getIds();
+            $user = $this->currentUser();
+
+            $discounts = VoucherPackageDiscount::whereIn('discount_id', $ids)->get();
+            if ($discounts->count() !== count(array_unique($ids))) {
+                return $this->errorResponse('بعض سجلات الخصم المحددة غير موجودة في النظام.', [], 404);
+            }
+
+            if ($user && ! $user->isSuperAdmin()) {
+                foreach ($discounts as $disc) {
+                    if (! Gate::forUser($user)->allows('delete', $disc)) {
+                        return $this->errorResponse('عذراً، غير مصرح لك بحذف بعض سجلات الخصم المحددة.', [], 403);
+                    }
+                }
+            }
+
             $count = $this->discountService->bulkDelete($ids);
 
             return $this->successResponse("تم نقل {$count} سجل خصم إلى سلة المحذوفات بنجاح.");
@@ -365,12 +499,29 @@ class VoucherPackageDiscountController extends BaseController
         ),
         responses: [
             new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح باستعادة بعض الخصومات'),
+            new OA\Response(response: 404, description: 'بعض الخصومات غير موجودة في سلة المحذوفات'),
         ]
     )]
     public function batchRestore(BatchIdsRequest $request): JsonResponse
     {
         try {
             $ids = $request->getIds();
+            $user = $this->currentUser();
+
+            $discounts = VoucherPackageDiscount::onlyTrashed()->whereIn('discount_id', $ids)->get();
+            if ($discounts->count() !== count(array_unique($ids))) {
+                return $this->errorResponse('بعض سجلات الخصم المحددة غير موجودة في سلة المحذوفات.', [], 404);
+            }
+
+            if ($user && ! $user->isSuperAdmin()) {
+                foreach ($discounts as $disc) {
+                    if (! Gate::forUser($user)->allows('restore', $disc)) {
+                        return $this->errorResponse('عذراً، غير مصرح لك باستعادة بعض سجلات الخصم المحددة.', [], 403);
+                    }
+                }
+            }
+
             $count = $this->discountService->bulkRestore($ids);
 
             return $this->successResponse("تمت استعادة {$count} سجل خصم بنجاح.");
@@ -403,12 +554,29 @@ class VoucherPackageDiscountController extends BaseController
         ),
         responses: [
             new OA\Response(response: 200, description: 'تم الحذف النهائي المجمع بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بالحذف النهائي لبعض الخصومات'),
+            new OA\Response(response: 404, description: 'بعض الخصومات غير موجودة'),
         ]
     )]
     public function batchForceDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
             $ids = $request->getIds();
+            $user = $this->currentUser();
+
+            $discounts = VoucherPackageDiscount::withTrashed()->whereIn('discount_id', $ids)->get();
+            if ($discounts->count() !== count(array_unique($ids))) {
+                return $this->errorResponse('بعض سجلات الخصم المحددة غير موجودة في النظام.', [], 404);
+            }
+
+            if ($user && ! $user->isSuperAdmin()) {
+                foreach ($discounts as $disc) {
+                    if (! Gate::forUser($user)->allows('forceDelete', $disc)) {
+                        return $this->errorResponse('عذراً، غير مصرح لك بالحذف النهائي لبعض سجلات الخصم المحددة.', [], 403);
+                    }
+                }
+            }
+
             $count = $this->discountService->bulkForceDelete($ids);
 
             return $this->successResponse("تم الحذف النهائي لـ {$count} سجل خصم بنجاح.");
@@ -431,11 +599,23 @@ class VoucherPackageDiscountController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم تبديل الحالة بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح بتعديل هذا الخصم'),
+            new OA\Response(response: 404, description: 'الخصم غير موجود'),
         ]
     )]
     public function toggleStatus(int $id): JsonResponse
     {
         try {
+            $discount = $this->discountService->findById($id);
+            if (! $discount) {
+                return $this->errorResponse('سجل الخصم المحدد غير موجود.', [], 404);
+            }
+
+            $user = $this->currentUser();
+            if ($user && ! Gate::forUser($user)->allows('update', $discount)) {
+                return $this->errorResponse('عذراً، غير مصرح لك بتعديل حالة هذا الخصم.', [], 403);
+            }
+
             $discount = $this->discountService->toggleStatus($id);
 
             return $this->successResponse('تم تبديل حالة تفعيل الخصم بنجاح.', new VoucherPackageDiscountResource($discount));
@@ -460,6 +640,8 @@ class VoucherPackageDiscountController extends BaseController
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم احتساب الخصم الفعلي بنجاح'),
+            new OA\Response(response: 403, description: 'غير مصرح باحتساب الخصم لنطاق خارج الصلاحيات'),
+            new OA\Response(response: 422, description: 'بيانات غير صالحة'),
         ]
     )]
     public function effectiveDiscount(Request $request): JsonResponse
@@ -473,9 +655,16 @@ class VoucherPackageDiscountController extends BaseController
                 return $this->errorResponse('يجب تحديد معرف الشبكة ونقطة البيع والباقة لاحتساب الخصم.', [], 422);
             }
 
+            $user = $this->currentUser();
+            if ($user) {
+                $this->tenantAuth->authorizeEffectiveDiscount($user, $networkId, $posId, $packageId);
+            }
+
             $effective = $this->discountService->getEffectiveDiscount($networkId, $posId, $packageId);
 
             return $this->successResponse('تم احتساب الخصم الفعلي بنجاح.', $effective);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {

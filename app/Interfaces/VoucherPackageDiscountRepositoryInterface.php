@@ -45,4 +45,11 @@ interface VoucherPackageDiscountRepositoryInterface extends BaseRepositoryInterf
      * @return Collection<int, VoucherPackageDiscount>|CursorPaginator
      */
     public function getDiscountsForPackage(int $packageId, array $filters = []): Collection|CursorPaginator;
+
+    /**
+     * جلب قائمة الخصومات المحذوفة مؤقتاً مع الفلترة والترقيم بالمؤشر.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public function getTrashed(int $perPage = 15, array $filters = []): CursorPaginator;
 }

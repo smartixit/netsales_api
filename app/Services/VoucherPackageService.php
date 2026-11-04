@@ -168,9 +168,9 @@ class VoucherPackageService
     /**
      * استرجاع قائمة الباقات المحذوفة مؤقتاً.
      */
-    public function getTrashed(int $perPage = 15): CursorPaginator
+    public function getTrashed(int $perPage = 15, array $filters = []): CursorPaginator
     {
-        return $this->voucherPackageRepository->getTrashed($perPage);
+        return $this->voucherPackageRepository->getTrashed($perPage, $filters);
     }
 
     /**

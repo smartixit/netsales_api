@@ -26,7 +26,9 @@ class VoucherPackageRepository extends BaseRepository implements VoucherPackageR
     {
         $query = $this->model->newQuery()->with($relations);
 
-        if (! empty($filters['network_id'])) {
+        if (isset($filters['network_ids'])) {
+            $query->whereIn('network_id', (array) $filters['network_ids']);
+        } elseif (! empty($filters['network_id'])) {
             $query->forNetwork((int) $filters['network_id']);
         }
 
@@ -76,5 +78,22 @@ class VoucherPackageRepository extends BaseRepository implements VoucherPackageR
         }
 
         return $this->getFiltered($filters, ['network']);
+    }
+
+    /**
+     * جلب قائمة الباقات المحذوفة مؤقتاً مع الفلترة والترقيم بالمؤشر.
+     */
+    public function getTrashed(int $perPage = 15, array $filters = []): CursorPaginator
+    {
+        $perPage = min(max(1, $perPage), 50);
+        $query = $this->model->newQuery()->onlyTrashed()->with(['network']);
+
+        if (isset($filters['network_ids'])) {
+            $query->whereIn('network_id', (array) $filters['network_ids']);
+        } elseif (! empty($filters['network_id'])) {
+            $query->forNetwork((int) $filters['network_id']);
+        }
+
+        return $query->orderBy($this->model->getKeyName(), 'desc')->cursorPaginate($perPage);
     }
 }
