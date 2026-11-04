@@ -52,8 +52,9 @@ flowchart TD
 
 ---
 
-## 3. Verified Seeder Discrepancies & Pending Decisions
-1. **Missing Seeder Permissions for Scoped Accountants:** `RolePermissionSeeder.php` currently has **no assignment blocks** for `NETWORK_ACCOUNTANT` or `POS_ACCOUNTANT`. (Tracked under `DEC-02` as `PROPOSED`).
-2. **Elevated Network User Rights:** Seed data currently grants `requests.approve` and `requests.reject` to `NETWORK_USER`.
-3. **Identical Agent vs. User Permissions:** In default seeders, `POS_AGENT` and `POS_USER` receive identical permission arrays.
-4. **Missing `role_scope` in API Output:** `AuthService::me()` returns `role_key` but omits `role_scope`. `RoleResource` returns `role_key` and `role_key_label` but omits `scope`. (Tracked under `DEC-01` as `PROPOSED`).
+## 3. Verified Seeder Status & Alignment
+1. **Resolved: Scoped Accountants Permissions (`DEC-02`):** `RolePermissionSeeder.php` now assigns dedicated least-privilege financial reporting, ledger review, and export permissions for `NETWORK_ACCOUNTANT` and `POS_ACCOUNTANT` strictly adhering to the constitutional invariant: *Accountants are financial read/report/export roles without entity-mutating rights*.
+2. **Resolved: Agent vs. User Permission Differentiation:** `POS_AGENT` holds administrative store management rights (`pos.edit`, `requests.delete`, `expenses.delete`, `pos_wallets.export`), whereas `POS_USER` is restricted to operational cashier, direct sales, and procurement request creation.
+3. **Operational Network Rights:** `NETWORK_USER` holds operational review permissions including `requests.approve` and `requests.reject` to manage incoming store procurement under the network tenant boundary.
+4. **Resolved: Backed Enum Unification:** `RoleSeeder.php` and `RolePermissionSeeder.php` strictly reference `RoleKey` and `RoleScope` backed PHP Enums (`App\Enums\RoleKey`, `App\Enums\RoleScope`), with labels derived from `RoleKey::...->label()`.
+5. **Pending Decision: `role_scope` in API Output:** `AuthService::me()` returns `role_key` but omits `role_scope`. `RoleResource` returns `role_key` and `role_key_label` but omits `scope`. (Tracked under `DEC-01` as `PROPOSED`).

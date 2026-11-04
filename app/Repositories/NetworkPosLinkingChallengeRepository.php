@@ -112,4 +112,3 @@ class NetworkPosLinkingChallengeRepository extends BaseRepository implements Net
             ->get();
     }
 }
-

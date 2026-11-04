@@ -435,6 +435,30 @@ This log documents all executed tasks, code changes, and verification command ou
   - Camera QA: **NOT VERIFIED ON PHYSICAL HARDWARE (Executed and verified via headless integration & mock test harness)**.
 - **Task Status:** Complete — M4 QR-based linking and reusable scanner fully delivered and verified.
 
+---
+
+## [2026-11-04 16:45] Task: System Seeders Alignment with Backed Enums & Role Permissions Unification
+- **Authorized Scope:** USER REQUESTED — Refactor `RoleSeeder.php`, `PermissionSeeder.php`, and `RolePermissionSeeder.php` to strictly utilize canonical `RoleKey` and `RoleScope` backed PHP Enums (`App\Enums\RoleKey`, `App\Enums\RoleScope`), with Arabic labels derived from `RoleKey::...->label()`, review permissions to ensure comprehensive CRUD operations (including `sales.delete`), populate least-privilege permissions across all 9 canonical roles including previously missing `NETWORK_ACCOUNTANT` and `POS_ACCOUNTANT`, and synchronize role assignments cleanly.
+- **Strict Compliance Invariants:**
+  1. 100% Backed Enum usage (`RoleKey::...->value`, `RoleScope::...->value`).
+  2. Preserved Constitutional Invariant on Accountant roles: *Accountants are strictly financial read/report/export/ledger auditors without administrative or entity-mutating rights*.
+  3. Differentiated `POS_AGENT` (master store administration) vs `POS_USER` (cashier & procurement request creation).
+  4. Non-destructive Git operations: preserved all modified and untracked files across both repos; zero git commit or push executed.
+- **Files Modified / Implemented:**
+  - `database/seeders/RoleSeeder.php`: Updated all 9 role definitions using `RoleKey` and `RoleScope` backed enums, with labels dynamically fetched from `RoleKey::...->label()`.
+  - `database/seeders/PermissionSeeder.php`: Completed sales module permissions with `'delete' => 'إلغاء أو حذف فاتورة بيع'`.
+  - `database/seeders/RolePermissionSeeder.php`: Refactored to reference `RoleKey` backed Enum cases across all 9 roles, introduced dedicated assignments for `NETWORK_ACCOUNTANT` and `POS_ACCOUNTANT`, refined `POS_AGENT` vs `POS_USER`, and synchronized per-role permissions using clean deletions before insertion.
+  - `docs/project/RBAC_AND_TENANT_CONTEXT.md`: Marked discrepancy #1 (`DEC-02`) and #3 as resolved.
+  - `tests/Feature/EnumContractParityTest.php`: Converted from `RefreshDatabase` to `DatabaseTransactions` to preserve seeded test database state.
+  - `tests/Feature/OperationalSecurityAndScopedMembershipTest.php`: Updated dynamic lookup of `Governorate` and `Directorate` to eliminate hardcoded ID 1 foreign key assumption.
+- **Database Seeding Executed:**
+  - `php artisan db:seed`: Seeded default MySQL database successfully (9 roles, 93 permissions, 280 role assignments).
+  - `php artisan db:seed --env=testing`: Seeded test MySQL database (`netsales_test_db`) successfully.
+- **Verification Commands & Outcomes:**
+  - `vendor/bin/pint --format agent`: **PASS (Cleanly formatted)**.
+  - `php artisan test --filter="EnumContractParityTest|CommercialEntitiesAndRelationshipsTest|NetworkPosLinkingChallengeTest|MembershipAndRoleScopeTest|OperationalSecurityAndScopedMembershipTest"`: **47 passed (762 assertions, 100% pass rate)**.
+- **Task Status:** Complete — Seeders and RBAC unified with backed Enums and fully verified.
+
 
 
 

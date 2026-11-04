@@ -38,13 +38,13 @@ use App\Models\NetworkWalletLog;
 use App\Models\Pos;
 use App\Models\PosWalletLog;
 use App\Models\UserDevice;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\Request;
 use Tests\TestCase;
 
 class EnumContractParityTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /**
      * Exact 24 Canonical PHP Backed Enums in app/Enums/

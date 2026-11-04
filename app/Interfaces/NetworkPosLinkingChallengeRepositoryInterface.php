@@ -53,4 +53,3 @@ interface NetworkPosLinkingChallengeRepositoryInterface extends BaseRepositoryIn
      */
     public function getActiveForNetwork(int $networkId): Collection;
 }
-

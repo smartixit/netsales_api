@@ -7,6 +7,8 @@ use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
 use App\Enums\RoleKey;
 use App\Enums\UserStatus;
+use App\Models\Directorate;
+use App\Models\Governorate;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\NetworkUser;
@@ -72,13 +74,17 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
+        $gov = Governorate::first() ?? Governorate::create(['governorate_name' => 'Sanaa']);
+        $dir = Directorate::where('governorate_id', $gov->governorate_id)->first()
+            ?? Directorate::create(['governorate_id' => $gov->governorate_id, 'directorate_name' => 'Main']);
+
         // 2. إنشاء الشبكات ونقاط البيع
         $this->networkA = Network::create([
             'owner_id' => $this->networkOwner->user_id,
             'network_name' => 'Operational Net A '.$suffix,
             'network_phone_number' => $this->networkOwner->user_phone_number,
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $gov->governorate_id,
+            'directorate_id' => $dir->directorate_id,
             'status' => NetworkStatus::ACTIVE,
         ]);
 
@@ -93,8 +99,8 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'owner_id' => $this->superAdmin->user_id,
             'network_name' => 'Operational Net B '.$suffix,
             'network_phone_number' => '73'.rand(1000000, 9999999),
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $gov->governorate_id,
+            'directorate_id' => $dir->directorate_id,
             'status' => NetworkStatus::ACTIVE,
         ]);
 
@@ -102,8 +108,8 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'owner_id' => $this->posOwner->user_id,
             'pos_name' => 'Operational POS A '.$suffix,
             'pos_phone_number' => $this->posOwner->user_phone_number,
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $gov->governorate_id,
+            'directorate_id' => $dir->directorate_id,
             'status' => PosStatus::ACTIVE,
         ]);
 
