@@ -459,6 +459,30 @@ This log documents all executed tasks, code changes, and verification command ou
   - `php artisan test --filter="EnumContractParityTest|CommercialEntitiesAndRelationshipsTest|NetworkPosLinkingChallengeTest|MembershipAndRoleScopeTest|OperationalSecurityAndScopedMembershipTest"`: **47 passed (762 assertions, 100% pass rate)**.
 - **Task Status:** Complete — Seeders and RBAC unified with backed Enums and fully verified.
 
+---
+
+## [2026-11-04 17:00] Task: Focused Final Verification: M4 QR-Based POS–Network Linking
+- **Authorized Scope:** USER REQUESTED — Focused, evidence-based verification across 8 strict areas: Atomicity & concurrent replay protection (InnoDB row-locking), Cryptographic & authorization verification, Missing security test coverage, Scanner package & lifecycle, QR sharing, sound & gallery import, API contract & date serialization, Repository pattern verification, and Scope control.
+- **Strict Compliance Invariants:**
+  1. Zero git commit, push, reset, or clean.
+  2. 100% Repository Pattern adherence without Eloquent leaks in Domain Services.
+  3. No-StatefulWidget invariant preserved in Flutter code.
+  4. Real database concurrency testing against MySQL InnoDB test environment.
+- **Files Modified / Implemented:**
+  - `tests/Feature/NetworkPosLinkingChallengeTest.php`: Added 10 security test methods covering expired/revoked previews, revocation rejection, post-preview expiry, unauthorized/cross-tenant confirmation, cross-tenant revocation, tampered payloads, existing relationships, and InnoDB row-level locking concurrency (`lockForUpdate` with multi-connection lock-timeout verification). Total: 17 tests (82 assertions).
+  - `tests/Feature/EnumContractParityTest.php`: Added `LinkingChallengeStatus::class` to canonical enum tests (5 tests, 678 assertions).
+  - `docs/project/API_CONTRACTS.md`: Formally documented all 4 QR challenge endpoints, requests, responses, timestamps, and `LinkingChallengeStatus` enum.
+  - `netsales/test/commercial/network_pos_qr_linking_test.dart`: Replaced static past timestamp with dynamic expiry timestamp to prevent wall-clock test drift (29/29 tests passed).
+- **Verification Commands & Outcomes:**
+  - `vendor/bin/pint --format agent`: **PASS (Cleanly formatted)**.
+  - `php artisan test --filter=NetworkPosLinkingChallengeTest`: **17 passed (82 assertions, 100% pass rate)**.
+  - `php artisan test --filter=EnumContractParityTest`: **5 passed (678 assertions, 100% pass rate)**.
+  - `flutter test test/commercial/ test/core/enums/`: **29 passed (100% pass rate)**.
+  - `flutter test test/architecture/`: **5 passed (100% pass rate)**.
+  - `flutter analyze lib/widgets/qr/ lib/features/commercial/ test/commercial/`: **No issues found (0 warnings, 0 errors)**.
+- **Task Status:** Complete — Focused Final Verification concluded. Halting at M4 enhancement boundary.
+
+
 
 
 

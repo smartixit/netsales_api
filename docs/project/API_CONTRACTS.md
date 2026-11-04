@@ -33,6 +33,7 @@ The 24 backed PHP Enums (`app/Enums/`) have the following exact canonical wire v
 | 22 | `BackupType` | `string` | `'AUTO'`, `'MANUAL'` | UPPERCASE |
 | 23 | `ScheduledTaskStatus` | `string` | `'sent'`, `'completed'`, `'failed'`, `'skipped'` | lowercase |
 | 24 | `ScheduledTaskType` | `string` | `'subscriptions_expire_outdated'`, `'subscriptions_notify_expiring'`, `'reports_daily_sms'`, `'reports_monthly_sms'`, `'alerts_low_balance'`, `'backup_auto'`, `'cleanup_user_sessions'`, `'cleanup_expired_otp'`, `'security_lift_bans'`, `'system_prune_logs'` | snake_case |
+| 25 | `LinkingChallengeStatus` | `string` | `'PENDING'`, `'CONSUMED'`, `'EXPIRED'`, `'REVOKED'` | UPPERCASE |
 
 ---
 
@@ -56,6 +57,7 @@ The 24 backed PHP Enums (`app/Enums/`) have the following exact canonical wire v
 | `NetworkPosResource` | `status` | `boolean` | **None** (Cast as `(bool) $this->status`) | **No** | Boolean Link Status |
 | `BackupJobResource` | `status` | `string` | `BackupStatus` | Yes (`status_label`) | Backup Status Badge |
 | `BackupJobResource` | `backup_type` | `string` | `BackupType` | Yes (`backup_type_label`) | Contextual Chip |
+| `NetworkPosLinkingChallengeResource` | `status` | `string` | `LinkingChallengeStatus` | Yes (`status_label`) | True Status Badge |
 
 ---
 
@@ -63,3 +65,62 @@ The 24 backed PHP Enums (`app/Enums/`) have the following exact canonical wire v
 - **Request Modification Preview:** `POST /api/v1/requests/{id}/preview-modification` exists. Validates item modifications and returns calculated order preview before approval.
 - **FIFO Repayment Collection:** `POST /api/v1/pos-debts/repayments` performs atomic FIFO allocation in `DebtRepaymentService`.
 - **FIFO Repayment Preview:** **No preview route currently exists** in the active API. DEC-04 remains `PROPOSED`.
+
+---
+
+## 4. M4 POS–Network Linking Challenge API Contracts (QR Workflow)
+
+### 4.1 Endpoints Specification
+
+| Method | Endpoint | Authorization / Scope | Rate Limit | Purpose |
+|---|---|---|---|---|
+| `POST` | `/api/v1/network-pos/challenges` | `can:networks.edit` | `throttle:api-write` | Generate encrypted QR challenge invitation for Network |
+| `POST` | `/api/v1/network-pos/challenges/preview` | `can:pos.view` | `throttle:api-write` | Decrypt and preview challenge metadata by POS |
+| `POST` | `/api/v1/network-pos/challenges/confirm` | `can:pos.edit` | `throttle:api-write` | Atomically confirm relationship and consume challenge |
+| `DELETE` | `/api/v1/network-pos/challenges/{uuid}` | `can:networks.edit` | `throttle:api-write` | Revoke active challenge by network owner |
+
+### 4.2 Request & Response Serialization Schemas
+
+#### 1. `POST /api/v1/network-pos/challenges`
+- **Request Body (`CreateNetworkPosLinkingChallengeRequest`):**
+  - `network_id` (`integer`, required): Network issuing the challenge.
+  - `pos_id` (`integer`, optional): Specific targeted POS ID.
+  - `pos_uuid` (`string/uuid`, optional): Specific targeted POS UUID.
+  - `duration_minutes` (`integer`, optional, default: 15, min: 5, max: 60).
+- **Response (201 Created):** Wraps `NetworkPosLinkingChallengeResource`.
+  - `data.challenge_uuid` (`string/uuid`): Public reference ID.
+  - `data.payload` (`string`): Asymmetrically sealed envelope prefixed with `NTS_LINK_V1_`.
+  - `data.status` (`string`): `'PENDING'`.
+  - `data.status_label` (`string`): `'قيد الانتظار'`.
+  - `data.expires_at` (`string`): `Y-m-d H:i:s` (`Asia/Aden` server timezone).
+
+#### 2. `POST /api/v1/network-pos/challenges/preview`
+- **Request Body (`PreviewNetworkPosLinkingChallengeRequest`):**
+  - `payload` (`string`, required): Scanned QR payload (`NTS_LINK_V1_...`).
+  - `pos_id` (`integer`, optional): Current active POS ID.
+  - `pos_uuid` (`string/uuid`, optional): Current active POS UUID.
+- **Response (200 OK):** Wraps `NetworkPosLinkingPreviewResource`.
+  - `data.challenge_uuid` (`string/uuid`)
+  - `data.network` (`NetworkResource`): Supplier Network details.
+  - `data.pos` (`PosResource`): Verified POS details.
+  - `data.expires_at` (`string`): Formatted expiration time.
+  - `data.is_targeted` (`boolean`): Whether challenge was targeted to a specific POS.
+
+#### 3. `POST /api/v1/network-pos/challenges/confirm`
+- **Request Body (`ConfirmNetworkPosLinkingChallengeRequest`):**
+  - `challenge_uuid` (`string/uuid`, required): UUID from preview.
+  - `pos_id` (`integer`, optional): POS ID confirming link.
+  - `pos_uuid` (`string/uuid`, optional): POS UUID confirming link.
+- **Response (201 Created):** Wraps `NetworkPosResource`.
+  - `data.network_pos_id` (`integer`)
+  - `data.network_id` (`integer`)
+  - `data.pos_id` (`integer`)
+  - `data.status` (`boolean`): `true`.
+
+#### 4. `DELETE /api/v1/network-pos/challenges/{uuid}`
+- **Response (200 OK):** Standard success response confirming revocation.
+
+### 4.3 Timestamp & Date Serialization Notes
+- **Current Canonical Pattern:** The NetSales API uniformly outputs timestamps via `Carbon::parse($field)->toDateTimeString()` (`Y-m-d H:i:s`) in the `Asia/Aden` timezone across all 25+ resources.
+- **Client Parsing Invariant:** The Flutter client parses timestamps via `DateTime.tryParse()`, which transparently ingests both `toDateTimeString()` formats and ISO 8601 UTC strings.
+- **Security Timestamp Consideration:** Timestamps inside the encrypted QR payload (`exp`) use integer epoch seconds (`$expiresAt->timestamp`) to ensure exact, timezone-agnostic expiration calculation on the server.

@@ -8,6 +8,7 @@ use App\Enums\BankAccountType;
 use App\Enums\BanType;
 use App\Enums\DeviceType;
 use App\Enums\InvoicePaymentStatus;
+use App\Enums\LinkingChallengeStatus;
 use App\Enums\NetworkStatus;
 use App\Enums\NotificationType;
 use App\Enums\OtpType;
@@ -27,6 +28,7 @@ use App\Enums\UserStatus;
 use App\Enums\ValueType;
 use App\Enums\WalletOperationType;
 use App\Http\Resources\API\V1\Backup\BackupJobResource;
+use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeResource;
 use App\Http\Resources\API\V1\Network\NetworkResource;
 use App\Http\Resources\API\V1\Network\NetworkWalletLogResource;
 use App\Http\Resources\API\V1\Pos\PosResource;
@@ -34,6 +36,7 @@ use App\Http\Resources\API\V1\Pos\PosWalletLogResource;
 use App\Http\Resources\API\V1\User\UserDeviceResource;
 use App\Models\BackupJob;
 use App\Models\Network;
+use App\Models\NetworkPosLinkingChallenge;
 use App\Models\NetworkWalletLog;
 use App\Models\Pos;
 use App\Models\PosWalletLog;
@@ -74,11 +77,12 @@ class EnumContractParityTest extends TestCase
         UserStatus::class,
         ValueType::class,
         WalletOperationType::class,
+        LinkingChallengeStatus::class,
     ];
 
     public function test_all_24_enums_exist_and_are_backed(): void
     {
-        $this->assertCount(24, self::ALL_24_ENUMS);
+        $this->assertCount(25, self::ALL_24_ENUMS);
 
         foreach (self::ALL_24_ENUMS as $enumClass) {
             $this->assertTrue(enum_exists($enumClass), "Enum {$enumClass} must exist.");
@@ -143,6 +147,7 @@ class EnumContractParityTest extends TestCase
             ValueType::class,
             BackupStatus::class,
             BackupType::class,
+            LinkingChallengeStatus::class,
         ];
 
         foreach ($uppercaseEnums as $enumClass) {
@@ -229,5 +234,14 @@ class EnumContractParityTest extends TestCase
         $this->assertArrayHasKey('log_operation_type_label', $posLogRes);
         $this->assertSame('WITHDRAW', $posLogRes['log_operation_type']);
         $this->assertSame('سحب', $posLogRes['log_operation_type_label']);
+
+        // 6. NetworkPosLinkingChallengeResource
+        $challenge = new NetworkPosLinkingChallenge([
+            'status' => LinkingChallengeStatus::PENDING,
+            'expires_at' => now(),
+        ]);
+        $challengeRes = (new NetworkPosLinkingChallengeResource($challenge))->toArray(Request::create('/'));
+        $this->assertSame('PENDING', $challengeRes['status']);
+        $this->assertSame('قيد الانتظار', $challengeRes['status_label']);
     }
 }
