@@ -46,8 +46,8 @@ namespace App\Models{
 /**
  * @property int $backup_job_id
  * @property string $job_uuid
- * @property string $backup_type
- * @property string $status
+ * @property \App\Enums\BackupType $backup_type
+ * @property \App\Enums\BackupStatus $status
  * @property string|null $stage
  * @property string|null $file_name
  * @property int|null $file_size_bytes
@@ -556,6 +556,50 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPos whereUpdatedAt($value)
  */
 	class NetworkPos extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $challenge_id
+ * @property string $challenge_uuid
+ * @property int $network_id
+ * @property int|null $pos_id
+ * @property int $created_by_user_id
+ * @property string $challenge_nonce
+ * @property string $payload_token
+ * @property string $status
+ * @property \Illuminate\Support\Carbon $expires_at
+ * @property \Illuminate\Support\Carbon|null $consumed_at
+ * @property int|null $consumed_by_user_id
+ * @property int|null $consumed_by_pos_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Pos|null $consumedPos
+ * @property-read \App\Models\User|null $consumer
+ * @property-read \App\Models\User|null $creator
+ * @property-read \App\Models\Network|null $network
+ * @property-read \App\Models\Pos|null $pos
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge pending()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge whereChallengeId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge whereChallengeNonce($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge whereChallengeUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge whereConsumedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge whereConsumedByPosId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge whereConsumedByUserId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge whereCreatedByUserId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge whereExpiresAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge wherePayloadToken($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge wherePosId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkPosLinkingChallenge whereUpdatedAt($value)
+ */
+	class NetworkPosLinkingChallenge extends \Eloquent {}
 }
 
 namespace App\Models{

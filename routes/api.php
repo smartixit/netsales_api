@@ -262,6 +262,12 @@ Route::prefix('v1')->group(function () {
             Route::post('network-pos/{id}/toggle-status', [NetworkPosController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.network_pos.toggle_status')->middleware('permission:networks.edit');
             Route::post('network-pos/batch-delete', [NetworkPosController::class, 'batchDelete'])->name('api.v1.network_pos.batch_delete')->middleware('permission:networks.edit');
             Route::post('network-pos/batch-status', [NetworkPosController::class, 'batchStatus'])->name('api.v1.network_pos.batch_status')->middleware('permission:networks.edit');
+
+            // QR-Based POS–Network Linking Challenges
+            Route::post('network-pos/challenges', [NetworkPosController::class, 'createChallenge'])->name('api.v1.network_pos.challenges.create')->middleware('permission:networks.edit');
+            Route::post('network-pos/challenges/preview', [NetworkPosController::class, 'previewChallenge'])->name('api.v1.network_pos.challenges.preview')->middleware('permission:pos.view');
+            Route::post('network-pos/challenges/confirm', [NetworkPosController::class, 'confirmChallenge'])->name('api.v1.network_pos.challenges.confirm')->middleware('permission:pos.edit');
+            Route::delete('network-pos/challenges/{uuid}', [NetworkPosController::class, 'revokeChallenge'])->name('api.v1.network_pos.challenges.revoke')->middleware('permission:networks.edit');
         });
 
         // ==========================================

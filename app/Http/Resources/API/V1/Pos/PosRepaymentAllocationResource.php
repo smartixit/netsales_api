@@ -25,7 +25,7 @@ class PosRepaymentAllocationResource extends JsonResource
             'pos_id' => $this->pos_id,
             'allocated_amount' => (float) $this->allocated_amount,
             'status' => $this->status,
-            'allocated_at' => $this->allocated_at?->toIso8601String(),
+            'allocated_at' => $this->allocated_at?->toDateTimeString(),
             'invoice' => new SaleInvoiceResource($this->whenLoaded('invoice')),
         ];
     }

@@ -4,12 +4,18 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Common\BatchStatusRequest;
+use App\Http\Requests\API\V1\Network\ConfirmNetworkPosLinkingChallengeRequest;
+use App\Http\Requests\API\V1\Network\CreateNetworkPosLinkingChallengeRequest;
+use App\Http\Requests\API\V1\Network\PreviewNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
+use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeResource;
+use App\Http\Resources\API\V1\Network\NetworkPosLinkingPreviewResource;
 use App\Http\Resources\API\V1\Network\NetworkPosResource;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\Pos;
+use App\Services\NetworkPosLinkingChallengeService;
 use App\Services\NetworkPosService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -31,6 +37,7 @@ class NetworkPosController extends BaseController
 {
     public function __construct(
         protected NetworkPosService $networkPosService,
+        protected NetworkPosLinkingChallengeService $challengeService,
     ) {}
 
     /**
@@ -475,6 +482,181 @@ class NetworkPosController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('تعذر جلب الشبكات المرتبطة بنقطة البيع: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * إنشاء دعوة وتحدي ربط نقطة بيع بالشبكة عبر رمز QR.
+     */
+    #[OA\Post(
+        path: '/api/v1/network-pos/challenges',
+        summary: 'إنشاء دعوة وتحدي ربط نقطة بيع بشبكة عبر رمز QR',
+        tags: ['Network POS'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات إنشاء التحدي المشفر',
+            content: new OA\JsonContent(
+                required: ['network_id'],
+                properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5),
+                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: '3fa85f64-5717-4562-b3fc-2c963f66afa6'),
+                    new OA\Property(property: 'duration_minutes', type: 'integer', default: 15, example: 15),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'تم إنشاء دعوة الربط المشفرة بنجاح'),
+            new OA\Response(response: 422, description: 'بيانات غير صالحة'),
+        ]
+    )]
+    public function createChallenge(CreateNetworkPosLinkingChallengeRequest $request): JsonResponse
+    {
+        try {
+            $user = $this->currentUser();
+            $challenge = $this->challengeService->createChallenge(
+                $user,
+                $request->getNetworkId(),
+                $request->getPosId(),
+                $request->getPosUuid(),
+                $request->getDurationMinutes()
+            );
+
+            return $this->successResponse(
+                'تم إنشاء دعوة ربط نقطة البيع عبر رمز QR بنجاح.',
+                new NetworkPosLinkingChallengeResource($challenge),
+                201
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل إنشاء دعوة الربط: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * معاينة وفحص دعوة الربط المشفرة من جانب نقطة البيع قبل الاعتماد.
+     */
+    #[OA\Post(
+        path: '/api/v1/network-pos/challenges/preview',
+        summary: 'معاينة وفحص دعوة الربط المشفرة من جانب نقطة البيع قبل الاعتماد',
+        tags: ['Network POS'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'حمولة رمز QR ومعرف نقطة البيع المستهدفة',
+            content: new OA\JsonContent(
+                required: ['payload'],
+                properties: [
+                    new OA\Property(property: 'payload', type: 'string', example: 'NTS_LINK_V1_...'),
+                    new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5),
+                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: '3fa85f64-5717-4562-b3fc-2c963f66afa6'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'تم فحص ومعاينة دعوة الربط بنجاح'),
+            new OA\Response(response: 422, description: 'بيانات غير صالحة أو دعوة منتهية/تالفة'),
+        ]
+    )]
+    public function previewChallenge(PreviewNetworkPosLinkingChallengeRequest $request): JsonResponse
+    {
+        try {
+            $user = $this->currentUser();
+            $preview = $this->challengeService->previewChallenge(
+                $user,
+                $request->getChallengePayload(),
+                $request->getPosId(),
+                $request->getPosUuid()
+            );
+
+            return $this->successResponse(
+                'تم فحص ومعاينة دعوة الربط بنجاح.',
+                new NetworkPosLinkingPreviewResource($preview)
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشلت معاينة دعوة الربط: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * تأكيد ربط نقطة البيع بالشبكة عبر التحدي المشفر (Consumer Confirmation).
+     */
+    #[OA\Post(
+        path: '/api/v1/network-pos/challenges/confirm',
+        summary: 'تأكيد اعتماد ربط نقطة البيع بالشبكة عبر التحدي المشفر',
+        tags: ['Network POS'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'المعرف الفريد للتحدي ونقطة البيع المؤكدة',
+            content: new OA\JsonContent(
+                required: ['challenge_uuid'],
+                properties: [
+                    new OA\Property(property: 'challenge_uuid', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5),
+                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: '3fa85f64-5717-4562-b3fc-2c963f66afa6'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'تم تأكيد وربط نقطة البيع بالشبكة بنجاح'),
+            new OA\Response(response: 422, description: 'فشل التأكيد أو انتهاء الصلاحية'),
+        ]
+    )]
+    public function confirmChallenge(ConfirmNetworkPosLinkingChallengeRequest $request): JsonResponse
+    {
+        try {
+            $user = $this->currentUser();
+            $networkPos = $this->challengeService->confirmChallenge(
+                $user,
+                $request->getChallengeUuid(),
+                $request->getPosId(),
+                $request->getPosUuid()
+            );
+
+            return $this->successResponse(
+                'تم تأكيد وربط نقطة البيع بالشبكة بنجاح.',
+                new NetworkPosResource($networkPos),
+                201
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل تأكيد الربط: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * إلغاء/إبطال دعوة الربط عبر المعرف الفريد.
+     */
+    #[OA\Delete(
+        path: '/api/v1/network-pos/challenges/{uuid}',
+        summary: 'إلغاء وإبطال دعوة الربط المشفرة',
+        tags: ['Network POS'],
+        parameters: [
+            new OA\Parameter(name: 'uuid', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'تم إلغاء دعوة الربط بنجاح'),
+            new OA\Response(response: 422, description: 'تعذر إلغاء دعوة الربط'),
+        ]
+    )]
+    public function revokeChallenge(string $uuid): JsonResponse
+    {
+        try {
+            $user = $this->currentUser();
+            $revoked = $this->challengeService->revokeChallenge($user, $uuid);
+
+            if (! $revoked) {
+                return $this->errorResponse('دعوة الربط غير موجودة أو تعذر إلغاؤها.', [], 404);
+            }
+
+            return $this->successResponse('تم إلغاء دعوة الربط بنجاح.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل إلغاء دعوة الربط: '.$e->getMessage(), [], 422);
         }
     }
 }

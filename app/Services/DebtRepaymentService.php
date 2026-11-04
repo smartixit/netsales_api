@@ -93,7 +93,7 @@ class DebtRepaymentService
                 'days_61_90' => $bucket61To90,
                 'days_over_90' => $bucketOver90,
             ],
-            'oldest_outstanding_invoice_date' => $oldestDate ? Carbon::parse($oldestDate)->toIso8601String() : null,
+            'oldest_outstanding_invoice_date' => $oldestDate ? Carbon::parse($oldestDate)->toDateTimeString() : null,
         ];
 
         if ($posId !== null) {

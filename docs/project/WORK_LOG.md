@@ -381,6 +381,61 @@ This log documents all executed tasks, code changes, and verification command ou
   - Project Governance Script (`powershell -ExecutionPolicy Bypass -File scripts/verify-project-governance.ps1`): **GOVERNANCE VERIFICATION PASSED**.
 - **Task Status:** Complete — Cross-repository Enum parity, presentation registry, and badge system fully established.
 
+---
+
+## [2026-11-04] Task: M4 Commercial Enhancement — Secure QR-Based POS–Network Linking & Reusable QR Scanner
+- **Authorized Scope:** USER APPROVED continuation of Milestone 4: Secure QR-based POS–Network linking challenge workflow and reusable domain-agnostic QR scanner component across both repositories.
+- **Repositories:** `smartixit/netsales_api` (Laravel 12) & `smartixit/netsales` (Flutter / Dart / GetX).
+- **Architecture Invariants Enforced:**
+  - 100% Repository Pattern adherence on Laravel backend (zero direct Eloquent in Domain Services).
+  - Backed PHP Enum `LinkingChallengeStatus` with Arabic `label()` companion.
+  - Zero `StatefulWidget` or `setState()` in Flutter application code.
+  - Domain-agnostic reusable scanner in `lib/widgets/qr/` without any commercial/POS/Network logic.
+  - Server is sole financial and commercial relationship authority; Flutter client is presentation and scanning consumer.
+  - Zero Git commits or pushes executed.
+- **Backend Implementation (`netsales_api`):**
+  - Backed Enum: `app/Enums/LinkingChallengeStatus.php` (`PENDING`, `CONSUMED`, `EXPIRED`, `REVOKED`) with Arabic labels.
+  - Migration: `database/migrations/2026_11_03_230000_create_network_pos_linking_challenges_table.php` (created and migrated on default & test databases).
+  - Model: `app/Models/NetworkPosLinkingChallenge.php` with `casts()` casting status to Enum, `ExactDateSerialization`, and scopes.
+  - Interface: `app/Interfaces/NetworkPosLinkingChallengeRepositoryInterface.php` extending `BaseRepositoryInterface`.
+  - Repository: `app/Repositories/NetworkPosLinkingChallengeRepository.php` extending `BaseRepository`. Bound in `RepositoryServiceProvider`.
+  - Domain Service: `app/Services/NetworkPosLinkingChallengeService.php` with 100% repository delegation, cryptographic envelope creation/decryption via `AsymmetricCryptoService`, atomic `confirmChallenge` execution under `lockForUpdate()`, and replay protection.
+  - Form Requests: `CreateNetworkPosLinkingChallengeRequest`, `PreviewNetworkPosLinkingChallengeRequest`, `ConfirmNetworkPosLinkingChallengeRequest`.
+  - API Resources: `NetworkPosLinkingChallengeResource` (with `@mixin`, `whenLoaded`, exact date formatting) and `NetworkPosLinkingPreviewResource`.
+  - Controller Endpoints: `createChallenge`, `previewChallenge`, `confirmChallenge`, `revokeChallenge` in `NetworkPosController.php`.
+  - Routes: `routes/api.php` under `throttle:api-write` with permissions `networks.edit`, `pos.view`, `pos.edit`.
+  - Feature Test Suite: `tests/Feature/NetworkPosLinkingChallengeTest.php` (7 tests, 34 assertions).
+  - Formatted with Pint: `vendor/bin/pint --format agent` (passed cleanly).
+- **Flutter Client Implementation (`netsales`):**
+  - Enum: `lib/core/enums/linking_challenge_status.dart` with `fromWire` parsing and `unknown` fallback.
+  - Enum Presentation: Added `resolveLinkingChallengeStatus` to `lib/core/presentation/enums/enum_presentation_registry.dart`.
+  - Reusable Scanner Widgets (`lib/widgets/qr/`):
+    - `qr_scan_result.dart`: Domain-agnostic immutable data class.
+    - `custom_qr_scanner_overlay.dart`: CustomPainter overlay with cutout and corner brackets (pure `StatelessWidget`).
+    - `custom_qr_scanner_controller.dart`: GetX controller managing `MobileScannerController`, torch, camera switch, gallery import, duplicate protection, and `SoundService` beep feedback.
+    - `custom_qr_scanner.dart`: Full-featured reusable scanner using `CustomButton.icon` (pure `StatelessWidget`).
+  - Branded Share Card & Commercial Linking Workflow:
+    - `network_pos_qr_share_card.dart`: High-resolution branded invitation card widget with `CustomQrCode` and export-to-image sharing via `ShareService.instance.shareBytes(...)`.
+    - `network_pos_link_confirm_sheet.dart`: Modal sheet for verifying network metadata before explicit confirmation.
+    - `network_pos_qr_challenge_sheet.dart`: Modal sheet for Network Owner to generate and view linking invitations.
+    - Entities: `NetworkPosLinkChallengeEntity`, `NetworkPosLinkPreviewEntity`.
+    - Models: `NetworkPosLinkChallengeModel`, `NetworkPosLinkPreviewModel`.
+    - Data Source & Repository: Added challenge methods in `CommercialRemoteDataSource`, `CommercialRemoteDataSourceImpl`, `CommercialRepository`, and `CommercialRepositoryImpl`.
+    - Use Cases: `CreateNetworkPosLinkChallengeUseCase`, `PreviewNetworkPosLinkChallengeUseCase`, `ConfirmNetworkPosLinkChallengeUseCase`, `RevokeNetworkPosLinkChallengeUseCase`.
+    - Presentation & Routing: Connected into `CommercialDirectoryController`, `CommercialBinding`, `NetworkPosDirectoryScreen`, and `PosLinkedNetworksScreen`.
+- **Verification Commands & Outcomes:**
+  - Laravel Feature Tests (`NetworkPosLinkingChallengeTest`): **7 passed (34 assertions, 100% pass rate)**.
+  - Laravel Enum Parity Tests (`EnumContractParityTest`): **5 passed (656 assertions, 100% pass rate)**.
+  - Laravel Commercial Tests (`CommercialEntitiesAndRelationshipsTest`): **23 passed (37 assertions, 100% pass rate)**.
+  - Flutter Analysis (`flutter analyze` across all affected paths): **No issues found (0 errors, 0 warnings, 0 infos)**.
+  - Flutter Commercial & Enum Tests (`flutter test test/commercial/ test/core/enums/`): **28 passed (100% pass rate)**.
+  - Flutter Architecture Compliance Tests (`flutter test test/architecture/architecture_compliance_test.dart`): **5 passed (100% pass rate)**.
+  - Flutter Formatter (`dart format`): **Applied cleanly across 19 files**.
+  - Project Governance Script (`verify-project-governance.ps1`): **GOVERNANCE VERIFICATION PASSED**.
+  - Camera QA: **NOT VERIFIED ON PHYSICAL HARDWARE (Executed and verified via headless integration & mock test harness)**.
+- **Task Status:** Complete — M4 QR-based linking and reusable scanner fully delivered and verified.
+
+
 
 
 
