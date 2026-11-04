@@ -1,7 +1,7 @@
 # NetSales — Current Project State & Authorization Snapshot
 
-**Last Verified Date:** 2026-11-03  
-**Active Working Tree Status:** Milestone 3 Final Acceptance Verified & Reconciled  
+**Last Verified Date:** 2026-11-04  
+**Active Working Tree Status:** M4 QR Linking Verified & M5 Targeted Backend Security Remediation Completed  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
 
@@ -16,7 +16,7 @@
 | **Milestone 2:** Clean Flutter Foundation, GetX Architecture, Workspace Isolation & Adaptive Navigation | `ACCEPTED AS WORKING BASELINE` | Implemented, tested, and reconciled. Client routing only; server remains sole security boundary. |
 | **Milestone 3:** Identity & Access Foundation | `COMPLETED WITH LIMITATIONS` | Completed and authoritatively verified. Hashing invariant enforced at rest without double hashing; Registered Device Binding enforced; route-level tenant and Network-to-Network isolation proven; absolute session expiration verified. |
 | **Milestone 4:** Commercial Entities — Networks, POS, Relationships | `COMPLETED & ENHANCED WITH SECURE QR LINKING` | Networks, POS, commercial relationships, and secure QR-based cryptographic linking challenge workflow implemented across Laravel and Flutter. Architectural compliance strictly enforced (0 StatefulWidget, 0 direct Eloquent in services, Clean Architecture 3-layer, GetX reactive state, automated feature & unit tests passing 100%). |
-| **Milestone 5:** Packages & Contractual Pricing | `NOT STARTED` | Scheduled after Milestone 4 completion & approval. |
+| **Milestone 5:** Packages & Contractual Pricing | `BACKEND SECURITY REMEDIATION COMPLETED (HALTED AT M5.1 BOUNDARY)` | Targeted backend security remediation addressing Voucher Packages and Contractual Discounts tenant isolation, POS privacy, active commercial link enforcement, and stateless controller resolution verified (14 tests, 103 assertions). Frontend package catalog UI and full M5 features halted awaiting explicit user authorization. |
 | **Milestone 6:** Procurement Requests Lifecycle | `NOT STARTED` | Scheduled after Milestone 5 completion & approval. |
 | **Milestone 7:** Invoicing & Accounting | `NOT STARTED` | Scheduled after Milestone 6 completion & approval. |
 | **Milestone 8:** Wallets, Credit, Debts & Repayments | `NOT STARTED` | Scheduled after Milestone 7 completion & approval. |

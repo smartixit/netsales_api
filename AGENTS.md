@@ -1,5 +1,11 @@
 # NETSALES — CONSTITUTIONAL INVARIANTS & PERMANENT AGENT GOVERNANCE
 
+## 0. Permanent Mandatory Session Protocol & Technical Governance Gate
+- **Mandatory Session Protocol Invocation:** Every Antigravity session and task MUST begin by executing the `netsales-session-protocol` skill before performing any task analysis, project planning, or code modification.
+- **Exhaustive Dynamic Governance Reading:** The agent must discover the complete governance inventory across BOTH repositories (`smartixit/netsales` and `smartixit/netsales_api`) and read every mandatory document line-by-line (100% coverage).
+- **Technical Preflight Write Gate:** Mutating tools (`write_file`, `edit_file`, `run_command`, etc.) are technically locked by the `PreToolUse` governance hook until the per-session ledger records 100% complete reading coverage across both repositories. Zero project file modifications are permitted before the session protocol reaches `COMPLETE`.
+- **Approved Working Baseline Discipline:** Preserved baselines, confirmed decisions in `docs/project/DECISION_LOG.md`, and project status in `docs/project/PROJECT_STATE.md` must be respected. Never assume approval, modify application code outside authorization, or introduce unapproved architecture changes.
+
 ## 1. Product Identity and Non-Negotiable Boundaries
 - NetSales is an enterprise **B2B Network and Point-of-Sale (POS) Sales Management Platform**.
 - It manages wholesale procurement, contractual package pricing, merchant links, wallets, invoices, credit facilities, debt aging, and repayment settlements.
