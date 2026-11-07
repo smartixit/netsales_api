@@ -546,3 +546,83 @@ This log documents all executed tasks, code changes, and verification command ou
 
 
 
+
+---
+
+## [2026-11-07 16:15] Task: Project-Wide Completed Features Architecture & Engineering Compliance Remediation
+- **Authorized Scope:** Project-wide implementation audit and targeted remediation across `netsales` (Flutter) and `netsales_api` (Laravel) for all completed and accepted features. Enforced cursor pagination on Flutter commercial lists, debounced server-side search, custom switch adoption, content-matching skeletons, automated architecture tests, and permanent promotion of standards into governance rules and skills.
+- **Strict Compliance Invariants:**
+  1. Zero git revert, git reset, or git clean executed.
+  2. Zero currency management introduced.
+  3. Clean Architecture 3-layer and GetX exclusive state maintained.
+  4. 100% server-side financial authority preserved in Laravel.
+  5. Technical write gate satisfied (100% coverage across 52 mandatory documents).
+- **Files Modified / Implemented:**
+  - **Flutter Client (`netsales`):**
+    - `lib/core/models/paginated_list.dart`: Created generic cursor pagination model `PaginatedList<T>`.
+    - `lib/widgets/inputs/custom_switch.dart`: Created canonical enterprise `CustomSwitch` component with design tokens and `CustomInteractiveBounce`.
+    - `lib/widgets/inputs/custom_switch_list_tile.dart`: Updated to use `CustomSwitch` instead of native `Switch.adaptive()`.
+    - `lib/features/commercial/presentation/widgets/network_pos_card_skeleton.dart`: Created content-matching skeleton for incremental load-more.
+    - `lib/features/commercial/domain/repositories/commercial_repository.dart`: Updated `getNetworkPosList` and `getPosNetworksList` to return `PaginatedList<NetworkPosLinkEntity>`.
+    - `lib/features/commercial/data/repositories/commercial_repository_impl.dart`: Mapped `ApiResponse` next/prev cursors into `PaginatedList`.
+    - `lib/features/commercial/domain/usecases/get_network_pos_list_use_case.dart`: Updated to return `PaginatedList`.
+    - `lib/features/commercial/domain/usecases/get_pos_networks_list_use_case.dart`: Updated to return `PaginatedList`.
+    - `lib/features/commercial/presentation/controllers/commercial_directory_controller.dart`: Refactored to support cursor pagination, incremental load-more, debounced (300ms) server-side search, and removed in-memory `filteredLinks`.
+    - `lib/features/commercial/presentation/screens/network_pos_directory_screen.dart`: Connected cursor pagination, incremental load-more trigger, and `NetworkPosCardSkeleton`.
+    - `lib/features/commercial/presentation/screens/pos_linked_networks_screen.dart`: Connected cursor pagination, incremental load-more trigger, and `NetworkPosCardSkeleton`.
+    - `lib/features/commercial/presentation/widgets/link_pos_bottom_sheet.dart`: Replaced `Switch.adaptive` with `CustomSwitch`.
+    - `test/widgets/inputs/custom_switch_test.dart`: Added widget tests for `CustomSwitch`.
+    - `test/commercial/commercial_entities_test.dart`: Aligned tests with `PaginatedList` contract.
+    - `test/architecture/architecture_compliance_test.dart`: Added automated tests forbidding raw `Switch` / `Switch.adaptive` in `lib/` and forbidding client-side `filteredLinks` in `CommercialDirectoryController`.
+    - `netsales/.agents/rules/flutter-architecture-and-getx.md`: Permanently codified cursor pagination and `CustomSwitch`.
+    - `netsales/.agents/rules/flutter-ui-ux-engineering-standard.md`: Permanently codified incremental load-more skeletons.
+    - `netsales/.agents/skills/flutter-feature-engineering/SKILL.md`: Permanently aligned feature engineering procedures.
+  - **Laravel API (`netsales_api`):**
+    - `netsales_api/.agents/rules/laravel-architecture-and-services.md`: Permanently codified cursor pagination standards.
+    - `netsales_api/.agents/skills/laravel-api-engineering/SKILL.md`: Permanently aligned backend engineering skill.
+- **Verification Commands & Outcomes:**
+  - `flutter analyze`: **No issues found! (0 errors, 0 warnings across entire netsales project)**.
+  - `flutter test`: **97 tests passed! (100% pass rate)**.
+  - `php artisan test`: **59 passed (900 assertions across relevant suites, 100% pass rate)**.
+  - `vendor/bin/pint --dirty --format agent`: **PASS**.
+  - `verify-project-governance.ps1`: **GOVERNANCE VERIFICATION PASSED (All 4 sections verified)**.
+- **Task Status:** Complete — Project-wide completed features architecture & engineering compliance remediation successfully delivered and permanently promoted.
+
+---
+
+## [2026-11-07 16:25] Task: Comprehensive Flutter Feature Architecture, Widget Decomposition & Premium UI/UX Standardization
+- **Authorized Scope:** USER REQUESTED — Comprehensive architecture inspection, component decomposition, UI/UX refinement, and targeted refactoring across all genuinely completed Flutter features. Verified strict 3-tier Clean Architecture, zero `StatefulWidget`/`setState` in feature presentation, declarative screen composition, and extracted atomic widgets.
+- **Strict Compliance Invariants:**
+  1. Zero git revert, git reset, or git clean executed; all modified and untracked files preserved.
+  2. Zero currency management introduced.
+  3. Clean Architecture (Data/Domain/Presentation) and GetX exclusive state maintained.
+  4. 100% server-side financial authority in Laravel preserved.
+  5. Technical write gate satisfied (100% reading coverage across 52 mandatory documents).
+- **Files Created / Decomposed:**
+  - `netsales/lib/features/auth/presentation/widgets/current_device_card.dart`: Extracted hero current device card (95 lines) with status badge and device type chip.
+  - `netsales/lib/features/auth/presentation/widgets/logout_other_devices_card.dart`: Extracted action banner card for terminating remote sessions (82 lines).
+  - `netsales/lib/features/auth/presentation/widgets/other_device_card.dart`: Extracted individual paired device list card (98 lines) with disconnect trigger.
+  - `netsales/lib/features/auth/presentation/screens/active_sessions_screen.dart`: Refactored to pure declarative page composition (reduced from 380 lines to 115 lines, >69% reduction).
+- **Audit Findings Verified Across Completed Features:**
+  - **Stateful Prohibition:** 0 `StatefulWidget` or `setState()` in `lib/features/` (100% compliant).
+  - **HTTP Isolation:** 0 direct `ApiService`, `package:http`, or `package:dio` calls in presentation/controllers (100% compliant).
+  - **Screen Line Counts:** All completed feature screens adhere to non-monolithic composition:
+    - `active_sessions_screen.dart`: 115 lines (COMPLIANT).
+    - `network_pos_directory_screen.dart`: 181 lines (COMPLIANT).
+    - `pos_linked_networks_screen.dart`: 185 lines (COMPLIANT).
+    - `welcome_screen.dart`: 156 lines (COMPLIANT).
+    - `onboarding_screen.dart`: 103 lines (COMPLIANT).
+    - `unsupported_platform_screen.dart`: 92 lines (COMPLIANT).
+    - `reset_password_screen.dart`: 88 lines (COMPLIANT).
+    - `register_network_screen.dart`: 70 lines (COMPLIANT).
+    - `register_pos_screen.dart`: 70 lines (COMPLIANT).
+    - `two_factor_auth_screen.dart`: 63 lines (COMPLIANT).
+    - `verify_otp_screen.dart`: 58 lines (COMPLIANT).
+    - `login_screen.dart`: 56 lines (COMPLIANT).
+    - `forgot_password_screen.dart`: 55 lines (COMPLIANT).
+    - `splash_screen.dart`: 47 lines (COMPLIANT).
+- **Verification Commands & Outcomes:**
+  - `flutter analyze`: **No issues found! (0 errors, 0 warnings across entire netsales project, ran in 69.7s)**.
+  - `flutter test`: **97 tests passed! (100% pass rate across unit, widget, and architecture tests)**.
+  - `verify-project-governance.ps1`: **GOVERNANCE VERIFICATION PASSED (All 4 sections verified)**.
+- **Task Status:** Complete — Feature architecture, decomposition, and UI/UX standardization delivered and verified.
