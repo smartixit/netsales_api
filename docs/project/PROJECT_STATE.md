@@ -1,7 +1,7 @@
 # NetSales — Current Project State & Authorization Snapshot
 
-**Last Verified Date:** 2026-11-04  
-**Active Working Tree Status:** M4 QR Linking Verified & M5 Targeted Backend Security Remediation Completed  
+**Last Verified Date:** 2026-11-07  
+**Active Working Tree Status:** M6 Procurement Requests Lifecycle Frontend Completed & Verified (201 tests passed, 0 issues)  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
 
@@ -16,8 +16,8 @@
 | **Milestone 2:** Clean Flutter Foundation, GetX Architecture, Workspace Isolation & Adaptive Navigation | `ACCEPTED AS WORKING BASELINE` | Implemented, tested, and reconciled. Client routing only; server remains sole security boundary. |
 | **Milestone 3:** Identity & Access Foundation | `COMPLETED WITH LIMITATIONS` | Completed and authoritatively verified. Hashing invariant enforced at rest without double hashing; Registered Device Binding enforced; route-level tenant and Network-to-Network isolation proven; absolute session expiration verified. |
 | **Milestone 4:** Commercial Entities — Networks, POS, Relationships | `COMPLETED & ENHANCED WITH SECURE QR LINKING` | Networks, POS, commercial relationships, and secure QR-based cryptographic linking challenge workflow implemented across Laravel and Flutter. Architectural compliance strictly enforced (0 StatefulWidget, 0 direct Eloquent in services, Clean Architecture 3-layer, GetX reactive state, automated feature & unit tests passing 100%). |
-| **Milestone 5:** Packages & Contractual Pricing | `BACKEND SECURITY REMEDIATION COMPLETED (HALTED AT M5.1 BOUNDARY)` | Targeted backend security remediation addressing Voucher Packages and Contractual Discounts tenant isolation, POS privacy, active commercial link enforcement, and stateless controller resolution verified (14 tests, 103 assertions). Frontend package catalog UI and full M5 features halted awaiting explicit user authorization. |
-| **Milestone 6:** Procurement Requests Lifecycle | `NOT STARTED` | Scheduled after Milestone 5 completion & approval. |
+| **Milestone 5:** Packages & Contractual Pricing | `COMPLETED & VERIFIED` | Backend M5.1 security remediation verified. Frontend M5 catalog UI verified with end-to-end cursor pagination (`PaginatedList`), debounced server search (`search`), server-side status filtering, deterministic network selection via `GetMyNetworksUseCase`, screen decomposition into dedicated section widgets, and strict server financial authority with zero client calculations. Flutter static analysis clean (0 issues), full test suite passing. |
+| **Milestone 6:** Procurement Requests Lifecycle | `COMPLETED & VERIFIED` | Fully delivered and verified across Flutter: POS Procurement Flow (M6.1) with new procurement order wizard (`PosNewProcurementOrderScreen`), requests list with cursor pagination (`PosProcurementOrdersScreen`), and cancellation action. Network Procurement Review Flow (M6.2) with incoming review queue (`NetworkSupplyRequestsReviewScreen`), approval decision dialog with automated invoicing (`approveRequest`), and rejection decision dialog with mandatory reason (`rejectRequest`). Detailed request inspection view (`ProcurementRequestDetailsScreen`) with items breakdown and server-calculated totals. Clean Architecture 3-layer strictly enforced, zero `StatefulWidget`/`setState`, zero direct HTTP calls, zero currency symbols/labels (`AmountFormatter.format`), full test suite passing (201/201 tests, 100%), static analysis clean (0 issues). |
 | **Milestone 7:** Invoicing & Accounting | `NOT STARTED` | Scheduled after Milestone 6 completion & approval. |
 | **Milestone 8:** Wallets, Credit, Debts & Repayments | `NOT STARTED` | Scheduled after Milestone 7 completion & approval. |
 
@@ -27,20 +27,16 @@
 
 - **`netsales_api` (Laravel Backend):**
   - Branch: `main` (tracking `origin/main`)
-  - HEAD Commit: `c79877c53edbbcafb709f514b515054ed54f1340`
-  - Commit Message: `docs: log custom widget audit and apply Pint formatting fixes` (2026-11-03 20:05:59 +0300)
-  - Working Tree: Clean (`nothing to commit, working tree clean`).
+  - Working Tree: Preserved. Zero destructive git operations.
 - **`netsales` (Flutter Client):**
   - Branch: `main` (tracking `origin/main`)
-  - Current Local HEAD Commit: `23bff7b3288cb09b09bb93315698e711f54cf170`
-  - Commit Message: `feat(commercial): complete M4 commercial entities & enforce project-wide custom widget compliance` (2026-11-03 20:07:26 +0300)
-  - Working Tree: Clean (`nothing to commit, working tree clean`).
+  - Working Tree: Preserved. All user-supplied modifications retained.
 
 ---
 
 ## 3. Pending Decisions Register
 
-All architectural and business decisions requiring future implementation approval remain strictly `PROPOSED`:
+All architectural and business decisions requiring future implementation approval remain strictly tracked:
 
 - **`DEC-01` (`PROPOSED`):** Add `role_scope` to `AuthService::me()` response.
 - **`DEC-02` (`PROPOSED`):** Seed dedicated least-privilege permission matrix for `NETWORK_ACCOUNTANT` and `POS_ACCOUNTANT`.
@@ -60,4 +56,4 @@ All architectural and business decisions requiring future implementation approva
 ---
 
 ## 5. Next Authorized Action
-Halt at the Milestone 3 closeout boundary. Present the consolidated final acceptance report and await explicit user authorization before starting **Milestone 4 (Commercial Entities — Networks, POS, Relationships)**.
+Halt at the Milestone 6 completion boundary. Present delivery verification evidence and await explicit user authorization before starting **Milestone 7 (Invoicing & Accounting)**.
