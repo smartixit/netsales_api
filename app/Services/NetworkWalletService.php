@@ -14,8 +14,8 @@ use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
 use App\Interfaces\NetworkWalletRepositoryInterface;
 use App\Models\NetworkWallet;
-use App\Models\User;
 use App\Models\NetworkWalletLog;
+use App\Models\User;
 use Exception;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -47,7 +47,7 @@ class NetworkWalletService
      */
     public function getWalletsForUser(array $filters, User $user): Collection|CursorPaginator
     {
-        if (! $user->isSuperAdmin()) {
+        if (!$user->isSuperAdmin()) {
             $filters['authorized_user_id'] = (int) $user->user_id;
         }
 
