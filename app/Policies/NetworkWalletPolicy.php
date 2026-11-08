@@ -21,7 +21,8 @@ class NetworkWalletPolicy
 
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->networks()->exists()
+            || $user->networkUsers()->where('status', 'ACTIVE')->exists();
     }
 
     public function view(User $user, NetworkWallet $wallet): bool
@@ -32,7 +33,10 @@ class NetworkWalletPolicy
         }
 
         // 2. Check if user belongs to the network
-        if (method_exists($user, 'networkUsers') && $user->networkUsers()->where('network_id', $wallet->network_id)->exists()) {
+        if ($user->networkUsers()
+            ->where('network_id', $wallet->network_id)
+            ->where('status', 'ACTIVE')
+            ->exists()) {
             return true;
         }
 

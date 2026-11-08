@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Interfaces\UserSessionRepositoryInterface;
 use App\Models\Network;
+use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
 use App\Models\Pos;
 use App\Models\PosWallet;
@@ -17,6 +18,68 @@ use Tests\TestCase;
 class IdentityAndAccessFoundationTest extends TestCase
 {
     use DatabaseTransactions;
+
+    /**
+     * Create a self-contained tenant fixture. Tests must not rely on seeded
+     * networks or wallets because DatabaseSeeder intentionally creates only
+     * platform foundation data.
+     *
+     * @return array{owner: User, network: Network, pos: Pos, networkWallet: NetworkWallet, posWallet: PosWallet}
+     */
+    private function createWalletTenant(string $label): array
+    {
+        $suffix = $label.'-'.bin2hex(random_bytes(4));
+
+        $owner = User::create([
+            'role_id' => null,
+            'user_full_name' => 'Wallet Tenant '.$suffix,
+            'user_phone_number' => '77'.random_int(1000000, 9999999),
+            'user_password' => bcrypt('Password@123'),
+            'status' => 'ACTIVE',
+        ]);
+
+        $network = Network::create([
+            'owner_id' => $owner->user_id,
+            'network_name' => 'Network '.$suffix,
+            'network_phone_number' => '71'.random_int(1000000, 9999999),
+            'governorate_id' => 1,
+            'directorate_id' => 1,
+            'status' => 'ACTIVE',
+        ]);
+
+        $pos = Pos::create([
+            'owner_id' => $owner->user_id,
+            'pos_name' => 'POS '.$suffix,
+            'pos_phone_number' => '73'.random_int(1000000, 9999999),
+            'governorate_id' => 1,
+            'directorate_id' => 1,
+            'status' => 'ACTIVE',
+        ]);
+
+        NetworkPos::create([
+            'network_id' => $network->network_id,
+            'pos_id' => $pos->pos_id,
+            'status' => true,
+        ]);
+
+        $networkWallet = NetworkWallet::create([
+            'network_id' => $network->network_id,
+            'wallet_uuid' => 'NET-WALLET-'.$suffix,
+            'wallet_balance' => 0,
+            'status' => true,
+        ]);
+
+        $posWallet = PosWallet::create([
+            'network_id' => $network->network_id,
+            'pos_id' => $pos->pos_id,
+            'wallet_uuid' => 'POS-WALLET-'.$suffix,
+            'wallet_balance' => 0,
+            'credit_limit' => 100000,
+            'status' => true,
+        ]);
+
+        return compact('owner', 'network', 'pos', 'networkWallet', 'posWallet');
+    }
 
     /**
      * اختبار: رفض الطلبات غير المصادق عليها برمز 401 صريح.
@@ -445,14 +508,14 @@ class IdentityAndAccessFoundationTest extends TestCase
      */
     public function test_cross_tenant_pos_membership_and_wallet_access_isolation(): void
     {
-        // نقطة بيع 1 ومحفظتها
-        $posWallet1 = PosWallet::first();
-        $this->assertNotNull($posWallet1);
-        $pos1 = Pos::find($posWallet1->pos_id);
-        $this->assertNotNull($pos1);
+        // إنشاء نقطتي بيع مستقلتين داخل الاختبار بدل الاعتماد على بيانات Seed.
+        $tenant1 = $this->createWalletTenant('POS-A');
+        $tenant2 = $this->createWalletTenant('POS-B');
 
-        $userPos1 = User::find($pos1->owner_id);
-        $this->assertNotNull($userPos1);
+        $posWallet1 = $tenant1['posWallet'];
+        $pos1 = $tenant1['pos'];
+        $userPos1 = $tenant1['owner'];
+        $posWallet2 = $tenant2['posWallet'];
 
         $devicePos1 = UserDevice::firstOrCreate(
             ['user_id' => $userPos1->user_id, 'device_uuid' => 'POS-1-OWNER-DEVICE-UUID'],
@@ -483,17 +546,14 @@ class IdentityAndAccessFoundationTest extends TestCase
         ]);
         $allowedResp->assertStatus(200);
 
-        // 2. مستخدم نقطة البيع 1 يُمنع تماماً بـ 403 عند محاولة الوصول لمحفظة نقطة بيع أخرى (مستأجر آخر)
-        $posWallet2 = PosWallet::where('pos_id', '!=', $pos1->pos_id)->first();
-        if ($posWallet2) {
-            $crossTenantResp = $this->getJson("/api/v1/pos-wallets/{$posWallet2->wallet_id}", [
-                'X-Session-Id' => $rawTokenPos1,
-                'X-Device-Uuid' => $devicePos1->device_uuid,
-                'X-Bypass-Encryption' => 'true',
-            ]);
-            $crossTenantResp->assertStatus(403);
-            $this->assertStringContainsString('غير مصرح لك بالوصول إلى هذه المحفظة', $crossTenantResp->json('message'));
-        }
+        // 2. مستخدم نقطة البيع 1 يُمنع تماماً من محفظة نقطة البيع الثانية.
+        $crossTenantResp = $this->getJson("/api/v1/pos-wallets/{$posWallet2->wallet_id}", [
+            'X-Session-Id' => $rawTokenPos1,
+            'X-Device-Uuid' => $devicePos1->device_uuid,
+            'X-Bypass-Encryption' => 'true',
+        ]);
+        $crossTenantResp->assertStatus(403);
+        $this->assertStringContainsString('غير مصرح لك بالوصول إلى هذه المحفظة', $crossTenantResp->json('message'));
     }
 
     /**
@@ -501,17 +561,14 @@ class IdentityAndAccessFoundationTest extends TestCase
      */
     public function test_cross_tenant_network_membership_and_wallet_access_isolation(): void
     {
-        // شبكة 1 ومحفظتها
-        $networkWallet1 = NetworkWallet::first();
-        $this->assertNotNull($networkWallet1);
-        $network1 = Network::find($networkWallet1->network_id);
-        $this->assertNotNull($network1);
+        // إنشاء شبكتين مستقلتين حتى يكون اختبار المستأجر الآخر حتميًا.
+        $networkTenant = $this->createWalletTenant('NETWORK-A');
+        $posTenant = $this->createWalletTenant('NETWORK-B');
 
-        // مستخدم نقطة بيع لا يملك ولا ينتمي للشبكة 1
-        $pos = Pos::where('owner_id', '!=', $network1->owner_id)->first();
-        $this->assertNotNull($pos);
-        $userPos1 = User::find($pos->owner_id);
-        $this->assertNotNull($userPos1);
+        $networkWallet1 = $networkTenant['networkWallet'];
+        $network1 = $networkTenant['network'];
+        $pos = $posTenant['pos'];
+        $userPos1 = $posTenant['owner'];
 
         $devicePos1 = UserDevice::firstOrCreate(
             ['user_id' => $userPos1->user_id, 'device_uuid' => 'POS-1-TO-NET-DEVICE-UUID'],
@@ -558,19 +615,14 @@ class IdentityAndAccessFoundationTest extends TestCase
      */
     public function test_network_owner_a_cannot_access_network_b_resources(): void
     {
-        $networkWalletA = NetworkWallet::first();
-        $this->assertNotNull($networkWalletA);
-        $networkA = Network::find($networkWalletA->network_id);
-        $this->assertNotNull($networkA);
-        $userA = User::find($networkA->owner_id);
-        $this->assertNotNull($userA);
+        $tenantA = $this->createWalletTenant('OWNER-A');
+        $tenantB = $this->createWalletTenant('OWNER-B');
 
-        // العثور على محفظة شبكة ب لا ينتمي إليها المستخدم أ إطلاقاً
-        $userANetworkIds = $userA->networks()->pluck('networks.network_id')->toArray();
-        $networkWalletB = NetworkWallet::whereNotIn('network_id', $userANetworkIds)->first();
-        $this->assertNotNull($networkWalletB);
-        $networkB = Network::find($networkWalletB->network_id);
-        $this->assertNotNull($networkB);
+        $networkWalletA = $tenantA['networkWallet'];
+        $networkA = $tenantA['network'];
+        $userA = $tenantA['owner'];
+        $networkWalletB = $tenantB['networkWallet'];
+        $networkB = $tenantB['network'];
 
         $deviceA = UserDevice::firstOrCreate(
             ['user_id' => $userA->user_id, 'device_uuid' => 'NET-A-OWNER-DEVICE-UUID'],

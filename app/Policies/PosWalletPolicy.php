@@ -21,7 +21,10 @@ class PosWalletPolicy
 
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->pos()->exists()
+            || $user->posUsers()->where('status', 'ACTIVE')->exists()
+            || $user->networks()->exists()
+            || $user->networkUsers()->where('status', 'ACTIVE')->exists();
     }
 
     public function view(User $user, PosWallet $wallet): bool
@@ -32,7 +35,7 @@ class PosWalletPolicy
         }
 
         // 2. Check if user belongs to the POS
-        if (method_exists($user, 'posUsers') && $user->posUsers()->where('pos_id', $wallet->pos_id)->exists()) {
+        if ($user->posUsers()->where('pos_id', $wallet->pos_id)->where('status', 'ACTIVE')->exists()) {
             return true;
         }
 
@@ -40,7 +43,7 @@ class PosWalletPolicy
         if ($user->networks()->where('networks.network_id', $wallet->network_id)->exists()) {
             return true;
         }
-        if (method_exists($user, 'networkUsers') && $user->networkUsers()->where('network_id', $wallet->network_id)->exists()) {
+        if ($user->networkUsers()->where('network_id', $wallet->network_id)->where('status', 'ACTIVE')->exists()) {
             return true;
         }
 
@@ -68,7 +71,10 @@ class PosWalletPolicy
         if ($user->pos && (int) $user->pos->pos_id === (int) $wallet->pos_id) {
             return false;
         }
-        if (method_exists($user, 'posUsers') && $user->posUsers()->where('pos_id', $wallet->pos_id)->exists()) {
+        if ($user->posUsers()
+            ->where('pos_id', $wallet->pos_id)
+            ->where('status', 'ACTIVE')
+            ->exists()) {
             return false;
         }
 
@@ -78,8 +84,11 @@ class PosWalletPolicy
         }
 
         // 3. Network user with pos_wallets.manage permission
-        if (method_exists($user, 'networkUsers') && $user->networkUsers()->where('network_id', $wallet->network_id)->exists()) {
-            return $user->hasPermission('pos_wallets.manage');
+        if ($user->networkUsers()
+            ->where('network_id', $wallet->network_id)
+            ->where('status', 'ACTIVE')
+            ->exists()) {
+            return $user->hasPermission('pos_wallets.manage', (int) $wallet->network_id);
         }
 
         return false;

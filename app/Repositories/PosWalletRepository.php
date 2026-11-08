@@ -25,6 +25,30 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
      */
     protected function applyFilters(Builder $query, array $filters): void
     {
+        // Injected by the authenticated service layer; never accepted from HTTP input.
+        // A user may view POS wallets they own, POS memberships they actively hold,
+        // or POS wallets belonging to networks they own/actively administer.
+        if (isset($filters['authorized_user_id'])) {
+            $userId = (int) $filters['authorized_user_id'];
+            $query->where(function (Builder $visibilityQuery) use ($userId): void {
+                $visibilityQuery
+                    ->whereHas('pos', function (Builder $posQuery) use ($userId): void {
+                        $posQuery->where('owner_id', $userId);
+                    })
+                    ->orWhereHas('pos.memberships', function (Builder $membershipQuery) use ($userId): void {
+                        $membershipQuery->where('user_id', $userId)
+                            ->where('status', 'ACTIVE');
+                    })
+                    ->orWhereHas('network', function (Builder $networkQuery) use ($userId): void {
+                        $networkQuery->where('owner_id', $userId)
+                            ->orWhereHas('memberships', function (Builder $membershipQuery) use ($userId): void {
+                                $membershipQuery->where('user_id', $userId)
+                                    ->where('status', 'ACTIVE');
+                            });
+                    });
+            });
+        }
+
         if (! empty($filters['network_id']) && ! empty($filters['pos_id'])) {
             $query->forNetworkAndPos((int) $filters['network_id'], (int) $filters['pos_id']);
         } else {

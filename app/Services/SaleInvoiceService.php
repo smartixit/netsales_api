@@ -56,6 +56,9 @@ class SaleInvoiceService
 
     /**
      * جلب قائمة فواتير المبيعات مع الفلترة والترقيم بالمؤشر.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, SaleInvoice>|CursorPaginator<int, SaleInvoice>
      */
     public function getFiltered(array $filters = []): Collection|CursorPaginator
     {
@@ -64,6 +67,9 @@ class SaleInvoiceService
 
     /**
      * جلب الفواتير المحذوفة مؤقتاً.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, SaleInvoice>|CursorPaginator<int, SaleInvoice>
      */
     public function getTrashed(array $filters = []): Collection|CursorPaginator
     {
@@ -95,7 +101,7 @@ class SaleInvoiceService
         ?array $overrideItems = null
     ): SaleInvoice {
         return DB::transaction(function () use ($request, $userId, $overrideSaleType, $overrideItems): SaleInvoice {
-            if ($overrideSaleType !== null && $overrideSaleType !== $request->sale_type) {
+            if ($overrideSaleType !== null && $overrideSaleType->value !== $request->getRawOriginal('sale_type')) {
                 throw ValidationException::withMessages([
                     'sale_type' => ['لا يُسمح بتعديل نوع البيع (كاش/آجل) المتفق عليه في الطلب الأصلي من قِبل الشبكة.'],
                 ]);
@@ -126,7 +132,7 @@ class SaleInvoiceService
             ? $overrideItems
             : $request->items()->with('voucherPackage')->get();
 
-            if (empty($itemsSource) || (is_countable($itemsSource) && count($itemsSource) === 0)) {
+            if (count($itemsSource) === 0) {
                 throw ValidationException::withMessages([
                     'items' => ['الطلب لا يحتوي على أي باقات.'],
                 ]);
@@ -459,8 +465,8 @@ class SaleInvoiceService
                 $count = (int) $item['voucher_count'];
                 $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $package->package_id);
                 $discount = $saleType === SaleType::CASH
-                    ? (float) ($discountData['discount_cash'] ?? 0.0)
-                    : (float) ($discountData['discount_credit'] ?? 0.0);
+                    ? $discountData['discount_cash']
+                    : $discountData['discount_credit'];
 
                 $invoiceItemModel = new SaleInvoiceItem([
                     'package_id' => $package->package_id,
@@ -501,6 +507,8 @@ class SaleInvoiceService
             $totalInvoiceAmount = round($totalInvoiceAmount, 2);
 
             // 3. تطبيق المنطق المحاسبي الموحد وفق توجيهات النزاهة المالية
+            $posBalanceAfter = null;
+
             if ($saleType === SaleType::CASH) {
                 // البيع النقدي المباشر: تم تسليم كامل المبلغ نقداً يداً بيد
                 $paidAmount = $totalInvoiceAmount;
@@ -592,11 +600,6 @@ class SaleInvoiceService
                     ? "سداد فاتورة مبيعات مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) - مسدد من الرصيد: (".formatWithCurrency($paidAmount).')، آجل متبقي: ('.formatWithCurrency($remainingAmount).") (رصيد مدين: {$formattedPosBalanceAfter})"
                     : "سداد فاتورة مبيعات مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) - ذمم مدينة (رصيد مدين: {$formattedPosBalanceAfter})";
 
-                $formattedPosBalanceAfter = formatWithCurrency(abs($posBalanceAfter));
-                $posStatement = $paidAmount > 0.001
-                    ? "سداد فاتورة مبيعات مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) - مسدد من الرصيد: (".formatWithCurrency($paidAmount).')، آجل متبقي: ('.formatWithCurrency($remainingAmount).") (رصيد مدين: {$formattedPosBalanceAfter})"
-                    : "سداد فاتورة مبيعات مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) - ذمم مدينة (رصيد مدين: {$formattedPosBalanceAfter})";
-
                 $this->posWalletLogRepository->createLog(
                     $posWallet->wallet_id,
                     WalletOperationType::WITHDRAW,
@@ -617,17 +620,6 @@ class SaleInvoiceService
                     );
                 }
 
-                // زيادة سيولة الشبكة فقط بالمبلغ المغطى برصيد إيجابي فعلي (إن وجد)
-                if ($paidAmount > 0.001) {
-                    $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $paidAmount);
-                    $this->networkWalletLogRepository->createLog(
-                        $networkWallet->wallet_id,
-                        WalletOperationType::DEPOSIT,
-                        $paidAmount,
-                        "تحصيل مبيعات كروت مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: (".formatWithCurrency($paidAmount).')، آجل متبقي: ('.formatWithCurrency($remainingAmount).')',
-                        $userId
-                    );
-                }
             }
 
             // تسجيل رسالة الأحداث المالية في صندوق الإرسال اللحظي (Transactional Outbox)
@@ -653,7 +645,7 @@ class SaleInvoiceService
             $formattedTotalInvoiceAmount = formatWithCurrency($totalInvoiceAmount);
             $formattedPaidAmount = formatWithCurrency($paidAmount);
             $formattedRemainingAmount = formatWithCurrency($remainingAmount);
-            $formattedPosBalanceAfter = $posBalanceAfter !== null ? formatWithCurrency($posBalanceAfter) : null;
+            $formattedPosBalanceAfter = $posBalanceAfter === null ? null : formatWithCurrency($posBalanceAfter);
 
             $posRecipientId = (int) ($pos->owner_id ?? $userId);
             $networkRecipientId = (int) ($network->owner_id ?? $userId);
@@ -664,7 +656,6 @@ class SaleInvoiceService
                 $posBalanceAfter,
                 $posRecipientId,
                 $networkRecipientId,
-                $networkWallet,
                 $paidAmount,
                 $pos,
                 $formattedTotalInvoiceAmount,
@@ -672,7 +663,7 @@ class SaleInvoiceService
                 $formattedRemainingAmount,
                 $formattedPosBalanceAfter
             ): void {
-                if ($posWallet && $remainingAmount > 0.001) {
+                if ($remainingAmount > 0.001) {
                     $posWallet->refresh();
                     $this->posWalletService->sendWalletSms($posWallet, 'payment', (float) $remainingAmount, $posBalanceAfter ?? 0.0);
 
@@ -691,7 +682,7 @@ class SaleInvoiceService
                     }
                 }
 
-                if ($networkWallet && $networkRecipientId) {
+                if ($networkRecipientId) {
                     $this->notificationService->sendDirect(
                         userId: $networkRecipientId,
                         type: NotificationType::WALLET_DEPOSIT,
@@ -760,6 +751,8 @@ class SaleInvoiceService
 
     /**
      * الحذف المجمع لفواتير المبيعات.
+     *
+     * @param  array<int, int>  $ids
      */
     public function bulkDelete(array $ids): int
     {
@@ -770,6 +763,8 @@ class SaleInvoiceService
 
     /**
      * الاستعادة المجمعة لفواتير المبيعات.
+     *
+     * @param  array<int, int>  $ids
      */
     public function bulkRestore(array $ids): int
     {
@@ -780,6 +775,8 @@ class SaleInvoiceService
 
     /**
      * الحذف النهائي المجمع لفواتير المبيعات.
+     *
+     * @param  array<int, int>  $ids
      */
     public function bulkForceDelete(array $ids): int
     {
@@ -791,6 +788,7 @@ class SaleInvoiceService
     /**
      * اجمالي مبيعات الكروت مجمعة بفترة زمنية (سلسلة زمنية حقيقية).
      *
+     * @param  array<string, mixed>  $filters
      * @return array<int, array{period: string, total: float, count: int}>
      */
     public function getSalesTrend(array $filters = []): array
@@ -801,7 +799,7 @@ class SaleInvoiceService
             $period = 'daily';
         }
 
-        $query = SaleInvoice::query();
+        $query = SaleInvoice::query()->toBase();
 
         if (! empty($filters['network_id'])) {
             $query->where('network_id', (int) $filters['network_id']);

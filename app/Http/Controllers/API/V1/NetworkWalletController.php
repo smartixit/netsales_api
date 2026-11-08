@@ -9,6 +9,7 @@ use App\Http\Requests\API\V1\Network\UpdateNetworkWalletRequest;
 use App\Http\Requests\API\V1\Network\WithdrawNetworkWalletRequest;
 use App\Http\Resources\API\V1\Network\NetworkWalletLogResource;
 use App\Http\Resources\API\V1\Network\NetworkWalletResource;
+use App\Models\NetworkWallet;
 use App\Services\NetworkWalletService;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -56,8 +57,13 @@ class NetworkWalletController extends BaseController
     public function index(Request $request): JsonResponse
     {
         try {
+            $currentUser = $this->requireCurrentUser();
+            if (! Gate::forUser($currentUser)->allows('viewAny', NetworkWallet::class)) {
+                return $this->errorResponse('غير مصرح لك بعرض محافظ الشبكات.', [], 403);
+            }
+
             $filters = $request->only(['network_id', 'status', 'min_balance', 'max_balance', 'search', 'per_page', 'all']);
-            $wallets = $this->networkWalletService->getWallets($filters);
+            $wallets = $this->networkWalletService->getWalletsForUser($filters, $currentUser);
 
             return $this->successResponse('تم استرجاع قائمة محافظ الشبكات بنجاح.', NetworkWalletResource::collection($wallets));
         } catch (ValidationException $e) {
@@ -392,8 +398,13 @@ class NetworkWalletController extends BaseController
     public function trashed(Request $request): JsonResponse
     {
         try {
+            $currentUser = $this->requireCurrentUser();
+            if (! Gate::forUser($currentUser)->allows('viewAny', NetworkWallet::class)) {
+                return $this->errorResponse('غير مصرح لك بعرض محافظ الشبكات المحذوفة.', [], 403);
+            }
+
             $filters = $request->only(['network_id', 'search', 'per_page', 'all']);
-            $wallets = $this->networkWalletService->getTrashedWallets($filters);
+            $wallets = $this->networkWalletService->getTrashedWalletsForUser($filters, $currentUser);
 
             return $this->successResponse('تم استرجاع قائمة المحافظ المحذوفة بنجاح.', NetworkWalletResource::collection($wallets));
         } catch (ValidationException $e) {
