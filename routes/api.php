@@ -544,6 +544,7 @@ Route::prefix('v1')->group(function () {
             Route::get('subscription-plan-requests', [SubscriptionPlanRequestController::class, 'index'])->name('api.v1.subscription_plan_requests.index');
             Route::get('subscription-plan-requests/trashed', [SubscriptionPlanRequestController::class, 'trashed'])->name('api.v1.subscription_plan_requests.trashed');
             Route::get('subscription-plan-requests/{id}', [SubscriptionPlanRequestController::class, 'show'])->whereNumber('id')->name('api.v1.subscription_plan_requests.show');
+            Route::get('subscription-plan-requests/{id}/receipt-link', [SubscriptionPlanRequestController::class, 'receiptLink'])->whereNumber('id')->name('api.v1.subscription_plan_requests.receipt_link');
         });
 
         Route::middleware('throttle:api-write')->group(function () {
