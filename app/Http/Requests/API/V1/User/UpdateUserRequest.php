@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\API\V1\User;
 
-use App\Enums\UserStatus;
+use App\Enums\RoleScope;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -36,14 +36,15 @@ class UpdateUserRequest extends FormRequest
 
     public function rules(): array
     {
-        $userId = $this->route('user')?->user_id ?? $this->route('user');
+        $routeUser = $this->route('user');
+        $userId = $this->route('id') ?? ($routeUser?->user_id ?? $routeUser);
 
         return [
             'role_id' => [
                 'sometimes',
                 'required',
                 'integer',
-                Rule::exists('roles', 'role_id')->whereNull('deleted_at'),
+                Rule::exists('roles', 'role_id')->whereNull('deleted_at')->where('scope', RoleScope::PLATFORM->value),
             ],
             'user_full_name' => [
                 'sometimes',
@@ -85,10 +86,7 @@ class UpdateUserRequest extends FormRequest
                 'nullable',
                 'boolean',
             ],
-            'status' => [
-                'sometimes',
-                Rule::enum(UserStatus::class),
-            ],
+            'status' => ['prohibited'],
         ];
     }
 }

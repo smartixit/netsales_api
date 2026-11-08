@@ -80,7 +80,13 @@ class SecurityService
     public function banUser(StoreSecurityBanRequest $request, ?int $adminUserId = null): SecurityBan
     {
         $userId = (int) $request->user_id;
-        $this->ensureUserExists($userId);
+        $user = $this->userRepository->findById($userId);
+
+        if ($user->status !== UserStatus::ACTIVE || $this->securityBanRepository->isUserBanned($userId)) {
+            throw ValidationException::withMessages([
+                'user_id' => ['لا يمكن تطبيق حظر جديد على حساب غير نشط أو لديه حظر أمني سارٍ.'],
+            ]);
+        }
 
         $banType = $request->ban_type;
         $reason = (string) ($request->ban_reason ?? 'حظر أمني إداري');
@@ -128,7 +134,13 @@ class SecurityService
     public function banDevice(StoreSecurityBanRequest $request, ?int $adminUserId = null): SecurityBan
     {
         $deviceId = (int) $request->device_id;
-        $this->ensureDeviceExists($deviceId);
+        $device = $this->userDeviceRepository->findById($deviceId);
+
+        if ($device->status !== UserDeviceStatus::ACTIVE || $this->securityBanRepository->isDeviceBanned($deviceId)) {
+            throw ValidationException::withMessages([
+                'device_id' => ['لا يمكن تطبيق حظر جديد على جهاز غير نشط أو لديه حظر أمني سارٍ.'],
+            ]);
+        }
 
         $banType = $request->ban_type;
         $reason = (string) ($request->ban_reason ?? 'حظر أمني للجهاز');
@@ -189,17 +201,26 @@ class SecurityService
         $adminUserId = $adminUserId ?? (auth()->id() ? (int) auth()->id() : 0);
 
         return DB::transaction(function () use ($ban, $banId, $adminUserId) {
-            // 1. رفع الحظر عبر المستودع
-            $this->securityBanRepository->liftBan($banId);
-
-            // 2. استعادة حالة المستخدم إذا كان محظوراً
-            if ($ban->user_id) {
-                $this->userRepository->setStatus($ban->user_id, UserStatus::ACTIVE);
+            // 1. رفع سجل الحظر المحدد أولاً.
+            if (! $this->securityBanRepository->liftBan($banId)) {
+                throw ValidationException::withMessages([
+                    'ban_id' => ['تعذر رفع سجل الحظر الأمني المحدد.'],
+                ]);
             }
 
-            // 3. استعادة حالة الجهاز إذا كان محظوراً
-            if ($ban->device_id) {
-                $this->userDeviceRepository->setDeviceStatus($ban->device_id, UserDeviceStatus::ACTIVE);
+            // 2. لا تعد الحالة النشطة ما دام سجل حظر آخر سارياً.
+            if ($ban->user_id && ! $this->securityBanRepository->isUserBanned($ban->user_id)) {
+                $user = $this->userRepository->findById($ban->user_id);
+                if ($user->status === UserStatus::BANNED) {
+                    $this->userRepository->setStatus($ban->user_id, UserStatus::ACTIVE);
+                }
+            }
+
+            if ($ban->device_id && ! $this->securityBanRepository->isDeviceBanned($ban->device_id)) {
+                $device = $this->userDeviceRepository->findById($ban->device_id);
+                if ($device->status === UserDeviceStatus::BANNED) {
+                    $this->userDeviceRepository->setDeviceStatus($ban->device_id, UserDeviceStatus::ACTIVE);
+                }
             }
 
             // 4. توثيق أمني

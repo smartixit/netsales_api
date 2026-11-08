@@ -46,8 +46,10 @@ class StoreSecurityBanRequest extends FormRequest
             ],
             'end_at' => [
                 'nullable',
+                'required_if:ban_type,'.BanType::TEMPORARY->value,
+                'prohibited_unless:ban_type,'.BanType::TEMPORARY->value,
                 'date',
-                'after_or_equal:start_at',
+                'after:now',
             ],
         ];
     }

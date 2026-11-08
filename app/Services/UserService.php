@@ -47,7 +47,7 @@ class UserService
     /**
      * البحث عن مستخدم عبر معرفه مع تحميل العلاقات المطلوبة.
      */
-    public function findById(int $id, array $relations = ['role', 'devices', 'permissions']): ?User
+    public function findById(int $id, array $relations = ['role', 'devices', 'permissions', 'securityBans']): ?User
     {
         try {
             $user = $this->userRepository->findById($id);
@@ -115,7 +115,6 @@ class UserService
                 'user_email' => $request->user_email,
                 'user_password' => $request->user_password,
                 'user_2fa_enabled' => $request->user_2fa_enabled !== null ? (bool) $request->user_2fa_enabled : null,
-                'status' => $request->status,
             ], fn ($value) => $value !== null);
         } else {
             $data = $request;
@@ -147,6 +146,46 @@ class UserService
             $user->refresh();
 
             return $user->load(['role', 'permissions']);
+        });
+    }
+
+    /**
+     * تحديث حالة حساب مستخدم غير محظور.
+     */
+    public function updateStatus(int $userId, UserStatus $status): User
+    {
+        try {
+            $user = $this->userRepository->findById($userId);
+        } catch (ModelNotFoundException) {
+            throw ValidationException::withMessages([
+                'user_id' => ['المستخدم المحدد غير موجود في النظام.'],
+            ]);
+        }
+
+        if ($user->status === UserStatus::BANNED) {
+            throw ValidationException::withMessages([
+                'status' => ['لا يمكن تغيير حالة حساب محظور قبل رفع الحظر الأمني.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($user, $userId, $status) {
+            $oldStatus = $user->status instanceof UserStatus ? $user->status->value : (string) $user->status;
+            $this->userRepository->setStatus($userId, $status);
+
+            if ($status !== UserStatus::ACTIVE) {
+                $this->sessionValidatorService->invalidateAllUserSessions($userId);
+            }
+
+            SystemLoggerService::log(
+                module: 'users',
+                action: 'status_updated',
+                entityType: 'User',
+                entityId: $userId,
+                oldData: ['status' => $oldStatus],
+                newData: ['status' => $status->value]
+            );
+
+            return $user->fresh(['role', 'permissions']);
         });
     }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Resources\API\V1\RBAC;
 
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Models\Role;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -28,6 +29,10 @@ class RoleResource extends JsonResource
                 : (RoleKey::tryFrom((string) $this->role_key)?->label()),
             'role_name' => $this->role_name,
             'role_desc' => $this->role_desc,
+            'scope' => $this->scope instanceof RoleScope ? $this->scope->value : $this->scope,
+            'scope_label' => $this->scope instanceof RoleScope
+                ? $this->scope->label()
+                : (RoleScope::tryFrom((string) $this->scope)?->label()),
             'is_system' => (bool) $this->is_system,
             'status' => (bool) $this->status,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,

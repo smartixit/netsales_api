@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -37,6 +38,7 @@ class Role extends Model
     protected function casts(): array
     {
         return [
+            'scope' => RoleScope::class,
             'is_system' => 'boolean',
             'status' => 'boolean',
         ];
