@@ -53,11 +53,11 @@ jobs:
       - name: Generate application key for tests
         run: php artisan key:generate --force
 
-      - name: Prepare SQLite test schema
+      - name: Prepare isolated SQLite schema and reference data
         run: |
           mkdir -p database
           touch database/testing.sqlite
-          php artisan migrate:fresh --force
+          php artisan migrate:fresh --seed --force
 
       - name: Audit Composer dependencies
         id: composer-audit
