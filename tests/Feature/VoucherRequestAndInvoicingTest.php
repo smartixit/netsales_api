@@ -10,6 +10,7 @@ use App\Enums\UserStatus;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
+use App\Models\NetworkWalletLog;
 use App\Models\Pos;
 use App\Models\PosWallet;
 use App\Models\User;
@@ -282,9 +283,15 @@ class VoucherRequestAndInvoicingTest extends TestCase
         $this->assertEquals('DEBIT', $refreshedPosWallet->getAccountingStatus());
         $this->assertEquals(46000.00, $refreshedPosWallet->getDebitAmount());
 
-        // 5. التحقق من إيداع المبيعات في محفظة الشبكة كاستحقاق
+        // 5. الدين غير المحصل لا يتحول إلى سيولة في محفظة الشبكة؛ لا يُودع إلا المبلغ المغطى فعلياً من رصيد الوكيل.
         $refreshedNetWallet = $this->networkWallet->fresh();
-        $this->assertEquals(46000.00, (float) $refreshedNetWallet->wallet_balance);
+        $this->assertSame('0.00', $refreshedNetWallet->wallet_balance);
+        $this->assertSame(
+            0,
+            NetworkWalletLog::query()
+                ->where('wallet_id', $this->networkWallet->wallet_id)
+                ->count()
+        );
 
         // 6. التحقق من مخرجات API لمحفظة الوكيل (عرض المركز المالي والمديونية)
         $posWalletApi = $this->withHeaders($this->headers)
