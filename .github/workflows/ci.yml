@@ -58,7 +58,21 @@ jobs:
         continue-on-error: true
         run: composer audit
 
+      - name: Preview Pint formatting for files reported by CI
+        run: |
+          files=(
+            app/Policies/VoucherPackageDiscountPolicy.php
+            app/Policies/VoucherPackagePolicy.php
+            app/Services/NetworkWalletService.php
+            app/Services/PosWalletService.php
+          )
+          vendor/bin/pint "${files[@]}"
+          git --no-pager diff -- "${files[@]}"
+          git checkout -- "${files[@]}"
+
       - name: Check PHP code style
+        id: php-style
+        continue-on-error: true
         run: vendor/bin/pint --test
 
       - name: Run Larastan / PHPStan analysis
@@ -67,10 +81,10 @@ jobs:
       - name: Run Laravel tests
         run: php artisan test
 
-      # Keep the security audit mandatory, but do not let existing advisories
-      # hide PHP style, static-analysis, or test results from this run.
-      - name: Fail CI when Composer audit reports vulnerabilities
-        if: steps.composer-audit.outcome == 'failure'
+      # These checks remain mandatory, but their failures no longer hide
+      # the results of the remaining PHP validation steps.
+      - name: Enforce Composer audit and PHP code-style gates
+        if: steps.composer-audit.outcome == 'failure' || steps.php-style.outcome == 'failure'
         run: |
-          echo "Composer audit failed. Review the security advisories above."
+          echo "Composer audit and/or Pint reported a required quality-gate failure."
           exit 1
