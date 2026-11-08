@@ -28,7 +28,7 @@ class VoucherPackagePolicy
     {
         $networkIds = $this->tenantAuth->getViewableNetworkIdsForPackages($user);
 
-        return $networkIds === null || ! empty($networkIds);
+        return $networkIds === null || $networkIds !== [];
     }
 
     public function view(User $user, VoucherPackage $package): bool
@@ -44,7 +44,7 @@ class VoucherPackagePolicy
 
         $networkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.create');
 
-        return $networkIds === null || ! empty($networkIds);
+        return $networkIds === null || $networkIds !== [];
     }
 
     public function update(User $user, VoucherPackage $package): bool

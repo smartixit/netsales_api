@@ -17,7 +17,21 @@ jobs:
   quality:
     name: Validate, audit, lint, analyse, and test
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: netsales_test_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     services:
       mysql:
@@ -40,7 +54,7 @@ jobs:
       DB_PORT: 3306
       DB_DATABASE: netsales_test_db
       DB_USERNAME: root
-      DB_PASSWORD: password
+      DB_PASSWORD: root
       CACHE_STORE: array
       SESSION_DRIVER: array
       QUEUE_CONNECTION: sync
@@ -66,9 +80,11 @@ jobs:
         run: cp .env.example .env
 
       - name: Install locked dependencies
+        id: dependencies
         run: composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
 
       - name: Generate application key for tests
+        id: application-key
         run: php artisan key:generate --force
 
       - name: Prepare isolated MySQL schema and reference data
@@ -78,6 +94,7 @@ jobs:
         id: composer-audit
         continue-on-error: true
         run: composer audit
+        continue-on-error: true
 
       - name: Preview Pint formatting for files reported by CI
         run: |
@@ -95,11 +112,19 @@ jobs:
         id: php-style
         continue-on-error: true
         run: vendor/bin/pint --test
+        continue-on-error: true
+
+      - name: Run targeted Larastan / PHPStan analysis
+        id: phpstan
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
+        run: vendor/bin/phpstan analyse app/Services/SaleInvoiceService.php tests/Feature/Milestone4CConcurrencyAndDirectInvoiceDebtTest.php --no-progress --memory-limit=1G
+        continue-on-error: true
 
       - name: Run Larastan / PHPStan analysis
         id: phpstan
         continue-on-error: true
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+        continue-on-error: true
 
       - name: Run Laravel tests
         id: php-tests

@@ -29,7 +29,7 @@ class VoucherPackageDiscountPolicy
         $networkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.view');
         $posIds = $this->tenantAuth->getUserAuthorizedPosIds($user, 'voucher_packages.view');
 
-        return $networkIds === null || ! empty($networkIds) || ! empty($posIds);
+        return $networkIds === null || $networkIds !== [] || ($posIds !== null && $posIds !== []);
     }
 
     public function view(User $user, VoucherPackageDiscount $discount): bool
@@ -45,7 +45,7 @@ class VoucherPackageDiscountPolicy
 
         $networkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.create');
 
-        return $networkIds === null || ! empty($networkIds);
+        return $networkIds === null || $networkIds !== [];
     }
 
     public function update(User $user, VoucherPackageDiscount $discount): bool
