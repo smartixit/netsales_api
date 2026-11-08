@@ -7,6 +7,7 @@ use App\Http\Requests\API\V1\User\StoreUserRequest;
 use App\Http\Requests\API\V1\User\SyncPermissionsRequest;
 use App\Http\Requests\API\V1\User\UpdateProfilePictureRequest;
 use App\Http\Requests\API\V1\User\UpdateUserRequest;
+use App\Http\Requests\API\V1\User\UpdateUserStatusRequest;
 use App\Http\Resources\API\V1\User\UserResource;
 use App\Services\UserService;
 use Exception;
@@ -186,6 +187,22 @@ class UserController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('فشل تحديث بيانات المستخدم: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * تحديث حالة حساب مستخدم مع إبطال الجلسات عند تعطيله.
+     */
+    public function updateStatus(UpdateUserStatusRequest $request, int $id): JsonResponse
+    {
+        try {
+            $user = $this->userService->updateStatus($id, $request->validated('status'));
+
+            return $this->successResponse('تم تحديث حالة المستخدم بنجاح.', new UserResource($user));
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر تحديث حالة المستخدم: '.$e->getMessage(), [], 422);
         }
     }
 
