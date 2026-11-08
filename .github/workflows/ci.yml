@@ -17,12 +17,30 @@ jobs:
   quality:
     name: Validate, audit, lint, analyse, and test
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: netsales_test_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     env:
       APP_ENV: testing
-      DB_CONNECTION: sqlite
-      DB_DATABASE: ':memory:'
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: netsales_test_db
+      DB_USERNAME: root
+      DB_PASSWORD: root
       CACHE_STORE: array
       SESSION_DRIVER: array
       QUEUE_CONNECTION: sync
@@ -55,6 +73,10 @@ jobs:
         id: application-key
         run: php artisan key:generate --force
 
+      - name: Migrate and seed test database
+        id: database-setup
+        run: php artisan migrate:fresh --seed --force
+
       - name: Audit Composer dependencies
         id: composer-audit
         if: ${{ always() && steps.dependencies.outcome == 'success' }}
@@ -75,7 +97,7 @@ jobs:
 
       - name: Run Laravel tests
         id: phpunit
-        if: ${{ always() && steps.dependencies.outcome == 'success' && steps.application-key.outcome == 'success' }}
+        if: ${{ always() && steps.dependencies.outcome == 'success' && steps.application-key.outcome == 'success' && steps.database-setup.outcome == 'success' }}
         run: php artisan test
         continue-on-error: true
 
@@ -89,6 +111,10 @@ jobs:
           fi
           if [ "${{ steps.application-key.outcome }}" != "success" ]; then
             echo "Test application key generation failed."
+            failed=1
+          fi
+          if [ "${{ steps.database-setup.outcome }}" != "success" ]; then
+            echo "MySQL migration or seed setup failed."
             failed=1
           fi
           if [ "${{ steps.composer-audit.outcome }}" != "success" ]; then
