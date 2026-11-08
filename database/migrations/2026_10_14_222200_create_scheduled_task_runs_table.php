@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('scheduled_task_runs', function (Blueprint $table) {
-            $table->unsignedBigInteger('id')->primary()->autoIncrement();
+            $table->id();
             $table->string('task_type', 50); // daily_summary | monthly_summary | backup_auto | etc.
             $table->unsignedBigInteger('network_id')->nullable(); // null يعني المهمة عامة لكامل النظام
             $table->date('target_date'); // التاريخ المستهدف للتشغيل
