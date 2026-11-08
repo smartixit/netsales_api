@@ -699,3 +699,24 @@ This log documents all executed tasks, code changes, and verification command ou
   - No `git reset`, `git clean`, `git checkout .`, `git commit`, or `git push` performed.
   - All pre-existing user modifications preserved.
 - **Task Status:** Milestone 7 Completed, Fully Verified, and Closed. Milestone 8 (Wallets, Credit, Debts & Repayments) identified as next authorized milestone.
+
+
+---
+
+## [2026-11-08 19:00] Task: Platform Dashboard Overview — Real API Data Foundation
+- **Authorized Scope:** USER REQUESTED — provide real persisted backend data for the platform dashboard Overview.
+- **Backend implementation on isolated branch \`feat/platform-dashboard-overview\`:**
+  - Added \`DashboardOverviewRequest\` with strict platform-role authorization and allowlisted period validation.
+  - Added \`DashboardController\`, \`DashboardOverviewService\`, and \`DashboardOverviewResource\`.
+  - Implemented permission-aware network, POS, subscription, support, sales, and expense metrics from existing Laravel models/tables.
+  - Implemented six-month subscription trend, seven-day operational activity, provider status distribution, pending network/POS queues, expiring subscriptions, pending plan requests, and recent activity.
+  - Added feature tests for actual persisted data, support-agent least privilege, tenant-role rejection, and period validation.
+- **Integrity boundaries:**
+  - No fake/demo records or client-derived aggregates.
+  - Financial aggregates use persisted invoice/expense columns and are returned as decimal strings.
+  - No currency model or currency conversion was introduced; current schema exposes no currency dimension.
+  - Support tickets have no lifecycle status column, so no false \`open_tickets\` metric was invented.
+  - Platform role authorization is enforced by FormRequest; metric groups and audit activity are filtered by actual role permissions.
+- **Commit:** \`ceb3fb29385e97133a3074aefbaa210214b42bfc\`.
+- **Verification:** Pending execution in a PHP/Laravel environment. No Pint, PHPUnit, database, or runtime result is claimed by this GitHub-only write.
+- **Task Status:** Backend implementation committed to an isolated feature branch; integration with the Flutter Overview and runtime verification remain outstanding.

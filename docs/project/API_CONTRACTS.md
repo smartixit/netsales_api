@@ -124,3 +124,55 @@ The 24 backed PHP Enums (`app/Enums/`) have the following exact canonical wire v
 - **Current Canonical Pattern:** The NetSales API uniformly outputs timestamps via `Carbon::parse($field)->toDateTimeString()` (`Y-m-d H:i:s`) in the `Asia/Aden` timezone across all 25+ resources.
 - **Client Parsing Invariant:** The Flutter client parses timestamps via `DateTime.tryParse()`, which transparently ingests both `toDateTimeString()` formats and ISO 8601 UTC strings.
 - **Security Timestamp Consideration:** Timestamps inside the encrypted QR payload (`exp`) use integer epoch seconds (`$expiresAt->timestamp`) to ensure exact, timezone-agnostic expiration calculation on the server.
+
+
+---
+
+## 5. Platform Dashboard Overview — Verified API Contract
+
+### Endpoint
+- **Method:** \`GET\`
+- **Path:** \`/api/v1/dashboard/overview\`
+- **Authentication:** Active session (\`session.auth\`) and registered device.
+- **Platform roles:** \`SUPER_ADMIN\`, \`SUPPORT_AGENT\`, \`ACCOUNTANT\` only.
+- **Period query:** Optional \`period\`: \`7d\`, \`30d\` (default), \`90d\`, or \`12m\`.
+- **Invalid period:** HTTP 422.
+- **Operational tenant roles:** HTTP 403. This endpoint must not expose cross-tenant platform aggregates to tenant roles.
+
+### Response envelope
+The standard API envelope contains \`success\`, \`message\`, \`data\`, and \`errors\`.
+
+\`data\` contains:
+- \`generated_at\`: ISO-8601 timestamp.
+- \`timezone\`: \`Asia/Aden\`.
+- \`period\`: \`key\`, \`days\`, \`from\`, \`to\`.
+- \`metrics\`: only metric groups authorized by the caller's permissions.
+- \`charts\`: \`subscription_trend\`, \`provider_distribution\`, \`operational_activity\`.
+- \`attention\`: only queues allowed by the caller's permissions.
+- \`recent_activity\`: audit events for \`system_logs.view\`; support-ticket creation activity for support-only users.
+
+### Permission-aware metric groups
+| Permission | Metric group | Source |
+|---|---|---|
+| \`networks.view\` | \`metrics.networks\` | Non-soft-deleted \`networks\`, grouped by actual status |
+| \`pos.view\` | \`metrics.pos\` | Non-soft-deleted \`pos\`, grouped by actual status |
+| \`subscriptions.view\` | \`metrics.subscriptions\` | \`provider_subscriptions\` and actual date/status fields |
+| \`support.view\` | \`metrics.support\` | \`support_tickets\` and unread \`support_ticket_messages\` |
+| \`sales.view\` | \`metrics.sales\` | Authoritative \`sale_invoices\` amounts within selected period |
+| \`expenses.view\` | \`metrics.expenses\` | Authoritative \`expenses\` amounts within selected period |
+| \`system_logs.view\` | Activity chart and recent audit activity | \`system_logs\` |
+
+Financial amount fields are serialized as decimal strings from SQL aggregates. The current schema has no currency dimension; no currency conversion or client-side financial calculation is performed.
+
+### Attention queues
+- \`pending_networks\`: records with \`networks.status = PENDING\`.
+- \`pending_pos\`: records with \`pos.status = PENDING\`.
+- \`expiring_subscriptions\`: \`ACTIVE\` provider subscriptions ending within the next seven days.
+- \`pending_subscription_requests\`: \`PENDING\` subscription-plan requests.
+
+Each queue returns an authoritative total \`count\` and at most five preview \`items\`. Each preview item contains \`id\`, \`title\`, \`subtitle\`, \`route_key\`, \`occurred_at\`, and \`due_at\`.
+
+### Semantic constraints
+- The support-ticket schema currently has no ticket lifecycle/status column. The API therefore exposes \`total_tickets\` and \`unread_messages\`; it does **not** label all tickets as open.
+- The API returns only existing persisted data. Empty chart series and empty queues are valid real results, not synthetic samples.
+- Recent audit events are returned only when \`system_logs.view\` is granted. Support agents without that permission receive only recent support-ticket creation activity.
