@@ -12,6 +12,7 @@ use App\Services\SubscriptionRequestService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
@@ -89,6 +90,35 @@ class SubscriptionPlanRequestController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('تعذر عرض بيانات طلب الاشتراك: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * إنشاء رابط مؤقت موقّع لعرض إيصال طلب الاشتراك مع تمرير صلاحية العرض للخادم.
+     */
+    public function receiptLink(int $id): JsonResponse
+    {
+        try {
+            $subRequest = $this->subscriptionRequestService->getById($id);
+            if (! $subRequest->transaction_receipt) {
+                return $this->errorResponse('لا يوجد إيصال مرفق بهذا الطلب.', [], 404);
+            }
+
+            $expiresAt = now()->addMinutes(5);
+            $url = URL::temporarySignedRoute(
+                'api.v1.files.signed',
+                $expiresAt,
+                ['path' => $subRequest->transaction_receipt]
+            );
+
+            return $this->successResponse('تم إنشاء رابط إيصال الدفع بنجاح.', [
+                'receipt_url' => $url,
+                'expires_at' => $expiresAt->toIso8601String(),
+            ]);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر إنشاء رابط إيصال الدفع: '.$e->getMessage(), [], 422);
         }
     }
 
