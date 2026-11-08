@@ -21,6 +21,7 @@ use App\Http\Controllers\API\V1\OtpController;
 use App\Http\Controllers\API\V1\PosController;
 use App\Http\Controllers\API\V1\PosMembershipController;
 use App\Http\Controllers\API\V1\PosWalletController;
+use App\Http\Controllers\API\V1\RoleController;
 use App\Http\Controllers\API\V1\ProviderSubscriptionController;
 use App\Http\Controllers\API\V1\RequestController;
 use App\Http\Controllers\API\V1\SaleInvoiceController;
@@ -124,57 +125,74 @@ Route::prefix('v1')->group(function () {
 
         // ==========================================
         // 1. إدارة المستخدمين (Users Management)
-        // ==========================================
-        Route::middleware('throttle:api-read')->group(function () {
+        Route::get('roles', [RoleController::class, 'index'])
+            ->middleware(['throttle:api-read', 'permission:roles.view'])
+            ->name('api.v1.roles.index');
+
+        Route::middleware(['throttle:api-read', 'permission:users.view'])->group(function () {
             Route::get('users', [UserController::class, 'index'])->name('api.v1.users.index');
             Route::get('users/trashed', [UserController::class, 'trashed'])->name('api.v1.users.trashed');
             Route::get('users/{id}', [UserController::class, 'show'])->whereNumber('id')->name('api.v1.users.show');
         });
 
         Route::middleware('throttle:api-write')->group(function () {
-            Route::post('users/{id}/permissions', [UserController::class, 'syncPermissions'])->name('api.v1.users.sync_permissions');
-            Route::post('users/batch-delete', [UserController::class, 'batchDelete'])->name('api.v1.users.batch_delete');
-            Route::post('users/batch-restore', [UserController::class, 'batchRestore'])->name('api.v1.users.batch_restore');
-            Route::post('users/batch-force-delete', [UserController::class, 'batchForceDelete'])->name('api.v1.users.batch_force_delete');
-            Route::post('users/{id}/restore', [UserController::class, 'restore'])->name('api.v1.users.restore');
-            Route::delete('users/{id}/force', [UserController::class, 'forceDelete'])->name('api.v1.users.force_delete');
-            Route::apiResource('users', UserController::class)->parameters(['users' => 'id'])->except(['index', 'show']);
+            Route::post('users/{id}/permissions', [UserController::class, 'syncPermissions'])
+                ->whereNumber('id')->middleware('permission:roles.manage')->name('api.v1.users.sync_permissions');
+            Route::post('users/batch-delete', [UserController::class, 'bulkDelete'])
+                ->middleware('permission:users.delete')->name('api.v1.users.batch_delete');
+            Route::post('users/batch-restore', [UserController::class, 'bulkRestore'])
+                ->middleware('permission:users.edit')->name('api.v1.users.batch_restore');
+            Route::post('users/batch-force-delete', [UserController::class, 'bulkForceDelete'])
+                ->middleware('permission:users.delete')->name('api.v1.users.batch_force_delete');
+            Route::post('users/{id}/restore', [UserController::class, 'restore'])
+                ->whereNumber('id')->middleware('permission:users.edit')->name('api.v1.users.restore');
+            Route::delete('users/{id}/force', [UserController::class, 'forceDelete'])
+                ->whereNumber('id')->middleware('permission:users.delete')->name('api.v1.users.force_delete');
+            Route::post('users', [UserController::class, 'store'])
+                ->middleware('permission:users.create')->name('api.v1.users.store');
+            Route::put('users/{id}', [UserController::class, 'update'])
+                ->whereNumber('id')->middleware('permission:users.edit')->name('api.v1.users.update');
+            Route::delete('users/{id}', [UserController::class, 'destroy'])
+                ->whereNumber('id')->middleware('permission:users.delete')->name('api.v1.users.destroy');
+            Route::post('users/{id}/status', [UserController::class, 'updateStatus'])
+                ->whereNumber('id')->middleware('permission:users.edit')->name('api.v1.users.update_status');
         });
 
         Route::post('users/{id}/profile-picture', [UserController::class, 'updateProfilePicture'])
-            ->middleware('throttle:api-upload')
+            ->whereNumber('id')
+            ->middleware(['throttle:api-upload', 'permission:users.edit'])
             ->name('api.v1.users.profile_picture');
 
-        // ==========================================
         // 2. إدارة الأمان والجلسات والحظر (Security & Sessions)
-        // ==========================================
         Route::prefix('security')->group(function () {
-            Route::middleware('throttle:api-read')->group(function () {
-                Route::get('users/{id}/sessions', [SecurityController::class, 'getUserSessions'])->name('api.v1.security.user_sessions');
-                Route::get('users/{id}/devices', [SecurityController::class, 'getUserDevices'])->name('api.v1.security.user_devices');
+            Route::middleware(['throttle:api-read', 'permission:auth.view'])->group(function () {
+                Route::get('users/{id}/sessions', [SecurityController::class, 'getUserSessions'])
+                    ->whereNumber('id')->name('api.v1.security.user_sessions');
+                Route::get('users/{id}/devices', [SecurityController::class, 'getUserDevices'])
+                    ->whereNumber('id')->name('api.v1.security.user_devices');
             });
-
-            Route::middleware('throttle:api-write')->group(function () {
+            Route::middleware(['throttle:api-write', 'permission:auth.manage'])->group(function () {
                 Route::post('ban-user', [SecurityController::class, 'banUser'])->name('api.v1.security.ban_user');
                 Route::post('ban-device', [SecurityController::class, 'banDevice'])->name('api.v1.security.ban_device');
-                Route::delete('bans/{id}', [SecurityController::class, 'unban'])->name('api.v1.security.unban');
-                Route::post('sessions/{id}/terminate', [SecurityController::class, 'terminateSession'])->name('api.v1.security.terminate_session');
+                Route::delete('bans/{id}', [SecurityController::class, 'unban'])
+                    ->whereNumber('id')->name('api.v1.security.unban');
+                Route::post('sessions/{id}/terminate', [SecurityController::class, 'terminateSession'])
+                    ->whereNumber('id')->name('api.v1.security.terminate_session');
             });
         });
 
-        // Top-level Security aliases for backward compatibility
-        Route::middleware('throttle:api-read')->group(function () {
-            Route::get('users/{id}/sessions', [SecurityController::class, 'getUserSessions']);
-            Route::get('users/{id}/devices', [SecurityController::class, 'getUserDevices']);
+        // Backward-compatible aliases keep the same authorization checks.
+        Route::middleware(['throttle:api-read', 'permission:auth.view'])->group(function () {
+            Route::get('users/{id}/sessions', [SecurityController::class, 'getUserSessions'])->whereNumber('id');
+            Route::get('users/{id}/devices', [SecurityController::class, 'getUserDevices'])->whereNumber('id');
         });
-        Route::middleware('throttle:api-write')->group(function () {
+        Route::middleware(['throttle:api-write', 'permission:auth.manage'])->group(function () {
             Route::post('ban-user', [SecurityController::class, 'banUser']);
             Route::post('ban-device', [SecurityController::class, 'banDevice']);
-            Route::delete('bans/{id}', [SecurityController::class, 'unban']);
-            Route::post('sessions/{id}/terminate', [SecurityController::class, 'terminateSession']);
+            Route::delete('bans/{id}', [SecurityController::class, 'unban'])->whereNumber('id');
+            Route::post('sessions/{id}/terminate', [SecurityController::class, 'terminateSession'])->whereNumber('id');
         });
 
-        // ==========================================
         // 3. إدارة مزودي الشبكات (Networks Management)
         // ==========================================
         Route::middleware(['throttle:api-read', 'permission:networks.view'])->group(function () {
