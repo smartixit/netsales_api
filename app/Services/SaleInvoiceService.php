@@ -656,7 +656,6 @@ class SaleInvoiceService
                 $posBalanceAfter,
                 $posRecipientId,
                 $networkRecipientId,
-                $networkWallet,
                 $paidAmount,
                 $pos,
                 $formattedTotalInvoiceAmount,
@@ -800,7 +799,7 @@ class SaleInvoiceService
             $period = 'daily';
         }
 
-        $query = DB::table('sale_invoices')->whereNull('deleted_at');
+        $query = SaleInvoice::query()->toBase();
 
         if (! empty($filters['network_id'])) {
             $query->where('network_id', (int) $filters['network_id']);

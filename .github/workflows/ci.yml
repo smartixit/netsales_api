@@ -86,7 +86,7 @@ jobs:
       - name: Check PHP code style
         id: pint
         if: ${{ always() && steps.dependencies.outcome == 'success' }}
-        run: vendor/bin/pint --test
+        run: vendor/bin/pint --test --diff
         continue-on-error: true
 
       - name: Run targeted Larastan / PHPStan analysis

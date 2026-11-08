@@ -13,8 +13,7 @@ class VoucherPackageDiscountPolicy
 
     public function __construct(
         protected TenantAuthorizationService $tenantAuth
-    ) {
-    }
+    ) {}
 
     public function before(User $user, string $ability): ?bool
     {
@@ -69,4 +68,3 @@ class VoucherPackageDiscountPolicy
         return $this->tenantAuth->canManageDiscount($user, $discount, 'voucher_packages.delete');
     }
 }
-
