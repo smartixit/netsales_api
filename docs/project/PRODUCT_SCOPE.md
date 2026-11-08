@@ -54,6 +54,7 @@ graph TD
 │                 PLATFORM SCOPE (DESKTOP)                    │
 │   • SUPER_ADMIN, SUPPORT_AGENT, ACCOUNTANT (Global)         │
 │   • SaaS Subscriptions, Licensing, Master Treasury         │
+│   • Global Platform bank accounts & subscription collection│
 │   • Reserved for future Windows Desktop Application         │
 └─────────────────────────────────────────────────────────────┘
                                ▲
@@ -71,3 +72,5 @@ graph TD
 ```
 
 The Flutter application must never expose Platform Scope navigation or `SUPER_ADMIN` functionality.
+
+`BankAccount` belongs exclusively to Platform Treasury. Its payment relationship is with `SubscriptionPlanRequest` (`account_id`); it is not a Network/POS bank account, a tenant settlement wallet, or a source of operational expense funding. It must not be surfaced as a Network or POS workspace feature.
