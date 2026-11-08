@@ -118,6 +118,10 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'status' => true,
         ]);
 
+        // A user without an owned or ACTIVE network membership cannot list wallets.
+        $listResponse = $this->withHeaders($attackerAuth['headers'])->getJson('/api/v1/network-wallets?all=true');
+        $listResponse->assertStatus(403);
+
         // Attacker attempts to view victim's wallet
         $response = $this->withHeaders($attackerAuth['headers'])->getJson("/api/v1/network-wallets/{$victimWallet->wallet_id}");
         $response->assertStatus(403);
@@ -181,6 +185,194 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
         $byNetPosResponse->assertStatus(200);
     }
 
+    public function test_network_wallet_lists_are_scoped_to_owned_or_active_network_memberships(): void
+    {
+        $ownerA = $this->createAuthenticatedUser(RoleKey::NETWORK_OWNER, 'list-a');
+        $ownerB = $this->createAuthenticatedUser(RoleKey::NETWORK_OWNER, 'list-b');
+
+        $networkA = Network::create([
+            'owner_id' => $ownerA['user']->user_id,
+            'network_name' => 'Network List A',
+            'network_phone_number' => '771110001',
+            'governorate_id' => 1,
+            'directorate_id' => 1,
+            'status' => 'ACTIVE',
+        ]);
+        $networkB = Network::create([
+            'owner_id' => $ownerB['user']->user_id,
+            'network_name' => 'Network List B',
+            'network_phone_number' => '771110002',
+            'governorate_id' => 1,
+            'directorate_id' => 1,
+            'status' => 'ACTIVE',
+        ]);
+
+        NetworkUser::create([
+            'network_id' => $networkA->network_id,
+            'user_id' => $ownerA['user']->user_id,
+            'role_id' => $ownerA['role']->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        NetworkUser::create([
+            'network_id' => $networkB->network_id,
+            'user_id' => $ownerB['user']->user_id,
+            'role_id' => $ownerB['role']->role_id,
+            'status' => 'ACTIVE',
+        ]);
+
+        $walletA = NetworkWallet::create([
+            'network_id' => $networkA->network_id,
+            'wallet_uuid' => 'NET-LIST-A',
+            'wallet_balance' => 1000,
+            'status' => true,
+        ]);
+        $walletB = NetworkWallet::create([
+            'network_id' => $networkB->network_id,
+            'wallet_uuid' => 'NET-LIST-B',
+            'wallet_balance' => 2000,
+            'status' => true,
+        ]);
+
+        // A member with an ACTIVE network membership can see that tenant.
+        $activeMember = $this->createAuthenticatedUser(RoleKey::NETWORK_USER, 'active-network-member');
+        NetworkUser::create([
+            'network_id' => $networkA->network_id,
+            'user_id' => $activeMember['user']->user_id,
+            'role_id' => $activeMember['role']->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        $memberResponse = $this->withHeaders($activeMember['headers'])
+            ->getJson('/api/v1/network-wallets?all=true');
+        $memberResponse->assertStatus(200)
+            ->assertJsonFragment(['wallet_id' => $walletA->wallet_id])
+            ->assertJsonMissing(['wallet_id' => $walletB->wallet_id]);
+
+        // Inactive memberships must not authorize wallet list access.
+        $inactiveMember = $this->createAuthenticatedUser(RoleKey::NETWORK_USER, 'inactive-network-member');
+        NetworkUser::create([
+            'network_id' => $networkA->network_id,
+            'user_id' => $inactiveMember['user']->user_id,
+            'role_id' => $inactiveMember['role']->role_id,
+            'status' => 'SUSPENDED',
+        ]);
+        $inactiveResponse = $this->withHeaders($inactiveMember['headers'])
+            ->getJson('/api/v1/network-wallets?all=true');
+        $inactiveResponse->assertStatus(403);
+
+        // No client-side tenant filter: the server must return only Network A.
+        $response = $this->withHeaders($ownerA['headers'])->getJson('/api/v1/network-wallets?all=true');
+        $response->assertStatus(200)
+            ->assertJsonFragment(['wallet_id' => $walletA->wallet_id])
+            ->assertJsonMissing(['wallet_id' => $walletB->wallet_id]);
+
+        // Supplying the victim's network ID must further narrow, never widen, scope.
+        $crossTenantFilter = $this->withHeaders($ownerA['headers'])
+            ->getJson('/api/v1/network-wallets?all=true&network_id='.$networkB->network_id);
+        $crossTenantFilter->assertStatus(200)
+            ->assertJsonMissing(['wallet_id' => $walletA->wallet_id])
+            ->assertJsonMissing(['wallet_id' => $walletB->wallet_id]);
+    }
+
+    public function test_pos_wallet_lists_are_scoped_to_owned_pos_or_active_pos_memberships(): void
+    {
+        $networkOwner = $this->createAuthenticatedUser(RoleKey::NETWORK_OWNER, 'pos-list-net');
+        $posOwnerA = $this->createAuthenticatedUser(RoleKey::POS_AGENT, 'pos-list-a');
+        $posOwnerB = $this->createAuthenticatedUser(RoleKey::POS_AGENT, 'pos-list-b');
+
+        $network = Network::create([
+            'owner_id' => $networkOwner['user']->user_id,
+            'network_name' => 'POS Wallet List Network',
+            'network_phone_number' => '772220001',
+            'governorate_id' => 1,
+            'directorate_id' => 1,
+            'status' => 'ACTIVE',
+        ]);
+
+        $posA = Pos::create([
+            'owner_id' => $posOwnerA['user']->user_id,
+            'pos_name' => 'Owned POS A',
+            'pos_phone_number' => '712220001',
+            'governorate_id' => 1,
+            'directorate_id' => 1,
+            'status' => 'ACTIVE',
+        ]);
+        $posB = Pos::create([
+            'owner_id' => $posOwnerB['user']->user_id,
+            'pos_name' => 'Victim POS B',
+            'pos_phone_number' => '712220002',
+            'governorate_id' => 1,
+            'directorate_id' => 1,
+            'status' => 'ACTIVE',
+        ]);
+
+        PosUser::create([
+            'pos_id' => $posA->pos_id,
+            'user_id' => $posOwnerA['user']->user_id,
+            'role_id' => $posOwnerA['role']->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        PosUser::create([
+            'pos_id' => $posB->pos_id,
+            'user_id' => $posOwnerB['user']->user_id,
+            'role_id' => $posOwnerB['role']->role_id,
+            'status' => 'ACTIVE',
+        ]);
+
+        $walletA = PosWallet::create([
+            'network_id' => $network->network_id,
+            'pos_id' => $posA->pos_id,
+            'wallet_uuid' => 'POS-LIST-A',
+            'wallet_balance' => 3000,
+            'status' => true,
+        ]);
+        $walletB = PosWallet::create([
+            'network_id' => $network->network_id,
+            'pos_id' => $posB->pos_id,
+            'wallet_uuid' => 'POS-LIST-B',
+            'wallet_balance' => 4000,
+            'status' => true,
+        ]);
+
+        // An active POS member can see the assigned POS wallet without owning it.
+        $activePosMember = $this->createAuthenticatedUser(RoleKey::POS_USER, 'active-pos-member');
+        PosUser::create([
+            'pos_id' => $posA->pos_id,
+            'user_id' => $activePosMember['user']->user_id,
+            'role_id' => $activePosMember['role']->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        $activePosMemberResponse = $this->withHeaders($activePosMember['headers'])
+            ->getJson('/api/v1/pos-wallets?all=true');
+        $activePosMemberResponse->assertStatus(200)
+            ->assertJsonFragment(['wallet_id' => $walletA->wallet_id])
+            ->assertJsonMissing(['wallet_id' => $walletB->wallet_id]);
+
+        // Inactive POS memberships must not authorize wallet list access.
+        $inactivePosMember = $this->createAuthenticatedUser(RoleKey::POS_USER, 'inactive-pos-member');
+        PosUser::create([
+            'pos_id' => $posA->pos_id,
+            'user_id' => $inactivePosMember['user']->user_id,
+            'role_id' => $inactivePosMember['role']->role_id,
+            'status' => 'SUSPENDED',
+        ]);
+        $inactivePosResponse = $this->withHeaders($inactivePosMember['headers'])
+            ->getJson('/api/v1/pos-wallets?all=true');
+        $inactivePosResponse->assertStatus(403);
+
+        // A POS owner must not see another POS wallet on the same network.
+        $response = $this->withHeaders($posOwnerA['headers'])->getJson('/api/v1/pos-wallets?all=true');
+        $response->assertStatus(200)
+            ->assertJsonFragment(['wallet_id' => $walletA->wallet_id])
+            ->assertJsonMissing(['wallet_id' => $walletB->wallet_id]);
+
+        // The client cannot escape its POS scope by explicitly requesting another POS.
+        $crossPosFilter = $this->withHeaders($posOwnerA['headers'])
+            ->getJson('/api/v1/pos-wallets?all=true&pos_id='.$posB->pos_id);
+        $crossPosFilter->assertStatus(200)
+            ->assertJsonMissing(['wallet_id' => $walletA->wallet_id])
+            ->assertJsonMissing(['wallet_id' => $walletB->wallet_id]);
+    }
+
     public function test_cross_pos_wallet_access_is_strictly_forbidden(): void
     {
         $netOwnerAuth = $this->createAuthenticatedUser(RoleKey::NETWORK_OWNER, 'net');
@@ -219,6 +411,10 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'wallet_balance' => 88888.0,
             'status' => true,
         ]);
+
+        // A POS user without an owned or ACTIVE POS/network membership cannot list wallets.
+        $listResponse = $this->withHeaders($attackerPosAuth['headers'])->getJson('/api/v1/pos-wallets?all=true');
+        $listResponse->assertStatus(403);
 
         // Attacker POS attempts to view victim POS wallet
         $response = $this->withHeaders($attackerPosAuth['headers'])->getJson("/api/v1/pos-wallets/{$victimPosWallet->wallet_id}");

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('backup_jobs', function (Blueprint $table) {
-            $table->unsignedBigInteger('backup_job_id')->primary()->autoIncrement();
+            $table->id('backup_job_id');
             $table->char('job_uuid', 36)->unique();
             $table->string('backup_type', 20)->default('manual'); // manual | auto
             $table->string('status', 20)->default('queued');     // queued | running | success | failed

@@ -14,6 +14,7 @@ use App\Http\Resources\API\V1\Network\NetworkWalletLogResource;
 use App\Http\Resources\API\V1\Network\NetworkWalletResource;
 use App\Http\Resources\API\V1\Pos\PosWalletLogResource;
 use App\Http\Resources\API\V1\Pos\PosWalletResource;
+use App\Models\PosWallet;
 use App\Services\PosWalletService;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -62,8 +63,13 @@ class PosWalletController extends BaseController
     public function index(Request $request): JsonResponse
     {
         try {
+            $currentUser = $this->requireCurrentUser();
+            if (! Gate::forUser($currentUser)->allows('viewAny', PosWallet::class)) {
+                return $this->errorResponse('غير مصرح لك بعرض محافظ نقاط البيع.', [], 403);
+            }
+
             $filters = $request->only(['network_id', 'pos_id', 'status', 'min_balance', 'max_balance', 'search', 'per_page', 'all']);
-            $wallets = $this->posWalletService->getWallets($filters);
+            $wallets = $this->posWalletService->getWalletsForUser($filters, $currentUser);
 
             return $this->successResponse('تم استرجاع قائمة محافظ نقاط البيع بنجاح.', PosWalletResource::collection($wallets));
         } catch (ValidationException $e) {
@@ -542,8 +548,13 @@ class PosWalletController extends BaseController
     public function trashed(Request $request): JsonResponse
     {
         try {
+            $currentUser = $this->requireCurrentUser();
+            if (! Gate::forUser($currentUser)->allows('viewAny', PosWallet::class)) {
+                return $this->errorResponse('غير مصرح لك بعرض محافظ نقاط البيع المحذوفة.', [], 403);
+            }
+
             $filters = $request->only(['network_id', 'pos_id', 'search', 'per_page', 'all']);
-            $wallets = $this->posWalletService->getTrashedWallets($filters);
+            $wallets = $this->posWalletService->getTrashedWalletsForUser($filters, $currentUser);
 
             return $this->successResponse('تم استرجاع قائمة المحافظ المحذوفة لنقاط البيع بنجاح.', PosWalletResource::collection($wallets));
         } catch (ValidationException $e) {

@@ -15,6 +15,7 @@ use App\Interfaces\NetworkWalletLogRepositoryInterface;
 use App\Interfaces\NetworkWalletRepositoryInterface;
 use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
+use App\Models\User;
 use Exception;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -42,11 +43,35 @@ class NetworkWalletService
     }
 
     /**
+     * Retrieve only wallets owned by or actively assigned to the authenticated user.
+     */
+    public function getWalletsForUser(array $filters, User $user): Collection|CursorPaginator
+    {
+        if (! $user->isSuperAdmin()) {
+            $filters['authorized_user_id'] = (int) $user->user_id;
+        }
+
+        return $this->getWallets($filters);
+    }
+
+    /**
      * جلب المحافظ المحذوفة مؤقتاً مع الفلترة والترقيم.
      */
     public function getTrashedWallets(array $filters = []): Collection|CursorPaginator
     {
         return $this->networkWalletRepository->getTrashedFiltered($filters, ['network']);
+    }
+
+    /**
+     * Retrieve deleted wallets only from the authenticated user's tenant scope.
+     */
+    public function getTrashedWalletsForUser(array $filters, User $user): Collection|CursorPaginator
+    {
+        if (! $user->isSuperAdmin()) {
+            $filters['authorized_user_id'] = (int) $user->user_id;
+        }
+
+        return $this->getTrashedWallets($filters);
     }
 
     /**

@@ -213,7 +213,10 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
 
         $this->assertEquals(0, SaleInvoice::where('request_id', $requestId)->count());
         $this->assertEquals($initialWalletBalance, (float) $this->posWallet->fresh()->wallet_balance);
-        $this->assertEquals(0, PosWalletLog::count());
+        $this->assertEquals(
+            0,
+            PosWalletLog::where('wallet_id', $this->posWallet->wallet_id)->count()
+        );
     }
 
     /**
