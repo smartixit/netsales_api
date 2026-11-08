@@ -22,7 +22,7 @@ class SubscriptionRouteAuthorizationTest extends TestCase
             $route = Route::getRoutes()->getByName($name);
 
             $this->assertNotNull($route, "Missing route [{$name}].");
-            $this->assertContains('permission:subscriptions.view', $route->gatherMiddleware(), "Route [{$name}] must require subscriptions.view.");
+            $this->assertContains('permission:subscriptions.view', $route->middleware(), "Route [{$name}] must require subscriptions.view.");
         }
     }
 
@@ -44,7 +44,7 @@ class SubscriptionRouteAuthorizationTest extends TestCase
             $route = Route::getRoutes()->getByName($name);
 
             $this->assertNotNull($route, "Missing route [{$name}].");
-            $this->assertContains($required, $route->gatherMiddleware(), "Route [{$name}] must require {$required}.");
+            $this->assertContains($required, $route->middleware(), "Route [{$name}] must require {$required}.");
         }
     }
 
@@ -60,7 +60,7 @@ class SubscriptionRouteAuthorizationTest extends TestCase
             $route = Route::getRoutes()->getByName($name);
 
             $this->assertNotNull($route, "Missing route [{$name}].");
-            $this->assertContains($required, $route->gatherMiddleware(), "Route [{$name}] must require {$required}.");
+            $this->assertContains($required, $route->middleware(), "Route [{$name}] must require {$required}.");
         }
     }
 
@@ -75,8 +75,8 @@ class SubscriptionRouteAuthorizationTest extends TestCase
             $route = Route::getRoutes()->getByName($name);
 
             $this->assertNotNull($route, "Missing route [{$name}].");
-            $this->assertNotContains('permission:subscriptions.view', $route->gatherMiddleware());
-            $this->assertNotContains('permission:subscriptions.edit', $route->gatherMiddleware());
+            $this->assertNotContains('permission:subscriptions.view', $route->middleware());
+            $this->assertNotContains('permission:subscriptions.edit', $route->middleware());
         }
     }
 }
