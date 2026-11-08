@@ -22,6 +22,7 @@ use App\Models\Request as RequestModel;
 use App\Models\RequestItem;
 use App\Models\SaleInvoice;
 use App\Models\SaleInvoiceItem;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -417,6 +418,49 @@ class SaleInvoiceService
     }
 
     /**
+     * Ensures a direct wholesale invoice is created by an owner or an
+     * actively authorized member of the exact target network.
+     *
+     * Global user permissions and permissions obtained from another
+     * network membership must not authorize access to this tenant.
+     */
+    private function ensureDirectInvoiceNetworkAccess(int $userId, User $user, object $network): void
+    {
+        $networkId = (int) $network->network_id;
+        $isNetworkOwner = (int) $network->owner_id === $userId;
+
+        if ($isNetworkOwner) {
+            $hasOwnerPermission = $user->role?->permissions()
+                ->where('permission_key', 'sales.create')
+                ->exists() ?? false;
+
+            $hasDirectPermission = $user->permissions()
+                ->where('permission_key', 'sales.create')
+                ->exists();
+
+            if ($hasOwnerPermission || $hasDirectPermission) {
+                return;
+            }
+        }
+
+        $hasScopedMembershipPermission = $user->networkUsers()
+            ->where('network_id', $networkId)
+            ->where('status', 'ACTIVE')
+            ->whereHas('role.permissions', function ($query): void {
+                $query->where('permission_key', 'sales.create');
+            })
+            ->exists();
+
+        if (! $hasScopedMembershipPermission) {
+            throw ValidationException::withMessages([
+                'network_id' => [
+                    'ليس لديك صلاحية إنشاء فواتير مبيعات مباشرة لهذه الشبكة. يجب أن تكون مالكها أو عضواً نشطاً فيها بدور يملك صلاحية المبيعات.',
+                ],
+            ]);
+        }
+    }
+
+    /**
      * إنشاء فاتورة مبيعات مباشرة (كاش أو آجل).
      */
     public function createDirectInvoice(StoreSaleInvoiceRequest $request, int $userId): SaleInvoice
@@ -430,6 +474,14 @@ class SaleInvoiceService
             // 1. التحقق من وجود الشبكة ونقطة البيع ونشاطهما
             $network = $this->networkRepository->findById($networkId);
             $network->ensureActive();
+
+            $user = User::query()->find($userId);
+            if (! $user) {
+                throw ValidationException::withMessages([
+                    'user_id' => ['تعذر التحقق من المستخدم الذي ينشئ فاتورة المبيعات.'],
+                ]);
+            }
+            $this->ensureDirectInvoiceNetworkAccess($userId, $user, $network);
 
             $pos = $this->posRepository->findById($posId);
             $pos->ensureActive();
