@@ -617,17 +617,6 @@ class SaleInvoiceService
                     );
                 }
 
-                // زيادة سيولة الشبكة فقط بالمبلغ المغطى برصيد إيجابي فعلي (إن وجد)
-                if ($paidAmount > 0.001) {
-                    $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $paidAmount);
-                    $this->networkWalletLogRepository->createLog(
-                        $networkWallet->wallet_id,
-                        WalletOperationType::DEPOSIT,
-                        $paidAmount,
-                        "تحصيل مبيعات كروت مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: (".formatWithCurrency($paidAmount).')، آجل متبقي: ('.formatWithCurrency($remainingAmount).')',
-                        $userId
-                    );
-                }
             }
 
             // تسجيل رسالة الأحداث المالية في صندوق الإرسال اللحظي (Transactional Outbox)
