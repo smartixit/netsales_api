@@ -81,10 +81,16 @@ class UserController extends BaseController
             new OA\Response(response: 401, description: 'غير مصرح'),
         ]
     )]
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
         try {
-            $user = $this->userService->findById($id);
+            $relations = ['role'];
+
+            if ($request->user()?->hasPermission('auth.view')) {
+                $relations = ['role', 'devices', 'securityBans'];
+            }
+
+            $user = $this->userService->findById($id, $relations);
             if (! $user) {
                 return $this->errorResponse('المستخدم غير موجود في النظام.', [], 404);
             }

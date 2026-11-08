@@ -8,6 +8,7 @@ use App\Enums\UserStatus;
 use App\Models\Role;
 use App\Models\SecurityBan;
 use App\Models\User;
+use App\Models\UserDevice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -29,11 +30,36 @@ class PlatformUserAdministrationSecurityTest extends TestCase
         $session = $this->createAuthenticatedSession($support);
 
         $this->getJson('/api/v1/users', $session['headers'])->assertOk();
-        $this->getJson('/api/v1/users/'.$target->user_id, $session['headers'])->assertOk();
+        $this->getJson('/api/v1/users/'.$target->user_id, $session['headers'])
+            ->assertOk()
+            ->assertJsonMissingPath('data.devices')
+            ->assertJsonMissingPath('data.security_bans');
         $this->postJson('/api/v1/users', [], $session['headers'])->assertForbidden();
         $this->postJson('/api/v1/security/ban-user', [], $session['headers'])->assertForbidden();
         $this->getJson('/api/v1/security/users/'.$target->user_id.'/sessions', $session['headers'])
             ->assertForbidden();
+    }
+
+    public function test_device_api_never_serializes_the_fcm_registration_token(): void
+    {
+        $admin = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'Platform Admin');
+        $target = $this->makePlatformUser(RoleKey::SUPPORT_AGENT, 'Target User');
+        $device = UserDevice::query()->create([
+            'user_id' => $target->user_id,
+            'device_uuid' => 'test-device-'.bin2hex(random_bytes(8)),
+            'device_name' => 'Test Android Device',
+            'device_type' => 'ANDROID',
+            'fcm_token' => 'private-fcm-registration-token',
+            'is_primary' => true,
+            'status' => 'ACTIVE',
+        ]);
+        $session = $this->createAuthenticatedSession($admin);
+
+        $this->getJson('/api/v1/security/users/'.$target->user_id.'/devices', $session['headers'])
+            ->assertOk()
+            ->assertJsonPath('data.0.device_id', $device->device_id)
+            ->assertJsonMissingPath('data.0.fcm_token')
+            ->assertDontSee('private-fcm-registration-token');
     }
 
     public function test_accountant_without_users_view_cannot_read_users(): void
