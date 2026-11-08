@@ -68,4 +68,3 @@ class VoucherPackageDiscountPolicy
         return $this->tenantAuth->canManageDiscount($user, $discount, 'voucher_packages.delete');
     }
 }
-
