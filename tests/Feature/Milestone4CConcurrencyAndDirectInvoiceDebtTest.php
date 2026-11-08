@@ -45,6 +45,7 @@ class Milestone4CConcurrencyAndDirectInvoiceDebtTest extends TestCase
 
     protected VoucherPackage $package;
 
+    /** @var array<string, string> */
     protected array $headers;
 
     protected function setUp(): void
