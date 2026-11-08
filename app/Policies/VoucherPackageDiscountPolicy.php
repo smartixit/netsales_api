@@ -13,7 +13,8 @@ class VoucherPackageDiscountPolicy
 
     public function __construct(
         protected TenantAuthorizationService $tenantAuth
-    ) {}
+    ) {
+    }
 
     public function before(User $user, string $ability): ?bool
     {
@@ -29,7 +30,7 @@ class VoucherPackageDiscountPolicy
         $networkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.view');
         $posIds = $this->tenantAuth->getUserAuthorizedPosIds($user, 'voucher_packages.view');
 
-        return $networkIds === null || ! empty($networkIds) || ! empty($posIds);
+        return $networkIds === null || !empty($networkIds) || !empty($posIds);
     }
 
     public function view(User $user, VoucherPackageDiscount $discount): bool
@@ -45,7 +46,7 @@ class VoucherPackageDiscountPolicy
 
         $networkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.create');
 
-        return $networkIds === null || ! empty($networkIds);
+        return $networkIds === null || !empty($networkIds);
     }
 
     public function update(User $user, VoucherPackageDiscount $discount): bool
