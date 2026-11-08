@@ -22,7 +22,7 @@ jobs:
     env:
       APP_ENV: testing
       DB_CONNECTION: sqlite
-      DB_DATABASE: ':memory:'
+      DB_DATABASE: database/testing.sqlite
       CACHE_STORE: array
       SESSION_DRIVER: array
       QUEUE_CONNECTION: sync
@@ -53,6 +53,12 @@ jobs:
       - name: Generate application key for tests
         run: php artisan key:generate --force
 
+      - name: Prepare SQLite test schema
+        run: |
+          mkdir -p database
+          touch database/testing.sqlite
+          php artisan migrate:fresh --force
+
       - name: Audit Composer dependencies
         id: composer-audit
         continue-on-error: true
@@ -81,12 +87,13 @@ jobs:
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
 
       - name: Run Laravel tests
+        id: php-tests
+        continue-on-error: true
         run: php artisan test
 
-      # These checks remain mandatory, but their failures no longer hide
-      # the results of the remaining PHP validation steps.
-      - name: Enforce Composer audit, PHP style, and static-analysis gates
-        if: steps.composer-audit.outcome == 'failure' || steps.php-style.outcome == 'failure' || steps.phpstan.outcome == 'failure'
+      # Keep every check visible, then fail the job if any required gate fails.
+      - name: Enforce Composer audit, PHP style, static-analysis, and test gates
+        if: always() && (steps.composer-audit.outcome == 'failure' || steps.php-style.outcome == 'failure' || steps.phpstan.outcome == 'failure' || steps.php-tests.outcome == 'failure')
         run: |
-          echo "Composer audit, Pint, and/or PHPStan reported a required quality-gate failure."
+          echo "Composer audit, Pint, PHPStan, and/or PHPUnit reported a required quality-gate failure."
           exit 1
