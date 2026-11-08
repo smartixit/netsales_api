@@ -179,8 +179,15 @@ class PosWalletController extends BaseController
     public function store(StorePosWalletRequest $request): JsonResponse
     {
         try {
-            $userId = $this->currentUserId();
-            $wallet = $this->posWalletService->createWallet($request, $userId);
+            $currentUser = $this->requireCurrentUser();
+            if (! Gate::forUser($currentUser)->allows(
+                'createForNetwork',
+                [PosWallet::class, (int) $request->getNetworkId(), (int) $request->getPosId()],
+            )) {
+                return $this->errorResponse('غير مصرح لك بإنشاء محفظة نقطة البيع ضمن هذه الشبكة.', [], 403);
+            }
+
+            $wallet = $this->posWalletService->createWallet($request, (int) $currentUser->user_id);
 
             return $this->successResponse('تم إنشاء وتدشين محفظة نقطة البيع بنجاح.', new PosWalletResource($wallet), 201);
         } catch (ValidationException $e) {
@@ -220,6 +227,11 @@ class PosWalletController extends BaseController
     public function update(UpdatePosWalletRequest $request, int $id): JsonResponse
     {
         try {
+            $denied = $this->authorizeWalletAction($id, 'update');
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $wallet = $this->posWalletService->updateStatus($id, $request);
 
             return $this->successResponse('تم تحديث حالة محفظة نقطة البيع بنجاح.', new PosWalletResource($wallet));
@@ -262,13 +274,13 @@ class PosWalletController extends BaseController
     {
         try {
             $wallet = $this->posWalletService->getWalletById($id);
-            $currentUser = $request->user();
+            $currentUser = $this->requireCurrentUser();
 
-            if ($currentUser && ! Gate::forUser($currentUser)->allows('manageCreditLimit', $wallet)) {
+            if (! Gate::forUser($currentUser)->allows('manageCreditLimit', $wallet)) {
                 return $this->errorResponse('غير مصرح لك بإدارة أو تعديل السقف الائتماني لنقطة البيع هذه.', [], 403);
             }
 
-            $userId = (int) ($currentUser?->user_id ?? 0);
+            $userId = (int) $currentUser->user_id;
             $updatedWallet = $this->posWalletService->updateCreditLimit($id, $request->getCreditLimit(), $userId);
 
             return $this->successResponse('تم تحديث السقف الائتماني لنقطة البيع بنجاح.', new PosWalletResource($updatedWallet));
@@ -311,8 +323,13 @@ class PosWalletController extends BaseController
     public function deposit(DepositPosWalletRequest $request, int $id): JsonResponse
     {
         try {
-            $userId = $this->currentUserId();
-            $result = $this->posWalletService->deposit($id, $request, $userId);
+            $denied = $this->authorizeWalletAction($id, 'deposit');
+            if ($denied !== null) {
+                return $denied;
+            }
+
+            $currentUser = $this->requireCurrentUser();
+            $result = $this->posWalletService->deposit($id, $request, (int) $currentUser->user_id);
 
             return $this->successResponse('تم إيداع الرصيد في محفظة نقطة البيع بنجاح.', [
                 'wallet' => new PosWalletResource($result['wallet']),
@@ -357,8 +374,13 @@ class PosWalletController extends BaseController
     public function withdraw(WithdrawPosWalletRequest $request, int $id): JsonResponse
     {
         try {
-            $userId = $this->currentUserId();
-            $result = $this->posWalletService->withdraw($id, $request, $userId);
+            $denied = $this->authorizeWalletAction($id, 'withdraw');
+            if ($denied !== null) {
+                return $denied;
+            }
+
+            $currentUser = $this->requireCurrentUser();
+            $result = $this->posWalletService->withdraw($id, $request, (int) $currentUser->user_id);
 
             return $this->successResponse('تم سحب الرصيد من محفظة نقطة البيع بنجاح.', [
                 'wallet' => new PosWalletResource($result['wallet']),
@@ -401,8 +423,15 @@ class PosWalletController extends BaseController
     public function transferFromNetwork(TransferNetworkToPosWalletRequest $request): JsonResponse
     {
         try {
-            $userId = $this->currentUserId();
-            $result = $this->posWalletService->transferFromNetwork($request, $userId);
+            $currentUser = $this->requireCurrentUser();
+            if (! Gate::forUser($currentUser)->allows(
+                'transferFromNetwork',
+                [PosWallet::class, (int) $request->getNetworkId(), (int) $request->getPosId()],
+            )) {
+                return $this->errorResponse('غير مصرح لك بتحويل رصيد من هذه الشبكة إلى نقطة البيع المحددة.', [], 403);
+            }
+
+            $result = $this->posWalletService->transferFromNetwork($request, (int) $currentUser->user_id);
 
             return $this->successResponse('تم تحويل وتغذية الرصيد إلى نقطة البيع بنجاح وتسجيل القيود المالية المزدوجة.', [
                 'network_wallet' => new NetworkWalletResource($result['network_wallet']),
@@ -447,8 +476,15 @@ class PosWalletController extends BaseController
     public function transferToNetwork(TransferPosToNetworkWalletRequest $request): JsonResponse
     {
         try {
-            $userId = $this->currentUserId();
-            $result = $this->posWalletService->transferToNetwork($request, $userId);
+            $currentUser = $this->requireCurrentUser();
+            if (! Gate::forUser($currentUser)->allows(
+                'transferToNetwork',
+                [PosWallet::class, (int) $request->getNetworkId(), (int) $request->getPosId()],
+            )) {
+                return $this->errorResponse('غير مصرح لك باسترجاع رصيد نقطة البيع إلى هذه الشبكة.', [], 403);
+            }
+
+            $result = $this->posWalletService->transferToNetwork($request, (int) $currentUser->user_id);
 
             return $this->successResponse('تم استرجاع الرصيد إلى محفظة الشبكة بنجاح وتسجيل القيود المالية المزدوجة.', [
                 'pos_wallet' => new PosWalletResource($result['pos_wallet']),
@@ -517,6 +553,11 @@ class PosWalletController extends BaseController
     public function destroy(int $id): JsonResponse
     {
         try {
+            $denied = $this->authorizeLifecycle();
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $this->posWalletService->deleteWallet($id);
 
             return $this->successResponse('تم حذف محفظة نقطة البيع مؤقتاً بنجاح.');
@@ -581,6 +622,11 @@ class PosWalletController extends BaseController
     public function restore(int $id): JsonResponse
     {
         try {
+            $denied = $this->authorizeLifecycle();
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $this->posWalletService->restoreWallet($id);
 
             return $this->successResponse('تم استعادة محفظة نقطة البيع بنجاح.');
@@ -608,6 +654,11 @@ class PosWalletController extends BaseController
     public function forceDelete(int $id): JsonResponse
     {
         try {
+            $denied = $this->authorizeLifecycle();
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $this->posWalletService->forceDeleteWallet($id);
 
             return $this->successResponse('تم حذف محفظة نقطة البيع نهائياً بنجاح.');
@@ -645,6 +696,11 @@ class PosWalletController extends BaseController
     public function batchDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
+            $denied = $this->authorizeLifecycle();
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $count = $this->posWalletService->bulkDelete($request->getIds());
 
             return $this->successResponse("تم حذف ({$count}) محفظة لنقاط البيع بنجاح.");
@@ -682,6 +738,11 @@ class PosWalletController extends BaseController
     public function batchRestore(BatchIdsRequest $request): JsonResponse
     {
         try {
+            $denied = $this->authorizeLifecycle();
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $count = $this->posWalletService->bulkRestore($request->getIds());
 
             return $this->successResponse("تم استعادة ({$count}) محفظة لنقاط البيع بنجاح.");
@@ -719,6 +780,11 @@ class PosWalletController extends BaseController
     public function batchForceDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
+            $denied = $this->authorizeLifecycle();
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $count = $this->posWalletService->bulkForceDelete($request->getIds());
 
             return $this->successResponse("تم الحذف النهائي لـ ({$count}) محفظة لنقاط البيع بنجاح.");
@@ -727,5 +793,28 @@ class PosWalletController extends BaseController
         } catch (Exception $e) {
             return $this->errorResponse('تعذر تنفيذ الحذف النهائي المجمع: '.$e->getMessage(), [], 422);
         }
+    }
+
+    private function authorizeWalletAction(int $walletId, string $ability): ?JsonResponse
+    {
+        $user = $this->requireCurrentUser();
+        $wallet = $this->posWalletService->getWalletById($walletId);
+
+        if (! Gate::forUser($user)->allows($ability, $wallet)) {
+            return $this->errorResponse('غير مصرح لك بتنفيذ هذه العملية على محفظة نقطة البيع.', [], 403);
+        }
+
+        return null;
+    }
+
+    private function authorizeLifecycle(): ?JsonResponse
+    {
+        $user = $this->requireCurrentUser();
+
+        if (! Gate::forUser($user)->allows('manageLifecycle', PosWallet::class)) {
+            return $this->errorResponse('إدارة حذف واستعادة المحافظ متاحة لمدير النظام فقط.', [], 403);
+        }
+
+        return null;
     }
 }

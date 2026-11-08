@@ -171,8 +171,15 @@ class NetworkWalletController extends BaseController
     public function store(StoreNetworkWalletRequest $request): JsonResponse
     {
         try {
-            $userId = $this->currentUserId();
-            $wallet = $this->networkWalletService->createWallet($request, $userId);
+            $currentUser = $this->requireCurrentUser();
+            if (! Gate::forUser($currentUser)->allows(
+                'createForNetwork',
+                [NetworkWallet::class, (int) $request->getNetworkId()],
+            )) {
+                return $this->errorResponse('غير مصرح لك بإنشاء محفظة لهذه الشبكة.', [], 403);
+            }
+
+            $wallet = $this->networkWalletService->createWallet($request, (int) $currentUser->user_id);
 
             return $this->successResponse('تم تدشين محفظة مزود الشبكة بنجاح.', new NetworkWalletResource($wallet), 201);
         } catch (ValidationException $e) {
@@ -212,6 +219,11 @@ class NetworkWalletController extends BaseController
     public function update(UpdateNetworkWalletRequest $request, int $id): JsonResponse
     {
         try {
+            $denied = $this->authorizeWalletAction($id, 'update');
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $wallet = $this->networkWalletService->updateStatus($id, $request);
 
             return $this->successResponse('تم تحديث حالة محفظة الشبكة بنجاح.', new NetworkWalletResource($wallet));
@@ -254,8 +266,13 @@ class NetworkWalletController extends BaseController
     public function deposit(DepositNetworkWalletRequest $request, int $id): JsonResponse
     {
         try {
-            $userId = $this->currentUserId();
-            $result = $this->networkWalletService->deposit($id, $request, $userId);
+            $denied = $this->authorizeWalletAction($id, 'deposit');
+            if ($denied !== null) {
+                return $denied;
+            }
+
+            $currentUser = $this->requireCurrentUser();
+            $result = $this->networkWalletService->deposit($id, $request, (int) $currentUser->user_id);
 
             return $this->successResponse('تم إيداع الرصيد بنجاح وتسجيل القيد في دفتر الأستاذ.', [
                 'wallet' => new NetworkWalletResource($result['wallet']),
@@ -300,8 +317,13 @@ class NetworkWalletController extends BaseController
     public function withdraw(WithdrawNetworkWalletRequest $request, int $id): JsonResponse
     {
         try {
-            $userId = $this->currentUserId();
-            $result = $this->networkWalletService->withdraw($id, $request, $userId);
+            $denied = $this->authorizeWalletAction($id, 'withdraw');
+            if ($denied !== null) {
+                return $denied;
+            }
+
+            $currentUser = $this->requireCurrentUser();
+            $result = $this->networkWalletService->withdraw($id, $request, (int) $currentUser->user_id);
 
             return $this->successResponse('تم سحب الرصيد بنجاح وتسجيل القيد في دفتر الأستاذ.', [
                 'wallet' => new NetworkWalletResource($result['wallet']),
@@ -368,6 +390,11 @@ class NetworkWalletController extends BaseController
     public function destroy(int $id): JsonResponse
     {
         try {
+            $denied = $this->authorizeLifecycle();
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $this->networkWalletService->deleteWallet($id);
 
             return $this->successResponse('تم حذف محفظة الشبكة مؤقتاً بنجاح.');
@@ -431,6 +458,11 @@ class NetworkWalletController extends BaseController
     public function restore(int $id): JsonResponse
     {
         try {
+            $denied = $this->authorizeLifecycle();
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $this->networkWalletService->restoreWallet($id);
 
             return $this->successResponse('تم استعادة محفظة الشبكة بنجاح.');
@@ -458,6 +490,11 @@ class NetworkWalletController extends BaseController
     public function forceDelete(int $id): JsonResponse
     {
         try {
+            $denied = $this->authorizeLifecycle();
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $this->networkWalletService->forceDeleteWallet($id);
 
             return $this->successResponse('تم حذف محفظة الشبكة نهائياً بنجاح.');
@@ -495,6 +532,11 @@ class NetworkWalletController extends BaseController
     public function batchDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
+            $denied = $this->authorizeLifecycle();
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $count = $this->networkWalletService->bulkDelete($request->getIds());
 
             return $this->successResponse("تم حذف ({$count}) محفظة بنجاح.");
@@ -532,6 +574,11 @@ class NetworkWalletController extends BaseController
     public function batchRestore(BatchIdsRequest $request): JsonResponse
     {
         try {
+            $denied = $this->authorizeLifecycle();
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $count = $this->networkWalletService->bulkRestore($request->getIds());
 
             return $this->successResponse("تم استعادة ({$count}) محفظة بنجاح.");
@@ -569,6 +616,11 @@ class NetworkWalletController extends BaseController
     public function batchForceDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
+            $denied = $this->authorizeLifecycle();
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $count = $this->networkWalletService->bulkForceDelete($request->getIds());
 
             return $this->successResponse("تم الحذف النهائي لـ ({$count}) محفظة بنجاح.");
@@ -577,5 +629,28 @@ class NetworkWalletController extends BaseController
         } catch (Exception $e) {
             return $this->errorResponse('تعذر تنفيذ الحذف النهائي المجمع: '.$e->getMessage(), [], 422);
         }
+    }
+
+    private function authorizeWalletAction(int $walletId, string $ability): ?JsonResponse
+    {
+        $user = $this->requireCurrentUser();
+        $wallet = $this->networkWalletService->getWalletById($walletId);
+
+        if (! Gate::forUser($user)->allows($ability, $wallet)) {
+            return $this->errorResponse('غير مصرح لك بتنفيذ هذه العملية على محفظة الشبكة.', [], 403);
+        }
+
+        return null;
+    }
+
+    private function authorizeLifecycle(): ?JsonResponse
+    {
+        $user = $this->requireCurrentUser();
+
+        if (! Gate::forUser($user)->allows('manageLifecycle', NetworkWallet::class)) {
+            return $this->errorResponse('إدارة حذف واستعادة المحافظ متاحة لمدير النظام فقط.', [], 403);
+        }
+
+        return null;
     }
 }
