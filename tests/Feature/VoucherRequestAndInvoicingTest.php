@@ -282,9 +282,11 @@ class VoucherRequestAndInvoicingTest extends TestCase
         $this->assertEquals('DEBIT', $refreshedPosWallet->getAccountingStatus());
         $this->assertEquals(46000.00, $refreshedPosWallet->getDebitAmount());
 
-        // 5. التحقق من إيداع المبيعات في محفظة الشبكة كاستحقاق
+        // 5. لا تدخل المديونية غير المحصلة في رصيد الشبكة القابل للسحب.
+        // رصيد POS كان صفراً؛ لذلك قيمة الفاتورة الآجلة (46,000) تبقى ديناً
+        // ولا تُودع في محفظة الشبكة إلا بعد سدادها فعلياً.
         $refreshedNetWallet = $this->networkWallet->fresh();
-        $this->assertEquals(46000.00, (float) $refreshedNetWallet->wallet_balance);
+        $this->assertEquals(0.00, (float) $refreshedNetWallet->wallet_balance);
 
         // 6. التحقق من مخرجات API لمحفظة الوكيل (عرض المركز المالي والمديونية)
         $posWalletApi = $this->withHeaders($this->headers)
