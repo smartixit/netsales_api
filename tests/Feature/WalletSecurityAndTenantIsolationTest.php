@@ -253,7 +253,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'network_id' => $networkA->network_id,
             'user_id' => $inactiveMember['user']->user_id,
             'role_id' => $inactiveMember['role']->role_id,
-            'status' => 'INACTIVE',
+            'status' => 'SUSPENDED',
         ]);
         $inactiveResponse = $this->withHeaders($inactiveMember['headers'])
             ->getJson('/api/v1/network-wallets?all=true');
@@ -353,7 +353,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'pos_id' => $posA->pos_id,
             'user_id' => $inactivePosMember['user']->user_id,
             'role_id' => $inactivePosMember['role']->role_id,
-            'status' => 'INACTIVE',
+            'status' => 'SUSPENDED',
         ]);
         $inactivePosResponse = $this->withHeaders($inactivePosMember['headers'])
             ->getJson('/api/v1/pos-wallets?all=true');
