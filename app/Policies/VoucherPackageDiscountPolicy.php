@@ -30,7 +30,7 @@ class VoucherPackageDiscountPolicy
         $networkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.view');
         $posIds = $this->tenantAuth->getUserAuthorizedPosIds($user, 'voucher_packages.view');
 
-        return $networkIds === null || ! empty($networkIds) || ! empty($posIds);
+        return $networkIds === null || $networkIds !== [] || ($posIds !== null && $posIds !== []);
     }
 
     public function view(User $user, VoucherPackageDiscount $discount): bool
