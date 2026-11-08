@@ -15,6 +15,7 @@ class SubscriptionRouteAuthorizationTest extends TestCase
             'api.v1.features.index',
             'api.v1.subscription_plan_requests.index',
             'api.v1.subscription_plan_requests.show',
+            'api.v1.subscription_plan_requests.receipt_link',
             'api.v1.provider_subscriptions.index',
             'api.v1.provider_subscriptions.show',
             'api.v1.provider_subscriptions.consumptions',
