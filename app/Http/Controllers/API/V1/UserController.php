@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Enums\UserStatus;
+
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\User\StoreUserRequest;
 use App\Http\Requests\API\V1\User\SyncPermissionsRequest;
@@ -196,7 +198,7 @@ class UserController extends BaseController
     public function updateStatus(UpdateUserStatusRequest $request, int $id): JsonResponse
     {
         try {
-            $user = $this->userService->updateStatus($id, $request->validated('status'));
+            $user = $this->userService->updateStatus($id, UserStatus::from($request->validated('status')));
 
             return $this->successResponse('تم تحديث حالة المستخدم بنجاح.', new UserResource($user));
         } catch (ValidationException $e) {
