@@ -286,7 +286,8 @@ class VoucherRequestAndInvoicingTest extends TestCase
         // رصيد POS كان صفراً؛ لذلك قيمة الفاتورة الآجلة (46,000) تبقى ديناً
         // ولا تُودع في محفظة الشبكة إلا بعد سدادها فعلياً.
         $refreshedNetWallet = $this->networkWallet->fresh();
-        $this->assertEquals(0.00, (float) $refreshedNetWallet->wallet_balance);
+        $this->assertSame('0.00', $refreshedNetWallet->wallet_balance);
+        $this->assertSame(0, $refreshedNetWallet->logs()->count());
 
         // 6. التحقق من مخرجات API لمحفظة الوكيل (عرض المركز المالي والمديونية)
         $posWalletApi = $this->withHeaders($this->headers)

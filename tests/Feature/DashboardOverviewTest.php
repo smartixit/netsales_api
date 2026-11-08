@@ -7,6 +7,7 @@ use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\RoleKey;
 use App\Enums\UserStatus;
 use App\Models\Network;
+use App\Models\NetworkUser;
 use App\Models\ProviderSubscription;
 use App\Models\Role;
 use App\Models\SubscriptionPlan;
@@ -39,7 +40,7 @@ class DashboardOverviewTest extends TestCase
 
         $network = Network::create([
             'owner_id' => $admin->user_id,
-            'network_name' => 'Overview Network '.Str::uuid(),
+            'network_name' => 'Overview Network '.Str::random(8),
             'network_phone_number' => '7'.random_int(100000000, 999999999),
             'governorate_id' => 1,
             'directorate_id' => 1,
@@ -118,20 +119,27 @@ class DashboardOverviewTest extends TestCase
             ->firstOrFail();
 
         $user = User::create([
-            'role_id' => $role->role_id,
+            'role_id' => null,
             'user_full_name' => 'Overview Network Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
             'user_password' => bcrypt('password'),
             'status' => UserStatus::ACTIVE,
         ]);
 
-        Network::create([
+        $network = Network::create([
             'owner_id' => $user->user_id,
-            'network_name' => 'Overview Owner Network '.Str::uuid(),
+            'network_name' => 'Overview Owner Network',
             'network_phone_number' => '7'.random_int(100000000, 999999999),
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => NetworkStatus::ACTIVE,
+        ]);
+
+        NetworkUser::create([
+            'network_id' => $network->network_id,
+            'user_id' => $user->user_id,
+            'role_id' => $role->role_id,
+            'status' => 'ACTIVE',
         ]);
 
         $headers = $this->createAuthenticatedSession($user)['headers'];
