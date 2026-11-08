@@ -11,8 +11,8 @@ graph TD
     D5["5. Sales Invoicing & Accounting Policy"]
     D6["6. Dual Wallets & Credit Limit Facilities"]
     D7["7. Debt Aging & FIFO Repayments"]
-    D8["8. Platform SaaS & Subscriptions (Platform Scope)"]
-    D9["9. Operating Expenses & Settlement Banks"]
+    D8["8. Platform SaaS, Subscriptions & Treasury (Platform Scope)"]
+    D9["9. Network Operating Expenses (Network Scope Only)"]
     D10["10. Notifications, Outbox & Audit"]
 
     D1 --> D2
@@ -23,6 +23,7 @@ graph TD
     D5 --> D6
     D5 --> D7
     D6 --> D7
+    D2 --> D8
     D2 --> D9
     D5 --> D10
 ```
@@ -74,17 +75,17 @@ graph TD
 - **Services:** `DebtRepaymentService`, `PosDebtQueryService`.
 - **Responsibilities:** Outstanding debt calculation, chronological aging tiers (Current, 1-30, 31-60, 61-90, 90+ days), atomic FIFO repayment settlement under row locks.
 
-### Domain 8: Platform SaaS & Subscriptions [PLATFORM SCOPE]
+### Domain 8: Platform SaaS, Subscriptions & Treasury [PLATFORM SCOPE]
 - **Status:** Backend Implemented (`VERIFIED`), Excluded from Mobile (`EXCLUDED`).
-- **Entities:** `ProviderSubscription`, `SubscriptionPlan`.
-- **Services:** `ProviderSubscriptionService`.
-- **Responsibilities:** Network provider SaaS plan licensing, subscription expiration checks, automated task renewal.
+- **Entities:** `ProviderSubscription`, `SubscriptionPlan`, `SubscriptionPlanRequest`, `BankAccount`.
+- **Services:** `ProviderSubscriptionService`, `SubscriptionRequestService`, `BankAccountService`.
+- **Responsibilities:** Platform-owned SaaS plans and network subscription lifecycle, subscription-payment review and collection, and global Platform bank-account administration. Bank accounts are Platform treasury records, not tenant settlement accounts.
 
-### Domain 9: Operating Expenses & Settlement Banks
-- **Status:** Backend Implemented (`VERIFIED`), Flutter Expense Planned (`PROPOSED`).
-- **Entities:** `Expense`, `ExpenseCategory`, `BankAccount`.
-- **Services:** `ExpenseService`, `BankAccountService`.
-- **Responsibilities:** POS and Network daily operational expense logging, bank account tracking for cash settlements.
+### Domain 9: Network Operating Expenses [NETWORK SCOPE ONLY]
+- **Status:** Backend Implemented (`VERIFIED`), Flutter Network Expense Workflow In Progress (`IN_PROGRESS`).
+- **Entities:** `Expense`, `ExpenseItem`, `ExpenseAttachment`.
+- **Services:** `ExpenseService`.
+- **Responsibilities:** Recording and reviewing daily operational expenses for a Network tenant, including itemized amounts and supporting attachments. Each expense belongs to a Network and is debited from that Network's wallet. POS expenses and Platform bank-account management are outside this domain.
 
 ### Domain 10: Notifications, Outbox & Audit
 - **Status:** Backend Implemented (`VERIFIED`), Flutter Alerts Planned (`PROPOSED`).
