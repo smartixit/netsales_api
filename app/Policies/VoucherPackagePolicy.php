@@ -67,4 +67,3 @@ class VoucherPackagePolicy
         return $this->tenantAuth->canManagePackage($user, $package, 'voucher_packages.delete');
     }
 }
-
