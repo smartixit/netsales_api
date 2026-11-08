@@ -22,6 +22,7 @@ use App\Interfaces\PosWalletRepositoryInterface;
 use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
 use App\Models\PosWallet;
+use App\Models\User;
 use App\Models\PosWalletLog;
 use App\Models\WalletTransfer;
 use Exception;
@@ -58,11 +59,35 @@ class PosWalletService
     }
 
     /**
+     * Retrieve only POS wallets visible within the authenticated user's tenants.
+     */
+    public function getWalletsForUser(array $filters, User $user): Collection|CursorPaginator
+    {
+        if (! $user->isSuperAdmin()) {
+            $filters['authorized_user_id'] = (int) $user->user_id;
+        }
+
+        return $this->getWallets($filters);
+    }
+
+    /**
      * جلب محافظ نقاط البيع المحذوفة مؤقتاً.
      */
     public function getTrashedWallets(array $filters = []): Collection|CursorPaginator
     {
         return $this->posWalletRepository->getTrashedFiltered($filters, ['network', 'pos']);
+    }
+
+    /**
+     * Retrieve deleted POS wallets within the authenticated user's tenant scope.
+     */
+    public function getTrashedWalletsForUser(array $filters, User $user): Collection|CursorPaginator
+    {
+        if (! $user->isSuperAdmin()) {
+            $filters['authorized_user_id'] = (int) $user->user_id;
+        }
+
+        return $this->getTrashedWallets($filters);
     }
 
     /**
