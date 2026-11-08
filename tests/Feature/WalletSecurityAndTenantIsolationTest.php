@@ -118,6 +118,10 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'status' => true,
         ]);
 
+        // A user without an owned or ACTIVE network membership cannot list wallets.
+        $listResponse = $this->withHeaders($attackerAuth['headers'])->getJson('/api/v1/network-wallets?all=true');
+        $listResponse->assertStatus(403);
+
         // Attacker attempts to view victim's wallet
         $response = $this->withHeaders($attackerAuth['headers'])->getJson("/api/v1/network-wallets/{$victimWallet->wallet_id}");
         $response->assertStatus(403);
@@ -229,6 +233,32 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'status' => true,
         ]);
 
+        // A member with an ACTIVE network membership can see that tenant.
+        $activeMember = $this->createAuthenticatedUser(RoleKey::NETWORK_USER, 'active-network-member');
+        NetworkUser::create([
+            'network_id' => $networkA->network_id,
+            'user_id' => $activeMember['user']->user_id,
+            'role_id' => $activeMember['role']->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        $memberResponse = $this->withHeaders($activeMember['headers'])
+            ->getJson('/api/v1/network-wallets?all=true');
+        $memberResponse->assertStatus(200)
+            ->assertJsonFragment(['wallet_id' => $walletA->wallet_id])
+            ->assertJsonMissing(['wallet_id' => $walletB->wallet_id]);
+
+        // Inactive memberships must not authorize wallet list access.
+        $inactiveMember = $this->createAuthenticatedUser(RoleKey::NETWORK_USER, 'inactive-network-member');
+        NetworkUser::create([
+            'network_id' => $networkA->network_id,
+            'user_id' => $inactiveMember['user']->user_id,
+            'role_id' => $inactiveMember['role']->role_id,
+            'status' => 'INACTIVE',
+        ]);
+        $inactiveResponse = $this->withHeaders($inactiveMember['headers'])
+            ->getJson('/api/v1/network-wallets?all=true');
+        $inactiveResponse->assertStatus(403);
+
         // No client-side tenant filter: the server must return only Network A.
         $response = $this->withHeaders($ownerA['headers'])->getJson('/api/v1/network-wallets?all=true');
         $response->assertStatus(200)
@@ -303,6 +333,32 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'status' => true,
         ]);
 
+        // An active POS member can see the assigned POS wallet without owning it.
+        $activePosMember = $this->createAuthenticatedUser(RoleKey::POS_USER, 'active-pos-member');
+        PosUser::create([
+            'pos_id' => $posA->pos_id,
+            'user_id' => $activePosMember['user']->user_id,
+            'role_id' => $activePosMember['role']->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        $activePosMemberResponse = $this->withHeaders($activePosMember['headers'])
+            ->getJson('/api/v1/pos-wallets?all=true');
+        $activePosMemberResponse->assertStatus(200)
+            ->assertJsonFragment(['wallet_id' => $walletA->wallet_id])
+            ->assertJsonMissing(['wallet_id' => $walletB->wallet_id]);
+
+        // Inactive POS memberships must not authorize wallet list access.
+        $inactivePosMember = $this->createAuthenticatedUser(RoleKey::POS_USER, 'inactive-pos-member');
+        PosUser::create([
+            'pos_id' => $posA->pos_id,
+            'user_id' => $inactivePosMember['user']->user_id,
+            'role_id' => $inactivePosMember['role']->role_id,
+            'status' => 'INACTIVE',
+        ]);
+        $inactivePosResponse = $this->withHeaders($inactivePosMember['headers'])
+            ->getJson('/api/v1/pos-wallets?all=true');
+        $inactivePosResponse->assertStatus(403);
+
         // A POS owner must not see another POS wallet on the same network.
         $response = $this->withHeaders($posOwnerA['headers'])->getJson('/api/v1/pos-wallets?all=true');
         $response->assertStatus(200)
@@ -355,6 +411,10 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'wallet_balance' => 88888.0,
             'status' => true,
         ]);
+
+        // A POS user without an owned or ACTIVE POS/network membership cannot list wallets.
+        $listResponse = $this->withHeaders($attackerPosAuth['headers'])->getJson('/api/v1/pos-wallets?all=true');
+        $listResponse->assertStatus(403);
 
         // Attacker POS attempts to view victim POS wallet
         $response = $this->withHeaders($attackerPosAuth['headers'])->getJson("/api/v1/pos-wallets/{$victimPosWallet->wallet_id}");
