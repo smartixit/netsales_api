@@ -109,7 +109,6 @@ jobs:
         id: full-phpstan
         continue-on-error: true
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
-        continue-on-error: true
 
       - name: Run Laravel tests
         id: php-tests
