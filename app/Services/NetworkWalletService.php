@@ -47,7 +47,7 @@ class NetworkWalletService
      */
     public function getWalletsForUser(array $filters, User $user): Collection|CursorPaginator
     {
-        if (!$user->isSuperAdmin()) {
+        if (! $user->isSuperAdmin()) {
             $filters['authorized_user_id'] = (int) $user->user_id;
         }
 
