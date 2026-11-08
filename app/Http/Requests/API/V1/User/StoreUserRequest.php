@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\API\V1\User;
 
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
@@ -32,7 +33,7 @@ class StoreUserRequest extends FormRequest
             'role_id' => [
                 'required',
                 'integer',
-                Rule::exists('roles', 'role_id')->whereNull('deleted_at'),
+                Rule::exists('roles', 'role_id')->whereNull('deleted_at')->where('scope', RoleScope::PLATFORM->value),
             ],
             'user_full_name' => [
                 'required',
@@ -70,7 +71,7 @@ class StoreUserRequest extends FormRequest
             ],
             'status' => [
                 'nullable',
-                Rule::enum(UserStatus::class),
+                Rule::in([UserStatus::ACTIVE->value, UserStatus::INACTIVE->value, UserStatus::PENDING->value]),
             ],
         ];
     }
