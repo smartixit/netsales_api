@@ -76,6 +76,8 @@ jobs:
         run: vendor/bin/pint --test
 
       - name: Run Larastan / PHPStan analysis
+        id: phpstan
+        continue-on-error: true
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
 
       - name: Run Laravel tests
@@ -83,8 +85,8 @@ jobs:
 
       # These checks remain mandatory, but their failures no longer hide
       # the results of the remaining PHP validation steps.
-      - name: Enforce Composer audit and PHP code-style gates
-        if: steps.composer-audit.outcome == 'failure' || steps.php-style.outcome == 'failure'
+      - name: Enforce Composer audit, PHP style, and static-analysis gates
+        if: steps.composer-audit.outcome == 'failure' || steps.php-style.outcome == 'failure' || steps.phpstan.outcome == 'failure'
         run: |
-          echo "Composer audit and/or Pint reported a required quality-gate failure."
+          echo "Composer audit, Pint, and/or PHPStan reported a required quality-gate failure."
           exit 1
