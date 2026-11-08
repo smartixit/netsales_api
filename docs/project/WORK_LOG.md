@@ -738,3 +738,15 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Root causes:** The super-admin fixture generated a UUID-suffixed network name longer than the schema's 50-character limit. The operational-role fixture assigned NETWORK_OWNER directly to users.role_id, although the schema requires platform-scoped roles in that column and tenant-scoped roles in the network_users membership table.
 - **Correction:** Shortened the generated test network name and changed the network-owner fixture to create a user with a null platform role, then attach the NETWORK_OWNER role through an active NetworkUser membership.
 - **Scope:** Test fixtures only; no production code, schema, dependency, or CI gate was weakened. Awaiting a new exact-HEAD CI run to verify the correction.
+
+
+## 2026-11-09 — Subscription API Route Authorization
+
+**Repository:** `smartixit/netsales_api`  
+**Branch:** `fix/subscription-api-permissions`
+
+- Added route-level `subscriptions.view/create/edit/delete/approve/reject` middleware to platform plan, feature catalogue, request review, provider subscription read, and extension operations.
+- Kept network request submission and operational consumption/early-activation routes outside platform permission middleware.
+- Added focused route middleware tests to assert the least-privilege mapping and preserve operational route boundaries.
+- No database schema, resource payload, financial calculation, or endpoint path changes.
+- Test execution is pending GitHub Actions; no local test run is claimed.
