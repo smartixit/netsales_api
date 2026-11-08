@@ -7,14 +7,17 @@ use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Enums\SaleType;
 use App\Enums\UserStatus;
+use App\Enums\WalletOperationType;
 use App\Http\Requests\API\V1\SaleInvoice\StoreSaleInvoiceRequest;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
+use App\Models\NetworkWalletLog;
 use App\Models\OutboxMessage;
 use App\Models\Pos;
 use App\Models\PosRepayment;
 use App\Models\PosWallet;
+use App\Models\PosWalletLog;
 use App\Models\SaleInvoice;
 use App\Models\User;
 use App\Models\UserDevice;
@@ -191,6 +194,26 @@ class Milestone4CConcurrencyAndDirectInvoiceDebtTest extends TestCase
         // محفظة نقطة البيع نزلت إلى -8,000
         $this->assertEquals(-8000.00, (float) $this->posWallet->wallet_balance);
 
+        // يجب أن ينتج عن الفاتورة قيد شبكة واحد فقط بالمبلغ المغطى فعلياً.
+        $networkLogs = NetworkWalletLog::query()
+            ->where('wallet_id', $this->networkWallet->wallet_id)
+            ->orderBy('log_id')
+            ->get();
+
+        $this->assertCount(1, $networkLogs);
+        $this->assertSame(WalletOperationType::DEPOSIT, $networkLogs->sole()->log_operation);
+        $this->assertSame('2000.00', $networkLogs->sole()->log_amount);
+
+        // ويجب أن يسجل خصم الفاتورة كاملاً من محفظة نقطة البيع مرة واحدة.
+        $posLogs = PosWalletLog::query()
+            ->where('wallet_id', $this->posWallet->wallet_id)
+            ->orderBy('log_id')
+            ->get();
+
+        $this->assertCount(1, $posLogs);
+        $this->assertSame(WalletOperationType::WITHDRAW, $posLogs->sole()->log_operation_type);
+        $this->assertSame('10000.00', $posLogs->sole()->log_amount);
+
         // الآن سداد الذمة المدينة الناتجة (8,000)
         $this->actingAs($this->networkOwner);
         $res = $this->withHeaders($this->headers)->postJson('/api/v1/pos-debts/repayments', [
@@ -215,6 +238,32 @@ class Milestone4CConcurrencyAndDirectInvoiceDebtTest extends TestCase
         $this->assertEquals(0.00, (float) $this->posWallet->wallet_balance);
         // النقد المتاح للشبكة زاد بـ 8,000 ليصبح إجمالي المقبوض نقداً 10,000
         $this->assertEquals(10000.00, (float) $this->networkWallet->wallet_balance);
+
+        // دفتر الشبكة يجب أن يعكس مصدرَي التحصيل دون أي قيد مكرر.
+        $networkLogs = NetworkWalletLog::query()
+            ->where('wallet_id', $this->networkWallet->wallet_id)
+            ->orderBy('log_id')
+            ->get();
+
+        $this->assertCount(2, $networkLogs);
+        $this->assertSame(
+            [WalletOperationType::DEPOSIT, WalletOperationType::DEPOSIT],
+            $networkLogs->pluck('log_operation')->all()
+        );
+        $this->assertSame(['2000.00', '8000.00'], $networkLogs->pluck('log_amount')->all());
+
+        // دفتر نقطة البيع: سحب إجمالي الفاتورة ثم إيداع مبلغ تسوية الدين مرة واحدة.
+        $posLogs = PosWalletLog::query()
+            ->where('wallet_id', $this->posWallet->wallet_id)
+            ->orderBy('log_id')
+            ->get();
+
+        $this->assertCount(2, $posLogs);
+        $this->assertSame(
+            [WalletOperationType::WITHDRAW, WalletOperationType::DEPOSIT],
+            $posLogs->pluck('log_operation_type')->all()
+        );
+        $this->assertSame(['10000.00', '8000.00'], $posLogs->pluck('log_amount')->all());
     }
 
     /**
