@@ -699,25 +699,24 @@ This log documents all executed tasks, code changes, and verification command ou
   - No `git reset`, `git clean`, `git checkout .`, `git commit`, or `git push` performed.
   - All pre-existing user modifications preserved.
 - **Task Status:** Milestone 7 Completed, Fully Verified, and Closed. Milestone 8 (Wallets, Credit, Debts & Repayments) identified as next authorized milestone.
+
+
 ---
 
-## [2026-11-08] Task: Direct Credit Invoice Duplicate Wallet Credit Regression
-- **Authorized Scope:** Continue the confirmed financial defect investigation for `SaleInvoiceService::createDirectInvoice()` where the same partial payment was credited twice to the network wallet.
-- **Root Cause:** The direct CREDIT branch contained two identical network-wallet `incrementBalance($paidAmount)` and `DEPOSIT` log blocks. The fix branch removes the duplicate block and retains one settlement for the amount covered by the POS positive balance.
-- **Files Changed:**
-  - `tests/Feature/Milestone4CConcurrencyAndDirectInvoiceDebtTest.php`: Extended the existing direct-credit invoice + repayment regression to assert exact wallet ledger counts, operation types, and amounts before and after repayment.
-  - `.github/workflows/ci.yml`: Composer audit now reports its failure without prematurely skipping Pint, PHPStan, and Laravel tests; a final enforcement step still fails the workflow when the audit is unsuccessful.
-- **Financial Assertions:** For a 10,000 invoice with 2,000 POS credit, network ledger must contain exactly one 2,000 DEPOSIT before repayment; after the 8,000 repayment it must contain exactly two DEPOSIT entries (2,000 and 8,000). POS ledger must contain one 10,000 WITHDRAW followed by one 8,000 DEPOSIT.
-- **Verification:** Existing GitHub Actions run `42486586682` failed at `composer audit` (11 advisories affecting 6 locked packages), so Pint, PHPStan, and PHPUnit were skipped. Repository network access from the local execution container was unavailable; the updated test suite has not yet been executed in this session. The revised workflow is intended to expose those checks on the updated pull request.
-- **Task Status:** Code and regression coverage updated on `fix/direct-invoice-credit-wallet-double-credit`; awaiting CI execution. Dependency remediation remains separate and is not included in this financial fix.
----
-
-## [2026-11-08] Task: Direct Credit Invoice Double-Credit — CI Root Cause and Regression Hardening
-- **Root cause confirmed:** `SaleInvoiceService::createDirectInvoice()` contained duplicate network-wallet increment and DEPOSIT-log blocks in the direct CREDIT path. The duplicate block is removed; the remaining settlement credits only the amount covered by the POS balance.
-- **Regression coverage:** The existing direct-invoice + repayment test now verifies exact counts, operation types, and amounts for both network and POS wallet ledgers before and after repayment.
-- **CI root cause:** The previous workflow forced `DB_CONNECTION=sqlite` and `DB_DATABASE=:memory:` but did not migrate or seed the database. The suite expects the project MySQL schema and seeded foundation records; the resulting 277 failures were dominated by missing-table errors. CI now provisions MySQL 8.0 and runs `migrate:fresh --seed` before PHPUnit.
-- **Quality gate behavior:** CI now runs Composer audit, Pint, PHPStan, and PHPUnit independently and aggregates results without hiding later failures.
-- **Formatting:** The two Pint-reported voucher policy files were adjusted; the latest HEAD run is the source of truth for confirmation.
-- **Static analysis:** The previous full PHPStan run reports broad existing issues across unrelated models, relations, controllers, and tests. The changed regression test's `$headers` property now has an explicit `array<string, string>` type. Existing project-wide issues are not suppressed.
-- **Security:** Composer audit still reports 11 advisories across 6 locked packages. Dependency upgrades are intentionally not mixed into this financial correction.
-- **Verification status:** Awaiting CI for the latest HEAD after the MySQL test-environment correction. Do not merge until the targeted financial regression passes and all required quality-gate failures are resolved.
+## [2026-11-08 19:00] Task: Platform Dashboard Overview — Real API Data Foundation
+- **Authorized Scope:** USER REQUESTED — provide real persisted backend data for the platform dashboard Overview.
+- **Backend implementation on isolated branch \`feat/platform-dashboard-overview\`:**
+  - Added \`DashboardOverviewRequest\` with strict platform-role authorization and allowlisted period validation.
+  - Added \`DashboardController\`, \`DashboardOverviewService\`, and \`DashboardOverviewResource\`.
+  - Implemented permission-aware network, POS, subscription, support, sales, and expense metrics from existing Laravel models/tables.
+  - Implemented six-month subscription trend, seven-day operational activity, provider status distribution, pending network/POS queues, expiring subscriptions, pending plan requests, and recent activity.
+  - Added feature tests for actual persisted data, support-agent least privilege, tenant-role rejection, and period validation.
+- **Integrity boundaries:**
+  - No fake/demo records or client-derived aggregates.
+  - Financial aggregates use persisted invoice/expense columns and are returned as decimal strings.
+  - No currency model or currency conversion was introduced; current schema exposes no currency dimension.
+  - Support tickets have no lifecycle status column, so no false \`open_tickets\` metric was invented.
+  - Platform role authorization is enforced by FormRequest; metric groups and audit activity are filtered by actual role permissions.
+- **Commit:** \`ceb3fb29385e97133a3074aefbaa210214b42bfc\`.
+- **Verification:** Pending execution in a PHP/Laravel environment. No Pint, PHPUnit, database, or runtime result is claimed by this GitHub-only write.
+- **Task Status:** Backend implementation committed to an isolated feature branch; integration with the Flutter Overview and runtime verification remain outstanding.
