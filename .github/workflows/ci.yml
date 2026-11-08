@@ -54,6 +54,8 @@ jobs:
         run: php artisan key:generate --force
 
       - name: Audit Composer dependencies
+        id: composer-audit
+        continue-on-error: true
         run: composer audit
 
       - name: Check PHP code style
@@ -64,3 +66,11 @@ jobs:
 
       - name: Run Laravel tests
         run: php artisan test
+
+      # Keep the security audit mandatory, but do not let existing advisories
+      # hide PHP style, static-analysis, or test results from this run.
+      - name: Fail CI when Composer audit reports vulnerabilities
+        if: steps.composer-audit.outcome == 'failure'
+        run: |
+          echo "Composer audit failed. Review the security advisories above."
+          exit 1
