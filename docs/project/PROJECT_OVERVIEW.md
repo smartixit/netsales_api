@@ -36,7 +36,7 @@ The system supports distinct business actors operating across isolated scopes:
 | **Network Accountant** | Network Scope | Audits sales invoices, reconciles POS debt collections, inspects liquidity statements. |
 | **Network User / Staff**| Network Scope | Assists in operational review of procurement requests within assigned permissions. |
 | **POS Agent / Merchant**| POS Scope | Submits wholesale procurement requests, tracks available wallet balance, monitors debt aging, submits repayments. |
-| **POS Accountant** | POS Scope | Monitors store procurement expenses, reconciles bank payments against wholesale invoices. |
+| **POS Accountant** | POS Scope | Reviews wholesale purchase invoices, outstanding debt, and repayment history for the POS tenant. |
 | **POS Staff / User** | POS Scope | Submits procurement requests on behalf of the POS agent. |
 | **Platform Super Admin**| Platform Scope | **Excluded from Mobile:** Manages SaaS subscriptions, platform licenses, and global system configurations via desktop platform. |
 
