@@ -699,3 +699,14 @@ This log documents all executed tasks, code changes, and verification command ou
   - No `git reset`, `git clean`, `git checkout .`, `git commit`, or `git push` performed.
   - All pre-existing user modifications preserved.
 - **Task Status:** Milestone 7 Completed, Fully Verified, and Closed. Milestone 8 (Wallets, Credit, Debts & Repayments) identified as next authorized milestone.
+---
+
+## [2026-11-08] Task: Direct Credit Invoice Duplicate Wallet Credit Regression
+- **Authorized Scope:** Continue the confirmed financial defect investigation for `SaleInvoiceService::createDirectInvoice()` where the same partial payment was credited twice to the network wallet.
+- **Root Cause:** The direct CREDIT branch contained two identical network-wallet `incrementBalance($paidAmount)` and `DEPOSIT` log blocks. The fix branch removes the duplicate block and retains one settlement for the amount covered by the POS positive balance.
+- **Files Changed:**
+  - `tests/Feature/Milestone4CConcurrencyAndDirectInvoiceDebtTest.php`: Extended the existing direct-credit invoice + repayment regression to assert exact wallet ledger counts, operation types, and amounts before and after repayment.
+  - `.github/workflows/ci.yml`: Composer audit now reports its failure without prematurely skipping Pint, PHPStan, and Laravel tests; a final enforcement step still fails the workflow when the audit is unsuccessful.
+- **Financial Assertions:** For a 10,000 invoice with 2,000 POS credit, network ledger must contain exactly one 2,000 DEPOSIT before repayment; after the 8,000 repayment it must contain exactly two DEPOSIT entries (2,000 and 8,000). POS ledger must contain one 10,000 WITHDRAW followed by one 8,000 DEPOSIT.
+- **Verification:** Existing GitHub Actions run `42486586682` failed at `composer audit` (11 advisories affecting 6 locked packages), so Pint, PHPStan, and PHPUnit were skipped. Repository network access from the local execution container was unavailable; the updated test suite has not yet been executed in this session. The revised workflow is intended to expose those checks on the updated pull request.
+- **Task Status:** Code and regression coverage updated on `fix/direct-invoice-credit-wallet-double-credit`; awaiting CI execution. Dependency remediation remains separate and is not included in this financial fix.
