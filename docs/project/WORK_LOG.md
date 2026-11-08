@@ -720,3 +720,12 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Commit:** \`ceb3fb29385e97133a3074aefbaa210214b42bfc\`.
 - **Verification:** Pending execution in a PHP/Laravel environment. No Pint, PHPUnit, database, or runtime result is claimed by this GitHub-only write.
 - **Task Status:** Backend implementation committed to an isolated feature branch; integration with the Flutter Overview and runtime verification remain outstanding.
+
+
+## [2026-11-08] Task: Regression Guard — Unpaid Credit Invoice Must Not Create Network Wallet Ledger Entries
+- **Base:** Current `main` at `5bf69030b9210343c4a4001c3db96fcd898fccfb`, after the previously merged API pull requests.
+- **Reason:** The main-branch feature test already verifies that a fully unpaid CREDIT invoice leaves the network wallet balance at zero. The test did not yet assert the companion ledger invariant, so an erroneous zero-netting deposit/withdraw pair could pass while the balance remained unchanged.
+- **Change:** Strengthen `VoucherRequestAndInvoicingTest::test_credit_sale_and_negative_balance_handling_when_insufficient_wallet_balance` to assert both the exact decimal balance `'0.00'` and zero rows in the network wallet's `logs()` relationship when the full 46,000 invoice is unpaid.
+- **Production behavior:** No production code, wallet settlement logic, schema, or Composer dependencies changed in this follow-up. The existing service rule credits only `$paidAmount`; with a zero POS balance and an entirely unpaid credit invoice, no network-wallet cash receipt or ledger DEPOSIT is expected.
+- **Previous CI evidence:** Run [42498855339](https://github.com/smartixit/netsales_api/actions/runs/42498855339) on the earlier merged-fix head confirmed MySQL migration/seeding, Pint (`601 files`), targeted PHPStan (`No errors`), and the direct-credit invoice regression (`1 passed, 24 assertions`). Composer audit remained blocking with 11 advisories across 6 packages. These results do not verify this follow-up test change; the new branch requires its own CI run.
+- **Task Status:** Regression assertion committed on an isolated branch from current `main`; awaiting matching CI. No dependency update or merge performed.
