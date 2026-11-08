@@ -90,3 +90,13 @@ Valid statuses are strictly:
 - **Recommendation:** Option A.
 - **Concurrency Qualification:** Any future server-side preview is strictly informational and non-binding because concurrent transactions can alter invoice balances between preview and collection. The final settlement is determined atomically inside the collection transaction under row locks.
 - **Implementation Status:** Not authorized. Remains `PROPOSED`.
+
+
+| SUB-AUTH-001 | 2026-11-09 | Enforce the seeded subscription permission matrix at Laravel route boundaries; do not rely on Flutter route guards or hidden controls. Preserve network-workspace request submission and quota operations outside platform-only permissions. | APPROVED |
+
+## SUB-AUTH-001 — Subscription API Authorization
+- Plan and feature catalogue reads require `subscriptions.view`.
+- Plan creation requires `subscriptions.create`; plan updates and feature catalogue mutations require `subscriptions.edit`; soft/force delete and plan status toggling require `subscriptions.delete`.
+- Subscription request reads require `subscriptions.view`; approval and rejection require their respective `subscriptions.approve` and `subscriptions.reject` permissions.
+- Provider subscription reads and consumption detail require `subscriptions.view`; extension requires `subscriptions.edit`.
+- Provider request submission, request cancellation, network-scoped active-subscription lookup, feature consumption, and early activation retain their operational routes and are not assigned platform subscription permissions by this change.
