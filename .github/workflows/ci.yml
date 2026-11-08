@@ -48,29 +48,63 @@ jobs:
         run: cp .env.example .env
 
       - name: Install locked dependencies
+        id: dependencies
         run: composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
 
       - name: Generate application key for tests
+        id: application-key
         run: php artisan key:generate --force
 
       - name: Audit Composer dependencies
         id: composer-audit
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: composer audit
         continue-on-error: true
 
       - name: Check PHP code style
+        id: pint
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: vendor/bin/pint --test
+        continue-on-error: true
 
       - name: Run Larastan / PHPStan analysis
+        id: phpstan
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+        continue-on-error: true
 
       - name: Run Laravel tests
+        id: phpunit
+        if: ${{ always() && steps.dependencies.outcome == 'success' && steps.application-key.outcome == 'success' }}
         run: php artisan test
+        continue-on-error: true
 
-      - name: Enforce dependency audit result
+      - name: Enforce all quality gates
         if: always()
         run: |
-          if [ "${{ steps.composer-audit.outcome }}" != "success" ]; then
-            echo "Composer security audit failed; see the audit step for existing dependency advisories."
-            exit 1
+          failed=0
+          if [ "${{ steps.dependencies.outcome }}" != "success" ]; then
+            echo "Composer dependency installation failed."
+            failed=1
           fi
+          if [ "${{ steps.application-key.outcome }}" != "success" ]; then
+            echo "Test application key generation failed."
+            failed=1
+          fi
+          if [ "${{ steps.composer-audit.outcome }}" != "success" ]; then
+            echo "Composer security audit failed; dependency advisories remain unresolved."
+            failed=1
+          fi
+          if [ "${{ steps.pint.outcome }}" != "success" ]; then
+            echo "Laravel Pint style check failed."
+            failed=1
+          fi
+          if [ "${{ steps.phpstan.outcome }}" != "success" ]; then
+            echo "Larastan / PHPStan analysis failed."
+            failed=1
+          fi
+          if [ "${{ steps.phpunit.outcome }}" != "success" ]; then
+            echo "Laravel test suite failed or could not run."
+            failed=1
+          fi
+          exit "$failed"
