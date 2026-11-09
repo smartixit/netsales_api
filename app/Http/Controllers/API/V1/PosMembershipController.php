@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Http\Resources\API\V1\RBAC\RoleResource;
 use App\Services\PosMembershipService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -28,6 +29,26 @@ class PosMembershipController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('تعذر جلب أعضاء نقطة البيع: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * عرض الأدوار المسموح بإسنادها إلى أعضاء نقطة البيع.
+     */
+    public function assignableRoles(int $posId): JsonResponse
+    {
+        try {
+            $actorId = (int) $this->currentUserId();
+            $roles = $this->membershipService->getAssignableRoles($posId, $actorId);
+
+            return $this->successResponse(
+                'تم استرجاع أدوار أعضاء نقطة البيع المسموح بها بنجاح.',
+                RoleResource::collection($roles)
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر جلب أدوار أعضاء نقطة البيع: '.$e->getMessage(), [], 422);
         }
     }
 
