@@ -172,6 +172,11 @@ class PlatformUserAdministrationSecurityTest extends TestCase
         ]);
         $session = $this->createAuthenticatedSession($admin);
 
+        $this->getJson('/api/v1/users', $session['headers'])->assertOk()->assertDontSee('Network Owner');
+        $operationalUser->delete();
+        $this->getJson('/api/v1/users/trashed', $session['headers'])->assertOk()->assertDontSee('Network Owner');
+
+        $operationalUser->restore();
         $this->getJson('/api/v1/users/'.$operationalUser->user_id, $session['headers'])->assertForbidden();
         $this->putJson('/api/v1/users/'.$operationalUser->user_id, [
             'user_full_name' => 'Attempted Cross Scope Edit',
