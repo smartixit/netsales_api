@@ -5,6 +5,10 @@ namespace Tests\Feature;
 use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Enums\UserStatus;
+use App\Models\Directorate;
+use App\Models\Governorate;
+use App\Models\Network;
+use App\Models\NetworkUser;
 use App\Models\Role;
 use App\Models\SecurityBan;
 use App\Models\User;
@@ -145,14 +149,7 @@ class PlatformUserAdministrationSecurityTest extends TestCase
 
     public function test_operational_role_cannot_access_platform_user_administration(): void
     {
-        $networkRole = Role::byKey(RoleKey::NETWORK_OWNER)->firstOrFail();
-        $operationalUser = User::query()->create([
-            'role_id' => $networkRole->role_id,
-            'user_full_name' => 'Network Owner',
-            'user_phone_number' => '77'.random_int(1000000, 9999999),
-            'user_password' => Hash::make('SecurePassword123'),
-            'status' => UserStatus::ACTIVE,
-        ]);
+        $operationalUser = $this->makeOperationalUser('Network Owner');
         $session = $this->createAuthenticatedSession($operationalUser);
 
         $this->getJson('/api/v1/users', $session['headers'])->assertForbidden();
@@ -162,14 +159,7 @@ class PlatformUserAdministrationSecurityTest extends TestCase
     public function test_platform_admin_cannot_read_or_mutate_operational_user_through_platform_routes(): void
     {
         $admin = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'Platform Admin');
-        $networkRole = Role::byKey(RoleKey::NETWORK_OWNER)->firstOrFail();
-        $operationalUser = User::query()->create([
-            'role_id' => $networkRole->role_id,
-            'user_full_name' => 'Network Owner',
-            'user_phone_number' => '77'.random_int(1000000, 9999999),
-            'user_password' => Hash::make('SecurePassword123'),
-            'status' => UserStatus::ACTIVE,
-        ]);
+        $operationalUser = $this->makeOperationalUser('Network Owner');
         $session = $this->createAuthenticatedSession($admin);
 
         $this->getJson('/api/v1/users', $session['headers'])->assertOk()->assertDontSee('Network Owner');
@@ -197,6 +187,46 @@ class PlatformUserAdministrationSecurityTest extends TestCase
             'user_full_name' => 'Network Owner',
             'deleted_at' => null,
         ]);
+    }
+
+
+    private function makeOperationalUser(string $name): User
+    {
+        $networkRole = Role::byKey(RoleKey::NETWORK_OWNER)->firstOrFail();
+        $governorate = Governorate::first()
+            ?? Governorate::query()->create(['governorate_name' => 'Platform Scope Test Governorate']);
+        $directorate = Directorate::query()->firstOrCreate(
+            [
+                'governorate_id' => $governorate->governorate_id,
+                'directorate_name' => 'Platform Scope Test Directorate',
+            ]
+        );
+
+        $user = User::query()->create([
+            'role_id' => null,
+            'user_full_name' => $name,
+            'user_phone_number' => '77'.random_int(1000000, 9999999),
+            'user_password' => Hash::make('SecurePassword123'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+
+        $network = Network::query()->create([
+            'owner_id' => $user->user_id,
+            'network_name' => 'Scope Test '.bin2hex(random_bytes(4)),
+            'network_phone_number' => '78'.random_int(1000000, 9999999),
+            'governorate_id' => $governorate->governorate_id,
+            'directorate_id' => $directorate->directorate_id,
+            'status' => 'ACTIVE',
+        ]);
+
+        NetworkUser::query()->create([
+            'network_id' => $network->network_id,
+            'user_id' => $user->user_id,
+            'role_id' => $networkRole->role_id,
+            'status' => 'ACTIVE',
+        ]);
+
+        return $user;
     }
 
     private function makePlatformUser(
