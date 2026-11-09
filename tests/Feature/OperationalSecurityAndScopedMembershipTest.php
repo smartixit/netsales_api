@@ -403,6 +403,23 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'role_id' => $networkAccountantRole->role_id,
         ]);
 
+        $changeCandidate = User::create([
+            'role_id' => null,
+            'user_full_name' => 'Network Role Change Candidate '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+        $this->withHeaders($ownerAuth['headers'])
+            ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
+                'user_phone_number' => $changeCandidate->user_phone_number,
+                'role_id' => $networkUserRole->role_id,
+            ])->assertCreated();
+        $this->withHeaders($ownerAuth['headers'])
+            ->putJson("/api/v1/networks/{$this->networkA->network_id}/members/{$changeCandidate->user_id}/role", [
+                'role_id' => $networkAccountantRole->role_id,
+            ])->assertUnprocessable();
+
         $this->assertDatabaseHas('roles', ['role_id' => $networkUserRole->role_id]);
     }
 
@@ -442,6 +459,23 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'pos_id' => $this->posA->pos_id,
             'role_id' => $posAccountantRole->role_id,
         ]);
+
+        $changeCandidate = User::create([
+            'role_id' => null,
+            'user_full_name' => 'POS Role Change Candidate '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+        $this->withHeaders($ownerAuth['headers'])
+            ->postJson("/api/v1/pos/{$this->posA->pos_id}/members", [
+                'user_phone_number' => $changeCandidate->user_phone_number,
+                'role_id' => $posUserRole->role_id,
+            ])->assertCreated();
+        $this->withHeaders($ownerAuth['headers'])
+            ->putJson("/api/v1/pos/{$this->posA->pos_id}/members/{$changeCandidate->user_id}/role", [
+                'role_id' => $posAccountantRole->role_id,
+            ])->assertUnprocessable();
 
         $this->assertDatabaseHas('roles', ['role_id' => $posUserRole->role_id]);
     }
