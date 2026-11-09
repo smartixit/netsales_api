@@ -1,16 +1,16 @@
 <?php
 
-namespace App\\Http\\Middleware;
+namespace App\Http\Middleware;
 
-use App\\Enums\\RoleScope;
-use App\\Models\\SecurityBan;
-use App\\Models\\User;
-use App\\Models\\UserDevice;
-use App\\Models\\UserSession;
+use App\Enums\RoleScope;
+use App\Models\SecurityBan;
+use App\Models\User;
+use App\Models\UserDevice;
+use App\Models\UserSession;
 use Closure;
-use Illuminate\\Auth\\Access\\AuthorizationException;
-use Illuminate\\Http\\Request;
-use Symfony\\Component\\HttpFoundation\\Response;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class EnsurePlatformUserScope
 {
