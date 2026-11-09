@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Http\Resources\API\V1\RBAC\RoleResource;
 use App\Services\NetworkMembershipService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -28,6 +29,26 @@ class NetworkMembershipController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('تعذر جلب أعضاء الشبكة: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * عرض الأدوار المسموح بإسنادها إلى أعضاء الشبكة.
+     */
+    public function assignableRoles(int $networkId): JsonResponse
+    {
+        try {
+            $actorId = (int) $this->currentUserId();
+            $roles = $this->membershipService->getAssignableRoles($networkId, $actorId);
+
+            return $this->successResponse(
+                'تم استرجاع أدوار أعضاء الشبكة المسموح بها بنجاح.',
+                RoleResource::collection($roles)
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر جلب أدوار أعضاء الشبكة: '.$e->getMessage(), [], 422);
         }
     }
 
