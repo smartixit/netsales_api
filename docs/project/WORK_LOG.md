@@ -757,3 +757,10 @@ This log documents all executed tasks, code changes, and verification command ou
 - Membership list responses now include an authoritative is_owner flag derived from the tenant owner_id.
 - Added regression coverage for exposed role choices and attempts to assign elevated roles.
 - Verification status: Laravel CI for PR #10 is running; no green result is claimed yet.
+
+## 2026-11-09 — Network and POS team management milestone
+- API PR #10: added tenant-authorized assignable-role endpoints, least-privilege role allowlists, authoritative owner markers, and privilege-escalation regression tests.
+- Flutter PR #20: added shared Clean Architecture membership module, Network/POS workspace team screens, member add/change-role/activate/suspend/remove actions, tenant selection and stale-response protection.
+- Role assignment currently permits only NETWORK_USER / POS_USER. Accountant roles are intentionally not assignable pending verification that their permission matrices are strictly read-only.
+- The Flutter repository delegates canonical work logging to this API repository; no duplicate local work log was created.
+- Verification: exact-head CI is pending. No claim of analyzer/test success or visual QA is made. Merge API PR #10 before Flutter PR #20 because the latter consumes the new role and owner-marker API contract.
