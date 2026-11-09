@@ -25,10 +25,16 @@ class NetworkMembershipService
     {
         $this->authorizeActor($networkId, $actorId);
 
+        $ownerId = (int) Network::query()->whereKey($networkId)->value('owner_id');
+
         return NetworkUser::where('network_id', $networkId)
             ->with(['user', 'role'])
             ->orderBy('id', 'asc')
-            ->get();
+            ->get()
+            ->each(fn (NetworkUser $member) => $member->setAttribute(
+                'is_owner',
+                (int) $member->user_id === $ownerId
+            ));
     }
 
     /**
