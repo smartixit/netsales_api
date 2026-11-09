@@ -29,7 +29,7 @@ interface UserRepositoryInterface extends BaseRepositoryInterface
     /**
      * Retrieve only soft-deleted platform-scope users.
      */
-    public function getPlatformTrashed(int $perPage = 15): CursorPaginator;
+    public function getPlatformTrashed(int $perPage = 15, ?string $search = null): CursorPaginator;
 
     /**
      * البحث عن مستخدم بواسطة رقم الهاتف مع إمكانية القفل المتشائم (Pessimistic Lock).
