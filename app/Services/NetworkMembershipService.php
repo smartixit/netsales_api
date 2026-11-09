@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * خدمة إدارة عضويات شبكات الإنترنت المقيدة بنطاق المنشأة (Scoped Network Memberships).
+ * خدمة إدارة عضويات شبكات الإنترنت المقيدة بنطاق الشبكة (Scoped Network Memberships).
  */
 class NetworkMembershipService
 {
@@ -125,7 +125,7 @@ class NetworkMembershipService
             $network = Network::findOrFail($networkId);
             if ((int) $network->owner_id === $userId) {
                 throw ValidationException::withMessages([
-                    'role_id' => ['لا يمكن تغيير دور مالك المنشأة الرئيسي للشبكة.'],
+                    'role_id' => ['لا يمكن تغيير دور مالك الشبكة الرئيسي للشبكة.'],
                 ]);
             }
 
@@ -179,7 +179,7 @@ class NetworkMembershipService
             $network = Network::findOrFail($networkId);
             if ((int) $network->owner_id === $userId && $newStatus !== 'ACTIVE') {
                 throw ValidationException::withMessages([
-                    'status' => ['لا يمكن تجميد أو إيقاف عضوية مالك المنشأة الرئيسي.'],
+                    'status' => ['لا يمكن تجميد أو إيقاف عضوية مالك الشبكة الرئيسي.'],
                 ]);
             }
 
@@ -225,7 +225,7 @@ class NetworkMembershipService
             $network = Network::findOrFail($networkId);
             if ((int) $network->owner_id === $userId) {
                 throw ValidationException::withMessages([
-                    'user_id' => ['لا يمكن إزالة أو حذف عضوية مالك المنشأة الرئيسي من الشبكة.'],
+                    'user_id' => ['لا يمكن إزالة أو حذف عضوية مالك الشبكة الرئيسي من الشبكة.'],
                 ]);
             }
 

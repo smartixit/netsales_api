@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * خدمة إدارة عضويات نقاط البيع والوكلاء المقيدة بنطاق المنشأة (Scoped POS Memberships).
+ * خدمة إدارة عضويات نقاط البيع والوكلاء المقيدة بنطاق الشبكة (Scoped POS Memberships).
  */
 class PosMembershipService
 {
