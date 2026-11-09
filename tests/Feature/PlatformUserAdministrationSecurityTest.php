@@ -104,7 +104,10 @@ class PlatformUserAdministrationSecurityTest extends TestCase
         $this->getJson('/api/v1/users/'.$target->user_id, $session['headers'])
             ->assertOk()
             ->assertJsonPath('data.devices.0.status', 'ACTIVE')
-            ->assertJsonPath('data.devices.0.security_bans', []);
+            ->assertJsonCount(1, 'data.devices.0.security_bans')
+            ->assertJsonPath('data.devices.0.security_bans.0.ban_id', $banId)
+            ->assertJsonPath('data.devices.0.security_bans.0.device_id', $device->device_id)
+            ->assertJsonPath('data.devices.0.security_bans.0.end_at', fn ($value) => $value !== null);
     }
 
     public function test_accountant_without_users_view_cannot_read_users(): void

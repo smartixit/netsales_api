@@ -13,6 +13,13 @@ use Illuminate\Support\Facades\RateLimiter;
 
 abstract class TestCase extends BaseTestCase
 {
+    /**
+     * Keep reference data available after RefreshDatabase recreates the schema.
+     *
+     * @var bool
+     */
+    protected $seed = true;
+
     protected function setUp(): void
     {
         parent::setUp();

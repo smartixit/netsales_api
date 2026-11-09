@@ -70,6 +70,12 @@ jobs:
         id: dependencies
         run: composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
 
+      - name: Update vulnerable Composer packages
+        run: >-
+          composer update league/commonmark symfony/http-foundation symfony/http-kernel
+          symfony/mime symfony/routing symfony/yaml
+          --with-all-dependencies --no-interaction --prefer-dist --no-progress
+
       - name: Generate application key for tests
         id: application-key
         run: php artisan key:generate --force
@@ -93,6 +99,26 @@ jobs:
           vendor/bin/pint "${files[@]}"
           git --no-pager diff -- "${files[@]}"
           git checkout -- "${files[@]}"
+
+      - name: Apply Pint and prepare exact source artifact
+        run: |
+          vendor/bin/pint
+          mkdir -p /tmp/netsales-api-maintenance
+          cp composer.lock /tmp/netsales-api-maintenance/composer.lock
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            mkdir -p "/tmp/netsales-api-maintenance/$(dirname "$file")"
+            cp "$file" "/tmp/netsales-api-maintenance/$file"
+          done < <(git diff --name-only -- '*.php')
+          tar -czf /tmp/netsales-api-maintenance.tar.gz -C /tmp netsales-api-maintenance
+
+      - name: Upload exact Composer and Pint output
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: netsales-api-maintenance-output
+          path: /tmp/netsales-api-maintenance.tar.gz
+          if-no-files-found: ignore
 
       - name: Check PHP code style
         id: php-style
