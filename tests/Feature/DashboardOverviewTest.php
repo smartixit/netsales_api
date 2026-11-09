@@ -77,9 +77,28 @@ class DashboardOverviewTest extends TestCase
                 'route_key' => 'provider_subscriptions',
             ]);
 
-        $this->assertCount(6, $response->json('data.charts.subscription_trend'));
-        $this->assertCount(7, $response->json('data.charts.operational_activity'));
+        $this->assertCount(30, $response->json('data.charts.subscription_trend'));
+        $this->assertCount(30, $response->json('data.charts.operational_activity'));
         $this->assertArrayHasKey('generated_at', $response->json('data'));
+    }
+
+    public function test_chart_granularity_tracks_selected_dashboard_period(): void
+    {
+        $admin = User::query()
+            ->whereHas('role', fn ($query) => $query->where('role_key', RoleKey::SUPER_ADMIN->value))
+            ->firstOrFail();
+
+        $headers = $this->createAuthenticatedSession($admin)['headers'];
+
+        $weekly = $this->getJson('/api/v1/dashboard/overview?period=90d', $headers);
+        $weekly->assertOk();
+        $this->assertCount(13, $weekly->json('data.charts.subscription_trend'));
+        $this->assertCount(13, $weekly->json('data.charts.operational_activity'));
+
+        $monthly = $this->getJson('/api/v1/dashboard/overview?period=12m', $headers);
+        $monthly->assertOk();
+        $this->assertCount(12, $monthly->json('data.charts.subscription_trend'));
+        $this->assertCount(12, $monthly->json('data.charts.operational_activity'));
     }
 
     public function test_support_agent_receives_only_metrics_allowed_by_its_role(): void

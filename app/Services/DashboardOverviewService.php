@@ -39,6 +39,7 @@ class DashboardOverviewService
         $now = Carbon::now(self::TIMEZONE);
         $periodDays = $this->periodDays($period);
         $periodStart = $now->copy()->subDays($periodDays - 1)->startOfDay();
+        $bucket = $this->periodBucket($period);
         $permissions = array_fill_keys($user->getAllPermissions(), true);
         $can = static fn (string $permission): bool => $user->isSuperAdmin()
             || isset($permissions[$permission]);
@@ -125,7 +126,7 @@ class DashboardOverviewService
                 'expiring_within_7_days' => $expiringSubscriptions,
             ];
 
-            $charts['subscription_trend'] = $this->subscriptionTrend($now);
+            $charts['subscription_trend'] = $this->subscriptionTrend($now, $period, $periodStart, $bucket);
 
             $expiringItems = $this->expiringSubscriptionQuery($now)
                 ->with(['network:network_id,network_name', 'plan:plan_id,plan_name'])
@@ -223,10 +224,10 @@ class DashboardOverviewService
         }
 
         if ($can('system_logs.view')) {
-            $charts['operational_activity'] = $this->systemActivityTrend($now);
+            $charts['operational_activity'] = $this->systemActivityTrend($now, $period, $periodStart, $bucket);
             $recentActivity = $this->recentSystemActivity();
         } elseif ($can('support.view')) {
-            $charts['operational_activity'] = $this->supportActivityTrend($now);
+            $charts['operational_activity'] = $this->supportActivityTrend($now, $period, $periodStart, $bucket);
             $recentActivity = $this->recentSupportActivity();
         }
 
@@ -348,83 +349,130 @@ class DashboardOverviewService
     }
 
     /**
+     * Select chart granularity from the same period used by the KPI queries.
+     */
+    private function periodBucket(string $period): string
+    {
+        return match ($period) {
+            '7d', '30d' => 'day',
+            '90d' => 'week',
+            '12m' => 'month',
+            default => 'day',
+        };
+    }
+
+    private function bucketSqlFormat(string $bucket): string
+    {
+        return match ($bucket) {
+            'week' => '%x-W%v',
+            'month' => '%Y-%m',
+            default => '%Y-%m-%d',
+        };
+    }
+
+    /**
      * @return array<int, array{period: string, value: int}>
      */
-    private function subscriptionTrend(Carbon $now): array
-    {
-        $firstMonth = $now->copy()->startOfMonth()->subMonths(5);
+    private function subscriptionTrend(
+        Carbon $now,
+        string $period,
+        Carbon $periodStart,
+        string $bucket
+    ): array {
+        $format = $this->bucketSqlFormat($bucket);
         $rows = ProviderSubscription::query()
-            ->whereBetween('subscription_start_date', [$firstMonth, $now])
-            ->selectRaw("DATE_FORMAT(subscription_start_date, '%Y-%m') as period, COUNT(*) as total")
-            ->groupBy('period')
-            ->orderBy('period')
-            ->pluck('total', 'period');
+            ->whereBetween('subscription_start_date', [$periodStart, $now])
+            ->selectRaw("DATE_FORMAT(subscription_start_date, '{$format}') as bucket, COUNT(*) as total")
+            ->groupBy('bucket')
+            ->orderBy('bucket')
+            ->pluck('total', 'bucket');
 
-        $trend = [];
-
-        for ($offset = 0; $offset < 6; $offset++) {
-            $key = $firstMonth->copy()->addMonths($offset)->format('Y-m');
-
-            $trend[] = [
-                'period' => $key,
-                'value' => (int) ($rows[$key] ?? 0),
-            ];
-        }
-
-        return $trend;
+        return $this->timeSeries($rows->all(), $now, $period, $bucket, 'period');
     }
 
     /**
      * @return array<int, array{date: string, value: int}>
      */
-    private function systemActivityTrend(Carbon $now): array
-    {
-        $start = $now->copy()->subDays(6)->startOfDay();
+    private function systemActivityTrend(
+        Carbon $now,
+        string $period,
+        Carbon $periodStart,
+        string $bucket
+    ): array {
+        $format = $this->bucketSqlFormat($bucket);
         $rows = SystemLog::query()
-            ->whereBetween('log_date', [$start, $now])
-            ->selectRaw('DATE(log_date) as bucket, COUNT(*) as total')
+            ->whereBetween('log_date', [$periodStart, $now])
+            ->selectRaw("DATE_FORMAT(log_date, '{$format}') as bucket, COUNT(*) as total")
             ->groupBy('bucket')
             ->orderBy('bucket')
             ->pluck('total', 'bucket');
 
-        return $this->dailySeries($rows->all(), $now);
+        return $this->timeSeries($rows->all(), $now, $period, $bucket, 'date');
     }
 
     /**
      * @return array<int, array{date: string, value: int}>
      */
-    private function supportActivityTrend(Carbon $now): array
-    {
-        $start = $now->copy()->subDays(6)->startOfDay();
+    private function supportActivityTrend(
+        Carbon $now,
+        string $period,
+        Carbon $periodStart,
+        string $bucket
+    ): array {
+        $format = $this->bucketSqlFormat($bucket);
         $rows = SupportTicket::query()
-            ->whereBetween('created_at', [$start, $now])
-            ->selectRaw('DATE(created_at) as bucket, COUNT(*) as total')
+            ->whereBetween('created_at', [$periodStart, $now])
+            ->selectRaw("DATE_FORMAT(created_at, '{$format}') as bucket, COUNT(*) as total")
             ->groupBy('bucket')
             ->orderBy('bucket')
             ->pluck('total', 'bucket');
 
-        return $this->dailySeries($rows->all(), $now);
+        return $this->timeSeries($rows->all(), $now, $period, $bucket, 'date');
     }
 
     /**
+     * Fill empty buckets so charts keep a stable, honest time axis.
+     *
      * @param  array<string, int|string>  $counts
-     * @return array<int, array{date: string, value: int}>
+     * @return array<int, array{period?: string, date?: string, value: int}>
      */
-    private function dailySeries(array $counts, Carbon $now): array
-    {
-        $firstDay = $now->copy()->subDays(6)->startOfDay();
-        $series = [];
+    private function timeSeries(
+        array $counts,
+        Carbon $now,
+        string $period,
+        string $bucket,
+        string $labelKey
+    ): array {
+        $keys = [];
 
-        for ($offset = 0; $offset < 7; $offset++) {
-            $key = $firstDay->copy()->addDays($offset)->toDateString();
+        if ($bucket === 'day') {
+            $days = $period === '7d' ? 7 : 30;
+            $firstDay = $now->copy()->startOfDay()->subDays($days - 1);
 
-            $series[] = [
-                'date' => $key,
-                'value' => (int) ($counts[$key] ?? 0),
-            ];
+            for ($offset = 0; $offset < $days; $offset++) {
+                $keys[] = $firstDay->copy()->addDays($offset)->toDateString();
+            }
+        } elseif ($bucket === 'week') {
+            $firstWeek = $now->copy()->startOfWeek(Carbon::MONDAY);
+
+            for ($offset = 12; $offset >= 0; $offset--) {
+                $keys[] = $firstWeek->copy()->subWeeks($offset)->format('o-\\WW');
+            }
+        } else {
+            $firstMonth = $now->copy()->startOfMonth()->subMonths(11);
+
+            for ($offset = 0; $offset < 12; $offset++) {
+                $keys[] = $firstMonth->copy()->addMonths($offset)->format('Y-m');
+            }
         }
 
-        return $series;
+        return array_map(
+            static fn (string $key): array => [
+                $labelKey => $key,
+                'value' => (int) ($counts[$key] ?? 0),
+            ],
+            $keys
+        );
     }
 
     /**
