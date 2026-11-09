@@ -80,6 +80,9 @@ class UserService
         }
 
         return DB::transaction(function () use ($data, $avatar) {
+            if (isset($data['role_id']) && $this->platformAdminContinuityService->isSuperAdminRoleId((int) $data['role_id'])) {
+                $this->platformAdminContinuityService->lockSuperAdminRole();
+            }
             if ($avatar) {
                 $data['user_profile_logo'] = $this->fileUploadService->uploadProfilePicture($avatar, 'users/avatars');
             }
@@ -267,6 +270,9 @@ class UserService
         return DB::transaction(function () use ($ids) {
             $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
             $this->platformAdminContinuityService->assertBulkMutationIsSafe($adminRole, $ids);
+            foreach ($ids as $id) {
+                $this->sessionValidatorService->invalidateAllUserSessions((int) $id);
+            }
             return $this->userRepository->bulkDelete($ids);
         });
     }
@@ -293,6 +299,9 @@ class UserService
         return DB::transaction(function () use ($ids) {
             $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
             $this->platformAdminContinuityService->assertBulkMutationIsSafe($adminRole, $ids);
+            foreach ($ids as $id) {
+                $this->sessionValidatorService->invalidateAllUserSessions((int) $id);
+            }
             return $this->userRepository->bulkForceDelete($ids);
         });
     }
