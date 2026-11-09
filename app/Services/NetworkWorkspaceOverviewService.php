@@ -113,8 +113,8 @@ class NetworkWorkspaceOverviewService
                 ->whereNull('deleted_at')
                 ->selectRaw(
                     'COUNT(*) as total,
-                    COALESCE(SUM(CASE WHEN network_pos.status = 1 THEN 1 ELSE 0 END), 0) as active,
-                    COALESCE(SUM(CASE WHEN network_pos.status = 0 THEN 1 ELSE 0 END), 0) as inactive'
+                    COALESCE(SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END), 0) as active,
+                    COALESCE(SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END), 0) as inactive'
                 )
                 ->first();
 
