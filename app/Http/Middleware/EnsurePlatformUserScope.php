@@ -48,6 +48,10 @@ class EnsurePlatformUserScope
             return User::withTrashed()->with('role')->findOrFail((int) $routeId);
         }
 
+        if ($request->is('api/v1/users/*/sessions') || $request->is('api/v1/users/*/devices')) {
+            return User::withTrashed()->with('role')->findOrFail((int) $routeId);
+        }
+
         if ($request->is('api/v1/security/ban-user')) {
             return User::withTrashed()->with('role')->findOrFail((int) $request->input('user_id'));
         }
