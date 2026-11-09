@@ -68,7 +68,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'idempotency' => IdempotencyMiddleware::class,
             'operational.scope' => EnsureOperationalWorkspaceScope::class,
             'platform.user.scope' => EnsurePlatformUserScope::class,
-            'operational.scope' => EnsureOperationalWorkspaceScope::class,
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {
