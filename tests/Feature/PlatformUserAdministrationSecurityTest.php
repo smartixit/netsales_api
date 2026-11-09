@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Models\UserDevice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class PlatformUserAdministrationSecurityTest extends TestCase
@@ -200,7 +201,7 @@ class PlatformUserAdministrationSecurityTest extends TestCase
         $this->assertSame(UserStatus::ACTIVE, $freshAdmin->status);
         $this->assertNull($freshAdmin->deleted_at);
         try {
-            app(\\App\\Services\\PlatformAdminContinuityService::class)->assertMutationIsSafe(
+            app(\App\Services\PlatformAdminContinuityService::class)->assertMutationIsSafe(
                 $adminRole,
                 $freshAdmin,
                 nextStatus: UserStatus::INACTIVE,
