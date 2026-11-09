@@ -33,7 +33,8 @@ class UserService
         protected FileUploadService $fileUploadService,
         protected SessionValidatorService $sessionValidatorService,
         protected NetworkService $networkService,
-        protected PosService $posService,\n        protected PlatformAdminContinuityService $platformAdminContinuityService,
+        protected PosService $posService,
+        protected PlatformAdminContinuityService $platformAdminContinuityService,
     ) {}
 
     /**
@@ -120,7 +121,11 @@ class UserService
             $data = $request;
         }
 
-        return DB::transaction(function () use ($user, $data, $avatar) {\n            if (isset($data['role_id']) && (int) $data['role_id'] !== (int) $user->role_id) {\n                $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();\n                $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, (int) $data['role_id']);\n            }
+        return DB::transaction(function () use ($user, $data, $avatar) {
+            if (isset($data['role_id']) && (int) $data['role_id'] !== (int) $user->role_id) {
+                $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
+                $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, (int) $data['role_id']);
+            }
             if ($avatar) {
                 $data['user_profile_logo'] = $this->fileUploadService->replaceFile(
                     $avatar,
@@ -168,7 +173,9 @@ class UserService
             ]);
         }
 
-        return DB::transaction(function () use ($user, $userId, $status) {\n            $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();\n            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, nextStatus: $status);
+        return DB::transaction(function () use ($user, $userId, $status) {
+            $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
+            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, nextStatus: $status);
             $oldStatus = $user->status instanceof UserStatus ? $user->status->value : (string) $user->status;
             $this->userRepository->setStatus($userId, $status);
 
