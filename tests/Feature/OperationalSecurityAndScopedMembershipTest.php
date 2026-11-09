@@ -381,9 +381,17 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $this->assertSame('NETWORK_USER', $roles->json('data.0.role_key'));
 
         foreach ([$networkAccountantRole, $networkOwnerRole, $platformRole] as $role) {
+            $candidate = User::create([
+                'role_id' => null,
+                'user_full_name' => 'Rejected Network Staff '.uniqid(),
+                'user_phone_number' => '70'.rand(1000000, 9999999),
+                'user_password' => bcrypt('password'),
+                'status' => UserStatus::ACTIVE,
+            ]);
+
             $response = $this->withHeaders($ownerAuth['headers'])
                 ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
-                    'user_phone_number' => '70'.rand(1000000, 9999999),
+                    'user_phone_number' => $candidate->user_phone_number,
                     'role_id' => $role->role_id,
                 ]);
 
@@ -413,9 +421,17 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             ->assertJsonPath('data.0.role_key', 'POS_USER');
 
         foreach ([$posAccountantRole, $posAgentRole, $platformRole] as $role) {
+            $candidate = User::create([
+                'role_id' => null,
+                'user_full_name' => 'Rejected POS Staff '.uniqid(),
+                'user_phone_number' => '70'.rand(1000000, 9999999),
+                'user_password' => bcrypt('password'),
+                'status' => UserStatus::ACTIVE,
+            ]);
+
             $response = $this->withHeaders($ownerAuth['headers'])
                 ->postJson("/api/v1/pos/{$this->posA->pos_id}/members", [
-                    'user_phone_number' => '70'.rand(1000000, 9999999),
+                    'user_phone_number' => $candidate->user_phone_number,
                     'role_id' => $role->role_id,
                 ]);
 
