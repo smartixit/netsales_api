@@ -4,6 +4,7 @@ namespace App\Http\Resources\API\V1\User;
 
 use App\Enums\DeviceType;
 use App\Enums\UserDeviceStatus;
+use App\Http\Resources\API\V1\System\SecurityBanResource;
 use App\Models\UserDevice;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -41,6 +42,7 @@ class UserDeviceResource extends JsonResource
 
             // Eager Loaded Relationships
             'user' => $this->whenLoaded('user', fn () => new UserResource($this->user)),
+            'security_bans' => $this->whenLoaded('securityBans', fn () => SecurityBanResource::collection($this->securityBans)),
         ];
     }
 }
