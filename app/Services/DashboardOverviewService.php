@@ -455,10 +455,10 @@ class DashboardOverviewService
                 $keys[] = $firstDay->copy()->addDays($offset)->toDateString();
             }
         } elseif ($bucket === 'week') {
-            $firstWeek = $now->copy()->startOfWeek(Carbon::MONDAY);
+            $firstWeek = $now->copy()->subDays(89)->startOfWeek(Carbon::MONDAY);
 
-            for ($offset = 12; $offset >= 0; $offset--) {
-                $keys[] = $firstWeek->copy()->subWeeks($offset)->format('o-\\WW');
+            for ($offset = 0; $offset < 13; $offset++) {
+                $keys[] = $firstWeek->copy()->addWeeks($offset)->format('o-\\WW');
             }
         } else {
             $firstMonth = $now->copy()->startOfMonth()->subMonths(11);
