@@ -4,7 +4,6 @@ namespace App\Http\Requests\API\V1\Network;
 
 use App\Models\Network;
 use App\Models\NetworkUser;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;

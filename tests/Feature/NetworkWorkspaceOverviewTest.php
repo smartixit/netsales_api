@@ -12,6 +12,7 @@ use App\Models\Expense;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
+use App\Models\NetworkUser;
 use App\Models\Pos;
 use App\Models\Request as ProcurementRequest;
 use App\Models\Role;
@@ -31,7 +32,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
             ->firstOrFail();
 
         $owner = User::create([
-            'role_id' => $ownerRole->role_id,
+            'role_id' => null,
             'user_full_name' => 'Network Overview Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
             'user_password' => 'password',
@@ -45,6 +46,14 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => NetworkStatus::ACTIVE,
+        ]);
+
+        NetworkUser::create([
+            'network_id' => $network->network_id,
+            'user_id' => $owner->user_id,
+            'role_id' => $ownerRole->role_id,
+            'status' => 'ACTIVE',
+            'last_event_seq' => 1,
         ]);
 
         $otherOwner = User::create([
@@ -62,6 +71,14 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => NetworkStatus::ACTIVE,
+        ]);
+
+        NetworkUser::create([
+            'network_id' => $otherNetwork->network_id,
+            'user_id' => $otherOwner->user_id,
+            'role_id' => $ownerRole->role_id,
+            'status' => 'ACTIVE',
+            'last_event_seq' => 1,
         ]);
 
         $activePos = Pos::create([
@@ -203,7 +220,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
             ->firstOrFail();
 
         $owner = User::create([
-            'role_id' => $role->role_id,
+            'role_id' => null,
             'user_full_name' => 'Network Period Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
             'user_password' => 'password',
@@ -260,7 +277,15 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'status' => NetworkStatus::ACTIVE,
         ]);
 
-        \App\Models\NetworkUser::create([
+        NetworkUser::create([
+            'network_id' => $network->network_id,
+            'user_id' => $owner->user_id,
+            'role_id' => $ownerRole->role_id,
+            'status' => 'ACTIVE',
+            'last_event_seq' => 1,
+        ]);
+
+        NetworkUser::create([
             'network_id' => $network->network_id,
             'user_id' => $member->user_id,
             'role_id' => $memberRole->role_id,

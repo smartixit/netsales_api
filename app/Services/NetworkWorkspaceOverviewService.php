@@ -2,14 +2,11 @@
 
 namespace App\Services;
 
-use App\Enums\NetworkStatus;
 use App\Enums\RequestStatus;
 use App\Enums\SaleType;
 use App\Models\Expense;
 use App\Models\Network;
-use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
-use App\Models\Pos;
 use App\Models\Request as ProcurementRequest;
 use App\Models\SaleInvoice;
 use App\Models\User;
@@ -38,7 +35,9 @@ class NetworkWorkspaceOverviewService
 
         if ($can('pos.view')) {
             $links = DB::table('network_pos')
-                ->where('network_id', $networkId)
+                ->join('pos', 'pos.pos_id', '=', 'network_pos.pos_id')
+                ->whereNull('pos.deleted_at')
+                ->where('network_pos.network_id', $networkId)
                 ->selectRaw(
                     'COUNT(*) as total,
                     COALESCE(SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END), 0) as active,
