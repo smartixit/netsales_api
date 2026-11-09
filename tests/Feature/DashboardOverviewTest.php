@@ -94,11 +94,14 @@ class DashboardOverviewTest extends TestCase
         $weekly->assertOk();
         $this->assertCount(13, $weekly->json('data.charts.subscription_trend'));
         $this->assertCount(13, $weekly->json('data.charts.operational_activity'));
+        $this->assertSame('90d', $weekly->json('data.period.key'));
 
         $monthly = $this->getJson('/api/v1/dashboard/overview?period=12m', $headers);
         $monthly->assertOk();
         $this->assertCount(12, $monthly->json('data.charts.subscription_trend'));
         $this->assertCount(12, $monthly->json('data.charts.operational_activity'));
+        $this->assertSame('12m', $monthly->json('data.period.key'));
+        $this->assertSame(12, count(array_unique(array_column($monthly->json('data.charts.subscription_trend'), 'period'))));
     }
 
     public function test_support_agent_receives_only_metrics_allowed_by_its_role(): void

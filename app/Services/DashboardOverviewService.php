@@ -38,7 +38,9 @@ class DashboardOverviewService
     {
         $now = Carbon::now(self::TIMEZONE);
         $periodDays = $this->periodDays($period);
-        $periodStart = $now->copy()->subDays($periodDays - 1)->startOfDay();
+        $periodStart = $period === '12m'
+            ? $now->copy()->startOfMonth()->subMonths(11)
+            : $now->copy()->subDays($periodDays - 1)->startOfDay();
         $bucket = $this->periodBucket($period);
         $permissions = array_fill_keys($user->getAllPermissions(), true);
         $can = static fn (string $permission): bool => $user->isSuperAdmin()
@@ -236,7 +238,7 @@ class DashboardOverviewService
             'timezone' => self::TIMEZONE,
             'period' => [
                 'key' => $period,
-                'days' => $periodDays,
+                'days' => $periodStart->diffInDays($now) + 1,
                 'from' => $periodStart->toIso8601String(),
                 'to' => $now->toIso8601String(),
             ],
