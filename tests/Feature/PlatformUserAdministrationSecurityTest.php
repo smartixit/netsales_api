@@ -196,6 +196,10 @@ class PlatformUserAdministrationSecurityTest extends TestCase
     {
         $admin = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'Only Platform Admin');
         $adminRole = Role::byKey(RoleKey::SUPER_ADMIN)->firstOrFail();
+        User::query()
+            ->where('role_id', $adminRole->role_id)
+            ->where('user_id', '!=', $admin->user_id)
+            ->update(['status' => UserStatus::INACTIVE->value]);
         $freshAdmin = $admin->fresh();
         $this->assertSame((int) $adminRole->role_id, (int) $freshAdmin->role_id);
         $this->assertSame(UserStatus::ACTIVE, $freshAdmin->status);
