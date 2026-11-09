@@ -1,0 +1,63 @@
+<?php
+
+namespace App\\Http\\Middleware;
+
+use App\\Enums\\RoleScope;
+use App\\Models\\SecurityBan;
+use App\\Models\\User;
+use App\\Models\\UserDevice;
+use App\\Models\\UserSession;
+use Closure;
+use Illuminate\\Auth\\Access\\AuthorizationException;
+use Illuminate\\Http\\Request;
+use Symfony\\Component\\HttpFoundation\\Response;
+
+class EnsurePlatformUserScope
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $actor = $request->user();
+
+        if (! $actor || $actor->role?->scope !== RoleScope::PLATFORM) {
+            throw new AuthorizationException('هذا الإجراء متاح لمستخدمي نطاق المنصة فقط.');
+        }
+
+        $target = $this->resolveTargetUser($request);
+
+        if ($target !== null && $target->role?->scope !== RoleScope::PLATFORM) {
+            throw new AuthorizationException('لا يمكن إدارة حساب خارج نطاق المنصة من لوحة التحكم.');
+        }
+
+        return $next($request);
+    }
+
+    private function resolveTargetUser(Request $request): ?User
+    {
+        $routeId = $request->route('id');
+
+        if ($request->routeIs('api.v1.users.*') && $routeId !== null) {
+            return User::withTrashed()->with('role')->findOrFail((int) $routeId);
+        }
+
+        if ($request->is('api/v1/security/ban-user')) {
+            return User::withTrashed()->with('role')->findOrFail((int) $request->input('user_id'));
+        }
+
+        if ($request->is('api/v1/security/ban-device')) {
+            $device = UserDevice::withTrashed()->with('user.role')->findOrFail((int) $request->input('device_id'));
+            return $device->user;
+        }
+
+        if ($request->is('api/v1/security/sessions/*/terminate')) {
+            $session = UserSession::with('user.role')->findOrFail((int) $routeId);
+            return $session->user;
+        }
+
+        if ($request->is('api/v1/security/bans/*')) {
+            $ban = SecurityBan::withTrashed()->with(['user.role', 'device.user.role'])->findOrFail((int) $routeId);
+            return $ban->user ?? $ban->device?->user;
+        }
+
+        return null;
+    }
+}
