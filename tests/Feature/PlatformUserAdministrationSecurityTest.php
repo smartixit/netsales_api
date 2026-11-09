@@ -190,6 +190,60 @@ class PlatformUserAdministrationSecurityTest extends TestCase
     }
 
 
+
+    public function test_last_active_super_admin_cannot_be_disabled_deleted_or_banned(): void
+    {
+        $admin = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'Only Platform Admin');
+        $session = $this->createAuthenticatedSession($admin);
+
+        $this->postJson('/api/v1/users/'.$admin->user_id.'/status', [
+            'status' => UserStatus::INACTIVE->value,
+        ], $session['headers'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('user_id');
+
+        $this->deleteJson('/api/v1/users/'.$admin->user_id, [], $session['headers'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('user_id');
+
+        $this->postJson('/api/v1/security/ban-user', [
+            'user_id' => $admin->user_id,
+            'ban_type' => 'PERMANENT',
+            'ban_reason' => 'Last admin protection test',
+        ], $session['headers'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('user_id');
+
+        $this->assertDatabaseHas('users', [
+            'user_id' => $admin->user_id,
+            'status' => UserStatus::ACTIVE->value,
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_super_admin_can_be_demoted_when_another_active_super_admin_remains(): void
+    {
+        $first = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'First Platform Admin');
+        $second = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'Second Platform Admin');
+        $supportRole = Role::byKey(RoleKey::SUPPORT_AGENT)->firstOrFail();
+        $session = $this->createAuthenticatedSession($first);
+
+        $this->putJson('/api/v1/users/'.$second->user_id, [
+            'role_id' => $supportRole->role_id,
+        ], $session['headers'])->assertOk();
+
+        $this->assertDatabaseHas('users', [
+            'user_id' => $first->user_id,
+            'role_id' => $first->role_id,
+            'status' => UserStatus::ACTIVE->value,
+        ]);
+        $this->assertDatabaseHas('users', [
+            'user_id' => $second->user_id,
+            'role_id' => $supportRole->role_id,
+            'status' => UserStatus::ACTIVE->value,
+        ]);
+    }
+
     private function makeOperationalUser(string $name): User
     {
         $networkRole = Role::byKey(RoleKey::NETWORK_OWNER)->firstOrFail();
