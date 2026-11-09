@@ -57,7 +57,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
         ]);
 
         $otherOwner = User::create([
-            'role_id' => $ownerRole->role_id,
+            'role_id' => null,
             'user_full_name' => 'Another Network Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
             'user_password' => 'password',
@@ -262,7 +262,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
             ->firstOrFail();
 
         $owner = User::create([
-            'role_id' => $ownerRole->role_id,
+            'role_id' => null,
             'user_full_name' => 'Workspace Member Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
             'user_password' => 'password',
