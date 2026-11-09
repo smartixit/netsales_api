@@ -236,6 +236,14 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'status' => NetworkStatus::ACTIVE,
         ]);
 
+        NetworkUser::create([
+            'network_id' => $network->network_id,
+            'user_id' => $owner->user_id,
+            'role_id' => $role->role_id,
+            'status' => 'ACTIVE',
+            'last_event_seq' => 1,
+        ]);
+
         $headers = $this->createAuthenticatedSession($owner)['headers'];
 
         $this->getJson(
