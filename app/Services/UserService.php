@@ -207,7 +207,9 @@ class UserService
             return false;
         }
 
-        return DB::transaction(function () use ($id) {
+        return DB::transaction(function () use ($id, $user) {
+            $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
+            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, willBeDeleted: true);
             $this->sessionValidatorService->invalidateAllUserSessions($id);
 
             return $this->userRepository->delete($id);
@@ -243,6 +245,8 @@ class UserService
         }
 
         return DB::transaction(function () use ($user, $id) {
+            $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
+            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, willBeDeleted: true);
             $this->sessionValidatorService->invalidateAllUserSessions($id);
 
             if ($user->user_profile_logo) {
@@ -261,6 +265,8 @@ class UserService
     public function bulkDelete(array $ids): int
     {
         return DB::transaction(function () use ($ids) {
+            $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
+            $this->platformAdminContinuityService->assertBulkMutationIsSafe($adminRole, $ids);
             return $this->userRepository->bulkDelete($ids);
         });
     }
@@ -285,6 +291,8 @@ class UserService
     public function bulkForceDelete(array $ids): int
     {
         return DB::transaction(function () use ($ids) {
+            $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
+            $this->platformAdminContinuityService->assertBulkMutationIsSafe($adminRole, $ids);
             return $this->userRepository->bulkForceDelete($ids);
         });
     }
