@@ -200,3 +200,16 @@ Each queue returns an authoritative total \`count\` and at most five preview \`i
   - `expenses`: `expenses.view`; network-only expense count and total for the selected date range.
   - `wallet`: `network_wallets.view`; current server wallet balance and active status, or `null` if no wallet is allocated.
 - Every query is scoped by the route's `networkId`. Financial values are aggregated only in Laravel and serialized as two-decimal strings. Flutter must not derive or aggregate these values.
+
+
+## Authentication — Operational Workspace Roles
+
+Successful login, successful two-factor verification, and `GET /api/v1/auth/me` include a top-level `workspace_roles` array. Each item contains:
+
+- `scope`: `NETWORK` or `POS`.
+- `tenant_id`: the network_id or pos_id to which the role applies.
+- `role_key` and `role_name`: the operational role assigned through the scoped membership.
+
+The global `user.role` remains reserved for global/platform-scoped roles. Network and POS roles are stored only in `network_users` and `pos_users`, respectively; registration must not place a tenant role in `users.role_id`.
+
+The top-level `permissions` list is a union of active scoped-role permissions for client-side capability display. It is not an authorization decision. Every protected endpoint must continue to verify the permission against the exact requested tenant using server-side scoped authorization. A user may have more than one workspace role, including roles in both scopes; the client chooses the workspace while the server validates each tenant independently.

@@ -773,3 +773,11 @@ This log documents all executed tasks, code changes, and verification command ou
 - Added server-owned period metrics for Network–POS links, procurement requests, package catalogue, sales invoices, Network expenses, and the Network wallet. Each section is omitted when the caller lacks its scope permission.
 - All reads are scoped to the requested network. Sales and expense totals are aggregated in Laravel and serialized as two-decimal strings; no financial calculation moves to Flutter.
 - Added feature coverage for live scoped aggregates, cross-network isolation, invalid periods, and permission-filtered financial fields.
+
+
+## 2026-11-09 — Operational Workspace Role Contract
+
+- Completed the separation of operational roles from the global user role: NETWORK roles are assigned through `network_users`, POS roles through `pos_users`.
+- Login, OTP verification, and `auth/me` now expose active `workspace_roles` with scope and tenant identifiers so the mobile WorkspaceGuard can route accounts whose `users.role_id` is null.
+- Permission lists include a union for client capability rendering only; all backend authorization continues to enforce exact tenant scope.
+- Added coverage for a user with simultaneous NETWORK and POS memberships and the tenant-aware network overview endpoint.
