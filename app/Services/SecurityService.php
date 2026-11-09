@@ -82,8 +82,6 @@ class SecurityService
     public function banUser(StoreSecurityBanRequest $request, ?int $adminUserId = null): SecurityBan
     {
         $userId = (int) $request->user_id;
-        $user = $this->userRepository->findById($userId);
-
         $banType = $request->ban_type;
         $reason = (string) ($request->ban_reason ?? 'حظر أمني إداري');
         $endAt = $request->end_at ? new DateTime($request->end_at) : null;
