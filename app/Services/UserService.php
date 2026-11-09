@@ -314,9 +314,9 @@ class UserService
         return $this->userRepository->getTrashed($perPage);
     }
 
-    public function getPlatformTrashed(int $perPage = 15): CursorPaginator
+    public function getPlatformTrashed(int $perPage = 15, ?string $search = null): CursorPaginator
     {
-        return $this->userRepository->getPlatformTrashed($perPage);
+        return $this->userRepository->getPlatformTrashed($perPage, $search);
     }
 
     /**
