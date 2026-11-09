@@ -62,12 +62,15 @@ class EnsurePlatformUserScope
         }
 
         if ($request->is('api/v1/security/sessions/*/terminate')) {
-            $session = UserSession::with('user.role')->findOrFail((int) $routeId);
+            $session = UserSession::with(['user' => fn ($query) => $query->withTrashed()->with('role')])->findOrFail((int) $routeId);
             return $session->user;
         }
 
         if ($request->is('api/v1/security/bans/*')) {
-            $ban = SecurityBan::withTrashed()->with(['user.role', 'device.user.role'])->findOrFail((int) $routeId);
+            $ban = SecurityBan::withTrashed()->with([
+                'user' => fn ($query) => $query->withTrashed()->with('role'),
+                'device.user' => fn ($query) => $query->withTrashed()->with('role'),
+            ])->findOrFail((int) $routeId);
             return $ban->user ?? $ban->device?->user;
         }
 
