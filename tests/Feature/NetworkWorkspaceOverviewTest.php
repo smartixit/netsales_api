@@ -109,7 +109,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'status' => PosStatus::ACTIVE,
         ]);
         $inactivePos = Pos::create([
-            'owner_id' => $owner->user_id,
+            'owner_id' => $otherOwner->user_id,
             'pos_name' => 'Inactive POS '.uniqid(),
             'pos_phone_number' => '73'.random_int(100000000, 999999999),
             'governorate_id' => $governorateId,
@@ -148,7 +148,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
         ]);
         ProcurementRequest::create([
             'network_id' => $otherNetwork->network_id,
-            'pos_id' => $activePos->pos_id,
+            'pos_id' => $inactivePos->pos_id,
             'request_uuid' => 'REQ-'.uniqid(),
             'sale_type' => SaleType::CASH,
             'request_total_amount' => '5000.00',
