@@ -28,6 +28,7 @@ use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
 use App\Models\Network;
 use App\Models\NetworkUser;
+use App\Models\PosUser;
 use App\Models\Pos;
 use App\Models\Role;
 use App\Models\User;
@@ -326,6 +327,7 @@ class AuthService
                 'user' => $user->load(['role']),
                 'session' => $session,
                 'permissions' => $mustChangePassword ? [] : $user->getAllPermissions(),
+                'workspace_roles' => $user->getWorkspaceRoles(),
             ];
         });
     }
@@ -486,6 +488,7 @@ class AuthService
                 'user' => $user->load(['role']),
                 'session' => $session,
                 'permissions' => $mustChangePassword ? [] : $user->getAllPermissions(),
+                'workspace_roles' => $user->getWorkspaceRoles(),
             ];
         });
     }
@@ -604,7 +607,7 @@ class AuthService
 
             // 3. إنشاء حساب المستخدم أولاً بحالة PENDING عبر المستودع
             $user = $this->userRepository->create([
-                'role_id' => $role->role_id,
+                'role_id' => null,
                 'user_full_name' => (string) $request->user_full_name,
                 'user_phone_number' => (string) $request->user_phone_number,
                 'user_email' => $request->user_email,
@@ -633,6 +636,15 @@ class AuthService
                 'pos_address' => $request->pos_address,
                 'pos_profile_logo' => $posLogoPath,
                 'status' => PosStatus::PENDING,
+            ]);
+
+            // Tenant roles belong to the scoped POS membership table.
+            PosUser::create([
+                'pos_id' => $pos->pos_id,
+                'user_id' => $user->user_id,
+                'role_id' => $role->role_id,
+                'status' => 'ACTIVE',
+                'last_event_seq' => 1,
             ]);
 
             // 6. تسجيل الجهاز كجهاز أساسي بحالة PENDING عبر المستودع
@@ -671,11 +683,13 @@ class AuthService
     public function me(User $user): array
     {
         $user->load(['role']);
+        $workspaceRoles = $user->getWorkspaceRoles();
 
         return [
             'user' => $user,
             'is_super_admin' => $user->hasRole(RoleKey::SUPER_ADMIN),
-            'role_key' => $user->role?->role_key,
+            'role_key' => $user->role?->role_key ?? ($workspaceRoles[0]['role_key'] ?? null),
+            'workspace_roles' => $workspaceRoles,
             'permissions' => $user->getAllPermissions(),
         ];
     }

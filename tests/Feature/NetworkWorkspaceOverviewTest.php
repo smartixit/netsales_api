@@ -8,12 +8,15 @@ use App\Enums\RequestStatus;
 use App\Enums\RoleKey;
 use App\Enums\SaleType;
 use App\Enums\UserStatus;
+use App\Models\Directorate;
 use App\Models\Expense;
+use App\Models\Governorate;
 use App\Models\Network;
 use App\Models\NetworkPos;
-use App\Models\NetworkWallet;
 use App\Models\NetworkUser;
+use App\Models\NetworkWallet;
 use App\Models\Pos;
+use App\Models\PosUser;
 use App\Models\Request as ProcurementRequest;
 use App\Models\Role;
 use App\Models\SaleInvoice;
@@ -25,8 +28,25 @@ class NetworkWorkspaceOverviewTest extends TestCase
 {
     use DatabaseTransactions;
 
+    /** @return array{int, int} */
+    private function geographicIds(): array
+    {
+        $governorate = Governorate::query()->first()
+            ?? Governorate::create(['governorate_name' => 'Workspace Test Governorate']);
+        $directorate = Directorate::query()
+            ->where('governorate_id', $governorate->governorate_id)
+            ->first()
+            ?? Directorate::create([
+                'governorate_id' => $governorate->governorate_id,
+                'directorate_name' => 'Workspace Test Directorate',
+            ]);
+
+        return [$governorate->governorate_id, $directorate->directorate_id];
+    }
+
     public function test_network_owner_receives_only_the_selected_networks_live_overview(): void
     {
+        [$governorateId, $directorateId] = $this->geographicIds();
         $ownerRole = Role::query()
             ->where('role_key', RoleKey::NETWORK_OWNER->value)
             ->firstOrFail();
@@ -43,8 +63,8 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'owner_id' => $owner->user_id,
             'network_name' => 'Overview Network '.uniqid(),
             'network_phone_number' => $owner->user_phone_number,
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $governorateId,
+            'directorate_id' => $directorateId,
             'status' => NetworkStatus::ACTIVE,
         ]);
 
@@ -57,7 +77,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
         ]);
 
         $otherOwner = User::create([
-            'role_id' => $ownerRole->role_id,
+            'role_id' => null,
             'user_full_name' => 'Another Network Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
             'user_password' => 'password',
@@ -68,8 +88,8 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'owner_id' => $otherOwner->user_id,
             'network_name' => 'Other Network '.uniqid(),
             'network_phone_number' => $otherOwner->user_phone_number,
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $governorateId,
+            'directorate_id' => $directorateId,
             'status' => NetworkStatus::ACTIVE,
         ]);
 
@@ -85,16 +105,16 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'owner_id' => $owner->user_id,
             'pos_name' => 'Active POS '.uniqid(),
             'pos_phone_number' => '73'.random_int(100000000, 999999999),
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $governorateId,
+            'directorate_id' => $directorateId,
             'status' => PosStatus::ACTIVE,
         ]);
         $inactivePos = Pos::create([
-            'owner_id' => $owner->user_id,
+            'owner_id' => $otherOwner->user_id,
             'pos_name' => 'Inactive POS '.uniqid(),
             'pos_phone_number' => '73'.random_int(100000000, 999999999),
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $governorateId,
+            'directorate_id' => $directorateId,
             'status' => PosStatus::ACTIVE,
         ]);
 
@@ -129,7 +149,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
         ]);
         ProcurementRequest::create([
             'network_id' => $otherNetwork->network_id,
-            'pos_id' => $activePos->pos_id,
+            'pos_id' => $inactivePos->pos_id,
             'request_uuid' => 'REQ-'.uniqid(),
             'sale_type' => SaleType::CASH,
             'request_total_amount' => '5000.00',
@@ -178,7 +198,28 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'created_by' => $owner->user_id,
         ]);
 
+        $posUserRole = Role::query()
+            ->where('role_key', RoleKey::POS_USER->value)
+            ->firstOrFail();
+
+        PosUser::create([
+            'pos_id' => $activePos->pos_id,
+            'user_id' => $owner->user_id,
+            'role_id' => $posUserRole->role_id,
+            'status' => 'ACTIVE',
+            'last_event_seq' => 1,
+        ]);
+
         $headers = $this->createAuthenticatedSession($owner)['headers'];
+
+        $this->getJson('/api/v1/auth/me', $headers)
+            ->assertOk()
+            ->assertJsonPath('data.role_key', RoleKey::NETWORK_OWNER->value)
+            ->assertJsonPath('data.workspace_roles.0.scope', 'NETWORK')
+            ->assertJsonPath('data.workspace_roles.0.tenant_id', $network->network_id)
+            ->assertJsonPath('data.workspace_roles.1.scope', 'POS')
+            ->assertJsonPath('data.workspace_roles.1.tenant_id', $activePos->pos_id);
+
         $response = $this->getJson(
             "/api/v1/networks/{$network->network_id}/workspace-overview?period=30d",
             $headers
@@ -193,6 +234,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
             ->assertJsonPath('data.metrics.points_of_sale.active', 1)
             ->assertJsonPath('data.metrics.points_of_sale.inactive', 1)
             ->assertJsonPath('data.metrics.requests.pending', 1)
+            ->assertJsonPath('data.recent_pending_requests.0.request_total_amount', '900.00')
             ->assertJsonPath('data.metrics.sales.total_amount', '1000.00')
             ->assertJsonPath('data.metrics.sales.paid_amount', '400.00')
             ->assertJsonPath('data.metrics.sales.outstanding_amount', '600.00')
@@ -215,6 +257,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
 
     public function test_workspace_overview_rejects_an_unsupported_period(): void
     {
+        [$governorateId, $directorateId] = $this->geographicIds();
         $role = Role::query()
             ->where('role_key', RoleKey::NETWORK_OWNER->value)
             ->firstOrFail();
@@ -231,8 +274,8 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'owner_id' => $owner->user_id,
             'network_name' => 'Period Network '.uniqid(),
             'network_phone_number' => $owner->user_phone_number,
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $governorateId,
+            'directorate_id' => $directorateId,
             'status' => NetworkStatus::ACTIVE,
         ]);
 
@@ -254,6 +297,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
 
     public function test_workspace_overview_omits_financial_metrics_for_a_network_user_without_finance_permissions(): void
     {
+        [$governorateId, $directorateId] = $this->geographicIds();
         $ownerRole = Role::query()
             ->where('role_key', RoleKey::NETWORK_OWNER->value)
             ->firstOrFail();
@@ -262,7 +306,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
             ->firstOrFail();
 
         $owner = User::create([
-            'role_id' => $ownerRole->role_id,
+            'role_id' => null,
             'user_full_name' => 'Workspace Member Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
             'user_password' => 'password',
@@ -280,8 +324,8 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'owner_id' => $owner->user_id,
             'network_name' => 'Member Network '.uniqid(),
             'network_phone_number' => $owner->user_phone_number,
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $governorateId,
+            'directorate_id' => $directorateId,
             'status' => NetworkStatus::ACTIVE,
         ]);
 
