@@ -194,9 +194,22 @@ Each queue returns an authoritative total \`count\` and at most five preview \`i
 - Response includes `generated_at`, `timezone` (`Asia/Aden`), `period`, the selected `network`, permission-filtered `metrics`, and up to five `recent_pending_requests`.
 - Metric groups are omitted when the caller lacks the corresponding permission:
   - `points_of_sale`: `pos.view`; counts active/inactive Network–POS links for the selected network.
-  - `requests` and `recent_pending_requests`: `requests.view`; status counts and a small pending queue without client-supplied totals.
+  - `requests` and `recent_pending_requests`: `requests.view`; status counts and a small pending queue including the server-calculated `request_total_amount` and request date.
   - `packages`: `voucher_packages.view`; active/inactive package counts.
   - `sales`: `sales.view`; server aggregates of invoice count, invoice total, paid and outstanding amounts for the selected date range.
   - `expenses`: `expenses.view`; network-only expense count and total for the selected date range.
   - `wallet`: `network_wallets.view`; current server wallet balance and active status, or `null` if no wallet is allocated.
 - Every query is scoped by the route's `networkId`. Financial values are aggregated only in Laravel and serialized as two-decimal strings. Flutter must not derive or aggregate these values.
+
+
+## Authentication — Operational Workspace Roles
+
+Successful login, successful two-factor verification, and `GET /api/v1/auth/me` include a top-level `workspace_roles` array. Each item contains:
+
+- `scope`: `NETWORK` or `POS`.
+- `tenant_id`: the network_id or pos_id to which the role applies.
+- `role_key` and `role_name`: the operational role assigned through the scoped membership.
+
+The global `user.role` remains reserved for global/platform-scoped roles. Network and POS roles are stored only in `network_users` and `pos_users`, respectively; registration must not place a tenant role in `users.role_id`.
+
+The top-level `permissions` list is a union of active scoped-role permissions for client-side capability display. It is not an authorization decision. Every protected endpoint must continue to verify the permission against the exact requested tenant using server-side scoped authorization. A user may have more than one workspace role, including roles in both scopes; the client chooses the workspace while the server validates each tenant independently.

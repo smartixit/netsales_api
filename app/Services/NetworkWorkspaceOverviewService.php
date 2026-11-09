@@ -83,6 +83,7 @@ class NetworkWorkspaceOverviewService
                     'pos_id',
                     'sale_type',
                     'request_date',
+                    'request_total_amount',
                     'status',
                 ]);
 
@@ -100,6 +101,7 @@ class NetworkWorkspaceOverviewService
                         'sale_type' => $saleType?->value,
                         'sale_type_label' => $saleType?->label(),
                         'request_date' => $request->request_date?->toIso8601String(),
+                        'request_total_amount' => number_format((float) $request->request_total_amount, 2, '.', ''),
                         'status' => RequestStatus::PENDING->value,
                         'status_label' => RequestStatus::PENDING->label(),
                     ];

@@ -5,6 +5,10 @@ namespace Tests\Feature;
 use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Enums\UserStatus;
+use App\Models\Directorate;
+use App\Models\Governorate;
+use App\Models\Network;
+use App\Models\NetworkUser;
 use App\Models\Role;
 use App\Models\SecurityBan;
 use App\Models\User;
@@ -141,6 +145,142 @@ class PlatformUserAdministrationSecurityTest extends TestCase
             ->assertOk();
 
         $this->assertSame(UserStatus::BANNED, $target->fresh()->status);
+    }
+
+    public function test_operational_role_cannot_access_platform_user_administration(): void
+    {
+        $operationalUser = $this->makeOperationalUser('Network Owner');
+        $session = $this->createAuthenticatedSession($operationalUser);
+
+        $this->getJson('/api/v1/users', $session['headers'])->assertForbidden();
+        $this->getJson('/api/v1/roles', $session['headers'])->assertForbidden();
+    }
+
+    public function test_platform_admin_cannot_read_or_mutate_operational_user_through_platform_routes(): void
+    {
+        $admin = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'Platform Admin');
+        $operationalUser = $this->makeOperationalUser('Network Owner');
+        $session = $this->createAuthenticatedSession($admin);
+
+        $this->getJson('/api/v1/users', $session['headers'])->assertOk()->assertDontSee('Network Owner');
+        $operationalUser->delete();
+        $this->getJson('/api/v1/users/trashed', $session['headers'])->assertOk()->assertDontSee('Network Owner');
+
+        $operationalUser->restore();
+        $this->getJson('/api/v1/users/'.$operationalUser->user_id, $session['headers'])->assertForbidden();
+        $this->getJson('/api/v1/security/users/'.$operationalUser->user_id.'/sessions', $session['headers'])->assertForbidden();
+        $this->getJson('/api/v1/security/users/'.$operationalUser->user_id.'/devices', $session['headers'])->assertForbidden();
+        $this->postJson('/api/v1/security/ban-user', [
+            'user_id' => $operationalUser->user_id,
+            'ban_type' => 'PERMANENT',
+            'ban_reason' => 'Cross-scope regression attempt',
+        ], $session['headers'])->assertForbidden();
+        $this->putJson('/api/v1/users/'.$operationalUser->user_id, [
+            'user_full_name' => 'Attempted Cross Scope Edit',
+        ], $session['headers'])->assertForbidden();
+        $this->postJson('/api/v1/users/batch-delete', [
+            'ids' => [$admin->user_id, $operationalUser->user_id],
+        ], $session['headers'])->assertForbidden();
+
+        $this->assertDatabaseHas('users', [
+            'user_id' => $operationalUser->user_id,
+            'user_full_name' => 'Network Owner',
+            'deleted_at' => null,
+        ]);
+    }
+
+
+
+    public function test_last_active_super_admin_cannot_be_disabled_deleted_or_banned(): void
+    {
+        $admin = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'Only Platform Admin');
+        $session = $this->createAuthenticatedSession($admin);
+
+        $this->postJson('/api/v1/users/'.$admin->user_id.'/status', [
+            'status' => UserStatus::INACTIVE->value,
+        ], $session['headers'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('user_id');
+
+        $this->deleteJson('/api/v1/users/'.$admin->user_id, [], $session['headers'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('user_id');
+
+        $this->postJson('/api/v1/security/ban-user', [
+            'user_id' => $admin->user_id,
+            'ban_type' => 'PERMANENT',
+            'ban_reason' => 'Last admin protection test',
+        ], $session['headers'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('user_id');
+
+        $this->assertDatabaseHas('users', [
+            'user_id' => $admin->user_id,
+            'status' => UserStatus::ACTIVE->value,
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_super_admin_can_be_demoted_when_another_active_super_admin_remains(): void
+    {
+        $first = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'First Platform Admin');
+        $second = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'Second Platform Admin');
+        $supportRole = Role::byKey(RoleKey::SUPPORT_AGENT)->firstOrFail();
+        $session = $this->createAuthenticatedSession($first);
+
+        $this->putJson('/api/v1/users/'.$second->user_id, [
+            'role_id' => $supportRole->role_id,
+        ], $session['headers'])->assertOk();
+
+        $this->assertDatabaseHas('users', [
+            'user_id' => $first->user_id,
+            'role_id' => $first->role_id,
+            'status' => UserStatus::ACTIVE->value,
+        ]);
+        $this->assertDatabaseHas('users', [
+            'user_id' => $second->user_id,
+            'role_id' => $supportRole->role_id,
+            'status' => UserStatus::ACTIVE->value,
+        ]);
+    }
+
+    private function makeOperationalUser(string $name): User
+    {
+        $networkRole = Role::byKey(RoleKey::NETWORK_OWNER)->firstOrFail();
+        $governorate = Governorate::first()
+            ?? Governorate::query()->create(['governorate_name' => 'Platform Scope Test Governorate']);
+        $directorate = Directorate::query()->firstOrCreate(
+            [
+                'governorate_id' => $governorate->governorate_id,
+                'directorate_name' => 'Platform Scope Test Directorate',
+            ]
+        );
+
+        $user = User::query()->create([
+            'role_id' => null,
+            'user_full_name' => $name,
+            'user_phone_number' => '77'.random_int(1000000, 9999999),
+            'user_password' => Hash::make('SecurePassword123'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+
+        $network = Network::query()->create([
+            'owner_id' => $user->user_id,
+            'network_name' => 'Scope Test '.bin2hex(random_bytes(4)),
+            'network_phone_number' => '78'.random_int(1000000, 9999999),
+            'governorate_id' => $governorate->governorate_id,
+            'directorate_id' => $directorate->directorate_id,
+            'status' => 'ACTIVE',
+        ]);
+
+        NetworkUser::query()->create([
+            'network_id' => $network->network_id,
+            'user_id' => $user->user_id,
+            'role_id' => $networkRole->role_id,
+            'status' => 'ACTIVE',
+        ]);
+
+        return $user;
     }
 
     private function makePlatformUser(

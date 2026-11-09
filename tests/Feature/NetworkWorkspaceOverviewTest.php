@@ -16,6 +16,7 @@ use App\Models\NetworkPos;
 use App\Models\NetworkUser;
 use App\Models\NetworkWallet;
 use App\Models\Pos;
+use App\Models\PosUser;
 use App\Models\Request as ProcurementRequest;
 use App\Models\Role;
 use App\Models\SaleInvoice;
@@ -155,7 +156,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
         ]);
         ProcurementRequest::create([
             'network_id' => $otherNetwork->network_id,
-            'pos_id' => $activePos->pos_id,
+            'pos_id' => $inactivePos->pos_id,
             'request_uuid' => 'REQ-'.uniqid(),
             'sale_type' => SaleType::CASH,
             'request_total_amount' => '5000.00',
@@ -204,7 +205,28 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'created_by' => $owner->user_id,
         ]);
 
+        $posUserRole = Role::query()
+            ->where('role_key', RoleKey::POS_USER->value)
+            ->firstOrFail();
+
+        PosUser::create([
+            'pos_id' => $activePos->pos_id,
+            'user_id' => $owner->user_id,
+            'role_id' => $posUserRole->role_id,
+            'status' => 'ACTIVE',
+            'last_event_seq' => 1,
+        ]);
+
         $headers = $this->createAuthenticatedSession($owner)['headers'];
+
+        $this->getJson('/api/v1/auth/me', $headers)
+            ->assertOk()
+            ->assertJsonPath('data.role_key', RoleKey::NETWORK_OWNER->value)
+            ->assertJsonPath('data.workspace_roles.0.scope', 'NETWORK')
+            ->assertJsonPath('data.workspace_roles.0.tenant_id', $network->network_id)
+            ->assertJsonPath('data.workspace_roles.1.scope', 'POS')
+            ->assertJsonPath('data.workspace_roles.1.tenant_id', $activePos->pos_id);
+
         $response = $this->getJson(
             "/api/v1/networks/{$network->network_id}/workspace-overview?period=30d",
             $headers
@@ -219,6 +241,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
             ->assertJsonPath('data.metrics.points_of_sale.active', 1)
             ->assertJsonPath('data.metrics.points_of_sale.inactive', 1)
             ->assertJsonPath('data.metrics.requests.pending', 1)
+            ->assertJsonPath('data.recent_pending_requests.0.request_total_amount', '900.00')
             ->assertJsonPath('data.metrics.sales.total_amount', '1000.00')
             ->assertJsonPath('data.metrics.sales.paid_amount', '400.00')
             ->assertJsonPath('data.metrics.sales.outstanding_amount', '600.00')

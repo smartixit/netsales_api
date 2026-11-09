@@ -11,6 +11,7 @@ use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
 use App\Models\SecurityBan;
+use App\Models\User;
 use App\Models\UserDevice;
 use App\Models\UserSession;
 use App\Services\Support\AsymmetricCryptoService;
@@ -38,6 +39,7 @@ class SecurityService
         protected UserSessionRepositoryInterface $userSessionRepository,
         protected SessionValidatorService $sessionValidatorService,
         protected AsymmetricCryptoService $asymmetricCryptoService,
+        protected PlatformAdminContinuityService $platformAdminContinuityService,
     ) {}
 
     /**
@@ -94,6 +96,10 @@ class SecurityService
         $adminUserId = $adminUserId ?? (auth()->id() ? (int) auth()->id() : 0);
 
         return DB::transaction(function () use ($userId, $adminUserId, $banType, $reason, $endAt) {
+            $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
+            $target = User::query()->lockForUpdate()->findOrFail($userId);
+            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $target, nextStatus: UserStatus::BANNED);
+
             // 1. تسجيل سجل الحظر
             $securityBan = $this->securityBanRepository->banUser(
                 userId: $userId,

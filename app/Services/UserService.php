@@ -34,6 +34,7 @@ class UserService
         protected SessionValidatorService $sessionValidatorService,
         protected NetworkService $networkService,
         protected PosService $posService,
+        protected PlatformAdminContinuityService $platformAdminContinuityService,
     ) {}
 
     /**
@@ -79,6 +80,9 @@ class UserService
         }
 
         return DB::transaction(function () use ($data, $avatar) {
+            if (isset($data['role_id']) && $this->platformAdminContinuityService->isSuperAdminRoleId((int) $data['role_id'])) {
+                $this->platformAdminContinuityService->lockSuperAdminRole();
+            }
             if ($avatar) {
                 $data['user_profile_logo'] = $this->fileUploadService->uploadProfilePicture($avatar, 'users/avatars');
             }
@@ -121,6 +125,10 @@ class UserService
         }
 
         return DB::transaction(function () use ($user, $data, $avatar) {
+            if (isset($data['role_id']) && (int) $data['role_id'] !== (int) $user->role_id) {
+                $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
+                $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, (int) $data['role_id']);
+            }
             if ($avatar) {
                 $data['user_profile_logo'] = $this->fileUploadService->replaceFile(
                     $avatar,
@@ -169,6 +177,8 @@ class UserService
         }
 
         return DB::transaction(function () use ($user, $userId, $status) {
+            $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
+            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, nextStatus: $status);
             $oldStatus = $user->status instanceof UserStatus ? $user->status->value : (string) $user->status;
             $this->userRepository->setStatus($userId, $status);
 
@@ -200,7 +210,9 @@ class UserService
             return false;
         }
 
-        return DB::transaction(function () use ($id) {
+        return DB::transaction(function () use ($id, $user) {
+            $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
+            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, willBeDeleted: true);
             $this->sessionValidatorService->invalidateAllUserSessions($id);
 
             return $this->userRepository->delete($id);
@@ -236,6 +248,8 @@ class UserService
         }
 
         return DB::transaction(function () use ($user, $id) {
+            $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
+            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, willBeDeleted: true);
             $this->sessionValidatorService->invalidateAllUserSessions($id);
 
             if ($user->user_profile_logo) {
@@ -254,6 +268,11 @@ class UserService
     public function bulkDelete(array $ids): int
     {
         return DB::transaction(function () use ($ids) {
+            $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
+            $this->platformAdminContinuityService->assertBulkMutationIsSafe($adminRole, $ids);
+            foreach ($ids as $id) {
+                $this->sessionValidatorService->invalidateAllUserSessions((int) $id);
+            }
             return $this->userRepository->bulkDelete($ids);
         });
     }
@@ -278,6 +297,11 @@ class UserService
     public function bulkForceDelete(array $ids): int
     {
         return DB::transaction(function () use ($ids) {
+            $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
+            $this->platformAdminContinuityService->assertBulkMutationIsSafe($adminRole, $ids);
+            foreach ($ids as $id) {
+                $this->sessionValidatorService->invalidateAllUserSessions((int) $id);
+            }
             return $this->userRepository->bulkForceDelete($ids);
         });
     }
@@ -288,6 +312,11 @@ class UserService
     public function getTrashed(int $perPage = 15): CursorPaginator
     {
         return $this->userRepository->getTrashed($perPage);
+    }
+
+    public function getPlatformTrashed(int $perPage = 15, ?string $search = null): CursorPaginator
+    {
+        return $this->userRepository->getPlatformTrashed($perPage, $search);
     }
 
     /**
