@@ -27,6 +27,11 @@ interface UserRepositoryInterface extends BaseRepositoryInterface
     public function getFiltered(array $filters = [], array $relations = []): Collection|CursorPaginator;
 
     /**
+     * Retrieve only soft-deleted platform-scope users.
+     */
+    public function getPlatformTrashed(int $perPage = 15): CursorPaginator;
+
+    /**
      * البحث عن مستخدم بواسطة رقم الهاتف مع إمكانية القفل المتشائم (Pessimistic Lock).
      */
     public function findByPhone(string $phone, bool $lock = false): ?User;
