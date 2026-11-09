@@ -215,6 +215,13 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('networks', NetworkController::class)->parameters(['networks' => 'id'])->except(['index', 'show', 'store', 'update', 'destroy']);
         });
 
+        // ملخص مساحة عمل الشبكة: scoped to an active network owner/member and permission set.
+        Route::middleware(['throttle:api-read', 'operational.scope'])->group(function () {
+            Route::get('networks/{networkId}/workspace-overview', [NetworkWorkspaceOverviewController::class, 'show'])
+                ->whereNumber('networkId')
+                ->name('api.v1.networks.workspace_overview');
+        });
+
         // 3.1. إدارة أعضاء وموظفي الشبكة (Scoped Network Memberships)
         Route::middleware(['throttle:api-read', 'operational.scope'])->group(function () {
             Route::get('networks/{networkId}/members/assignable-roles', [NetworkMembershipController::class, 'assignableRoles'])->whereNumber('networkId')->name('api.v1.networks.members.assignable_roles');

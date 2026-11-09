@@ -764,3 +764,12 @@ This log documents all executed tasks, code changes, and verification command ou
 - Role assignment currently permits only NETWORK_USER / POS_USER. Accountant roles are intentionally not assignable pending verification that their permission matrices are strictly read-only.
 - The Flutter repository delegates canonical work logging to this API repository; no duplicate local work log was created.
 - Verification: exact-head CI is pending. No claim of analyzer/test success or visual QA is made. Merge API PR #10 before Flutter PR #20 because the latter consumes the new role and owner-marker API contract.
+
+
+## 2026-11-09 — Network Workspace Overview API
+
+- Added a dedicated `GET /api/v1/networks/{networkId}/workspace-overview` contract for the mobile Network workspace. It deliberately does not reuse the Platform-only dashboard overview.
+- Added tenant-aware FormRequest authorization: network ownership or active Network membership, Network view policy, and the `networks.view` permission in the requested Network scope.
+- Added server-owned period metrics for Network–POS links, procurement requests, package catalogue, sales invoices, Network expenses, and the Network wallet. Each section is omitted when the caller lacks its scope permission.
+- All reads are scoped to the requested network. Sales and expense totals are aggregated in Laravel and serialized as two-decimal strings; no financial calculation moves to Flutter.
+- Added feature coverage for live scoped aggregates, cross-network isolation, invalid periods, and permission-filtered financial fields.
