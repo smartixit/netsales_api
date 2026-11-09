@@ -1,12 +1,12 @@
 <?php
 
-namespace App\\Services;
+namespace App\Services;
 
-use App\\Enums\\RoleKey;
-use App\\Enums\\UserStatus;
-use App\\Models\\Role;
-use App\\Models\\User;
-use Illuminate\\Validation\\ValidationException;
+use App\Enums\RoleKey;
+use App\Enums\UserStatus;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Serializes administrative account mutations and preserves one active

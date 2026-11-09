@@ -82,14 +82,6 @@ class SecurityService
     public function banUser(StoreSecurityBanRequest $request, ?int $adminUserId = null): SecurityBan
     {
         $userId = (int) $request->user_id;
-        $user = $this->userRepository->findById($userId);
-
-        if ($user->status !== UserStatus::ACTIVE || $this->securityBanRepository->isUserBanned($userId)) {
-            throw ValidationException::withMessages([
-                'user_id' => ['لا يمكن تطبيق حظر جديد على حساب غير نشط أو لديه حظر أمني سارٍ.'],
-            ]);
-        }
-
         $banType = $request->ban_type;
         $reason = (string) ($request->ban_reason ?? 'حظر أمني إداري');
         $endAt = $request->end_at ? new DateTime($request->end_at) : null;
@@ -98,6 +90,11 @@ class SecurityService
         return DB::transaction(function () use ($userId, $adminUserId, $banType, $reason, $endAt) {
             $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
             $target = User::query()->lockForUpdate()->findOrFail($userId);
+            if ($target->status !== UserStatus::ACTIVE || $this->securityBanRepository->isUserBanned($userId)) {
+                throw ValidationException::withMessages([
+                    'user_id' => ['لا يمكن تطبيق حظر جديد على حساب غير نشط أو لديه حظر أمني سارٍ.'],
+                ]);
+            }
             $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $target, nextStatus: UserStatus::BANNED);
 
             // 1. تسجيل سجل الحظر
@@ -140,20 +137,19 @@ class SecurityService
     public function banDevice(StoreSecurityBanRequest $request, ?int $adminUserId = null): SecurityBan
     {
         $deviceId = (int) $request->device_id;
-        $device = $this->userDeviceRepository->findById($deviceId);
-
-        if ($device->status !== UserDeviceStatus::ACTIVE || $this->securityBanRepository->isDeviceBanned($deviceId)) {
-            throw ValidationException::withMessages([
-                'device_id' => ['لا يمكن تطبيق حظر جديد على جهاز غير نشط أو لديه حظر أمني سارٍ.'],
-            ]);
-        }
-
         $banType = $request->ban_type;
         $reason = (string) ($request->ban_reason ?? 'حظر أمني للجهاز');
         $endAt = $request->end_at ? new DateTime($request->end_at) : null;
         $adminUserId = $adminUserId ?? (auth()->id() ? (int) auth()->id() : 0);
 
         return DB::transaction(function () use ($deviceId, $adminUserId, $reason, $endAt) {
+            $device = UserDevice::query()->lockForUpdate()->findOrFail($deviceId);
+            if ($device->status !== UserDeviceStatus::ACTIVE || $this->securityBanRepository->isDeviceBanned($deviceId)) {
+                throw ValidationException::withMessages([
+                    'device_id' => ['لا يمكن تطبيق حظر جديد على جهاز غير نشط أو لديه حظر أمني سارٍ.'],
+                ]);
+            }
+
             // 1. تسجيل الحظر
             $securityBan = $this->securityBanRepository->banDevice(
                 deviceId: $deviceId,

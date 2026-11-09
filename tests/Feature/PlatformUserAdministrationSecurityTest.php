@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Models\UserDevice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class PlatformUserAdministrationSecurityTest extends TestCase
@@ -194,6 +195,25 @@ class PlatformUserAdministrationSecurityTest extends TestCase
     public function test_last_active_super_admin_cannot_be_disabled_deleted_or_banned(): void
     {
         $admin = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'Only Platform Admin');
+        $adminRole = Role::byKey(RoleKey::SUPER_ADMIN)->firstOrFail();
+        User::query()
+            ->where('role_id', $adminRole->role_id)
+            ->where('user_id', '!=', $admin->user_id)
+            ->update(['status' => UserStatus::INACTIVE->value]);
+        $freshAdmin = $admin->fresh();
+        $this->assertSame((int) $adminRole->role_id, (int) $freshAdmin->role_id);
+        $this->assertSame(UserStatus::ACTIVE, $freshAdmin->status);
+        $this->assertNull($freshAdmin->deleted_at);
+        try {
+            app(\App\Services\PlatformAdminContinuityService::class)->assertMutationIsSafe(
+                $adminRole,
+                $freshAdmin,
+                nextStatus: UserStatus::INACTIVE,
+            );
+            $this->fail('The continuity guard must reject disabling the last active SUPER_ADMIN.');
+        } catch (ValidationException) {
+            // Expected: the final active platform administrator is protected.
+        }
         $session = $this->createAuthenticatedSession($admin);
 
         $this->postJson('/api/v1/users/'.$admin->user_id.'/status', [

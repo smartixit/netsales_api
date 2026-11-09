@@ -127,7 +127,8 @@ class UserService
         return DB::transaction(function () use ($user, $data, $avatar) {
             if (isset($data['role_id']) && (int) $data['role_id'] !== (int) $user->role_id) {
                 $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
-                $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, (int) $data['role_id']);
+                $lockedUser = User::query()->lockForUpdate()->findOrFail($user->user_id);
+                $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $lockedUser, (int) $data['role_id']);
             }
             if ($avatar) {
                 $data['user_profile_logo'] = $this->fileUploadService->replaceFile(
@@ -178,7 +179,8 @@ class UserService
 
         return DB::transaction(function () use ($user, $userId, $status) {
             $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
-            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, nextStatus: $status);
+            $lockedUser = User::query()->lockForUpdate()->findOrFail($userId);
+            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $lockedUser, nextStatus: $status);
             $oldStatus = $user->status instanceof UserStatus ? $user->status->value : (string) $user->status;
             $this->userRepository->setStatus($userId, $status);
 
@@ -212,7 +214,8 @@ class UserService
 
         return DB::transaction(function () use ($id, $user) {
             $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
-            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, willBeDeleted: true);
+            $lockedUser = User::query()->lockForUpdate()->findOrFail($id);
+            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $lockedUser, willBeDeleted: true);
             $this->sessionValidatorService->invalidateAllUserSessions($id);
 
             return $this->userRepository->delete($id);
@@ -249,7 +252,8 @@ class UserService
 
         return DB::transaction(function () use ($user, $id) {
             $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
-            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $user, willBeDeleted: true);
+            $lockedUser = User::withTrashed()->lockForUpdate()->findOrFail($id);
+            $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $lockedUser, willBeDeleted: true);
             $this->sessionValidatorService->invalidateAllUserSessions($id);
 
             if ($user->user_profile_logo) {
