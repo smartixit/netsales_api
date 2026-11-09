@@ -367,10 +367,10 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
     public function test_network_membership_only_exposes_and_accepts_network_user_role(): void
     {
         $ownerAuth = $this->createAuthenticatedSession($this->networkOwner);
-        $networkUserRole = \\App\\Models\\Role::where('role_key', 'NETWORK_USER')->firstOrFail();
-        $networkAccountantRole = \\App\\Models\\Role::where('role_key', 'NETWORK_ACCOUNTANT')->firstOrFail();
-        $networkOwnerRole = \\App\\Models\\Role::where('role_key', 'NETWORK_OWNER')->firstOrFail();
-        $platformRole = \\App\\Models\\Role::where('role_key', 'SUPER_ADMIN')->firstOrFail();
+        $networkUserRole = \App\Models\Role::where('role_key', 'NETWORK_USER')->firstOrFail();
+        $networkAccountantRole = \App\Models\Role::where('role_key', 'NETWORK_ACCOUNTANT')->firstOrFail();
+        $networkOwnerRole = \App\Models\Role::where('role_key', 'NETWORK_OWNER')->firstOrFail();
+        $platformRole = \App\Models\Role::where('role_key', 'SUPER_ADMIN')->firstOrFail();
 
         $roles = $this->withHeaders($ownerAuth['headers'])
             ->getJson("/api/v1/networks/{$this->networkA->network_id}/members/assignable-roles")
@@ -409,10 +409,10 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
     public function test_pos_membership_only_exposes_and_accepts_pos_user_role(): void
     {
         $ownerAuth = $this->createAuthenticatedSession($this->posOwner);
-        $posUserRole = \\App\\Models\\Role::where('role_key', 'POS_USER')->firstOrFail();
-        $posAccountantRole = \\App\\Models\\Role::where('role_key', 'POS_ACCOUNTANT')->firstOrFail();
-        $posAgentRole = \\App\\Models\\Role::where('role_key', 'POS_AGENT')->firstOrFail();
-        $platformRole = \\App\\Models\\Role::where('role_key', 'SUPER_ADMIN')->firstOrFail();
+        $posUserRole = \App\Models\Role::where('role_key', 'POS_USER')->firstOrFail();
+        $posAccountantRole = \App\Models\Role::where('role_key', 'POS_ACCOUNTANT')->firstOrFail();
+        $posAgentRole = \App\Models\Role::where('role_key', 'POS_AGENT')->firstOrFail();
+        $platformRole = \App\Models\Role::where('role_key', 'SUPER_ADMIN')->firstOrFail();
 
         $this->withHeaders($ownerAuth['headers'])
             ->getJson("/api/v1/pos/{$this->posA->pos_id}/members/assignable-roles")
