@@ -89,7 +89,7 @@ class UserController extends BaseController
             $relations = ['role'];
 
             if ($request->user()?->hasPermission('auth.view')) {
-                $relations = ['role', 'devices', 'securityBans'];
+                $relations = ['role', 'devices.securityBans', 'securityBans'];
             }
 
             $user = $this->userService->findById($id, $relations);

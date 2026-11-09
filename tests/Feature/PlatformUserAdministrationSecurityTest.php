@@ -67,6 +67,46 @@ class PlatformUserAdministrationSecurityTest extends TestCase
             ->assertDontSee('private-fcm-registration-token');
     }
 
+    public function test_device_ban_history_is_included_in_user_detail_and_can_be_lifted(): void
+    {
+        $admin = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'Platform Admin');
+        $target = $this->makePlatformUser(RoleKey::SUPPORT_AGENT, 'Target User');
+        $device = UserDevice::query()->create([
+            'user_id' => $target->user_id,
+            'device_uuid' => 'test-device-'.bin2hex(random_bytes(8)),
+            'device_name' => 'Test Windows Device',
+            'device_type' => 'WINDOWS',
+            'fcm_token' => null,
+            'is_primary' => false,
+            'status' => 'ACTIVE',
+        ]);
+        $session = $this->createAuthenticatedSession($admin);
+
+        $this->postJson('/api/v1/security/ban-device', [
+            'device_id' => $device->device_id,
+            'ban_type' => 'TEMPORARY',
+            'ban_reason' => 'Temporary security review',
+            'end_at' => now('Asia/Aden')->addHours(3)->toDateTimeString(),
+        ], $session['headers'])->assertOk();
+
+        $detail = $this->getJson('/api/v1/users/'.$target->user_id, $session['headers'])
+            ->assertOk()
+            ->assertJsonPath('data.devices.0.device_id', $device->device_id)
+            ->assertJsonPath('data.devices.0.security_bans.0.device_id', $device->device_id)
+            ->assertJsonPath('data.devices.0.security_bans.0.ban_type', 'TEMPORARY')
+            ->assertJsonPath('data.devices.0.status', 'BANNED');
+
+        $banId = $detail->json('data.devices.0.security_bans.0.ban_id');
+
+        $this->deleteJson('/api/v1/security/bans/'.$banId, [], $session['headers'])
+            ->assertOk();
+
+        $this->getJson('/api/v1/users/'.$target->user_id, $session['headers'])
+            ->assertOk()
+            ->assertJsonPath('data.devices.0.status', 'ACTIVE')
+            ->assertJsonPath('data.devices.0.security_bans', []);
+    }
+
     public function test_accountant_without_users_view_cannot_read_users(): void
     {
         $accountant = $this->makePlatformUser(RoleKey::ACCOUNTANT, 'Platform Accountant');
