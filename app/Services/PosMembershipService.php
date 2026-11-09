@@ -25,10 +25,16 @@ class PosMembershipService
     {
         $this->authorizeActor($posId, $actorId);
 
+        $ownerId = (int) Pos::query()->whereKey($posId)->value('owner_id');
+
         return PosUser::where('pos_id', $posId)
             ->with(['user', 'role'])
             ->orderBy('id', 'asc')
-            ->get();
+            ->get()
+            ->each(fn (PosUser $member) => $member->setAttribute(
+                'is_owner',
+                (int) $member->user_id === $ownerId
+            ));
     }
 
     /**
