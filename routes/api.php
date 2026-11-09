@@ -217,6 +217,7 @@ Route::prefix('v1')->group(function () {
 
         // 3.1. إدارة أعضاء وموظفي الشبكة (Scoped Network Memberships)
         Route::middleware(['throttle:api-read', 'operational.scope'])->group(function () {
+            Route::get('networks/{networkId}/members/assignable-roles', [NetworkMembershipController::class, 'assignableRoles'])->whereNumber('networkId')->name('api.v1.networks.members.assignable_roles');
             Route::get('networks/{networkId}/members', [NetworkMembershipController::class, 'index'])->whereNumber('networkId')->name('api.v1.networks.members.index');
         });
         Route::middleware(['throttle:api-write', 'operational.scope'])->group(function () {
@@ -251,6 +252,7 @@ Route::prefix('v1')->group(function () {
 
         // 4.1. إدارة أعضاء وموظفي نقاط البيع (Scoped POS Memberships)
         Route::middleware(['throttle:api-read', 'operational.scope'])->group(function () {
+            Route::get('pos/{posId}/members/assignable-roles', [PosMembershipController::class, 'assignableRoles'])->whereNumber('posId')->name('api.v1.pos.members.assignable_roles');
             Route::get('pos/{posId}/members', [PosMembershipController::class, 'index'])->whereNumber('posId')->name('api.v1.pos.members.index');
         });
         Route::middleware(['throttle:api-write', 'operational.scope'])->group(function () {
