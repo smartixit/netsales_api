@@ -178,6 +178,13 @@ class PlatformUserAdministrationSecurityTest extends TestCase
 
         $operationalUser->restore();
         $this->getJson('/api/v1/users/'.$operationalUser->user_id, $session['headers'])->assertForbidden();
+        $this->getJson('/api/v1/security/users/'.$operationalUser->user_id.'/sessions', $session['headers'])->assertForbidden();
+        $this->getJson('/api/v1/security/users/'.$operationalUser->user_id.'/devices', $session['headers'])->assertForbidden();
+        $this->postJson('/api/v1/security/ban-user', [
+            'user_id' => $operationalUser->user_id,
+            'ban_type' => 'PERMANENT',
+            'ban_reason' => 'Cross-scope regression attempt',
+        ], $session['headers'])->assertForbidden();
         $this->putJson('/api/v1/users/'.$operationalUser->user_id, [
             'user_full_name' => 'Attempted Cross Scope Edit',
         ], $session['headers'])->assertForbidden();
