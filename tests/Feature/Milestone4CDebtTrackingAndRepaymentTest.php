@@ -5,9 +5,11 @@ namespace Tests\Feature;
 use App\Enums\InvoicePaymentStatus;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Enums\RoleKey;
 use App\Enums\SaleType;
 use App\Enums\UserStatus;
 use App\Models\Network;
+use App\Models\NetworkUser;
 use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
 use App\Models\OutboxMessage;
@@ -15,6 +17,7 @@ use App\Models\Pos;
 use App\Models\PosRepayment;
 use App\Models\PosRepaymentAllocation;
 use App\Models\PosWallet;
+use App\Models\Role;
 use App\Models\SaleInvoice;
 use App\Models\User;
 use App\Models\UserDevice;
@@ -79,6 +82,14 @@ class Milestone4CDebtTrackingAndRepaymentTest extends TestCase
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => NetworkStatus::ACTIVE,
+        ]);
+
+        $networkOwnerRole = Role::byKey(RoleKey::NETWORK_OWNER)->firstOrFail();
+        NetworkUser::query()->create([
+            'network_id' => $this->network->network_id,
+            'user_id' => $this->networkOwner->user_id,
+            'role_id' => $networkOwnerRole->role_id,
+            'status' => 'ACTIVE',
         ]);
 
         // 3. إنشاء محفظة الشبكة
@@ -152,6 +163,13 @@ class Milestone4CDebtTrackingAndRepaymentTest extends TestCase
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => NetworkStatus::ACTIVE,
+        ]);
+
+        NetworkUser::query()->create([
+            'network_id' => $this->otherNetwork->network_id,
+            'user_id' => $this->otherNetworkOwner->user_id,
+            'role_id' => $networkOwnerRole->role_id,
+            'status' => 'ACTIVE',
         ]);
 
         // جهاز وجلسة صاحب الشبكة
