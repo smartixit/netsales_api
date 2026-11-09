@@ -198,6 +198,13 @@ class NetworkWorkspaceOverviewTest extends TestCase
         ]);
 
         $headers = $this->createAuthenticatedSession($owner)['headers'];
+
+        $this->getJson('/api/v1/auth/me', $headers)
+            ->assertOk()
+            ->assertJsonPath('data.role_key', RoleKey::NETWORK_OWNER->value)
+            ->assertJsonPath('data.workspace_roles.0.scope', 'NETWORK')
+            ->assertJsonPath('data.workspace_roles.0.tenant_id', $network->network_id);
+
         $response = $this->getJson(
             "/api/v1/networks/{$network->network_id}/workspace-overview?period=30d",
             $headers
