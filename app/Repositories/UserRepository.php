@@ -66,13 +66,14 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
     /**
      * Retrieve only soft-deleted platform-scope users with cursor pagination.
      */
-    public function getPlatformTrashed(int $perPage = 15): CursorPaginator
+    public function getPlatformTrashed(int $perPage = 15, ?string $search = null): CursorPaginator
     {
         $perPage = min(max(1, $perPage), 50);
 
         return $this->model->newQuery()
             ->onlyTrashed()
             ->whereHas('role', fn ($query) => $query->where('scope', RoleScope::PLATFORM->value))
+            ->when($search !== null && trim($search) !== '', fn ($query) => $query->search(trim($search)))
             ->with('role')
             ->orderBy('user_id', 'desc')
             ->cursorPaginate($perPage);
