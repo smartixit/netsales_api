@@ -87,8 +87,8 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'owner_id' => $otherOwner->user_id,
             'network_name' => 'Other Network '.uniqid(),
             'network_phone_number' => $otherOwner->user_phone_number,
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $governorateId,
+            'directorate_id' => $directorateId,
             'status' => NetworkStatus::ACTIVE,
         ]);
 
@@ -104,16 +104,16 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'owner_id' => $owner->user_id,
             'pos_name' => 'Active POS '.uniqid(),
             'pos_phone_number' => '73'.random_int(100000000, 999999999),
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $governorateId,
+            'directorate_id' => $directorateId,
             'status' => PosStatus::ACTIVE,
         ]);
         $inactivePos = Pos::create([
             'owner_id' => $owner->user_id,
             'pos_name' => 'Inactive POS '.uniqid(),
             'pos_phone_number' => '73'.random_int(100000000, 999999999),
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $governorateId,
+            'directorate_id' => $directorateId,
             'status' => PosStatus::ACTIVE,
         ]);
 
@@ -251,8 +251,8 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'owner_id' => $owner->user_id,
             'network_name' => 'Period Network '.uniqid(),
             'network_phone_number' => $owner->user_phone_number,
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $governorateId,
+            'directorate_id' => $directorateId,
             'status' => NetworkStatus::ACTIVE,
         ]);
 
@@ -301,8 +301,8 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'owner_id' => $owner->user_id,
             'network_name' => 'Member Network '.uniqid(),
             'network_phone_number' => $owner->user_phone_number,
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $governorateId,
+            'directorate_id' => $directorateId,
             'status' => NetworkStatus::ACTIVE,
         ]);
 
