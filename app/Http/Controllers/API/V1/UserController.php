@@ -269,7 +269,7 @@ class UserController extends BaseController
     {
         try {
             $perPage = (int) ($request->query('per_page', 15));
-            $trashed = $this->userService->getPlatformTrashed($perPage);
+            $trashed = $this->userService->getPlatformTrashed($perPage, $request->query('search'));
 
             return $this->successResponse('تم استرجاع المحذوفات بنجاح.', UserResource::collection($trashed));
         } catch (ValidationException $e) {
