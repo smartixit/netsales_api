@@ -8,11 +8,13 @@ use App\Enums\RequestStatus;
 use App\Enums\RoleKey;
 use App\Enums\SaleType;
 use App\Enums\UserStatus;
+use App\Models\Directorate;
 use App\Models\Expense;
+use App\Models\Governorate;
 use App\Models\Network;
 use App\Models\NetworkPos;
-use App\Models\NetworkWallet;
 use App\Models\NetworkUser;
+use App\Models\NetworkWallet;
 use App\Models\Pos;
 use App\Models\Request as ProcurementRequest;
 use App\Models\Role;
@@ -25,8 +27,25 @@ class NetworkWorkspaceOverviewTest extends TestCase
 {
     use DatabaseTransactions;
 
+    /** @return array{int, int} */
+    private function geographicIds(): array
+    {
+        $governorate = Governorate::query()->first()
+            ?? Governorate::create(['governorate_name' => 'Workspace Test Governorate']);
+        $directorate = Directorate::query()
+            ->where('governorate_id', $governorate->governorate_id)
+            ->first()
+            ?? Directorate::create([
+                'governorate_id' => $governorate->governorate_id,
+                'directorate_name' => 'Workspace Test Directorate',
+            ]);
+
+        return [$governorate->governorate_id, $directorate->directorate_id];
+    }
+
     public function test_network_owner_receives_only_the_selected_networks_live_overview(): void
     {
+        [$governorateId, $directorateId] = $this->geographicIds();
         $ownerRole = Role::query()
             ->where('role_key', RoleKey::NETWORK_OWNER->value)
             ->firstOrFail();
@@ -43,8 +62,8 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'owner_id' => $owner->user_id,
             'network_name' => 'Overview Network '.uniqid(),
             'network_phone_number' => $owner->user_phone_number,
-            'governorate_id' => 1,
-            'directorate_id' => 1,
+            'governorate_id' => $governorateId,
+            'directorate_id' => $directorateId,
             'status' => NetworkStatus::ACTIVE,
         ]);
 
@@ -215,6 +234,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
 
     public function test_workspace_overview_rejects_an_unsupported_period(): void
     {
+        [$governorateId, $directorateId] = $this->geographicIds();
         $role = Role::query()
             ->where('role_key', RoleKey::NETWORK_OWNER->value)
             ->firstOrFail();
@@ -254,6 +274,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
 
     public function test_workspace_overview_omits_financial_metrics_for_a_network_user_without_finance_permissions(): void
     {
+        [$governorateId, $directorateId] = $this->geographicIds();
         $ownerRole = Role::query()
             ->where('role_key', RoleKey::NETWORK_OWNER->value)
             ->firstOrFail();
