@@ -37,7 +37,8 @@ class SecurityService
         protected UserDeviceRepositoryInterface $userDeviceRepository,
         protected UserSessionRepositoryInterface $userSessionRepository,
         protected SessionValidatorService $sessionValidatorService,
-        protected AsymmetricCryptoService $asymmetricCryptoService,\n        protected PlatformAdminContinuityService $platformAdminContinuityService,
+        protected AsymmetricCryptoService $asymmetricCryptoService,
+        protected PlatformAdminContinuityService $platformAdminContinuityService,
     ) {}
 
     /**
