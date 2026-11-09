@@ -683,12 +683,13 @@ class AuthService
     public function me(User $user): array
     {
         $user->load(['role']);
+        $workspaceRoles = $user->getWorkspaceRoles();
 
         return [
             'user' => $user,
             'is_super_admin' => $user->hasRole(RoleKey::SUPER_ADMIN),
-            'role_key' => $user->role?->role_key ?? ($user->getWorkspaceRoles()[0]['role_key'] ?? null),
-            'workspace_roles' => $user->getWorkspaceRoles(),
+            'role_key' => $user->role?->role_key ?? ($workspaceRoles[0]['role_key'] ?? null),
+            'workspace_roles' => $workspaceRoles,
             'permissions' => $user->getAllPermissions(),
         ];
     }

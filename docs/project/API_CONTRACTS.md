@@ -194,7 +194,7 @@ Each queue returns an authoritative total \`count\` and at most five preview \`i
 - Response includes `generated_at`, `timezone` (`Asia/Aden`), `period`, the selected `network`, permission-filtered `metrics`, and up to five `recent_pending_requests`.
 - Metric groups are omitted when the caller lacks the corresponding permission:
   - `points_of_sale`: `pos.view`; counts active/inactive Network–POS links for the selected network.
-  - `requests` and `recent_pending_requests`: `requests.view`; status counts and a small pending queue without client-supplied totals.
+  - `requests` and `recent_pending_requests`: `requests.view`; status counts and a small pending queue including the server-calculated `request_total_amount` and request date.
   - `packages`: `voucher_packages.view`; active/inactive package counts.
   - `sales`: `sales.view`; server aggregates of invoice count, invoice total, paid and outstanding amounts for the selected date range.
   - `expenses`: `expenses.view`; network-only expense count and total for the selected date range.

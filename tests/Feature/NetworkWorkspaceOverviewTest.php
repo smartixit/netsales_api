@@ -234,6 +234,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
             ->assertJsonPath('data.metrics.points_of_sale.active', 1)
             ->assertJsonPath('data.metrics.points_of_sale.inactive', 1)
             ->assertJsonPath('data.metrics.requests.pending', 1)
+            ->assertJsonPath('data.recent_pending_requests.0.request_total_amount', '900.00')
             ->assertJsonPath('data.metrics.sales.total_amount', '1000.00')
             ->assertJsonPath('data.metrics.sales.paid_amount', '400.00')
             ->assertJsonPath('data.metrics.sales.outstanding_amount', '600.00')
