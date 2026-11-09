@@ -290,6 +290,11 @@ class UserService
         return $this->userRepository->getTrashed($perPage);
     }
 
+    public function getPlatformTrashed(int $perPage = 15): CursorPaginator
+    {
+        return $this->userRepository->getPlatformTrashed($perPage);
+    }
+
     /**
      * مزامنة الصلاحيات المباشرة للمستخدم.
      *
