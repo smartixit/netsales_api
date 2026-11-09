@@ -15,6 +15,7 @@ use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\NetworkUser;
 use App\Models\NetworkWallet;
+use App\Models\PosUser;
 use App\Models\Pos;
 use App\Models\Request as ProcurementRequest;
 use App\Models\Role;
@@ -197,13 +198,27 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'created_by' => $owner->user_id,
         ]);
 
+        $posUserRole = Role::query()
+            ->where('role_key', RoleKey::POS_USER->value)
+            ->firstOrFail();
+
+        PosUser::create([
+            'pos_id' => $activePos->pos_id,
+            'user_id' => $owner->user_id,
+            'role_id' => $posUserRole->role_id,
+            'status' => 'ACTIVE',
+            'last_event_seq' => 1,
+        ]);
+
         $headers = $this->createAuthenticatedSession($owner)['headers'];
 
         $this->getJson('/api/v1/auth/me', $headers)
             ->assertOk()
             ->assertJsonPath('data.role_key', RoleKey::NETWORK_OWNER->value)
             ->assertJsonPath('data.workspace_roles.0.scope', 'NETWORK')
-            ->assertJsonPath('data.workspace_roles.0.tenant_id', $network->network_id);
+            ->assertJsonPath('data.workspace_roles.0.tenant_id', $network->network_id)
+            ->assertJsonPath('data.workspace_roles.1.scope', 'POS')
+            ->assertJsonPath('data.workspace_roles.1.tenant_id', $activePos->pos_id);
 
         $response = $this->getJson(
             "/api/v1/networks/{$network->network_id}/workspace-overview?period=30d",
