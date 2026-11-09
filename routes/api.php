@@ -75,6 +75,7 @@ Route::prefix('v1')->group(function () {
             Route::post('logout-other-devices', [AuthController::class, 'logoutOtherDevices'])->name('api.v1.auth.logout_other_devices');
             Route::get('me', [AuthController::class, 'me'])->name('api.v1.auth.me');
             Route::post('update-password', [AuthController::class, 'updatePassword'])->name('api.v1.auth.update_password');
+            Route::post('2fa/request-otp', [AuthController::class, 'requestTwoFactorOtp'])->name('api.v1.auth.2fa.request_otp');
             Route::post('toggle-2fa', [AuthController::class, 'toggleTwoFactor'])->name('api.v1.auth.toggle_2fa');
             Route::get('devices', [AuthController::class, 'getDevices'])->name('api.v1.auth.devices');
             Route::delete('devices/{id}', [AuthController::class, 'disconnectDevice'])->whereNumber('id')->name('api.v1.auth.devices.disconnect');

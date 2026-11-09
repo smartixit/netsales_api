@@ -919,6 +919,21 @@ class AuthService
     }
 
     /**
+     * طلب رمز تحقق (OTP) لتفعيل أو إدارة المصادقة الثنائية للمستخدم المصادق عليه.
+     *
+     * @return array{code: string, expires_at: \Carbon\Carbon}
+     */
+    public function requestTwoFactorOtp(User $user, string $deviceUuid, ?string $appHash = null): array
+    {
+        return $this->otpService->generateOtpForUser(
+            user: $user,
+            type: OtpType::OTP_2FA,
+            deviceUuid: $deviceUuid,
+            appHash: $appHash
+        );
+    }
+
+    /**
      * تفعيل أو تعطيل المصادقة الثنائية (2FA) للحساب.
      */
     public function toggleTwoFactor(User $user, ToggleTwoFactorRequest|bool $request, ?string $otp = null): bool
@@ -926,13 +941,38 @@ class AuthService
         if ($request instanceof ToggleTwoFactorRequest) {
             $enable = (bool) $request->enable;
             $otp = $request->otp ? (string) $request->otp : null;
+            $currentPassword = $request->current_password ? (string) $request->current_password : null;
         } else {
             $enable = (bool) $request;
+            $currentPassword = null;
         }
 
-        if ($enable && $otp) {
-            $deviceUuid = (string) (request()->header('X-Device-Uuid') ?? request()->input('device_uuid') ?? 'CURRENT-DEVICE');
+        $deviceUuid = (string) (request()->header('X-Device-Uuid') ?? request()->input('device_uuid') ?? 'CURRENT-DEVICE');
+
+        if ($enable) {
+            if (empty($otp)) {
+                throw ValidationException::withMessages([
+                    'otp' => ['رمز التحقق (OTP) مطلوب لتفعيل المصادقة الثنائية.'],
+                ]);
+            }
             $this->otpService->verifyOtp($user->user_id, $otp, OtpType::OTP_2FA, $deviceUuid);
+        } else {
+            // تعطيل المصادقة الثنائية يتطلب إعادة المصادقة بكلمة المرور الحالية أو برمز OTP
+            if ($user->user_2fa_enabled) {
+                if (! empty($currentPassword)) {
+                    if (! Hash::check($currentPassword, (string) $user->user_password)) {
+                        throw ValidationException::withMessages([
+                            'current_password' => ['كلمة المرور الحالية غير صحيحة.'],
+                        ]);
+                    }
+                } elseif (! empty($otp)) {
+                    $this->otpService->verifyOtp($user->user_id, $otp, OtpType::OTP_2FA, $deviceUuid);
+                } else {
+                    throw ValidationException::withMessages([
+                        'current_password' => ['يرجى إدخال كلمة المرور الحالية أو رمز التحقق لتعطيل المصادقة الثنائية.'],
+                    ]);
+                }
+            }
         }
 
         return DB::transaction(function () use ($user, $enable) {

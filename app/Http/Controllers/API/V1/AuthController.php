@@ -541,6 +541,40 @@ class AuthController extends BaseController
     }
 
     /**
+     * طلب رمز تحقق (OTP) لتفعيل أو إدارة المصادقة الثنائية للمستخدم الحالي.
+     */
+    #[OA\Post(
+        path: '/api/v1/auth/2fa/request-otp',
+        summary: 'طلب رمز تحقق (OTP) لتفعيل أو إدارة المصادقة الثنائية للمستخدم الحالي',
+        security: [['sessionAuth' => []]],
+        tags: ['Auth'],
+        responses: [
+            new OA\Response(response: 200, description: 'تم إرسال رمز التحقق بنجاح'),
+            new OA\Response(response: 422, description: 'فشل إرسال رمز التحقق'),
+        ]
+    )]
+    public function requestTwoFactorOtp(Request $request): JsonResponse
+    {
+        try {
+            $user = $this->currentUser();
+            if (! $user) {
+                return $this->errorResponse('غير مصادق عليه.', [], 401);
+            }
+
+            $deviceUuid = (string) ($request->header('X-Device-Uuid') ?? $request->input('device_uuid') ?? 'CURRENT-DEVICE');
+            $appHash = (string) ($request->input('app_hash') ?? $request->header('X-App-Signature') ?? $request->header('X-App-Hash') ?? '');
+
+            $this->authService->requestTwoFactorOtp($user, $deviceUuid, $appHash ?: null);
+
+            return $this->successResponse('تم إرسال رمز التحقق بنجاح إلى رقم هاتفك المسجل.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل إرسال رمز التحقق: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
      * تفعيل أو تعطيل المصادقة الثنائية (2FA).
      */
     #[OA\Post(
@@ -558,6 +592,8 @@ class AuthController extends BaseController
                     properties: [
                         new OA\Property(property: 'enable', type: 'boolean', example: true),
                         new OA\Property(property: 'otp', type: 'string', nullable: true, example: '123456'),
+                        new OA\Property(property: 'current_password', type: 'string', nullable: true, example: 'secret123'),
+                        new OA\Property(property: 'device_uuid', type: 'string', nullable: true, example: 'uuid-12345'),
                     ]
                 )
             )
