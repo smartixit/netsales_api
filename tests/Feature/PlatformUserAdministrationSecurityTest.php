@@ -143,6 +143,50 @@ class PlatformUserAdministrationSecurityTest extends TestCase
         $this->assertSame(UserStatus::BANNED, $target->fresh()->status);
     }
 
+    public function test_operational_role_cannot_access_platform_user_administration(): void
+    {
+        $networkRole = Role::byKey(RoleKey::NETWORK_OWNER)->firstOrFail();
+        $operationalUser = User::query()->create([
+            'role_id' => $networkRole->role_id,
+            'user_full_name' => 'Network Owner',
+            'user_phone_number' => '77'.random_int(1000000, 9999999),
+            'user_password' => Hash::make('SecurePassword123'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+        $session = $this->createAuthenticatedSession($operationalUser);
+
+        $this->getJson('/api/v1/users', $session['headers'])->assertForbidden();
+        $this->getJson('/api/v1/roles', $session['headers'])->assertForbidden();
+    }
+
+    public function test_platform_admin_cannot_read_or_mutate_operational_user_through_platform_routes(): void
+    {
+        $admin = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'Platform Admin');
+        $networkRole = Role::byKey(RoleKey::NETWORK_OWNER)->firstOrFail();
+        $operationalUser = User::query()->create([
+            'role_id' => $networkRole->role_id,
+            'user_full_name' => 'Network Owner',
+            'user_phone_number' => '77'.random_int(1000000, 9999999),
+            'user_password' => Hash::make('SecurePassword123'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+        $session = $this->createAuthenticatedSession($admin);
+
+        $this->getJson('/api/v1/users/'.$operationalUser->user_id, $session['headers'])->assertForbidden();
+        $this->putJson('/api/v1/users/'.$operationalUser->user_id, [
+            'user_full_name' => 'Attempted Cross Scope Edit',
+        ], $session['headers'])->assertForbidden();
+        $this->postJson('/api/v1/users/batch-delete', [
+            'ids' => [$admin->user_id, $operationalUser->user_id],
+        ], $session['headers'])->assertForbidden();
+
+        $this->assertDatabaseHas('users', [
+            'user_id' => $operationalUser->user_id,
+            'user_full_name' => 'Network Owner',
+            'deleted_at' => null,
+        ]);
+    }
+
     private function makePlatformUser(
         RoleKey $roleKey,
         string $name,
