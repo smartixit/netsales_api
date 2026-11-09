@@ -126,16 +126,16 @@ Route::prefix('v1')->group(function () {
         // ==========================================
         // 1. إدارة المستخدمين (Users Management)
         Route::get('roles', [RoleController::class, 'index'])
-            ->middleware(['throttle:api-read', 'permission:roles.view'])
+            ->middleware(['throttle:api-read', 'platform.user.scope', 'permission:roles.view'])
             ->name('api.v1.roles.index');
 
-        Route::middleware(['throttle:api-read', 'permission:users.view'])->group(function () {
+        Route::middleware(['throttle:api-read', 'platform.user.scope', 'permission:users.view'])->group(function () {
             Route::get('users', [UserController::class, 'index'])->name('api.v1.users.index');
             Route::get('users/trashed', [UserController::class, 'trashed'])->name('api.v1.users.trashed');
             Route::get('users/{id}', [UserController::class, 'show'])->whereNumber('id')->name('api.v1.users.show');
         });
 
-        Route::middleware('throttle:api-write')->group(function () {
+        Route::middleware(['throttle:api-write', 'platform.user.scope'])->group(function () {
             Route::post('users/{id}/permissions', [UserController::class, 'syncPermissions'])
                 ->whereNumber('id')->middleware('permission:roles.manage')->name('api.v1.users.sync_permissions');
             Route::post('users/batch-delete', [UserController::class, 'bulkDelete'])
@@ -160,11 +160,11 @@ Route::prefix('v1')->group(function () {
 
         Route::post('users/{id}/profile-picture', [UserController::class, 'updateProfilePicture'])
             ->whereNumber('id')
-            ->middleware(['throttle:api-upload', 'permission:users.edit'])
+            ->middleware(['throttle:api-upload', 'platform.user.scope', 'permission:users.edit'])
             ->name('api.v1.users.profile_picture');
 
         // 2. إدارة الأمان والجلسات والحظر (Security & Sessions)
-        Route::prefix('security')->group(function () {
+        Route::prefix('security')->middleware('platform.user.scope')->group(function () {
             Route::middleware(['throttle:api-read', 'permission:auth.view'])->group(function () {
                 Route::get('users/{id}/sessions', [SecurityController::class, 'getUserSessions'])
                     ->whereNumber('id')->name('api.v1.security.user_sessions');
@@ -181,12 +181,12 @@ Route::prefix('v1')->group(function () {
             });
         });
 
-        // Backward-compatible aliases keep the same authorization checks.
-        Route::middleware(['throttle:api-read', 'permission:auth.view'])->group(function () {
+        // Backward-compatible aliases keep the same authorization and platform-scope checks.
+        Route::middleware(['throttle:api-read', 'platform.user.scope', 'permission:auth.view'])->group(function () {
             Route::get('users/{id}/sessions', [SecurityController::class, 'getUserSessions'])->whereNumber('id');
             Route::get('users/{id}/devices', [SecurityController::class, 'getUserDevices'])->whereNumber('id');
         });
-        Route::middleware(['throttle:api-write', 'permission:auth.manage'])->group(function () {
+        Route::middleware(['throttle:api-write', 'platform.user.scope', 'permission:auth.manage'])->group(function () {
             Route::post('ban-user', [SecurityController::class, 'banUser']);
             Route::post('ban-device', [SecurityController::class, 'banDevice']);
             Route::delete('bans/{id}', [SecurityController::class, 'unban'])->whereNumber('id');

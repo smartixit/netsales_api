@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Interfaces\UserRepositoryInterface;
 use App\Models\User;
@@ -36,6 +37,10 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
         $withRelations = ! empty($relations) ? $relations : $defaultRelations;
         $query = $this->model->newQuery()->with($withRelations);
 
+        if (($filters['role_scope'] ?? null) === RoleScope::PLATFORM->value) {
+            $query->whereHas('role', fn ($roleQuery) => $roleQuery->where('scope', RoleScope::PLATFORM->value));
+        }
+
         if (! empty($filters['search'])) {
             $query->search($filters['search']);
         }
@@ -55,6 +60,23 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
         }
 
         return $query->orderBy('user_id', 'desc')->cursorPaginate($perPage);
+    }
+
+
+    /**
+     * Retrieve only soft-deleted platform-scope users with cursor pagination.
+     */
+    public function getPlatformTrashed(int $perPage = 15, ?string $search = null): CursorPaginator
+    {
+        $perPage = min(max(1, $perPage), 50);
+
+        return $this->model->newQuery()
+            ->onlyTrashed()
+            ->whereHas('role', fn ($query) => $query->where('scope', RoleScope::PLATFORM->value))
+            ->when($search !== null && trim($search) !== '', fn ($query) => $query->search(trim($search)))
+            ->with('role')
+            ->orderBy('user_id', 'desc')
+            ->cursorPaginate($perPage);
     }
 
     /**
