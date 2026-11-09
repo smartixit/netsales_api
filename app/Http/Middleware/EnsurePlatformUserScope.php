@@ -52,21 +52,21 @@ class EnsurePlatformUserScope
             return User::withTrashed()->with('role')->findOrFail((int) $routeId);
         }
 
-        if ($request->is('api/v1/security/ban-user')) {
+        if ($request->is('api/v1/security/ban-user') || $request->is('api/v1/ban-user')) {
             return User::withTrashed()->with('role')->findOrFail((int) $request->input('user_id'));
         }
 
-        if ($request->is('api/v1/security/ban-device')) {
+        if ($request->is('api/v1/security/ban-device') || $request->is('api/v1/ban-device')) {
             $device = UserDevice::withTrashed()->with(['user' => fn ($query) => $query->withTrashed()->with('role')])->findOrFail((int) $request->input('device_id'));
             return $device->user;
         }
 
-        if ($request->is('api/v1/security/sessions/*/terminate')) {
+        if ($request->is('api/v1/security/sessions/*/terminate') || $request->is('api/v1/sessions/*/terminate')) {
             $session = UserSession::with(['user' => fn ($query) => $query->withTrashed()->with('role')])->findOrFail((int) $routeId);
             return $session->user;
         }
 
-        if ($request->is('api/v1/security/bans/*')) {
+        if ($request->is('api/v1/security/bans/*') || $request->is('api/v1/bans/*')) {
             $ban = SecurityBan::withTrashed()->with([
                 'user' => fn ($query) => $query->withTrashed()->with('role'),
                 'device' => fn ($query) => $query->withTrashed()->with(['user' => fn ($userQuery) => $userQuery->withTrashed()->with('role')]),
