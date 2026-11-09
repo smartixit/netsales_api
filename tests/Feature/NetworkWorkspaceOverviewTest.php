@@ -108,8 +108,15 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'directorate_id' => $directorateId,
             'status' => PosStatus::ACTIVE,
         ]);
+        $inactivePosOwner = User::create([
+            'role_id' => null,
+            'user_full_name' => 'Inactive POS Owner',
+            'user_phone_number' => '7'.random_int(100000000, 999999999),
+            'user_password' => 'password',
+            'status' => UserStatus::ACTIVE,
+        ]);
         $inactivePos = Pos::create([
-            'owner_id' => $owner->user_id,
+            'owner_id' => $inactivePosOwner->user_id,
             'pos_name' => 'Inactive POS '.uniqid(),
             'pos_phone_number' => '73'.random_int(100000000, 999999999),
             'governorate_id' => $governorateId,
