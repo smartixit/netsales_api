@@ -22,6 +22,15 @@ class EnsurePlatformUserScope
             throw new AuthorizationException('هذا الإجراء متاح لمستخدمي نطاق المنصة فقط.');
         }
 
+        if ($request->is('api/v1/users/batch-*')) {
+            $ids = array_values(array_unique(array_map('intval', (array) $request->input('ids', []))));
+            $users = User::withTrashed()->with('role')->whereIn('user_id', $ids)->get();
+
+            if ($ids === [] || $users->count() !== count($ids) || $users->contains(fn (User $user): bool => $user->role?->scope !== RoleScope::PLATFORM)) {
+                throw new AuthorizationException('تتضمن العملية حسابات غير موجودة أو خارج نطاق المنصة.');
+            }
+        }
+
         $target = $this->resolveTargetUser($request);
 
         if ($target !== null && $target->role?->scope !== RoleScope::PLATFORM) {
