@@ -183,3 +183,20 @@ Each queue returns an authoritative total \`count\` and at most five preview \`i
 - Member list records include `is_owner`, computed from the authoritative tenant `owner_id`.
 - Membership create and role-change operations accept only the matching operational user role. Owner, accountant, platform, cross-scope, inactive and unknown roles are rejected.
 - The global `GET /api/v1/roles` remains platform role reference data and must not be used for mobile tenant membership role selection.
+
+
+## Network Workspace Overview — Operational Mobile Contract
+
+- Method/path: `GET /api/v1/networks/{networkId}/workspace-overview`.
+- Authentication: active `session.auth` session and an operational workspace account.
+- Authorization: the caller must own the target Network or hold an `ACTIVE` `network_users` membership, pass the Network view policy, and hold `networks.view` in that exact network scope. Platform Dashboard overview is not reused by mobile.
+- Optional `period`: `7d`, `30d` (default), `90d`, `12m`; invalid values return HTTP 422.
+- Response includes `generated_at`, `timezone` (`Asia/Aden`), `period`, the selected `network`, permission-filtered `metrics`, and up to five `recent_pending_requests`.
+- Metric groups are omitted when the caller lacks the corresponding permission:
+  - `points_of_sale`: `pos.view`; counts active/inactive Network–POS links for the selected network.
+  - `requests` and `recent_pending_requests`: `requests.view`; status counts and a small pending queue without client-supplied totals.
+  - `packages`: `voucher_packages.view`; active/inactive package counts.
+  - `sales`: `sales.view`; server aggregates of invoice count, invoice total, paid and outstanding amounts for the selected date range.
+  - `expenses`: `expenses.view`; network-only expense count and total for the selected date range.
+  - `wallet`: `network_wallets.view`; current server wallet balance and active status, or `null` if no wallet is allocated.
+- Every query is scoped by the route's `networkId`. Financial values are aggregated only in Laravel and serialized as two-decimal strings. Flutter must not derive or aggregate these values.
