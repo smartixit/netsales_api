@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Models\Network;
 use App\Models\NetworkMembershipAuditLog;
 use App\Models\NetworkUser;
@@ -23,9 +25,30 @@ class NetworkMembershipService
     {
         $this->authorizeActor($networkId, $actorId);
 
+        $ownerId = (int) Network::query()->whereKey($networkId)->value('owner_id');
+
         return NetworkUser::where('network_id', $networkId)
             ->with(['user', 'role'])
             ->orderBy('id', 'asc')
+            ->get()
+            ->each(fn (NetworkUser $member) => $member->setAttribute(
+                'is_owner',
+                (int) $member->user_id === $ownerId
+            ));
+    }
+
+    /**
+     * جلب الأدوار التشغيلية المسموح بإسنادها داخل هذا النطاق.
+     */
+    public function getAssignableRoles(int $networkId, int $actorId): Collection
+    {
+        $this->authorizeActor($networkId, $actorId);
+
+        return Role::query()
+            ->where('scope', RoleScope::NETWORK->value)
+            ->where('role_key', RoleKey::NETWORK_USER->value)
+            ->active()
+            ->orderBy('role_name')
             ->get();
     }
 
@@ -49,13 +72,8 @@ class NetworkMembershipService
                 ]);
             }
 
-            // التحقق من أن الدور المحدد ذو نطاق NETWORK حصراً
-            $role = Role::find($roleId);
-            if (! $role || $role->scope !== 'NETWORK') {
-                throw ValidationException::withMessages([
-                    'role_id' => ['الدور المحدد غير صالح لعضوية مزود الشبكة (يجب أن يكون مقيداً بنطاق NETWORK).'],
-                ]);
-            }
+            // لا تسمح عضويات التشغيل بترقية عضو إلى مالك أو محاسب أو دور منصة.
+            $this->resolveAssignableRole($roleId);
 
             // منع التكرار
             $existing = NetworkUser::where('network_id', $networkId)
@@ -116,12 +134,7 @@ class NetworkMembershipService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $newRole = Role::find($newRoleId);
-            if (! $newRole || $newRole->scope !== 'NETWORK') {
-                throw ValidationException::withMessages([
-                    'role_id' => ['الدور الجديد يجب أن يكون مقيداً بنطاق NETWORK حصراً.'],
-                ]);
-            }
+            $newRole = $this->resolveAssignableRole($newRoleId);
 
             $oldRoleId = $member->role_id;
             if ($oldRoleId === $newRoleId) {
@@ -240,6 +253,27 @@ class NetworkMembershipService
 
             return true;
         });
+    }
+
+    /**
+     * لا تقبل إلا NETWORK_USER النشط؛ يمنع ذلك تصعيد الامتيازات عبر العضويات.
+     */
+    protected function resolveAssignableRole(int $roleId): Role
+    {
+        $role = Role::query()->find($roleId);
+
+        if (
+            ! $role
+            || ! $role->isActive()
+            || $role->scope !== RoleScope::NETWORK
+            || $role->role_key !== RoleKey::NETWORK_USER->value
+        ) {
+            throw ValidationException::withMessages([
+                'role_id' => ['الدور المحدد غير مسموح به لعضوية الشبكة. يسمح حالياً بدور مستخدم الشبكة التشغيلي فقط.'],
+            ]);
+        }
+
+        return $role;
     }
 
     /**

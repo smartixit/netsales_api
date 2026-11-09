@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Models\Pos;
 use App\Models\PosMembershipAuditLog;
 use App\Models\PosUser;
@@ -23,9 +25,30 @@ class PosMembershipService
     {
         $this->authorizeActor($posId, $actorId);
 
+        $ownerId = (int) Pos::query()->whereKey($posId)->value('owner_id');
+
         return PosUser::where('pos_id', $posId)
             ->with(['user', 'role'])
             ->orderBy('id', 'asc')
+            ->get()
+            ->each(fn (PosUser $member) => $member->setAttribute(
+                'is_owner',
+                (int) $member->user_id === $ownerId
+            ));
+    }
+
+    /**
+     * جلب الأدوار التشغيلية المسموح بإسنادها داخل نطاق نقطة البيع.
+     */
+    public function getAssignableRoles(int $posId, int $actorId): Collection
+    {
+        $this->authorizeActor($posId, $actorId);
+
+        return Role::query()
+            ->where('scope', RoleScope::POS->value)
+            ->where('role_key', RoleKey::POS_USER->value)
+            ->active()
+            ->orderBy('role_name')
             ->get();
     }
 
@@ -49,13 +72,8 @@ class PosMembershipService
                 ]);
             }
 
-            // التحقق من أن الدور المحدد ذو نطاق POS حصراً
-            $role = Role::find($roleId);
-            if (! $role || $role->scope !== 'POS') {
-                throw ValidationException::withMessages([
-                    'role_id' => ['الدور المحدد غير صالح لعضوية نقطة البيع (يجب أن يكون مقيداً بنطاق POS).'],
-                ]);
-            }
+            // لا تسمح عضويات التشغيل بترقية عضو إلى وكيل أو محاسب أو دور منصة.
+            $this->resolveAssignableRole($roleId);
 
             // منع التكرار
             $existing = PosUser::where('pos_id', $posId)
@@ -116,12 +134,7 @@ class PosMembershipService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $newRole = Role::find($newRoleId);
-            if (! $newRole || $newRole->scope !== 'POS') {
-                throw ValidationException::withMessages([
-                    'role_id' => ['الدور الجديد يجب أن يكون مقيداً بنطاق POS حصراً.'],
-                ]);
-            }
+            $newRole = $this->resolveAssignableRole($newRoleId);
 
             $oldRoleId = $member->role_id;
             if ($oldRoleId === $newRoleId) {
@@ -240,6 +253,27 @@ class PosMembershipService
 
             return true;
         });
+    }
+
+    /**
+     * لا تقبل إلا POS_USER النشط؛ يمنع ذلك تصعيد الامتيازات عبر العضويات.
+     */
+    protected function resolveAssignableRole(int $roleId): Role
+    {
+        $role = Role::query()->find($roleId);
+
+        if (
+            ! $role
+            || ! $role->isActive()
+            || $role->scope !== RoleScope::POS
+            || $role->role_key !== RoleKey::POS_USER->value
+        ) {
+            throw ValidationException::withMessages([
+                'role_id' => ['الدور المحدد غير مسموح به لعضوية نقطة البيع. يسمح حالياً بدور مستخدم نقطة البيع التشغيلي فقط.'],
+            ]);
+        }
+
+        return $role;
     }
 
     /**

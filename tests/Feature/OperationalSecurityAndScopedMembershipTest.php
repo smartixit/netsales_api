@@ -359,4 +359,125 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             ->deleteJson("/api/v1/pos/{$this->posA->pos_id}/members/{$newMemberUser->user_id}");
         $deleteMemberResponse->assertStatus(200);
     }
+
+    /**
+     * Membership role discovery and assignment must expose only least-privilege
+     * operational roles; scope membership alone must never allow privilege escalation.
+     */
+    public function test_network_membership_only_exposes_and_accepts_network_user_role(): void
+    {
+        $ownerAuth = $this->createAuthenticatedSession($this->networkOwner);
+        $networkUserRole = \App\Models\Role::where('role_key', 'NETWORK_USER')->firstOrFail();
+        $networkAccountantRole = \App\Models\Role::where('role_key', 'NETWORK_ACCOUNTANT')->firstOrFail();
+        $networkOwnerRole = \App\Models\Role::where('role_key', 'NETWORK_OWNER')->firstOrFail();
+        $platformRole = \App\Models\Role::where('role_key', 'SUPER_ADMIN')->firstOrFail();
+
+        $roles = $this->withHeaders($ownerAuth['headers'])
+            ->getJson("/api/v1/networks/{$this->networkA->network_id}/members/assignable-roles")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.role_key', 'NETWORK_USER');
+
+        $this->assertSame('NETWORK_USER', $roles->json('data.0.role_key'));
+
+        foreach ([$networkAccountantRole, $networkOwnerRole, $platformRole] as $role) {
+            $candidate = User::create([
+                'role_id' => null,
+                'user_full_name' => 'Rejected Network Staff '.uniqid(),
+                'user_phone_number' => '70'.rand(1000000, 9999999),
+                'user_password' => bcrypt('password'),
+                'status' => UserStatus::ACTIVE,
+            ]);
+
+            $response = $this->withHeaders($ownerAuth['headers'])
+                ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
+                    'user_phone_number' => $candidate->user_phone_number,
+                    'role_id' => $role->role_id,
+                ]);
+
+            $response->assertUnprocessable();
+        }
+
+        $this->assertDatabaseMissing('network_users', [
+            'network_id' => $this->networkA->network_id,
+            'role_id' => $networkAccountantRole->role_id,
+        ]);
+
+        $changeCandidate = User::create([
+            'role_id' => null,
+            'user_full_name' => 'Network Role Change Candidate '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+        $this->withHeaders($ownerAuth['headers'])
+            ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
+                'user_phone_number' => $changeCandidate->user_phone_number,
+                'role_id' => $networkUserRole->role_id,
+            ])->assertCreated();
+        $this->withHeaders($ownerAuth['headers'])
+            ->putJson("/api/v1/networks/{$this->networkA->network_id}/members/{$changeCandidate->user_id}/role", [
+                'role_id' => $networkAccountantRole->role_id,
+            ])->assertUnprocessable();
+
+        $this->assertDatabaseHas('roles', ['role_id' => $networkUserRole->role_id]);
+    }
+
+    public function test_pos_membership_only_exposes_and_accepts_pos_user_role(): void
+    {
+        $ownerAuth = $this->createAuthenticatedSession($this->posOwner);
+        $posUserRole = \App\Models\Role::where('role_key', 'POS_USER')->firstOrFail();
+        $posAccountantRole = \App\Models\Role::where('role_key', 'POS_ACCOUNTANT')->firstOrFail();
+        $posAgentRole = \App\Models\Role::where('role_key', 'POS_AGENT')->firstOrFail();
+        $platformRole = \App\Models\Role::where('role_key', 'SUPER_ADMIN')->firstOrFail();
+
+        $this->withHeaders($ownerAuth['headers'])
+            ->getJson("/api/v1/pos/{$this->posA->pos_id}/members/assignable-roles")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.role_key', 'POS_USER');
+
+        foreach ([$posAccountantRole, $posAgentRole, $platformRole] as $role) {
+            $candidate = User::create([
+                'role_id' => null,
+                'user_full_name' => 'Rejected POS Staff '.uniqid(),
+                'user_phone_number' => '70'.rand(1000000, 9999999),
+                'user_password' => bcrypt('password'),
+                'status' => UserStatus::ACTIVE,
+            ]);
+
+            $response = $this->withHeaders($ownerAuth['headers'])
+                ->postJson("/api/v1/pos/{$this->posA->pos_id}/members", [
+                    'user_phone_number' => $candidate->user_phone_number,
+                    'role_id' => $role->role_id,
+                ]);
+
+            $response->assertUnprocessable();
+        }
+
+        $this->assertDatabaseMissing('pos_users', [
+            'pos_id' => $this->posA->pos_id,
+            'role_id' => $posAccountantRole->role_id,
+        ]);
+
+        $changeCandidate = User::create([
+            'role_id' => null,
+            'user_full_name' => 'POS Role Change Candidate '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+        $this->withHeaders($ownerAuth['headers'])
+            ->postJson("/api/v1/pos/{$this->posA->pos_id}/members", [
+                'user_phone_number' => $changeCandidate->user_phone_number,
+                'role_id' => $posUserRole->role_id,
+            ])->assertCreated();
+        $this->withHeaders($ownerAuth['headers'])
+            ->putJson("/api/v1/pos/{$this->posA->pos_id}/members/{$changeCandidate->user_id}/role", [
+                'role_id' => $posAccountantRole->role_id,
+            ])->assertUnprocessable();
+
+        $this->assertDatabaseHas('roles', ['role_id' => $posUserRole->role_id]);
+    }
+
 }

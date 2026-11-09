@@ -57,3 +57,10 @@ All architectural and business decisions requiring future implementation approva
 
 ## 5. Next Authorized Action
 Halt at the Milestone 6 completion boundary. Present delivery verification evidence and await explicit user authorization before starting **Milestone 7 (Invoicing & Accounting)**.
+
+## Active implementation — Network/POS membership safety (2026-11-09)
+- API implementation is under review in PR #10 (`feat/scoped-membership-role-safety`).
+- Flutter implementation is under review in NetSales PR #20 (`feat/network-pos-team-management`).
+- Role assignment is intentionally limited to the ordinary operational user role per tenant. Accountant assignment remains excluded until accountant permission sets are verified to be read-only and policy-compliant.
+- PR #20 depends on the API contract and `is_owner` response change in PR #10; merge the API PR first, then the Flutter PR.
+- CI and visual QA are pending; do not mark this feature fully verified until exact-head checks pass and rendered phone/tablet Light/Dark review is completed.
