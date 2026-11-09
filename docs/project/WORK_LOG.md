@@ -750,3 +750,10 @@ This log documents all executed tasks, code changes, and verification command ou
 - Added focused route middleware tests to assert the least-privilege mapping and preserve operational route boundaries.
 - No database schema, resource payload, financial calculation, or endpoint path changes.
 - Test execution is pending GitHub Actions; no local test run is claimed.
+
+## 2026-11-09 — Scoped Network/POS membership role safety
+- Added tenant-authorized role-discovery endpoints for Network and POS memberships.
+- Restricted assignment and role changes to active NETWORK_USER / POS_USER roles only; owner, accountant, platform, cross-scope and inactive roles are rejected.
+- Membership list responses now include an authoritative is_owner flag derived from the tenant owner_id.
+- Added regression coverage for exposed role choices and attempts to assign elevated roles.
+- Verification status: Laravel CI for PR #10 is running; no green result is claimed yet.
