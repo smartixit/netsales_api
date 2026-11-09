@@ -238,7 +238,7 @@ class DashboardOverviewService
             'timezone' => self::TIMEZONE,
             'period' => [
                 'key' => $period,
-                'days' => $periodStart->diffInDays($now) + 1,
+                'days' => (int) $periodStart->diffInDays($now) + 1,
                 'from' => $periodStart->toIso8601String(),
                 'to' => $now->toIso8601String(),
             ],
