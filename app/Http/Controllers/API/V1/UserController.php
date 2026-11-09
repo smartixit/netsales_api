@@ -54,6 +54,7 @@ class UserController extends BaseController
     {
         try {
             $filters = $request->only(['search', 'role_id', 'status', 'per_page', 'all']);
+            $filters['role_scope'] = \\App\\Enums\\RoleScope::PLATFORM->value;
             $users = $this->userService->getFiltered($filters);
 
             return $this->successResponse('تم استرجاع قائمة المستخدمين بنجاح.', UserResource::collection($users));
@@ -267,7 +268,7 @@ class UserController extends BaseController
     {
         try {
             $perPage = (int) ($request->query('per_page', 15));
-            $trashed = $this->userService->getTrashed($perPage);
+            $trashed = $this->userService->getPlatformTrashed($perPage);
 
             return $this->successResponse('تم استرجاع المحذوفات بنجاح.', UserResource::collection($trashed));
         } catch (ValidationException $e) {
