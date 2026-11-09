@@ -219,6 +219,7 @@ class AuthController extends BaseController
                     'require_password_change' => $mustChangePassword,
                     'user' => new UserResource($user),
                     'permissions' => $result['permissions'],
+                    'workspace_roles' => $result['workspace_roles'],
                 ]
             );
         } catch (ValidationException $e) {
@@ -277,6 +278,7 @@ class AuthController extends BaseController
                     'require_password_change' => $mustChangePassword,
                     'user' => new UserResource($result['user']),
                     'permissions' => $result['permissions'],
+                    'workspace_roles' => $result['workspace_roles'],
                 ]
             );
         } catch (ValidationException $e) {
@@ -313,6 +315,7 @@ class AuthController extends BaseController
             'is_super_admin' => $result['is_super_admin'],
             'role_key' => $result['role_key'],
             'permissions' => $result['permissions'],
+            'workspace_roles' => $result['workspace_roles'],
         ]);
     }
 

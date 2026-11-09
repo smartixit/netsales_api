@@ -326,6 +326,7 @@ class AuthService
                 'user' => $user->load(['role']),
                 'session' => $session,
                 'permissions' => $mustChangePassword ? [] : $user->getAllPermissions(),
+                'workspace_roles' => $user->getWorkspaceRoles(),
             ];
         });
     }
@@ -675,7 +676,8 @@ class AuthService
         return [
             'user' => $user,
             'is_super_admin' => $user->hasRole(RoleKey::SUPER_ADMIN),
-            'role_key' => $user->role?->role_key,
+            'role_key' => $user->role?->role_key ?? ($user->getWorkspaceRoles()[0]['role_key'] ?? null),
+            'workspace_roles' => $user->getWorkspaceRoles(),
             'permissions' => $user->getAllPermissions(),
         ];
     }

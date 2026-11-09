@@ -404,7 +404,48 @@ class User extends Authenticatable
     }
 
     /**
-     * Get all unique permission keys assigned to this user.
+     * Return active operational memberships for client workspace routing.
+     *
+     * @return array<int, array{scope: string, tenant_id: int, role_key: string, role_name: string}>
+     */
+    public function getWorkspaceRoles(): array
+    {
+        $networkRoles = $this->networkUsers()
+            ->where('status', 'ACTIVE')
+            ->with('role')
+            ->get()
+            ->map(static fn (NetworkUser $membership): ?array => $membership->role === null
+                ? null
+                : [
+                    'scope' => 'NETWORK',
+                    'tenant_id' => (int) $membership->network_id,
+                    'role_key' => (string) $membership->role->role_key,
+                    'role_name' => (string) $membership->role->role_name,
+                ])
+            ->filter()
+            ->values();
+
+        $posRoles = $this->posUsers()
+            ->where('status', 'ACTIVE')
+            ->with('role')
+            ->get()
+            ->map(static fn (PosUser $membership): ?array => $membership->role === null
+                ? null
+                : [
+                    'scope' => 'POS',
+                    'tenant_id' => (int) $membership->pos_id,
+                    'role_key' => (string) $membership->role->role_key,
+                    'role_name' => (string) $membership->role->role_name,
+                ])
+            ->filter()
+            ->values();
+
+        return $networkRoles->concat($posRoles)->all();
+    }
+
+    /**
+     * Get unique permissions for the authenticated user, including active tenant roles.
+     * This is a client capability union only; authorization remains tenant-scoped on the server.
      *
      * @return array<int, string>
      */
@@ -414,10 +455,31 @@ class User extends Authenticatable
             return Permission::pluck('permission_key')->toArray();
         }
 
-        $rolePermissions = $this->role ? $this->role->permissions()->pluck('permission_key')->toArray() : [];
+        $rolePermissions = $this->role
+            ? $this->role->permissions()->pluck('permission_key')->toArray()
+            : [];
         $directPermissions = $this->permissions()->pluck('permission_key')->toArray();
 
-        return array_values(array_unique(array_merge($rolePermissions, $directPermissions)));
+        $networkPermissions = $this->networkUsers()
+            ->where('status', 'ACTIVE')
+            ->with('role.permissions')
+            ->get()
+            ->flatMap(static fn (NetworkUser $membership) => $membership->role?->permissions
+                ->pluck('permission_key') ?? collect());
+
+        $posPermissions = $this->posUsers()
+            ->where('status', 'ACTIVE')
+            ->with('role.permissions')
+            ->get()
+            ->flatMap(static fn (PosUser $membership) => $membership->role?->permissions
+                ->pluck('permission_key') ?? collect());
+
+        return array_values(array_unique(array_merge(
+            $rolePermissions,
+            $directPermissions,
+            $networkPermissions->all(),
+            $posPermissions->all(),
+        )));
     }
 
     protected function displayName(): Attribute
