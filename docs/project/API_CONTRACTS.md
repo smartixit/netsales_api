@@ -176,3 +176,10 @@ Each queue returns an authoritative total \`count\` and at most five preview \`i
 - The support-ticket schema currently has no ticket lifecycle/status column. The API therefore exposes \`total_tickets\` and \`unread_messages\`; it does **not** label all tickets as open.
 - The API returns only existing persisted data. Empty chart series and empty queues are valid real results, not synthetic samples.
 - Recent audit events are returned only when \`system_logs.view\` is granted. Support agents without that permission receive only recent support-ticket creation activity.
+
+## Network and POS membership role discovery (2026-11-09)
+- `GET /api/v1/networks/{networkId}/members/assignable-roles` returns active `NETWORK_USER` only after Network owner authorization.
+- `GET /api/v1/pos/{posId}/members/assignable-roles` returns active `POS_USER` only after POS owner/agent authorization.
+- Member list records include `is_owner`, computed from the authoritative tenant `owner_id`.
+- Membership create and role-change operations accept only the matching operational user role. Owner, accountant, platform, cross-scope, inactive and unknown roles are rejected.
+- The global `GET /api/v1/roles` remains platform role reference data and must not be used for mobile tenant membership role selection.
