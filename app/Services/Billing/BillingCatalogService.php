@@ -70,7 +70,13 @@ class BillingCatalogService
             ->where('plan_id', $plan->plan_id);
 
         if (! empty($filters['status'])) {
-            $query->where('status', BillingPlanVersionStatus::from((string) $filters['status']));
+            $status = BillingPlanVersionStatus::tryFrom((string) $filters['status']);
+            if (! $status) {
+                throw ValidationException::withMessages([
+                    'status' => ['حالة إصدار الخطة غير معروفة.'],
+                ]);
+            }
+            $query->where('status', $status);
         }
 
         $perPage = min(max((int) ($filters['per_page'] ?? 20), 1), 100);
