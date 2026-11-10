@@ -75,8 +75,8 @@ class BillingRevenueRecognitionService
                 }
 
                 $remainingAmount = $total - $recognized;
-                $remainingDays = $nextServiceDay->diffInDays($end) + 1;
-                $elapsedDays = $nextServiceDay->diffInDays($recognizedThrough) + 1;
+                $remainingDays = (int) $nextServiceDay->diffInDays($end) + 1;
+                $elapsedDays = (int) $nextServiceDay->diffInDays($recognizedThrough) + 1;
 
                 if ($remainingDays <= 0 || $elapsedDays <= 0 || $elapsedDays > $remainingDays) {
                     throw new OverflowException('فترة الاعتراف بالإيراد غير متسقة.');
