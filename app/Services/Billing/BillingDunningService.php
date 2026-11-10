@@ -127,15 +127,26 @@ class BillingDunningService
                 }
 
                 $oldStatus = $subscription->status->value;
-                $subscription->status = BillingSubscriptionStatus::SUSPENDED;
-                $subscription->paused_at = now('Asia/Aden');
+                $isIncomplete = $subscription->status === BillingSubscriptionStatus::INCOMPLETE;
+                $targetStatus = $isIncomplete
+                    ? BillingSubscriptionStatus::EXPIRED
+                    : BillingSubscriptionStatus::SUSPENDED;
+
+                $subscription->status = $targetStatus;
+                if ($isIncomplete) {
+                    $subscription->ended_at = now('Asia/Aden');
+                } else {
+                    $subscription->paused_at = now('Asia/Aden');
+                }
                 $subscription->save();
 
                 BillingSubscriptionEvent::query()->create([
                     'billing_subscription_id' => $subscription->billing_subscription_id,
-                    'event_type' => 'SUBSCRIPTION_SUSPENDED_FOR_NON_PAYMENT',
+                    'event_type' => $isIncomplete
+                        ? 'INITIAL_SUBSCRIPTION_EXPIRED_FOR_NON_PAYMENT'
+                        : 'SUBSCRIPTION_SUSPENDED_FOR_NON_PAYMENT',
                     'from_status' => $oldStatus,
-                    'to_status' => BillingSubscriptionStatus::SUSPENDED->value,
+                    'to_status' => $targetStatus->value,
                     'payload' => ['grace_period_ended_at' => $subscription->grace_period_ends_at?->toDateTimeString()],
                     'occurred_at' => now('Asia/Aden'),
                 ]);
