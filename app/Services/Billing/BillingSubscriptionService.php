@@ -95,8 +95,8 @@ class BillingSubscriptionService
                 'status' => $isTrial ? BillingSubscriptionStatus::TRIALING : BillingSubscriptionStatus::INCOMPLETE,
                 'collection_method' => 'MANUAL',
                 'quantity' => 1,
-                'current_period_start' => $now,
-                'current_period_end' => $isTrial ? $now->addDays($trialDays) : $periodEnd,
+                'current_period_start' => $isTrial ? $now : null,
+                'current_period_end' => $isTrial ? $now->addDays($trialDays) : null,
                 'trial_start' => $isTrial ? $now : null,
                 'trial_end' => $isTrial ? $now->addDays($trialDays) : null,
                 'terms_snapshot' => [
