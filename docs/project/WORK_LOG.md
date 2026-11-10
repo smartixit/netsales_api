@@ -898,3 +898,13 @@ This log documents all executed tasks, code changes, and verification command ou
 - Added server-side subscription search across subscription/account identifiers, account number/legal name, network name, and plan name/key. Existing currency/status/account/network filters and cursor pagination remain in place.
 - Dashboard integration now sends subscription search terms through the remote datasource, repository contract, use case, and controller; search refreshes subscriptions, invoices, and payments with the existing stale-response guards.
 - Verification: GitHub compare confirms the API branch is 14 commits ahead of `main` and Dashboard is 31 commits ahead, both 0 commits behind at the time of this entry. No PHP/Flutter runtime commands, automated tests, route:list, analyzer, or CI were executed in this environment. Do not treat the changes as validated or production-ready.
+
+
+## Platform billing catalogue contract completion — 2026-11-11
+
+- Added the platform billing product index contract and dedicated `BillingProductResource`; route is protected by `billing.view`.
+- Added cursor-paginated plan version history at `GET /api/v1/platform/billing/plans/{planId}/versions`, including immutable version status, policy-version references, per-currency prices, feature values, and timestamps.
+- Added safe validation for version status filters and eager-loaded policy/version relationships for the plan catalogue.
+- Corrected the platform subscriptions index controller to forward the `search` filter into `BillingPlatformReadService`; the service searches subscription/account identifiers, account number/legal name, network name, and plan name/key before cursor pagination.
+- Relevant commits: `97adf759` (version query), `42f23081` (version controller), `685674e6` (version resource), `68a0fb12` (version route), `52d519b4` (subscription search forwarding), `191eb032` (safe status filter), `9605afd8` (catalog eager loading).
+- Commands executed: GitHub source reads and file/commit operations only. No PHP runtime, Pint, PHPStan, PHPUnit, migration, route:list, or CI commands were run.
