@@ -134,7 +134,7 @@ class BillingRefundService
                 'تسوية استرداد '.$refund->refund_reference.' من الإشعار '.$creditNote->credit_note_number,
                 'billing-refund-'.$refund->refund_id,
                 [
-                    ['ledger_account_id' => $accounts['1100']->ledger_account_id, 'debit_minor' => $amountMinor, 'credit_minor' => 0],
+                    ['ledger_account_id' => $accounts['2200']->ledger_account_id, 'debit_minor' => $amountMinor, 'credit_minor' => 0],
                     ['ledger_account_id' => $treasuryLedger->ledger_account_id, 'debit_minor' => 0, 'credit_minor' => $amountMinor],
                 ],
                 $actor,
