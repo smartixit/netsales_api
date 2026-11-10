@@ -908,3 +908,14 @@ This log documents all executed tasks, code changes, and verification command ou
 - Corrected the platform subscriptions index controller to forward the `search` filter into `BillingPlatformReadService`; the service searches subscription/account identifiers, account number/legal name, network name, and plan name/key before cursor pagination.
 - Relevant commits: `97adf759` (version query), `42f23081` (version controller), `685674e6` (version resource), `68a0fb12` (version route), `52d519b4` (subscription search forwarding), `191eb032` (safe status filter), `9605afd8` (catalog eager loading).
 - Commands executed: GitHub source reads and file/commit operations only. No PHP runtime, Pint, PHPStan, PHPUnit, migration, route:list, or CI commands were run.
+
+
+## 2026-11-11 — Versioned Trial and Dunning Policy Read Contracts
+
+- Added cursor-paginated policy-version history endpoints:
+  - `GET /api/v1/platform/billing/policies/trials/{policyId}/versions`
+  - `GET /api/v1/platform/billing/policies/dunning/{policyId}/versions`
+- Added dedicated API Resources exposing immutable version IDs, exact policy values, publication timestamps, and version status.
+- Both routes are in the existing Platform Billing read group and therefore require `billing.view`.
+- Relevant commits: `07984ab7`, `3b662a0b`, `879806fa`, `0473f303`, `c31ffeef`.
+- Verification remains pending: no Laravel runtime, Pint, PHPStan, PHPUnit, route:list, migrations, or CI were run.
