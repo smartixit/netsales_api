@@ -141,6 +141,7 @@ jobs:
           app/Services/Billing/BillingPolicyManagementService.php
           app/Services/Billing/BillingCatalogService.php
           tests/Feature/BillingRevenueRecognitionTest.php
+          tests/Feature/BillingCreditNoteSettlementTest.php
           --no-progress --memory-limit=1G
         continue-on-error: true
 
