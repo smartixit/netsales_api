@@ -14,7 +14,6 @@ use App\Enums\NotificationType;
 use App\Enums\OtpType;
 use App\Enums\PaymentType;
 use App\Enums\PosStatus;
-use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\RequestStatus;
 use App\Enums\RoleKey;
 use App\Enums\RoleScope;
@@ -50,9 +49,9 @@ class EnumContractParityTest extends TestCase
     use DatabaseTransactions;
 
     /**
-     * Exact 24 Canonical PHP Backed Enums in app/Enums/
+     * Canonical PHP backed enums in app/Enums/
      */
-    public const ALL_24_ENUMS = [
+    public const ALL_ENUMS = [
         BackupStatus::class,
         BackupType::class,
         BankAccountType::class,
@@ -141,7 +140,6 @@ class EnumContractParityTest extends TestCase
             OtpType::class,
             BanType::class,
             BankAccountType::class,
-            ProviderSubscriptionStatus::class,
             NotificationType::class,
             SettingCategory::class,
             ValueType::class,

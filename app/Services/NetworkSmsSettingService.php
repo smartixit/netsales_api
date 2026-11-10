@@ -61,7 +61,6 @@ class NetworkSmsSettingService
                 'low_balance' => $setting ? (bool) $setting->notify_low_balance : true,
                 'daily_summary' => $setting ? (bool) $setting->notify_daily_summary : true,
                 'monthly_summary' => $setting ? (bool) $setting->notify_monthly_summary : true,
-                'subscription_expiry' => $setting ? (bool) $setting->notify_subscription_expiry : true,
             ];
 
             $activeCount = count(array_filter($types));
@@ -200,7 +199,6 @@ class NetworkSmsSettingService
                 'notify_low_balance',
                 'notify_daily_summary',
                 'notify_monthly_summary',
-                'notify_subscription_expiry',
             ];
             foreach ($switches as $col) {
                 if ($request->has($col)) {

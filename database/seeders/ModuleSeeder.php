@@ -98,13 +98,6 @@ class ModuleSeeder extends Seeder
                 'status' => true,
             ],
             [
-                'module_key' => 'subscriptions',
-                'module_name' => 'خطط الاشتراكات',
-                'module_icon' => 'heroicon-o-sparkles',
-                'module_desc' => 'إدارة باقات اشتراك الشبكات، الميزات، وطلبات التجديد',
-                'status' => true,
-            ],
-            [
                 'module_key' => 'billing',
                 'module_name' => 'الفوترة والاشتراكات والمنصة المالية',
                 'module_icon' => 'heroicon-o-receipt-percent',

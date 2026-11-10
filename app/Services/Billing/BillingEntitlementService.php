@@ -36,17 +36,32 @@ class BillingEntitlementService
 
     public function activeSubscriptionForNetwork(int $networkId): ?BillingSubscription
     {
-        $billingAccountId = \App\Models\BillingAccount::query()
-            ->where('network_id', $networkId)
-            ->where('status', 'ACTIVE')
-            ->value('billing_account_id');
-        if ($billingAccountId) {
-            $this->startEligibleFirstActivation((int) $billingAccountId);
+        // Resolve the subscription first; never choose an arbitrary account on a multi-currency network.
+        $candidate = BillingSubscription::query()
+            ->whereHas('billingAccount', fn ($account) => $account
+                ->where('network_id', $networkId)
+                ->where('status', 'ACTIVE'))
+            ->where(function ($query): void {
+                $query->where(function ($activation): void {
+                    $activation->where('status', BillingSubscriptionStatus::INCOMPLETE)
+                        ->whereNotNull('trial_policy_snapshot')
+                        ->where('trial_policy_snapshot->start_trigger', 'FIRST_ACTIVATION');
+                })->orWhereIn('status', [
+                    BillingSubscriptionStatus::ACTIVE,
+                    BillingSubscriptionStatus::TRIALING,
+                    BillingSubscriptionStatus::PAST_DUE,
+                ]);
+            })
+            ->orderByDesc('billing_subscription_id')
+            ->first();
+
+        if ($candidate && $candidate->status === BillingSubscriptionStatus::INCOMPLETE) {
+            $this->startEligibleFirstActivation((int) $candidate->billing_account_id);
         }
 
         return BillingSubscription::query()
             ->with(['planVersion.features', 'currency'])
-            ->whereHas('billingAccount', fn ($account) => $account->where('network_id', $networkId))
+            ->whereHas('billingAccount', fn ($account) => $account->where('network_id', $networkId)->where('status', 'ACTIVE'))
             ->where(function ($query): void {
                 $query->where(function ($active): void {
                     $active->whereIn('status', [

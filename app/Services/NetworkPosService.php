@@ -104,16 +104,16 @@ class NetworkPosService
             $pos->ensureActive();
             $network->ensureActive();
 
-            // 4. تفرض حدود الخطة في طبقة المجال، وليس في Flutter أو وسيط HTTP بعد تنفيذ العملية.
-            $this->assertPosQuota($networkId);
-
-            // 5. منع تكرار الارتباط
+            // 4. منع تكرار الارتباط قبل احتساب الحصة؛ الطلب المكرر لا يستهلك مورداً جديداً.
             $existing = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId);
             if ($existing) {
                 throw ValidationException::withMessages([
                     'pos_id' => ['نقطة البيع هذه مرتبطة بالفعل بهذه الشبكة مسبقاً.'],
                 ]);
             }
+
+            // 5. فحص الحصة قبل إنشاء ارتباط جديد فقط.
+            $this->assertPosQuota($networkId);
 
             $networkPos = $this->networkPosRepository->create([
                 'network_id' => $networkId,

@@ -26,7 +26,6 @@ return new class extends Migration
             $table->boolean('notify_low_balance')->default(true);         // تنبيه هبوط رصيد المحفظة تحت الحد الائتماني
             $table->boolean('notify_daily_summary')->default(true);       // إرسال الملخص المالي اليومي للشبكة
             $table->boolean('notify_monthly_summary')->default(true);     // إرسال التقرير المالي الختامي الشهري للشبكة
-            $table->boolean('notify_subscription_expiry')->default(true); // تنبيهات اقتراب وانتهاء اشتراك الشبكة في النظام
 
             // وضع البوابة: false = استخدام بوابة النظام العامة، true = بوابة خاصة بالشبكة
             $table->boolean('use_custom_gateway')->default(false);
