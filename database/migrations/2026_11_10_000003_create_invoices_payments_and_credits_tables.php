@@ -128,7 +128,7 @@ return new class extends Migration
             $table->foreignId('currency_id')->constrained('currencies', 'currency_id')->restrictOnDelete();
             $table->foreignId('payment_method_id')->constrained('billing_payment_methods', 'payment_method_id')->restrictOnDelete();
             $table->unsignedBigInteger('amount_minor');
-            $table->string('status', 20)->default('REQUIRES_PAYMENT_METHOD')->index();
+            $table->string('status', 32)->default('REQUIRES_PAYMENT_METHOD')->index();
             $table->string('idempotency_key', 128)->unique();
             $table->json('metadata')->nullable();
             $table->timestamp('expires_at')->nullable();
