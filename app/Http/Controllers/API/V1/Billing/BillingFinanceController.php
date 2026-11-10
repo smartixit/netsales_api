@@ -66,7 +66,7 @@ class BillingFinanceController extends BaseController
         return $this->successResponse(
             'تم استرجاع اشتراكات المنصة.',
             BillingSubscriptionResource::collection($this->read->subscriptions($request->only([
-                'network_id', 'billing_account_id', 'currency_id', 'status', 'per_page', 'all',
+                'network_id', 'billing_account_id', 'currency_id', 'status', 'search', 'per_page', 'all',
             ])))
         );
     }
