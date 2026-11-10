@@ -118,18 +118,22 @@ class BillingDashboardService
                 'pending_payments' => [
                     'count' => (int) ($pending->item_count ?? 0),
                     'amount_minor' => (int) ($pending->amount_minor ?? 0),
+                    'amount' => (new Money((int) ($pending->amount_minor ?? 0), (string) $currency->code))->toDecimalString((int) $currency->decimal_places),
                 ],
                 'open_invoices' => [
                     'count' => (int) ($open->item_count ?? 0),
                     'outstanding_minor' => (int) ($open->amount_minor ?? 0),
+                    'outstanding' => (new Money((int) ($open->amount_minor ?? 0), (string) $currency->code))->toDecimalString((int) $currency->decimal_places),
                 ],
                 'overdue_invoices' => [
                     'count' => (int) ($overdue->item_count ?? 0),
                     'outstanding_minor' => (int) ($overdue->amount_minor ?? 0),
+                    'outstanding' => (new Money((int) ($overdue->amount_minor ?? 0), (string) $currency->code))->toDecimalString((int) $currency->decimal_places),
                 ],
                 'verified_collections_this_month' => [
                     'count' => (int) ($collected->item_count ?? 0),
                     'amount_minor' => (int) ($collected->amount_minor ?? 0),
+                    'amount' => (new Money((int) ($collected->amount_minor ?? 0), (string) $currency->code))->toDecimalString((int) $currency->decimal_places),
                 ],
             ];
         })->values()->all();
