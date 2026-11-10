@@ -198,7 +198,7 @@ class BillingReconciliationService
                     ->where('entries.status', 'POSTED')
                     ->where('lines.ledger_account_id', $account->ledger_account_id)
                     ->where('lines.currency_id', $currencyId)
-                    ->selectRaw('COALESCE(SUM(lines.debit_minor - lines.credit_minor), 0) AS balance_minor')
+                    ->selectRaw('COALESCE(SUM(CAST(lines.debit_minor AS SIGNED) - CAST(lines.credit_minor AS SIGNED)), 0) AS balance_minor')
                     ->value('balance_minor');
             } else {
                 $missingLedgerAccountCount++;
