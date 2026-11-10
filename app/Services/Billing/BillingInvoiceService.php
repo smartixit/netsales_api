@@ -180,6 +180,7 @@ class BillingInvoiceService
             $invoice->tax_minor = $tax;
             $invoice->total_minor = $total;
             $invoice->paid_minor = 0;
+            $invoice->credited_minor = 0;
             $invoice->remaining_minor = $total;
             $invoice->issued_on = now('Asia/Aden')->toDateString();
             $invoice->finalized_at = now('Asia/Aden');
@@ -192,6 +193,9 @@ class BillingInvoiceService
 
                 return $invoice->load(['lines', 'currency', 'billingAccount']);
             }
+
+            $invoice->status = BillingInvoiceStatus::OPEN;
+            $invoice->save();
 
             $accounts = $this->chart->ensureForCurrency($invoice->currency);
             $holdRevenueRecognition = ($invoice->pricing_snapshot['revenue_recognition_activation'] ?? 'PERIOD_START') === 'ON_PAYMENT';
