@@ -13,6 +13,7 @@ class BillingLedgerChartService
         ['code' => '2200', 'name' => 'أرصدة دائنة للعملاء - إشعارات دائنة', 'class' => 'LIABILITY', 'normal' => 'CREDIT'],
         ['code' => '4100', 'name' => 'إيرادات الاشتراكات', 'class' => 'REVENUE', 'normal' => 'CREDIT'],
         ['code' => '4110', 'name' => 'إيرادات الاستخدام الإضافي', 'class' => 'REVENUE', 'normal' => 'CREDIT'],
+        ['code' => '4120', 'name' => 'إيرادات رسوم التهيئة والخدمات', 'class' => 'REVENUE', 'normal' => 'CREDIT'],
         ['code' => '4190', 'name' => 'تكلفة واستردادات الاشتراكات', 'class' => 'EXPENSE', 'normal' => 'DEBIT'],
     ];
 
