@@ -4,7 +4,7 @@ namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
 use App\Http\Requests\API\V1\Billing\{StoreCurrencyRequest, StorePlanFeatureRequest, StorePlanRequest, StorePriceRequest, StoreProductRequest, UpdateCurrencyRequest};
-use App\Http\Resources\API\V1\Billing\{BillingPlanResource, BillingPlanFeatureResource, BillingPriceResource, CurrencyResource};
+use App\Http\Resources\API\V1\Billing\{BillingPlanResource, BillingPlanFeatureResource, BillingPriceResource, BillingProductResource, CurrencyResource};
 use App\Services\Billing\{BillingCatalogService, CurrencyService};
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
