@@ -49,6 +49,23 @@ class BillingPlatformReadService
         if (! empty($filters['currency_id'])) {
             $query->where('currency_id', (int) $filters['currency_id']);
         }
+        if (! empty($filters['search'])) {
+            $term = trim((string) $filters['search']);
+            $query->where(function (Builder $builder) use ($term): void {
+                if (ctype_digit($term)) {
+                    $builder->orWhere('billing_subscription_id', (int) $term)
+                        ->orWhere('billing_account_id', (int) $term);
+                }
+                $builder->orWhereHas('plan', fn (Builder $plan) => $plan
+                    ->where('name', 'like', "%{$term}%")
+                    ->orWhere('plan_key', 'like', "%{$term}%"))
+                    ->orWhereHas('billingAccount', fn (Builder $account) => $account
+                        ->where('account_number', 'like', "%{$term}%")
+                        ->orWhere('legal_name', 'like', "%{$term}%")
+                        ->orWhereHas('network', fn (Builder $network) => $network
+                            ->where('network_name', 'like', "%{$term}%")));
+            });
+        }
 
         return $this->paginate($query, $filters, 'billing_subscription_id');
     }
