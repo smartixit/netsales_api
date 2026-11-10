@@ -13,7 +13,8 @@ class BillingPaymentService
 {
     public function __construct(
         private BillingLedgerService $ledger,
-        private BillingLedgerChartService $chart
+        private BillingLedgerChartService $chart,
+        private BillingAuthorizationService $authorization
     ) {}
 
     public function recordManualPayment(
@@ -34,6 +35,12 @@ class BillingPaymentService
         }
 
         return DB::transaction(function () use ($invoiceId, $paymentMethodId, $amountMinor, $idempotencyKey, $actor, $externalReference, $proof): BillingPayment {
+            $invoice = BillingInvoice::query()
+                ->with('billingAccount')
+                ->lockForUpdate()
+                ->findOrFail($invoiceId);
+            $this->authorization->assertBillingAccountAccess($actor, $invoice->billingAccount);
+
             $existing = BillingPayment::query()
                 ->with(['currency', 'proofs'])
                 ->where('idempotency_key', $idempotencyKey)
@@ -48,8 +55,6 @@ class BillingPaymentService
 
                 return $existing;
             }
-
-            $invoice = BillingInvoice::query()->lockForUpdate()->findOrFail($invoiceId);
 
             if (! in_array($invoice->status, [BillingInvoiceStatus::OPEN, BillingInvoiceStatus::PARTIALLY_PAID], true)
                 || (int) $invoice->remaining_minor <= 0) {
@@ -108,6 +113,8 @@ class BillingPaymentService
 
     public function verify(int $paymentId, int $treasuryAccountId, User $reviewer, ?string $note = null): BillingPayment
     {
+        $this->authorization->assertPlatform($reviewer);
+
         return DB::transaction(function () use ($paymentId, $treasuryAccountId, $reviewer, $note): BillingPayment {
             $payment = BillingPayment::query()
                 ->with(['currency', 'paymentMethod'])
@@ -227,6 +234,8 @@ class BillingPaymentService
 
     public function reject(int $paymentId, User $reviewer, string $reason): BillingPayment
     {
+        $this->authorization->assertPlatform($reviewer);
+
         return DB::transaction(function () use ($paymentId, $reviewer, $reason): BillingPayment {
             $payment = BillingPayment::query()->lockForUpdate()->findOrFail($paymentId);
 
