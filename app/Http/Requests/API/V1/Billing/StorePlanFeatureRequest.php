@@ -28,9 +28,10 @@ class StorePlanFeatureRequest extends FormRequest
             'reset_period' => ['nullable', 'in:DAY,WEEK,MONTH,YEAR,NEVER'],
             'overage_behavior' => ['nullable', 'in:BLOCK,TRACK,INVOICE'],
             'configuration' => ['nullable', 'array'],
-            'configuration.overage_unit_size_micros' => ['required_if:overage_behavior,INVOICE', 'integer', 'min:1'],
-            'configuration.overage_unit_amount_minor' => ['required_if:overage_behavior,INVOICE', 'integer', 'min:0'],
-            'configuration.overage_currency_id' => ['required_if:overage_behavior,INVOICE', 'integer', 'exists:currencies,currency_id'],
+            'configuration.overage_prices' => ['required_if:overage_behavior,INVOICE', 'array', 'min:1'],
+            'configuration.overage_prices.*.currency_id' => ['required_if:overage_behavior,INVOICE', 'integer', 'exists:currencies,currency_id'],
+            'configuration.overage_prices.*.unit_size_micros' => ['required_if:overage_behavior,INVOICE', 'integer', 'min:1'],
+            'configuration.overage_prices.*.unit_amount_minor' => ['required_if:overage_behavior,INVOICE', 'integer', 'min:0'],
         ];
     }
 }

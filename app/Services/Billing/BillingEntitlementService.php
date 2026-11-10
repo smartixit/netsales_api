@@ -32,6 +32,29 @@ class BillingEntitlementService
             ->first();
     }
 
+    public function activeSubscriptionForNetwork(int $networkId): ?BillingSubscription
+    {
+        return BillingSubscription::query()
+            ->with(['planVersion.features', 'currency'])
+            ->whereHas('billingAccount', fn ($account) => $account->where('network_id', $networkId))
+            ->where(function ($query): void {
+                $query->where(function ($active): void {
+                    $active->whereIn('status', [
+                        BillingSubscriptionStatus::ACTIVE,
+                        BillingSubscriptionStatus::TRIALING,
+                    ])->where(function ($period): void {
+                        $period->whereNull('current_period_end')
+                            ->orWhere('current_period_end', '>', now('Asia/Aden'));
+                    });
+                })->orWhere(function ($grace): void {
+                    $grace->where('status', BillingSubscriptionStatus::PAST_DUE)
+                        ->where('grace_period_ends_at', '>', now('Asia/Aden'));
+                });
+            })
+            ->latest('billing_subscription_id')
+            ->first();
+    }
+
     public function featureValue(BillingSubscription $subscription, string $featureKey): mixed
     {
         $feature = $subscription->planVersion?->features
@@ -93,11 +116,11 @@ class BillingEntitlementService
         }
 
         $limit = filter_var($feature->value, FILTER_VALIDATE_INT);
-        if ($limit === false || $limit < 0 || $currentCount < 0 || $requested < 1) {
+        if ($limit === false || $limit < -1 || $currentCount < 0 || $requested < 1) {
             throw ValidationException::withMessages(['feature' => ['قيمة حد الموارد غير صالحة.']]);
         }
 
-        if ($currentCount > $limit - $requested) {
+        if ($limit !== -1 && $currentCount > $limit - $requested) {
             throw ValidationException::withMessages(['quota' => ['تم تجاوز حد الموارد المسموح به في الاشتراك.']]);
         }
     }

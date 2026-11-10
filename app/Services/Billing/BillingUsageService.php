@@ -117,13 +117,14 @@ class BillingUsageService
 
             if (! $isUnlimited && $newMicros > $limitMicros && $behavior === 'INVOICE') {
                 $configuration = (array) ($feature->configuration ?? []);
-                $unitSizeMicros = (int) ($configuration['overage_unit_size_micros'] ?? 0);
-                $unitAmountMinor = (int) ($configuration['overage_unit_amount_minor'] ?? -1);
-                $overageCurrencyId = (int) ($configuration['overage_currency_id'] ?? 0);
+                $overagePrice = collect($configuration['overage_prices'] ?? [])
+                    ->first(fn (array $price): bool => (int) ($price['currency_id'] ?? 0) === (int) $subscription->currency_id);
+                $unitSizeMicros = (int) ($overagePrice['unit_size_micros'] ?? 0);
+                $unitAmountMinor = (int) ($overagePrice['unit_amount_minor'] ?? -1);
 
-                if ($unitSizeMicros <= 0 || $unitAmountMinor < 0 || $overageCurrencyId !== (int) $subscription->currency_id) {
+                if ($unitSizeMicros <= 0 || $unitAmountMinor < 0) {
                     throw ValidationException::withMessages([
-                        'configuration' => ['تعرفة تجاوز الاستخدام غير مكتملة أو لا تطابق عملة الاشتراك.'],
+                        'configuration' => ['تعرفة تجاوز الاستخدام غير معرفة بعملة الاشتراك الحالية.'],
                     ]);
                 }
 

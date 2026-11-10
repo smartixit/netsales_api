@@ -1,8 +1,5 @@
 <?php
 
-use App\Enums\ProviderSubscriptionStatus;
-use App\Models\ProviderSubscription;
-use App\Services\ProviderSubscriptionService;
 use App\Services\Billing\BillingDunningService;
 use App\Services\Billing\BillingRenewalService;
 use Illuminate\Foundation\Inspiring;
@@ -12,22 +9,6 @@ use Illuminate\Support\Facades\Schedule;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
-
-Artisan::command('subscriptions:expire-outdated', function (ProviderSubscriptionService $subscriptionService) {
-    $now = now('Asia/Aden');
-    $expiredSubs = ProviderSubscription::where('status', ProviderSubscriptionStatus::ACTIVE)
-        ->whereNotNull('subscription_end_date')
-        ->where('subscription_end_date', '<=', $now)
-        ->get();
-
-    $count = 0;
-    foreach ($expiredSubs as $sub) {
-        $subscriptionService->getActiveForNetwork($sub->network_id);
-        $count++;
-    }
-
-    $this->info("تم فحص ومعالجة {$count} اشتراكاً منتهي الصلاحية وتحديث حالتها بنجاح.");
-})->purpose('فحص وإنهاء الاشتراكات المنتهية وتفعيل الباقات المجدولة في الخلفية');
 
 Artisan::command('billing:process-renewals', function (BillingRenewalService $renewals) {
     $result = $renewals->processDueSubscriptions((int) config('billing.renewal_batch_size', 100));
@@ -48,12 +29,6 @@ Schedule::command('billing:process-renewals')->everyFifteenMinutes()->withoutOve
 
 // 2. معالجة التذكيرات المالية وفترات السماح كل 15 دقيقة
 Schedule::command('billing:process-dunning')->everyFifteenMinutes()->withoutOverlapping()->timezone('Asia/Aden');
-
-// 3. فحص وإنهاء اشتراكات الشبكات التشغيلية القديمة كل ساعة
-Schedule::command('subscriptions:expire-outdated')->hourly();
-
-// 4. تنبيه الشبكات باقتراب موعد انتهاء الاشتراك (يومياً الساعة 10 صباحاً)
-Schedule::command('subscriptions:notify-expiring')->dailyAt('10:00')->timezone('Asia/Aden');
 
 // 3. إرسال الملخص المالي اليومي للشبكات عبر SMS (يومياً الساعة 8 مساءً)
 Schedule::command('reports:daily-summary-sms')->dailyAt('20:00')->timezone('Asia/Aden');

@@ -214,20 +214,28 @@ class BillingCatalogService
 
             $configuration = (array) ($data['configuration'] ?? []);
             if ($type === BillingFeatureType::METERED && $overageBehavior === 'INVOICE') {
-                $unitSize = filter_var($configuration['overage_unit_size_micros'] ?? null, FILTER_VALIDATE_INT);
-                $unitAmount = filter_var($configuration['overage_unit_amount_minor'] ?? null, FILTER_VALIDATE_INT);
-                $currencyId = filter_var($configuration['overage_currency_id'] ?? null, FILTER_VALIDATE_INT);
+                $priceCurrencyIds = $version->prices->pluck('currency_id')->map(fn ($id) => (int) $id)->unique()->sort()->values();
+                $overagePrices = collect($configuration['overage_prices'] ?? []);
+                $configuredCurrencyIds = $overagePrices->pluck('currency_id')->map(fn ($id) => (int) $id)->unique()->sort()->values();
 
-                $priceCurrencyIds = $version->prices->pluck('currency_id')->unique();
-                if ($unitSize === false || $unitSize <= 0 || $unitAmount === false || $unitAmount < 0
-                    || $currencyId === false || ! $priceCurrencyIds->contains($currencyId)) {
+                foreach ($overagePrices as $overagePrice) {
+                    $unitSize = filter_var($overagePrice['unit_size_micros'] ?? null, FILTER_VALIDATE_INT);
+                    $unitAmount = filter_var($overagePrice['unit_amount_minor'] ?? null, FILTER_VALIDATE_INT);
+                    if ($unitSize === false || $unitSize <= 0 || $unitAmount === false || $unitAmount < 0) {
+                        throw ValidationException::withMessages([
+                            'configuration' => ['تعرفة تجاوز الاستخدام يجب أن تحتوي على حجم وحدة موجب ومبلغ بوحدات العملة الصغرى غير سالب.'],
+                        ]);
+                    }
+                }
+
+                if ($priceCurrencyIds->all() !== $configuredCurrencyIds->all()) {
                     throw ValidationException::withMessages([
-                        'configuration' => ['تسعير تجاوز الاستخدام يتطلب حجم وحدة ومبلغاً بوحدات العملة الصغرى وعملة نشطة.'],
+                        'configuration.overage_prices' => ['يجب تحديد تعرفة تجاوز مستقلة لكل عملة مستخدمة في أسعار نسخة الخطة، دون تكرار عملة.'],
                     ]);
                 }
             }
 
-            return $this->catalog->createFeature([
+            $feature = $this->catalog->createFeature([
                 'plan_version_id' => $versionId,
                 'feature_key' => trim((string) $data['feature_key']),
                 'name' => trim((string) $data['name']),
@@ -239,6 +247,29 @@ class BillingCatalogService
                 'overage_behavior' => $overageBehavior,
                 'configuration' => $configuration,
             ]);
+
+            if ($type === BillingFeatureType::METERED) {
+                $meter = \App\Models\BillingUsageMeter::query()->firstOrCreate(
+                    ['meter_key' => $feature->feature_key],
+                    [
+                        'name' => $feature->name,
+                        'unit' => $feature->unit ?? 'unit',
+                        'aggregation' => $feature->aggregation ?? 'SUM',
+                        'reset_period' => $feature->reset_period,
+                        'description' => 'عداد الاستخدام المرتبط بميزة '.$feature->feature_key,
+                        'is_active' => true,
+                    ]
+                );
+
+                if ($meter->unit !== ($feature->unit ?? 'unit')
+                    || $meter->aggregation !== ($feature->aggregation ?? 'SUM')) {
+                    throw ValidationException::withMessages([
+                        'feature_key' => ['تعريف العداد مستخدم مسبقاً بوحدة أو طريقة تجميع مختلفة؛ يجب توحيد تعريف العداد عبر الخطط.'],
+                    ]);
+                }
+            }
+
+            return $feature;
         }, 3);
     }
 

@@ -2,127 +2,143 @@
 
 namespace App\Http\Middleware;
 
-use App\Services\ProviderSubscriptionService;
+use App\Enums\BillingFeatureType;
+use App\Models\Network;
+use App\Services\Billing\{BillingEntitlementService, BillingUsageService};
 use App\Traits\ApiResponseTrait;
 use Closure;
-use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Throwable;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * وسيط التحقق من سريان اشتراك المزود وتوافر رصيد الميزة (Subscription & Quota Enforcement Middleware).
- *
- * يوفر حماية مركزية على مستوى بوابات الـ HTTP لضمان:
- * 1. وجود اشتراك نشط وسارٍ للمزود قبل تنفيذ العملية.
- * 2. كفاية رصيد الميزة المطلوبة أو إمكانية التفعيل المبكر التلقائي للباقة المجدولة التالية (المسار الأول).
- * 3. حماية الموارد والعمليات التشغيلية (مثل إنشاء نقاط البيع، توليد الكروت، إلخ) من الاستهلاك غير المصرح.
- */
 class CheckSubscriptionFeatureQuota
 {
     use ApiResponseTrait;
 
     public function __construct(
-        protected ProviderSubscriptionService $subscriptionService
+        private BillingEntitlementService $entitlements,
+        private BillingUsageService $usage
     ) {}
 
-    /**
-     * معالجة الطلب الوارد وفحص صلاحية الاشتراك وسريانه وحصة الميزة.
-     *
-     * الاستخدام في تعريف المسارات:
-     * ->middleware('subscription.active') // للتحقق من سريان وصلاحية الاشتراك العام
-     * ->middleware('subscription.quota:pos_limit,1') // للتحقق من الصلاحية والحصة
-     * ->middleware('subscription.quota:card_generation,1,auto_consume')
-     */
-    public function handle(Request $request, Closure $next, ?string $featureName = null, int $amount = 1, bool|string $autoConsume = false): Response
-    {
+    public function handle(
+        Request $request,
+        Closure $next,
+        ?string $featureName = null,
+        int $amount = 1,
+        bool|string $autoConsume = false
+    ): Response {
         $user = $request->user();
         if (! $user) {
             throw new AuthorizationException('عذراً، يجب تسجيل الدخول أولاً للوصول لهذا الإجراء.');
         }
 
-        // استخراج معرف الشبكة المستهدفة وفق الأولوية الأمنية
         $networkId = $this->resolveNetworkId($request, $user);
-
         if (! $networkId) {
             return $this->errorResponse(
-                'عذراً، لم يتم تحديد شبكة المزود المرتبطة بالعملية أو غير مصرح لك بالوصول لحصة هذه الشبكة.',
-                [
-                    'network_id' => ['معرف شبكة المزود غير صالح أو غير مصرح لك بالوصول إليه.'],
-                ],
+                'تعذر تحديد شبكة تشغيلية مصرح بها للمستخدم الحالي.',
+                ['network_id' => ['معرف الشبكة غير صالح أو لا يملك المستخدم عضوية نشطة فيها.']],
                 403
             );
         }
 
-        // 1. إذا لم يُحدد اسم ميزة، يتم التحقق حصرياً من سريان وصلاحية الاشتراك العام
-        if (empty($featureName)) {
-            $subscription = $this->subscriptionService->getActiveForNetwork($networkId);
-            if (! $subscription || ! $subscription->isActive()) {
-                return $this->errorResponse(
-                    'عذراً، لا يوجد اشتراك سارٍ ونشط لهذه الشبكة أو أن فترة صلاحية الاشتراك قد انتهت.',
-                    [
-                        'subscription' => ['فترة صلاحية الاشتراك منتهية ولا توجد باقة مفعّلة.'],
-                    ],
-                    403
-                );
-            }
+        $subscription = $this->entitlements->activeSubscriptionForNetwork($networkId);
+        if (! $subscription) {
+            return $this->errorResponse(
+                'لا يوجد اشتراك صالح لهذه الشبكة حالياً.',
+                ['subscription' => ['لا يوجد اشتراك نشط أو تجربة سارية أو فترة سماح متاحة.']],
+                403
+            );
+        }
 
-            $request->attributes->set('subscription_network_id', $networkId);
-            $request->attributes->set('active_subscription', $subscription);
+        $request->attributes->set('subscription_network_id', $networkId);
+        $request->attributes->set('active_subscription', $subscription);
 
+        if ($featureName === null || trim($featureName) === '') {
             return $next($request);
         }
 
-        // 2. فحص إمكانية الاستهلاك وفق المسار الأول (الباقة النشطة الحالية أو الباقة المجدولة التالية)
-        $canConsume = $this->subscriptionService->canConsume($networkId, $featureName, $amount);
+        $this->entitlements->assertEnabled($subscription, $featureName);
+        $feature = $subscription->planVersion?->features->firstWhere('feature_key', $featureName);
 
-        if (! $canConsume) {
+        if (! $feature) {
             return $this->errorResponse(
-                "عذراً، تم استنفاد الحصة المسموح بها للميزة [{$featureName}] أو أن فترة صلاحية الاشتراك قد انتهت.",
-                [
-                    'subscription_quota' => ["رصيد الميزة [{$featureName}] غير كافٍ أو أن الاشتراك منتهٍ، ولا توجد باقة اشتراك مجدولة للتفعيل المبكر."],
-                ],
+                'الميزة المطلوبة غير مضمنة في نسخة الخطة الحالية.',
+                ['feature' => ["الميزة [{$featureName}] غير معرفة في اشتراك الشبكة."]],
                 403
             );
         }
 
-        // تخزين معلومات الحصة في خصائص الطلب لاستخدامها في وحدات التحكم أو مراحل لاحقة
-        $request->attributes->set('subscription_network_id', $networkId);
         $request->attributes->set('subscription_feature_name', $featureName);
         $request->attributes->set('subscription_feature_amount', $amount);
 
         $response = $next($request);
+        $shouldConsume = $autoConsume === true || $autoConsume === 'auto_consume' || $autoConsume === '1';
 
-        // إذا كان خيار الاستهلاك التلقائي مفعّلاً ونجحت العملية (200..299)، يتم قيد الاستهلاك تلقائياً
-        $shouldConsume = ($autoConsume === true || $autoConsume === 'auto_consume' || $autoConsume === '1');
         if ($shouldConsume && $response->isSuccessful()) {
+            if ($feature->feature_type !== BillingFeatureType::METERED) {
+                report(new \LogicException(
+                    "Auto-consumption middleware only supports METERED features; [{$featureName}] is [{$feature->feature_type->value}]."
+                ));
+
+                return $this->errorResponse(
+                    'لا يمكن تسجيل الاستهلاك الآلي لهذه الميزة؛ يجب احتساب حدود الموارد داخل خدمة المجال التي تنشئ المورد.',
+                    ['feature' => ['العداد الآلي مخصص للميزات من النوع METERED فقط.']],
+                    500
+                );
+            }
+
             try {
-                $this->subscriptionService->consume($networkId, $featureName, $amount);
-            } catch (Exception) {
-                // في حال حدوث استثناء نادر عند القيد البعدي يتم تسجيله
+                $idempotencyKey = trim((string) $request->header('Idempotency-Key'));
+                if ($idempotencyKey === '') {
+                    $idempotencyKey = (string) Str::uuid();
+                }
+
+                $this->usage->record(
+                    (int) $subscription->billing_subscription_id,
+                    $featureName,
+                    (string) $amount,
+                    $idempotencyKey,
+                    'HTTP_ROUTE',
+                    null,
+                    [
+                        'route' => $request->route()?->getName(),
+                        'path' => $request->path(),
+                        'actor_id' => $user->user_id,
+                    ]
+                );
+            } catch (Throwable $exception) {
+                report($exception);
+                return $this->errorResponse(
+                    'نجحت العملية التشغيلية لكن تعذر تسجيل استهلاك الميزة؛ تم تسجيل الخطأ للتدقيق ويجب استكمال التسوية قبل إعادة المحاولة.',
+                    ['subscription_usage' => ['تعذر تسجيل حدث الاستهلاك.']],
+                    503
+                );
             }
         }
 
         return $response;
     }
 
-    /**
-     * استخراج معرف الشبكة الموثوقة من سياق الطلب والمستخدم مع التحقق من العزل والصلاحية.
-     */
-    protected function resolveNetworkId(Request $request, $user): ?int
+    private function resolveNetworkId(Request $request, $user): ?int
     {
         $targetNetworkId = null;
 
-        // 1. إذا كان المسار يحتوي على معامل الشبكة {network_id} أو {networkId}
-        if ($request->route('network_id')) {
-            $targetNetworkId = (int) $request->route('network_id');
-        } elseif ($request->route('networkId')) {
-            $targetNetworkId = (int) $request->route('networkId');
-        } elseif ($request->filled('network_id')) {
-            $targetNetworkId = (int) $request->input('network_id');
-        } elseif ($request->filled('networkId')) {
-            $targetNetworkId = (int) $request->input('networkId');
-        } elseif (! empty($user->network_id)) {
+        foreach (['network_id', 'networkId'] as $parameter) {
+            $routeValue = $request->route($parameter);
+            if ($routeValue !== null && $routeValue !== '') {
+                $targetNetworkId = (int) $routeValue;
+                break;
+            }
+
+            if ($request->filled($parameter)) {
+                $targetNetworkId = (int) $request->input($parameter);
+                break;
+            }
+        }
+
+        if (! $targetNetworkId && ! empty($user->network_id)) {
             $targetNetworkId = (int) $user->network_id;
         }
 
@@ -130,21 +146,30 @@ class CheckSubscriptionFeatureQuota
             return null;
         }
 
-        // إذا كان مسؤول النظام فله الصلاحية الكاملة على جميع الشبكات
-        if ($user->isSuperAdmin()) {
+        $network = Network::query()->find($targetNetworkId);
+        if (! $network) {
+            return null;
+        }
+
+        if ((int) $network->owner_id === (int) $user->user_id) {
             return $targetNetworkId;
         }
 
-        // التحقق من ملكية أو عضوية المستخدم في الشبكة
-        $isNetworkMember = $user->networks()->where('networks.network_id', $targetNetworkId)->exists()
-            || (method_exists($user, 'networkUsers') && $user->networkUsers()->where('network_id', $targetNetworkId)->exists());
+        $networkMember = $user->networks()
+            ->where('networks.network_id', $targetNetworkId)
+            ->exists()
+            || $user->networkUsers()
+                ->where('network_id', $targetNetworkId)
+                ->where('status', 'ACTIVE')
+                ->exists();
 
-        if ($isNetworkMember) {
+        if ($networkMember) {
             return $targetNetworkId;
         }
 
-        // إذا كان مستخدم نقطة بيع مرتبطة بالشبكة
-        if ($user->pos && method_exists($user->pos, 'networks') && $user->pos->networks()->where('networks.network_id', $targetNetworkId)->exists()) {
+        if ($user->pos
+            && method_exists($user->pos, 'networks')
+            && $user->pos->networks()->where('networks.network_id', $targetNetworkId)->exists()) {
             return $targetNetworkId;
         }
 
