@@ -34,9 +34,14 @@ class BillingUsageService
                 ->lockForUpdate()
                 ->findOrFail($subscriptionId);
 
-            if ($subscription->status !== BillingSubscriptionStatus::ACTIVE
-                || ($subscription->current_period_end && $subscription->current_period_end->lte(now('Asia/Aden')))) {
-                throw ValidationException::withMessages(['subscription_id' => ['لا يوجد اشتراك نشط يسمح بتسجيل الاستهلاك.']]);
+            $active = $subscription->status === BillingSubscriptionStatus::ACTIVE
+                && (! $subscription->current_period_end || $subscription->current_period_end->gt(now('Asia/Aden')));
+            $grace = $subscription->status === BillingSubscriptionStatus::PAST_DUE
+                && $subscription->grace_period_ends_at
+                && $subscription->grace_period_ends_at->gt(now('Asia/Aden'));
+
+            if (! $active && ! $grace) {
+                throw ValidationException::withMessages(['subscription_id' => ['لا يوجد اشتراك نشط أو فترة سماح تسمح بتسجيل الاستهلاك.']]);
             }
 
             $existing = BillingUsageEvent::query()
@@ -91,14 +96,47 @@ class BillingUsageService
                 ->findOrFail($aggregate->usage_aggregate_id);
 
             $currentMicros = $this->toMicros((string) $aggregate->quantity);
-            $limitMicros = $this->toMicros((string) $feature->value);
+            $limitValue = trim((string) $feature->value);
+            $isUnlimited = $limitValue === '-1';
+            $limitMicros = $isUnlimited ? PHP_INT_MAX : $this->toMicros($limitValue);
             $newMicros = $this->safeAdd($currentMicros, $quantityMicros);
-
             $behavior = strtoupper((string) $feature->overage_behavior);
-            if ($newMicros > $limitMicros && $behavior === 'BLOCK') {
+
+            if (! in_array($behavior, ['BLOCK', 'TRACK', 'INVOICE'], true)) {
+                throw ValidationException::withMessages(['overage_behavior' => ['سياسة تجاوز الحد غير مدعومة.']]);
+            }
+
+            if (! $isUnlimited && $newMicros > $limitMicros && $behavior === 'BLOCK') {
                 throw ValidationException::withMessages([
                     'quota' => ['تم تجاوز الحد المقاس للاستهلاك في فترة الفوترة الحالية.'],
                 ]);
+            }
+
+            if (! $isUnlimited && $newMicros > $limitMicros && $behavior === 'INVOICE') {
+                $configuration = (array) ($feature->configuration ?? []);
+                $unitSizeMicros = (int) ($configuration['overage_unit_micros'] ?? 1000000);
+                $unitAmountMinor = (int) ($configuration['overage_unit_amount_minor'] ?? -1);
+                $overageCurrencyId = (int) ($configuration['overage_currency_id'] ?? $subscription->currency_id);
+
+                if ($unitSizeMicros <= 0 || $unitAmountMinor < 0 || $overageCurrencyId !== (int) $subscription->currency_id) {
+                    throw ValidationException::withMessages([
+                        'configuration' => ['تعرفة تجاوز الاستخدام غير مكتملة أو لا تطابق عملة الاشتراك.'],
+                    ]);
+                }
+
+                $previousOverage = max(0, $currentMicros - $limitMicros);
+                $newOverage = max(0, $newMicros - $limitMicros);
+                $billableMicros = $newOverage - $previousOverage;
+                $units = intdiv($billableMicros, $unitSizeMicros) + (($billableMicros % $unitSizeMicros) > 0 ? 1 : 0);
+
+                if ($unitAmountMinor > 0 && $units > intdiv(PHP_INT_MAX, $unitAmountMinor)) {
+                    throw new OverflowException('رسوم تجاوز الاستخدام تتجاوز السعة الرقمية المسموحة.');
+                }
+
+                $aggregate->amount_minor = $this->safeAdd(
+                    (int) $aggregate->amount_minor,
+                    $units * $unitAmountMinor
+                );
             }
 
             $event = BillingUsageEvent::query()->create([

@@ -14,10 +14,17 @@ class BillingEntitlementService
         return BillingSubscription::query()
             ->with(['planVersion.features', 'currency'])
             ->where('billing_account_id', $billingAccountId)
-            ->where('status', BillingSubscriptionStatus::ACTIVE)
             ->where(function ($query): void {
-                $query->whereNull('current_period_end')
-                    ->orWhere('current_period_end', '>', now('Asia/Aden'));
+                $query->where(function ($active): void {
+                    $active->where('status', BillingSubscriptionStatus::ACTIVE)
+                        ->where(function ($period): void {
+                            $period->whereNull('current_period_end')
+                                ->orWhere('current_period_end', '>', now('Asia/Aden'));
+                        });
+                })->orWhere(function ($grace): void {
+                    $grace->where('status', BillingSubscriptionStatus::PAST_DUE)
+                        ->where('grace_period_ends_at', '>', now('Asia/Aden'));
+                });
             })
             ->latest('billing_subscription_id')
             ->first();
@@ -42,8 +49,13 @@ class BillingEntitlementService
 
     public function allows(BillingSubscription $subscription, string $featureKey): bool
     {
-        if ($subscription->status !== BillingSubscriptionStatus::ACTIVE
-            || ($subscription->current_period_end && $subscription->current_period_end->lte(now('Asia/Aden')))) {
+        $active = $subscription->status === BillingSubscriptionStatus::ACTIVE
+            && (! $subscription->current_period_end || $subscription->current_period_end->gt(now('Asia/Aden')));
+        $grace = $subscription->status === BillingSubscriptionStatus::PAST_DUE
+            && $subscription->grace_period_ends_at
+            && $subscription->grace_period_ends_at->gt(now('Asia/Aden'));
+
+        if (! $active && ! $grace) {
             return false;
         }
 
