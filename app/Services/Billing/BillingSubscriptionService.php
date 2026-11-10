@@ -22,14 +22,18 @@ class BillingSubscriptionService
      *
      * @return array{subscription: BillingSubscription, invoice: ?\App\Models\BillingInvoice}
      */
-    public function purchase(int $billingAccountId, int $priceId, User $actor): array
+    public function purchase(int $billingAccountId, int $priceId, User $actor, bool $platformOperation = false): array
     {
-        return DB::transaction(function () use ($billingAccountId, $priceId, $actor): array {
+        return DB::transaction(function () use ($billingAccountId, $priceId, $actor, $platformOperation): array {
             $initialAccount = BillingAccount::query()->findOrFail($billingAccountId);
-            $this->authorization->assertNetworkOwner($actor, (int) $initialAccount->network_id);
+            if ($platformOperation) {
+                $this->authorization->assertPlatform($actor);
+            } else {
+                $this->authorization->assertNetworkOwner($actor, (int) $initialAccount->network_id);
+            }
 
             $network = Network::query()->lockForUpdate()->findOrFail($initialAccount->network_id);
-            if ((int) $network->owner_id !== (int) $actor->user_id || ! $network->isActive()) {
+            if ((! $platformOperation && (int) $network->owner_id !== (int) $actor->user_id) || ! $network->isActive()) {
                 throw ValidationException::withMessages([
                     'billing_account_id' => ['الشبكة غير متاحة أو لم تعد مملوكة للمستخدم الحالي.'],
                 ]);
@@ -253,11 +257,15 @@ class BillingSubscriptionService
         };
     }
 
-    public function cancel(int $subscriptionId, bool $atPeriodEnd, User $actor): BillingSubscription
+    public function cancel(int $subscriptionId, bool $atPeriodEnd, User $actor, ?string $reason = null, bool $platformOperation = false): BillingSubscription
     {
-        return DB::transaction(function () use ($subscriptionId, $atPeriodEnd, $actor): BillingSubscription {
+        return DB::transaction(function () use ($subscriptionId, $atPeriodEnd, $actor, $reason, $platformOperation): BillingSubscription {
             $subscription = BillingSubscription::query()->with('billingAccount')->lockForUpdate()->findOrFail($subscriptionId);
-            $this->authorization->assertNetworkOwner($actor, (int) $subscription->billingAccount->network_id);
+            if ($platformOperation) {
+                $this->authorization->assertPlatform($actor);
+            } else {
+                $this->authorization->assertNetworkOwner($actor, (int) $subscription->billingAccount->network_id);
+            }
 
             if (! in_array($subscription->status, [
                 BillingSubscriptionStatus::ACTIVE,
@@ -307,7 +315,7 @@ class BillingSubscriptionService
                 'event_type' => $eventType,
                 'from_status' => $oldStatus,
                 'to_status' => $subscription->status->value,
-                'payload' => ['cancel_at_period_end' => $atPeriodEnd],
+                'payload' => ['cancel_at_period_end' => $atPeriodEnd, 'reason' => $reason, 'actor_scope' => $platformOperation ? 'PLATFORM' : 'NETWORK'],
                 'actor_id' => $actor->user_id,
                 'occurred_at' => now('Asia/Aden'),
             ]);
