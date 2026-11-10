@@ -22,7 +22,8 @@ use App\Services\Billing\{
     BillingLedgerChartService,
     BillingLedgerService,
     BillingPaymentService,
-    BillingRefundService
+    BillingRefundService,
+    BillingReconciliationService
 };
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
@@ -235,6 +236,12 @@ class BillingCreditNoteSettlementTest extends TestCase
         $this->assertLedgerEntryBalanced($refundEntry);
         $this->assertLedgerAmount($refundEntry, '2200', 'debit_minor', 1000);
         $this->assertLedgerAmount($refundEntry, $treasury->ledgerAccount->account_code ?? '', 'credit_minor', 1000);
+
+        $reconciliation = app(BillingReconciliationService::class)->report((int) $this->currency->currency_id);
+        $currencyReport = collect($reconciliation['currencies'])->first();
+        $this->assertNotNull($currencyReport);
+        $this->assertSame('MATCH', $currencyReport['status'], json_encode($currencyReport, JSON_THROW_ON_ERROR));
+        $this->assertSame(0, collect($currencyReport['checks'])->sum('difference_minor'));
     }
 
     private function createInvoiceLine(string $type, int $subtotal, int $tax, int $total): void
