@@ -5,7 +5,7 @@ namespace App\Http\Controllers\API\V1\Billing;
 use App\Http\Controllers\API\V1\BaseController;
 use App\Http\Requests\API\V1\Billing\{RejectPaymentRequest, StoreCurrencyConversionRequest, StoreExchangeRateRequest, StoreRefundRequest, StoreCreditNoteRequest, StoreTreasuryAccountRequest, VerifyPaymentRequest};
 use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingInvoiceResource, BillingPaymentResource, BillingSubscriptionResource, CurrencyExchangeRateResource, CurrencyConversionResource, CurrencyResource, LedgerJournalEntryResource, PaymentMethodResource, TreasuryAccountResource};
-use App\Services\Billing\{BillingDashboardService, BillingCreditNoteService, BillingInvoiceService, BillingPaymentService, BillingPlatformReadService, BillingRefundService, BillingTreasuryService, CurrencyExchangeService};
+use App\Services\Billing\{BillingDashboardService, BillingCreditNoteService, BillingInvoiceService, BillingPaymentService, BillingPlatformReadService, BillingRefundService, BillingTreasuryService, BillingReconciliationService, CurrencyExchangeService};
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -20,7 +20,8 @@ class BillingFinanceController extends BaseController
         private CurrencyExchangeService $exchange,
         private BillingDashboardService $dashboard,
         private BillingRefundService $refunds,
-        private BillingCreditNoteService $creditNotes
+        private BillingCreditNoteService $creditNotes,
+        private BillingReconciliationService $reconciliation
     ) {}
 
     public function overview(Request $request): JsonResponse
@@ -35,6 +36,19 @@ class BillingFinanceController extends BaseController
         $data['payment_review_queue'] = BillingPaymentResource::collection($data['payment_review_queue']);
 
         return $this->successResponse('تم استرجاع ملخص اشتراكات المنصة والتحصيلات حسب العملة.', $data);
+    }
+
+    public function reconciliation(Request $request): JsonResponse
+    {
+        $request->validate([
+            'currency_id' => ['nullable', 'integer', 'exists:currencies,currency_id'],
+        ]);
+
+        $result = $this->reconciliation->report(
+            $request->filled('currency_id') ? (int) $request->input('currency_id') : null
+        );
+
+        return $this->successResponse('تم استرجاع مطابقة الأستاذ العام والدفاتر الفرعية لكل عملة.', $result);
     }
 
     public function accounts(Request $request): JsonResponse
