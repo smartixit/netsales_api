@@ -47,7 +47,7 @@ class BillingPolicyController extends BaseController
 
         return $this->successResponse(
             'تم استرجاع إصدارات سياسة التجربة.',
-            \\App\\Http\\Resources\\API\\V1\\Billing\\BillingTrialPolicyVersionResource::collection($versions)
+            \App\Http\Resources\API\V1\Billing\BillingTrialPolicyVersionResource::collection($versions)
         );
     }
 
@@ -62,7 +62,7 @@ class BillingPolicyController extends BaseController
 
         return $this->successResponse(
             'تم استرجاع إصدارات سياسة التحصيل.',
-            \\App\\Http\\Resources\\API\\V1\\Billing\\BillingDunningPolicyVersionResource::collection($versions)
+            \App\Http\Resources\API\V1\Billing\BillingDunningPolicyVersionResource::collection($versions)
         );
     }
 
