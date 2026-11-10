@@ -490,9 +490,12 @@ Route::prefix('v1')->group(function () {
                     Route::get('dunning', 'dunningPolicies')->name('api.v1.platform.billing.policies.dunning.index');
                     Route::get('trial-redemptions/pending', 'pendingRedemptions')->name('api.v1.platform.billing.policies.trials.pending');
                 });
-                Route::middleware(['throttle:api-write', 'permission:billing.manage'])->group(function () {
+                Route::middleware(['throttle:api-write', 'permission:billing.create'])->group(function () {
                 Route::post('accounts', [BillingFinanceController::class, 'createAccount'])->name('api.v1.platform.billing.accounts.store');
                 Route::post('subscriptions', [BillingFinanceController::class, 'createSubscription'])->name('api.v1.platform.billing.subscriptions.store');
+            });
+
+            Route::middleware(['throttle:api-write', 'permission:billing.manage'])->group(function () {
                 Route::post('subscriptions/{subscriptionId}/cancel', [BillingFinanceController::class, 'cancelSubscription'])
                     ->whereNumber('subscriptionId')->name('api.v1.platform.billing.subscriptions.cancel');
                     Route::post('trial-redemptions/{redemptionId}/approve', 'approveRedemption')->name('api.v1.platform.billing.policies.trials.approve');
