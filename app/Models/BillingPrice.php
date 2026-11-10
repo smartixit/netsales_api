@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BillingInterval;
+use App\Enums\BillingPlanVersionStatus;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,7 +36,8 @@ class BillingPrice extends Model
     {
         $assertDraft = static function (self $price): void {
             $status = $price->planVersion()->value('status');
-            if ($status !== 'DRAFT') {
+            $statusValue = $status instanceof BillingPlanVersionStatus ? $status->value : (string) $status;
+            if ($statusValue !== BillingPlanVersionStatus::DRAFT->value) {
                 throw new LogicException('أسعار النسخ المنشورة أو المؤرشفة غير قابلة للإضافة أو التعديل أو الحذف؛ أنشئ نسخة خطة جديدة.');
             }
         };
