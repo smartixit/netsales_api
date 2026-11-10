@@ -17,7 +17,7 @@ class BillingRefundService
         private BillingAuthorizationService $authorization
     ) {}
 
-    public function refund(int $paymentId, int $treasuryAccountId, int $amountMinor, string $reason, User $actor): BillingRefund
+    public function refund(int $paymentId, int $treasuryAccountId, int $amountMinor, string $reason, string $idempotencyKey, User $actor): BillingRefund
     {
         $this->authorization->assertPlatform($actor);
 
@@ -25,7 +25,18 @@ class BillingRefundService
             throw ValidationException::withMessages(['amount_minor' => ['يجب أن يكون مبلغ الاسترداد أكبر من صفر.']]);
         }
 
-        return DB::transaction(function () use ($paymentId, $treasuryAccountId, $amountMinor, $reason, $actor): BillingRefund {
+        return DB::transaction(function () use ($paymentId, $treasuryAccountId, $amountMinor, $reason, $idempotencyKey, $actor): BillingRefund {
+            $existing = BillingRefund::query()->where('idempotency_key', $idempotencyKey)->first();
+            if ($existing) {
+                if ((int) $existing->payment_id !== $paymentId
+                    || (int) $existing->amount_minor !== $amountMinor
+                    || $existing->reason !== $reason) {
+                    throw ValidationException::withMessages(['idempotency_key' => ['مفتاح منع التكرار مستخدم لطلب استرداد مختلف.']]);
+                }
+
+                return $existing->load(['payment', 'currency']);
+            }
+
             $payment = BillingPayment::query()->with('currency')->lockForUpdate()->findOrFail($paymentId);
 
             if (! in_array($payment->status, [BillingPaymentStatus::VERIFIED, BillingPaymentStatus::PARTIALLY_REFUNDED], true)) {
@@ -56,6 +67,7 @@ class BillingRefundService
 
             $refund = BillingRefund::query()->create([
                 'refund_reference' => 'NS-REF-'.now('Asia/Aden')->format('Ymd').'-'.Str::upper(Str::random(8)),
+                'idempotency_key' => $idempotencyKey,
                 'payment_id' => $payment->payment_id,
                 'currency_id' => $payment->currency_id,
                 'amount_minor' => $amountMinor,

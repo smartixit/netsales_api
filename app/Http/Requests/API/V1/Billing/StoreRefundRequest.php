@@ -17,6 +17,7 @@ class StoreRefundRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'idempotency_key' => ['required', 'string', 'min:8', 'max:128'],
             'treasury_account_id' => ['required', 'integer', 'exists:treasury_accounts,treasury_account_id'],
             'amount_minor' => ['required', 'integer', 'min:1'],
             'reason' => ['required', 'string', 'min:3', 'max:1000'],

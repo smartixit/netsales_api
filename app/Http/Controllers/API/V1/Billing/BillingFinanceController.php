@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
-use App\Http\Requests\API\V1\Billing\{RejectPaymentRequest, StoreCurrencyConversionRequest, StoreExchangeRateRequest, StoreTreasuryAccountRequest, VerifyPaymentRequest};
-use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingInvoiceResource, BillingPaymentResource, BillingSubscriptionResource, CurrencyExchangeRateResource, CurrencyConversionResource, LedgerJournalEntryResource, PaymentMethodResource, TreasuryAccountResource};
-use App\Services\Billing\{BillingDashboardService, BillingInvoiceService, BillingPaymentService, BillingPlatformReadService, BillingTreasuryService, CurrencyExchangeService};
+use App\Http\Requests\API\V1\Billing\{RejectPaymentRequest, StoreCurrencyConversionRequest, StoreExchangeRateRequest, StoreRefundRequest, StoreTreasuryAccountRequest, VerifyPaymentRequest};
+use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingInvoiceResource, BillingPaymentResource, BillingSubscriptionResource, CurrencyExchangeRateResource, CurrencyConversionResource, CurrencyResource, LedgerJournalEntryResource, PaymentMethodResource, TreasuryAccountResource};
+use App\Services\Billing\{BillingDashboardService, BillingInvoiceService, BillingPaymentService, BillingPlatformReadService, BillingRefundService, BillingTreasuryService, CurrencyExchangeService};
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -169,6 +169,7 @@ class BillingFinanceController extends BaseController
                 (int) $request->input('treasury_account_id'),
                 (int) $request->input('amount_minor'),
                 (string) $request->input('reason'),
+                (string) $request->input('idempotency_key'),
                 $this->requireCurrentUser()
             );
 
@@ -176,7 +177,7 @@ class BillingFinanceController extends BaseController
                 'refund_id' => $refund->refund_id,
                 'refund_reference' => $refund->refund_reference,
                 'payment_id' => $refund->payment_id,
-                'currency' => new \\App\\Http\\Resources\\API\\V1\\Billing\\CurrencyResource($refund->currency),
+                'currency' => new CurrencyResource($refund->currency),
                 'amount_minor' => $refund->amount_minor,
                 'status' => $refund->status,
                 'reason' => $refund->reason,
