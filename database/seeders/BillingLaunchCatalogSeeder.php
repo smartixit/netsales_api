@@ -263,14 +263,14 @@ class BillingLaunchCatalogSeeder extends Seeder
     private function ensureLaunchDunningDraft(?int $actorId, mixed $now): ?int
     {
         $policy = DB::table('billing_dunning_policies')
-            ->where('policy_key', 'netsales-launch-dunning')
+            ->where('policy_key', 'platform-default')
             ->first();
 
         if (! $policy) {
             $policyId = (int) DB::table('billing_dunning_policies')->insertGetId([
-                'policy_key' => 'netsales-launch-dunning',
-                'name' => 'سياسة التحصيل لإطلاق NetSales',
-                'description' => 'مسودة سياسة تحصيل الإطلاق: فترة سماح 7 أيام، تذكيرات عند الاستحقاق وبعد يومين وخمسة وسبعة أيام، وتنبيهات قبل التجديد.',
+                'policy_key' => 'platform-default',
+                'name' => 'سياسة التحصيل الافتراضية لمنصة NetSales',
+                'description' => 'مسودة السياسة الافتراضية للمنصة؛ فترة سماح 7 أيام، تذكيرات عند الاستحقاق وبعد يومين وخمسة وسبعة أيام، وتنبيهات قبل التجديد.',
                 'is_active' => true,
                 'created_by' => $actorId,
                 'created_at' => $now,
