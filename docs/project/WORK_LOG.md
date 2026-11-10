@@ -835,3 +835,5 @@ This log documents all executed tasks, code changes, and verification command ou
 - Added invoice states for partially credited and fully credited invoices, and exposed credit note balances in invoice resources.
 - Allowed the final transition from partially refunded payment to fully refunded.
 - Automated tests, migration execution, and GitHub Actions remain deferred to the final validation stage.
+
+- Rechecked refund idempotency after acquiring the invoice lock to serialize concurrent retries and avoid duplicate-key race failures.

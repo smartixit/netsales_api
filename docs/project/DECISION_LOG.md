@@ -131,3 +131,5 @@ Valid statuses are strictly:
 - Credit-note issuance debits deferred revenue or recognized revenue reversal according to an explicit Platform Scope accounting treatment and credits Accounts Receivable.
 - Cash settlement of refundable credit debits Accounts Receivable/customer credit and credits a treasury account in the same currency.
 - Credit notes, refunds, and their accounting journal entries are immutable after posting; corrections require a new financial document/reversal.
+
+- Refund requests revalidate idempotency after acquiring the invoice lock; invoice-level serialization is the concurrency boundary for refunds on that invoice.

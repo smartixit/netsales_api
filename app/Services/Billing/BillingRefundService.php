@@ -55,6 +55,22 @@ class BillingRefundService
             $payment = BillingPayment::query()->with('currency')->lockForUpdate()->findOrFail($paymentId);
             $creditNote = BillingCreditNote::query()->lockForUpdate()->findOrFail($creditNoteId);
 
+            // Recheck the idempotency key after acquiring the invoice lock.
+            // This closes the race where two concurrent requests both pass the initial lookup.
+            $existing = BillingRefund::query()
+                ->where('idempotency_key', $idempotencyKey)
+                ->first();
+
+            if ($existing) {
+                if ((int) $existing->payment_id !== $paymentId
+                    || (int) $existing->credit_note_id !== $creditNoteId
+                    || (int) $existing->amount_minor !== $amountMinor
+                    || $existing->reason !== $reason) {
+                    throw ValidationException::withMessages(['idempotency_key' => ['مفتاح منع التكرار مستخدم لعملية استرداد مختلفة.']]);
+                }
+                return $existing->load(['payment', 'currency', 'creditNote']);
+            }
+
             if ((int) $payment->invoice_id !== (int) $invoice->invoice_id
                 || (int) $creditNote->invoice_id !== (int) $invoice->invoice_id
                 || (int) $payment->currency_id !== (int) $creditNote->currency_id

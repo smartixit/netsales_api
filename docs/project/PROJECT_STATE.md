@@ -103,3 +103,5 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Credit note issuance and cash settlement are separately posted to the same-currency ledger.
 - Invoice API responses can expose the related credit notes and their applied/refundable/refunded balances.
 - Tests, migration execution, and CI remain pending by instruction.
+
+- Refund idempotency is checked again after invoice-level locking to handle concurrent retries safely.
