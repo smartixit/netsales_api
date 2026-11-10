@@ -508,6 +508,7 @@ Route::prefix('v1')->group(function () {
             Route::middleware(['throttle:api-read', 'permission:billing.view'])->group(function () {
                 Route::get('currencies', [BillingCatalogController::class, 'currencies'])->name('api.v1.platform.billing.currencies.index');
                 Route::get('overview', [BillingFinanceController::class, 'overview'])->name('api.v1.platform.billing.overview');
+                Route::get('reconciliation', [BillingFinanceController::class, 'reconciliation'])->name('api.v1.platform.billing.reconciliation');
                 Route::get('plans', [BillingCatalogController::class, 'plans'])->name('api.v1.platform.billing.plans.index');
 
                 Route::get('accounts', [BillingFinanceController::class, 'accounts'])->name('api.v1.platform.billing.accounts.index');
