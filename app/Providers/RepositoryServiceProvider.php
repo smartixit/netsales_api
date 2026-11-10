@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use App\Interfaces\BackupJobRepositoryInterface;
 use App\Interfaces\BankAccountRepositoryInterface;
+use App\Interfaces\BillingCatalogRepositoryInterface;
+use App\Interfaces\BillingLedgerRepositoryInterface;
+use App\Interfaces\CurrencyRepositoryInterface;
 use App\Interfaces\DashboardRepositoryInterface;
 use App\Interfaces\DirectorateRepositoryInterface;
 use App\Interfaces\ExpenseAttachmentRepositoryInterface;
@@ -44,6 +47,9 @@ use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Repositories\BackupJobRepository;
 use App\Repositories\BankAccountRepository;
+use App\Repositories\BillingCatalogRepository;
+use App\Repositories\BillingLedgerRepository;
+use App\Repositories\CurrencyRepository;
 use App\Repositories\DashboardRepository;
 use App\Repositories\DirectorateRepository;
 use App\Repositories\ExpenseAttachmentRepository;
@@ -129,6 +135,9 @@ class RepositoryServiceProvider extends ServiceProvider
         FeatureRepositoryInterface::class => FeatureRepository::class,
         SubscriptionPlanFeatureRepositoryInterface::class => SubscriptionPlanFeatureRepository::class,
         BankAccountRepositoryInterface::class => BankAccountRepository::class,
+        CurrencyRepositoryInterface::class => CurrencyRepository::class,
+        BillingCatalogRepositoryInterface::class => BillingCatalogRepository::class,
+        BillingLedgerRepositoryInterface::class => BillingLedgerRepository::class,
         SubscriptionPlanRequestRepositoryInterface::class => SubscriptionPlanRequestRepository::class,
         ProviderSubscriptionRepositoryInterface::class => ProviderSubscriptionRepository::class,
         SubscriptionPlanFeatureConsumptionRepositoryInterface::class => SubscriptionPlanFeatureConsumptionRepository::class,

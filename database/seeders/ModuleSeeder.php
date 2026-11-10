@@ -105,6 +105,13 @@ class ModuleSeeder extends Seeder
                 'status' => true,
             ],
             [
+                'module_key' => 'billing',
+                'module_name' => 'الفوترة والاشتراكات والمنصة المالية',
+                'module_icon' => 'heroicon-o-receipt-percent',
+                'module_desc' => 'إدارة العملات والتسعير والاشتراكات والفواتير والتحصيل والخزينة والدفتر المحاسبي',
+                'status' => true,
+            ],
+            [
                 'module_key' => 'bank_accounts',
                 'module_name' => 'الحسابات البنكية',
                 'module_icon' => 'heroicon-o-building-library',
