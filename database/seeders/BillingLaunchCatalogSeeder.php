@@ -149,7 +149,8 @@ class BillingLaunchCatalogSeeder extends Seeder
                     }
                 }
 
-                if ($version->status ?? 'DRAFT' === 'DRAFT') {
+                $versionStatus = $version->status ?? 'DRAFT';
+                if ($versionStatus === 'DRAFT') {
                     $this->ensureResourceLimit(
                         $versionId,
                         'max_pos_count',
@@ -176,6 +177,8 @@ class BillingLaunchCatalogSeeder extends Seeder
         $policy = DB::table('billing_trial_policies')
             ->where('policy_key', 'netsales-starter-14-day-trial')
             ->first();
+
+        $currentVersionId = $policy?->current_version_id;
 
         if (! $policy) {
             $policyId = DB::table('billing_trial_policies')->insertGetId([
@@ -220,7 +223,7 @@ class BillingLaunchCatalogSeeder extends Seeder
             $versionId = (int) $version->trial_policy_version_id;
         }
 
-        if (! $policy->current_version_id ?? true) {
+        if (! $currentVersionId) {
             DB::table('billing_trial_policies')
                 ->where('trial_policy_id', $policyId)
                 ->update(['current_version_id' => $versionId, 'updated_at' => $now]);
