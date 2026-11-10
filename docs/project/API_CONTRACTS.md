@@ -234,3 +234,12 @@ All endpoints are under `/api/v1/platform/billing` and require Platform Scope pl
 - `POST invoices/{invoiceId}/credit-notes`: issue an immutable credit note against one or more original invoice lines. Requires an idempotency key, reason, explicit accounting treatment (`DEFERRED_REVENUE` or `REVENUE_REVERSAL`), and positive line amounts. The service prevents line-level and invoice-level over-crediting, offsets open receivables first, and reserves only the overpaid portion as refundable customer credit.
 - `POST payments/{paymentId}/refunds`: settle an issued credit note against a verified payment. Requires `credit_note_id`, `treasury_account_id`, `amount_minor`, `reason`, and `idempotency_key`. The amount must fit both the payment's remaining refundable amount and the credit note's remaining refundable amount. The journal entry debits Accounts Receivable/customer credit and credits the same-currency treasury account.
 - Invoice resources expose issued credit notes when loaded, including receivable-applied, refundable, and refunded amounts.
+
+
+## Subscription Billing — Invoice Settlement and Currency Contract
+- Every invoice and all its invoice lines use exactly one currency. Payments, credit notes, refunds, treasury accounts, and journal entries must match that invoice currency; cross-currency settlement requires an explicit recorded currency conversion.
+- Monetary API amounts are returned as integer minor units plus formatted decimal strings derived from the currency decimal-place definition. Clients must not use binary floating-point arithmetic for financial decisions.
+- Invoice balances are maintained independently as `total_minor`, `paid_minor`, `credited_minor`, and `remaining_minor`. `credited_minor` is the total issued credit-note value; `remaining_minor = max(0, total_minor - paid_minor - credited_minor)`.
+- Credit-note issuance first allocates against open receivables. Any amount exceeding the remaining receivable is recorded as a customer-credit liability in ledger account `2200`; cash refunds debit that liability and credit the same-currency treasury account.
+- `PARTIALLY_CREDITED` invoices may still accept payment for their remaining balance. `CREDITED` means the invoice obligation was fully offset by credit notes. A paid invoice can also have a subsequent credit note, creating a refundable customer credit.
+- This contract is implementation documentation only until the final automated validation and migration gate passes.
