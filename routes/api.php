@@ -547,6 +547,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('overview', [BillingFinanceController::class, 'overview'])->name('api.v1.platform.billing.overview');
                 Route::get('reconciliation', [BillingFinanceController::class, 'reconciliation'])->name('api.v1.platform.billing.reconciliation');
                 Route::get('plans', [BillingCatalogController::class, 'plans'])->name('api.v1.platform.billing.plans.index');
+                Route::get('products', [BillingCatalogController::class, 'products'])->name('api.v1.platform.billing.products.index');
 
                 Route::get('accounts', [BillingFinanceController::class, 'accounts'])->name('api.v1.platform.billing.accounts.index');
                 Route::get('subscriptions', [BillingFinanceController::class, 'subscriptions'])->name('api.v1.platform.billing.subscriptions.index');
