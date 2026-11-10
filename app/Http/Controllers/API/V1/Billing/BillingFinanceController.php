@@ -169,7 +169,6 @@ class BillingFinanceController extends BaseController
                 $invoiceId,
                 $request->input('lines'),
                 (string) $request->input('reason'),
-                (string) $request->input('accounting_treatment'),
                 (string) $request->input('idempotency_key'),
                 $this->requireCurrentUser()
             );
