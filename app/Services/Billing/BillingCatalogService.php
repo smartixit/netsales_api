@@ -56,6 +56,30 @@ class BillingCatalogService
         return $this->catalog->getPlans($filters);
     }
 
+    public function versionsForPlan(int $planId, array $filters = []): CursorPaginator
+    {
+        $plan = BillingPlan::query()->findOrFail($planId);
+        $query = BillingPlanVersion::query()
+            ->with([
+                'plan',
+                'trialPolicyVersion.policy',
+                'dunningPolicyVersion.policy',
+                'prices.currency',
+                'features',
+            ])
+            ->where('plan_id', $plan->plan_id);
+
+        if (! empty($filters['status'])) {
+            $query->where('status', BillingPlanVersionStatus::from((string) $filters['status']));
+        }
+
+        $perPage = min(max((int) ($filters['per_page'] ?? 20), 1), 100);
+
+        return $query->orderByDesc('version_number')
+            ->orderByDesc('plan_version_id')
+            ->cursorPaginate($perPage);
+    }
+
     public function products(array $filters = []): Collection|CursorPaginator
     {
         $query = BillingProduct::query();
