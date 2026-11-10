@@ -20,7 +20,7 @@ class BillingInvoice extends Model
     protected $fillable = [
         'invoice_number', 'billing_account_id', 'billing_subscription_id', 'currency_id',
         'invoice_type', 'status', 'period_start', 'period_end', 'issued_on', 'due_on',
-        'subtotal_minor', 'discount_minor', 'tax_minor', 'total_minor', 'paid_minor',
+        'subtotal_minor', 'discount_minor', 'tax_minor', 'total_minor', 'paid_minor', 'credited_minor',
         'remaining_minor', 'customer_snapshot', 'pricing_snapshot', 'memo',
         'finalized_at', 'paid_at', 'voided_at', 'created_by',
     ];
@@ -38,6 +38,7 @@ class BillingInvoice extends Model
             'tax_minor' => 'integer',
             'total_minor' => 'integer',
             'paid_minor' => 'integer',
+            'credited_minor' => 'integer',
             'remaining_minor' => 'integer',
             'customer_snapshot' => 'array',
             'pricing_snapshot' => 'array',
@@ -55,7 +56,7 @@ class BillingInvoice extends Model
             }
 
             $allowed = [
-                'status', 'paid_minor', 'remaining_minor', 'paid_at',
+                'status', 'paid_minor', 'credited_minor', 'remaining_minor', 'paid_at',
                 'voided_at', 'memo', 'updated_at',
             ];
 
