@@ -42,3 +42,12 @@
 
 ## Subscription Trial and Dunning Controls
 Trial eligibility, redemption, and adjustments are server-side transactional controls. A unique redemption subject is enforced by the database for each policy and configured redemption scope. Published policy versions and subscription policy snapshots are immutable. Dunning grace and suspension use the version assigned to the subscription; they must never read generic `system_settings` keys.
+
+
+## Subscription Billing Subledger Invariants
+1. Invoice open balance is the non-negative remainder after cash settlement and issued credit notes: `max(0, total_minor - paid_minor - credited_minor)`.
+2. `credited_minor` represents the full face value of issued credit notes, not only the portion applied against receivables. The allocation split is stored on the credit note as `applied_to_receivable_minor` and `refundable_minor`.
+3. Credit-note issue debits deferred revenue or recognized revenue according to the approved accounting treatment; it credits receivables only for the amount applied to open debt and credits customer-credit liability for the refundable excess.
+4. Refund settlement debits customer-credit liability and credits the same-currency treasury asset. It must not debit receivables a second time.
+5. Invoice, payment, credit note, refund, treasury, and journal currency IDs must agree. Currency conversion is a separate immutable record and cannot silently alter a posted document.
+6. Every journal entry is balanced per currency. No report may sum unlike currencies into one monetary total without an explicit functional-currency translation and recorded FX policy.
