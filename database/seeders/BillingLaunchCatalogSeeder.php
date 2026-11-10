@@ -61,6 +61,7 @@ class BillingLaunchCatalogSeeder extends Seeder
                     'description' => 'للشبكات الصغيرة التي تبدأ تشغيلها التجاري؛ حد مقترح قدره نقطتا بيع و5 باقات.',
                     'pos_limit' => '2',
                     'package_limit' => '5',
+                    'member_limit' => '2',
                     'trial_policy_version_id' => $trialPolicyVersionId,
                 ],
                 [
@@ -69,6 +70,7 @@ class BillingLaunchCatalogSeeder extends Seeder
                     'description' => 'للشبكات النامية؛ حد مقترح قدره 5 نقاط بيع و15 باقة.',
                     'pos_limit' => '5',
                     'package_limit' => '15',
+                    'member_limit' => '5',
                     'trial_policy_version_id' => null,
                 ],
                 [
@@ -77,6 +79,7 @@ class BillingLaunchCatalogSeeder extends Seeder
                     'description' => 'للشبكات متعددة نقاط البيع؛ حد مقترح قدره 20 نقطة بيع و50 باقة.',
                     'pos_limit' => '20',
                     'package_limit' => '50',
+                    'member_limit' => '15',
                     'trial_policy_version_id' => null,
                 ],
                 [
@@ -85,6 +88,7 @@ class BillingLaunchCatalogSeeder extends Seeder
                     'description' => 'للشبكات الكبيرة بعقد مخصص؛ حدود الموارد غير مقيدة وتحدد الشروط التجارية لكل عميل.',
                     'pos_limit' => '-1',
                     'package_limit' => '-1',
+                    'member_limit' => '-1',
                     'trial_policy_version_id' => null,
                 ],
             ];
@@ -167,6 +171,14 @@ class BillingLaunchCatalogSeeder extends Seeder
                         'package',
                         $now
                     );
+                    $this->ensureResourceLimit(
+                        $versionId,
+                        'max_network_members',
+                        'الحد الأقصى لأعضاء فريق الشبكة النشطين أو المدعوين',
+                        $definition['member_limit'],
+                        'member',
+                        $now
+                    );
                 }
             }
         }, 3);
@@ -177,8 +189,6 @@ class BillingLaunchCatalogSeeder extends Seeder
         $policy = DB::table('billing_trial_policies')
             ->where('policy_key', 'netsales-starter-14-day-trial')
             ->first();
-
-        $currentVersionId = $policy?->current_version_id;
 
         if (! $policy) {
             $policyId = DB::table('billing_trial_policies')->insertGetId([
