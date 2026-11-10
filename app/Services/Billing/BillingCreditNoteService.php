@@ -221,7 +221,7 @@ class BillingCreditNoteService
             $note->issued_at = now('Asia/Aden');
             $note->save();
 
-            $invoice->credited_minor = (int) $invoice->credited_minor + $appliedToReceivableMinor;
+            $invoice->credited_minor = (int) $invoice->credited_minor + $amountMinor;
             $invoice->remaining_minor = max(0, (int) $invoice->total_minor - (int) $invoice->paid_minor - (int) $invoice->credited_minor);
             $newCreditTotal = $previousCreditTotal + $amountMinor;
 
