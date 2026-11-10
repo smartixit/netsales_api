@@ -105,3 +105,11 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Tests, migration execution, and CI remain pending by instruction.
 
 - Refund idempotency is checked again after invoice-level locking to handle concurrent retries safely.
+
+
+### Billing implementation closeout — 2026-11-10
+- Subscription billing implementation is functionally assembled on feat/saas-billing-multicurrency-rebuild / PR #18.
+- Closeout hardening corrected the trial policy resolver, duplicate Outbox dispatch, payment verification controller contract, invoice credit balance accounting, customer-credit liability postings, and dunning/dashboard handling for credited invoices.
+- billing_invoices.credited_minor records issued credit-note value separately from cash collections. Outstanding amount is derived as max(0, total_minor - paid_minor - credited_minor).
+- Credit-note issue allocates value against receivables first and posts any overpaid amount to customer-credit liability. Refund settlement debits that liability and credits same-currency treasury.
+- Verification status: NOT VERIFIED. Per user instruction, no tests, PHP lint/static analysis, migrations, or GitHub Actions have been run yet. Do not merge or treat as production-ready until the final validation gate passes and all failures are resolved.
