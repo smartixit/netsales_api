@@ -19,6 +19,7 @@ Valid statuses are strictly:
 | **DEC-02** | 2026-11-02 | Dedicated Scoped Permissions for Network & POS Accountants | **`PROPOSED`** | Pending Review |
 | **DEC-03** | 2026-11-02 | Strict PaymentType Enum Validation and Model Cast in Repayments | **`PROPOSED`** | Pending Review |
 | **DEC-04** | 2026-11-02 | Server-Side Informational FIFO Repayment Preview Endpoint | **`PROPOSED`** | Pending Review |
+| **BILL-TRIAL-01** | 2026-11-10 | Versioned Trial and Dunning Policy Engine | **`APPROVED`** | 2026-11-10 |
 
 ---
 

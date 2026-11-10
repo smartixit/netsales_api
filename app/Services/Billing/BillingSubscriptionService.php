@@ -3,7 +3,7 @@
 namespace App\Services\Billing;
 
 use App\Enums\{BillingInvoiceStatus, BillingPlanVersionStatus, BillingSubscriptionStatus, BillingInterval};
-use App\Models\{BillingAccount, BillingPrice, BillingSubscription, BillingSubscriptionEvent, Network, User};
+use App\Models\{BillingAccount, BillingPrice, BillingSubscription, BillingSubscriptionEvent, BillingTrialPolicyVersion, Network, User};
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -227,7 +227,7 @@ class BillingSubscriptionService
         }, 3);
     }
 
-    private function trialDurationDays(\\App\\Models\\BillingTrialPolicyVersion $version): int
+    private function trialDurationDays(BillingTrialPolicyVersion $version): int
     {
         return match ($version->duration_unit) {
             'HOUR' => max(1, (int) ceil($version->duration_value / 24)),
@@ -238,7 +238,7 @@ class BillingSubscriptionService
         };
     }
 
-    private function trialEnd(CarbonImmutable $start, \\App\\Models\\BillingTrialPolicyVersion $version): CarbonImmutable
+    private function trialEnd(CarbonImmutable $start, BillingTrialPolicyVersion $version): CarbonImmutable
     {
         return match ($version->duration_unit) {
             'HOUR' => $start->addHours($version->duration_value),
