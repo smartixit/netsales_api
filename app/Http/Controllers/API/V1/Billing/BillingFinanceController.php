@@ -217,6 +217,7 @@ class BillingFinanceController extends BaseController
                 'refund_reference' => $refund->refund_reference,
                 'payment_id' => $refund->payment_id,
                 'credit_note_id' => $refund->credit_note_id,
+                'treasury_account_id' => $refund->treasury_account_id,
                 'currency' => new CurrencyResource($refund->currency),
                 'amount_minor' => $refund->amount_minor,
                 'status' => $refund->status,
