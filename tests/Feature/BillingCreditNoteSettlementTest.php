@@ -127,6 +127,35 @@ class BillingCreditNoteSettlementTest extends TestCase
         $this->assertLedgerAmount($entry, '1100', 'credit_minor', 800);
     }
 
+    public function test_credit_note_keeps_initial_revenue_schedule_held_until_payment(): void
+    {
+        $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
+        $schedule = BillingRevenueRecognitionSchedule::query()->create([
+            'invoice_id' => $this->invoice->invoice_id,
+            'invoice_line_id' => $this->line->invoice_line_id,
+            'currency_id' => $this->currency->currency_id,
+            'revenue_account_code' => '4100',
+            'total_minor' => 1000,
+            'recognized_minor' => 0,
+            'service_start_on' => '2026-01-01',
+            'service_end_on' => '2026-01-10',
+            'status' => 'HOLD',
+        ]);
+
+        app(BillingCreditNoteService::class)->issue(
+            (int) $this->invoice->invoice_id,
+            [['invoice_line_id' => $this->line->invoice_line_id, 'amount_minor' => 200]],
+            'تخفيض قبل تفعيل الاشتراك',
+            'credit-note-before-payment-'.Str::uuid(),
+            $this->actor
+        );
+
+        $schedule->refresh();
+        $this->assertSame(800, $schedule->total_minor);
+        $this->assertSame(0, $schedule->recognized_minor);
+        $this->assertSame('HOLD', $schedule->status);
+    }
+
     public function test_credit_note_allocates_tax_and_setup_revenue_without_manual_treatment(): void
     {
         $this->createInvoiceLine('SETUP_FEE', 1000, 100, 1100);
