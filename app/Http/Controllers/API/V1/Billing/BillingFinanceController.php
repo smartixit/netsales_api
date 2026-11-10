@@ -5,7 +5,7 @@ namespace App\Http\Controllers\API\V1\Billing;
 use App\Http\Controllers\API\V1\BaseController;
 use App\Http\Requests\API\V1\Billing\{RejectPaymentRequest, StoreCurrencyConversionRequest, StoreExchangeRateRequest, StoreRefundRequest, StoreCreditNoteRequest, StoreTreasuryAccountRequest, VerifyPaymentRequest};
 use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingInvoiceResource, BillingPaymentResource, BillingSubscriptionResource, CurrencyExchangeRateResource, CurrencyConversionResource, CurrencyResource, LedgerJournalEntryResource, PaymentMethodResource, TreasuryAccountResource};
-use App\Services\Billing\{BillingDashboardService, BillingCreditNoteService, BillingInvoiceService, BillingPaymentService, BillingPlatformReadService, BillingRefundService, BillingTreasuryService, BillingReconciliationService, CurrencyExchangeService};
+use App\Services\Billing\{BillingAccountService, BillingDashboardService, BillingCreditNoteService, BillingInvoiceService, BillingPaymentService, BillingPlatformReadService, BillingRefundService, BillingTreasuryService, BillingReconciliationService, BillingSubscriptionService, CurrencyExchangeService};
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -21,7 +21,9 @@ class BillingFinanceController extends BaseController
         private BillingDashboardService $dashboard,
         private BillingRefundService $refunds,
         private BillingCreditNoteService $creditNotes,
-        private BillingReconciliationService $reconciliation
+        private BillingReconciliationService $reconciliation,
+        private BillingAccountService $accountsService,
+        private BillingSubscriptionService $subscriptionsService
     ) {}
 
     public function overview(Request $request): JsonResponse
@@ -67,6 +69,80 @@ class BillingFinanceController extends BaseController
                 'network_id', 'billing_account_id', 'currency_id', 'status', 'per_page', 'all',
             ])))
         );
+    }
+
+    public function createAccount(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'network_id' => ['required', 'integer', 'exists:networks,network_id'],
+            'currency_id' => ['required', 'integer', 'exists:currencies,currency_id'],
+        ]);
+
+        $account = $this->accountsService->createForPlatform(
+            (int) $data['network_id'],
+            (int) $data['currency_id'],
+            $this->requireCurrentUser()
+        );
+
+        return $this->successResponse('تم إنشاء أو استرجاع حساب الفوترة للشبكة.', new BillingAccountResource($account), 201);
+    }
+
+    public function createSubscription(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'billing_account_id' => ['required', 'integer', 'exists:billing_accounts,billing_account_id'],
+            'price_id' => ['required', 'integer', 'exists:billing_prices,price_id'],
+        ]);
+
+        $result = $this->subscriptionsService->purchase(
+            (int) $data['billing_account_id'],
+            (int) $data['price_id'],
+            $this->requireCurrentUser(),
+            true
+        );
+
+        return $this->successResponse('تم إنشاء الاشتراك وإصدار الفاتورة وفق محرك الفوترة.', [
+            'subscription' => new BillingSubscriptionResource($result['subscription']->load(['billingAccount.network', 'currency', 'plan', 'planVersion', 'price'])),
+            'invoice' => $result['invoice'] ? new BillingInvoiceResource($result['invoice']) : null,
+        ], 201);
+    }
+
+    public function subscriptionDetails(int $subscriptionId): JsonResponse
+    {
+        $subscription = \\App\\Models\\BillingSubscription::query()
+            ->with(['billingAccount.network', 'currency', 'plan', 'planVersion', 'price', 'trialRedemption', 'events'])
+            ->findOrFail($subscriptionId);
+
+        return $this->successResponse('تم استرجاع تفاصيل الاشتراك وسجل أحداثه.', [
+            'subscription' => new BillingSubscriptionResource($subscription),
+            'events' => $subscription->events->map(static fn ($event): array => [
+                'event_id' => $event->event_id,
+                'event_type' => $event->event_type,
+                'from_status' => $event->from_status,
+                'to_status' => $event->to_status,
+                'payload' => $event->payload,
+                'actor_id' => $event->actor_id,
+                'occurred_at' => $event->occurred_at?->toDateTimeString(),
+            ]),
+        ]);
+    }
+
+    public function cancelSubscription(Request $request, int $subscriptionId): JsonResponse
+    {
+        $data = $request->validate([
+            'cancel_at_period_end' => ['required', 'boolean'],
+            'reason' => ['required', 'string', 'min:5', 'max:500'],
+        ]);
+
+        $subscription = $this->subscriptionsService->cancel(
+            $subscriptionId,
+            (bool) $data['cancel_at_period_end'],
+            $this->requireCurrentUser(),
+            (string) $data['reason'],
+            true
+        );
+
+        return $this->successResponse('تم تنفيذ إجراء إلغاء الاشتراك وتسجيل سببه في سجل التدقيق.', new BillingSubscriptionResource($subscription));
     }
 
     public function invoices(Request $request): JsonResponse
