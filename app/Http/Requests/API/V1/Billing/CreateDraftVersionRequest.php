@@ -17,7 +17,8 @@ class CreateDraftVersionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'trial_days' => ['sometimes', 'integer', 'between:0,365'],
+            'trial_policy_version_id' => ['nullable', 'integer', 'exists:billing_trial_policy_versions,trial_policy_version_id'],
+            'dunning_policy_version_id' => ['nullable', 'integer', 'exists:billing_dunning_policy_versions,dunning_policy_version_id'],
         ];
     }
 }

@@ -484,7 +484,9 @@ Route::prefix('v1')->group(function () {
         // Platform Billing — Windows Platform Scope only
         // ==========================================
         Route::prefix('platform/billing')->middleware('platform.user.scope')->group(function () {
-            Route::prefix('policies')->controller(BillingPolicyController::class)->group(function () {
+            Route::prefix('policies')->controller(BillingPolicyController::class)->middleware(['throttle:api-write', 'permission:billing.manage'])->group(function () {
+                Route::get('trials', 'trialPolicies')->name('api.v1.platform.billing.policies.trials.index');
+                Route::get('dunning', 'dunningPolicies')->name('api.v1.platform.billing.policies.dunning.index');
                 Route::post('trials', 'storeTrial')->name('api.v1.platform.billing.policies.trials.store');
                 Route::post('dunning', 'storeDunning')->name('api.v1.platform.billing.policies.dunning.store');
                 Route::post('trials/{policyId}/versions', 'storeTrialVersion')->name('api.v1.platform.billing.policies.trials.versions.store');

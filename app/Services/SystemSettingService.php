@@ -33,6 +33,10 @@ class SystemSettingService
      */
     public function get(string $key, mixed $default = null, ?int $centerId = null): mixed
     {
+        if (in_array($key, ['trial_period_days', 'grace_period_days', 'auto_suspend_expired', 'subscription_expiry_alert_days'], true)) {
+            return $default;
+        }
+
         $settings = $this->settingRepository->getAllCached();
         $setting = $settings->firstWhere('setting_key', $key);
 

@@ -100,3 +100,16 @@ Valid statuses are strictly:
 - Subscription request reads require `subscriptions.view`; approval and rejection require their respective `subscriptions.approve` and `subscriptions.reject` permissions.
 - Provider subscription reads and consumption detail require `subscriptions.view`; extension requires `subscriptions.edit`.
 - Provider request submission, request cancellation, network-scoped active-subscription lookup, feature consumption, and early activation retain their operational routes and are not assigned platform subscription permissions by this change.
+
+
+---
+
+## BILL-TRIAL-01: Versioned Trial Policy Engine and Removal from System Settings
+- **Status:** **`APPROVED`**
+- **Date:** 2026-11-10
+- **User Decision Date:** 2026-11-10
+- **Context:** Subscription trial duration and dunning behavior must not be global key/value settings. Commercial policy needs eligibility, versioning, plan/price overrides, redemption controls, approval, and auditable adjustments.
+- **Decision:** Use dedicated immutable published versions for trial and dunning policies. Resolution order is price override, plan-version assignment, then active platform default. Snapshot the resolved versions on every subscription. Trial eligibility and redemption are enforced server-side and transactionally. Trial extensions and early termination require a reason and an actor audit record. Dunning grace, suspension, reminders, and pre-renewal alerts are governed by a separate dunning policy.
+- **System Settings:** Remove the `SUBSCRIPTION` category and its trial/grace/suspension/expiry-alert keys. System Settings must reject creation, update, and lookup/filter operations for the retired category. Policy management is available only under Platform Scope billing APIs.
+- **Compatibility:** Existing plan-version trial durations are migrated to equivalent immutable policy versions; zero-day plans remain explicitly non-trial. Existing subscription records retain their historical terms through policy snapshots.
+- **Consequence:** Changing a policy affects only future subscriptions/assignments; existing subscriptions continue using their stored snapshots.

@@ -3,7 +3,7 @@
 namespace App\Services\Billing;
 
 use App\Enums\{BillingInvoiceStatus, BillingSubscriptionStatus};
-use App\Models\{BillingDunningAttempt, BillingInvoice, BillingSubscription, BillingSubscriptionEvent};
+use App\Models\{BillingDunningAttempt, BillingInvoice, BillingSubscription, BillingSubscriptionAlert, BillingSubscriptionEvent};
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -25,6 +25,58 @@ class BillingDunningService
                 ]
             );
         }
+    }
+
+    public function scheduleSubscriptionAlerts(BillingSubscription $subscription): void
+    {
+        if (! $subscription->current_period_end || ! $subscription->dunning_policy_version_id) return;
+        foreach ((array) ($subscription->dunning_policy_snapshot['pre_renewal_alert_days'] ?? []) as $days) {
+            BillingSubscriptionAlert::query()->firstOrCreate([
+                'billing_subscription_id' => $subscription->billing_subscription_id,
+                'period_end' => $subscription->current_period_end,
+                'alert_days' => (int) $days,
+            ], [
+                'dunning_policy_version_id' => $subscription->dunning_policy_version_id,
+                'scheduled_at' => $subscription->current_period_end->copy()->subDays((int) $days),
+                'status' => 'PENDING',
+            ]);
+        }
+    }
+
+    public function processDueAlerts(int $limit = 100): int
+    {
+        $ids = BillingSubscriptionAlert::query()->where('status', 'PENDING')->where('scheduled_at', '<=', now('Asia/Aden'))
+            ->orderBy('scheduled_at')->limit(min(max($limit, 1), 500))->pluck('subscription_alert_id');
+        $processed = 0;
+        foreach ($ids as $id) {
+            $done = DB::transaction(function () use ($id): bool {
+                $alert = BillingSubscriptionAlert::query()->lockForUpdate()->find($id);
+                if (! $alert || $alert->status !== 'PENDING') return false;
+                $subscription = BillingSubscription::query()->with('billingAccount.network')->lockForUpdate()->find($alert->billing_subscription_id);
+                if (! $subscription || ! in_array($subscription->status, [BillingSubscriptionStatus::ACTIVE, BillingSubscriptionStatus::TRIALING], true)) {
+                    $alert->status = 'CANCELLED'; $alert->save(); return false;
+                }
+                $uuid = (string) Str::uuid();
+                DB::table('outbox_messages')->insert([
+                    'message_uuid' => $uuid, 'aggregate_type' => 'BILLING_SUBSCRIPTION',
+                    'aggregate_id' => $subscription->billing_subscription_id,
+                    'event_type' => 'billing.subscription.renewal_reminder',
+                    'payload' => json_encode([
+                        'billing_subscription_id' => $subscription->billing_subscription_id,
+                        'network_id' => $subscription->billingAccount->network_id,
+                        'owner_id' => $subscription->billingAccount->network->owner_id,
+                        'period_end' => $alert->period_end->toDateTimeString(),
+                        'days_remaining' => $alert->alert_days,
+                    ], JSON_THROW_ON_ERROR),
+                    'status' => 'PENDING', 'retry_count' => 0, 'max_retries' => 5,
+                    'created_at' => now('Asia/Aden'), 'updated_at' => now('Asia/Aden'),
+                ]);
+                $alert->status = 'QUEUED'; $alert->queued_at = now('Asia/Aden'); $alert->message_uuid = $uuid; $alert->save();
+                return true;
+            }, 3);
+            if ($done) $processed++;
+        }
+        return $processed;
     }
 
     public function processDueAttempts(int $limit = 100): int
@@ -171,8 +223,9 @@ class BillingDunningService
     public function process(int $limit = 100): array
     {
         $queued = $this->processDueAttempts($limit);
+        $alerts = $this->processDueAlerts($limit);
         $suspended = $this->suspendExpiredGracePeriods($limit);
 
-        return ['reminders_queued' => $queued, 'subscriptions_suspended' => $suspended];
+        return ['reminders_queued' => $queued, 'renewal_alerts_queued' => $alerts, 'subscriptions_suspended' => $suspended];
     }
 }

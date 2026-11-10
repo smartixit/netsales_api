@@ -91,6 +91,20 @@ class BillingEntitlementService
             return false;
         }
 
+        if ($active && $subscription->status === BillingSubscriptionStatus::TRIALING) {
+            $trialPolicy = (array) $subscription->trial_policy_snapshot;
+            $mode = $trialPolicy['entitlement_mode'] ?? 'FULL_PLAN';
+            if ($mode === 'NONE') {
+                return false;
+            }
+            if ($mode === 'RESTRICTED') {
+                $allowed = (array) ($trialPolicy['entitlement_config']['allowed_features'] ?? []);
+                if (! in_array($featureKey, $allowed, true)) {
+                    return false;
+                }
+            }
+        }
+
         if ($grace && $feature->feature_type === BillingFeatureType::METERED) {
             return false;
         }

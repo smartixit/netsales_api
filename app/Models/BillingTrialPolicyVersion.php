@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
 class BillingTrialPolicyVersion extends Model
 {
@@ -17,6 +18,16 @@ class BillingTrialPolicyVersion extends Model
     protected function casts(): array
     {
         return ['is_enabled' => 'boolean', 'requires_manual_approval' => 'boolean', 'duration_value' => 'integer', 'version_number' => 'integer', 'entitlement_config' => 'array', 'published_at' => 'datetime'];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $version): void {
+            if ($version->getRawOriginal('status') !== 'DRAFT' && array_diff(array_keys($version->getDirty()), ['status', 'published_at', 'updated_at']) !== []) {
+                throw new LogicException('إصدار سياسة التجربة المنشور غير قابل للتعديل؛ أنشئ إصداراً جديداً.');
+            }
+        });
+        static::deleting(fn () => throw new LogicException('إصدارات سياسات التجربة لا تحذف.'));
     }
 
     public function policy(): BelongsTo

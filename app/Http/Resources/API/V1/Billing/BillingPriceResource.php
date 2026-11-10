@@ -25,6 +25,8 @@ class BillingPriceResource extends JsonResource
             'billing_interval_label' => $this->billing_interval?->label(),
             'interval_count' => (int) $this->interval_count,
             'tax_behavior' => $this->tax_behavior,
+            'trial_policy_version_id' => $this->trial_policy_version_id,
+            'dunning_policy_version_id' => $this->dunning_policy_version_id,
             'is_active' => (bool) $this->is_active,
         ];
     }

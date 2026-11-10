@@ -12,7 +12,7 @@ class BillingSubscriptionAlert extends Model
 
     protected $table = 'billing_subscription_alerts';
     protected $primaryKey = 'subscription_alert_id';
-    protected $fillable = ['billing_subscription_id', 'dunning_policy_version_id', 'period_end', 'alert_days', 'scheduled_at', 'status', 'queued_at', 'message_uuid', 'result_message'];
+    protected $fillable = ['billing_subscription_id','dunning_policy_version_id','period_end','alert_days','scheduled_at','status','queued_at','message_uuid','result_message'];
 
     protected function casts(): array
     {

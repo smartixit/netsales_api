@@ -168,6 +168,9 @@ class BillingSubscriptionService
 
             if ($isTrial) {
                 $redemption = $this->policies->reserveRedemption($trialVersion, $subscription, $account, $network, $price->planVersion->plan);
+                if ($trialStartsAtPurchase) {
+                    $this->dunning->scheduleSubscriptionAlerts($subscription);
+                }
                 $subscription->events()->create([
                     'event_type' => $trialVersion->requires_manual_approval ? 'TRIAL_PENDING_APPROVAL' : 'TRIAL_RESERVED',
                     'from_status' => null,

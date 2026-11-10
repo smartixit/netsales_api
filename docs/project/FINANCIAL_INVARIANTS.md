@@ -38,3 +38,7 @@
    - Repayment collections must lock affected invoices and wallet balances using pessimistic row locking (`lockForUpdate()`) inside `DB::transaction(...)`.
 4. **Preview Non-Binding Qualification (DEC-04):**
    - Any server-side repayment preview is strictly non-binding and informational. Because concurrent transactions can mutate invoice balances, the final settlement is determined atomically at collection time.
+
+
+## Subscription Trial and Dunning Controls
+Trial eligibility, redemption, and adjustments are server-side transactional controls. A unique redemption subject is enforced by the database for each policy and configured redemption scope. Published policy versions and subscription policy snapshots are immutable. Dunning grace and suspension use the version assigned to the subscription; they must never read generic `system_settings` keys.

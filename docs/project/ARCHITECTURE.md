@@ -174,3 +174,7 @@ NetSales is an enterprise B2B sales management platform. Functional correctness 
    - `CustomChip`: Renders a compact or interactive semantic chip.
    - Ad-hoc color/status switches in presentation code are strictly prohibited.
 
+
+
+## Subscription Commercial Policy Boundary
+Trial and dunning behavior are dedicated versioned billing-domain policies, not key/value system settings. Policy resolution is price override, then plan-version assignment, then active platform default. The resolved policy versions and commercial terms are snapshotted on each subscription. Trial redemption and eligibility are enforced transactionally; manual adjustments are append-only audit records. Dunning policy independently controls grace, reminders, suspension, and pre-renewal alerts.

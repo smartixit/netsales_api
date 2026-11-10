@@ -106,6 +106,9 @@ class BillingRenewalService
                     return 'FREE_RENEWAL';
                 }
 
+                if ($wasTrial) {
+                    $subscription->trialRedemption()->where('status', 'ACTIVE')->update(['status' => 'COMPLETED', 'completed_at' => now('Asia/Aden')]);
+                }
                 $subscription->status = $wasTrial
                     ? BillingSubscriptionStatus::INCOMPLETE
                     : BillingSubscriptionStatus::PAST_DUE;

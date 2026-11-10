@@ -215,6 +215,7 @@ class BillingPaymentService
                     $subscription->status = BillingSubscriptionStatus::ACTIVE;
                     $subscription->grace_period_ends_at = null;
                     $subscription->save();
+                    $this->dunning->scheduleSubscriptionAlerts($subscription);
 
                     BillingSubscriptionEvent::query()->create([
                         'billing_subscription_id' => $subscription->billing_subscription_id,

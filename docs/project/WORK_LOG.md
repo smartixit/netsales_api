@@ -781,3 +781,18 @@ This log documents all executed tasks, code changes, and verification command ou
 - Login, OTP verification, and `auth/me` now expose active `workspace_roles` with scope and tenant identifiers so the mobile WorkspaceGuard can route accounts whose `users.role_id` is null.
 - Permission lists include a union for client capability rendering only; all backend authorization continues to enforce exact tenant scope.
 - Added coverage for a user with simultaneous NETWORK and POS memberships and the tenant-aware network overview endpoint.
+
+
+---
+
+## 2026-11-10 — Versioned Trial and Dunning Policy Engine
+- Added dedicated trial policy and policy-version models with configurable enablement, duration unit/value, start trigger (purchase/first activation), eligibility, redemption scope, manual approval, end behavior, and entitlement mode.
+- Added transactional trial redemption uniqueness by policy/scope/subject, subscription linkage, manual approval, and audited extension/shortening/early-end adjustments.
+- Added separate versioned dunning policies for grace periods, payment reminder schedules, auto-suspension, and pre-renewal alerts.
+- Added policy resolution order: price override → plan-version assignment → platform default; snapshots are stored on subscriptions.
+- Replaced `billing_plan_versions.trial_days` with a trial-policy-version reference. Migration preserves existing zero-day and non-zero legacy trial behavior.
+- Removed the `SUBSCRIPTION` category and legacy trial/grace/suspension/expiry-alert settings from `SystemSettingSeeder` and the setting category enum; write and filter validation rejects the retired category.
+- Added Platform Scope API endpoints to list/create policies, create/publish immutable versions, assign policies to draft plan versions/prices, approve trial redemptions, and adjust active trial periods.
+- Integrated first-activation trials, trial expiry outcomes, policy-driven dunning grace/suspension, invoice reminder schedules, and pre-renewal alerts through the transactional outbox.
+- Updated plan, price, and subscription resources to expose policy references/snapshots.
+- Tests and GitHub Actions remain intentionally deferred by user instruction. Static/runtime validation has not yet been performed; do not infer passing status.

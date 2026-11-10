@@ -31,8 +31,7 @@ class NotifyExpiringSubscriptions extends Command
         ProviderSubscriptionRepositoryInterface $subscriptionRepository
     ): int {
         $now = Carbon::now('Asia/Aden');
-        $defaultDays = (int) systemSetting('subscription_expiry_alert_days', 3);
-        $days = (int) ($this->option('days') ?: $defaultDays);
+        $days = max(0, (int) ($this->option('days') ?: 3));
         $force = (bool) $this->option('force');
         $targetDate = $now->toDateString();
 

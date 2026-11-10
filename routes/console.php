@@ -17,7 +17,7 @@ Artisan::command('billing:process-renewals', function (BillingRenewalService $re
 
 Artisan::command('billing:process-dunning', function (BillingDunningService $dunning) {
     $result = $dunning->process((int) config('billing.dunning_batch_size', 100));
-    $this->info("تم إدراج {$result['reminders_queued']} تذكيراً في Outbox وتعليق {$result['subscriptions_suspended']} اشتراكاً بعد انتهاء السماح.");
+    $this->info("تم إدراج {$result['reminders_queued']} تذكيراً بالفواتير و{$result['renewal_alerts_queued']} تنبيهاً بالتجديد في Outbox وتعليق {$result['subscriptions_suspended']} اشتراكاً بعد انتهاء السماح.");
 })->purpose('معالجة التذكيرات المالية وتعليق الاشتراكات المتأخرة بعد فترة السماح');
 
 // ═══════════════════════════════════════════════════════════════════════

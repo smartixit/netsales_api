@@ -1,6 +1,6 @@
 # NetSales — Current Project State & Authorization Snapshot
 
-**Last Verified Date:** 2026-11-07  
+**Last Updated Date:** 2026-11-10  
 **Active Working Tree Status:** M6 Procurement Requests Lifecycle Frontend Completed & Verified (201 tests passed, 0 issues)  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
@@ -64,3 +64,14 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Role assignment is intentionally limited to the ordinary operational user role per tenant. Accountant assignment remains excluded until accountant permission sets are verified to be read-only and policy-compliant.
 - PR #20 depends on the API contract and `is_owner` response change in PR #10; merge the API PR first, then the Flutter PR.
 - CI and visual QA are pending; do not mark this feature fully verified until exact-head checks pass and rendered phone/tablet Light/Dark review is completed.
+
+
+## Active implementation — SaaS Billing and Versioned Trial/Dunning Policies (2026-11-10)
+- Active backend branch: `feat/saas-billing-multicurrency-rebuild`.
+- The subscription and billing domain is being rebuilt around immutable plan/price versions, explicit currencies, invoice/payment/ledger workflows, entitlements, usage metering, and platform-only billing administration.
+- Trial behavior is controlled by versioned `billing_trial_policies` / `billing_trial_policy_versions`, not `system_settings`. Resolution order: price override → plan-version assignment → platform default.
+- Trial eligibility, redemption uniqueness, manual approval, first-activation start, expiry behavior, and audited adjustments are server-owned.
+- Grace periods, dunning reminders, auto-suspension, and pre-renewal alerts are separately governed by versioned dunning policies.
+- `system_settings` no longer owns the `SUBSCRIPTION` category or its four legacy keys. The System Settings API rejects attempts to recreate the retired category.
+- Existing plan versions are migrated to equivalent immutable trial policy versions; plans with zero trial days remain non-trial.
+- Tests and GitHub Actions are intentionally deferred until the end of the approved implementation plan. No test or CI success is claimed in this state entry.

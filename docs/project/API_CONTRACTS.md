@@ -213,3 +213,14 @@ Successful login, successful two-factor verification, and `GET /api/v1/auth/me` 
 The global `user.role` remains reserved for global/platform-scoped roles. Network and POS roles are stored only in `network_users` and `pos_users`, respectively; registration must not place a tenant role in `users.role_id`.
 
 The top-level `permissions` list is a union of active scoped-role permissions for client-side capability display. It is not an authorization decision. Every protected endpoint must continue to verify the permission against the exact requested tenant using server-side scoped authorization. A user may have more than one workspace role, including roles in both scopes; the client chooses the workspace while the server validates each tenant independently.
+
+
+## Platform Billing — Trial and Dunning Policies
+All endpoints below are nested under `/api/v1/platform/billing` and protected by Platform Scope authorization:
+- `GET policies/trials`, `GET policies/dunning`: list policies and their current versions.
+- `POST policies/trials`, `POST policies/dunning`: create a policy with its first draft version.
+- `POST policies/trials/{policyId}/versions`, `POST policies/dunning/{policyId}/versions`: create a new draft version.
+- `POST policies/trial-versions/{versionId}/publish`, `POST policies/dunning-versions/{versionId}/publish`: publish a draft as the current immutable version.
+- `PUT policies/plan-versions/{versionId}`, `PUT policies/prices/{priceId}`: assign published policy versions to a draft plan version or draft price.
+- `POST policies/trial-redemptions/{redemptionId}/approve`: approve a trial awaiting manual approval.
+- `POST policies/subscriptions/{subscriptionId}/trial-adjustments`: extend, shorten, or end an active trial with mandatory reason and audit actor.

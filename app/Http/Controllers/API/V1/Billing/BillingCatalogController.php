@@ -105,7 +105,7 @@ class BillingCatalogController extends BaseController
             $version = $this->catalog->createDraftVersion(
                 $planId,
                 $this->currentUserId(false),
-                (int) $request->input('trial_days', 0)
+                $request->only(['trial_policy_version_id', 'dunning_policy_version_id'])
             );
 
             return $this->successResponse('تم إنشاء نسخة مسودة جديدة للخطة.', [

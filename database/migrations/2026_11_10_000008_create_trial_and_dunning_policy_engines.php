@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -346,11 +347,8 @@ return new class extends Migration
             $table->dropColumn('trial_days');
         });
 
-        Schema::table('system_settings', function (Blueprint $table): void {
-            // Historical subscription settings are removed by the following data deletion.
-        });
-
         DB::table('system_settings')->where('setting_category', 'SUBSCRIPTION')->delete();
+        Cache::forget('system_settings_cache_all');
     }
 
     public function down(): void
