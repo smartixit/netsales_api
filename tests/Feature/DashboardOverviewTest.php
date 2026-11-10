@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Enums\BillingSubscriptionStatus;
 use App\Enums\NetworkStatus;
 use App\Enums\RoleKey;
 use App\Enums\UserStatus;
+use App\Models\BillingSubscription;
 use App\Models\Network;
 use App\Models\NetworkUser;
 use App\Models\Role;
@@ -30,6 +32,14 @@ class DashboardOverviewTest extends TestCase
         $activeNetworksBefore = Network::query()
             ->where('status', NetworkStatus::ACTIVE->value)
             ->count();
+        $now = CarbonImmutable::now('Asia/Aden');
+        $expiringBefore = BillingSubscription::query()
+            ->whereIn('status', [
+                BillingSubscriptionStatus::ACTIVE->value,
+                BillingSubscriptionStatus::TRIALING->value,
+            ])
+            ->whereBetween('current_period_end', [$now, $now->addDays(7)])
+            ->count();
         $network = Network::create([
             'owner_id' => $admin->user_id,
             'network_name' => 'Overview Network '.Str::random(8),
@@ -42,7 +52,7 @@ class DashboardOverviewTest extends TestCase
         $subscription = $this->createActiveBillingSubscriptionForNetwork(
             $network,
             [],
-            CarbonImmutable::now('Asia/Aden')->addDays(5),
+            $now->addDays(5),
             $admin
         );
 
