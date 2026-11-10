@@ -203,8 +203,8 @@ class BillingLaunchCatalogSeeder extends Seeder
             $versionId = DB::table('billing_trial_policy_versions')->insertGetId([
                 'trial_policy_id' => $policyId,
                 'version_number' => 1,
-                'status' => 'PUBLISHED',
-                'is_enabled' => true,
+                'status' => 'DRAFT',
+                'is_enabled' => false,
                 'duration_value' => 14,
                 'duration_unit' => 'DAY',
                 'start_trigger' => 'PURCHASE',
@@ -214,19 +214,13 @@ class BillingLaunchCatalogSeeder extends Seeder
                 'end_behavior' => 'CREATE_INVOICE',
                 'entitlement_mode' => 'FULL_PLAN',
                 'entitlement_config' => null,
-                'published_at' => $now,
+                'published_at' => null,
                 'created_by' => $actorId,
                 'created_at' => $now,
                 'updated_at' => $now,
             ], 'trial_policy_version_id');
         } else {
             $versionId = (int) $version->trial_policy_version_id;
-        }
-
-        if (! $currentVersionId) {
-            DB::table('billing_trial_policies')
-                ->where('trial_policy_id', $policyId)
-                ->update(['current_version_id' => $versionId, 'updated_at' => $now]);
         }
 
         return $versionId;
