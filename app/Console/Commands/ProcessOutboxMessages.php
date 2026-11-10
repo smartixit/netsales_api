@@ -4,35 +4,22 @@ namespace App\Console\Commands;
 
 use App\Services\OutboxService;
 use App\Services\Billing\BillingOutboxNotificationDispatcher;
-use Exception;
-use RuntimeException;
+use Throwable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class ProcessOutboxMessages extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'outbox:process {--batch-size=20 : عدد الرسائل في الدفعة} {--lease-seconds=60 : مدة حجز القفل بالثواني}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'معالجة الرسائل والأحداث المالية المعلقة في صندوق الإرسال اللحظي (Transactional Outbox)';
 
-    /**
-     * Execute the console command.
-     */
-    public function handle(OutboxService $outboxService, BillingOutboxNotificationDispatcher $billingNotifications): int
-    {
-        $batchSize = (int) $this->option('batch-size');
-        $leaseSeconds = (int) $this->option('lease-seconds');
-
+    public function handle(
+        OutboxService $outboxService,
+        BillingOutboxNotificationDispatcher $billingNotifications
+    ): int {
+        $batchSize = max(1, min((int) $this->option('batch-size'), 500));
+        $leaseSeconds = max(10, min((int) $this->option('lease-seconds'), 3600));
         $messages = $outboxService->claimBatch($batchSize, $leaseSeconds);
 
         if ($messages->isEmpty()) {
@@ -43,35 +30,35 @@ class ProcessOutboxMessages extends Command
 
         $processedCount = 0;
         $failedCount = 0;
+        $billingEventTypes = [
+            'billing.invoice.payment_reminder',
+            'billing.subscription.renewal_reminder',
+        ];
 
-        foreach ($messages as $msg) {
+        foreach ($messages as $message) {
             try {
-                if (in_array($msg->event_type, [
-                    'billing.invoice.payment_reminder',
-                    'billing.subscription.renewal_reminder',
-                ], true)) {
-                    $billingNotifications->dispatch($msg);
-                }
-
-                Log::info("Processing outbox message #{$msg->id} [{$msg->event_type}] for aggregate [{$msg->aggregate_type}:{$msg->aggregate_id}]", [
-                    'message_uuid' => $msg->message_uuid,
+                Log::info("Processing outbox message #{$message->id} [{$message->event_type}] for aggregate [{$message->aggregate_type}:{$message->aggregate_id}]", [
+                    'message_uuid' => $message->message_uuid,
                 ]);
 
-                if (in_array($msg->event_type, ['billing.invoice.payment_reminder', 'billing.subscription.renewal_reminder'], true)
-                    && ! $billingNotifications->dispatch($msg)) {
-                    throw new RuntimeException('تعذر تسليم إشعار الفوترة إلى المستلم.');
+                if (in_array($message->event_type, $billingEventTypes, true)
+                    && ! $billingNotifications->dispatch($message)) {
+                    throw new \RuntimeException('تعذر تسليم إشعار الفوترة إلى المستلم.');
                 }
-                $outboxService->markPublished($msg->id, (string) $msg->lease_token);
+
+                $outboxService->markPublished($message->id, (string) $message->lease_token);
                 $processedCount++;
-            } catch (Exception $e) {
-                Log::error("Failed to process outbox message #{$msg->id}: ".$e->getMessage());
-                $outboxService->markFailed($msg->id, (string) $msg->lease_token, $e->getMessage());
+            } catch (Throwable $exception) {
+                Log::error("Failed to process outbox message #{$message->id}: ".$exception->getMessage(), [
+                    'message_uuid' => $message->message_uuid,
+                ]);
+                $outboxService->markFailed($message->id, (string) $message->lease_token, $exception->getMessage());
                 $failedCount++;
             }
         }
 
         $this->info("تمت معالجة {$processedCount} رسالة بنجاح، وفشل {$failedCount} رسالة.");
 
-        return self::SUCCESS;
+        return $failedCount > 0 ? self::FAILURE : self::SUCCESS;
     }
 }
