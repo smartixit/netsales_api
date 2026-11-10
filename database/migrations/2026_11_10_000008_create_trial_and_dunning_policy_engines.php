@@ -182,7 +182,6 @@ return new class extends Migration
             $table->dropColumn('trial_days');
         });
 
-        DB::table('system_settings')->where('setting_category', 'SUBSCRIPTION')->delete();
         Cache::forget('system_settings_cache_all');
     }
 
