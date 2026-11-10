@@ -54,6 +54,16 @@ class BillingCatalogController extends BaseController
         }
     }
 
+    public function products(Request $request): JsonResponse
+    {
+        return $this->successResponse(
+            'تم استرجاع منتجات الفوترة.',
+            BillingProductResource::collection($this->catalog->products(
+                $request->only(['is_active', 'search', 'per_page', 'all'])
+            ))
+        );
+    }
+
     public function plans(Request $request): JsonResponse
     {
         return $this->successResponse(
