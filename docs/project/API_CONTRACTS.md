@@ -232,7 +232,7 @@ All endpoints below are nested under `/api/v1/platform/billing` and protected by
 ## Credit Notes and Refund Settlement
 All endpoints are under `/api/v1/platform/billing` and require Platform Scope plus `billing.approve`:
 - `POST invoices/{invoiceId}/credit-notes`: issue an immutable credit note against one or more original invoice lines. Requires an idempotency key, reason, and positive line amounts; accounting treatment is derived automatically per invoice line from revenue recognition state and proportional tax allocation. The service prevents line-level and invoice-level over-crediting, offsets open receivables first, and reserves only the overpaid portion as refundable customer credit.
-- `POST payments/{paymentId}/refunds`: settle an issued credit note against a verified payment. Requires `credit_note_id`, `treasury_account_id`, `amount_minor`, `reason`, and `idempotency_key`. The amount must fit both the payment's remaining refundable amount and the credit note's remaining refundable amount. The journal entry debits customer-credit liability (2200) and credits the same-currency treasury account.
+- `POST payments/{paymentId}/refunds`: settle an issued credit note against a verified payment. Requires `credit_note_id`, `treasury_account_id`, `amount_minor`, `reason`, and `idempotency_key`. The amount must fit both the payment's remaining refundable amount and the credit note's remaining refundable amount. The refund persists the treasury account used, debits customer-credit liability (2200), and credits that same-currency treasury account.
 - Invoice resources expose issued credit notes when loaded, including receivable-applied, refundable, and refunded amounts.
 
 
@@ -252,3 +252,11 @@ All endpoints are under `/api/v1/platform/billing` and require Platform Scope pl
 - `billing:recognize-revenue` runs daily in `Asia/Aden` and is safe to rerun. It debits deferred revenue (2100) and credits subscription revenue (4100), with a deterministic ledger idempotency key and an auditable recognition entry.
 - Credit notes allocate the original line value proportionally between tax, unearned subscription revenue, and already-recognized revenue. They reduce the recognition schedule's remaining service obligation and post the appropriate debit to deferred revenue (2100), subscription revenue (4100), setup revenue (4120), usage revenue (4110), and tax payable (2300), as applicable. Clients and reviewers cannot choose a manual accounting treatment.
 - An invoice with any recognized revenue cannot be voided. Corrections after service delivery must use the credit-note workflow so revenue history is not erased.
+
+
+## Financial Reconciliation Contract
+- `GET /api/v1/platform/billing/reconciliation` is Platform Scope only and requires `billing.view`. Optional `currency_id` limits the result to one currency; omitting it returns separate currency groups and never combines unlike currencies.
+- Each currency group contains per-control-account ledger/subledger balances and `difference_minor` for Accounts Receivable (1100), Deferred Revenue (2100), Customer Credit Liability (2200), and Tax Payable (2300), plus trial balance totals.
+- Treasury accounts are reconciled individually by comparing their general-ledger asset balance with verified payments assigned to that treasury less completed refunds paid from that same treasury. Every refund stores `treasury_account_id`.
+- Any verified payment or completed refund missing a treasury link is exposed in warnings and makes the currency group require attention. Treasury accounts missing their ledger link are also exposed.
+- `MATCH` means all internal ledger/subledger checks balance exactly in minor units. It is not a substitute for matching external bank statements; no bank-statement import is currently represented by this endpoint.
