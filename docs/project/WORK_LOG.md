@@ -837,3 +837,14 @@ This log documents all executed tasks, code changes, and verification command ou
 - Automated tests, migration execution, and GitHub Actions remain deferred to the final validation stage.
 
 - Rechecked refund idempotency after acquiring the invoice lock to serialize concurrent retries and avoid duplicate-key race failures.
+
+
+## [2026-11-10] Billing stage closeout hardening — reconciliation and lifecycle consistency
+- Corrected malformed BillingPolicyResolver implementation and restored trial redemption metadata, eligibility, snapshots, and default policy methods.
+- Fixed Outbox dispatch so billing notification events are dispatched once per processing attempt; failures return to the Outbox retry lifecycle.
+- Corrected the Platform Finance controller to call BillingPaymentService::verify() using its actual method signature.
+- Added credited_minor to invoice balances and resources. Outstanding amount is now computed from total less verified payments and issued credit notes; partial-credit invoices remain payable.
+- Split credit-note postings between receivables and customer-credit liability (2200). Cash refunds now settle customer-credit liability rather than incorrectly debiting receivables.
+- Updated payment verification, invoice state transitions, dashboard counts, and dunning cancellation for fully credited invoices.
+- Added migration 2026_11_10_000011_add_credited_minor_to_billing_invoices.php.
+- Automated tests, PHP static analysis, migration execution, and GitHub Actions remain intentionally pending for the final validation gate. No runtime success is claimed.
