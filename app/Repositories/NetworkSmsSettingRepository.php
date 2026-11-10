@@ -68,7 +68,6 @@ class NetworkSmsSettingRepository extends BaseRepository implements NetworkSmsSe
                 'notify_low_balance' => false,
                 'notify_daily_summary' => false,
                 'notify_monthly_summary' => false,
-                'notify_subscription_expiry' => false,
                 'use_custom_gateway' => false,
                 'server_type' => 'cloud',
                 'base_url' => 'https://api.sms-gate.app',

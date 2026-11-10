@@ -92,8 +92,12 @@ class BillingLaunchCatalogSeederTest extends TestCase
             ->where('billing_interval', BillingInterval::MONTH)
             ->firstOrFail();
 
+        $feature = $version->features()->where('feature_key', 'max_pos_count')->firstOrFail();
+
         $price->unit_amount_minor = 3_375_000;
         $price->save();
+        $feature->value = '3';
+        $feature->save();
 
         app(BillingLaunchCatalogSeeder::class)->run();
 
@@ -102,6 +106,7 @@ class BillingLaunchCatalogSeederTest extends TestCase
             (int) $price->refresh()->unit_amount_minor,
             'A seeder rerun must not overwrite the platform-approved draft price.'
         );
+        $this->assertSame('3', $feature->refresh()->value);
 
     }
 }

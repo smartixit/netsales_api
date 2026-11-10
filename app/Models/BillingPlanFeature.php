@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BillingFeatureType;
+use App\Enums\BillingPlanVersionStatus;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,7 +33,8 @@ class BillingPlanFeature extends Model
     {
         $assertDraft = static function (self $feature): void {
             $status = $feature->planVersion()->value('status');
-            if ($status !== 'DRAFT') {
+            $status = $status instanceof BillingPlanVersionStatus ? $status->value : $status;
+            if ($status !== BillingPlanVersionStatus::DRAFT->value) {
                 throw new LogicException('استحقاقات النسخ المنشورة أو المؤرشفة غير قابلة للإضافة أو التعديل أو الحذف؛ أنشئ نسخة خطة جديدة.');
             }
         };

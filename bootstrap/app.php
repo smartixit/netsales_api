@@ -17,7 +17,6 @@ $_ENV['TEMP'] = $appTempDir;
 $_ENV['TMP'] = $appTempDir;
 
 use App\Http\Middleware\CheckMaintenanceMode;
-use App\Http\Middleware\CheckSubscriptionFeatureQuota;
 use App\Http\Middleware\EncryptDecryptPayload;
 use App\Http\Middleware\EnsureAppAdmin;
 use App\Http\Middleware\EnsureOperationalWorkspaceScope;
@@ -63,8 +62,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'session.auth' => SessionAuthMiddleware::class,
             'permission' => EnsurePermissionMiddleware::class,
             'app.admin' => EnsureAppAdmin::class,
-            'subscription.quota' => CheckSubscriptionFeatureQuota::class,
-            'subscription.active' => CheckSubscriptionFeatureQuota::class,
             'idempotency' => IdempotencyMiddleware::class,
             'operational.scope' => EnsureOperationalWorkspaceScope::class,
             'platform.user.scope' => EnsurePlatformUserScope::class,
