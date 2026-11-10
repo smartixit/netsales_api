@@ -183,7 +183,7 @@ class BillingSubscriptionService
                 return ['subscription' => $subscription->load(['planVersion.features', 'currency', 'price', 'trialRedemption']), 'invoice' => null];
             }
 
-            $invoice = $this->invoices->createForSubscription($subscription, $actor);
+            $invoice = $this->invoices->createForSubscription($subscription, $actor, null, null, true, true);
             $invoice = $this->invoices->finalize((int) $invoice->invoice_id, $actor);
 
             if ($invoice->status === BillingInvoiceStatus::PAID && (int) $invoice->total_minor === 0) {
