@@ -14,20 +14,11 @@ class BillingAccount extends Model
     use SoftDeletes;
 
     protected $table = 'billing_accounts';
-
     protected $primaryKey = 'billing_account_id';
 
     protected $fillable = [
-        'network_id',
-        'account_number',
-        'legal_name',
-        'billing_email',
-        'tax_number',
-        'billing_address',
-        'default_currency_id',
-        'payment_terms_days',
-        'status',
-        'created_by',
+        'network_id', 'account_number', 'legal_name', 'billing_email', 'tax_number',
+        'billing_address', 'default_currency_id', 'payment_terms_days', 'status', 'created_by',
     ];
 
     protected function casts(): array
@@ -48,5 +39,20 @@ class BillingAccount extends Model
     public function contacts(): HasMany
     {
         return $this->hasMany(BillingAccountContact::class, 'billing_account_id', 'billing_account_id');
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(BillingSubscription::class, 'billing_account_id', 'billing_account_id');
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(BillingInvoice::class, 'billing_account_id', 'billing_account_id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(BillingPayment::class, 'billing_account_id', 'billing_account_id');
     }
 }

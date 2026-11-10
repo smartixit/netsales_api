@@ -2,7 +2,8 @@
 
 namespace App\Services\Billing;
 
-use App\Models\{BillingAccount, Network, User};
+use App\Enums\BillingSubscriptionStatus;
+use App\Models\{BillingAccount, BillingInvoice, BillingSubscription, Network, User};
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -51,7 +52,7 @@ class BillingAccountService
 
             if ((int) $account->default_currency_id !== (int) $currency->currency_id) {
                 throw ValidationException::withMessages([
-                    'currency_id' => ['حساب الفوترة موجود بعملة أخرى؛ يجب تعديل العملة التعاقدية للحساب أولاً قبل اختيار أسعار بعملة مختلفة.'],
+                    'currency_id' => ['حساب الفوترة موجود بعملة أخرى؛ لا يمكن تبديل العملة بعد إنشاء الحساب.'],
                 ]);
             }
 
@@ -67,9 +68,14 @@ class BillingAccountService
             $account = BillingAccount::query()->lockForUpdate()->findOrFail($accountId);
             $this->authorization->assertNetworkOwner($actor, (int) $account->network_id);
 
-            if ($account->subscriptions()->exists() || $account->network()->first()?->billingInvoices()->exists()) {
+            $hasCommercialHistory = BillingSubscription::query()
+                ->where('billing_account_id', $accountId)
+                ->exists()
+                || BillingInvoice::query()->where('billing_account_id', $accountId)->exists();
+
+            if ($hasCommercialHistory) {
                 throw ValidationException::withMessages([
-                    'currency_id' => ['لا يمكن تغيير عملة حساب الفوترة بعد وجود اشتراكات أو فواتير؛ أنشئ حساب فوترة جديداً أو حافظ على العملة التعاقدية الحالية.'],
+                    'currency_id' => ['لا يمكن تغيير عملة حساب الفوترة بعد وجود اشتراكات أو فواتير.'],
                 ]);
             }
 

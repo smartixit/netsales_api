@@ -3,7 +3,7 @@
 namespace App\Services\Billing;
 
 use App\Enums\LedgerAccountClass;
-use App\Models\{Currency, LedgerAccount};
+use App\Models\{Currency, LedgerAccount, TreasuryAccount};
 
 class BillingLedgerChartService
 {
@@ -22,10 +22,7 @@ class BillingLedgerChartService
 
         foreach (self::ACCOUNTS as $definition) {
             $account = LedgerAccount::query()->firstOrCreate(
-                [
-                    'account_code' => $definition['code'],
-                    'currency_id' => $currency->currency_id,
-                ],
+                ['account_code' => $definition['code'], 'currency_id' => $currency->currency_id],
                 [
                     'name' => $definition['name'],
                     'account_class' => LedgerAccountClass::from($definition['class']),
@@ -34,27 +31,35 @@ class BillingLedgerChartService
                     'is_active' => true,
                 ]
             );
-
             $accounts[$definition['code']] = $account;
         }
 
         return $accounts;
     }
 
-    public function createTreasuryLedgerAccount(Currency $currency, string $reference, string $name): LedgerAccount
+    public function ensureTreasuryAccount(TreasuryAccount $treasury): LedgerAccount
     {
-        return LedgerAccount::query()->firstOrCreate(
+        $treasury->loadMissing('currency');
+
+        $ledger = LedgerAccount::query()->firstOrCreate(
             [
-                'account_code' => '1000-'.$reference,
-                'currency_id' => $currency->currency_id,
+                'account_code' => '10'.str_pad((string) $treasury->treasury_account_id, 8, '0', STR_PAD_LEFT),
+                'currency_id' => $treasury->currency_id,
             ],
             [
-                'name' => $name,
+                'name' => $treasury->name,
                 'account_class' => LedgerAccountClass::ASSET,
                 'normal_balance' => 'DEBIT',
                 'is_control_account' => false,
                 'is_active' => true,
             ]
         );
+
+        if ($treasury->ledger_account_id !== $ledger->ledger_account_id) {
+            $treasury->ledger_account_id = $ledger->ledger_account_id;
+            $treasury->save();
+        }
+
+        return $ledger;
     }
 }
