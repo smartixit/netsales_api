@@ -18,7 +18,8 @@ class BillingFinanceController extends BaseController
         private BillingPaymentService $payments,
         private BillingInvoiceService $invoices,
         private CurrencyExchangeService $exchange,
-        private BillingDashboardService $dashboard
+        private BillingDashboardService $dashboard,
+        private BillingRefundService $refunds
     ) {}
 
     public function overview(Request $request): JsonResponse
@@ -155,6 +156,32 @@ class BillingFinanceController extends BaseController
             );
 
             return $this->successResponse('تم رفض إثبات الدفع.', new BillingPaymentResource($payment));
+        } catch (ValidationException $exception) {
+            return $this->validationErrorResponse($exception);
+        }
+    }
+
+    public function refundPayment(StoreRefundRequest $request, int $paymentId): JsonResponse
+    {
+        try {
+            $refund = $this->refunds->refund(
+                $paymentId,
+                (int) $request->input('treasury_account_id'),
+                (int) $request->input('amount_minor'),
+                (string) $request->input('reason'),
+                $this->requireCurrentUser()
+            );
+
+            return $this->successResponse('تم تنفيذ الاسترداد وترحيل قيده المالي.', [
+                'refund_id' => $refund->refund_id,
+                'refund_reference' => $refund->refund_reference,
+                'payment_id' => $refund->payment_id,
+                'currency' => new \\App\\Http\\Resources\\API\\V1\\Billing\\CurrencyResource($refund->currency),
+                'amount_minor' => $refund->amount_minor,
+                'status' => $refund->status,
+                'reason' => $refund->reason,
+                'processed_at' => $refund->processed_at,
+            ], 201);
         } catch (ValidationException $exception) {
             return $this->validationErrorResponse($exception);
         }

@@ -13,8 +13,11 @@ class BillingPayment extends Model {
  protected static function booted(): void {
   static::updating(function (self $payment): void {
    $originalStatus = $payment->getRawOriginal('status');
-   if ($originalStatus !== BillingPaymentStatus::PENDING_REVIEW->value) {
-    throw new LogicException('لا يمكن تعديل دفعة بعد اعتمادها أو رفضها؛ أنشئ استرداداً أو تسوية مستقلة.');
+   $refundTransition = $originalStatus === BillingPaymentStatus::VERIFIED->value
+    && $payment->isDirty('status')
+    && in_array($payment->status, [BillingPaymentStatus::REFUNDED, BillingPaymentStatus::PARTIALLY_REFUNDED], true);
+   if ($originalStatus !== BillingPaymentStatus::PENDING_REVIEW->value && ! $refundTransition) {
+    throw new LogicException('لا يمكن تعديل دفعة بعد اعتمادها أو رفضها؛ استخدم مسار الاسترداد المالي.');
    }
    $allowed = ['status','treasury_account_id','verified_at','verified_by','review_note','updated_at'];
    if (array_diff(array_keys($payment->getDirty()), $allowed) !== []) {
@@ -22,7 +25,7 @@ class BillingPayment extends Model {
    }
    if ($payment->isDirty('status')) {
     $newStatus = $payment->status instanceof BillingPaymentStatus ? $payment->status : BillingPaymentStatus::from((string) $payment->status);
-    if (! in_array($newStatus, [BillingPaymentStatus::VERIFIED, BillingPaymentStatus::REJECTED], true)) {
+    if (! in_array($newStatus, [BillingPaymentStatus::VERIFIED, BillingPaymentStatus::REJECTED, BillingPaymentStatus::REFUNDED, BillingPaymentStatus::PARTIALLY_REFUNDED], true)) {
      throw new LogicException('انتقال حالة الدفعة غير مسموح.');
     }
    }

@@ -534,6 +534,8 @@ Route::prefix('v1')->group(function () {
                     ->whereNumber('paymentId')->name('api.v1.platform.billing.payments.verify');
                 Route::post('payments/{paymentId}/reject', [BillingFinanceController::class, 'rejectPayment'])
                     ->whereNumber('paymentId')->name('api.v1.platform.billing.payments.reject');
+                Route::post('payments/{paymentId}/refunds', [BillingFinanceController::class, 'refundPayment'])
+                    ->whereNumber('paymentId')->name('api.v1.platform.billing.payments.refunds.store');
                 Route::post('invoices/{invoiceId}/void', [BillingFinanceController::class, 'voidInvoice'])
                     ->whereNumber('invoiceId')->name('api.v1.platform.billing.invoices.void');
             });
