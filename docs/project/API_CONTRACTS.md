@@ -231,8 +231,8 @@ All endpoints below are nested under `/api/v1/platform/billing` and protected by
 
 ## Credit Notes and Refund Settlement
 All endpoints are under `/api/v1/platform/billing` and require Platform Scope plus `billing.approve`:
-- `POST invoices/{invoiceId}/credit-notes`: issue an immutable credit note against one or more original invoice lines. Requires an idempotency key, reason, explicit accounting treatment (`DEFERRED_REVENUE` or `REVENUE_REVERSAL`), and positive line amounts. The service prevents line-level and invoice-level over-crediting, offsets open receivables first, and reserves only the overpaid portion as refundable customer credit.
-- `POST payments/{paymentId}/refunds`: settle an issued credit note against a verified payment. Requires `credit_note_id`, `treasury_account_id`, `amount_minor`, `reason`, and `idempotency_key`. The amount must fit both the payment's remaining refundable amount and the credit note's remaining refundable amount. The journal entry debits Accounts Receivable/customer credit and credits the same-currency treasury account.
+- `POST invoices/{invoiceId}/credit-notes`: issue an immutable credit note against one or more original invoice lines. Requires an idempotency key, reason, and positive line amounts; accounting treatment is derived automatically per invoice line from revenue recognition state and proportional tax allocation. The service prevents line-level and invoice-level over-crediting, offsets open receivables first, and reserves only the overpaid portion as refundable customer credit.
+- `POST payments/{paymentId}/refunds`: settle an issued credit note against a verified payment. Requires `credit_note_id`, `treasury_account_id`, `amount_minor`, `reason`, and `idempotency_key`. The amount must fit both the payment's remaining refundable amount and the credit note's remaining refundable amount. The journal entry debits customer-credit liability (2200) and credits the same-currency treasury account.
 - Invoice resources expose issued credit notes when loaded, including receivable-applied, refundable, and refunded amounts.
 
 
@@ -243,3 +243,12 @@ All endpoints are under `/api/v1/platform/billing` and require Platform Scope pl
 - Credit-note issuance first allocates against open receivables. Any amount exceeding the remaining receivable is recorded as a customer-credit liability in ledger account `2200`; cash refunds debit that liability and credit the same-currency treasury account.
 - `PARTIALLY_CREDITED` invoices may still accept payment for their remaining balance. `CREDITED` means the invoice obligation was fully offset by credit notes. A paid invoice can also have a subsequent credit note, creating a refundable customer credit.
 - This contract is implementation documentation only until the final automated validation and migration gate passes.
+
+
+## Deferred Revenue Recognition Contract
+- Invoice finalization classifies `SUBSCRIPTION` recurring lines as deferred revenue (2100), `SETUP_FEE` lines as immediately earned setup/service revenue (4120), and `METERED_USAGE` lines as earned usage revenue (4110). One-time subscription prices are recognized immediately. Unsupported invoice line types are rejected rather than guessed.
+- Invoice line tax is posted separately to tax payable (2300); it is not recognized as subscription revenue. Every invoice journal balances in the invoice currency.
+- Each recurring subscription invoice line creates one immutable-identity recognition schedule (`billing_revenue_recognition_schedules`) with service dates, currency, revenue account, total amount, recognized amount, and status. Daily catch-up uses cumulative integer allocation; the final service day recognizes the exact residual, eliminating rounding loss.
+- `billing:recognize-revenue` runs daily in `Asia/Aden` and is safe to rerun. It debits deferred revenue (2100) and credits subscription revenue (4100), with a deterministic ledger idempotency key and an auditable recognition entry.
+- Credit notes allocate the original line value proportionally between tax, unearned subscription revenue, and already-recognized revenue. They reduce the recognition schedule's remaining service obligation and post the appropriate debit to deferred revenue (2100), subscription revenue (4100), setup revenue (4120), usage revenue (4110), and tax payable (2300), as applicable. Clients and reviewers cannot choose a manual accounting treatment.
+- An invoice with any recognized revenue cannot be voided. Corrections after service delivery must use the credit-note workflow so revenue history is not erased.
