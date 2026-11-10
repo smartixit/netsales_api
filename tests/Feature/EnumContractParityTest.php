@@ -87,7 +87,7 @@ class EnumContractParityTest extends TestCase
 
     public function test_canonical_enums_exist_and_are_backed(): void
     {
-        $this->assertCount(25, self::ALL_ENUMS);
+        $this->assertCount(27, self::ALL_ENUMS);
 
         foreach (self::ALL_ENUMS as $enumClass) {
             $this->assertTrue(enum_exists($enumClass), "Enum {$enumClass} must exist.");
