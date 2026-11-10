@@ -23,10 +23,12 @@ use App\Services\PosService;
 use App\Services\Support\SMSGateService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
+use Tests\Concerns\CreatesActiveBillingSubscription;
 
 class WalletAutoCreationTest extends TestCase
 {
     use DatabaseTransactions;
+    use CreatesActiveBillingSubscription;
 
     protected NetworkService $networkService;
 
@@ -112,6 +114,8 @@ class WalletAutoCreationTest extends TestCase
             'network_phone_number' => '733111222',
             'status' => NetworkStatus::ACTIVE,
         ]);
+
+        $this->createActiveBillingSubscriptionForNetwork($network, [], null, $admin);
 
         $pos = $this->posRepository->create([
             'owner_id' => $posUser->user_id,

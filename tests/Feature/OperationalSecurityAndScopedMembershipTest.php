@@ -20,10 +20,12 @@ use App\Models\User;
 use App\Models\VoucherPackage;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
+use Tests\Concerns\CreatesActiveBillingSubscription;
 
 class OperationalSecurityAndScopedMembershipTest extends TestCase
 {
     use DatabaseTransactions;
+    use CreatesActiveBillingSubscription;
 
     protected User $superAdmin;
 
@@ -87,6 +89,8 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'directorate_id' => $dir->directorate_id,
             'status' => NetworkStatus::ACTIVE,
         ]);
+
+        $this->createActiveBillingSubscriptionForNetwork($this->networkA, [], null, $this->networkOwner);
 
         NetworkUser::create([
             'network_id' => $this->networkA->network_id,

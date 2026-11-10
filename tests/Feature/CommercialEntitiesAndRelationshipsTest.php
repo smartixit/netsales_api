@@ -18,10 +18,12 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
+use Tests\Concerns\CreatesActiveBillingSubscription;
 
 class CommercialEntitiesAndRelationshipsTest extends TestCase
 {
     use DatabaseTransactions;
+    use CreatesActiveBillingSubscription;
 
     protected User $superAdmin;
 
@@ -131,6 +133,9 @@ class CommercialEntitiesAndRelationshipsTest extends TestCase
             'directorate_id' => $dir->directorate_id,
             'status' => NetworkStatus::ACTIVE,
         ]);
+
+        $this->createActiveBillingSubscriptionForNetwork($this->networkA, [], null, $this->networkOwnerA);
+        $this->createActiveBillingSubscriptionForNetwork($this->networkB, [], null, $this->networkOwnerB);
 
         // 5. POS
         $this->posA = Pos::create([

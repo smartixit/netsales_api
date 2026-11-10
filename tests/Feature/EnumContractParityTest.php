@@ -4,6 +4,10 @@ namespace Tests\Feature;
 
 use App\Enums\BackupStatus;
 use App\Enums\BackupType;
+use App\Enums\BillingFeatureType;
+use App\Enums\BillingInterval;
+use App\Enums\BillingPlanVersionStatus;
+use App\Enums\BillingSubscriptionStatus;
 use App\Enums\BankAccountType;
 use App\Enums\BanType;
 use App\Enums\DeviceType;
@@ -54,6 +58,10 @@ class EnumContractParityTest extends TestCase
     public const ALL_ENUMS = [
         BackupStatus::class,
         BackupType::class,
+        BillingFeatureType::class,
+        BillingInterval::class,
+        BillingPlanVersionStatus::class,
+        BillingSubscriptionStatus::class,
         BankAccountType::class,
         BanType::class,
         DeviceType::class,
@@ -63,7 +71,6 @@ class EnumContractParityTest extends TestCase
         OtpType::class,
         PaymentType::class,
         PosStatus::class,
-        ProviderSubscriptionStatus::class,
         RequestStatus::class,
         RoleKey::class,
         RoleScope::class,
@@ -74,7 +81,6 @@ class EnumContractParityTest extends TestCase
         SmsMessageType::class,
         UserDeviceStatus::class,
         UserStatus::class,
-        ValueType::class,
         WalletOperationType::class,
         LinkingChallengeStatus::class,
     ];
@@ -142,7 +148,6 @@ class EnumContractParityTest extends TestCase
             BankAccountType::class,
             NotificationType::class,
             SettingCategory::class,
-            ValueType::class,
             BackupStatus::class,
             BackupType::class,
             LinkingChallengeStatus::class,
