@@ -23,9 +23,10 @@ class BillingInvoiceService
         ?User $actor = null,
         ?string $periodStart = null,
         ?string $periodEnd = null,
-        bool $includeSetupFee = true
+        bool $includeSetupFee = true,
+        bool $holdRevenueRecognition = false
     ): BillingInvoice {
-        return DB::transaction(function () use ($subscription, $actor, $periodStart, $periodEnd, $includeSetupFee): BillingInvoice {
+        return DB::transaction(function () use ($subscription, $actor, $periodStart, $periodEnd, $includeSetupFee, $holdRevenueRecognition): BillingInvoice {
             $subscription->loadMissing([
                 'billingAccount.defaultCurrency',
                 'plan.product',
@@ -83,6 +84,7 @@ class BillingInvoiceService
                     'unit_amount_minor' => $price->unit_amount_minor,
                     'setup_fee_minor' => $price->setup_fee_minor,
                     'tax_behavior' => $price->tax_behavior,
+                    'revenue_recognition_activation' => $holdRevenueRecognition ? 'ON_PAYMENT' : 'PERIOD_START',
                 ],
                 'due_on' => now('Asia/Aden')->addDays((int) $subscription->billingAccount->payment_terms_days)->toDateString(),
                 'created_by' => $actor?->user_id,
@@ -192,6 +194,7 @@ class BillingInvoiceService
             }
 
             $accounts = $this->chart->ensureForCurrency($invoice->currency);
+            $holdRevenueRecognition = ($invoice->pricing_snapshot['revenue_recognition_activation'] ?? 'PERIOD_START') === 'ON_PAYMENT';
             $deferredMinor = 0;
             $immediateRevenueByAccount = [];
             $recognitionSchedules = [];
@@ -232,7 +235,31 @@ class BillingInvoiceService
                             'recognized_minor' => 0,
                             'service_start_on' => $invoice->period_start->toDateString(),
                             'service_end_on' => $invoice->period_end->toDateString(),
-                            'status' => 'PENDING',
+                            'status' => $holdRevenueRecognition ? 'HOLD' : 'PENDING',
+                        ];
+                    }
+                    continue;
+                }
+
+                if ($line->line_type === 'SETUP_FEE' && $holdRevenueRecognition) {
+                    if (! $invoice->period_start) {
+                        throw ValidationException::withMessages([
+                            'period' => ['يجب تحديد تاريخ بدء الخدمة قبل تأجيل الاعتراف برسوم التهيئة.'],
+                        ]);
+                    }
+
+                    $deferredMinor = $this->safeAdd($deferredMinor, $revenueBaseMinor);
+                    if ($revenueBaseMinor > 0) {
+                        $recognitionSchedules[] = [
+                            'invoice_id' => $invoice->invoice_id,
+                            'invoice_line_id' => $line->invoice_line_id,
+                            'currency_id' => $invoice->currency_id,
+                            'revenue_account_code' => '4120',
+                            'total_minor' => $revenueBaseMinor,
+                            'recognized_minor' => 0,
+                            'service_start_on' => $invoice->period_start->toDateString(),
+                            'service_end_on' => $invoice->period_start->toDateString(),
+                            'status' => 'HOLD',
                         ];
                     }
                     continue;
@@ -340,7 +367,7 @@ class BillingInvoiceService
 
             DB::table('billing_revenue_recognition_schedules')
                 ->where('invoice_id', $invoice->invoice_id)
-                ->whereIn('status', ['PENDING', 'ACTIVE'])
+                ->whereIn('status', ['HOLD', 'PENDING', 'ACTIVE'])
                 ->update(['status' => 'CANCELLED', 'updated_at' => now('Asia/Aden')]);
 
             if ($invoice->status === BillingInvoiceStatus::OPEN) {
