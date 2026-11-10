@@ -859,3 +859,12 @@ This log documents all executed tasks, code changes, and verification command ou
 - Invoice voiding is blocked after any revenue recognition; unused schedules are cancelled when an eligible invoice is voided.
 - Added `BillingRevenueRecognitionTest` for proportional recognition, repeated-run idempotency, delayed scheduler catch-up, exact residual posting, and journal balance.
 - Migration/schema validation in GitHub Actions confirmed `migrate:fresh --seed` passed at commit `2c19f61d`; Pint previously identified two PHP parse errors in the catalog/policy services, now corrected at commits `afff613f` and `b265e39`. Exact-head CI and full tests remain pending.
+
+
+## [2026-11-10] Internal financial reconciliation closeout
+- Added `treasury_account_id` to completed refund records and linked the refund model/service/API response to the actual paying treasury account.
+- Added `BillingReconciliationService` and `GET /api/v1/platform/billing/reconciliation` (Platform Scope + `billing.view`), with optional currency filter and independent per-currency output.
+- The report compares accounts receivable, deferred revenue, customer credit liability, tax payable, and each treasury asset against their corresponding billing subledgers; it also checks the trial balance.
+- Missing treasury allocation and missing treasury ledger links are surfaced as warnings. No unlike currencies are combined.
+- Added an integration assertion requiring all reconciliation checks to match after full payment, credit-note issuance, and refund settlement.
+- Exact-head CI remains pending after the latest schema, service, controller, route, and test changes. No passing result is claimed yet.
