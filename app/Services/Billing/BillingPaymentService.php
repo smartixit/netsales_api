@@ -184,6 +184,7 @@ class BillingPaymentService
                 if ($subscription && in_array($subscription->status, [
                     BillingSubscriptionStatus::INCOMPLETE,
                     BillingSubscriptionStatus::PAST_DUE,
+                    BillingSubscriptionStatus::SUSPENDED,
                 ], true)) {
                     $oldStatus = $subscription->status->value;
                     if ($invoice->period_start !== null && $invoice->period_end !== null) {
