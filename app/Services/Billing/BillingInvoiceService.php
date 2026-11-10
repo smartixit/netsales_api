@@ -327,6 +327,22 @@ class BillingInvoiceService
                 ]);
             }
 
+            $hasRecognizedRevenue = DB::table('billing_revenue_recognition_schedules')
+                ->where('invoice_id', $invoice->invoice_id)
+                ->where('recognized_minor', '>', 0)
+                ->exists();
+
+            if ($hasRecognizedRevenue) {
+                throw ValidationException::withMessages([
+                    'invoice_id' => ['بدأ الاعتراف بالإيراد لهذه الفاتورة؛ استخدم إشعاراً دائناً لعكس الالتزام دون محو أثر الخدمة المقدمة.'],
+                ]);
+            }
+
+            DB::table('billing_revenue_recognition_schedules')
+                ->where('invoice_id', $invoice->invoice_id)
+                ->whereIn('status', ['PENDING', 'ACTIVE'])
+                ->update(['status' => 'CANCELLED', 'updated_at' => now('Asia/Aden')]);
+
             if ($invoice->status === BillingInvoiceStatus::OPEN) {
                 $entry = LedgerJournalEntry::query()
                     ->where('source_type', 'BILLING_INVOICE')
