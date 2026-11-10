@@ -4,7 +4,7 @@ namespace App\Services\Billing;
 
 use App\Enums\BillingInvoiceStatus;
 use App\Enums\BillingPaymentStatus;
-use App\Models\{BillingCreditNote, BillingInvoice, BillingInvoiceLine, Currency, User};
+use App\Models\{BillingCreditNote, BillingInvoice, BillingInvoiceLine, BillingRevenueRecognitionSchedule, Currency, User};
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -28,7 +28,6 @@ class BillingCreditNoteService
         int $invoiceId,
         array $lines,
         string $reason,
-        string $accountingTreatment,
         string $idempotencyKey,
         User $actor
     ): BillingCreditNote {
@@ -38,9 +37,6 @@ class BillingCreditNoteService
             throw ValidationException::withMessages(['idempotency_key' => ['مفتاح منع التكرار مطلوب.']]);
         }
 
-        if (! in_array($accountingTreatment, ['DEFERRED_REVENUE', 'REVENUE_REVERSAL'], true)) {
-            throw ValidationException::withMessages(['accounting_treatment' => ['المعالجة المحاسبية للإشعار الدائن غير صالحة.']]);
-        }
 
         if ($lines === []) {
             throw ValidationException::withMessages(['lines' => ['يجب أن يحتوي الإشعار الدائن على بند واحد على الأقل.']]);
@@ -50,7 +46,6 @@ class BillingCreditNoteService
             $invoiceId,
             $lines,
             $reason,
-            $accountingTreatment,
             $idempotencyKey,
             $actor
         ): BillingCreditNote {
@@ -65,7 +60,7 @@ class BillingCreditNoteService
                 ->first();
 
             if ($existing) {
-                $this->assertSameRequest($existing, $invoiceId, $lines, $reason, $accountingTreatment);
+                $this->assertSameRequest($existing, $invoiceId, $lines, $reason);
                 return $existing;
             }
 
@@ -114,20 +109,93 @@ class BillingCreditNoteService
                 ->pluck('credited_minor', 'invoice_line_id');
 
             $amountMinor = 0;
+            $deferredCreditMinor = 0;
+            $taxCreditMinor = 0;
+            $earnedCreditByAccount = [];
+            $recognitionScheduleUpdates = [];
+
             foreach ($normalized as $line) {
                 $source = $invoiceLines->get($line['invoice_line_id']);
                 if ((int) $source->currency_id !== (int) $invoice->currency_id) {
                     throw ValidationException::withMessages(['currency_id' => ['عملة بند الإشعار الدائن لا تطابق عملة الفاتورة.']]);
                 }
 
+                $lineTotalMinor = (int) $source->total_minor;
                 $alreadyCredited = (int) ($previousByLine[$line['invoice_line_id']] ?? 0);
-                $availableOnLine = (int) $source->total_minor - $alreadyCredited;
+                $availableOnLine = $lineTotalMinor - $alreadyCredited;
                 if ($line['amount_minor'] > $availableOnLine) {
                     throw ValidationException::withMessages([
                         'lines' => ['قيمة أحد بنود الإشعار تتجاوز الرصيد غير المعتمد من بند الفاتورة الأصلي.'],
                     ]);
                 }
 
+                $originalTaxMinor = (int) $source->tax_minor;
+                $previousTaxCreditedMinor = $lineTotalMinor > 0
+                    ? $this->multiplyDivideFloor($originalTaxMinor, $alreadyCredited, $lineTotalMinor)
+                    : 0;
+                $cumulativeCreditMinor = $alreadyCredited + $line['amount_minor'];
+                $targetTaxCreditedMinor = $cumulativeCreditMinor >= $lineTotalMinor
+                    ? $originalTaxMinor
+                    : $this->multiplyDivideFloor($originalTaxMinor, $cumulativeCreditMinor, $lineTotalMinor);
+                $lineTaxCreditMinor = $targetTaxCreditedMinor - $previousTaxCreditedMinor;
+                $lineRevenueCreditMinor = $line['amount_minor'] - $lineTaxCreditMinor;
+
+                if ($lineTaxCreditMinor < 0 || $lineRevenueCreditMinor < 0) {
+                    throw ValidationException::withMessages(['lines' => ['تعذر توزيع مبلغ الإشعار بين الإيراد والضريبة بدقة.']]);
+                }
+
+                if ($source->line_type === 'SUBSCRIPTION') {
+                    $schedule = BillingRevenueRecognitionSchedule::query()
+                        ->where('invoice_line_id', $source->invoice_line_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (! $schedule) {
+                        throw ValidationException::withMessages([
+                            'lines' => ['لا يوجد جدول اعتراف بالإيراد لهذا البند؛ لا يمكن إصدار إشعار دائن قبل إصلاح سجل الاعتراف.'],
+                        ]);
+                    }
+
+                    $originalRevenueMinor = (int) $source->subtotal_minor - (int) $source->discount_minor;
+                    $previousRevenueCreditedMinor = $alreadyCredited - $previousTaxCreditedMinor;
+                    if ((int) $schedule->total_minor !== $originalRevenueMinor - $previousRevenueCreditedMinor) {
+                        throw ValidationException::withMessages([
+                            'lines' => ['رصيد جدول الاعتراف لا يطابق مبالغ الإشعارات الدائنة السابقة لهذا البند.'],
+                        ]);
+                    }
+
+                    $unearnedMinor = max(0, (int) $schedule->total_minor - (int) $schedule->recognized_minor);
+                    $deferredForLineMinor = min($lineRevenueCreditMinor, $unearnedMinor);
+                    $earnedForLineMinor = $lineRevenueCreditMinor - $deferredForLineMinor;
+
+                    $schedule->total_minor = (int) $schedule->total_minor - $lineRevenueCreditMinor;
+                    $schedule->recognized_minor = (int) $schedule->recognized_minor - $earnedForLineMinor;
+                    $schedule->status = (int) $schedule->recognized_minor >= (int) $schedule->total_minor
+                        ? 'COMPLETED'
+                        : 'ACTIVE';
+                    $recognitionScheduleUpdates[] = $schedule;
+                    $deferredCreditMinor = $this->safeAdd($deferredCreditMinor, $deferredForLineMinor);
+                    $earnedCreditByAccount['4100'] = $this->safeAdd(
+                        (int) ($earnedCreditByAccount['4100'] ?? 0),
+                        $earnedForLineMinor
+                    );
+                } elseif ($source->line_type === 'SETUP_FEE') {
+                    $earnedCreditByAccount['4120'] = $this->safeAdd(
+                        (int) ($earnedCreditByAccount['4120'] ?? 0),
+                        $lineRevenueCreditMinor
+                    );
+                } elseif ($source->line_type === 'METERED_USAGE') {
+                    $earnedCreditByAccount['4110'] = $this->safeAdd(
+                        (int) ($earnedCreditByAccount['4110'] ?? 0),
+                        $lineRevenueCreditMinor
+                    );
+                } else {
+                    throw ValidationException::withMessages([
+                        'lines' => ['نوع بند الفاتورة لا يملك سياسة معالجة إشعار دائن معرفة.'],
+                    ]);
+                }
+
+                $taxCreditMinor = $this->safeAdd($taxCreditMinor, $lineTaxCreditMinor);
                 $amountMinor = $this->safeAdd($amountMinor, $line['amount_minor']);
             }
 
@@ -179,7 +247,7 @@ class BillingCreditNoteService
                 'currency_id' => $invoice->currency_id,
                 'status' => 'DRAFT',
                 'reason' => $reason,
-                'accounting_treatment' => $accountingTreatment,
+                'accounting_treatment' => 'AUTOMATIC',
                 'subtotal_minor' => $amountMinor,
                 'tax_minor' => 0,
                 'total_minor' => $amountMinor,
@@ -200,22 +268,65 @@ class BillingCreditNoteService
             }
 
             $accounts = $this->chart->ensureForCurrency($invoice->currency);
-            // Reverse the liability for unearned service, or debit subscription revenue for earned service.
-            $debitCode = $accountingTreatment === 'DEFERRED_REVENUE' ? '2100' : '4100';
+            $journalLines = [];
+
+            if ($deferredCreditMinor > 0) {
+                $journalLines[] = [
+                    'ledger_account_id' => $accounts['2100']->ledger_account_id,
+                    'debit_minor' => $deferredCreditMinor,
+                    'credit_minor' => 0,
+                ];
+            }
+
+            foreach ($earnedCreditByAccount as $accountCode => $earnedMinor) {
+                if ($earnedMinor <= 0) {
+                    continue;
+                }
+
+                $journalLines[] = [
+                    'ledger_account_id' => $accounts[$accountCode]->ledger_account_id,
+                    'debit_minor' => $earnedMinor,
+                    'credit_minor' => 0,
+                ];
+            }
+
+            if ($taxCreditMinor > 0) {
+                $journalLines[] = [
+                    'ledger_account_id' => $accounts['2300']->ledger_account_id,
+                    'debit_minor' => $taxCreditMinor,
+                    'credit_minor' => 0,
+                ];
+            }
+
+            if ($appliedToReceivableMinor > 0) {
+                $journalLines[] = [
+                    'ledger_account_id' => $accounts['1100']->ledger_account_id,
+                    'debit_minor' => 0,
+                    'credit_minor' => $appliedToReceivableMinor,
+                ];
+            }
+
+            if ($refundableMinor > 0) {
+                $journalLines[] = [
+                    'ledger_account_id' => $accounts['2200']->ledger_account_id,
+                    'debit_minor' => 0,
+                    'credit_minor' => $refundableMinor,
+                ];
+            }
 
             $this->ledger->post(
                 (int) $invoice->currency_id,
                 'إصدار إشعار دائن '.$note->credit_note_number.' للفاتورة '.$invoice->invoice_number,
                 'billing-credit-note-issued-'.$note->credit_note_id,
-                [
-                    ['ledger_account_id' => $accounts[$debitCode]->ledger_account_id, 'debit_minor' => $amountMinor, 'credit_minor' => 0],
-                    ['ledger_account_id' => $accounts['1100']->ledger_account_id, 'debit_minor' => 0, 'credit_minor' => $appliedToReceivableMinor],
-                    ['ledger_account_id' => $accounts['2200']->ledger_account_id, 'debit_minor' => 0, 'credit_minor' => $refundableMinor],
-                ],
+                $journalLines,
                 $actor,
                 'BILLING_CREDIT_NOTE',
                 (int) $note->credit_note_id
             );
+
+            foreach ($recognitionScheduleUpdates as $schedule) {
+                $schedule->save();
+            }
 
             $note->status = 'ISSUED';
             $note->issued_at = now('Asia/Aden');
@@ -251,8 +362,7 @@ class BillingCreditNoteService
         BillingCreditNote $existing,
         int $invoiceId,
         array $lines,
-        string $reason,
-        string $accountingTreatment
+        string $reason
     ): void {
         $expected = collect($lines)->map(fn (array $line): array => [
             'invoice_line_id' => (int) ($line['invoice_line_id'] ?? 0),
@@ -266,10 +376,48 @@ class BillingCreditNoteService
 
         if ((int) $existing->invoice_id !== $invoiceId
             || $existing->reason !== $reason
-            || $existing->accounting_treatment !== $accountingTreatment
             || $expected !== $actual) {
             throw ValidationException::withMessages(['idempotency_key' => ['مفتاح منع التكرار مستخدم لإشعار دائن ببيانات مختلفة.']]);
         }
+    }
+
+    /**
+     * Returns floor(a * b / divisor) without multiplying two large money integers.
+     * The algorithm keeps the intermediate remainder below the divisor.
+     */
+    private function multiplyDivideFloor(int $a, int $b, int $divisor): int
+    {
+        if ($a < 0 || $b < 0 || $divisor <= 0 || $a > $divisor || $b > $divisor) {
+            throw new OverflowException('نسبة توزيع الضريبة خارج الحدود الرقمية المسموحة.');
+        }
+
+        $quotient = 0;
+        $remainder = 0;
+
+        foreach (str_split(decbin($b)) as $bit) {
+            if ($quotient > intdiv(PHP_INT_MAX, 2)) {
+                throw new OverflowException('تجاوز توزيع الضريبة السعة الرقمية المسموحة.');
+            }
+            $quotient *= 2;
+
+            if ($remainder >= $divisor - $remainder) {
+                $remainder -= ($divisor - $remainder);
+                $quotient++;
+            } else {
+                $remainder += $remainder;
+            }
+
+            if ($bit === '1') {
+                if ($remainder >= $divisor - $a) {
+                    $remainder -= ($divisor - $a);
+                    $quotient++;
+                } else {
+                    $remainder += $a;
+                }
+            }
+        }
+
+        return $quotient;
     }
 
     private function safeAdd(int $left, int $right): int
