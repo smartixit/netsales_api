@@ -12,6 +12,12 @@ use RuntimeException;
  * This seeder never publishes a plan or policy version and never changes a
  * current_version_id pointer. Publishing is an explicit Platform Billing
  * operation after commercial and policy review.
+
+ * YER tariffs are independent catalogue prices. The launch reference is the
+ * Aden market USD/YER midpoint (1,566.5 YER/USD) observed on 2026-11-10,
+ * rounded to practical 1,000-YER monthly price points. These are not FX
+ * conversions and are not recalculated when exchange rates change.
+ * Currency decimal_places=2, so every YER major-unit amount is stored x100.
  */
 class BillingLaunchCatalogSeeder extends Seeder
 {
@@ -353,6 +359,7 @@ class BillingLaunchCatalogSeeder extends Seeder
                 ],
                 'prices' => [
                     'SAR' => ['monthly_minor' => 7900, 'yearly_minor' => 79000],
+                    'YER' => ['monthly_minor' => 3300000, 'yearly_minor' => 33000000],
                     'USD' => ['monthly_minor' => 2100, 'yearly_minor' => 21000],
                     'AED' => ['monthly_minor' => 7900, 'yearly_minor' => 79000],
                 ],
@@ -370,6 +377,7 @@ class BillingLaunchCatalogSeeder extends Seeder
                 ],
                 'prices' => [
                     'SAR' => ['monthly_minor' => 15900, 'yearly_minor' => 159000],
+                    'YER' => ['monthly_minor' => 6600000, 'yearly_minor' => 66000000],
                     'USD' => ['monthly_minor' => 4200, 'yearly_minor' => 42000],
                     'AED' => ['monthly_minor' => 15900, 'yearly_minor' => 159000],
                 ],
@@ -387,6 +395,7 @@ class BillingLaunchCatalogSeeder extends Seeder
                 ],
                 'prices' => [
                     'SAR' => ['monthly_minor' => 29900, 'yearly_minor' => 299000],
+                    'YER' => ['monthly_minor' => 12400000, 'yearly_minor' => 124000000],
                     'USD' => ['monthly_minor' => 7900, 'yearly_minor' => 79000],
                     'AED' => ['monthly_minor' => 29900, 'yearly_minor' => 299000],
                 ],
