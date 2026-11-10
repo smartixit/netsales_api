@@ -59,8 +59,15 @@ class BillingLaunchCatalogSeeder extends Seeder
                     continue;
                 }
 
-                foreach ($definition['limits'] as $limit) {
-                    $this->ensureResourceLimit($planVersionId, ...$limit, $now);
+                foreach ($definition['limits'] as [$featureKey, $name, $value, $unit]) {
+                    $this->ensureResourceLimit(
+                        $planVersionId,
+                        $featureKey,
+                        $name,
+                        $value,
+                        $unit,
+                        $now
+                    );
                 }
 
                 foreach ($definition['prices'] as $currencyCode => $priceSet) {
@@ -228,6 +235,7 @@ class BillingLaunchCatalogSeeder extends Seeder
         return $this->ensurePolicyDraftVersion(
             'billing_trial_policy_versions',
             'trial_policy_version_id',
+            'trial_policy_id',
             $policyId,
             [
                 'is_enabled' => true,
@@ -269,6 +277,7 @@ class BillingLaunchCatalogSeeder extends Seeder
         return $this->ensurePolicyDraftVersion(
             'billing_dunning_policy_versions',
             'dunning_policy_version_id',
+            'dunning_policy_id',
             $policyId,
             [
                 'grace_period_days' => 7,
@@ -283,22 +292,23 @@ class BillingLaunchCatalogSeeder extends Seeder
 
     /**
      * Returns an existing draft without overwriting it. If a policy has only
-     * immutable published history, one next draft may be created only when
-     * that history consists of its original version. Subsequent runs are
-     * idempotent and will not generate draft-version churn.
+     * its original immutable version, creates the next draft exactly once.
+     * When multiple immutable versions exist, seeding stops rather than
+     * manufacturing new versions on every run.
      *
      * @param array<string, mixed> $values
      */
     private function ensurePolicyDraftVersion(
         string $table,
         string $primaryKey,
+        string $foreignKey,
         int $policyId,
         array $values,
         ?int $actorId,
         mixed $now
     ): ?int {
         $versions = DB::table($table)
-            ->where(str_ends_with($table, 'trial_policy_versions') ? 'trial_policy_id' : 'dunning_policy_id', $policyId)
+            ->where($foreignKey, $policyId)
             ->orderByDesc('version_number')
             ->get();
 
@@ -314,10 +324,6 @@ class BillingLaunchCatalogSeeder extends Seeder
         $nextVersion = $versions->isEmpty()
             ? 1
             : ((int) $versions->first()->version_number + 1);
-
-        $foreignKey = str_ends_with($table, 'trial_policy_versions')
-            ? 'trial_policy_id'
-            : 'dunning_policy_id';
 
         return (int) DB::table($table)->insertGetId([
             $foreignKey => $policyId,
