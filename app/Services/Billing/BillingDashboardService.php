@@ -51,6 +51,7 @@ class BillingDashboardService
             ->whereIn('status', [
                 BillingInvoiceStatus::OPEN->value,
                 BillingInvoiceStatus::PARTIALLY_PAID->value,
+                BillingInvoiceStatus::PARTIALLY_CREDITED->value,
             ])
             ->when($currencyId, fn ($query) => $query->where('currency_id', $currencyId))
             ->groupBy('currency_id')
@@ -170,6 +171,8 @@ class BillingDashboardService
                     'draft' => $invoiceCounts[BillingInvoiceStatus::DRAFT->value] ?? 0,
                     'open' => $invoiceCounts[BillingInvoiceStatus::OPEN->value] ?? 0,
                     'partially_paid' => $invoiceCounts[BillingInvoiceStatus::PARTIALLY_PAID->value] ?? 0,
+                    'partially_credited' => $invoiceCounts[BillingInvoiceStatus::PARTIALLY_CREDITED->value] ?? 0,
+                    'credited' => $invoiceCounts[BillingInvoiceStatus::CREDITED->value] ?? 0,
                     'paid' => $invoiceCounts[BillingInvoiceStatus::PAID->value] ?? 0,
                     'uncollectible' => $invoiceCounts[BillingInvoiceStatus::UNCOLLECTIBLE->value] ?? 0,
                     'void' => $invoiceCounts[BillingInvoiceStatus::VOID->value] ?? 0,
