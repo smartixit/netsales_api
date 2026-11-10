@@ -346,9 +346,9 @@ class BillingLaunchCatalogSeeder extends Seeder
                     ['max_network_members', 'الحد الأقصى لأعضاء فريق الشبكة النشطين أو المدعوين', '2', 'member'],
                 ],
                 'prices' => [
-                    'SAR' => ['monthly_minor' => 5900, 'yearly_minor' => 59000],
-                    'USD' => ['monthly_minor' => 1600, 'yearly_minor' => 16000],
-                    'AED' => ['monthly_minor' => 5900, 'yearly_minor' => 59000],
+                    'SAR' => ['monthly_minor' => 7900, 'yearly_minor' => 79000],
+                    'USD' => ['monthly_minor' => 2100, 'yearly_minor' => 21000],
+                    'AED' => ['monthly_minor' => 7900, 'yearly_minor' => 79000],
                 ],
             ],
             [
@@ -363,9 +363,9 @@ class BillingLaunchCatalogSeeder extends Seeder
                     ['max_network_members', 'الحد الأقصى لأعضاء فريق الشبكة النشطين أو المدعوين', '5', 'member'],
                 ],
                 'prices' => [
-                    'SAR' => ['monthly_minor' => 11900, 'yearly_minor' => 119000],
-                    'USD' => ['monthly_minor' => 3200, 'yearly_minor' => 32000],
-                    'AED' => ['monthly_minor' => 11700, 'yearly_minor' => 117000],
+                    'SAR' => ['monthly_minor' => 15900, 'yearly_minor' => 159000],
+                    'USD' => ['monthly_minor' => 4200, 'yearly_minor' => 42000],
+                    'AED' => ['monthly_minor' => 15900, 'yearly_minor' => 159000],
                 ],
             ],
             [
@@ -380,9 +380,9 @@ class BillingLaunchCatalogSeeder extends Seeder
                     ['max_network_members', 'الحد الأقصى لأعضاء فريق الشبكة النشطين أو المدعوين', '15', 'member'],
                 ],
                 'prices' => [
-                    'SAR' => ['monthly_minor' => 23900, 'yearly_minor' => 239000],
-                    'USD' => ['monthly_minor' => 6400, 'yearly_minor' => 64000],
-                    'AED' => ['monthly_minor' => 23500, 'yearly_minor' => 235000],
+                    'SAR' => ['monthly_minor' => 29900, 'yearly_minor' => 299000],
+                    'USD' => ['monthly_minor' => 7900, 'yearly_minor' => 79000],
+                    'AED' => ['monthly_minor' => 29900, 'yearly_minor' => 299000],
                 ],
             ],
             [
