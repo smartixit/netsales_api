@@ -78,7 +78,7 @@ class BillingCatalogController extends BaseController
     {
         return $this->successResponse(
             'تم استرجاع إصدارات الخطة.',
-            \\App\\Http\\Resources\\API\\V1\\Billing\\BillingPlanVersionResource::collection(
+            \App\Http\Resources\API\V1\Billing\BillingPlanVersionResource::collection(
                 $this->catalog->versionsForPlan($planId, $request->only(['status', 'per_page']))
             )
         );
