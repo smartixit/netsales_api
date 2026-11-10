@@ -208,6 +208,8 @@ class BillingCreditNoteSettlementTest extends TestCase
         $this->assertSame(0, $note->applied_to_receivable_minor);
         $this->assertSame(1000, $note->refundable_minor);
 
+        $treasury->refresh()->load('ledgerAccount');
+
         $refund = app(BillingRefundService::class)->refund(
             (int) $payment->payment_id,
             (int) $note->credit_note_id,
