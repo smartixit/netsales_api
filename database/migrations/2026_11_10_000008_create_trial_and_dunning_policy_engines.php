@@ -156,7 +156,7 @@ return new class extends Migration
             $table->foreignId('actor_id')->constrained('users', 'user_id')->restrictOnDelete();
             $table->timestamp('occurred_at')->useCurrent();
             $table->json('metadata')->nullable();
-            $table->index(['billing_subscription_id', 'occurred_at']);
+            $table->index(['billing_subscription_id', 'occurred_at'], 'idx_bta_sub_occurred');
         });
 
         Schema::create('billing_subscription_alerts', function (Blueprint $table): void {
