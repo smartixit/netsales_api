@@ -38,11 +38,12 @@ class BillingRefundService
             if ($existing) {
                 if ((int) $existing->payment_id !== $paymentId
                     || (int) $existing->credit_note_id !== $creditNoteId
+                    || (int) $existing->treasury_account_id !== $treasuryAccountId
                     || (int) $existing->amount_minor !== $amountMinor
                     || $existing->reason !== $reason) {
                     throw ValidationException::withMessages(['idempotency_key' => ['مفتاح منع التكرار مستخدم لعملية استرداد مختلفة.']]);
                 }
-                return $existing->load(['payment', 'currency', 'creditNote']);
+                return $existing->load(['payment', 'currency', 'creditNote', 'treasuryAccount']);
             }
 
             $invoiceId = BillingCreditNote::query()->whereKey($creditNoteId)->value('invoice_id');
@@ -129,7 +130,7 @@ class BillingRefundService
             ]);
 
             // The credit note already reduced A/R (and created a customer credit when overpaid).
-            // Cash settlement consumes that customer credit: Dr A/R, Cr Treasury.
+            // Cash settlement consumes that customer credit: Dr customer-credit liability, Cr Treasury.
             $this->ledger->post(
                 (int) $payment->currency_id,
                 'تسوية استرداد '.$refund->refund_reference.' من الإشعار '.$creditNote->credit_note_number,
