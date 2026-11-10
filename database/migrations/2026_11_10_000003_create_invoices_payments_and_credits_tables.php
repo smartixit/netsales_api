@@ -154,6 +154,7 @@ return new class extends Migration
         Schema::create('billing_payments', function (Blueprint $table): void {
             $table->id('payment_id');
             $table->string('payment_reference', 50)->unique();
+            $table->string('idempotency_key', 128)->unique();
             $table->foreignId('payment_intent_id')->nullable()->constrained('billing_payment_intents', 'payment_intent_id')->restrictOnDelete();
             $table->foreignId('invoice_id')->constrained('billing_invoices', 'invoice_id')->restrictOnDelete();
             $table->foreignId('billing_account_id')->constrained('billing_accounts', 'billing_account_id')->restrictOnDelete();
