@@ -136,7 +136,6 @@ class BillingFinanceController extends BaseController
         try {
             $payment = $this->payments->verify(
                 $paymentId,
-                (int) $request->input('credit_note_id'),
                 (int) $request->input('treasury_account_id'),
                 $this->requireCurrentUser(),
                 $request->input('note')
