@@ -180,10 +180,42 @@ class BillingCreditNoteService
                         $earnedForLineMinor
                     );
                 } elseif ($source->line_type === 'SETUP_FEE') {
-                    $earnedCreditByAccount['4120'] = $this->safeAdd(
-                        (int) ($earnedCreditByAccount['4120'] ?? 0),
-                        $lineRevenueCreditMinor
-                    );
+                    $schedule = BillingRevenueRecognitionSchedule::query()
+                        ->where('invoice_line_id', $source->invoice_line_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($schedule) {
+                        $originalRevenueMinor = (int) $source->subtotal_minor - (int) $source->discount_minor;
+                        $previousRevenueCreditedMinor = $alreadyCredited - $previousTaxCreditedMinor;
+                        if ((int) $schedule->total_minor !== $originalRevenueMinor - $previousRevenueCreditedMinor) {
+                            throw ValidationException::withMessages([
+                                'lines' => ['رصيد جدول الاعتراف برسوم التهيئة لا يطابق مبالغ الإشعارات الدائنة السابقة.'],
+                            ]);
+                        }
+
+                        $unearnedMinor = max(0, (int) $schedule->total_minor - (int) $schedule->recognized_minor);
+                        $deferredForLineMinor = min($lineRevenueCreditMinor, $unearnedMinor);
+                        $earnedForLineMinor = $lineRevenueCreditMinor - $deferredForLineMinor;
+
+                        $schedule->total_minor = (int) $schedule->total_minor - $lineRevenueCreditMinor;
+                        $schedule->recognized_minor = (int) $schedule->recognized_minor - $earnedForLineMinor;
+                        $schedule->status = (int) $schedule->recognized_minor >= (int) $schedule->total_minor
+                            ? 'COMPLETED'
+                            : 'ACTIVE';
+                        $recognitionScheduleUpdates[] = $schedule;
+                        $deferredCreditMinor = $this->safeAdd($deferredCreditMinor, $deferredForLineMinor);
+                        $earnedCreditByAccount['4120'] = $this->safeAdd(
+                            (int) ($earnedCreditByAccount['4120'] ?? 0),
+                            $earnedForLineMinor
+                        );
+                    } else {
+                        // Legacy or standalone setup line: no deferred schedule exists, so it was earned at issue.
+                        $earnedCreditByAccount['4120'] = $this->safeAdd(
+                            (int) ($earnedCreditByAccount['4120'] ?? 0),
+                            $lineRevenueCreditMinor
+                        );
+                    }
                 } elseif ($source->line_type === 'METERED_USAGE') {
                     $earnedCreditByAccount['4110'] = $this->safeAdd(
                         (int) ($earnedCreditByAccount['4110'] ?? 0),
