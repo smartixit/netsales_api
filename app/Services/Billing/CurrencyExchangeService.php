@@ -60,6 +60,25 @@ class CurrencyExchangeService
         }
 
         return DB::transaction(function () use ($rateId, $sourceAmountMinor, $feeMinor, $sourceType, $sourceId, $actor): CurrencyConversion {
+            $existing = CurrencyConversion::query()
+                ->with(['fromCurrency', 'toCurrency', 'exchangeRate'])
+                ->where('source_type', $sourceType)
+                ->where('source_id', $sourceId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                if ((int) $existing->exchange_rate_id !== $rateId
+                    || (int) $existing->source_amount_minor !== $sourceAmountMinor
+                    || (int) $existing->fee_amount_minor !== $feeMinor) {
+                    throw ValidationException::withMessages([
+                        'source_id' => ['تم تسجيل تحويل سابق لهذه العملية المصدرية ببيانات مختلفة.'],
+                    ]);
+                }
+
+                return $existing;
+            }
+
             $rate = CurrencyExchangeRate::query()
                 ->with(['baseCurrency', 'quoteCurrency'])
                 ->lockForUpdate()

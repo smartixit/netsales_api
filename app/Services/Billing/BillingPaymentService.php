@@ -61,8 +61,16 @@ class BillingPaymentService
                 throw ValidationException::withMessages(['invoice_id' => ['الفاتورة غير مستحقة للدفع حالياً.']]);
             }
 
-            if ($amountMinor > (int) $invoice->remaining_minor) {
-                throw ValidationException::withMessages(['amount_minor' => ['قيمة الدفعة تتجاوز المبلغ المتبقي على الفاتورة.']]);
+            $pendingMinor = (int) BillingPayment::query()
+                ->where('invoice_id', $invoice->invoice_id)
+                ->where('status', BillingPaymentStatus::PENDING_REVIEW)
+                ->sum('amount_minor');
+            $availableMinor = (int) $invoice->remaining_minor - $pendingMinor;
+
+            if ($amountMinor > $availableMinor) {
+                throw ValidationException::withMessages([
+                    'amount_minor' => ['قيمة الدفعة تتجاوز الرصيد المتاح بعد احتساب طلبات الدفع المعلقة قيد المراجعة.'],
+                ]);
             }
 
             $method = BillingPaymentMethod::query()
@@ -134,6 +142,10 @@ class BillingPaymentService
             if (! in_array($invoice->status, [BillingInvoiceStatus::OPEN, BillingInvoiceStatus::PARTIALLY_PAID], true)
                 || (int) $invoice->remaining_minor < (int) $payment->amount_minor) {
                 throw ValidationException::withMessages(['invoice_id' => ['لم تعد الفاتورة تسمح بهذه الدفعة أو تغير المبلغ المتبقي.']]);
+            }
+
+            if ((int) $payment->billing_account_id !== (int) $invoice->billing_account_id) {
+                throw ValidationException::withMessages(['billing_account_id' => ['حساب الدفعة لا يطابق حساب الفاتورة.']]);
             }
 
             if ((int) $payment->currency_id !== (int) $invoice->currency_id) {

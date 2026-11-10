@@ -2,7 +2,7 @@
 
 namespace App\Services\Billing;
 
-use App\Enums\{BillingSubscriptionStatus, BillingInterval};
+use App\Enums\{BillingInvoiceStatus, BillingSubscriptionStatus, BillingInterval};
 use App\Models\{BillingSubscription, BillingSubscriptionEvent};
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -82,6 +82,29 @@ class BillingRenewalService
                 );
                 $invoice = $this->invoices->finalize((int) $invoice->invoice_id);
 
+                if ($invoice->status === BillingInvoiceStatus::PAID && (int) $invoice->total_minor === 0) {
+                    $subscription->status = BillingSubscriptionStatus::ACTIVE;
+                    $subscription->current_period_start = $start;
+                    $subscription->current_period_end = $end;
+                    $subscription->grace_period_ends_at = null;
+                    $subscription->save();
+
+                    $subscription->events()->create([
+                        'event_type' => $wasTrial ? 'TRIAL_CONVERTED_TO_FREE_PLAN' : 'ZERO_VALUE_RENEWAL_SETTLED',
+                        'from_status' => $oldStatus,
+                        'to_status' => BillingSubscriptionStatus::ACTIVE->value,
+                        'payload' => [
+                            'invoice_id' => $invoice->invoice_id,
+                            'period_start' => $start->toDateString(),
+                            'period_end' => $end->toDateString(),
+                            'currency_id' => $invoice->currency_id,
+                        ],
+                        'occurred_at' => now('Asia/Aden'),
+                    ]);
+
+                    return 'FREE_RENEWAL';
+                }
+
                 $subscription->status = $wasTrial
                     ? BillingSubscriptionStatus::INCOMPLETE
                     : BillingSubscriptionStatus::PAST_DUE;
@@ -107,7 +130,7 @@ class BillingRenewalService
                 return 'RENEWED';
             }, 3);
 
-            if ($result === 'RENEWED') {
+            if ($result === 'RENEWED' || $result === 'FREE_RENEWAL') {
                 $renewed++;
             } elseif ($result === 'CANCELLED') {
                 $cancelled++;

@@ -6,24 +6,18 @@ use App\Enums\BillingInterval;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
 class BillingPrice extends Model
 {
     use ExactDateSerialization;
 
     protected $table = 'billing_prices';
-
     protected $primaryKey = 'price_id';
 
     protected $fillable = [
-        'plan_version_id',
-        'currency_id',
-        'billing_interval',
-        'interval_count',
-        'unit_amount_minor',
-        'setup_fee_minor',
-        'tax_behavior',
-        'is_active',
+        'plan_version_id', 'currency_id', 'billing_interval', 'interval_count',
+        'unit_amount_minor', 'setup_fee_minor', 'tax_behavior', 'is_active',
     ];
 
     protected function casts(): array
@@ -35,6 +29,20 @@ class BillingPrice extends Model
             'setup_fee_minor' => 'integer',
             'is_active' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        $assertDraft = static function (self $price): void {
+            $status = $price->planVersion()->value('status');
+            if ($status !== 'DRAFT') {
+                throw new LogicException('أسعار النسخ المنشورة أو المؤرشفة غير قابلة للإضافة أو التعديل أو الحذف؛ أنشئ نسخة خطة جديدة.');
+            }
+        };
+
+        static::creating($assertDraft);
+        static::updating($assertDraft);
+        static::deleting($assertDraft);
     }
 
     public function planVersion(): BelongsTo

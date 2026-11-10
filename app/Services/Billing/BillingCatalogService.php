@@ -311,7 +311,6 @@ class BillingCatalogService
                 $seen[$key] = true;
             }
 
-            $published = $this->catalog->publishVersion($version, (int) $actor->user_id);
             $plan = $this->catalog->findPlan((int) $version->plan_id, true);
 
             if (! $plan) {
@@ -320,6 +319,16 @@ class BillingCatalogService
                 ]);
             }
 
+            $previousVersionId = $plan->current_version_id;
+            if ($previousVersionId && (int) $previousVersionId !== (int) $version->plan_version_id) {
+                $previousVersion = $this->catalog->findVersion((int) $previousVersionId, true);
+                if ($previousVersion && $previousVersion->status === BillingPlanVersionStatus::PUBLISHED) {
+                    $previousVersion->status = BillingPlanVersionStatus::ARCHIVED;
+                    $previousVersion->save();
+                }
+            }
+
+            $published = $this->catalog->publishVersion($version, (int) $actor->user_id);
             $this->catalog->setCurrentVersion($plan, $published->plan_version_id);
 
             return $published;

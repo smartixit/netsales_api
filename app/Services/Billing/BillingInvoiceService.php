@@ -169,8 +169,26 @@ class BillingInvoiceService
                 $total = $this->safeAdd($total, $lineTotal);
             }
 
-            if ($total <= 0) {
-                throw ValidationException::withMessages(['total_minor' => ['لا يمكن إصدار فاتورة بقيمة صفرية أو سالبة.']]);
+            if ($total < 0) {
+                throw ValidationException::withMessages(['total_minor' => ['لا يمكن إصدار فاتورة بقيمة سالبة.']]);
+            }
+
+            $invoice->subtotal_minor = $subtotal;
+            $invoice->discount_minor = $discount;
+            $invoice->tax_minor = $tax;
+            $invoice->total_minor = $total;
+            $invoice->paid_minor = 0;
+            $invoice->remaining_minor = $total;
+            $invoice->issued_on = now('Asia/Aden')->toDateString();
+            $invoice->finalized_at = now('Asia/Aden');
+
+            if ($total === 0) {
+                $invoice->status = BillingInvoiceStatus::PAID;
+                $invoice->paid_at = now('Asia/Aden');
+                $invoice->memo = trim(($invoice->memo ?? '')."\nتم إغلاق الفاتورة كفاتورة صفرية؛ لا يوجد مبلغ مستحق للتحصيل.");
+                $invoice->save();
+
+                return $invoice->load(['lines', 'currency', 'billingAccount']);
             }
 
             $accounts = $this->chart->ensureForCurrency($invoice->currency);
@@ -212,6 +230,17 @@ class BillingInvoiceService
             if (! in_array($invoice->status, [BillingInvoiceStatus::DRAFT, BillingInvoiceStatus::OPEN], true)
                 || (int) $invoice->paid_minor !== 0) {
                 throw ValidationException::withMessages(['invoice_id' => ['لا يمكن إلغاء فاتورة مدفوعة أو مسددة جزئياً أو سبق إغلاقها.']]);
+            }
+
+            $hasPendingPayments = \App\Models\BillingPayment::query()
+                ->where('invoice_id', $invoice->invoice_id)
+                ->where('status', \App\Enums\BillingPaymentStatus::PENDING_REVIEW)
+                ->exists();
+
+            if ($hasPendingPayments) {
+                throw ValidationException::withMessages([
+                    'invoice_id' => ['لا يمكن إلغاء الفاتورة بينما توجد طلبات دفع قيد المراجعة؛ ارفضها أو احسمها أولاً.'],
+                ]);
             }
 
             if ($invoice->status === BillingInvoiceStatus::OPEN) {

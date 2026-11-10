@@ -2,7 +2,7 @@
 
 namespace App\Services\Billing;
 
-use App\Enums\{BillingPlanVersionStatus, BillingSubscriptionStatus, BillingInterval};
+use App\Enums\{BillingInvoiceStatus, BillingPlanVersionStatus, BillingSubscriptionStatus, BillingInterval};
 use App\Models\{BillingAccount, BillingPrice, BillingSubscription, BillingSubscriptionEvent, Network, User};
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +12,8 @@ class BillingSubscriptionService
 {
     public function __construct(
         private BillingAuthorizationService $authorization,
-        private BillingInvoiceService $invoices
+        private BillingInvoiceService $invoices,
+        private BillingDunningService $dunning
     ) {}
 
     /**
@@ -161,8 +162,26 @@ class BillingSubscriptionService
             $invoice = $this->invoices->createForSubscription($subscription, $actor);
             $invoice = $this->invoices->finalize((int) $invoice->invoice_id, $actor);
 
+            if ($invoice->status === BillingInvoiceStatus::PAID && (int) $invoice->total_minor === 0) {
+                $subscription->status = BillingSubscriptionStatus::ACTIVE;
+                $subscription->current_period_start = $now;
+                $subscription->current_period_end = $periodEnd;
+                $subscription->save();
+
+                $subscription->events()->create([
+                    'event_type' => 'ZERO_VALUE_SUBSCRIPTION_ACTIVATED',
+                    'from_status' => BillingSubscriptionStatus::INCOMPLETE->value,
+                    'to_status' => BillingSubscriptionStatus::ACTIVE->value,
+                    'payload' => ['invoice_id' => $invoice->invoice_id, 'currency_id' => $subscription->currency_id],
+                    'actor_id' => $actor->user_id,
+                    'occurred_at' => now('Asia/Aden'),
+                ]);
+            } elseif ($invoice->status !== BillingInvoiceStatus::PAID) {
+                $this->dunning->scheduleForInvoice($invoice);
+            }
+
             return [
-                'subscription' => $subscription->load(['planVersion.features', 'currency', 'price']),
+                'subscription' => $subscription->refresh()->load(['planVersion.features', 'currency', 'price']),
                 'invoice' => $invoice,
             ];
         }, 3);
