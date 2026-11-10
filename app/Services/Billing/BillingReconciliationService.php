@@ -63,7 +63,7 @@ class BillingReconciliationService
             ->where('currency_id', $currency->currency_id)
             ->whereIn('status', ['ISSUED', 'PARTIALLY_REFUNDED', 'REFUNDED'])
             ->sum('tax_minor');
-        $subledgerBalances['tax_payable'] = max(0, $issuedTaxMinor - $creditedTaxMinor);
+        $subledgerBalances['tax_payable'] = $issuedTaxMinor - $creditedTaxMinor;
 
         $checks = [];
         foreach (self::CONTROL_ACCOUNTS as $code => $definition) {
