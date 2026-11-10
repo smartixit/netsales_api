@@ -62,12 +62,11 @@ class BillingUsageService
                 BillingSubscriptionStatus::ACTIVE,
                 BillingSubscriptionStatus::TRIALING,
             ], true) && (! $subscription->current_period_end || $subscription->current_period_end->gt(now('Asia/Aden')));
-            $grace = $subscription->status === BillingSubscriptionStatus::PAST_DUE
-                && $subscription->grace_period_ends_at
-                && $subscription->grace_period_ends_at->gt(now('Asia/Aden'));
 
-            if (! $active && ! $grace) {
-                throw ValidationException::withMessages(['subscription_id' => ['لا يوجد اشتراك نشط أو فترة سماح تسمح بتسجيل الاستهلاك.']]);
+            if (! $active) {
+                throw ValidationException::withMessages([
+                    'subscription_id' => ['لا يمكن تسجيل استهلاك مقاس إلا أثناء اشتراك نشط أو فترة تجربة سارية؛ يوقف الاستهلاك الجديد عند التأخر عن السداد.'],
+                ]);
             }
 
             $feature = $subscription->planVersion?->features->firstWhere('feature_key', $meterKey);

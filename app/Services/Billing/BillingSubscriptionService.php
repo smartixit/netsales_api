@@ -177,6 +177,22 @@ class BillingSubscriptionService
                     'occurred_at' => now('Asia/Aden'),
                 ]);
             } elseif ($invoice->status !== BillingInvoiceStatus::PAID) {
+                $graceEndsAt = now('Asia/Aden')->addDays((int) config('billing.grace_period_days', 7));
+                $subscription->grace_period_ends_at = $graceEndsAt;
+                $subscription->save();
+
+                $subscription->events()->create([
+                    'event_type' => 'INITIAL_INVOICE_ISSUED',
+                    'from_status' => BillingSubscriptionStatus::INCOMPLETE->value,
+                    'to_status' => BillingSubscriptionStatus::INCOMPLETE->value,
+                    'payload' => [
+                        'invoice_id' => $invoice->invoice_id,
+                        'grace_period_ends_at' => $graceEndsAt->toDateTimeString(),
+                    ],
+                    'actor_id' => $actor->user_id,
+                    'occurred_at' => now('Asia/Aden'),
+                ]);
+
                 $this->dunning->scheduleForInvoice($invoice);
             }
 

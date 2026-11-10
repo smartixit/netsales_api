@@ -91,6 +91,10 @@ class BillingEntitlementService
             return false;
         }
 
+        if ($grace && $feature->feature_type === BillingFeatureType::METERED) {
+            return false;
+        }
+
         return match ($feature->feature_type) {
             BillingFeatureType::BOOLEAN => filter_var($feature->value, FILTER_VALIDATE_BOOLEAN),
             BillingFeatureType::RESOURCE_LIMIT, BillingFeatureType::METERED => true,

@@ -17,8 +17,23 @@ class BillingFinanceController extends BaseController
         private BillingTreasuryService $treasury,
         private BillingPaymentService $payments,
         private BillingInvoiceService $invoices,
-        private CurrencyExchangeService $exchange
+        private CurrencyExchangeService $exchange,
+        private BillingDashboardService $dashboard
     ) {}
+
+    public function overview(Request $request): JsonResponse
+    {
+        $request->validate([
+            'currency_id' => ['nullable', 'integer', 'exists:currencies,currency_id'],
+        ]);
+
+        $data = $this->dashboard->overview(
+            $request->filled('currency_id') ? (int) $request->input('currency_id') : null
+        );
+        $data['payment_review_queue'] = BillingPaymentResource::collection($data['payment_review_queue']);
+
+        return $this->successResponse('تم استرجاع ملخص اشتراكات المنصة والتحصيلات حسب العملة.', $data);
+    }
 
     public function accounts(Request $request): JsonResponse
     {
