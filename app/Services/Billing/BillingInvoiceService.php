@@ -192,29 +192,113 @@ class BillingInvoiceService
             }
 
             $accounts = $this->chart->ensureForCurrency($invoice->currency);
-            $invoice->subtotal_minor = $subtotal;
-            $invoice->discount_minor = $discount;
-            $invoice->tax_minor = $tax;
-            $invoice->total_minor = $total;
-            $invoice->paid_minor = 0;
-            $invoice->remaining_minor = $total;
-            $invoice->issued_on = now('Asia/Aden')->toDateString();
-            $invoice->finalized_at = now('Asia/Aden');
-            $invoice->status = BillingInvoiceStatus::OPEN;
-            $invoice->save();
+            $deferredMinor = 0;
+            $immediateRevenueByAccount = [];
+            $recognitionSchedules = [];
+
+            foreach ($invoice->lines as $line) {
+                $revenueBaseMinor = (int) $line->subtotal_minor - (int) $line->discount_minor;
+                $lineTaxMinor = (int) $line->tax_minor;
+
+                if ($revenueBaseMinor < 0 || $lineTaxMinor < 0) {
+                    throw ValidationException::withMessages(['lines' => ['لا يمكن أن يكون أساس الإيراد أو الضريبة في بند الفاتورة سالباً.']]);
+                }
+
+                if ($line->line_type === 'SUBSCRIPTION') {
+                    $billingInterval = $line->source_snapshot['billing_interval'] ?? null;
+                    if ($billingInterval === 'ONE_TIME') {
+                        $immediateRevenueByAccount['4100'] = $this->safeAdd(
+                            (int) ($immediateRevenueByAccount['4100'] ?? 0),
+                            $revenueBaseMinor
+                        );
+                        continue;
+                    }
+
+                    if (! $invoice->period_start || ! $invoice->period_end
+                        || $invoice->period_end->lt($invoice->period_start)) {
+                        throw ValidationException::withMessages([
+                            'period' => ['يجب تحديد فترة خدمة صحيحة لكل بند اشتراك دوري قبل إصدار الفاتورة.'],
+                        ]);
+                    }
+
+                    $deferredMinor = $this->safeAdd($deferredMinor, $revenueBaseMinor);
+                    if ($revenueBaseMinor > 0) {
+                        $recognitionSchedules[] = [
+                            'invoice_id' => $invoice->invoice_id,
+                            'invoice_line_id' => $line->invoice_line_id,
+                            'currency_id' => $invoice->currency_id,
+                            'revenue_account_code' => '4100',
+                            'total_minor' => $revenueBaseMinor,
+                            'recognized_minor' => 0,
+                            'service_start_on' => $invoice->period_start->toDateString(),
+                            'service_end_on' => $invoice->period_end->toDateString(),
+                            'status' => 'PENDING',
+                        ];
+                    }
+                    continue;
+                }
+
+                if ($line->line_type === 'SETUP_FEE') {
+                    $accountCode = '4120';
+                } elseif ($line->line_type === 'METERED_USAGE') {
+                    $accountCode = '4110';
+                } else {
+                    throw ValidationException::withMessages([
+                        'line_type' => ['نوع بند الفاتورة لا يملك سياسة اعتراف محاسبي معرفة.'],
+                    ]);
+                }
+
+                $immediateRevenueByAccount[$accountCode] = $this->safeAdd(
+                    (int) ($immediateRevenueByAccount[$accountCode] ?? 0),
+                    $revenueBaseMinor
+                );
+            }
+
+            $journalLines = [
+                ['ledger_account_id' => $accounts['1100']->ledger_account_id, 'debit_minor' => $total, 'credit_minor' => 0],
+            ];
+
+            if ($deferredMinor > 0) {
+                $journalLines[] = [
+                    'ledger_account_id' => $accounts['2100']->ledger_account_id,
+                    'debit_minor' => 0,
+                    'credit_minor' => $deferredMinor,
+                ];
+            }
+
+            foreach ($immediateRevenueByAccount as $accountCode => $amountMinor) {
+                if ($amountMinor <= 0) {
+                    continue;
+                }
+
+                $journalLines[] = [
+                    'ledger_account_id' => $accounts[$accountCode]->ledger_account_id,
+                    'debit_minor' => 0,
+                    'credit_minor' => $amountMinor,
+                ];
+            }
+
+            if ($tax > 0) {
+                $journalLines[] = [
+                    'ledger_account_id' => $accounts['2300']->ledger_account_id,
+                    'debit_minor' => 0,
+                    'credit_minor' => $tax,
+                ];
+            }
 
             $this->ledger->post(
                 (int) $invoice->currency_id,
                 'إصدار فاتورة اشتراك '.$invoice->invoice_number,
                 'billing-invoice-issued-'.$invoice->invoice_id,
-                [
-                    ['ledger_account_id' => $accounts['1100']->ledger_account_id, 'debit_minor' => $total, 'credit_minor' => 0],
-                    ['ledger_account_id' => $accounts['2100']->ledger_account_id, 'debit_minor' => 0, 'credit_minor' => $total],
-                ],
+                $journalLines,
                 $actor,
                 'BILLING_INVOICE',
                 (int) $invoice->invoice_id
             );
+
+            foreach ($recognitionSchedules as $schedule) {
+                \App\Models\BillingRevenueRecognitionSchedule::query()->create($schedule);
+            }
 
             return $invoice->load(['lines', 'currency', 'billingAccount']);
         }, 3);
