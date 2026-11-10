@@ -10,6 +10,7 @@ class BillingLedgerChartService
     private const ACCOUNTS = [
         ['code' => '1100', 'name' => 'الذمم المدينة - اشتراكات', 'class' => 'ASSET', 'normal' => 'DEBIT'],
         ['code' => '2100', 'name' => 'الإيرادات المؤجلة - اشتراكات', 'class' => 'LIABILITY', 'normal' => 'CREDIT'],
+        ['code' => '2200', 'name' => 'أرصدة دائنة للعملاء - إشعارات دائنة', 'class' => 'LIABILITY', 'normal' => 'CREDIT'],
         ['code' => '4100', 'name' => 'إيرادات الاشتراكات', 'class' => 'REVENUE', 'normal' => 'CREDIT'],
         ['code' => '4110', 'name' => 'إيرادات الاستخدام الإضافي', 'class' => 'REVENUE', 'normal' => 'CREDIT'],
         ['code' => '4190', 'name' => 'تكلفة واستردادات الاشتراكات', 'class' => 'EXPENSE', 'normal' => 'DEBIT'],
