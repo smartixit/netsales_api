@@ -19,7 +19,7 @@ class BillingAccountResource extends JsonResource
             'tax_number' => $this->tax_number,
             'billing_address' => $this->billing_address,
             'status' => $this->status,
-            'default_currency' => new CurrencyResource($this->whenLoaded('defaultCurrency')),
+            'default_currency' => $this->whenLoaded('defaultCurrency', fn () => new CurrencyResource($this->defaultCurrency)),
             'payment_terms_days' => (int) $this->payment_terms_days,
             'contacts' => BillingAccountContactResource::collection($this->whenLoaded('contacts')),
             'created_at' => $this->created_at?->toDateTimeString(),

@@ -14,7 +14,7 @@ class TreasuryAccountResource extends JsonResource
             'account_code' => $this->account_code,
             'name' => $this->name,
             'account_type' => $this->account_type,
-            'currency' => new CurrencyResource($this->whenLoaded('currency')),
+            'currency' => $this->whenLoaded('currency', fn () => new CurrencyResource($this->currency)),
             'institution_name' => $this->institution_name,
             'account_reference' => $this->account_reference,
             'status' => $this->status,

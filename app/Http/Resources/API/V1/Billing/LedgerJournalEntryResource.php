@@ -12,7 +12,7 @@ class LedgerJournalEntryResource extends JsonResource
         return [
             'journal_entry_id' => $this->journal_entry_id,
             'entry_number' => $this->entry_number,
-            'currency' => new CurrencyResource($this->whenLoaded('currency')),
+            'currency' => $this->whenLoaded('currency', fn () => new CurrencyResource($this->currency)),
             'entry_date' => $this->entry_date?->toDateTimeString(),
             'source_type' => $this->source_type,
             'source_id' => $this->source_id,
