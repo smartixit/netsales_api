@@ -102,7 +102,7 @@ return new class extends Migration
             $table->foreignId('currency_id')->constrained('currencies', 'currency_id')->restrictOnDelete();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            $table->unique(['payment_method_id', 'currency_id']);
+            $table->unique(['payment_method_id', 'currency_id'], 'uq_bpmc_method_currency');
         });
 
         Schema::create('treasury_accounts', function (Blueprint $table): void {
