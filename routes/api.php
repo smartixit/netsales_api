@@ -580,6 +580,8 @@ Route::prefix('v1')->group(function () {
 
         Route::prefix('billing')->middleware('operational.scope')->group(function () {
             Route::middleware('throttle:api-read')->group(function () {
+                Route::get('currencies', [BillingSelfServiceController::class, 'currencies'])
+                    ->name('api.v1.billing.currencies.index');
                 Route::get('accounts/{billingAccountId}/plans', [BillingSelfServiceController::class, 'plans'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.plans');
                 Route::get('accounts/{billingAccountId}/subscriptions', [BillingSelfServiceController::class, 'subscriptions'])
