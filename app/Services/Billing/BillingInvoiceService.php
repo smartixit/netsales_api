@@ -136,7 +136,7 @@ class BillingInvoiceService
                 ->findOrFail($invoiceId);
 
             if ($invoice->status !== BillingInvoiceStatus::DRAFT) {
-                if (in_array($invoice->status, [BillingInvoiceStatus::OPEN, BillingInvoiceStatus::PARTIALLY_PAID, BillingInvoiceStatus::PAID], true)) {
+                if (in_array($invoice->status, [BillingInvoiceStatus::OPEN, BillingInvoiceStatus::PARTIALLY_PAID, BillingInvoiceStatus::PARTIALLY_CREDITED, BillingInvoiceStatus::PAID, BillingInvoiceStatus::CREDITED], true)) {
                     return $invoice->load(['lines', 'currency']);
                 }
 
