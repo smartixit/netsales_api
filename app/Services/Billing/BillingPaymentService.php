@@ -56,7 +56,7 @@ class BillingPaymentService
                 return $existing;
             }
 
-            if (! in_array($invoice->status, [BillingInvoiceStatus::OPEN, BillingInvoiceStatus::PARTIALLY_PAID], true)
+            if (! in_array($invoice->status, [BillingInvoiceStatus::OPEN, BillingInvoiceStatus::PARTIALLY_PAID, BillingInvoiceStatus::PARTIALLY_CREDITED], true)
                 || (int) $invoice->remaining_minor <= 0) {
                 throw ValidationException::withMessages(['invoice_id' => ['الفاتورة غير مستحقة للدفع حالياً.']]);
             }
@@ -199,10 +199,10 @@ class BillingPaymentService
             $payment->save();
 
             $invoice->paid_minor = $this->safeAdd((int) $invoice->paid_minor, (int) $payment->amount_minor);
-            $invoice->remaining_minor = (int) $invoice->total_minor - (int) $invoice->paid_minor;
+            $invoice->remaining_minor = max(0, (int) $invoice->total_minor - (int) $invoice->paid_minor - (int) $invoice->credited_minor);
             $invoice->status = $invoice->remaining_minor === 0
-                ? BillingInvoiceStatus::PAID
-                : BillingInvoiceStatus::PARTIALLY_PAID;
+                ? (((int) $invoice->credited_minor >= (int) $invoice->total_minor) ? BillingInvoiceStatus::CREDITED : BillingInvoiceStatus::PAID)
+                : ((int) $invoice->credited_minor > 0 ? BillingInvoiceStatus::PARTIALLY_CREDITED : BillingInvoiceStatus::PARTIALLY_PAID);
             if ($invoice->remaining_minor === 0) {
                 $invoice->paid_at = now('Asia/Aden');
             }
