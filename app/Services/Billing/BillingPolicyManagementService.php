@@ -148,7 +148,7 @@ class BillingPolicyManagementService
                 ]);
                 return $subscription->refresh();
             }
-            $end = $this->calculateTrialEnd(\\Carbon\\CarbonImmutable::instance($now), $snapshot);
+            $end = $this->calculateTrialEnd(\Carbon\CarbonImmutable::instance($now), $snapshot);
             $subscription->status = BillingSubscriptionStatus::TRIALING;
             $subscription->trial_start = $now;
             $subscription->trial_end = $end;
