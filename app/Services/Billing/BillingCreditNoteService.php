@@ -209,7 +209,8 @@ class BillingCreditNoteService
                 'billing-credit-note-issued-'.$note->credit_note_id,
                 [
                     ['ledger_account_id' => $accounts[$debitCode]->ledger_account_id, 'debit_minor' => $amountMinor, 'credit_minor' => 0],
-                    ['ledger_account_id' => $accounts['1100']->ledger_account_id, 'debit_minor' => 0, 'credit_minor' => $amountMinor],
+                    ['ledger_account_id' => $accounts['1100']->ledger_account_id, 'debit_minor' => 0, 'credit_minor' => $appliedToReceivableMinor],
+                    ['ledger_account_id' => $accounts['2200']->ledger_account_id, 'debit_minor' => 0, 'credit_minor' => $refundableMinor],
                 ],
                 $actor,
                 'BILLING_CREDIT_NOTE',
@@ -220,17 +221,18 @@ class BillingCreditNoteService
             $note->issued_at = now('Asia/Aden');
             $note->save();
 
-            $invoice->remaining_minor = (int) $invoice->remaining_minor - $appliedToReceivableMinor;
+            $invoice->credited_minor = (int) $invoice->credited_minor + $appliedToReceivableMinor;
+            $invoice->remaining_minor = max(0, (int) $invoice->total_minor - (int) $invoice->paid_minor - (int) $invoice->credited_minor);
             $newCreditTotal = $previousCreditTotal + $amountMinor;
 
             if ($invoice->remaining_minor === 0) {
-                $invoice->status = $newCreditTotal >= (int) $invoice->total_minor
+                $invoice->status = (int) $invoice->credited_minor >= (int) $invoice->total_minor
                     ? BillingInvoiceStatus::CREDITED
                     : BillingInvoiceStatus::PAID;
                 if ($invoice->status === BillingInvoiceStatus::PAID && $invoice->paid_at === null) {
                     $invoice->paid_at = now('Asia/Aden');
                 }
-            } elseif ($newCreditTotal > 0) {
+            } elseif ((int) $invoice->credited_minor > 0) {
                 $invoice->status = BillingInvoiceStatus::PARTIALLY_CREDITED;
             } else {
                 $invoice->status = (int) $invoice->paid_minor > 0
