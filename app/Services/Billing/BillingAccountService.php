@@ -38,6 +38,17 @@ class BillingAccountService
             ->firstOrFail();
     }
 
+    public function ownedAccount(int $accountId, User $actor): BillingAccount
+    {
+        $account = BillingAccount::query()
+            ->with(['defaultCurrency', 'contacts'])
+            ->findOrFail($accountId);
+
+        $this->authorization->assertNetworkOwner($actor, (int) $account->network_id);
+
+        return $account;
+    }
+
     public function createForNetwork(int $networkId, int $currencyId, User $actor): BillingAccount
     {
         $this->authorization->assertNetworkOwner($actor, $networkId);
