@@ -5,7 +5,7 @@ namespace App\Http\Controllers\API\V1\Billing;
 use App\Http\Controllers\API\V1\BaseController;
 use App\Http\Requests\API\V1\Billing\{CreateBillingAccountRequest, PurchaseSubscriptionRequest, StorePaymentRequest};
 use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingSubscriptionResource, PaymentMethodResource};
-use App\Services\Billing\{BillingPaymentService, BillingPlatformReadService, BillingSelfService, BillingSubscriptionService};
+use App\Services\Billing\{BillingPaymentService, BillingPlatformReadService, BillingSelfService, BillingSubscriptionService, CurrencyService};
 use App\Services\Support\FileUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,8 +19,17 @@ class BillingSelfServiceController extends BaseController
         private BillingSubscriptionService $subscriptions,
         private BillingPaymentService $payments,
         private BillingPlatformReadService $read,
+        private CurrencyService $currencies,
         private FileUploadService $files
     ) {}
+
+    public function currencies(): JsonResponse
+    {
+        return $this->successResponse(
+            'تم استرجاع العملات المتاحة لفتح حساب فوترة.',
+            CurrencyResource::collection($this->currencies->listActive())
+        );
+    }
 
     public function accounts(int $networkId): JsonResponse
     {
