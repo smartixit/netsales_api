@@ -868,3 +868,24 @@ This log documents all executed tasks, code changes, and verification command ou
 - Missing treasury allocation and missing treasury ledger links are surfaced as warnings. No unlike currencies are combined.
 - Added an integration assertion requiring all reconciliation checks to match after full payment, credit-note issuance, and refund settlement.
 - Exact-head CI remains pending after the latest schema, service, controller, route, and test changes. No passing result is claimed yet.
+
+
+## 2026-11-11 — Platform Billing Administration Contracts
+
+**Repository:** `smartixit/netsales_api`  
+**Branch:** `feat/platform-billing-admin-contracts`
+
+### Implemented
+- Added platform-only billing account provisioning using the network's active state and selected active currency.
+- Extended subscription purchase/cancellation services with explicit platform-operation authorization while preserving network-owner authorization for self-service callers.
+- Added platform endpoints for account creation, subscription provisioning, subscription detail/event history, and audited cancellation with a required reason.
+- Added billing-account context to subscription resources.
+- Extended overview financial summaries with server-formatted decimal strings for each currency.
+
+### Important correction
+- Corrected the platform subscription administration routes so account/subscription provisioning and cancellation are registered directly under `/platform/billing`, not accidentally nested under `/platform/billing/policies`.
+
+### Verification boundary
+- No Laravel/PHP runtime was available in this GitHub-only execution. Pint, PHPStan, PHPUnit, route:list, and exact-head CI have not been run.
+- Role permission catalog already defines `billing.*`; existing role assignment keeps platform accountants at view/approve/report and SUPER_ADMIN with full platform permissions. SUPPORT_AGENT does not receive billing access by default.
+- No PR has been opened and no merge is claimed.
