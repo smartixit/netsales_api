@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\{BillingInterval, BillingInvoiceStatus, BillingSubscriptionStatus, NetworkStatus};
 use App\Models\{
     BillingAccount,
+    BillingDunningPolicyVersion,
     BillingInvoice,
     BillingPaymentMethod,
     BillingPlan,
@@ -21,6 +22,7 @@ use App\Services\Billing\{
     BillingCatalogService,
     BillingEntitlementService,
     BillingPaymentService,
+    BillingPolicyManagementService,
     BillingReconciliationService,
     BillingSubscriptionService
 };
@@ -92,6 +94,19 @@ class BillingSubscriptionPurchaseTest extends TestCase
             'tax_behavior' => 'EXCLUSIVE',
             'is_active' => true,
         ]);
+
+        $dunningVersion = BillingDunningPolicyVersion::query()
+            ->where('status', 'DRAFT')
+            ->whereHas('policy', fn ($query) => $query->where('policy_key', 'platform-default'))
+            ->firstOrFail();
+
+        app(BillingPolicyManagementService::class)->publishDunningVersion(
+            (int) $dunningVersion->dunning_policy_version_id,
+            $actor
+        );
+
+        $version->dunning_policy_version_id = $dunningVersion->dunning_policy_version_id;
+        $version->save();
 
         app(BillingCatalogService::class)->publishVersion(
             (int) $version->plan_version_id,
