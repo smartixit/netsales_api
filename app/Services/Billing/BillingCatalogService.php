@@ -4,7 +4,7 @@ namespace App\Services\Billing;
 
 use App\Enums\{BillingFeatureType, BillingInterval, BillingPlanVersionStatus};
 use App\Interfaces\{BillingCatalogRepositoryInterface, CurrencyRepositoryInterface};
-use App\Models\{BillingPlan, BillingPlanFeature, BillingPlanVersion, BillingPrice, BillingProduct, User};
+use App\Models\{BillingDunningPolicyVersion, BillingPlan, BillingPlanFeature, BillingPlanVersion, BillingPrice, BillingProduct, BillingTrialPolicyVersion, User};
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -303,6 +303,28 @@ class BillingCatalogService
                 throw ValidationException::withMessages([
                     'prices' => ['يجب إضافة سعر واحد على الأقل بعملة وفترة فوترة محددتين قبل النشر.'],
                 ]);
+            }
+
+            if ($version->trial_policy_version_id) {
+                $trialPolicyVersion = BillingTrialPolicyVersion::query()
+                    ->find($version->trial_policy_version_id);
+
+                if (! $trialPolicyVersion || $trialPolicyVersion->status !== 'PUBLISHED') {
+                    throw ValidationException::withMessages([
+                        'trial_policy_version_id' => ['يجب نشر سياسة التجربة المرتبطة بنسخة الخطة قبل نشر الخطة.'],
+                    ]);
+                }
+            }
+
+            if ($version->dunning_policy_version_id) {
+                $dunningPolicyVersion = BillingDunningPolicyVersion::query()
+                    ->find($version->dunning_policy_version_id);
+
+                if (! $dunningPolicyVersion || $dunningPolicyVersion->status !== 'PUBLISHED') {
+                    throw ValidationException::withMessages([
+                        'dunning_policy_version_id' => ['يجب نشر سياسة التحصيل المرتبطة بنسخة الخطة قبل نشر الخطة.'],
+                    ]);
+                }
             }
 
             $seen = [];
