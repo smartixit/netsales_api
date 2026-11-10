@@ -248,7 +248,9 @@ class Network extends Model
         })->exists();
     }
 
+    public function smsSetting(): HasOne
     {
+        return $this->hasOne(NetworkSmsSetting::class, 'network_id', 'network_id');
     }
 
     public function getLogoUrlAttribute(): ?string
