@@ -3,10 +3,9 @@
 namespace App\Services\Billing;
 
 use App\Enums\{BillingInvoiceStatus, BillingPaymentStatus, BillingSubscriptionStatus};
-use App\Models\{BillingInvoice, BillingPayment, Currency};
+use App\Models\{BillingPayment, Currency};
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 
 class BillingDashboardService

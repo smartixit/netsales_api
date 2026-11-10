@@ -5,7 +5,7 @@ namespace App\Http\Controllers\API\V1\Billing;
 use App\Http\Controllers\API\V1\BaseController;
 use App\Http\Requests\API\V1\Billing\{RejectPaymentRequest, StoreCurrencyConversionRequest, StoreExchangeRateRequest, StoreTreasuryAccountRequest, VerifyPaymentRequest};
 use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingInvoiceResource, BillingPaymentResource, BillingSubscriptionResource, CurrencyExchangeRateResource, CurrencyConversionResource, LedgerJournalEntryResource, PaymentMethodResource, TreasuryAccountResource};
-use App\Services\Billing\{BillingInvoiceService, BillingPaymentService, BillingPlatformReadService, BillingTreasuryService, CurrencyExchangeService};
+use App\Services\Billing\{BillingDashboardService, BillingInvoiceService, BillingPaymentService, BillingPlatformReadService, BillingTreasuryService, CurrencyExchangeService};
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
