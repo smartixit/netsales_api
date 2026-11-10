@@ -144,13 +144,13 @@ jobs:
           tests/Feature/BillingRevenueRecognitionTest.php
           tests/Feature/BillingCreditNoteSettlementTest.php
           tests/Feature/BillingInvoiceRevenuePostingTest.php
-          --no-progress --memory-limit=1G
+          --no-progress --memory-limit=1G --error-format=table
         continue-on-error: true
 
       - name: Run Larastan / PHPStan analysis
         id: full-phpstan
         continue-on-error: true
-        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G --error-format=table
 
       - name: Run Laravel tests
         id: php-tests
