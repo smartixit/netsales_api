@@ -109,7 +109,7 @@ class BillingFinanceController extends BaseController
 
     public function subscriptionDetails(int $subscriptionId): JsonResponse
     {
-        $subscription = \\App\\Models\\BillingSubscription::query()
+        $subscription = \App\Models\BillingSubscription::query()
             ->with(['billingAccount.network', 'currency', 'plan', 'planVersion', 'price', 'trialRedemption', 'events'])
             ->findOrFail($subscriptionId);
 
