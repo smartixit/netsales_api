@@ -122,3 +122,12 @@ Valid statuses are strictly:
 - Billing lock order for invoice collection is Invoice -> Payment -> Treasury; all collection paths must preserve this order.
 - Period-end cancellation is only available while an ACTIVE/TRIALING service period is still in the future. Immediate cancellation revokes any reserved/active trial redemption and suppresses queued renewal alerts.
 - Settlement of an invoice after the originally billed period elapsed does not grant retroactive service time; the paid period restarts at settlement.
+
+
+### Credit notes and cash refund accounting — 2026-11-10
+- A cash refund must never be issued without an issued credit note authorizing the customer's credit.
+- Credit notes first offset open accounts receivable; only any remaining amount backed by net verified collections becomes refundable customer credit.
+- Credit-note amounts are allocated to original invoice lines and cannot exceed either the uncredited source line amount or the remaining invoice amount.
+- Credit-note issuance debits deferred revenue or recognized revenue reversal according to an explicit Platform Scope accounting treatment and credits Accounts Receivable.
+- Cash settlement of refundable credit debits Accounts Receivable/customer credit and credits a treasury account in the same currency.
+- Credit notes, refunds, and their accounting journal entries are immutable after posting; corrections require a new financial document/reversal.

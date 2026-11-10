@@ -3,11 +3,10 @@
 namespace App\Services\Billing;
 
 use App\Enums\BillingPaymentStatus;
-use App\Models\{BillingPayment, BillingRefund, TreasuryAccount, User};
+use App\Models\{BillingCreditNote, BillingInvoice, BillingPayment, BillingRefund, TreasuryAccount, User};
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use OverflowException;
 
 class BillingRefundService
 {
@@ -17,40 +16,75 @@ class BillingRefundService
         private BillingAuthorizationService $authorization
     ) {}
 
-    public function refund(int $paymentId, int $treasuryAccountId, int $amountMinor, string $reason, string $idempotencyKey, User $actor): BillingRefund
-    {
+    public function refund(
+        int $paymentId,
+        int $creditNoteId,
+        int $treasuryAccountId,
+        int $amountMinor,
+        string $reason,
+        string $idempotencyKey,
+        User $actor
+    ): BillingRefund {
         $this->authorization->assertPlatform($actor);
 
-        if ($amountMinor <= 0) {
-            throw ValidationException::withMessages(['amount_minor' => ['يجب أن يكون مبلغ الاسترداد أكبر من صفر.']]);
+        if ($amountMinor <= 0 || trim($idempotencyKey) === '' || strlen($idempotencyKey) > 128) {
+            throw ValidationException::withMessages(['refund' => ['مبلغ الاسترداد ومفتاح منع التكرار غير صالحين.']]);
         }
 
-        return DB::transaction(function () use ($paymentId, $treasuryAccountId, $amountMinor, $reason, $idempotencyKey, $actor): BillingRefund {
+        return DB::transaction(function () use (
+            $paymentId, $creditNoteId, $treasuryAccountId, $amountMinor, $reason, $idempotencyKey, $actor
+        ): BillingRefund {
             $existing = BillingRefund::query()->where('idempotency_key', $idempotencyKey)->first();
             if ($existing) {
                 if ((int) $existing->payment_id !== $paymentId
+                    || (int) $existing->credit_note_id !== $creditNoteId
                     || (int) $existing->amount_minor !== $amountMinor
                     || $existing->reason !== $reason) {
-                    throw ValidationException::withMessages(['idempotency_key' => ['مفتاح منع التكرار مستخدم لطلب استرداد مختلف.']]);
+                    throw ValidationException::withMessages(['idempotency_key' => ['مفتاح منع التكرار مستخدم لعملية استرداد مختلفة.']]);
                 }
-
-                return $existing->load(['payment', 'currency']);
+                return $existing->load(['payment', 'currency', 'creditNote']);
             }
 
+            $invoiceId = BillingCreditNote::query()->whereKey($creditNoteId)->value('invoice_id');
+            if ($invoiceId === null) {
+                throw ValidationException::withMessages(['credit_note_id' => ['الإشعار الدائن غير موجود.']]);
+            }
+
+            // Global lock order: Invoice -> Payment -> Credit Note -> Treasury.
+            $invoice = BillingInvoice::query()->lockForUpdate()->findOrFail((int) $invoiceId);
             $payment = BillingPayment::query()->with('currency')->lockForUpdate()->findOrFail($paymentId);
+            $creditNote = BillingCreditNote::query()->lockForUpdate()->findOrFail($creditNoteId);
 
-            if (! in_array($payment->status, [BillingPaymentStatus::VERIFIED, BillingPaymentStatus::PARTIALLY_REFUNDED], true)) {
-                throw ValidationException::withMessages(['payment_id' => ['لا يمكن استرداد دفعة غير معتمدة أو سبق استردادها بالكامل.']]);
+            if ((int) $payment->invoice_id !== (int) $invoice->invoice_id
+                || (int) $creditNote->invoice_id !== (int) $invoice->invoice_id
+                || (int) $payment->currency_id !== (int) $creditNote->currency_id
+                || (int) $invoice->currency_id !== (int) $creditNote->currency_id) {
+                throw ValidationException::withMessages(['credit_note_id' => ['يجب أن ترتبط الدفعة والإشعار الدائن والفاتورة بالحساب والعملة نفسيهما.']]);
             }
 
-            $alreadyRefunded = (int) BillingRefund::query()
+            if (! in_array($payment->status, [
+                BillingPaymentStatus::VERIFIED,
+                BillingPaymentStatus::PARTIALLY_REFUNDED,
+            ], true)) {
+                throw ValidationException::withMessages(['payment_id' => ['لا يمكن استرداد دفعة غير معتمدة أو مستردة بالكامل.']]);
+            }
+
+            if (! in_array($creditNote->status, ['ISSUED', 'PARTIALLY_REFUNDED'], true)) {
+                throw ValidationException::withMessages(['credit_note_id' => ['الإشعار الدائن غير متاح للاسترداد.']]);
+            }
+
+            $alreadyRefundedFromPayment = (int) BillingRefund::query()
                 ->where('payment_id', $payment->payment_id)
                 ->where('status', 'COMPLETED')
                 ->sum('amount_minor');
+            $remainingOnPayment = (int) $payment->amount_minor - $alreadyRefundedFromPayment;
 
-            if ($alreadyRefunded > (int) $payment->amount_minor
-                || $amountMinor > (int) $payment->amount_minor - $alreadyRefunded) {
-                throw ValidationException::withMessages(['amount_minor' => ['مبلغ الاسترداد يتجاوز الرصيد القابل للاسترداد من الدفعة.']]);
+            $remainingOnCredit = (int) $creditNote->refundable_minor - (int) $creditNote->refunded_minor;
+
+            if ($amountMinor > $remainingOnPayment || $amountMinor > $remainingOnCredit) {
+                throw ValidationException::withMessages([
+                    'amount_minor' => ['مبلغ الاسترداد يتجاوز الرصيد المتاح إما للدفعة أو للإشعار الدائن.'],
+                ]);
             }
 
             $treasury = TreasuryAccount::query()
@@ -69,6 +103,7 @@ class BillingRefundService
                 'refund_reference' => 'NS-REF-'.now('Asia/Aden')->format('Ymd').'-'.Str::upper(Str::random(8)),
                 'idempotency_key' => $idempotencyKey,
                 'payment_id' => $payment->payment_id,
+                'credit_note_id' => $creditNote->credit_note_id,
                 'currency_id' => $payment->currency_id,
                 'amount_minor' => $amountMinor,
                 'status' => 'PENDING',
@@ -76,12 +111,14 @@ class BillingRefundService
                 'processed_by' => $actor->user_id,
             ]);
 
+            // The credit note already reduced A/R (and created a customer credit when overpaid).
+            // Cash settlement consumes that customer credit: Dr A/R, Cr Treasury.
             $this->ledger->post(
                 (int) $payment->currency_id,
-                'استرداد دفعة '.$payment->payment_reference.' - '.$refund->refund_reference,
+                'تسوية استرداد '.$refund->refund_reference.' من الإشعار '.$creditNote->credit_note_number,
                 'billing-refund-'.$refund->refund_id,
                 [
-                    ['ledger_account_id' => $accounts['4190']->ledger_account_id, 'debit_minor' => $amountMinor, 'credit_minor' => 0],
+                    ['ledger_account_id' => $accounts['1100']->ledger_account_id, 'debit_minor' => $amountMinor, 'credit_minor' => 0],
                     ['ledger_account_id' => $treasuryLedger->ledger_account_id, 'debit_minor' => 0, 'credit_minor' => $amountMinor],
                 ],
                 $actor,
@@ -93,13 +130,21 @@ class BillingRefundService
             $refund->processed_at = now('Asia/Aden');
             $refund->save();
 
-            $newRefundedTotal = $alreadyRefunded + $amountMinor;
-            $payment->status = $newRefundedTotal === (int) $payment->amount_minor
+            $creditNote->refunded_minor += $amountMinor;
+            if ($creditNote->refunded_minor === (int) $creditNote->refundable_minor) {
+                $creditNote->status = 'REFUNDED';
+            } else {
+                $creditNote->status = 'PARTIALLY_REFUNDED';
+            }
+            $creditNote->save();
+
+            $newPaymentRefunded = $alreadyRefundedFromPayment + $amountMinor;
+            $payment->status = $newPaymentRefunded === (int) $payment->amount_minor
                 ? BillingPaymentStatus::REFUNDED
                 : BillingPaymentStatus::PARTIALLY_REFUNDED;
             $payment->save();
 
-            return $refund->load(['payment', 'currency']);
+            return $refund->load(['payment', 'currency', 'creditNote']);
         }, 3);
     }
 }

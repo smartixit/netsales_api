@@ -823,3 +823,15 @@ This log documents all executed tasks, code changes, and verification command ou
 - Allowed recovery from an initially expired non-payment subscription only after its full invoice is settled; if the invoiced period has already elapsed, a fresh paid period begins at settlement rather than granting expired historical access.
 - Ensured zero-value initial activation schedules its pre-renewal alerts.
 - Automated tests, migration execution, and GitHub Actions remain deferred to the final validation stage.
+
+
+### Credit note and refund settlement workflow — 2026-11-10
+- Added credit note idempotency, accounting treatment, receivable-applied amount, refundable amount, and refunded amount snapshots.
+- Added immutable issued credit note and credit note line lifecycle guards.
+- Added Platform Scope credit-note issuance endpoint with per-invoice-line and per-invoice over-credit protection.
+- Credit notes offset outstanding receivables first; only the excess against net collected funds becomes refundable customer credit.
+- Added currency, invoice, payment, and credit-note consistency checks to cash refund settlement.
+- Cash refunds now require an issued credit note, cannot exceed the payment's remaining refundable amount or the credit note's remaining refundable amount, and debit customer receivables/credit while crediting the matching treasury account.
+- Added invoice states for partially credited and fully credited invoices, and exposed credit note balances in invoice resources.
+- Allowed the final transition from partially refunded payment to fully refunded.
+- Automated tests, migration execution, and GitHub Actions remain deferred to the final validation stage.

@@ -55,7 +55,7 @@ class BillingPlatformReadService
 
     public function invoices(array $filters = []): Collection|CursorPaginator
     {
-        $query = BillingInvoice::query()->with(['billingAccount.network', 'currency', 'subscription.plan', 'lines']);
+        $query = BillingInvoice::query()->with(['billingAccount.network', 'currency', 'subscription.plan', 'lines', 'creditNotes.currency']);
 
         if (! empty($filters['network_id'])) {
             $query->whereHas('billingAccount', fn (Builder $builder) => $builder->where('network_id', (int) $filters['network_id']));

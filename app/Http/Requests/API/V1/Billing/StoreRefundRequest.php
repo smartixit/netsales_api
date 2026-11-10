@@ -18,6 +18,7 @@ class StoreRefundRequest extends FormRequest
     {
         return [
             'idempotency_key' => ['required', 'string', 'min:8', 'max:128'],
+            'credit_note_id' => ['required', 'integer', 'exists:billing_credit_notes,credit_note_id'],
             'treasury_account_id' => ['required', 'integer', 'exists:treasury_accounts,treasury_account_id'],
             'amount_minor' => ['required', 'integer', 'min:1'],
             'reason' => ['required', 'string', 'min:3', 'max:1000'],

@@ -95,3 +95,11 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - A late settlement of an initially expired invoice can restore the subscription only by starting a fresh paid period if the original period elapsed.
 - The duplicate payment idempotency-key migration operation has been removed.
 - Automated validation and migrations remain pending by instruction.
+
+
+### Credit note and refund workflow — 2026-11-10
+- Platform credit-note issuance now records invoice-line allocations, immutable amounts, accounting treatment, receivable offsets, and refundable customer credit.
+- Refunds require a matching issued credit note and are limited by both payment and credit-note remaining refundable balances.
+- Credit note issuance and cash settlement are separately posted to the same-currency ledger.
+- Invoice API responses can expose the related credit notes and their applied/refundable/refunded balances.
+- Tests, migration execution, and CI remain pending by instruction.

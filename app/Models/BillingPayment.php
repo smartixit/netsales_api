@@ -13,7 +13,7 @@ class BillingPayment extends Model {
  protected static function booted(): void {
   static::updating(function (self $payment): void {
    $originalStatus = $payment->getRawOriginal('status');
-   $refundTransition = $originalStatus === BillingPaymentStatus::VERIFIED->value
+   $refundTransition = in_array($originalStatus, [BillingPaymentStatus::VERIFIED->value, BillingPaymentStatus::PARTIALLY_REFUNDED->value], true)
     && $payment->isDirty('status')
     && in_array($payment->status, [BillingPaymentStatus::REFUNDED, BillingPaymentStatus::PARTIALLY_REFUNDED], true);
    if ($originalStatus !== BillingPaymentStatus::PENDING_REVIEW->value && ! $refundTransition) {

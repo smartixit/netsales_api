@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
-use App\Http\Requests\API\V1\Billing\{RejectPaymentRequest, StoreCurrencyConversionRequest, StoreExchangeRateRequest, StoreRefundRequest, StoreTreasuryAccountRequest, VerifyPaymentRequest};
+use App\Http\Requests\API\V1\Billing\{RejectPaymentRequest, StoreCurrencyConversionRequest, StoreExchangeRateRequest, StoreRefundRequest, StoreCreditNoteRequest, StoreTreasuryAccountRequest, VerifyPaymentRequest};
 use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingInvoiceResource, BillingPaymentResource, BillingSubscriptionResource, CurrencyExchangeRateResource, CurrencyConversionResource, CurrencyResource, LedgerJournalEntryResource, PaymentMethodResource, TreasuryAccountResource};
-use App\Services\Billing\{BillingDashboardService, BillingInvoiceService, BillingPaymentService, BillingPlatformReadService, BillingRefundService, BillingTreasuryService, CurrencyExchangeService};
+use App\Services\Billing\{BillingDashboardService, BillingCreditNoteService, BillingInvoiceService, BillingPaymentService, BillingPlatformReadService, BillingRefundService, BillingTreasuryService, CurrencyExchangeService};
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -19,7 +19,8 @@ class BillingFinanceController extends BaseController
         private BillingInvoiceService $invoices,
         private CurrencyExchangeService $exchange,
         private BillingDashboardService $dashboard,
-        private BillingRefundService $refunds
+        private BillingRefundService $refunds,
+        private BillingCreditNoteService $creditNotes
     ) {}
 
     public function overview(Request $request): JsonResponse
@@ -135,6 +136,7 @@ class BillingFinanceController extends BaseController
         try {
             $payment = $this->payments->verify(
                 $paymentId,
+                (int) $request->input('credit_note_id'),
                 (int) $request->input('treasury_account_id'),
                 $this->requireCurrentUser(),
                 $request->input('note')
@@ -161,11 +163,50 @@ class BillingFinanceController extends BaseController
         }
     }
 
+    public function issueCreditNote(StoreCreditNoteRequest $request, int $invoiceId): JsonResponse
+    {
+        try {
+            $note = $this->creditNotes->issue(
+                $invoiceId,
+                $request->input('lines'),
+                (string) $request->input('reason'),
+                (string) $request->input('accounting_treatment'),
+                (string) $request->input('idempotency_key'),
+                $this->requireCurrentUser()
+            );
+
+            return $this->successResponse('تم إصدار الإشعار الدائن وتحديث الذمم ورصيد العميل.', [
+                'credit_note_id' => $note->credit_note_id,
+                'credit_note_number' => $note->credit_note_number,
+                'invoice_id' => $note->invoice_id,
+                'currency' => new CurrencyResource($note->currency),
+                'accounting_treatment' => $note->accounting_treatment,
+                'subtotal_minor' => $note->subtotal_minor,
+                'tax_minor' => $note->tax_minor,
+                'total_minor' => $note->total_minor,
+                'applied_to_receivable_minor' => $note->applied_to_receivable_minor,
+                'refundable_minor' => $note->refundable_minor,
+                'refunded_minor' => $note->refunded_minor,
+                'status' => $note->status,
+                'reason' => $note->reason,
+                'issued_at' => $note->issued_at,
+                'lines' => $note->lines->map(fn ($line) => [
+                    'invoice_line_id' => $line->invoice_line_id,
+                    'description' => $line->description,
+                    'amount_minor' => $line->amount_minor,
+                ]),
+            ], 201);
+        } catch (ValidationException $exception) {
+            return $this->validationErrorResponse($exception);
+        }
+    }
+
     public function refundPayment(StoreRefundRequest $request, int $paymentId): JsonResponse
     {
         try {
             $refund = $this->refunds->refund(
                 $paymentId,
+                (int) $request->input('credit_note_id'),
                 (int) $request->input('treasury_account_id'),
                 (int) $request->input('amount_minor'),
                 (string) $request->input('reason'),
@@ -173,10 +214,11 @@ class BillingFinanceController extends BaseController
                 $this->requireCurrentUser()
             );
 
-            return $this->successResponse('تم تنفيذ الاسترداد وترحيل قيده المالي.', [
+            return $this->successResponse('تم تسوية الاسترداد من رصيد الإشعار الدائن وترحيل القيد المالي.', [
                 'refund_id' => $refund->refund_id,
                 'refund_reference' => $refund->refund_reference,
                 'payment_id' => $refund->payment_id,
+                'credit_note_id' => $refund->credit_note_id,
                 'currency' => new CurrencyResource($refund->currency),
                 'amount_minor' => $refund->amount_minor,
                 'status' => $refund->status,
