@@ -22,6 +22,7 @@ class BillingAccountService
         return BillingAccount::query()
             ->with(['defaultCurrency', 'contacts'])
             ->where('network_id', $networkId)
+            ->orderBy('billing_account_id')
             ->firstOrFail();
     }
 
@@ -38,7 +39,7 @@ class BillingAccountService
             }
 
             $account = BillingAccount::query()->firstOrCreate(
-                ['network_id' => $networkId],
+                ['network_id' => $networkId, 'default_currency_id' => $currency->currency_id],
                 [
                     'account_number' => 'BILL-'.str_pad((string) $networkId, 8, '0', STR_PAD_LEFT).'-'.Str::upper(Str::random(4)),
                     'default_currency_id' => $currency->currency_id,
@@ -49,12 +50,6 @@ class BillingAccountService
                     'billing_address' => $network->network_address,
                 ]
             );
-
-            if ((int) $account->default_currency_id !== (int) $currency->currency_id) {
-                throw ValidationException::withMessages([
-                    'currency_id' => ['حساب الفوترة موجود بعملة أخرى؛ لا يمكن تبديل العملة بعد إنشاء الحساب.'],
-                ]);
-            }
 
             return $account->load(['defaultCurrency', 'contacts']);
         }, 3);

@@ -104,7 +104,7 @@ return new class extends Migration
 
         Schema::create('billing_accounts', function (Blueprint $table): void {
             $table->id('billing_account_id');
-            $table->foreignId('network_id')->unique()->constrained('networks', 'network_id')->restrictOnDelete();
+            $table->foreignId('network_id')->constrained('networks', 'network_id')->restrictOnDelete();
             $table->string('account_number', 40)->unique();
             $table->string('legal_name', 160)->nullable();
             $table->string('billing_email', 160)->nullable();
@@ -112,6 +112,7 @@ return new class extends Migration
             $table->text('billing_address')->nullable();
             $table->foreignId('default_currency_id')->constrained('currencies', 'currency_id')->restrictOnDelete();
             $table->unsignedSmallInteger('payment_terms_days')->default(0);
+            $table->unique(['network_id', 'default_currency_id'], 'uq_billing_account_network_currency');
             $table->string('status', 16)->default('ACTIVE')->index();
             $table->foreignId('created_by')->nullable()->constrained('users', 'user_id')->nullOnDelete();
             $table->timestamps();
