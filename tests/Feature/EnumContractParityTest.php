@@ -85,11 +85,11 @@ class EnumContractParityTest extends TestCase
         LinkingChallengeStatus::class,
     ];
 
-    public function test_all_24_enums_exist_and_are_backed(): void
+    public function test_canonical_enums_exist_and_are_backed(): void
     {
-        $this->assertCount(25, self::ALL_24_ENUMS);
+        $this->assertCount(25, self::ALL_ENUMS);
 
-        foreach (self::ALL_24_ENUMS as $enumClass) {
+        foreach (self::ALL_ENUMS as $enumClass) {
             $this->assertTrue(enum_exists($enumClass), "Enum {$enumClass} must exist.");
             $reflection = new \ReflectionEnum($enumClass);
             $this->assertTrue($reflection->isBacked(), "Enum {$enumClass} must be backed.");
@@ -97,9 +97,9 @@ class EnumContractParityTest extends TestCase
         }
     }
 
-    public function test_all_24_enums_implement_non_empty_arabic_label(): void
+    public function test_canonical_enums_implement_non_empty_arabic_label(): void
     {
-        foreach (self::ALL_24_ENUMS as $enumClass) {
+        foreach (self::ALL_ENUMS as $enumClass) {
             $cases = $enumClass::cases();
             $this->assertNotEmpty($cases, "Enum {$enumClass} must have cases.");
 
