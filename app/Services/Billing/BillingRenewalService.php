@@ -136,7 +136,10 @@ class BillingRenewalService
                 $subscription->status = $wasTrial
                     ? BillingSubscriptionStatus::INCOMPLETE
                     : BillingSubscriptionStatus::PAST_DUE;
-                $subscription->grace_period_ends_at = now('Asia/Aden')->addDays((int) $subscription->dunning_policy_snapshot['grace_period_days']);
+                $dueDate = $invoice->due_on?->toDateString() ?? now('Asia/Aden')->toDateString();
+                $subscription->grace_period_ends_at = CarbonImmutable::parse($dueDate, 'Asia/Aden')
+                    ->endOfDay()
+                    ->addDays((int) $subscription->dunning_policy_snapshot['grace_period_days']);
                 $subscription->save();
 
                 $subscription->events()->create([

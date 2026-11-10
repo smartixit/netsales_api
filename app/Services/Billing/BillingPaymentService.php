@@ -124,10 +124,25 @@ class BillingPaymentService
         $this->authorization->assertPlatform($reviewer);
 
         return DB::transaction(function () use ($paymentId, $treasuryAccountId, $reviewer, $note): BillingPayment {
+            // Keep the global billing lock order consistent: Invoice -> Payment -> Treasury.
+            // The payment's invoice_id is immutable after creation, so the initial read only locates its parent.
+            $paymentInvoiceId = BillingPayment::query()
+                ->whereKey($paymentId)
+                ->value('invoice_id');
+
+            if ($paymentInvoiceId === null) {
+                throw ValidationException::withMessages(['payment_id' => ['سجل الدفعة غير موجود.']]);
+            }
+
+            $invoice = BillingInvoice::query()->lockForUpdate()->findOrFail((int) $paymentInvoiceId);
             $payment = BillingPayment::query()
                 ->with(['currency', 'paymentMethod'])
                 ->lockForUpdate()
                 ->findOrFail($paymentId);
+
+            if ((int) $payment->invoice_id !== (int) $invoice->invoice_id) {
+                throw ValidationException::withMessages(['invoice_id' => ['ارتباط الدفعة بالفاتورة غير متسق.']]);
+            }
 
             if ($payment->status === BillingPaymentStatus::VERIFIED) {
                 return $payment->load(['invoice', 'treasuryAccount', 'proofs']);
@@ -136,8 +151,6 @@ class BillingPaymentService
             if ($payment->status !== BillingPaymentStatus::PENDING_REVIEW) {
                 throw ValidationException::withMessages(['payment_id' => ['لا يمكن اعتماد دفعة ليست قيد المراجعة.']]);
             }
-
-            $invoice = BillingInvoice::query()->lockForUpdate()->findOrFail($payment->invoice_id);
 
             if (! in_array($invoice->status, [BillingInvoiceStatus::OPEN, BillingInvoiceStatus::PARTIALLY_PAID], true)
                 || (int) $invoice->remaining_minor < (int) $payment->amount_minor) {

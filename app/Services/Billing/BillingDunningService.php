@@ -11,7 +11,10 @@ class BillingDunningService
 {
     public function scheduleForInvoice(BillingInvoice $invoice): void
     {
+        $invoice->loadMissing('subscription');
         $schedule = (array) ($invoice->subscription?->dunning_policy_snapshot['reminder_schedule_days'] ?? [0, 1, 3, 7]);
+        $dueDate = $invoice->due_on?->toDateString() ?? now('Asia/Aden')->toDateString();
+        $reminderBase = CarbonImmutable::parse($dueDate, 'Asia/Aden')->setTime(9, 0);
         foreach ($schedule as $index => $day) {
             BillingDunningAttempt::query()->firstOrCreate(
                 [
@@ -21,7 +24,7 @@ class BillingDunningService
                 [
                     'status' => 'PENDING',
                     'channel' => 'OUTBOX',
-                    'scheduled_at' => now('Asia/Aden')->addDays((int) $day),
+                    'scheduled_at' => $reminderBase->addDays(max(0, (int) $day)),
                 ]
             );
         }
@@ -55,6 +58,7 @@ class BillingDunningService
                 $subscription = BillingSubscription::query()->with('billingAccount.network')->lockForUpdate()->find($alert->billing_subscription_id);
                 if (! $subscription
                     || ! in_array($subscription->status, [BillingSubscriptionStatus::ACTIVE, BillingSubscriptionStatus::TRIALING], true)
+                    || $subscription->cancel_at_period_end
                     || ! $subscription->current_period_end
                     || $subscription->current_period_end->lte(now('Asia/Aden'))
                     || ! $subscription->current_period_end->equalTo($alert->period_end)) {

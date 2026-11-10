@@ -91,7 +91,7 @@ class BillingOutboxNotificationDispatcher
             ->find((int) ($payload['billing_subscription_id'] ?? 0));
 
         $ownerId = $subscription?->billingAccount?->network?->owner_id;
-        if (! $subscription || ! $ownerId || ! in_array($subscription->status->value, ['ACTIVE', 'TRIALING'], true)) {
+        if (! $subscription || ! $ownerId || $subscription->cancel_at_period_end || ! in_array($subscription->status->value, ['ACTIVE', 'TRIALING'], true)) {
             return [null, null, null, null, []];
         }
 

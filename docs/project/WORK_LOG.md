@@ -810,3 +810,16 @@ This log documents all executed tasks, code changes, and verification command ou
 - Retired subscription keys are rejected on create/update/read-by-key and are skipped in batch setting updates.
 - Published policy versions are now immutable, including their status field.
 - No tests, migrations, or GitHub Actions were run; they remain deferred to the final plan stage.
+
+
+### Billing lifecycle consistency pass — 2026-11-10
+- Removed the duplicate payment idempotency-key column alteration from the later treasury-ledger migration; the column and unique index are already created with billing_payments.
+- Anchored invoice dunning reminders to the invoice due date and the policy's day offsets instead of scheduling them relative to invoice creation.
+- Anchored initial and renewal grace-period deadlines to the invoice due date plus the configured grace days.
+- Prevented pre-renewal alerts from being queued after a customer schedules cancellation at period end.
+- Cancelled pending renewal alerts when cancellation is scheduled or performed immediately; revoked outstanding trial redemptions on immediate cancellation.
+- Restricted period-end cancellation scheduling to ACTIVE/TRIALING subscriptions with a future service period; other states must use immediate cancellation.
+- Standardized payment verification lock ordering to Invoice -> Payment -> Treasury, matching payment registration and reducing avoidable deadlock risk.
+- Allowed recovery from an initially expired non-payment subscription only after its full invoice is settled; if the invoiced period has already elapsed, a fresh paid period begins at settlement rather than granting expired historical access.
+- Ensured zero-value initial activation schedules its pre-renewal alerts.
+- Automated tests, migration execution, and GitHub Actions remain deferred to the final validation stage.

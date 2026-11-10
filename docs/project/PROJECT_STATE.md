@@ -86,3 +86,12 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Billing reminders are delivered through the existing notification service from Outbox with a unique message UUID delivery guard.
 - Manual trial approval/rejection and audited trial adjustment routes are exposed under Platform Scope.
 - Automated tests, migration execution, and GitHub Actions remain pending by user instruction.
+
+
+### Billing lifecycle consistency — 2026-11-10
+- Invoice reminders and grace-period deadlines are now anchored to contractual invoice due dates.
+- Cancellation scheduling is limited to live subscriptions with a future period; pending renewal alerts are cancelled on cancellation.
+- Payment verification now uses the global Invoice -> Payment -> Treasury lock order.
+- A late settlement of an initially expired invoice can restore the subscription only by starting a fresh paid period if the original period elapsed.
+- The duplicate payment idempotency-key migration operation has been removed.
+- Automated validation and migrations remain pending by instruction.

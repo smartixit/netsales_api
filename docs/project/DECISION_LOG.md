@@ -114,3 +114,11 @@ Valid statuses are strictly:
 - **System Settings:** Remove the `SUBSCRIPTION` category and its trial/grace/suspension/expiry-alert keys. System Settings must reject creation, update, and lookup/filter operations for the retired category. Policy management is available only under Platform Scope billing APIs.
 - **Compatibility:** Existing plan-version trial durations are migrated to equivalent immutable policy versions; zero-day plans remain explicitly non-trial. The platform default is disabled with zero duration, so newly created plans do not receive an unintended free trial. Existing subscription records receive explicit trial and dunning policy snapshots during migration.
 - **Consequence:** Changing a policy affects only future subscriptions/assignments; existing subscriptions continue using their stored snapshots.
+
+
+### Billing collection timing and lock order — 2026-11-10
+- Dunning reminder offsets are measured from the invoice due date, not invoice creation time.
+- Grace periods are measured from the due date, then extended by the policy's configured number of days.
+- Billing lock order for invoice collection is Invoice -> Payment -> Treasury; all collection paths must preserve this order.
+- Period-end cancellation is only available while an ACTIVE/TRIALING service period is still in the future. Immediate cancellation revokes any reserved/active trial redemption and suppresses queued renewal alerts.
+- Settlement of an invoice after the originally billed period elapsed does not grant retroactive service time; the paid period restarts at settlement.

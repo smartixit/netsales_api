@@ -191,6 +191,7 @@ class BillingSubscriptionService
                 $subscription->current_period_start = $now;
                 $subscription->current_period_end = $periodEnd;
                 $subscription->save();
+                $this->dunning->scheduleSubscriptionAlerts($subscription);
 
                 $subscription->events()->create([
                     'event_type' => 'ZERO_VALUE_SUBSCRIPTION_ACTIVATED',
@@ -201,7 +202,10 @@ class BillingSubscriptionService
                     'occurred_at' => now('Asia/Aden'),
                 ]);
             } elseif ($invoice->status !== BillingInvoiceStatus::PAID) {
-                $graceEndsAt = now('Asia/Aden')->addDays((int) $subscription->dunning_policy_snapshot['grace_period_days']);
+                $dueDate = $invoice->due_on?->toDateString() ?? now('Asia/Aden')->toDateString();
+                $graceEndsAt = CarbonImmutable::parse($dueDate, 'Asia/Aden')
+                    ->endOfDay()
+                    ->addDays((int) $subscription->dunning_policy_snapshot['grace_period_days']);
                 $subscription->grace_period_ends_at = $graceEndsAt;
                 $subscription->save();
 
@@ -265,15 +269,36 @@ class BillingSubscriptionService
                 throw ValidationException::withMessages(['subscription_id' => ['لا يمكن إلغاء الاشتراك في حالته الحالية.']]);
             }
 
+            if ($atPeriodEnd && (
+                ! in_array($subscription->status, [BillingSubscriptionStatus::ACTIVE, BillingSubscriptionStatus::TRIALING], true)
+                || ! $subscription->current_period_end
+                || $subscription->current_period_end->lte(now('Asia/Aden'))
+            )) {
+                throw ValidationException::withMessages([
+                    'cancel_at_period_end' => ['لا يمكن جدولة الإلغاء لنهاية فترة منتهية أو لا تملك فترة خدمة نشطة؛ استخدم الإلغاء الفوري.'],
+                ]);
+            }
+
             $oldStatus = $subscription->status->value;
             if ($atPeriodEnd) {
                 $subscription->cancel_at_period_end = true;
+                BillingSubscriptionAlert::query()
+                    ->where('billing_subscription_id', $subscription->billing_subscription_id)
+                    ->where('status', 'PENDING')
+                    ->update(['status' => 'CANCELLED']);
                 $eventType = 'CANCELLATION_SCHEDULED';
             } else {
                 $subscription->status = BillingSubscriptionStatus::CANCELED;
                 $subscription->cancel_at_period_end = false;
                 $subscription->canceled_at = now('Asia/Aden');
                 $subscription->ended_at = now('Asia/Aden');
+                $subscription->trialRedemption()
+                    ->whereIn('status', ['RESERVED', 'PENDING_APPROVAL', 'ACTIVE'])
+                    ->update(['status' => 'REVOKED', 'completed_at' => now('Asia/Aden')]);
+                BillingSubscriptionAlert::query()
+                    ->where('billing_subscription_id', $subscription->billing_subscription_id)
+                    ->where('status', 'PENDING')
+                    ->update(['status' => 'CANCELLED']);
                 $eventType = 'SUBSCRIPTION_CANCELED';
             }
 
