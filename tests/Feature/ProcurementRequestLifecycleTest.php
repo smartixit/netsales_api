@@ -516,4 +516,137 @@ class ProcurementRequestLifecycleTest extends TestCase
         $approveCancelledResponse->assertStatus(422)
             ->assertJsonValidationErrors(['status']);
     }
+
+    /**
+     * اختبار معاينة واحتساب عرض الأسعار الرسمي والرموز الموقعة (Phase 3.1 Quote Endpoint).
+     */
+    public function test_quote_endpoint_returns_authoritative_pricing_and_pricing_token(): void
+    {
+        $payload = [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'sale_type' => 'CASH',
+            'items' => [
+                [
+                    'package_id' => $this->package->package_id,
+                    'voucher_count' => 100,
+                ],
+            ],
+        ];
+
+        $response = $this->withHeaders($this->headers)
+            ->postJson('/api/v1/requests/quote', $payload);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonStructure([
+                'data' => [
+                    'network_id',
+                    'pos_id',
+                    'sale_type',
+                    'gross_total',
+                    'discount_total',
+                    'net_total',
+                    'pricing_token',
+                    'expires_at',
+                    'items' => [
+                        '*' => [
+                            'package_id',
+                            'package_name',
+                            'voucher_count',
+                            'unit_price',
+                            'discount_rate',
+                            'effective_price',
+                            'line_gross_total',
+                            'line_discount_amount',
+                            'line_net_total',
+                            'pricing_token',
+                        ],
+                    ],
+                ],
+            ]);
+
+        $this->assertNotEmpty($response->json('data.pricing_token'));
+    }
+
+    /**
+     * اختبار تقديم الطلب بنجاح باستخدام رمز التسعير الموثق الصادر من الخادم.
+     */
+    public function test_request_store_with_valid_pricing_token_succeeds(): void
+    {
+        $quoteResponse = $this->withHeaders($this->headers)
+            ->postJson('/api/v1/requests/quote', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'sale_type' => 'CASH',
+                'items' => [
+                    [
+                        'package_id' => $this->package->package_id,
+                        'voucher_count' => 50,
+                    ],
+                ],
+            ]);
+
+        $quoteResponse->assertStatus(200);
+        $pricingToken = $quoteResponse->json('data.pricing_token');
+
+        $storeResponse = $this->withHeaders($this->headers)
+            ->postJson('/api/v1/requests', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'sale_type' => 'CASH',
+                'pricing_token' => $pricingToken,
+                'items' => [
+                    [
+                        'package_id' => $this->package->package_id,
+                        'voucher_count' => 50,
+                    ],
+                ],
+            ]);
+
+        $storeResponse->assertStatus(201)
+            ->assertJsonPath('success', true);
+    }
+
+    /**
+     * اختبار رفض تقديم الطلب عند تغير أسعار الباقات لدى الشبكة بعد الحصول على عرض الأسعار.
+     */
+    public function test_request_store_with_changed_package_price_rejects_with_pricing_validation_error(): void
+    {
+        $quoteResponse = $this->withHeaders($this->headers)
+            ->postJson('/api/v1/requests/quote', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'sale_type' => 'CASH',
+                'items' => [
+                    [
+                        'package_id' => $this->package->package_id,
+                        'voucher_count' => 50,
+                    ],
+                ],
+            ]);
+
+        $quoteResponse->assertStatus(200);
+        $pricingToken = $quoteResponse->json('data.pricing_token');
+
+        // تغيير سعر الباقة في قاعدة البيانات لمحاكاة تحديث الشبكة للتسعير
+        $this->package->update(['package_voucher_price' => $this->package->package_voucher_price + 50]);
+
+        $storeResponse = $this->withHeaders($this->headers)
+            ->postJson('/api/v1/requests', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'sale_type' => 'CASH',
+                'pricing_token' => $pricingToken,
+                'items' => [
+                    [
+                        'package_id' => $this->package->package_id,
+                        'voucher_count' => 50,
+                    ],
+                ],
+            ]);
+
+        $storeResponse->assertStatus(422)
+            ->assertJsonValidationErrors(['pricing']);
+    }
 }

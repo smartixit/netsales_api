@@ -79,8 +79,17 @@ class StoreRequestRequest extends FormRequest
                 'integer',
                 'min:1',
             ],
+            'pricing_token' => [
+                'nullable',
+                'string',
+            ],
             // NOTE: voucher_price & item_discount NO LONGER accepted from client (backend uses catalog/effective).
         ];
+    }
+
+    public function getPricingToken(): ?string
+    {
+        return $this->input('pricing_token');
     }
 
     public function getNetworkId(): int

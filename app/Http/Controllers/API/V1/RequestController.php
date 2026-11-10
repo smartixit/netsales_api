@@ -6,6 +6,7 @@ use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Common\RejectRequest;
 use App\Http\Requests\API\V1\Request\ApproveRequestRequest;
 use App\Http\Requests\API\V1\Request\PreviewRequestModificationRequest;
+use App\Http\Requests\API\V1\Request\QuoteRequestRequest;
 use App\Http\Requests\API\V1\Request\StoreRequestRequest;
 use App\Http\Requests\API\V1\Request\UpdateRequestRequest;
 use App\Http\Resources\API\V1\Request\RequestResource;
@@ -124,6 +125,62 @@ class RequestController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('تعذر عرض بيانات الطلب: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * احتساب ومعاينة عرض أسعار سيادي معتمد لطلب توريد جديد مع إصدار رمز توثيق تسعيري.
+     */
+    #[OA\Post(
+        path: '/api/v1/requests/quote',
+        summary: 'معاينة واحتساب عرض أسعار سيادي معتمد لطلب توريد جديد',
+        tags: ['Voucher Requests'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات طلب عرض الأسعار',
+            content: new OA\MediaType(
+                mediaType: 'application/json',
+                schema: new OA\Schema(
+                    required: ['network_id', 'pos_id', 'items'],
+                    properties: [
+                        new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'pos_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'sale_type', type: 'string', example: 'CASH'),
+                        new OA\Property(
+                            property: 'items',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(property: 'package_id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'voucher_count', type: 'integer', example: 100),
+                                ]
+                            )
+                        ),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'تم احتساب عرض الأسعار بنجاح'),
+        ]
+    )]
+    public function quote(QuoteRequestRequest $request): JsonResponse
+    {
+        try {
+            $userId = $this->currentUserId();
+            $result = $this->requestService->quoteNewRequest(
+                $request->getNetworkId(),
+                $request->getPosId(),
+                $request->getSaleType(),
+                $request->getItems(),
+                $userId
+            );
+
+            return $this->successResponse('تم احتساب عرض الأسعار الرسمي المعتمد من الخادم بنجاح.', $result);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر احتساب عرض الأسعار: '.$e->getMessage(), [], 422);
         }
     }
 

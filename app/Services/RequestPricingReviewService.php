@@ -383,4 +383,228 @@ class RequestPricingReviewService
             'removed_items' => $removedItems,
         ];
     }
+
+    /**
+     * احتساب عرض أسعار سيادي معتمد لطلب توريد جديد مع توليد رمز توثيق تسعيري.
+     *
+     * @param  array<int, array{package_id: int, voucher_count: int}>  $items
+     * @return array<string, mixed>
+     */
+    public function quoteNewRequest(
+        int $networkId,
+        int $posId,
+        SaleType $saleType,
+        array $items
+    ): array {
+        $quoteItems = [];
+        $grossTotal = 0.0;
+        $netTotal = 0.0;
+
+        foreach ($items as $item) {
+            $packageId = (int) $item['package_id'];
+            $voucherCount = (int) $item['voucher_count'];
+
+            if ($voucherCount < 1) {
+                throw ValidationException::withMessages([
+                    'items' => ["الكمية المطلوبة للباقة [{$packageId}] يجب أن تكون كرت واحد على الأقل."],
+                ]);
+            }
+
+            $package = $this->voucherPackageRepository->findById($packageId);
+            if (! $package || (int) $package->network_id !== $networkId) {
+                $pkgName = $package ? $package->package_name : (string) $packageId;
+                throw ValidationException::withMessages([
+                    'items' => ["الباقة ({$pkgName}) لا تنتمي لمزود الشبكة المحدد."],
+                ]);
+            }
+            $package->ensureActive();
+
+            $unitPrice = (float) $package->package_voucher_price;
+            $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $packageId);
+            $discountPercent = $saleType->isCash()
+                ? (float) ($discountData['discount_cash'] ?? 0.0)
+                : (float) ($discountData['discount_credit'] ?? 0.0);
+
+            $lineGross = $voucherCount * $unitPrice;
+            $lineNet = round($lineGross * (1.0 - ($discountPercent / 100.0)), 2);
+            $lineDiscount = round($lineGross - $lineNet, 2);
+            $effectiveUnitPrice = round($unitPrice * (1.0 - ($discountPercent / 100.0)), 2);
+
+            $grossTotal += $lineGross;
+            $netTotal += $lineNet;
+
+            $itemToken = $this->generatePricingToken(
+                0,
+                $networkId,
+                $posId,
+                $packageId,
+                $saleType,
+                $unitPrice,
+                $discountPercent
+            );
+
+            $quoteItems[] = [
+                'package_id' => $packageId,
+                'package_name' => $package->package_name,
+                'package_color' => $package->package_color,
+                'package_voucher_count' => (int) $package->package_voucher_count,
+                'voucher_count' => $voucherCount,
+                'unit_price' => $unitPrice,
+                'discount_rate' => $discountPercent,
+                'effective_price' => $effectiveUnitPrice,
+                'line_gross_total' => round($lineGross, 2),
+                'line_discount_amount' => $lineDiscount,
+                'line_net_total' => $lineNet,
+                'is_custom_discount' => (bool) ($discountData['is_custom'] ?? false),
+                'pricing_token' => $itemToken,
+            ];
+        }
+
+        $grossTotal = round($grossTotal, 2);
+        $netTotal = round($netTotal, 2);
+        $discountTotal = round($grossTotal - $netTotal, 2);
+
+        $orderToken = $this->generateOrderPricingToken(
+            $networkId,
+            $posId,
+            $saleType,
+            $netTotal,
+            $quoteItems
+        );
+
+        return [
+            'network_id' => $networkId,
+            'pos_id' => $posId,
+            'sale_type' => $saleType->value,
+            'sale_type_label' => $saleType->label(),
+            'gross_total' => $grossTotal,
+            'discount_total' => $discountTotal,
+            'net_total' => $netTotal,
+            'currency' => 'YER',
+            'pricing_token' => $orderToken,
+            'expires_at' => now('Asia/Aden')->addMinutes(30)->toIso8601String(),
+            'items' => $quoteItems,
+        ];
+    }
+
+    /**
+     * توليد رمز تسعيري شامل للطلب كاملاً موقّع ببصمة HMAC.
+     */
+    public function generateOrderPricingToken(
+        int $networkId,
+        int $posId,
+        SaleType $saleType,
+        float $netTotal,
+        array $items
+    ): string {
+        $itemsSnapshot = array_map(fn ($it) => [
+            'pid' => (int) $it['package_id'],
+            'qty' => (int) $it['voucher_count'],
+            'pr' => round((float) $it['unit_price'], 2),
+            'dc' => round((float) $it['discount_rate'], 2),
+        ], $items);
+
+        $payload = [
+            'v' => 1,
+            'nid' => $networkId,
+            'pos' => $posId,
+            'st' => $saleType->value,
+            'tot' => round($netTotal, 2),
+            'it' => $itemsSnapshot,
+            'ts' => now('Asia/Aden')->timestamp,
+        ];
+
+        $json = json_encode($payload, JSON_UNESCAPED_SLASHES);
+        $sig = hash_hmac('sha256', (string) $json, (string) config('app.key'));
+        $packet = json_encode(['d' => $payload, 's' => $sig], JSON_UNESCAPED_SLASHES);
+
+        return rtrim(strtr(base64_encode((string) $packet), '+/', '-_'), '=');
+    }
+
+    /**
+     * التحقق الصارم من صحة وتطابق رمز عرض الأسعار الشامل عند تقديم الطلب.
+     * يرفض الطلب فوراً إذا انتهت صلاحيته أو تم التلاعب به أو تغيرت أسعار الكتالوج أو الخصومات.
+     *
+     * @param array<int, array{package_id: int, voucher_count: int}> $items
+     */
+    public function verifyOrderPricingToken(
+        int $networkId,
+        int $posId,
+        SaleType $saleType,
+        array $items,
+        string $token,
+        int $maxLifetimeSeconds = 1800 // 30 minutes
+    ): void {
+        $decoded = base64_decode(strtr($token, '-_', '+/'), true);
+        if ($decoded === false) {
+            throw ValidationException::withMessages([
+                'pricing' => ['رمز عرض الأسعار غير صالح أو تالف. يرجى مراجعة وتحديث عرض الأسعار.'],
+            ]);
+        }
+
+        $packet = json_decode($decoded, true);
+        if (! is_array($packet) || ! isset($packet['d'], $packet['s'])) {
+            throw ValidationException::withMessages([
+                'pricing' => ['بنية رمز عرض الأسعار غير متوافقة. يرجى طلب معاينة جديدة.'],
+            ]);
+        }
+
+        $payload = $packet['d'];
+        $sig = $packet['s'];
+
+        $expectedSig = hash_hmac('sha256', (string) json_encode($payload, JSON_UNESCAPED_SLASHES), (string) config('app.key'));
+        if (! hash_equals($expectedSig, $sig)) {
+            throw ValidationException::withMessages([
+                'pricing' => ['تم اكتشاف تلاعب أو عدم تطابق في توقيع رمز عرض الأسعار. يرجى إعادة المعاينة.'],
+            ]);
+        }
+
+        if (
+            (int) ($payload['nid'] ?? 0) !== $networkId ||
+            (int) ($payload['pos'] ?? 0) !== $posId ||
+            (string) ($payload['st'] ?? '') !== $saleType->value
+        ) {
+            throw ValidationException::withMessages([
+                'pricing' => ['رمز عرض الأسعار لا يطابق سياق الشبكة أو نقطة البيع أو طريقة الدفع الحالية.'],
+            ]);
+        }
+
+        $timestamp = (int) ($payload['ts'] ?? 0);
+        $now = now('Asia/Aden')->timestamp;
+        if (($now - $timestamp) > $maxLifetimeSeconds) {
+            throw ValidationException::withMessages([
+                'pricing' => ['انتهت صلاحية عرض الأسعار (أكثر من 30 دقيقة). يرجى تحديث المعاينة قبل الإرسال.'],
+            ]);
+        }
+
+        // التحقق الحاسم من ثبات أسعار الكتالوج والخصومات الفعلية الحالية مع ما تم اعتماده في الرمز
+        $tokenItems = $payload['it'] ?? [];
+        $tokenItemsMap = [];
+        foreach ($tokenItems as $ti) {
+            $tokenItemsMap[(int) $ti['pid']] = $ti;
+        }
+
+        foreach ($items as $item) {
+            $packageId = (int) $item['package_id'];
+            if (! isset($tokenItemsMap[$packageId])) {
+                throw ValidationException::withMessages([
+                    'pricing' => ['تغيرت بنود الطلب عن عرض الأسعار المعتمد. يرجى طلب معاينة جديدة.'],
+                ]);
+            }
+
+            $ti = $tokenItemsMap[$packageId];
+            $package = $this->voucherPackageRepository->findById($packageId);
+            $currentPrice = (float) $package->package_voucher_price;
+            $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $packageId);
+            $currentDiscount = $saleType->isCash()
+                ? (float) ($discountData['discount_cash'] ?? 0.0)
+                : (float) ($discountData['discount_credit'] ?? 0.0);
+
+            if (round($currentPrice, 2) !== round((float) $ti['pr'], 2) || round($currentDiscount, 2) !== round((float) $ti['dc'], 2)) {
+                throw ValidationException::withMessages([
+                    'pricing' => ['تم تحديث أسعار الباقات أو شروط الخصم المعتمدة لدى الشبكة. يرجى مراجعة وتحديث عرض الأسعار قبل الإرسال.'],
+                ]);
+            }
+        }
+    }
 }

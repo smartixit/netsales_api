@@ -414,20 +414,18 @@ class BusinessIdentifierGenerator
 
     /**
      * Generate a Wallet Business UUID following NetSales architectural rule:
-     * Format: WAL-{YY}{MM}-{SEQUENCE}-{RANDOM} (e.g. WAL-2601-00001-8F3A)
+     * Format: {SEQUENCE} (e.g. 0000000001)
      */
     public static function forWallet(string $model, ?int $walletId): string
     {
         $generator = self::make()
-            ->pattern('{PREFIX}-{YY}{MM}-{SEQUENCE}-{RANDOM}')
-            ->prefix('WAL')
-            ->random(4)
+            ->pattern('{SEQUENCE}')
             ->uniqueIn($model, 'wallet_uuid', true);
 
         if ($walletId != null) {
-            $generator->id($walletId, 5, '0');
+            $generator->id($walletId, 10, '0');
         } else {
-            $generator->nextIdFrom($model, 'wallet_id', 5);
+            $generator->nextIdFrom($model, 'wallet_id', 10);
         }
 
         return $generator->generate();

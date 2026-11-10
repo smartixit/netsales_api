@@ -1,0 +1,100 @@
+<?php
+
+namespace App\Http\Requests\API\V1\Request;
+
+use App\Enums\SaleType;
+use App\Http\Requests\Traits\LoadsCustomValidationMessages;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class QuoteRequestRequest extends FormRequest
+{
+    use LoadsCustomValidationMessages;
+
+    public function authorize(): bool
+    {
+        $user = $this->user();
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        $posId = (int) $this->input('pos_id');
+        if (! $posId) {
+            return true;
+        }
+
+        if ($user->pos && (int) $user->pos->pos_id === $posId) {
+            return true;
+        }
+
+        if (method_exists($user, 'posUsers') && $user->posUsers()->where('pos_id', $posId)->exists()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'network_id' => [
+                'required',
+                'integer',
+                Rule::exists('networks', 'network_id')->whereNull('deleted_at'),
+            ],
+            'pos_id' => [
+                'required',
+                'integer',
+                Rule::exists('pos', 'pos_id')->whereNull('deleted_at'),
+            ],
+            'sale_type' => [
+                'nullable',
+                Rule::enum(SaleType::class),
+            ],
+            'items' => [
+                'required',
+                'array',
+                'min:1',
+            ],
+            'items.*.package_id' => [
+                'required',
+                'integer',
+                Rule::exists('voucher_packages', 'package_id')->whereNull('deleted_at'),
+            ],
+            'items.*.voucher_count' => [
+                'required',
+                'integer',
+                'min:1',
+            ],
+        ];
+    }
+
+    public function getNetworkId(): int
+    {
+        return (int) $this->input('network_id');
+    }
+
+    public function getPosId(): int
+    {
+        return (int) $this->input('pos_id');
+    }
+
+    public function getSaleType(): SaleType
+    {
+        $saleType = $this->input('sale_type');
+
+        return $saleType ? (SaleType::tryFrom((string) $saleType) ?? SaleType::CASH) : SaleType::CASH;
+    }
+
+    /**
+     * @return array<int, array{package_id: int, voucher_count: int}>
+     */
+    public function getItems(): array
+    {
+        return (array) $this->input('items', []);
+    }
+}

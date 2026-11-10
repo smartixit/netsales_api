@@ -120,6 +120,18 @@ class RequestService
             }
             $link->ensureActive();
 
+            // التحقق الصارم من التسعير والتوثيق إذا تم تزويد رمز عرض الأسعار
+            $pricingToken = $request->getPricingToken();
+            if (! empty($pricingToken)) {
+                $this->pricingReviewService->verifyOrderPricingToken(
+                    $networkId,
+                    $posId,
+                    $saleType,
+                    $items,
+                    $pricingToken
+                );
+            }
+
             // التحقق من صحة الباقات وتبعيتها للشبكة واحتساب الإجمالي مع الخصومات المطبقة
             $totalAmount = 0.0;
             $itemsData = [];
@@ -288,6 +300,57 @@ class RequestService
 
             return $this->getById($requestId);
         });
+    }
+
+    /**
+     * احتساب ومعاينة عرض أسعار سيادي معتمد لطلب توريد جديد.
+     *
+     * @param  array<int, array{package_id: int, voucher_count: int}>  $items
+     * @return array<string, mixed>
+     */
+    public function quoteNewRequest(int $networkId, int $posId, SaleType $saleType, array $items, int $userId): array
+    {
+        if (empty($items)) {
+            throw ValidationException::withMessages([
+                'items' => ['يجب إضافة باقة واحدة على الأقل لاحتساب عرض الأسعار.'],
+            ]);
+        }
+
+        // التحقق من وجود ونشاط الشبكة ونقطة البيع
+        $network = $this->networkRepository->findById($networkId);
+        $network->ensureActive();
+
+        $pos = $this->posRepository->findById($posId);
+        $pos->ensureActive();
+
+        // التحقق من صلاحية المستخدم على نقطة البيع
+        $user = $this->userRepository->findById($userId);
+        if ($user && ! $user->isSuperAdmin()) {
+            $isAuthorized = ($user->pos && (int) $user->pos->pos_id === (int) $posId)
+                || (method_exists($user, 'posUsers') && $user->posUsers()->where('pos_id', $posId)->exists());
+
+            if (! $isAuthorized) {
+                throw ValidationException::withMessages([
+                    'pos_id' => ['غير مصرح لك بطلب عرض أسعار باسم نقطة البيع المحددة.'],
+                ]);
+            }
+        }
+
+        // التحقق من ارتباط نقطة البيع بالشبكة وتفعيله
+        $link = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId);
+        if (! $link) {
+            throw ValidationException::withMessages([
+                'pos_id' => ['نقطة البيع غير مرتبطة بهذه الشبكة.'],
+            ]);
+        }
+        $link->ensureActive();
+
+        return $this->pricingReviewService->quoteNewRequest(
+            $networkId,
+            $posId,
+            $saleType,
+            $items
+        );
     }
 
     /**
