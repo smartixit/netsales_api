@@ -172,7 +172,7 @@ class BillingCreditNoteService
                     $schedule->recognized_minor = (int) $schedule->recognized_minor - $earnedForLineMinor;
                     $schedule->status = (int) $schedule->recognized_minor >= (int) $schedule->total_minor
                         ? 'COMPLETED'
-                        : 'ACTIVE';
+                        : ($schedule->status === 'HOLD' ? 'HOLD' : 'ACTIVE');
                     $recognitionScheduleUpdates[] = $schedule;
                     $deferredCreditMinor = $this->safeAdd($deferredCreditMinor, $deferredForLineMinor);
                     $earnedCreditByAccount['4100'] = $this->safeAdd(
