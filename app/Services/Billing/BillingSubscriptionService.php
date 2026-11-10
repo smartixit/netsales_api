@@ -13,7 +13,8 @@ class BillingSubscriptionService
     public function __construct(
         private BillingAuthorizationService $authorization,
         private BillingInvoiceService $invoices,
-        private BillingDunningService $dunning
+        private BillingDunningService $dunning,
+        private BillingPolicyResolver $policies
     ) {}
 
     /**
@@ -48,7 +49,7 @@ class BillingSubscriptionService
             }
 
             $price = BillingPrice::query()
-                ->with(['currency', 'planVersion.plan.product', 'planVersion.features'])
+                ->with(['currency', 'planVersion.plan.product', 'planVersion.features', 'trialPolicyVersion.policy', 'dunningPolicyVersion.policy'])
                 ->lockForUpdate()
                 ->findOrFail($priceId);
 
@@ -98,21 +99,31 @@ class BillingSubscriptionService
                 BillingInterval::ONE_TIME => null,
             };
 
-            $trialDays = (int) $price->planVersion->trial_days;
-            $isTrial = $trialDays > 0;
+            $resolvedPolicies = $this->policies->resolveForPurchase($price, $account, $network);
+            $trialVersion = $resolvedPolicies['trial_version'];
+            $dunningVersion = $resolvedPolicies['dunning_version'];
+            $isTrial = $trialVersion !== null;
+            $trialDays = $isTrial ? $this->trialDurationDays($trialVersion) : 0;
+            $trialStartsAtPurchase = $isTrial && $trialVersion->start_trigger === 'PURCHASE' && ! $trialVersion->requires_manual_approval;
+            $trialStart = $trialStartsAtPurchase ? $now : null;
+            $trialEnd = $trialStartsAtPurchase ? $this->trialEnd($now, $trialVersion) : null;
             $subscription = BillingSubscription::query()->create([
                 'billing_account_id' => $account->billing_account_id,
                 'plan_id' => $price->planVersion->plan_id,
                 'plan_version_id' => $price->plan_version_id,
                 'price_id' => $price->price_id,
                 'currency_id' => $price->currency_id,
-                'status' => $isTrial ? BillingSubscriptionStatus::TRIALING : BillingSubscriptionStatus::INCOMPLETE,
+                'trial_policy_version_id' => $trialVersion?->trial_policy_version_id,
+                'dunning_policy_version_id' => $dunningVersion->dunning_policy_version_id,
+                'trial_policy_snapshot' => $trialVersion ? $this->policies->snapshot($trialVersion) : null,
+                'dunning_policy_snapshot' => $this->policies->dunningSnapshot($dunningVersion),
+                'status' => $isTrial && $trialStartsAtPurchase ? BillingSubscriptionStatus::TRIALING : BillingSubscriptionStatus::INCOMPLETE,
                 'collection_method' => 'MANUAL',
                 'quantity' => 1,
-                'current_period_start' => $isTrial ? $now : null,
-                'current_period_end' => $isTrial ? $now->addDays($trialDays) : null,
-                'trial_start' => $isTrial ? $now : null,
-                'trial_end' => $isTrial ? $now->addDays($trialDays) : null,
+                'current_period_start' => $trialStart,
+                'current_period_end' => $trialEnd,
+                'trial_start' => $trialStart,
+                'trial_end' => $trialEnd,
                 'terms_snapshot' => [
                     'plan_name' => $price->planVersion->plan->name,
                     'plan_key' => $price->planVersion->plan->plan_key,
@@ -156,7 +167,17 @@ class BillingSubscriptionService
             ]);
 
             if ($isTrial) {
-                return ['subscription' => $subscription->load(['planVersion.features', 'currency', 'price']), 'invoice' => null];
+                $redemption = $this->policies->reserveRedemption($trialVersion, $subscription, $account, $network, $price->planVersion->plan);
+                $subscription->events()->create([
+                    'event_type' => $trialVersion->requires_manual_approval ? 'TRIAL_PENDING_APPROVAL' : 'TRIAL_RESERVED',
+                    'from_status' => null,
+                    'to_status' => $subscription->status->value,
+                    'payload' => ['trial_redemption_id' => $redemption->trial_redemption_id, 'trial_policy_version_id' => $trialVersion->trial_policy_version_id, 'trial_end' => $trialEnd?->toDateTimeString()],
+                    'actor_id' => $actor->user_id,
+                    'occurred_at' => $now,
+                ]);
+
+                return ['subscription' => $subscription->load(['planVersion.features', 'currency', 'price', 'trialRedemption']), 'invoice' => null];
             }
 
             $invoice = $this->invoices->createForSubscription($subscription, $actor);
@@ -177,7 +198,7 @@ class BillingSubscriptionService
                     'occurred_at' => now('Asia/Aden'),
                 ]);
             } elseif ($invoice->status !== BillingInvoiceStatus::PAID) {
-                $graceEndsAt = now('Asia/Aden')->addDays((int) config('billing.grace_period_days', 7));
+                $graceEndsAt = now('Asia/Aden')->addDays((int) $subscription->dunning_policy_snapshot['grace_period_days']);
                 $subscription->grace_period_ends_at = $graceEndsAt;
                 $subscription->save();
 
@@ -201,6 +222,28 @@ class BillingSubscriptionService
                 'invoice' => $invoice,
             ];
         }, 3);
+    }
+
+    private function trialDurationDays(\\App\\Models\\BillingTrialPolicyVersion $version): int
+    {
+        return match ($version->duration_unit) {
+            'HOUR' => max(1, (int) ceil($version->duration_value / 24)),
+            'DAY' => (int) $version->duration_value,
+            'WEEK' => (int) $version->duration_value * 7,
+            'MONTH' => (int) $version->duration_value * 30,
+            default => throw ValidationException::withMessages(['trial_policy' => ['وحدة مدة التجربة غير مدعومة.']]),
+        };
+    }
+
+    private function trialEnd(CarbonImmutable $start, \\App\\Models\\BillingTrialPolicyVersion $version): CarbonImmutable
+    {
+        return match ($version->duration_unit) {
+            'HOUR' => $start->addHours($version->duration_value),
+            'DAY' => $start->addDays($version->duration_value),
+            'WEEK' => $start->addWeeks($version->duration_value),
+            'MONTH' => $start->addMonthsNoOverflow($version->duration_value),
+            default => throw ValidationException::withMessages(['trial_policy' => ['وحدة مدة التجربة غير مدعومة.']]),
+        };
     }
 
     public function cancel(int $subscriptionId, bool $atPeriodEnd, User $actor): BillingSubscription

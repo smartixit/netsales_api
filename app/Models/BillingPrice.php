@@ -17,7 +17,7 @@ class BillingPrice extends Model
 
     protected $fillable = [
         'plan_version_id', 'currency_id', 'billing_interval', 'interval_count',
-        'unit_amount_minor', 'setup_fee_minor', 'tax_behavior', 'is_active',
+        'unit_amount_minor', 'setup_fee_minor', 'tax_behavior', 'trial_policy_version_id', 'dunning_policy_version_id', 'is_active',
     ];
 
     protected function casts(): array
@@ -48,6 +48,16 @@ class BillingPrice extends Model
     public function planVersion(): BelongsTo
     {
         return $this->belongsTo(BillingPlanVersion::class, 'plan_version_id', 'plan_version_id');
+    }
+
+    public function trialPolicyVersion(): BelongsTo
+    {
+        return $this->belongsTo(BillingTrialPolicyVersion::class, 'trial_policy_version_id', 'trial_policy_version_id');
+    }
+
+    public function dunningPolicyVersion(): BelongsTo
+    {
+        return $this->belongsTo(BillingDunningPolicyVersion::class, 'dunning_policy_version_id', 'dunning_policy_version_id');
     }
 
     public function currency(): BelongsTo

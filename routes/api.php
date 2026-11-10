@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\V1\AdminNotificationController;
 use App\Http\Controllers\API\V1\Billing\BillingCatalogController;
+use App\Http\Controllers\API\V1\Billing\BillingPolicyController;
 use App\Http\Controllers\API\V1\Billing\BillingFinanceController;
 use App\Http\Controllers\API\V1\Billing\BillingSelfServiceController;
 use App\Http\Controllers\API\V1\AuthController;
@@ -483,6 +484,17 @@ Route::prefix('v1')->group(function () {
         // Platform Billing — Windows Platform Scope only
         // ==========================================
         Route::prefix('platform/billing')->middleware('platform.user.scope')->group(function () {
+            Route::prefix('policies')->controller(BillingPolicyController::class)->group(function () {
+                Route::post('trials', 'storeTrial')->name('api.v1.platform.billing.policies.trials.store');
+                Route::post('dunning', 'storeDunning')->name('api.v1.platform.billing.policies.dunning.store');
+                Route::post('trials/{policyId}/versions', 'storeTrialVersion')->name('api.v1.platform.billing.policies.trials.versions.store');
+                Route::post('dunning/{policyId}/versions', 'storeDunningVersion')->name('api.v1.platform.billing.policies.dunning.versions.store');
+                Route::post('trial-versions/{versionId}/publish', 'publishTrial')->name('api.v1.platform.billing.policies.trials.publish');
+                Route::post('dunning-versions/{versionId}/publish', 'publishDunning')->name('api.v1.platform.billing.policies.dunning.publish');
+                Route::put('plan-versions/{versionId}', 'assignPlanVersion')->name('api.v1.platform.billing.policies.plan_versions.assign');
+                Route::put('prices/{priceId}', 'assignPrice')->name('api.v1.platform.billing.policies.prices.assign');
+            });
+
             Route::middleware(['throttle:api-read', 'permission:billing.view'])->group(function () {
                 Route::get('currencies', [BillingCatalogController::class, 'currencies'])->name('api.v1.platform.billing.currencies.index');
                 Route::get('overview', [BillingFinanceController::class, 'overview'])->name('api.v1.platform.billing.overview');

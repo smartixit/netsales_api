@@ -8,7 +8,6 @@ enum SettingCategory: string
     case FINANCIAL = 'FINANCIAL';
     case SECURITY = 'SECURITY';
     case NOTIFICATION = 'NOTIFICATION';
-    case SUBSCRIPTION = 'SUBSCRIPTION';
     case SYSTEM = 'SYSTEM';
     case BACKUP = 'BACKUP';
 
@@ -29,7 +28,6 @@ enum SettingCategory: string
             self::FINANCIAL => 'مالي',
             self::SECURITY => 'أمني',
             self::NOTIFICATION => 'إشعارات',
-            self::SUBSCRIPTION => 'اشتراكات',
             self::SYSTEM => 'نظام',
             self::BACKUP => 'نسخ احتياطي',
         };
@@ -42,7 +40,6 @@ enum SettingCategory: string
             self::FINANCIAL->value => self::FINANCIAL->label(),
             self::SECURITY->value => self::SECURITY->label(),
             self::NOTIFICATION->value => self::NOTIFICATION->label(),
-            self::SUBSCRIPTION->value => self::SUBSCRIPTION->label(),
             self::SYSTEM->value => self::SYSTEM->label(),
             self::BACKUP->value => self::BACKUP->label(),
         ];

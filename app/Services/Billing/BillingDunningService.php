@@ -11,7 +11,8 @@ class BillingDunningService
 {
     public function scheduleForInvoice(BillingInvoice $invoice): void
     {
-        foreach ((array) config('billing.dunning_days', [0, 1, 3, 7]) as $index => $day) {
+        $schedule = (array) ($invoice->subscription?->dunning_policy_snapshot['reminder_schedule_days'] ?? [0, 1, 3, 7]);
+        foreach ($schedule as $index => $day) {
             BillingDunningAttempt::query()->firstOrCreate(
                 [
                     'invoice_id' => $invoice->invoice_id,
@@ -123,6 +124,11 @@ class BillingDunningService
                     || ! in_array($subscription->status, [BillingSubscriptionStatus::PAST_DUE, BillingSubscriptionStatus::INCOMPLETE], true)
                     || ! $subscription->grace_period_ends_at
                     || $subscription->grace_period_ends_at->gt(now('Asia/Aden'))) {
+                    return false;
+                }
+
+                $policy = (array) $subscription->dunning_policy_snapshot;
+                if (! ($policy['auto_suspend_after_grace'] ?? true)) {
                     return false;
                 }
 

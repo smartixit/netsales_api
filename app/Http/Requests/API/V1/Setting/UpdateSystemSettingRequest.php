@@ -3,6 +3,7 @@
 namespace App\Http\Requests\API\V1\Setting;
 
 use App\Enums\SettingCategory;
+use Illuminate\Validation\ValidationException;
 use App\Enums\ValueType;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
@@ -36,6 +37,10 @@ class UpdateSystemSettingRequest extends FormRequest
      */
     public function rules(): array
     {
+        if (strtoupper((string) $this->input('setting_category')) === 'SUBSCRIPTION') {
+            throw ValidationException::withMessages(['setting_category' => ['تم نقل سياسات الاشتراك والتجربة إلى محرك سياسات الفوترة.']]);
+        }
+
         $settingId = $this->route('system_setting')?->setting_id
             ?? $this->route('setting')?->setting_id
             ?? $this->route('system_setting')

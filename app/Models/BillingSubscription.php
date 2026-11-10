@@ -18,7 +18,7 @@ class BillingSubscription extends Model
     protected $primaryKey = 'billing_subscription_id';
 
     protected $fillable = [
-        'billing_account_id', 'plan_id', 'plan_version_id', 'price_id', 'currency_id',
+        'billing_account_id', 'plan_id', 'plan_version_id', 'price_id', 'currency_id', 'trial_policy_version_id', 'dunning_policy_version_id', 'trial_policy_snapshot', 'dunning_policy_snapshot',
         'status', 'collection_method', 'quantity', 'current_period_start', 'current_period_end',
         'trial_start', 'trial_end', 'cancel_at_period_end', 'canceled_at', 'ended_at',
         'paused_at', 'grace_period_ends_at', 'terms_snapshot', 'metadata', 'created_by',
@@ -39,6 +39,8 @@ class BillingSubscription extends Model
             'paused_at' => 'datetime',
             'grace_period_ends_at' => 'datetime',
             'terms_snapshot' => 'array',
+            'trial_policy_snapshot' => 'array',
+            'dunning_policy_snapshot' => 'array',
             'metadata' => 'array',
         ];
     }
@@ -85,6 +87,21 @@ class BillingSubscription extends Model
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_id', 'currency_id');
+    }
+
+    public function trialPolicyVersion(): BelongsTo
+    {
+        return $this->belongsTo(BillingTrialPolicyVersion::class, 'trial_policy_version_id', 'trial_policy_version_id');
+    }
+
+    public function dunningPolicyVersion(): BelongsTo
+    {
+        return $this->belongsTo(BillingDunningPolicyVersion::class, 'dunning_policy_version_id', 'dunning_policy_version_id');
+    }
+
+    public function trialRedemption(): HasOne
+    {
+        return $this->hasOne(BillingTrialRedemption::class, 'billing_subscription_id', 'billing_subscription_id');
     }
 
     public function items(): HasMany

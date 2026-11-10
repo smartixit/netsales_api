@@ -17,7 +17,7 @@ class BillingPlanVersion extends Model
     protected $primaryKey = 'plan_version_id';
 
     protected $fillable = [
-        'plan_id', 'version_number', 'status', 'trial_days',
+        'plan_id', 'version_number', 'status', 'trial_policy_version_id', 'dunning_policy_version_id',
         'terms_snapshot', 'published_at', 'created_by',
     ];
 
@@ -26,7 +26,6 @@ class BillingPlanVersion extends Model
         return [
             'status' => BillingPlanVersionStatus::class,
             'version_number' => 'integer',
-            'trial_days' => 'integer',
             'terms_snapshot' => 'array',
             'published_at' => 'datetime',
         ];
@@ -63,6 +62,16 @@ class BillingPlanVersion extends Model
         static::deleting(function (): void {
             throw new LogicException('سجلات نسخ الخطط لا تحذف؛ استخدم الأرشفة للمحافظة على التاريخ التجاري.');
         });
+    }
+
+    public function trialPolicyVersion(): BelongsTo
+    {
+        return $this->belongsTo(BillingTrialPolicyVersion::class, 'trial_policy_version_id', 'trial_policy_version_id');
+    }
+
+    public function dunningPolicyVersion(): BelongsTo
+    {
+        return $this->belongsTo(BillingDunningPolicyVersion::class, 'dunning_policy_version_id', 'dunning_policy_version_id');
     }
 
     public function plan(): BelongsTo

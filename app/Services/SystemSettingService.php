@@ -99,6 +99,10 @@ class SystemSettingService
      */
     public function getFiltered(array $filters = []): Collection|CursorPaginator
     {
+        if (($filters['setting_category'] ?? null) === 'SUBSCRIPTION') {
+            throw ValidationException::withMessages(['setting_category' => ['لم يعد تصنيف الاشتراكات جزءاً من إعدادات النظام.']]);
+        }
+
         return $this->settingRepository->getFiltered($filters);
     }
 
@@ -115,6 +119,10 @@ class SystemSettingService
      */
     public function getByCategory(string|SettingCategory $category): Collection
     {
+        if (($category instanceof SettingCategory ? $category->value : $category) === 'SUBSCRIPTION') {
+            throw ValidationException::withMessages(['category' => ['لم يعد تصنيف الاشتراكات جزءاً من إعدادات النظام.']]);
+        }
+
         return $this->settingRepository->getByCategory($category);
     }
 

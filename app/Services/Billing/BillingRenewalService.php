@@ -12,7 +12,8 @@ class BillingRenewalService
 {
     public function __construct(
         private BillingInvoiceService $invoices,
-        private BillingDunningService $dunning
+        private BillingDunningService $dunning,
+        private BillingPolicyResolver $policies
     ) {}
 
     public function processDueSubscriptions(int $limit = 100): array
@@ -31,7 +32,7 @@ class BillingRenewalService
         foreach ($ids as $subscriptionId) {
             $result = DB::transaction(function () use ($subscriptionId): string {
                 $subscription = BillingSubscription::query()
-                    ->with(['price', 'planVersion.plan'])
+                    ->with(['price', 'planVersion.plan', 'dunningPolicyVersion.policy', 'trialPolicyVersion.policy'])
                     ->lockForUpdate()
                     ->find($subscriptionId);
 
@@ -108,7 +109,7 @@ class BillingRenewalService
                 $subscription->status = $wasTrial
                     ? BillingSubscriptionStatus::INCOMPLETE
                     : BillingSubscriptionStatus::PAST_DUE;
-                $subscription->grace_period_ends_at = now('Asia/Aden')->addDays((int) config('billing.grace_period_days', 7));
+                $subscription->grace_period_ends_at = now('Asia/Aden')->addDays((int) $subscription->dunning_policy_snapshot['grace_period_days']);
                 $subscription->save();
 
                 $subscription->events()->create([
