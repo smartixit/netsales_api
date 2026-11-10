@@ -1,0 +1,21 @@
+<?php
+namespace App\Models;
+use App\Enums\BillingInvoiceStatus;
+use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\{BelongsTo,HasMany};
+class BillingInvoice extends Model {
+ use ExactDateSerialization;
+ protected $table='billing_invoices'; protected $primaryKey='invoice_id';
+ protected $fillable=['invoice_number','billing_account_id','billing_subscription_id','currency_id','invoice_type','status','period_start','period_end','issued_on','due_on','subtotal_minor','discount_minor','tax_minor','total_minor','paid_minor','remaining_minor','customer_snapshot','pricing_snapshot','memo','finalized_at','paid_at','voided_at','created_by'];
+ protected function casts(): array { return ['status'=>BillingInvoiceStatus::class,'period_start'=>'date','period_end'=>'date','issued_on'=>'date','due_on'=>'date','subtotal_minor'=>'integer','discount_minor'=>'integer','tax_minor'=>'integer','total_minor'=>'integer','paid_minor'=>'integer','remaining_minor'=>'integer','customer_snapshot'=>'array','pricing_snapshot'=>'array','finalized_at'=>'datetime','paid_at'=>'datetime','voided_at'=>'datetime']; }
+ public function billingAccount(): BelongsTo { return $this->belongsTo(BillingAccount::class,'billing_account_id','billing_account_id'); }
+ public function subscription(): BelongsTo { return $this->belongsTo(BillingSubscription::class,'billing_subscription_id','billing_subscription_id'); }
+ public function currency(): BelongsTo { return $this->belongsTo(Currency::class,'currency_id','currency_id'); }
+ public function lines(): HasMany { return $this->hasMany(BillingInvoiceLine::class,'invoice_id','invoice_id'); }
+ public function payments(): HasMany { return $this->hasMany(BillingPayment::class,'invoice_id','invoice_id'); }
+ public function creditNotes(): HasMany { return $this->hasMany(BillingCreditNote::class,'invoice_id','invoice_id'); }
+ public function dunningAttempts(): HasMany { return $this->hasMany(BillingDunningAttempt::class,'invoice_id','invoice_id'); }
+ public function scopeForAccount(Builder $q,int $id): Builder { return $q->where('billing_account_id',$id); }
+}
