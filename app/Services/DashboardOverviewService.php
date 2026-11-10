@@ -409,7 +409,7 @@ class DashboardOverviewService
         string $bucket
     ): array {
         $format = $this->bucketSqlFormat($bucket);
-        $rows = ProviderSubscription::query()
+        $rows = BillingSubscription::query()
             ->whereBetween('created_at', [$periodStart, $now])
             ->selectRaw("DATE_FORMAT(created_at, '{$format}') as bucket, COUNT(*) as total")
             ->groupBy('bucket')
