@@ -88,7 +88,7 @@ class BillingSubscriptionPurchaseTest extends TestCase
             'billing_interval' => BillingInterval::MONTH,
             'interval_count' => 1,
             'unit_amount_minor' => 1000,
-            'setup_fee_minor' => 0,
+            'setup_fee_minor' => 200,
             'tax_behavior' => 'EXCLUSIVE',
             'is_active' => true,
         ]);
@@ -114,13 +114,21 @@ class BillingSubscriptionPurchaseTest extends TestCase
         $this->assertSame($subscription->current_period_start->toDateString(), $invoice->period_start->toDateString());
         $this->assertSame($subscription->current_period_end->toDateString(), $invoice->period_end->endOfDay()->toDateString());
         $this->assertSame(BillingInvoiceStatus::OPEN, $invoice->status);
-        $this->assertSame(1000, $invoice->total_minor);
+        $this->assertSame(1200, $invoice->total_minor);
 
-        $schedule = BillingRevenueRecognitionSchedule::query()
+        $schedules = BillingRevenueRecognitionSchedule::query()
             ->where('invoice_id', $invoice->invoice_id)
-            ->firstOrFail();
-        $this->assertSame(1000, $schedule->total_minor);
-        $this->assertSame(0, $schedule->recognized_minor);
+            ->orderBy('revenue_schedule_id')
+            ->get();
+        $this->assertCount(2, $schedules);
+        $this->assertSame(['HOLD', 'HOLD'], $schedules->pluck('status')->all());
+        $this->assertSame(1000, (int) $schedules->firstWhere('revenue_account_code', '4100')->total_minor);
+        $this->assertSame(200, (int) $schedules->firstWhere('revenue_account_code', '4120')->total_minor);
+        $this->assertSame(0, (int) $schedules->sum('recognized_minor'));
+
+        $beforePaymentReconciliation = app(BillingReconciliationService::class)->report((int) $currency->currency_id);
+        $beforePaymentCurrency = collect($beforePaymentReconciliation['currencies'])->first();
+        $this->assertSame('MATCH', $beforePaymentCurrency['status'], json_encode($beforePaymentCurrency, JSON_THROW_ON_ERROR));
 
         $this->assertNull(app(BillingEntitlementService::class)->activeSubscriptionForAccount(
             (int) $account->billing_account_id
@@ -139,7 +147,7 @@ class BillingSubscriptionPurchaseTest extends TestCase
         $payment = $payments->recordManualPayment(
             (int) $invoice->invoice_id,
             (int) $method->payment_method_id,
-            1000,
+            1200,
             'purchase-payment-'.Str::uuid(),
             $actor
         );
@@ -150,6 +158,10 @@ class BillingSubscriptionPurchaseTest extends TestCase
         );
 
         $this->assertSame('VERIFIED', $payment->status->value);
+        $this->assertSame(2, BillingRevenueRecognitionSchedule::query()
+            ->where('invoice_id', $invoice->invoice_id)
+            ->where('status', 'PENDING')
+            ->count());
         $subscription->refresh();
         $this->assertSame(BillingSubscriptionStatus::ACTIVE, $subscription->status);
         $active = app(BillingEntitlementService::class)->activeSubscriptionForAccount(
