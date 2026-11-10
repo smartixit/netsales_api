@@ -102,6 +102,7 @@ class BillingRenewalService
                     null,
                     $start->toDateString(),
                     $end->toDateString(),
+                    $wasTrial,
                     $wasTrial
                 );
                 $invoice = $this->invoices->finalize((int) $invoice->invoice_id);
