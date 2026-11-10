@@ -44,7 +44,7 @@ class BillingReconciliationService
                 ->sum('remaining_minor'),
             'deferred_revenue' => (int) DB::table('billing_revenue_recognition_schedules')
                 ->where('currency_id', $currency->currency_id)
-                ->whereIn('status', ['PENDING', 'ACTIVE'])
+                ->whereIn('status', ['HOLD', 'PENDING', 'ACTIVE'])
                 ->selectRaw('COALESCE(SUM(total_minor - recognized_minor), 0) AS balance_minor')
                 ->value('balance_minor'),
             'customer_credit_liability' => (int) DB::table('billing_credit_notes')
