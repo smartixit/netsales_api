@@ -120,8 +120,8 @@ class BillingSubscriptionService
                 'status' => $isTrial && $trialStartsAtPurchase ? BillingSubscriptionStatus::TRIALING : BillingSubscriptionStatus::INCOMPLETE,
                 'collection_method' => 'MANUAL',
                 'quantity' => 1,
-                'current_period_start' => $trialStart,
-                'current_period_end' => $trialEnd,
+                'current_period_start' => $isTrial ? $trialStart : $now,
+                'current_period_end' => $isTrial ? $trialEnd : $periodEnd,
                 'trial_start' => $trialStart,
                 'trial_end' => $trialEnd,
                 'terms_snapshot' => [
