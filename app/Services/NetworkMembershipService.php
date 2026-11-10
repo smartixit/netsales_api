@@ -9,6 +9,7 @@ use App\Models\NetworkMembershipAuditLog;
 use App\Models\NetworkUser;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\Billing\BillingEntitlementService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -18,6 +19,10 @@ use Illuminate\Validation\ValidationException;
  */
 class NetworkMembershipService
 {
+    public function __construct(
+        private BillingEntitlementService $billingEntitlements
+    ) {}
+
     /**
      * جلب قائمة أعضاء الشبكة مع أدوارهم وبياناتهم الشخصية.
      */
@@ -65,6 +70,12 @@ class NetworkMembershipService
         $this->authorizeActor($networkId, $actorId);
 
         return DB::transaction(function () use ($networkId, $phoneNumber, $roleId, $actorId, $status): NetworkUser {
+            // تسلسل حجز المقاعد داخل الشبكة لمنع تجاوز الحد بطلبات متزامنة.
+            $network = Network::query()->lockForUpdate()->findOrFail($networkId);
+            $normalizedStatus = in_array($status, ['ACTIVE', 'SUSPENDED', 'INVITED'], true)
+                ? $status
+                : 'ACTIVE';
+
             $user = User::where('user_phone_number', $phoneNumber)->first();
             if (! $user) {
                 throw ValidationException::withMessages([
@@ -86,11 +97,15 @@ class NetworkMembershipService
                 ]);
             }
 
+            if (in_array($normalizedStatus, ['ACTIVE', 'INVITED'], true)) {
+                $this->assertNetworkMemberQuota($networkId, (int) $network->owner_id);
+            }
+
             $member = NetworkUser::create([
                 'network_id' => $networkId,
                 'user_id' => $user->user_id,
                 'role_id' => $roleId,
-                'status' => in_array($status, ['ACTIVE', 'SUSPENDED', 'INVITED'], true) ? $status : 'ACTIVE',
+                'status' => $normalizedStatus,
                 'last_event_seq' => 1,
             ]);
 
@@ -176,7 +191,7 @@ class NetworkMembershipService
         }
 
         return DB::transaction(function () use ($networkId, $userId, $newStatus, $actorId, $reason): NetworkUser {
-            $network = Network::findOrFail($networkId);
+            $network = Network::query()->lockForUpdate()->findOrFail($networkId);
             if ((int) $network->owner_id === $userId && $newStatus !== 'ACTIVE') {
                 throw ValidationException::withMessages([
                     'status' => ['لا يمكن تجميد أو إيقاف عضوية مالك الشبكة الرئيسي.'],
@@ -191,6 +206,11 @@ class NetworkMembershipService
             $oldStatus = $member->status;
             if ($oldStatus === $newStatus) {
                 return $member->load(['user', 'role']);
+            }
+
+            if (! in_array($oldStatus, ['ACTIVE', 'INVITED'], true)
+                && in_array($newStatus, ['ACTIVE', 'INVITED'], true)) {
+                $this->assertNetworkMemberQuota($networkId, (int) $network->owner_id);
             }
 
             $nextSeq = (int) $member->last_event_seq + 1;
@@ -253,6 +273,33 @@ class NetworkMembershipService
 
             return true;
         });
+    }
+
+    /**
+     * Enforce the plan's concurrent active/invited network-member seat limit.
+     * The network row is locked by the caller for the duration of its transaction.
+     */
+    private function assertNetworkMemberQuota(int $networkId, int $ownerId): void
+    {
+        $subscription = $this->billingEntitlements->activeSubscriptionForNetwork($networkId);
+
+        if (! $subscription) {
+            throw ValidationException::withMessages([
+                'subscription' => ['يلزم وجود اشتراك نشط أو تجربة سارية قبل تفعيل أعضاء فريق الشبكة.'],
+            ]);
+        }
+
+        $currentCount = NetworkUser::query()
+            ->where('network_id', $networkId)
+            ->where('user_id', '!=', $ownerId)
+            ->whereIn('status', ['ACTIVE', 'INVITED'])
+            ->count();
+
+        $this->billingEntitlements->assertResourceLimit(
+            $subscription,
+            'max_network_members',
+            $currentCount
+        );
     }
 
     /**
