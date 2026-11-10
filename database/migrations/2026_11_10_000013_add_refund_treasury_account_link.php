@@ -22,7 +22,8 @@ return new class extends Migration
     {
         Schema::table('billing_refunds', function (Blueprint $table): void {
             $table->dropIndex('idx_brf_treasury_status');
-            $table->dropConstrainedForeignId('treasury_account_id');
+            $table->dropForeign('fk_brf_treasury');
+            $table->dropColumn('treasury_account_id');
         });
     }
 };
