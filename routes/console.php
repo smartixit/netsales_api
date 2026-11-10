@@ -24,6 +24,9 @@ Artisan::command('billing:process-dunning', function (BillingDunningService $dun
 // جدولة المهام الدورية وفق توقيت صنعاء (Asia/Aden Schedule Registry)
 // ═══════════════════════════════════════════════════════════════════════
 
+// 0. الاعتراف اليومي بالإيرادات المؤجلة حسب الخدمة المقدمة
+Schedule::command('billing:recognize-revenue')->dailyAt('01:05')->withoutOverlapping()->timezone('Asia/Aden');
+
 // 1. معالجة فواتير التجديد والتحويل من التجربة كل 15 دقيقة
 Schedule::command('billing:process-renewals')->everyFifteenMinutes()->withoutOverlapping()->timezone('Asia/Aden');
 
