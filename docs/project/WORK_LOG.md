@@ -889,3 +889,12 @@ This log documents all executed tasks, code changes, and verification command ou
 - No Laravel/PHP runtime was available in this GitHub-only execution. Pint, PHPStan, PHPUnit, route:list, and exact-head CI have not been run.
 - Role permission catalog already defines `billing.*`; existing role assignment keeps platform accountants at view/approve/report and SUPER_ADMIN with full platform permissions. SUPPORT_AGENT does not receive billing access by default.
 - No PR has been opened and no merge is claimed.
+
+
+## 2026-11-11 — Billing Catalog Read Contract and Subscription Search
+
+- Added cursor-paginated `GET /api/v1/platform/billing/products`, permission-gated by `billing.view`, with search and active-state filtering.
+- Added a dedicated `BillingProductResource` and product catalog read method; this closes the missing read side of the existing product-create/plan-create workflow.
+- Added server-side subscription search across subscription/account identifiers, account number/legal name, network name, and plan name/key. Existing currency/status/account/network filters and cursor pagination remain in place.
+- Dashboard integration now sends subscription search terms through the remote datasource, repository contract, use case, and controller; search refreshes subscriptions, invoices, and payments with the existing stale-response guards.
+- Verification: GitHub compare confirms the API branch is 14 commits ahead of `main` and Dashboard is 31 commits ahead, both 0 commits behind at the time of this entry. No PHP/Flutter runtime commands, automated tests, route:list, analyzer, or CI were executed in this environment. Do not treat the changes as validated or production-ready.
