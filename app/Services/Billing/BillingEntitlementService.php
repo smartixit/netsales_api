@@ -16,11 +16,13 @@ class BillingEntitlementService
             ->where('billing_account_id', $billingAccountId)
             ->where(function ($query): void {
                 $query->where(function ($active): void {
-                    $active->where('status', BillingSubscriptionStatus::ACTIVE)
-                        ->where(function ($period): void {
-                            $period->whereNull('current_period_end')
-                                ->orWhere('current_period_end', '>', now('Asia/Aden'));
-                        });
+                    $active->whereIn('status', [
+                        BillingSubscriptionStatus::ACTIVE,
+                        BillingSubscriptionStatus::TRIALING,
+                    ])->where(function ($period): void {
+                        $period->whereNull('current_period_end')
+                            ->orWhere('current_period_end', '>', now('Asia/Aden'));
+                    });
                 })->orWhere(function ($grace): void {
                     $grace->where('status', BillingSubscriptionStatus::PAST_DUE)
                         ->where('grace_period_ends_at', '>', now('Asia/Aden'));
@@ -49,8 +51,10 @@ class BillingEntitlementService
 
     public function allows(BillingSubscription $subscription, string $featureKey): bool
     {
-        $active = $subscription->status === BillingSubscriptionStatus::ACTIVE
-            && (! $subscription->current_period_end || $subscription->current_period_end->gt(now('Asia/Aden')));
+        $active = in_array($subscription->status, [
+            BillingSubscriptionStatus::ACTIVE,
+            BillingSubscriptionStatus::TRIALING,
+        ], true) && (! $subscription->current_period_end || $subscription->current_period_end->gt(now('Asia/Aden')));
         $grace = $subscription->status === BillingSubscriptionStatus::PAST_DUE
             && $subscription->grace_period_ends_at
             && $subscription->grace_period_ends_at->gt(now('Asia/Aden'));

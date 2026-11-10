@@ -218,8 +218,9 @@ class BillingCatalogService
                 $unitAmount = filter_var($configuration['overage_unit_amount_minor'] ?? null, FILTER_VALIDATE_INT);
                 $currencyId = filter_var($configuration['overage_currency_id'] ?? null, FILTER_VALIDATE_INT);
 
+                $priceCurrencyIds = $version->prices->pluck('currency_id')->unique();
                 if ($unitSize === false || $unitSize <= 0 || $unitAmount === false || $unitAmount < 0
-                    || $currencyId === false || ! $this->currencies->findActiveById($currencyId)) {
+                    || $currencyId === false || ! $priceCurrencyIds->contains($currencyId)) {
                     throw ValidationException::withMessages([
                         'configuration' => ['تسعير تجاوز الاستخدام يتطلب حجم وحدة ومبلغاً بوحدات العملة الصغرى وعملة نشطة.'],
                     ]);
@@ -324,8 +325,11 @@ class BillingCatalogService
                 throw ValidationException::withMessages(['value' => ['حد الاستهلاك يجب أن يكون -1 أو رقماً موجباً بدقة لا تتجاوز 6 منازل.']]);
             }
 
-            if ($quantity !== '-1' && (float) $quantity <= 0) {
-                throw ValidationException::withMessages(['value' => ['حد الاستهلاك يجب أن يكون أكبر من صفر أو -1.']]);
+            if ($quantity !== '-1') {
+                $normalized = str_replace('.', '', $quantity);
+                if (trim($normalized, '0') === '') {
+                    throw ValidationException::withMessages(['value' => ['حد الاستهلاك يجب أن يكون أكبر من صفر أو -1.']]);
+                }
             }
 
             return $quantity;

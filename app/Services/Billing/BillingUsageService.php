@@ -34,27 +34,16 @@ class BillingUsageService
                 ->lockForUpdate()
                 ->findOrFail($subscriptionId);
 
-            $active = $subscription->status === BillingSubscriptionStatus::ACTIVE
-                && (! $subscription->current_period_end || $subscription->current_period_end->gt(now('Asia/Aden')));
+            $active = in_array($subscription->status, [
+                BillingSubscriptionStatus::ACTIVE,
+                BillingSubscriptionStatus::TRIALING,
+            ], true) && (! $subscription->current_period_end || $subscription->current_period_end->gt(now('Asia/Aden')));
             $grace = $subscription->status === BillingSubscriptionStatus::PAST_DUE
                 && $subscription->grace_period_ends_at
                 && $subscription->grace_period_ends_at->gt(now('Asia/Aden'));
 
             if (! $active && ! $grace) {
                 throw ValidationException::withMessages(['subscription_id' => ['لا يوجد اشتراك نشط أو فترة سماح تسمح بتسجيل الاستهلاك.']]);
-            }
-
-            $existing = BillingUsageEvent::query()
-                ->where('billing_subscription_id', $subscriptionId)
-                ->where('idempotency_key', $idempotencyKey)
-                ->first();
-
-            if ($existing) {
-                if ($existing->meter->meter_key !== $meterKey || $this->toMicros((string) $existing->quantity) !== $quantityMicros) {
-                    throw ValidationException::withMessages(['idempotency_key' => ['مفتاح الاستهلاك أعيد استخدامه ببيانات مختلفة.']]);
-                }
-
-                return $existing;
             }
 
             $meter = BillingUsageMeter::query()
@@ -64,6 +53,20 @@ class BillingUsageService
 
             if (! $meter) {
                 throw ValidationException::withMessages(['meter_key' => ['عداد الاستخدام غير موجود أو غير نشط.']]);
+            }
+
+            $existing = BillingUsageEvent::query()
+                ->where('billing_subscription_id', $subscriptionId)
+                ->where('meter_id', $meter->meter_id)
+                ->where('idempotency_key', $idempotencyKey)
+                ->first();
+
+            if ($existing) {
+                if ($this->toMicros((string) $existing->quantity) !== $quantityMicros) {
+                    throw ValidationException::withMessages(['idempotency_key' => ['مفتاح الاستهلاك أعيد استخدامه بكمية مختلفة.']]);
+                }
+
+                return $existing;
             }
 
             $feature = $subscription->planVersion?->features->firstWhere('feature_key', $meterKey);
@@ -114,9 +117,9 @@ class BillingUsageService
 
             if (! $isUnlimited && $newMicros > $limitMicros && $behavior === 'INVOICE') {
                 $configuration = (array) ($feature->configuration ?? []);
-                $unitSizeMicros = (int) ($configuration['overage_unit_micros'] ?? 1000000);
+                $unitSizeMicros = (int) ($configuration['overage_unit_size_micros'] ?? 0);
                 $unitAmountMinor = (int) ($configuration['overage_unit_amount_minor'] ?? -1);
-                $overageCurrencyId = (int) ($configuration['overage_currency_id'] ?? $subscription->currency_id);
+                $overageCurrencyId = (int) ($configuration['overage_currency_id'] ?? 0);
 
                 if ($unitSizeMicros <= 0 || $unitAmountMinor < 0 || $overageCurrencyId !== (int) $subscription->currency_id) {
                     throw ValidationException::withMessages([
@@ -126,17 +129,22 @@ class BillingUsageService
 
                 $previousOverage = max(0, $currentMicros - $limitMicros);
                 $newOverage = max(0, $newMicros - $limitMicros);
-                $billableMicros = $newOverage - $previousOverage;
-                $units = intdiv($billableMicros, $unitSizeMicros) + (($billableMicros % $unitSizeMicros) > 0 ? 1 : 0);
+                $previousUnits = intdiv($previousOverage, $unitSizeMicros)
+                    + (($previousOverage % $unitSizeMicros) > 0 ? 1 : 0);
+                $newUnits = intdiv($newOverage, $unitSizeMicros)
+                    + (($newOverage % $unitSizeMicros) > 0 ? 1 : 0);
+                $additionalUnits = $newUnits - $previousUnits;
 
-                if ($unitAmountMinor > 0 && $units > intdiv(PHP_INT_MAX, $unitAmountMinor)) {
+                if ($unitAmountMinor > 0 && $newUnits > intdiv(PHP_INT_MAX, $unitAmountMinor)) {
                     throw new OverflowException('رسوم تجاوز الاستخدام تتجاوز السعة الرقمية المسموحة.');
                 }
 
-                $aggregate->amount_minor = $this->safeAdd(
-                    (int) $aggregate->amount_minor,
-                    $units * $unitAmountMinor
-                );
+                $targetAmountMinor = $newUnits * $unitAmountMinor;
+                if ($targetAmountMinor < (int) $aggregate->amount_minor) {
+                    throw ValidationException::withMessages(['amount_minor' => ['لا يمكن خفض إجمالي رسوم التجاوز بعد تسجيل الاستهلاك.']]);
+                }
+
+                $aggregate->amount_minor = $targetAmountMinor;
             }
 
             $event = BillingUsageEvent::query()->create([
