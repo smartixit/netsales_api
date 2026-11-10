@@ -19,7 +19,7 @@ return new class extends Migration
             $table->timestamp('expires_at')->nullable();
             $table->foreignId('recorded_by')->nullable()->constrained('users', 'user_id')->nullOnDelete();
             $table->timestamps();
-            $table->index(['base_currency_id', 'quote_currency_id', 'effective_at']);
+            $table->index(['base_currency_id', 'quote_currency_id', 'effective_at'], 'idx_cer_pair_effective');
         });
 
         Schema::create('currency_conversions', function (Blueprint $table): void {
@@ -124,7 +124,7 @@ return new class extends Migration
             $table->text('last_error')->nullable();
             $table->json('payload')->nullable();
             $table->timestamps();
-            $table->index(['aggregate_type', 'aggregate_id', 'job_type']);
+            $table->index(['aggregate_type', 'aggregate_id', 'job_type'], 'idx_baj_aggregate_job');
         });
     }
 
