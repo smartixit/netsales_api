@@ -487,7 +487,9 @@ Route::prefix('v1')->group(function () {
             Route::prefix('policies')->controller(BillingPolicyController::class)->group(function () {
                 Route::middleware(['throttle:api-read', 'permission:billing.view'])->group(function () {
                     Route::get('trials', 'trialPolicies')->name('api.v1.platform.billing.policies.trials.index');
+                    Route::get('trials/{policyId}/versions', 'trialPolicyVersions')->whereNumber('policyId')->name('api.v1.platform.billing.policies.trials.versions.index');
                     Route::get('dunning', 'dunningPolicies')->name('api.v1.platform.billing.policies.dunning.index');
+                    Route::get('dunning/{policyId}/versions', 'dunningPolicyVersions')->whereNumber('policyId')->name('api.v1.platform.billing.policies.dunning.versions.index');
                     Route::get('trial-redemptions/pending', 'pendingRedemptions')->name('api.v1.platform.billing.policies.trials.pending');
                 });
                 Route::middleware(['throttle:api-write', 'permission:billing.manage'])->group(function () {
