@@ -114,6 +114,7 @@ class BillingDunningService
 
                 if (! $invoice || in_array($invoice->status, [
                     BillingInvoiceStatus::PAID,
+                    BillingInvoiceStatus::CREDITED,
                     BillingInvoiceStatus::VOID,
                     BillingInvoiceStatus::UNCOLLECTIBLE,
                 ], true)) {
