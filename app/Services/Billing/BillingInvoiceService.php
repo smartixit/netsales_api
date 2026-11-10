@@ -14,7 +14,8 @@ class BillingInvoiceService
 {
     public function __construct(
         private BillingLedgerService $ledger,
-        private BillingLedgerChartService $chart
+        private BillingLedgerChartService $chart,
+        private BillingAuthorizationService $authorization
     ) {}
 
     public function createForSubscription(
@@ -200,8 +201,10 @@ class BillingInvoiceService
         }, 3);
     }
 
-    public function void(int $invoiceId, string $reason, ?User $actor = null): BillingInvoice
+    public function void(int $invoiceId, string $reason, User $actor): BillingInvoice
     {
+        $this->authorization->assertPlatform($actor);
+
         return DB::transaction(function () use ($invoiceId, $reason, $actor): BillingInvoice {
             $invoice = BillingInvoice::query()->with('currency')->lockForUpdate()->findOrFail($invoiceId);
 

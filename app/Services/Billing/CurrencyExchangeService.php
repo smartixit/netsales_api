@@ -9,7 +9,10 @@ use OverflowException;
 
 class CurrencyExchangeService
 {
-    public function __construct(private CurrencyService $currencies) {}
+    public function __construct(
+        private CurrencyService $currencies,
+        private BillingAuthorizationService $authorization
+    ) {}
 
     public function recordRate(
         int $baseCurrencyId,
@@ -20,6 +23,8 @@ class CurrencyExchangeService
         User $actor,
         ?\DateTimeInterface $expiresAt = null
     ): CurrencyExchangeRate {
+        $this->authorization->assertPlatform($actor);
+
         if ($baseCurrencyId === $quoteCurrencyId || $numerator <= 0 || $denominator <= 0 || trim($source) === '') {
             throw ValidationException::withMessages(['rate' => ['بيانات سعر الصرف غير صالحة.']]);
         }
@@ -47,6 +52,8 @@ class CurrencyExchangeService
         int $sourceId,
         User $actor
     ): CurrencyConversion {
+        $this->authorization->assertPlatform($actor);
+
         if ($sourceAmountMinor <= 0 || $feeMinor < 0 || $feeMinor >= $sourceAmountMinor) {
             throw ValidationException::withMessages(['amount_minor' => ['مبلغ التحويل أو الرسوم غير صالح.']]);
         }
