@@ -923,3 +923,11 @@ This log documents all executed tasks, code changes, and verification command ou
 
 - Follow-up source inspection caught and corrected doubled PHP namespace separators in the newly introduced ProductResource and version-resource controller references before any runtime validation. This is a source correction only; syntax validity remains unverified until Pint/PHP lint and CI run.
 - Correction commit: `548c2d59`.
+
+## 2026-11-11 — Platform Billing administration route reconciliation
+
+- Reconciled the Platform Billing route group against BillingPolicyController and the existing policy-management service contracts.
+- Removed duplicate and misplaced policy-route declarations. Canonical policy operations remain nested under /platform/billing/policies, with reads protected by billing.view and policy mutations protected by billing.manage.
+- Confirmed the plan catalogue permission boundaries: product/plan creation uses billing.create; draft version, price, and feature mutations use billing.edit; plan-version publication uses billing.manage.
+- Source-inspected trial/dunning version publication, Draft-only plan/price policy assignment, pending-redemption approval/rejection, and audited trial adjustment behavior. No service or accounting behavior was changed in this route-reconciliation step.
+- Verification: GitHub source reads and file updates only. PHP runtime, Pint, PHPStan, PHPUnit, route:list, migrations, and exact-head CI have not been run. Do not merge until the API quality workflow completes on the PR head.
