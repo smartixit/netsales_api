@@ -796,3 +796,17 @@ This log documents all executed tasks, code changes, and verification command ou
 - Integrated first-activation trials, trial expiry outcomes, policy-driven dunning grace/suspension, invoice reminder schedules, and pre-renewal alerts through the transactional outbox.
 - Updated plan, price, and subscription resources to expose policy references/snapshots.
 - Tests and GitHub Actions remain intentionally deferred by user instruction. Static/runtime validation has not yet been performed; do not infer passing status.
+
+
+### Integration hardening follow-up — 2026-11-10
+- Corrected first-activation redemption state: deferred trials are reserved until the first entitlement lookup activates them; manual approval is honored before the reservation can start.
+- Allowed the subscription model to update only the trial start/end lifecycle timestamps in addition to the existing mutable lifecycle fields.
+- Changed the platform-default trial policy to disabled/zero duration. Legacy non-zero trial durations are migrated to dedicated immutable policy versions rather than becoming the default for every future plan.
+- Existing subscription rows now receive resolved trial/dunning policy snapshots during migration, not only foreign-key references.
+- Trial ineligibility now removes the free-trial offer while allowing normal paid purchase; it no longer blocks the customer from purchasing.
+- Implemented explicit trial rejection and audited adjustment API routes, plus pending-redemption listing.
+- Applied the trial end behavior: EXPIRE ends the trial without creating a conversion invoice; CREATE_INVOICE continues into the paid conversion flow.
+- Added idempotent Outbox notification-delivery records and dispatch for billing invoice reminders and subscription renewal alerts through the existing NotificationService (in-app + FCM queue).
+- Retired subscription keys are rejected on create/update/read-by-key and are skipped in batch setting updates.
+- Published policy versions are now immutable, including their status field.
+- No tests, migrations, or GitHub Actions were run; they remain deferred to the final plan stage.

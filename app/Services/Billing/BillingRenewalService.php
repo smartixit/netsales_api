@@ -74,6 +74,29 @@ class BillingRenewalService
 
                 $wasTrial = $subscription->status === BillingSubscriptionStatus::TRIALING;
                 $oldStatus = $subscription->status->value;
+
+                if ($wasTrial && ($subscription->trial_policy_snapshot['end_behavior'] ?? 'CREATE_INVOICE') === 'EXPIRE') {
+                    $subscription->status = BillingSubscriptionStatus::EXPIRED;
+                    $subscription->ended_at = now('Asia/Aden');
+                    $subscription->save();
+                    $subscription->trialRedemption()->where('status', 'ACTIVE')->update([
+                        'status' => 'COMPLETED',
+                        'completed_at' => now('Asia/Aden'),
+                    ]);
+                    \App\Models\BillingSubscriptionAlert::query()
+                        ->where('billing_subscription_id', $subscription->billing_subscription_id)
+                        ->where('status', 'PENDING')
+                        ->update(['status' => 'CANCELLED']);
+                    $subscription->events()->create([
+                        'event_type' => 'TRIAL_EXPIRED_WITHOUT_CONVERSION',
+                        'from_status' => $oldStatus,
+                        'to_status' => BillingSubscriptionStatus::EXPIRED->value,
+                        'payload' => ['trial_end' => $subscription->trial_end?->toDateTimeString()],
+                        'occurred_at' => now('Asia/Aden'),
+                    ]);
+                    return 'TRIAL_EXPIRED';
+                }
+
                 $invoice = $this->invoices->createForSubscription(
                     $subscription,
                     null,

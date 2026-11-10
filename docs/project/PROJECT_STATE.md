@@ -75,3 +75,14 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - `system_settings` no longer owns the `SUBSCRIPTION` category or its four legacy keys. The System Settings API rejects attempts to recreate the retired category.
 - Existing plan versions are migrated to equivalent immutable trial policy versions; plans with zero trial days remain non-trial.
 - Tests and GitHub Actions are intentionally deferred until the end of the approved implementation plan. No test or CI success is claimed in this state entry.
+
+
+### Billing integration hardening — 2026-11-10
+- Platform default trial is intentionally disabled; trial activation must be explicitly configured.
+- Existing non-zero legacy plan trial durations map to dedicated policy versions. Existing subscriptions receive policy snapshots during migration.
+- Ineligible trial customers may still purchase the paid subscription without a trial.
+- First-activation trials use RESERVED redemption state and activate atomically on the first entitlement lookup after any required manual approval.
+- Trial expiry behavior is enforced: EXPIRE closes the trial; CREATE_INVOICE begins conversion billing.
+- Billing reminders are delivered through the existing notification service from Outbox with a unique message UUID delivery guard.
+- Manual trial approval/rejection and audited trial adjustment routes are exposed under Platform Scope.
+- Automated tests, migration execution, and GitHub Actions remain pending by user instruction.

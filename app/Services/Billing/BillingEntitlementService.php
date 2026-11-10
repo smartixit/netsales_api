@@ -11,6 +11,8 @@ class BillingEntitlementService
 {
     public function activeSubscriptionForAccount(int $billingAccountId): ?BillingSubscription
     {
+        $this->startEligibleFirstActivation($billingAccountId);
+
         return BillingSubscription::query()
             ->with(['planVersion.features', 'currency'])
             ->where('billing_account_id', $billingAccountId)
@@ -34,6 +36,14 @@ class BillingEntitlementService
 
     public function activeSubscriptionForNetwork(int $networkId): ?BillingSubscription
     {
+        $billingAccountId = \App\Models\BillingAccount::query()
+            ->where('network_id', $networkId)
+            ->where('status', 'ACTIVE')
+            ->value('billing_account_id');
+        if ($billingAccountId) {
+            $this->startEligibleFirstActivation((int) $billingAccountId);
+        }
+
         return BillingSubscription::query()
             ->with(['planVersion.features', 'currency'])
             ->whereHas('billingAccount', fn ($account) => $account->where('network_id', $networkId))
@@ -53,6 +63,79 @@ class BillingEntitlementService
             })
             ->latest('billing_subscription_id')
             ->first();
+    }
+
+
+    private function startEligibleFirstActivation(int $billingAccountId): void
+    {
+        $subscriptionId = BillingSubscription::query()
+            ->where('billing_account_id', $billingAccountId)
+            ->where('status', BillingSubscriptionStatus::INCOMPLETE)
+            ->whereNotNull('trial_policy_snapshot')
+            ->where('trial_policy_snapshot->start_trigger', 'FIRST_ACTIVATION')
+            ->orderBy('billing_subscription_id')
+            ->value('billing_subscription_id');
+
+        if (! $subscriptionId) {
+            return;
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($subscriptionId): void {
+            $subscription = BillingSubscription::query()
+                ->with('trialRedemption')
+                ->lockForUpdate()
+                ->find($subscriptionId);
+
+            if (! $subscription
+                || $subscription->status !== BillingSubscriptionStatus::INCOMPLETE
+                || ! $subscription->trialRedemption
+                || $subscription->trialRedemption->status !== 'RESERVED') {
+                return;
+            }
+
+            $snapshot = (array) $subscription->trial_policy_snapshot;
+            if (($snapshot['start_trigger'] ?? null) !== 'FIRST_ACTIVATION'
+                || (($snapshot['requires_manual_approval'] ?? false)
+                    && empty($subscription->trialRedemption->metadata['approved_at']))) {
+                return;
+            }
+
+            $now = \Carbon\CarbonImmutable::now('Asia/Aden');
+            $end = match ($snapshot['duration_unit'] ?? null) {
+                'HOUR' => $now->addHours((int) $snapshot['duration_value']),
+                'DAY' => $now->addDays((int) $snapshot['duration_value']),
+                'WEEK' => $now->addWeeks((int) $snapshot['duration_value']),
+                'MONTH' => $now->addMonthsNoOverflow((int) $snapshot['duration_value']),
+                default => null,
+            };
+
+            if (! $end || $end->lte($now)) {
+                return;
+            }
+
+            $subscription->status = BillingSubscriptionStatus::TRIALING;
+            $subscription->trial_start = $now;
+            $subscription->trial_end = $end;
+            $subscription->current_period_start = $now;
+            $subscription->current_period_end = $end;
+            $subscription->save();
+
+            $subscription->trialRedemption->status = 'ACTIVE';
+            $subscription->trialRedemption->started_at = $now;
+            $subscription->trialRedemption->save();
+
+            app(BillingDunningService::class)->scheduleSubscriptionAlerts($subscription);
+            $subscription->events()->create([
+                'event_type' => 'TRIAL_STARTED_ON_FIRST_ACTIVATION',
+                'from_status' => BillingSubscriptionStatus::INCOMPLETE->value,
+                'to_status' => BillingSubscriptionStatus::TRIALING->value,
+                'payload' => [
+                    'trial_redemption_id' => $subscription->trialRedemption->trial_redemption_id,
+                    'trial_end' => $end->toDateTimeString(),
+                ],
+                'occurred_at' => $now,
+            ]);
+        }, 3);
     }
 
     public function featureValue(BillingSubscription $subscription, string $featureKey): mixed

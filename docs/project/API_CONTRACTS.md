@@ -222,5 +222,8 @@ All endpoints below are nested under `/api/v1/platform/billing` and protected by
 - `POST policies/trials/{policyId}/versions`, `POST policies/dunning/{policyId}/versions`: create a new draft version.
 - `POST policies/trial-versions/{versionId}/publish`, `POST policies/dunning-versions/{versionId}/publish`: publish a draft as the current immutable version.
 - `PUT policies/plan-versions/{versionId}`, `PUT policies/prices/{priceId}`: assign published policy versions to a draft plan version or draft price.
+- `GET policies/trial-redemptions/pending`: cursor-paginated list of trial requests awaiting Platform Scope review.
 - `POST policies/trial-redemptions/{redemptionId}/approve`: approve a trial awaiting manual approval.
+- `POST policies/trial-redemptions/{redemptionId}/reject`: reject a pending trial request with a mandatory reason.
+- `POST policies/subscriptions/{subscriptionId}/trial-adjustments`: extend, shorten, or end an active trial with mandatory reason and audit actor.
 - `POST policies/subscriptions/{subscriptionId}/trial-adjustments`: extend, shorten, or end an active trial with mandatory reason and audit actor.

@@ -37,6 +37,9 @@ class StoreSystemSettingRequest extends FormRequest
      */
     public function rules(): array
     {
+        if (in_array(strtolower((string) $this->input('setting_key')), ['trial_period_days', 'grace_period_days', 'auto_suspend_expired', 'subscription_expiry_alert_days'], true)) {
+            throw ValidationException::withMessages(['setting_key' => ['تم نقل هذا المفتاح إلى محرك سياسات الفوترة.']]);
+        }
         if (strtoupper((string) $this->input('setting_category')) === 'SUBSCRIPTION') {
             throw ValidationException::withMessages(['setting_category' => ['تم نقل سياسات الاشتراك والتجربة إلى محرك سياسات الفوترة.']]);
         }

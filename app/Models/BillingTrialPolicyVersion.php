@@ -23,7 +23,7 @@ class BillingTrialPolicyVersion extends Model
     protected static function booted(): void
     {
         static::updating(function (self $version): void {
-            if ($version->getRawOriginal('status') !== 'DRAFT' && array_diff(array_keys($version->getDirty()), ['status', 'published_at', 'updated_at']) !== []) {
+            if ($version->getRawOriginal('status') !== 'DRAFT' && array_diff(array_keys($version->getDirty()), ['updated_at']) !== []) {
                 throw new LogicException('إصدار سياسة التجربة المنشور غير قابل للتعديل؛ أنشئ إصداراً جديداً.');
             }
         });

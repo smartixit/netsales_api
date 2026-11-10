@@ -166,6 +166,7 @@ class SystemSettingService
      */
     public function create(StoreSystemSettingRequest $request): SystemSetting
     {
+        $this->assertNotRetiredSubscriptionKey($request->getSettingKey());
         return DB::transaction(function () use ($request) {
             $data = [
                 'setting_category' => $request->getSettingCategory()->value,
@@ -186,6 +187,9 @@ class SystemSettingService
     {
         return DB::transaction(function () use ($request, $id) {
             $setting = $this->getById($id);
+            if ($request->getSettingKey() !== null) {
+                $this->assertNotRetiredSubscriptionKey($request->getSettingKey());
+            }
 
             $data = [];
 
@@ -319,6 +323,13 @@ class SystemSettingService
     /**
      * تفريغ الذاكرة المؤقتة للإعدادات.
      */
+    private function assertNotRetiredSubscriptionKey(string $key): void
+    {
+        if (in_array($key, ['trial_period_days', 'grace_period_days', 'auto_suspend_expired', 'subscription_expiry_alert_days'], true)) {
+            throw ValidationException::withMessages(['setting_key' => ['تم نقل هذا الإعداد إلى محرك سياسات الفوترة.']]);
+        }
+    }
+
     public function clearCache(): void
     {
         $this->settingRepository->clearCache();

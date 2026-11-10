@@ -4,7 +4,8 @@ namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
 use App\Services\Billing\BillingPolicyManagementService;
-use App\Models\{BillingDunningPolicy, BillingTrialPolicy};
+use App\Models\{BillingDunningPolicy, BillingTrialPolicy, BillingTrialRedemption};
+use App\Enums\BillingTrialRedemptionStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -13,6 +14,66 @@ use Illuminate\Validation\ValidationException;
 class BillingPolicyController extends BaseController
 {
     public function __construct(private BillingPolicyManagementService $policies) {}
+
+
+    public function trialPolicies(Request $request): JsonResponse
+    {
+        $query = BillingTrialPolicy::query()->with('currentVersion')->orderBy('trial_policy_id');
+        if ($request->filled('search')) {
+            $term = trim((string) $request->query('search'));
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('policy_key', 'like', "%{$term}%"));
+        }
+        return $this->successResponse('تم استرجاع سياسات التجربة.', $query->cursorPaginate(min(max($request->integer('per_page', 20), 1), 100)));
+    }
+
+    public function dunningPolicies(Request $request): JsonResponse
+    {
+        $query = BillingDunningPolicy::query()->with('currentVersion')->orderBy('dunning_policy_id');
+        if ($request->filled('search')) {
+            $term = trim((string) $request->query('search'));
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('policy_key', 'like', "%{$term}%"));
+        }
+        return $this->successResponse('تم استرجاع سياسات التحصيل.', $query->cursorPaginate(min(max($request->integer('per_page', 20), 1), 100)));
+    }
+
+    public function pendingRedemptions(Request $request): JsonResponse
+    {
+        $query = BillingTrialRedemption::query()
+            ->with(['policy', 'policyVersion', 'subscription.billingAccount.network'])
+            ->where('status', BillingTrialRedemptionStatus::PENDING_APPROVAL->value)
+            ->orderBy('trial_redemption_id');
+        return $this->successResponse('تم استرجاع طلبات التجربة المعلقة.', $query->cursorPaginate(min(max($request->integer('per_page', 20), 1), 100)));
+    }
+
+    public function approveRedemption(int $redemptionId): JsonResponse
+    {
+        $subscription = $this->policies->approveTrialRedemption($redemptionId, $this->requireCurrentUser());
+        return $this->successResponse('تم اعتماد طلب التجربة.', $subscription);
+    }
+
+    public function rejectRedemption(Request $request, int $redemptionId): JsonResponse
+    {
+        $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:500']]);
+        $subscription = $this->policies->rejectTrialRedemption($redemptionId, $data['reason'], $this->requireCurrentUser());
+        return $this->successResponse('تم رفض طلب التجربة وإغلاق الاشتراك المعلق.', $subscription);
+    }
+
+    public function adjustTrial(Request $request, int $subscriptionId): JsonResponse
+    {
+        $data = $request->validate([
+            'adjustment_type' => ['required', Rule::in(['EXTEND', 'SHORTEN', 'END_EARLY'])],
+            'days' => ['required_unless:adjustment_type,END_EARLY', 'nullable', 'integer', 'between:1,365'],
+            'reason' => ['required', 'string', 'min:5', 'max:500'],
+        ]);
+        $subscription = $this->policies->adjustTrial(
+            $subscriptionId,
+            $data['adjustment_type'],
+            isset($data['days']) ? (int) $data['days'] : null,
+            $data['reason'],
+            $this->requireCurrentUser()
+        );
+        return $this->successResponse('تم تعديل فترة التجربة وتسجيل سبب التعديل.', $subscription);
+    }
 
     public function storeTrial(Request $request): JsonResponse
     {

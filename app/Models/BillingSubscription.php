@@ -6,7 +6,7 @@ use App\Enums\BillingSubscriptionStatus;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
 use Illuminate\Database\Eloquent\SoftDeletes;
 use LogicException;
 
@@ -49,7 +49,7 @@ class BillingSubscription extends Model
     {
         static::updating(function (self $subscription): void {
             $allowed = [
-                'status', 'current_period_start', 'current_period_end',
+                'status', 'current_period_start', 'current_period_end', 'trial_start', 'trial_end',
                 'cancel_at_period_end', 'canceled_at', 'ended_at', 'paused_at',
                 'grace_period_ends_at', 'metadata', 'updated_at',
             ];

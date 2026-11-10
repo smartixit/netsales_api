@@ -3,7 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Services\OutboxService;
+use App\Services\Billing\BillingOutboxNotificationDispatcher;
 use Exception;
+use RuntimeException;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -26,7 +28,7 @@ class ProcessOutboxMessages extends Command
     /**
      * Execute the console command.
      */
-    public function handle(OutboxService $outboxService): int
+    public function handle(OutboxService $outboxService, BillingOutboxNotificationDispatcher $billingNotifications): int
     {
         $batchSize = (int) $this->option('batch-size');
         $leaseSeconds = (int) $this->option('lease-seconds');
@@ -44,11 +46,21 @@ class ProcessOutboxMessages extends Command
 
         foreach ($messages as $msg) {
             try {
-                // تنفيذ تسليم الحدث أو الإشعار المقترن
+                if (in_array($msg->event_type, [
+                    'billing.invoice.payment_reminder',
+                    'billing.subscription.renewal_reminder',
+                ], true)) {
+                    $billingNotifications->dispatch($msg);
+                }
+
                 Log::info("Processing outbox message #{$msg->id} [{$msg->event_type}] for aggregate [{$msg->aggregate_type}:{$msg->aggregate_id}]", [
                     'message_uuid' => $msg->message_uuid,
                 ]);
 
+                if (in_array($msg->event_type, ['billing.invoice.payment_reminder', 'billing.subscription.renewal_reminder'], true)
+                    && ! $billingNotifications->dispatch($msg)) {
+                    throw new RuntimeException('تعذر تسليم إشعار الفوترة إلى المستلم.');
+                }
                 $outboxService->markPublished($msg->id, (string) $msg->lease_token);
                 $processedCount++;
             } catch (Exception $e) {

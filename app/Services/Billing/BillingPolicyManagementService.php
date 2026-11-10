@@ -171,6 +171,43 @@ class BillingPolicyManagementService
         }, 3);
     }
 
+    public function rejectTrialRedemption(int $redemptionId, string $reason, User $actor): BillingSubscription
+    {
+        return DB::transaction(function () use ($redemptionId, $reason, $actor): BillingSubscription {
+            $this->assertPlatform($actor);
+            $redemption = BillingTrialRedemption::query()->lockForUpdate()->findOrFail($redemptionId);
+            if ($redemption->status !== 'PENDING_APPROVAL') {
+                throw ValidationException::withMessages(['trial_redemption_id' => ['طلب التجربة ليس بانتظار الموافقة.']]);
+            }
+            $subscription = BillingSubscription::query()->lockForUpdate()->findOrFail($redemption->billing_subscription_id);
+            if ($subscription->status !== BillingSubscriptionStatus::INCOMPLETE) {
+                throw ValidationException::withMessages(['subscription_id' => ['لا يمكن رفض طلب التجربة بعد بدء الاشتراك.']]);
+            }
+            $now = now('Asia/Aden');
+            $redemption->status = 'REVOKED';
+            $redemption->completed_at = $now;
+            $redemption->metadata = array_merge((array) $redemption->metadata, [
+                'rejected_at' => $now->toDateTimeString(),
+                'rejected_by' => $actor->user_id,
+                'rejection_reason' => $reason,
+            ]);
+            $redemption->save();
+
+            $subscription->status = BillingSubscriptionStatus::EXPIRED;
+            $subscription->ended_at = $now;
+            $subscription->save();
+            $subscription->events()->create([
+                'event_type' => 'TRIAL_REDEMPTION_REJECTED',
+                'from_status' => BillingSubscriptionStatus::INCOMPLETE->value,
+                'to_status' => BillingSubscriptionStatus::EXPIRED->value,
+                'payload' => ['trial_redemption_id' => $redemption->trial_redemption_id, 'reason' => $reason],
+                'actor_id' => $actor->user_id,
+                'occurred_at' => $now,
+            ]);
+            return $subscription->refresh();
+        }, 3);
+    }
+
     public function adjustTrial(int $subscriptionId, string $type, ?int $days, string $reason, User $actor): BillingSubscription
     {
         return DB::transaction(function () use ($subscriptionId, $type, $days, $reason, $actor): BillingSubscription {

@@ -34,8 +34,8 @@ class BillingPolicyResolver
             && $trialVersion->is_enabled
             && $trialVersion->duration_value > 0;
 
-        if ($trialEnabled) {
-            $this->assertEligible($trialVersion, $account, $network, $planVersion->plan);
+        if ($trialEnabled && ! $this->isEligible($trialVersion, $account, $network, $planVersion->plan)) {
+            $trialEnabled = false;
         }
 
         return [
@@ -64,27 +64,25 @@ class BillingPolicyResolver
             'redemption_subject_key' => $subject,
             'status' => $version->requires_manual_approval
                 ? BillingTrialRedemptionStatus::PENDING_APPROVAL->value
-                : BillingTrialRedemptionStatus::ACTIVE->value,
+                : ($version->start_trigger === 'FIRST_ACTIVATION'
+                    ? BillingTrialRedemptionStatus::RESERVED->value
+                    : BillingTrialRedemptionStatus::ACTIVE->value),
             'reserved_at' => now('Asia/Aden'),
             'started_at' => $version->start_trigger === 'PURCHASE' && ! $version->requires_manual_approval
                 ? now('Asia/Aden')
                 : null,
-            'metadata' => ['eligibility_mode' => $version->eligibility_mode],
-        ]);
-    }
-
-    public function assertEligible(BillingTrialPolicyVersion $version, BillingAccount $account, Network $network, BillingPlan $plan): void
+            'metadata' => ['eligibility_mode' => $version->eligibility_mod    public function isEligible(BillingTrialPolicyVersion $version, BillingAccount $account, Network $network, BillingPlan $plan): bool
     {
         $mode = BillingTrialEligibilityMode::from($version->eligibility_mode);
 
         if ($mode === BillingTrialEligibilityMode::NEW_NETWORK
             && BillingTrialRedemption::query()->where('network_id', $network->network_id)->exists()) {
-            throw ValidationException::withMessages(['trial' => ['هذه الشبكة سبق لها الاستفادة من تجربة مجانية.']]);
+            return false;
         }
 
         if ($mode === BillingTrialEligibilityMode::NEW_BILLING_ACCOUNT
             && BillingTrialRedemption::query()->where('billing_account_id', $account->billing_account_id)->exists()) {
-            throw ValidationException::withMessages(['trial' => ['حساب الفوترة سبق له الاستفادة من تجربة مجانية.']]);
+            return false;
         }
 
         $scope = BillingTrialRedemptionScope::from($version->redemption_scope);
@@ -94,12 +92,14 @@ class BillingPolicyResolver
             BillingTrialRedemptionScope::PRODUCT => 'network:'.$network->network_id.':product:'.$plan->product_id,
         };
 
-        if (BillingTrialRedemption::query()
+        return ! BillingTrialRedemption::query()
             ->where('trial_policy_id', $version->trial_policy_id)
             ->where('redemption_scope', $scope->value)
             ->where('redemption_subject_key', $subject)
-            ->exists()) {
-            throw ValidationException::withMessages(['trial' => ['تم استخدام هذه السياسة التجريبية مسبقاً ضمن نطاق الاستفادة المحدد.']]);
+            ->exists();
+    }
+
+']]);
         }
     }
 

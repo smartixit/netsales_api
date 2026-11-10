@@ -45,6 +45,8 @@ enum NotificationType: string
     // إعلانات النظام العامة
     case SYSTEM_ANNOUNCEMENT = 'SYSTEM_ANNOUNCEMENT';
     case GENERAL_INFO = 'GENERAL_INFO';
+    case BILLING_INVOICE_PAYMENT_REMINDER = 'BILLING_INVOICE_PAYMENT_REMINDER';
+    case BILLING_SUBSCRIPTION_RENEWAL_REMINDER = 'BILLING_SUBSCRIPTION_RENEWAL_REMINDER';
 
     public static function values(): array
     {
@@ -90,6 +92,8 @@ enum NotificationType: string
 
             self::SYSTEM_ANNOUNCEMENT => 'إعلان إداري عام',
             self::GENERAL_INFO => 'إشعار توجيهي عام',
+            self::BILLING_INVOICE_PAYMENT_REMINDER => 'تذكير بسداد فاتورة الاشتراك',
+            self::BILLING_SUBSCRIPTION_RENEWAL_REMINDER => 'تنبيه تجديد الاشتراك',
         };
     }
 
@@ -104,7 +108,9 @@ enum NotificationType: string
             self::SALE_INVOICE_CANCELLED,
             self::WALLET_DEPOSIT,
             self::WALLET_WITHDRAWAL,
-            self::WALLET_TRANSFER => 'FINANCIAL',
+            self::WALLET_TRANSFER,
+            self::BILLING_INVOICE_PAYMENT_REMINDER,
+            self::BILLING_SUBSCRIPTION_RENEWAL_REMINDER => 'FINANCIAL',
 
             self::VOUCHER_REQUEST_CREATED,
             self::VOUCHER_REQUEST_APPROVED,
@@ -150,7 +156,9 @@ enum NotificationType: string
             self::NETWORK_APPROVED,
             self::NETWORK_REJECTED,
             self::POS_APPROVED,
-            self::POS_REJECTED => true,
+            self::POS_REJECTED,
+            self::BILLING_INVOICE_PAYMENT_REMINDER,
+            self::BILLING_SUBSCRIPTION_RENEWAL_REMINDER => true,
             default => false,
         };
     }

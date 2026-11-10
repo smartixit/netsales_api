@@ -182,7 +182,7 @@ return new class extends Migration
         $defaultTrialPolicyId = DB::table('billing_trial_policies')->insertGetId([
             'policy_key' => 'platform-default',
             'name' => 'سياسة التجربة الافتراضية للمنصة',
-            'description' => 'السياسة الافتراضية التي تطبق على نسخ الخطط والأسعار التي لا تعيّن سياسة خاصة.',
+            'description' => 'التجربة معطلة افتراضياً؛ يجب تفعيلها صراحةً على مستوى الخطة أو السعر أو سياسة المنصة.',
             'is_active' => true,
             'created_at' => $now,
             'updated_at' => $now,
@@ -192,12 +192,12 @@ return new class extends Migration
             'trial_policy_id' => $defaultTrialPolicyId,
             'version_number' => 1,
             'status' => 'PUBLISHED',
-            'is_enabled' => true,
-            'duration_value' => 14,
+            'is_enabled' => false,
+            'duration_value' => 0,
             'duration_unit' => 'DAY',
             'start_trigger' => 'PURCHASE',
             'redemption_scope' => 'PRODUCT',
-            'eligibility_mode' => 'NEW_BILLING_ACCOUNT',
+            'eligibility_mode' => 'ANY',
             'requires_manual_approval' => false,
             'end_behavior' => 'CREATE_INVOICE',
             'entitlement_mode' => 'FULL_PLAN',
@@ -253,13 +253,6 @@ return new class extends Migration
                 DB::table('billing_plan_versions')
                     ->where('trial_days', 0)
                     ->update(['trial_policy_version_id' => $noTrialVersionId]);
-                continue;
-            }
-
-            if ($days === 14) {
-                DB::table('billing_plan_versions')
-                    ->where('trial_days', 14)
-                    ->update(['trial_policy_version_id' => $defaultTrialVersionId]);
                 continue;
             }
 
@@ -334,11 +327,44 @@ return new class extends Migration
                     ->where('plan_version_id', $subscription->plan_version_id)
                     ->first();
 
+                $trialVersionId = $planVersion?->trial_policy_version_id;
+                $dunningVersionId = $planVersion?->dunning_policy_version_id ?? $defaultDunningVersionId;
+                $trialVersion = $trialVersionId
+                    ? DB::table('billing_trial_policy_versions')->where('trial_policy_version_id', $trialVersionId)->first()
+                    : null;
+                $dunningVersion = DB::table('billing_dunning_policy_versions')
+                    ->where('dunning_policy_version_id', $dunningVersionId)
+                    ->first();
+
+                $trialSnapshot = $trialVersion ? [
+                    'trial_policy_version_id' => (int) $trialVersion->trial_policy_version_id,
+                    'is_enabled' => (bool) $trialVersion->is_enabled,
+                    'duration_value' => (int) $trialVersion->duration_value,
+                    'duration_unit' => $trialVersion->duration_unit,
+                    'start_trigger' => $trialVersion->start_trigger,
+                    'redemption_scope' => $trialVersion->redemption_scope,
+                    'eligibility_mode' => $trialVersion->eligibility_mode,
+                    'requires_manual_approval' => (bool) $trialVersion->requires_manual_approval,
+                    'end_behavior' => $trialVersion->end_behavior,
+                    'entitlement_mode' => $trialVersion->entitlement_mode,
+                    'entitlement_config' => $trialVersion->entitlement_config ? json_decode($trialVersion->entitlement_config, true) : null,
+                ] : null;
+
+                $dunningSnapshot = $dunningVersion ? [
+                    'dunning_policy_version_id' => (int) $dunningVersion->dunning_policy_version_id,
+                    'grace_period_days' => (int) $dunningVersion->grace_period_days,
+                    'auto_suspend_after_grace' => (bool) $dunningVersion->auto_suspend_after_grace,
+                    'reminder_schedule_days' => json_decode($dunningVersion->reminder_schedule_days, true),
+                    'pre_renewal_alert_days' => json_decode($dunningVersion->pre_renewal_alert_days, true),
+                ] : null;
+
                 DB::table('billing_subscriptions')
                     ->where('billing_subscription_id', $subscription->billing_subscription_id)
                     ->update([
-                        'trial_policy_version_id' => $planVersion?->trial_policy_version_id,
-                        'dunning_policy_version_id' => $planVersion?->dunning_policy_version_id ?? $defaultDunningVersionId,
+                        'trial_policy_version_id' => $trialVersionId,
+                        'dunning_policy_version_id' => $dunningVersionId,
+                        'trial_policy_snapshot' => $trialSnapshot ? json_encode($trialSnapshot, JSON_THROW_ON_ERROR) : null,
+                        'dunning_policy_snapshot' => $dunningSnapshot ? json_encode($dunningSnapshot, JSON_THROW_ON_ERROR) : null,
                     ]);
             }
         );
