@@ -46,7 +46,7 @@ class BillingLedgerService
                 return $existing;
             }
 
-            $currency = $this->currencies->getActive($currencyId);
+            $currency = Currency::query()->findOrFail($currencyId);
             $normalizedLines = $this->normalizeLines($lines, $currency);
             $accountIds = array_values(array_unique(array_column($normalizedLines, 'ledger_account_id')));
             $accounts = $this->ledger->findAccountsForCurrency($currencyId, $accountIds);

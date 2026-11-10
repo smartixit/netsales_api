@@ -12,7 +12,7 @@ class BillingPlatformReadService
 {
     public function accounts(array $filters = []): Collection|CursorPaginator
     {
-        $query = BillingAccount::query()->with(['network', 'defaultCurrency']);
+        $query = BillingAccount::query()->with(['network', 'defaultCurrency', 'contacts']);
 
         if (! empty($filters['network_id'])) {
             $query->where('network_id', (int) $filters['network_id']);

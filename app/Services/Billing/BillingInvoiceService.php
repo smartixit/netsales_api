@@ -82,6 +82,7 @@ class BillingInvoiceService
                     'quantity' => $subscription->quantity,
                     'unit_amount_minor' => $price->unit_amount_minor,
                     'setup_fee_minor' => $price->setup_fee_minor,
+                    'tax_behavior' => $price->tax_behavior,
                 ],
                 'due_on' => now('Asia/Aden')->addDays((int) $subscription->billingAccount->payment_terms_days)->toDateString(),
                 'created_by' => $actor?->user_id,

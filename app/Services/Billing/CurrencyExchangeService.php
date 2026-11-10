@@ -54,7 +54,8 @@ class CurrencyExchangeService
     ): CurrencyConversion {
         $this->authorization->assertPlatform($actor);
 
-        if ($sourceAmountMinor <= 0 || $feeMinor < 0 || $feeMinor >= $sourceAmountMinor) {
+        if ($sourceAmountMinor <= 0 || $feeMinor < 0 || $feeMinor >= $sourceAmountMinor
+            || trim($sourceType) === '' || $sourceId <= 0) {
             throw ValidationException::withMessages(['amount_minor' => ['مبلغ التحويل أو الرسوم غير صالح.']]);
         }
 

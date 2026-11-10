@@ -52,6 +52,7 @@ class BillingSubscriptionService
                 ->findOrFail($priceId);
 
             if (! $price->is_active
+                || ! $price->currency?->is_active
                 || $price->planVersion?->status !== BillingPlanVersionStatus::PUBLISHED
                 || ! $price->planVersion->plan?->is_active) {
                 throw ValidationException::withMessages(['price_id' => ['السعر أو نسخة الخطة غير منشورة أو غير مفعلة.']]);

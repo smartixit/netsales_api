@@ -99,10 +99,14 @@ class BillingCatalogController extends BaseController
         }
     }
 
-    public function createDraftVersion(int $planId): JsonResponse
+    public function createDraftVersion(\App\Http\Requests\API\V1\Billing\CreateDraftVersionRequest $request, int $planId): JsonResponse
     {
         try {
-            $version = $this->catalog->createDraftVersion($planId, $this->currentUserId(false));
+            $version = $this->catalog->createDraftVersion(
+                $planId,
+                $this->currentUserId(false),
+                (int) $request->input('trial_days', 0)
+            );
 
             return $this->successResponse('تم إنشاء نسخة مسودة جديدة للخطة.', [
                 'plan_version_id' => $version->plan_version_id,

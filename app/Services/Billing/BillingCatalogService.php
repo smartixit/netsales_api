@@ -97,11 +97,15 @@ class BillingCatalogService
         return $query->orderBy('plan_id')->cursorPaginate($perPage);
     }
 
-    public function createDraftVersion(int $planId, int $actorId): BillingPlanVersion
+    public function createDraftVersion(int $planId, int $actorId, int $trialDays = 0): BillingPlanVersion
     {
         $actor = $this->platformActor($actorId);
 
-        return DB::transaction(function () use ($planId, $actor): BillingPlanVersion {
+        if ($trialDays < 0 || $trialDays > 365) {
+            throw ValidationException::withMessages(['trial_days' => ['مدة التجربة يجب أن تكون بين صفر و365 يوماً.']]);
+        }
+
+        return DB::transaction(function () use ($planId, $actor, $trialDays): BillingPlanVersion {
             $plan = $this->catalog->findPlan($planId, true);
 
             if (! $plan || ! $plan->is_active) {
@@ -110,7 +114,11 @@ class BillingCatalogService
                 ]);
             }
 
-            return $this->catalog->createDraftVersion($planId, (int) $actor->user_id);
+            $version = $this->catalog->createDraftVersion($planId, (int) $actor->user_id);
+            $version->trial_days = $trialDays;
+            $version->save();
+
+            return $version->refresh()->load(['plan', 'prices.currency', 'features']);
         }, 3);
     }
 

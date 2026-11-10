@@ -21,7 +21,7 @@ class BillingAccountService
         $this->authorization->assertNetworkOwner($actor, $networkId);
 
         return BillingAccount::query()
-            ->with(['defaultCurrency', 'contacts'])
+            ->with(['network', 'defaultCurrency', 'contacts'])
             ->where('network_id', $networkId)
             ->orderBy('billing_account_id')
             ->get();
@@ -32,7 +32,7 @@ class BillingAccountService
         $this->authorization->assertNetworkOwner($actor, $networkId);
 
         return BillingAccount::query()
-            ->with(['defaultCurrency', 'contacts'])
+            ->with(['network', 'defaultCurrency', 'contacts'])
             ->where('network_id', $networkId)
             ->where('default_currency_id', $currencyId)
             ->firstOrFail();
@@ -41,7 +41,7 @@ class BillingAccountService
     public function ownedAccount(int $accountId, User $actor): BillingAccount
     {
         $account = BillingAccount::query()
-            ->with(['defaultCurrency', 'contacts'])
+            ->with(['network', 'defaultCurrency', 'contacts'])
             ->findOrFail($accountId);
 
         $this->authorization->assertNetworkOwner($actor, (int) $account->network_id);

@@ -506,6 +506,7 @@ Route::prefix('v1')->group(function () {
                 Route::patch('treasury-accounts/{treasuryAccountId}/status', [BillingFinanceController::class, 'setTreasuryStatus'])
                     ->whereNumber('treasuryAccountId')->name('api.v1.platform.billing.treasury_accounts.status');
                 Route::post('exchange-rates', [BillingFinanceController::class, 'storeExchangeRate'])->name('api.v1.platform.billing.exchange_rates.store');
+                Route::post('conversions', [BillingFinanceController::class, 'convertCurrency'])->name('api.v1.platform.billing.conversions.store');
             });
 
             Route::middleware(['throttle:api-write', 'permission:billing.create'])->group(function () {

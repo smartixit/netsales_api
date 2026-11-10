@@ -34,18 +34,6 @@ class BillingUsageService
                 ->lockForUpdate()
                 ->findOrFail($subscriptionId);
 
-            $active = in_array($subscription->status, [
-                BillingSubscriptionStatus::ACTIVE,
-                BillingSubscriptionStatus::TRIALING,
-            ], true) && (! $subscription->current_period_end || $subscription->current_period_end->gt(now('Asia/Aden')));
-            $grace = $subscription->status === BillingSubscriptionStatus::PAST_DUE
-                && $subscription->grace_period_ends_at
-                && $subscription->grace_period_ends_at->gt(now('Asia/Aden'));
-
-            if (! $active && ! $grace) {
-                throw ValidationException::withMessages(['subscription_id' => ['لا يوجد اشتراك نشط أو فترة سماح تسمح بتسجيل الاستهلاك.']]);
-            }
-
             $meter = BillingUsageMeter::query()
                 ->where('meter_key', $meterKey)
                 ->where('is_active', true)
@@ -56,6 +44,7 @@ class BillingUsageService
             }
 
             $existing = BillingUsageEvent::query()
+                ->with('meter')
                 ->where('billing_subscription_id', $subscriptionId)
                 ->where('meter_id', $meter->meter_id)
                 ->where('idempotency_key', $idempotencyKey)
@@ -67,6 +56,18 @@ class BillingUsageService
                 }
 
                 return $existing;
+            }
+
+            $active = in_array($subscription->status, [
+                BillingSubscriptionStatus::ACTIVE,
+                BillingSubscriptionStatus::TRIALING,
+            ], true) && (! $subscription->current_period_end || $subscription->current_period_end->gt(now('Asia/Aden')));
+            $grace = $subscription->status === BillingSubscriptionStatus::PAST_DUE
+                && $subscription->grace_period_ends_at
+                && $subscription->grace_period_ends_at->gt(now('Asia/Aden'));
+
+            if (! $active && ! $grace) {
+                throw ValidationException::withMessages(['subscription_id' => ['لا يوجد اشتراك نشط أو فترة سماح تسمح بتسجيل الاستهلاك.']]);
             }
 
             $feature = $subscription->planVersion?->features->firstWhere('feature_key', $meterKey);

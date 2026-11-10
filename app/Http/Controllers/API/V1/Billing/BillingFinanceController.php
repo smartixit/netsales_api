@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
-use App\Http\Requests\API\V1\Billing\{RejectPaymentRequest, StoreExchangeRateRequest, StoreTreasuryAccountRequest, VerifyPaymentRequest};
+use App\Http\Requests\API\V1\Billing\{RejectPaymentRequest, StoreCurrencyConversionRequest, StoreExchangeRateRequest, StoreTreasuryAccountRequest, VerifyPaymentRequest};
 use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingInvoiceResource, BillingPaymentResource, BillingSubscriptionResource, CurrencyExchangeRateResource, CurrencyConversionResource, LedgerJournalEntryResource, PaymentMethodResource, TreasuryAccountResource};
 use App\Services\Billing\{BillingInvoiceService, BillingPaymentService, BillingPlatformReadService, BillingTreasuryService, CurrencyExchangeService};
 use Illuminate\Http\JsonResponse;
@@ -185,6 +185,28 @@ class BillingFinanceController extends BaseController
             );
 
             return $this->successResponse('تم تسجيل سعر الصرف ككسر دقيق مع مصدره وتوقيته.', new CurrencyExchangeRateResource($rate->load(['baseCurrency', 'quoteCurrency'])), 201);
+        } catch (ValidationException $exception) {
+            return $this->validationErrorResponse($exception);
+        }
+    }
+
+    public function convertCurrency(StoreCurrencyConversionRequest $request): JsonResponse
+    {
+        try {
+            $conversion = $this->exchange->convert(
+                (int) $request->input('exchange_rate_id'),
+                (int) $request->input('source_amount_minor'),
+                (int) $request->input('fee_amount_minor', 0),
+                (string) $request->input('source_type'),
+                (int) $request->input('source_id'),
+                $this->requireCurrentUser()
+            );
+
+            return $this->successResponse(
+                'تم تسجيل تحويل العملة مع لقطة سعر الصرف والرسوم والتقريب.',
+                new CurrencyConversionResource($conversion->load(['fromCurrency', 'toCurrency', 'exchangeRate'])),
+                201
+            );
         } catch (ValidationException $exception) {
             return $this->validationErrorResponse($exception);
         }
