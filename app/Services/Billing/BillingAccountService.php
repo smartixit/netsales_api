@@ -78,6 +78,37 @@ class BillingAccountService
         }, 3);
     }
 
+    public function createForPlatform(int $networkId, int $currencyId, User $actor): BillingAccount
+    {
+        $this->authorization->assertPlatform($actor);
+        $currency = $this->currencies->getActive($currencyId);
+
+        return DB::transaction(function () use ($networkId, $currency, $actor): BillingAccount {
+            $network = Network::query()->lockForUpdate()->findOrFail($networkId);
+
+            if (! $network->isActive()) {
+                throw ValidationException::withMessages([
+                    'network_id' => ['لا يمكن إنشاء حساب فوترة لشبكة غير نشطة.'],
+                ]);
+            }
+
+            $account = BillingAccount::query()->firstOrCreate(
+                ['network_id' => $networkId, 'default_currency_id' => $currency->currency_id],
+                [
+                    'account_number' => 'BILL-'.str_pad((string) $networkId, 8, '0', STR_PAD_LEFT).'-'.Str::upper(Str::random(4)),
+                    'default_currency_id' => $currency->currency_id,
+                    'status' => 'ACTIVE',
+                    'created_by' => $actor->user_id,
+                    'legal_name' => $network->network_name,
+                    'billing_email' => $network->network_email,
+                    'billing_address' => $network->network_address,
+                ]
+            );
+
+            return $account->load(['network', 'defaultCurrency', 'contacts']);
+        }, 3);
+    }
+
     public function changeDefaultCurrency(int $accountId, int $currencyId, User $actor): BillingAccount
     {
         $currency = $this->currencies->getActive($currencyId);
