@@ -60,3 +60,13 @@ Trial eligibility, redemption, and adjustments are server-side transactional con
 4. Recognition is cumulative and integer-based. The last service day posts the exact unrecognized remainder; no floating-point arithmetic or rounding leakage is allowed.
 5. Credit notes reduce the remaining service obligation and the net recognized amount using the original line's schedule. The service derives this automatically; no caller-supplied accounting treatment is authoritative.
 6. An invoice with recognized revenue cannot be voided. Use an immutable credit note to correct it.
+
+
+## Reconciliation Invariants
+1. The Accounts Receivable control account (1100) must equal the sum of finalized invoice `remaining_minor` balances, excluding void invoices.
+2. Deferred Revenue (2100) must equal the remaining unrecognized amount on all pending/active revenue recognition schedules.
+3. Customer Credit Liability (2200) must equal the unrefunded refundable amount across issued credit notes.
+4. Tax Payable (2300) must equal tax on finalized non-void invoices less tax reversed by issued credit notes.
+5. Each treasury asset account must equal verified payments allocated to that treasury minus completed refunds allocated from that same treasury. Every new refund must persist its treasury account.
+6. The posted trial balance must balance independently per currency. Missing treasury links are reported as reconciliation warnings, never silently allocated to another account.
+7. All reconciliation values are compared in the original transaction currency and minor units. No cross-currency total is calculated unless a separate functional-currency translation policy is established.
