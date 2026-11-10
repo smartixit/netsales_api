@@ -36,6 +36,36 @@ class BillingPolicyController extends BaseController
         return $this->successResponse('تم استرجاع سياسات التحصيل.', $query->cursorPaginate(min(max($request->integer('per_page', 20), 1), 100)));
     }
 
+    public function trialPolicyVersions(Request $request, int $policyId): JsonResponse
+    {
+        $policy = BillingTrialPolicy::query()->findOrFail($policyId);
+        $versions = $policy->versions()
+            ->with('policy')
+            ->orderByDesc('version_number')
+            ->orderByDesc('trial_policy_version_id')
+            ->cursorPaginate(min(max($request->integer('per_page', 20), 1), 100));
+
+        return $this->successResponse(
+            'تم استرجاع إصدارات سياسة التجربة.',
+            \\App\\Http\\Resources\\API\\V1\\Billing\\BillingTrialPolicyVersionResource::collection($versions)
+        );
+    }
+
+    public function dunningPolicyVersions(Request $request, int $policyId): JsonResponse
+    {
+        $policy = BillingDunningPolicy::query()->findOrFail($policyId);
+        $versions = $policy->versions()
+            ->with('policy')
+            ->orderByDesc('version_number')
+            ->orderByDesc('dunning_policy_version_id')
+            ->cursorPaginate(min(max($request->integer('per_page', 20), 1), 100));
+
+        return $this->successResponse(
+            'تم استرجاع إصدارات سياسة التحصيل.',
+            \\App\\Http\\Resources\\API\\V1\\Billing\\BillingDunningPolicyVersionResource::collection($versions)
+        );
+    }
+
     public function pendingRedemptions(Request $request): JsonResponse
     {
         $query = BillingTrialRedemption::query()
