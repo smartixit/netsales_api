@@ -74,6 +74,16 @@ class BillingCatalogController extends BaseController
         );
     }
 
+    public function versions(Request $request, int $planId): JsonResponse
+    {
+        return $this->successResponse(
+            'تم استرجاع إصدارات الخطة.',
+            \\App\\Http\\Resources\\API\\V1\\Billing\\BillingPlanVersionResource::collection(
+                $this->catalog->versionsForPlan($planId, $request->only(['status', 'per_page']))
+            )
+        );
+    }
+
     public function storeProduct(StoreProductRequest $request): JsonResponse
     {
         try {
