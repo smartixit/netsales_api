@@ -24,9 +24,23 @@ class BillingLaunchCatalogSeeder extends Seeder
             $actorId = $this->platformActorId();
             $productId = $this->ensureProduct($actorId, $now);
             $trialVersionId = $this->ensureStarterTrialDraft($actorId, $now);
-            $dunningVersionId = $this->requiredPublishedDefaultDunningVersionId();
+            $dunningVersionId = $this->ensureLaunchDunningDraft($actorId, $now);
 
             foreach ($this->planDefinitions() as $definition) {
+                if ($dunningVersionId === null) {
+                    $this->command?->warn(
+                        'Skipped plan catalog: the launch dunning policy has no editable draft. Create a new policy version through Platform Billing.'
+                    );
+                    break;
+                }
+
+                if ($definition['trial_policy_version_id'] === 'starter' && $trialVersionId === null) {
+                    $this->command?->warn(
+                        'Skipped [starter]: the Starter trial policy has no editable draft. Create a new policy version through Platform Billing.'
+                    );
+                    continue;
+                }
+
                 $planId = $this->ensurePlan($productId, $definition, $actorId, $now);
                 $planVersionId = $this->ensureDraftPlanVersion(
                     $planId,
@@ -191,7 +205,7 @@ class BillingLaunchCatalogSeeder extends Seeder
         ], 'plan_version_id');
     }
 
-    private function ensureStarterTrialDraft(?int $actorId, mixed $now): int
+    private function ensureStarterTrialDraft(?int $actorId, mixed $now): ?int
     {
         $policy = DB::table('billing_trial_policies')
             ->where('policy_key', 'netsales-starter-14-day-trial')
@@ -211,62 +225,110 @@ class BillingLaunchCatalogSeeder extends Seeder
             $policyId = (int) $policy->trial_policy_id;
         }
 
-        $version = DB::table('billing_trial_policy_versions')
-            ->where('trial_policy_id', $policyId)
-            ->where('version_number', 1)
+        return $this->ensurePolicyDraftVersion(
+            'billing_trial_policy_versions',
+            'trial_policy_version_id',
+            $policyId,
+            [
+                'is_enabled' => true,
+                'duration_value' => 14,
+                'duration_unit' => 'DAY',
+                'start_trigger' => 'PURCHASE',
+                'redemption_scope' => 'NETWORK',
+                'eligibility_mode' => 'NEW_BILLING_ACCOUNT',
+                'requires_manual_approval' => false,
+                'end_behavior' => 'CREATE_INVOICE',
+                'entitlement_mode' => 'FULL_PLAN',
+                'entitlement_config' => null,
+            ],
+            $actorId,
+            $now
+        );
+    }
+
+    private function ensureLaunchDunningDraft(?int $actorId, mixed $now): ?int
+    {
+        $policy = DB::table('billing_dunning_policies')
+            ->where('policy_key', 'netsales-launch-dunning')
             ->first();
 
-        if ($version) {
-            // Never downgrade or rewrite a version that has already been published.
-            return (int) $version->trial_policy_version_id;
+        if (! $policy) {
+            $policyId = (int) DB::table('billing_dunning_policies')->insertGetId([
+                'policy_key' => 'netsales-launch-dunning',
+                'name' => 'سياسة التحصيل لإطلاق NetSales',
+                'description' => 'مسودة سياسة تحصيل الإطلاق: فترة سماح 7 أيام، تذكيرات عند الاستحقاق وبعد يومين وخمسة وسبعة أيام، وتنبيهات قبل التجديد.',
+                'is_active' => true,
+                'created_by' => $actorId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ], 'dunning_policy_id');
+        } else {
+            $policyId = (int) $policy->dunning_policy_id;
         }
 
-        return (int) DB::table('billing_trial_policy_versions')->insertGetId([
-            'trial_policy_id' => $policyId,
-            'version_number' => 1,
+        return $this->ensurePolicyDraftVersion(
+            'billing_dunning_policy_versions',
+            'dunning_policy_version_id',
+            $policyId,
+            [
+                'grace_period_days' => 7,
+                'auto_suspend_after_grace' => true,
+                'reminder_schedule_days' => json_encode([0, 2, 5, 7], JSON_THROW_ON_ERROR),
+                'pre_renewal_alert_days' => json_encode([7, 3, 1], JSON_THROW_ON_ERROR),
+            ],
+            $actorId,
+            $now
+        );
+    }
+
+    /**
+     * Returns an existing draft without overwriting it. If a policy has only
+     * immutable published history, one next draft may be created only when
+     * that history consists of its original version. Subsequent runs are
+     * idempotent and will not generate draft-version churn.
+     *
+     * @param array<string, mixed> $values
+     */
+    private function ensurePolicyDraftVersion(
+        string $table,
+        string $primaryKey,
+        int $policyId,
+        array $values,
+        ?int $actorId,
+        mixed $now
+    ): ?int {
+        $versions = DB::table($table)
+            ->where(str_ends_with($table, 'trial_policy_versions') ? 'trial_policy_id' : 'dunning_policy_id', $policyId)
+            ->orderByDesc('version_number')
+            ->get();
+
+        $draft = $versions->firstWhere('status', 'DRAFT');
+        if ($draft) {
+            return (int) $draft->{$primaryKey};
+        }
+
+        if ($versions->count() > 1) {
+            return null;
+        }
+
+        $nextVersion = $versions->isEmpty()
+            ? 1
+            : ((int) $versions->first()->version_number + 1);
+
+        $foreignKey = str_ends_with($table, 'trial_policy_versions')
+            ? 'trial_policy_id'
+            : 'dunning_policy_id';
+
+        return (int) DB::table($table)->insertGetId([
+            $foreignKey => $policyId,
+            'version_number' => $nextVersion,
             'status' => 'DRAFT',
-            'is_enabled' => true,
-            'duration_value' => 14,
-            'duration_unit' => 'DAY',
-            'start_trigger' => 'PURCHASE',
-            'redemption_scope' => 'NETWORK',
-            'eligibility_mode' => 'NEW_BILLING_ACCOUNT',
-            'requires_manual_approval' => false,
-            'end_behavior' => 'CREATE_INVOICE',
-            'entitlement_mode' => 'FULL_PLAN',
-            'entitlement_config' => null,
+            ...$values,
             'published_at' => null,
             'created_by' => $actorId,
             'created_at' => $now,
             'updated_at' => $now,
-        ], 'trial_policy_version_id');
-    }
-
-    private function requiredPublishedDefaultDunningVersionId(): int
-    {
-        $versionId = DB::table('billing_dunning_policies')
-            ->where('policy_key', 'platform-default')
-            ->where('is_active', true)
-            ->value('current_version_id');
-
-        if (! $versionId) {
-            throw new RuntimeException(
-                'The platform-default dunning policy must be initialized by its schema migration before seeding the plan catalog.'
-            );
-        }
-
-        $isPublished = DB::table('billing_dunning_policy_versions')
-            ->where('dunning_policy_version_id', $versionId)
-            ->where('status', 'PUBLISHED')
-            ->exists();
-
-        if (! $isPublished) {
-            throw new RuntimeException(
-                'The current platform-default dunning policy version must be published before it can be referenced by plan drafts.'
-            );
-        }
-
-        return (int) $versionId;
+        ], $primaryKey);
     }
 
     private function planDefinitions(): array
