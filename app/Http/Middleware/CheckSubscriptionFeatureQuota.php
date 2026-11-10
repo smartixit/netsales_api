@@ -2,14 +2,12 @@
 
 namespace App\Http\Middleware;
 
-use App\Enums\BillingFeatureType;
 use App\Models\Network;
-use App\Services\Billing\{BillingEntitlementService, BillingUsageService};
+use App\Services\Billing\BillingEntitlementService;
 use App\Traits\ApiResponseTrait;
 use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
-use Throwable;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckSubscriptionFeatureQuota
@@ -17,16 +15,13 @@ class CheckSubscriptionFeatureQuota
     use ApiResponseTrait;
 
     public function __construct(
-        private BillingEntitlementService $entitlements,
-        private BillingUsageService $usage
+        private BillingEntitlementService $entitlements
     ) {}
 
     public function handle(
         Request $request,
         Closure $next,
-        ?string $featureName = null,
-        int $amount = 1,
-        bool|string $autoConsume = false
+        ?string $featureName = null
     ): Response {
         $user = $request->user();
         if (! $user) {
@@ -70,54 +65,10 @@ class CheckSubscriptionFeatureQuota
         }
 
         $request->attributes->set('subscription_feature_name', $featureName);
-        $request->attributes->set('subscription_feature_amount', $amount);
 
-        $response = $next($request);
-        $shouldConsume = $autoConsume === true || $autoConsume === 'auto_consume' || $autoConsume === '1';
-
-        if ($shouldConsume && $response->isSuccessful()) {
-            if ($feature->feature_type !== BillingFeatureType::METERED) {
-                report(new \LogicException(
-                    "Auto-consumption middleware only supports METERED features; [{$featureName}] is [{$feature->feature_type->value}]."
-                ));
-
-                return $this->errorResponse(
-                    'لا يمكن تسجيل الاستهلاك الآلي لهذه الميزة؛ يجب احتساب حدود الموارد داخل خدمة المجال التي تنشئ المورد.',
-                    ['feature' => ['العداد الآلي مخصص للميزات من النوع METERED فقط.']],
-                    500
-                );
-            }
-
-            try {
-                $idempotencyKey = trim((string) $request->header('Idempotency-Key'));
-                if ($idempotencyKey === '') {
-                    $idempotencyKey = (string) Str::uuid();
-                }
-
-                $this->usage->record(
-                    (int) $subscription->billing_subscription_id,
-                    $featureName,
-                    (string) $amount,
-                    $idempotencyKey,
-                    'HTTP_ROUTE',
-                    null,
-                    [
-                        'route' => $request->route()?->getName(),
-                        'path' => $request->path(),
-                        'actor_id' => $user->user_id,
-                    ]
-                );
-            } catch (Throwable $exception) {
-                report($exception);
-                return $this->errorResponse(
-                    'نجحت العملية التشغيلية لكن تعذر تسجيل استهلاك الميزة؛ تم تسجيل الخطأ للتدقيق ويجب استكمال التسوية قبل إعادة المحاولة.',
-                    ['subscription_usage' => ['تعذر تسجيل حدث الاستهلاك.']],
-                    503
-                );
-            }
-        }
-
-        return $response;
+        // Usage events must be recorded by the domain service in the same
+        // transaction as the measured operation; never after an HTTP response.
+        return $next($request);
     }
 
     private function resolveNetworkId(Request $request, $user): ?int
@@ -154,21 +105,12 @@ class CheckSubscriptionFeatureQuota
             return $targetNetworkId;
         }
 
-        $networkMember = $user->networks()
-            ->where('networks.network_id', $targetNetworkId)
-            ->exists()
-            || $user->networkUsers()
-                ->where('network_id', $targetNetworkId)
-                ->where('status', 'ACTIVE')
-                ->exists();
+        $networkMember = $user->networkUsers()
+            ->where('network_id', $targetNetworkId)
+            ->where('status', 'ACTIVE')
+            ->exists();
 
         if ($networkMember) {
-            return $targetNetworkId;
-        }
-
-        if ($user->pos
-            && method_exists($user->pos, 'networks')
-            && $user->pos->networks()->where('networks.network_id', $targetNetworkId)->exists()) {
             return $targetNetworkId;
         }
 
