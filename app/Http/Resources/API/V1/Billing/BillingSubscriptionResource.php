@@ -12,6 +12,14 @@ class BillingSubscriptionResource extends JsonResource
         return [
             'billing_subscription_id' => $this->billing_subscription_id,
             'billing_account_id' => $this->billing_account_id,
+            'billing_account' => $this->whenLoaded('billingAccount', fn () => [
+                'billing_account_id' => $this->billingAccount?->billing_account_id,
+                'account_number' => $this->billingAccount?->account_number,
+                'network_id' => $this->billingAccount?->network_id,
+                'network_name' => $this->billingAccount?->network?->network_name,
+                'legal_name' => $this->billingAccount?->legal_name,
+                'status' => $this->billingAccount?->status,
+            ]),
             'plan_id' => $this->plan_id,
             'plan_version_id' => $this->plan_version_id,
             'price_id' => $this->price_id,
