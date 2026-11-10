@@ -76,6 +76,10 @@ class SystemSetting extends Model
     // Static Helpers
     public static function getValue(string $key, mixed $default = null): mixed
     {
+        if (in_array($key, ['trial_period_days', 'grace_period_days', 'auto_suspend_expired', 'subscription_expiry_alert_days'], true)) {
+            return $default;
+        }
+
         $setting = static::query()->byKey($key)->first();
 
         return $setting ? $setting->typed_value : $default;

@@ -1,14 +1,16 @@
 <?php
 
 use App\Http\Controllers\API\V1\AdminNotificationController;
+use App\Http\Controllers\API\V1\Billing\BillingCatalogController;
+use App\Http\Controllers\API\V1\Billing\BillingPolicyController;
+use App\Http\Controllers\API\V1\Billing\BillingFinanceController;
+use App\Http\Controllers\API\V1\Billing\BillingSelfServiceController;
 use App\Http\Controllers\API\V1\AuthController;
 use App\Http\Controllers\API\V1\BackupController;
-use App\Http\Controllers\API\V1\BankAccountController;
 use App\Http\Controllers\API\V1\DashboardController;
 use App\Http\Controllers\API\V1\DebtRepaymentController;
 use App\Http\Controllers\API\V1\DirectorateController;
 use App\Http\Controllers\API\V1\ExpenseController;
-use App\Http\Controllers\API\V1\FeatureController;
 use App\Http\Controllers\API\V1\FileController;
 use App\Http\Controllers\API\V1\GovernorateController;
 use App\Http\Controllers\API\V1\NetworkController;
@@ -22,14 +24,11 @@ use App\Http\Controllers\API\V1\OtpController;
 use App\Http\Controllers\API\V1\PosController;
 use App\Http\Controllers\API\V1\PosMembershipController;
 use App\Http\Controllers\API\V1\PosWalletController;
-use App\Http\Controllers\API\V1\ProviderSubscriptionController;
 use App\Http\Controllers\API\V1\RequestController;
 use App\Http\Controllers\API\V1\RoleController;
 use App\Http\Controllers\API\V1\SaleInvoiceController;
 use App\Http\Controllers\API\V1\ScheduledTaskRunController;
 use App\Http\Controllers\API\V1\SecurityController;
-use App\Http\Controllers\API\V1\SubscriptionPlanController;
-use App\Http\Controllers\API\V1\SubscriptionPlanRequestController;
 use App\Http\Controllers\API\V1\SupportTicketController;
 use App\Http\Controllers\API\V1\SystemLogController;
 use App\Http\Controllers\API\V1\SystemSettingController;
@@ -483,113 +482,132 @@ Route::prefix('v1')->group(function () {
         });
 
         // ==========================================
-        // 13. باقات الاشتراك السحابية لمزودي الشبكات (Subscription Plans)
+        // Platform Billing — Windows Platform Scope only
         // ==========================================
-        Route::middleware(['throttle:api-read', 'permission:subscriptions.view'])->group(function () {
-            Route::get('subscription-plans', [SubscriptionPlanController::class, 'index'])->name('api.v1.subscription_plans.index');
-            Route::get('subscription-plans/trashed', [SubscriptionPlanController::class, 'trashed'])->name('api.v1.subscription_plans.trashed');
-            Route::get('subscription-plans/{id}', [SubscriptionPlanController::class, 'show'])->whereNumber('id')->name('api.v1.subscription_plans.show');
-        });
+        Route::prefix('platform/billing')->middleware('platform.user.scope')->group(function () {
+            Route::prefix('policies')->controller(BillingPolicyController::class)->group(function () {
+                Route::middleware(['throttle:api-read', 'permission:billing.view'])->group(function () {
+                    Route::get('trials', 'trialPolicies')->name('api.v1.platform.billing.policies.trials.index');
+                    Route::get('dunning', 'dunningPolicies')->name('api.v1.platform.billing.policies.dunning.index');
+                    Route::get('trial-redemptions/pending', 'pendingRedemptions')->name('api.v1.platform.billing.policies.trials.pending');
+                });
+                Route::middleware(['throttle:api-write', 'permission:billing.manage'])->group(function () {
+                    Route::post('trial-redemptions/{redemptionId}/approve', 'approveRedemption')->name('api.v1.platform.billing.policies.trials.approve');
+                    Route::post('trial-redemptions/{redemptionId}/reject', 'rejectRedemption')->name('api.v1.platform.billing.policies.trials.reject');
+                    Route::post('subscriptions/{subscriptionId}/trial-adjustments', 'adjustTrial')->name('api.v1.platform.billing.policies.trials.adjust');
+                Route::post('trials', 'storeTrial')->name('api.v1.platform.billing.policies.trials.store');
+                Route::post('dunning', 'storeDunning')->name('api.v1.platform.billing.policies.dunning.store');
+                Route::post('trials/{policyId}/versions', 'storeTrialVersion')->name('api.v1.platform.billing.policies.trials.versions.store');
+                Route::post('dunning/{policyId}/versions', 'storeDunningVersion')->name('api.v1.platform.billing.policies.dunning.versions.store');
+                Route::post('trial-versions/{versionId}/publish', 'publishTrial')->name('api.v1.platform.billing.policies.trials.publish');
+                Route::post('dunning-versions/{versionId}/publish', 'publishDunning')->name('api.v1.platform.billing.policies.dunning.publish');
+                Route::put('plan-versions/{versionId}', 'assignPlanVersion')->name('api.v1.platform.billing.policies.plan_versions.assign');
+                Route::put('prices/{priceId}', 'assignPrice')->name('api.v1.platform.billing.policies.prices.assign');
+                });
+            });
 
-        Route::middleware('throttle:api-write')->group(function () {
-            Route::post('subscription-plans', [SubscriptionPlanController::class, 'store'])->name('api.v1.subscription_plans.store')->middleware('permission:subscriptions.create');
-            Route::put('subscription-plans/{id}', [SubscriptionPlanController::class, 'update'])->whereNumber('id')->name('api.v1.subscription_plans.update')->middleware('permission:subscriptions.edit');
-            Route::delete('subscription-plans/{id}', [SubscriptionPlanController::class, 'destroy'])->whereNumber('id')->name('api.v1.subscription_plans.destroy')->middleware('permission:subscriptions.delete');
-            Route::post('subscription-plans/{id}/restore', [SubscriptionPlanController::class, 'restore'])->whereNumber('id')->name('api.v1.subscription_plans.restore')->middleware('permission:subscriptions.edit');
-            Route::delete('subscription-plans/{id}/force', [SubscriptionPlanController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.subscription_plans.force_delete')->middleware('permission:subscriptions.delete');
-            Route::post('subscription-plans/{id}/toggle-status', [SubscriptionPlanController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.subscription_plans.toggle_status')->middleware('permission:subscriptions.delete');
-            Route::post('subscription-plans/{id}/features', [SubscriptionPlanController::class, 'attachFeature'])->whereNumber('id')->name('api.v1.subscription_plans.attach_feature')->middleware('permission:subscriptions.edit');
-            Route::delete('subscription-plans/{id}/features/{featureId}', [SubscriptionPlanController::class, 'detachFeature'])->whereNumber('id')->whereNumber('featureId')->name('api.v1.subscription_plans.detach_feature')->middleware('permission:subscriptions.edit');
-            Route::post('subscription-plans/batch-delete', [SubscriptionPlanController::class, 'batchDelete'])->name('api.v1.subscription_plans.batch_delete')->middleware('permission:subscriptions.delete');
-            Route::post('subscription-plans/batch-restore', [SubscriptionPlanController::class, 'batchRestore'])->name('api.v1.subscription_plans.batch_restore')->middleware('permission:subscriptions.edit');
-            Route::post('subscription-plans/batch-force-delete', [SubscriptionPlanController::class, 'batchForceDelete'])->name('api.v1.subscription_plans.batch_force_delete')->middleware('permission:subscriptions.delete');
-        });
+            Route::middleware(['throttle:api-read', 'permission:billing.view'])->group(function () {
+                Route::get('currencies', [BillingCatalogController::class, 'currencies'])->name('api.v1.platform.billing.currencies.index');
+                Route::get('overview', [BillingFinanceController::class, 'overview'])->name('api.v1.platform.billing.overview');
+                Route::get('reconciliation', [BillingFinanceController::class, 'reconciliation'])->name('api.v1.platform.billing.reconciliation');
+                Route::get('plans', [BillingCatalogController::class, 'plans'])->name('api.v1.platform.billing.plans.index');
 
-        // ==========================================
-        // 14. كتالوج ميزات النظام (System Features)
-        // ==========================================
-        Route::middleware(['throttle:api-read', 'permission:subscriptions.view'])->group(function () {
-            Route::get('features', [FeatureController::class, 'index'])->name('api.v1.features.index');
-            Route::get('features/trashed', [FeatureController::class, 'trashed'])->name('api.v1.features.trashed');
-            Route::get('features/{id}', [FeatureController::class, 'show'])->whereNumber('id')->name('api.v1.features.show');
-        });
+                Route::get('accounts', [BillingFinanceController::class, 'accounts'])->name('api.v1.platform.billing.accounts.index');
+                Route::get('subscriptions', [BillingFinanceController::class, 'subscriptions'])->name('api.v1.platform.billing.subscriptions.index');
+                Route::get('invoices', [BillingFinanceController::class, 'invoices'])->name('api.v1.platform.billing.invoices.index');
+                Route::get('payments', [BillingFinanceController::class, 'payments'])->name('api.v1.platform.billing.payments.index');
+                Route::get('payment-methods', [BillingFinanceController::class, 'paymentMethods'])->name('api.v1.platform.billing.payment_methods.index');
+                Route::get('treasury-accounts', [BillingFinanceController::class, 'treasuryAccounts'])->name('api.v1.platform.billing.treasury_accounts.index');
+                Route::get('journal-entries', [BillingFinanceController::class, 'journalEntries'])->name('api.v1.platform.billing.journal_entries.index');
+                Route::get('exchange-rates', [BillingFinanceController::class, 'exchangeRates'])->name('api.v1.platform.billing.exchange_rates.index');
+                Route::get('conversions', [BillingFinanceController::class, 'conversions'])->name('api.v1.platform.billing.conversions.index');
+            });
 
-        Route::middleware(['throttle:api-write', 'permission:subscriptions.edit'])->group(function () {
-            Route::post('features', [FeatureController::class, 'store'])->name('api.v1.features.store');
-            Route::put('features/{id}', [FeatureController::class, 'update'])->whereNumber('id')->name('api.v1.features.update');
-            Route::delete('features/{id}', [FeatureController::class, 'destroy'])->whereNumber('id')->name('api.v1.features.destroy');
-            Route::post('features/{id}/restore', [FeatureController::class, 'restore'])->whereNumber('id')->name('api.v1.features.restore');
-            Route::delete('features/{id}/force', [FeatureController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.features.force_delete');
-            Route::post('features/{id}/toggle-status', [FeatureController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.features.toggle_status');
-            Route::post('features/batch-delete', [FeatureController::class, 'batchDelete'])->name('api.v1.features.batch_delete');
-            Route::post('features/batch-restore', [FeatureController::class, 'batchRestore'])->name('api.v1.features.batch_restore');
-            Route::post('features/batch-force-delete', [FeatureController::class, 'batchForceDelete'])->name('api.v1.features.batch_force_delete');
-        });
+            Route::middleware(['throttle:api-write', 'permission:billing.manage'])->group(function () {
+                Route::post('currencies', [BillingCatalogController::class, 'storeCurrency'])->name('api.v1.platform.billing.currencies.store');
+                Route::put('currencies/{currencyId}', [BillingCatalogController::class, 'updateCurrency'])
+                    ->whereNumber('currencyId')->name('api.v1.platform.billing.currencies.update');
+                Route::post('treasury-accounts', [BillingFinanceController::class, 'storeTreasuryAccount'])->name('api.v1.platform.billing.treasury_accounts.store');
+                Route::patch('treasury-accounts/{treasuryAccountId}/status', [BillingFinanceController::class, 'setTreasuryStatus'])
+                    ->whereNumber('treasuryAccountId')->name('api.v1.platform.billing.treasury_accounts.status');
+                Route::post('exchange-rates', [BillingFinanceController::class, 'storeExchangeRate'])->name('api.v1.platform.billing.exchange_rates.store');
+                Route::post('conversions', [BillingFinanceController::class, 'convertCurrency'])->name('api.v1.platform.billing.conversions.store');
+            });
 
-        // ==========================================
-        // 15. الحسابات البنكية والمحافظ (Bank Accounts)
-        // ==========================================
-        Route::middleware(['throttle:api-read', 'permission:bank_accounts.view'])->group(function () {
-            Route::get('bank-accounts', [BankAccountController::class, 'index'])->name('api.v1.bank_accounts.index');
-            Route::get('bank-accounts/active', [BankAccountController::class, 'active'])->name('api.v1.bank_accounts.active');
-            Route::get('bank-accounts/trashed', [BankAccountController::class, 'trashed'])->name('api.v1.bank_accounts.trashed');
-            Route::get('bank-accounts/{id}', [BankAccountController::class, 'show'])->whereNumber('id')->name('api.v1.bank_accounts.show');
-        });
+            Route::middleware(['throttle:api-write', 'permission:billing.create'])->group(function () {
+                Route::post('products', [BillingCatalogController::class, 'storeProduct'])->name('api.v1.platform.billing.products.store');
+                Route::post('plans', [BillingCatalogController::class, 'storePlan'])->name('api.v1.platform.billing.plans.store');
+            });
 
-        Route::middleware('throttle:api-write')->group(function () {
-            Route::post('bank-accounts', [BankAccountController::class, 'store'])->name('api.v1.bank_accounts.store')->middleware('permission:bank_accounts.create');
-            Route::put('bank-accounts/{id}', [BankAccountController::class, 'update'])->whereNumber('id')->name('api.v1.bank_accounts.update')->middleware('permission:bank_accounts.edit');
-            Route::delete('bank-accounts/{id}', [BankAccountController::class, 'destroy'])->whereNumber('id')->name('api.v1.bank_accounts.destroy')->middleware('permission:bank_accounts.delete');
-            Route::post('bank-accounts/{id}/restore', [BankAccountController::class, 'restore'])->whereNumber('id')->name('api.v1.bank_accounts.restore')->middleware('permission:bank_accounts.edit');
-            Route::delete('bank-accounts/{id}/force', [BankAccountController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.bank_accounts.force_delete')->middleware('permission:bank_accounts.delete');
-            Route::post('bank-accounts/{id}/toggle-status', [BankAccountController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.bank_accounts.toggle_status')->middleware('permission:bank_accounts.manage');
-            Route::post('bank-accounts/batch-delete', [BankAccountController::class, 'batchDelete'])->name('api.v1.bank_accounts.batch_delete')->middleware('permission:bank_accounts.delete');
-            Route::post('bank-accounts/batch-restore', [BankAccountController::class, 'batchRestore'])->name('api.v1.bank_accounts.batch_restore')->middleware('permission:bank_accounts.edit');
-            Route::post('bank-accounts/batch-force-delete', [BankAccountController::class, 'batchForceDelete'])->name('api.v1.bank_accounts.batch_force_delete')->middleware('permission:bank_accounts.delete');
-            Route::apiResource('bank-accounts', BankAccountController::class)->parameters(['bank-accounts' => 'id'])->except(['index', 'show']);
-        });
+            Route::middleware(['throttle:api-write', 'permission:billing.edit'])->group(function () {
+                Route::post('plans/{planId}/versions', [BillingCatalogController::class, 'createDraftVersion'])
+                    ->whereNumber('planId')->name('api.v1.platform.billing.plan_versions.store');
+                Route::post('plan-versions/{versionId}/prices', [BillingCatalogController::class, 'addPrice'])
+                    ->whereNumber('versionId')->name('api.v1.platform.billing.prices.store');
+                Route::post('plan-versions/{versionId}/features', [BillingCatalogController::class, 'addFeature'])
+                    ->whereNumber('versionId')->name('api.v1.platform.billing.features.store');
+            });
 
-        // ==========================================
-        // 16. طلبات الاشتراك والترقية (Subscription Plan Requests)
-        // ==========================================
-        Route::middleware(['throttle:api-read', 'permission:subscriptions.view'])->group(function () {
-            Route::get('subscription-plan-requests', [SubscriptionPlanRequestController::class, 'index'])->name('api.v1.subscription_plan_requests.index');
-            Route::get('subscription-plan-requests/trashed', [SubscriptionPlanRequestController::class, 'trashed'])->name('api.v1.subscription_plan_requests.trashed');
-            Route::get('subscription-plan-requests/{id}', [SubscriptionPlanRequestController::class, 'show'])->whereNumber('id')->name('api.v1.subscription_plan_requests.show');
-            Route::get('subscription-plan-requests/{id}/receipt-link', [SubscriptionPlanRequestController::class, 'receiptLink'])->whereNumber('id')->name('api.v1.subscription_plan_requests.receipt_link');
-        });
+            Route::post('plan-versions/{versionId}/publish', [BillingCatalogController::class, 'publishVersion'])
+                ->whereNumber('versionId')
+                ->middleware(['throttle:api-write', 'permission:billing.manage'])
+                ->name('api.v1.platform.billing.plan_versions.publish');
 
-        Route::middleware('throttle:api-write')->group(function () {
-            // Providers submit their own requests through their operational workspace.
-            Route::post('subscription-plan-requests', [SubscriptionPlanRequestController::class, 'store'])->name('api.v1.subscription_plan_requests.store');
-            Route::post('subscription-plan-requests/{id}/approve', [SubscriptionPlanRequestController::class, 'approve'])->whereNumber('id')->name('api.v1.subscription_plan_requests.approve')->middleware('permission:subscriptions.approve');
-            Route::post('subscription-plan-requests/{id}/reject', [SubscriptionPlanRequestController::class, 'reject'])->whereNumber('id')->name('api.v1.subscription_plan_requests.reject')->middleware('permission:subscriptions.reject');
-            Route::post('subscription-plan-requests/{id}/cancel', [SubscriptionPlanRequestController::class, 'cancel'])->whereNumber('id')->name('api.v1.subscription_plan_requests.cancel');
-            Route::delete('subscription-plan-requests/{id}', [SubscriptionPlanRequestController::class, 'destroy'])->whereNumber('id')->name('api.v1.subscription_plan_requests.destroy')->middleware('permission:subscriptions.delete');
-            Route::post('subscription-plan-requests/{id}/restore', [SubscriptionPlanRequestController::class, 'restore'])->whereNumber('id')->name('api.v1.subscription_plan_requests.restore')->middleware('permission:subscriptions.edit');
-            Route::delete('subscription-plan-requests/{id}/force', [SubscriptionPlanRequestController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.subscription_plan_requests.force_delete')->middleware('permission:subscriptions.delete');
-            Route::post('subscription-plan-requests/batch-delete', [SubscriptionPlanRequestController::class, 'batchDelete'])->name('api.v1.subscription_plan_requests.batch_delete')->middleware('permission:subscriptions.delete');
-            Route::post('subscription-plan-requests/batch-restore', [SubscriptionPlanRequestController::class, 'batchRestore'])->name('api.v1.subscription_plan_requests.batch_restore')->middleware('permission:subscriptions.edit');
-            Route::post('subscription-plan-requests/batch-force-delete', [SubscriptionPlanRequestController::class, 'batchForceDelete'])->name('api.v1.subscription_plan_requests.batch_force_delete')->middleware('permission:subscriptions.delete');
+            Route::middleware(['throttle:api-write', 'permission:billing.approve'])->group(function () {
+                Route::post('payments/{paymentId}/verify', [BillingFinanceController::class, 'verifyPayment'])
+                    ->whereNumber('paymentId')->name('api.v1.platform.billing.payments.verify');
+                Route::post('payments/{paymentId}/reject', [BillingFinanceController::class, 'rejectPayment'])
+                    ->whereNumber('paymentId')->name('api.v1.platform.billing.payments.reject');
+                Route::post('invoices/{invoiceId}/credit-notes', [BillingFinanceController::class, 'issueCreditNote'])
+                    ->whereNumber('invoiceId')->name('api.v1.platform.billing.invoices.credit_notes.store');
+                Route::post('payments/{paymentId}/refunds', [BillingFinanceController::class, 'refundPayment'])
+                    ->whereNumber('paymentId')->name('api.v1.platform.billing.payments.refunds.store');
+                Route::post('invoices/{invoiceId}/void', [BillingFinanceController::class, 'voidInvoice'])
+                    ->whereNumber('invoiceId')->name('api.v1.platform.billing.invoices.void');
+            });
         });
 
         // ==========================================
-        // 17. اشتراكات مزودي الشبكات وتتبع الحصص (Provider Subscriptions & Feature Quotas)
+        // Network Billing Self-Service — Network Owner only
         // ==========================================
-        Route::middleware(['throttle:api-read', 'permission:subscriptions.view'])->group(function () {
-            Route::get('provider-subscriptions', [ProviderSubscriptionController::class, 'index'])->name('api.v1.provider_subscriptions.index');
-            Route::get('provider-subscriptions/{id}', [ProviderSubscriptionController::class, 'show'])->whereNumber('id')->name('api.v1.provider_subscriptions.show');
-            Route::get('provider-subscriptions/{id}/consumptions', [ProviderSubscriptionController::class, 'consumptions'])->whereNumber('id')->name('api.v1.provider_subscriptions.consumptions');
-        });
-        Route::middleware('throttle:api-read')->group(function () {
-            Route::get('provider-subscriptions/network/{networkId}/active', [ProviderSubscriptionController::class, 'activeForNetwork'])->whereNumber('networkId')->name('api.v1.provider_subscriptions.active_for_network');
+        Route::prefix('networks/{networkId}/billing')->middleware(['operational.scope'])->group(function () {
+            Route::get('accounts', [BillingSelfServiceController::class, 'accounts'])
+                ->whereNumber('networkId')->middleware('throttle:api-read')
+                ->name('api.v1.networks.billing.accounts.index');
+            Route::post('accounts', [BillingSelfServiceController::class, 'createAccount'])
+                ->whereNumber('networkId')->middleware('throttle:api-write')
+                ->name('api.v1.networks.billing.accounts.store');
         });
 
-        Route::middleware('throttle:api-write')->group(function () {
-            Route::post('provider-subscriptions/{id}/extend', [ProviderSubscriptionController::class, 'extend'])->whereNumber('id')->name('api.v1.provider_subscriptions.extend')->middleware('permission:subscriptions.edit');
-            // Feature consumption and early activation remain operational network-workspace actions.
-            Route::post('provider-subscriptions/network/{networkId}/consume', [ProviderSubscriptionController::class, 'consume'])->whereNumber('networkId')->name('api.v1.provider_subscriptions.consume');
-            Route::post('provider-subscriptions/network/{networkId}/activate-early', [ProviderSubscriptionController::class, 'activateEarly'])->whereNumber('networkId')->name('api.v1.provider_subscriptions.activate_early');
+        Route::prefix('billing')->middleware('operational.scope')->group(function () {
+            Route::middleware('throttle:api-read')->group(function () {
+                Route::get('currencies', [BillingSelfServiceController::class, 'currencies'])
+                    ->name('api.v1.billing.currencies.index');
+                Route::get('accounts/{billingAccountId}/plans', [BillingSelfServiceController::class, 'plans'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.plans');
+                Route::get('accounts/{billingAccountId}/subscriptions', [BillingSelfServiceController::class, 'subscriptions'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.subscriptions.index');
+                Route::get('accounts/{billingAccountId}/invoices', [BillingSelfServiceController::class, 'invoices'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.invoices.index');
+                Route::get('accounts/{billingAccountId}/payments', [BillingSelfServiceController::class, 'payments'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.payments.index');
+                Route::get('accounts/{billingAccountId}/payment-methods', [BillingSelfServiceController::class, 'paymentMethods'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.payment_methods');
+                Route::get('invoices/{invoiceId}', [BillingSelfServiceController::class, 'invoice'])
+                    ->whereNumber('invoiceId')->name('api.v1.billing.invoices.show');
+            });
+
+            Route::middleware('throttle:api-write')->group(function () {
+                Route::post('accounts/{billingAccountId}/subscriptions', [BillingSelfServiceController::class, 'purchase'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.subscriptions.purchase');
+                Route::post('subscriptions/{subscriptionId}/cancel', [BillingSelfServiceController::class, 'cancelSubscription'])
+                    ->whereNumber('subscriptionId')->name('api.v1.billing.subscriptions.cancel');
+            });
+
+            Route::post('invoices/{invoiceId}/payments', [BillingSelfServiceController::class, 'storePayment'])
+                ->whereNumber('invoiceId')
+                ->middleware(['throttle:api-upload', 'throttle:api-write'])
+                ->name('api.v1.billing.invoices.payments.store');
         });
 
         // ==========================================

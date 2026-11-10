@@ -20,10 +20,12 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
+use Tests\Concerns\CreatesActiveBillingSubscription;
 
 class NetworkPosLinkingChallengeTest extends TestCase
 {
     use DatabaseTransactions;
+    use CreatesActiveBillingSubscription;
 
     protected User $networkOwner;
 
@@ -106,6 +108,8 @@ class NetworkPosLinkingChallengeTest extends TestCase
             'governorate_id' => $gov->governorate_id,
             'directorate_id' => $dir->directorate_id,
         ]);
+
+        $this->createActiveBillingSubscriptionForNetwork($this->network, [], null, $this->networkOwner);
 
         $this->pos = Pos::create([
             'owner_id' => $this->posOwner->user_id,

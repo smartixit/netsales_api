@@ -33,6 +33,10 @@ class SystemSettingService
      */
     public function get(string $key, mixed $default = null, ?int $centerId = null): mixed
     {
+        if (in_array($key, ['trial_period_days', 'grace_period_days', 'auto_suspend_expired', 'subscription_expiry_alert_days'], true)) {
+            return $default;
+        }
+
         $settings = $this->settingRepository->getAllCached();
         $setting = $settings->firstWhere('setting_key', $key);
 
@@ -99,6 +103,10 @@ class SystemSettingService
      */
     public function getFiltered(array $filters = []): Collection|CursorPaginator
     {
+        if (($filters['setting_category'] ?? null) === 'SUBSCRIPTION') {
+            throw ValidationException::withMessages(['setting_category' => ['لم يعد تصنيف الاشتراكات جزءاً من إعدادات النظام.']]);
+        }
+
         return $this->settingRepository->getFiltered($filters);
     }
 
@@ -115,6 +123,10 @@ class SystemSettingService
      */
     public function getByCategory(string|SettingCategory $category): Collection
     {
+        if (($category instanceof SettingCategory ? $category->value : $category) === 'SUBSCRIPTION') {
+            throw ValidationException::withMessages(['category' => ['لم يعد تصنيف الاشتراكات جزءاً من إعدادات النظام.']]);
+        }
+
         return $this->settingRepository->getByCategory($category);
     }
 
@@ -154,6 +166,7 @@ class SystemSettingService
      */
     public function create(StoreSystemSettingRequest $request): SystemSetting
     {
+        $this->assertNotRetiredSubscriptionKey($request->getSettingKey());
         return DB::transaction(function () use ($request) {
             $data = [
                 'setting_category' => $request->getSettingCategory()->value,
@@ -174,6 +187,9 @@ class SystemSettingService
     {
         return DB::transaction(function () use ($request, $id) {
             $setting = $this->getById($id);
+            if ($request->getSettingKey() !== null) {
+                $this->assertNotRetiredSubscriptionKey($request->getSettingKey());
+            }
 
             $data = [];
 
@@ -307,6 +323,13 @@ class SystemSettingService
     /**
      * تفريغ الذاكرة المؤقتة للإعدادات.
      */
+    private function assertNotRetiredSubscriptionKey(string $key): void
+    {
+        if (in_array($key, ['trial_period_days', 'grace_period_days', 'auto_suspend_expired', 'subscription_expiry_alert_days'], true)) {
+            throw ValidationException::withMessages(['setting_key' => ['تم نقل هذا الإعداد إلى محرك سياسات الفوترة.']]);
+        }
+    }
+
     public function clearCache(): void
     {
         $this->settingRepository->clearCache();

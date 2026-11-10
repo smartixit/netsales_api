@@ -237,40 +237,6 @@ class SystemSettingSeeder extends Seeder
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // 4. SUBSCRIPTION (سياسات الاشتراكات والفترات التجريبية)
-            // ═══════════════════════════════════════════════════════════════
-            [
-                'setting_category' => 'SUBSCRIPTION',
-                'setting_key' => 'trial_period_days',
-                'setting_value_type' => 'INTEGER',
-                'setting_value' => '14',
-                'setting_desc' => 'عدد أيام الفترة التجريبية المجانية للشبكات الجديدة',
-            ],
-            [
-                'setting_category' => 'SUBSCRIPTION',
-                'setting_key' => 'grace_period_days',
-                'setting_value_type' => 'INTEGER',
-                'setting_value' => '3',
-                'setting_desc' => 'فترة السماح بالأيام بعد انتهاء الاشتراك قبل إيقاف الشبكة',
-            ],
-            [
-                'setting_category' => 'SUBSCRIPTION',
-                'setting_key' => 'auto_suspend_expired',
-                'setting_value_type' => 'BOOLEAN',
-                'setting_value' => '1',
-                'setting_desc' => 'إيقاف خدمات الشبكة تلقائياً بعد استنفاد فترة السماح',
-            ],
-            [
-                'setting_category' => 'SUBSCRIPTION',
-                'setting_key' => 'subscription_expiry_alert_days',
-                'setting_value_type' => 'INTEGER',
-                'setting_value' => '3',
-                'setting_desc' => 'عدد الأيام المسبقة لتنبيه الشبكة بقرب انتهاء الاشتراك',
-            ],
-
-            // ═══════════════════════════════════════════════════════════════
-            // 5. NOTIFICATION (بوابة الرسائل SMSGate، الفايربيس FCM، والبريد)
-            // ═══════════════════════════════════════════════════════════════
             // -- SMSGate Configurations --
             [
                 'setting_category' => 'NOTIFICATION',

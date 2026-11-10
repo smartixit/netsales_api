@@ -8,7 +8,9 @@ use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\PosWalletRepositoryInterface;
+use App\Models\Network;
 use App\Models\NetworkPos;
+use App\Services\Billing\BillingEntitlementService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -31,6 +33,7 @@ class NetworkPosService
         protected NetworkRepositoryInterface $networkRepository,
         protected PosRepositoryInterface $posRepository,
         protected PosWalletRepositoryInterface $posWalletRepository,
+        protected BillingEntitlementService $billingEntitlements,
     ) {}
 
     /**
@@ -89,26 +92,28 @@ class NetworkPosService
                 ]);
             }
 
-            // 2. التحقق من وجود الشبكة
-            try {
-                $network = $this->networkRepository->findById($networkId);
-            } catch (ModelNotFoundException) {
+            // 2. قفل سجل الشبكة لتسلسل إنشاء الارتباطات ومنع تجاوز الحصة بالتزامن.
+            $network = Network::query()->lockForUpdate()->find($networkId);
+            if (! $network) {
                 throw ValidationException::withMessages([
                     'network_id' => ['مزود الشبكة المحدد غير موجود في النظام.'],
                 ]);
             }
 
-            // 3. التحقق من نشاط نقطة البيع والشبكة عبر دوال حراسة الحالة في الموديلات
+            // 3. التحقق من نشاط نقطة البيع والشبكة عبر دوال حراسة الحالة في الموديلات.
             $pos->ensureActive();
             $network->ensureActive();
 
-            // 4. منع تكرار الارتباط
+            // 4. منع تكرار الارتباط قبل احتساب الحصة؛ الطلب المكرر لا يستهلك مورداً جديداً.
             $existing = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId);
             if ($existing) {
                 throw ValidationException::withMessages([
                     'pos_id' => ['نقطة البيع هذه مرتبطة بالفعل بهذه الشبكة مسبقاً.'],
                 ]);
             }
+
+            // 5. فحص الحصة قبل إنشاء ارتباط جديد فقط.
+            $this->assertPosQuota($networkId);
 
             $networkPos = $this->networkPosRepository->create([
                 'network_id' => $networkId,
@@ -230,6 +235,27 @@ class NetworkPosService
     public function getPosForNetwork(int $networkId, array $filters = []): Collection|CursorPaginator
     {
         return $this->networkPosRepository->getPosForNetwork($networkId, $filters);
+    }
+
+    private function assertPosQuota(int $networkId): void
+    {
+        $subscription = $this->billingEntitlements->activeSubscriptionForNetwork($networkId);
+
+        if (! $subscription) {
+            throw ValidationException::withMessages([
+                'subscription' => ['يلزم وجود اشتراك نشط أو تجربة سارية قبل ربط نقاط البيع بالشبكة.'],
+            ]);
+        }
+
+        $currentCount = NetworkPos::query()
+            ->where('network_id', $networkId)
+            ->count();
+
+        $this->billingEntitlements->assertResourceLimit(
+            $subscription,
+            'max_pos_count',
+            $currentCount
+        );
     }
 
     /**

@@ -22,7 +22,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property bool $notify_low_balance
  * @property bool $notify_daily_summary
  * @property bool $notify_monthly_summary
- * @property bool $notify_subscription_expiry
  * @property bool $use_custom_gateway
  * @property string $server_type
  * @property string $base_url
@@ -55,7 +54,6 @@ class NetworkSmsSetting extends Model
         'notify_low_balance',
         'notify_daily_summary',
         'notify_monthly_summary',
-        'notify_subscription_expiry',
         'use_custom_gateway',
         'server_type',
         'base_url',
@@ -84,7 +82,6 @@ class NetworkSmsSetting extends Model
             'notify_low_balance' => 'boolean',
             'notify_daily_summary' => 'boolean',
             'notify_monthly_summary' => 'boolean',
-            'notify_subscription_expiry' => 'boolean',
             'use_custom_gateway' => 'boolean',
             'sim_number' => 'integer',
             'skip_phone_validation' => 'boolean',

@@ -4,14 +4,13 @@ namespace App\Services;
 
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
-use App\Enums\ProviderSubscriptionStatus;
-use App\Enums\RequestStatus;
+use App\Enums\BillingSubscriptionStatus;
 use App\Models\Expense;
 use App\Models\Network;
 use App\Models\Pos;
-use App\Models\ProviderSubscription;
+use App\Models\BillingSubscription;
+use App\Models\BillingTrialRedemption;
 use App\Models\SaleInvoice;
-use App\Models\SubscriptionPlanRequest;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketMessage;
 use App\Models\SystemLog;
@@ -115,7 +114,7 @@ class DashboardOverviewService
             ];
         }
 
-        if ($can('subscriptions.view')) {
+        if ($can('billing.view')) {
             $subscriptionCounts = $this->subscriptionStatusCounts();
             $activeSubscriptions = $this->activeSubscriptionQuery($now)->count();
             $expiringSubscriptions = $this->expiringSubscriptionQuery($now)->count();
@@ -123,7 +122,10 @@ class DashboardOverviewService
             $metrics['subscriptions'] = [
                 'total' => array_sum($subscriptionCounts),
                 'active' => $activeSubscriptions,
-                'queued' => (int) ($subscriptionCounts[ProviderSubscriptionStatus::QUEUED->value] ?? 0),
+                'incomplete' => (int) ($subscriptionCounts[BillingSubscriptionStatus::INCOMPLETE->value] ?? 0),
+                'trialing' => (int) ($subscriptionCounts[BillingSubscriptionStatus::TRIALING->value] ?? 0),
+                'past_due' => (int) ($subscriptionCounts[BillingSubscriptionStatus::PAST_DUE->value] ?? 0),
+                'suspended' => (int) ($subscriptionCounts[BillingSubscriptionStatus::SUSPENDED->value] ?? 0),
                 'expired' => $this->expiredSubscriptionCount($now),
                 'expiring_within_7_days' => $expiringSubscriptions,
             ];
@@ -131,49 +133,57 @@ class DashboardOverviewService
             $charts['subscription_trend'] = $this->subscriptionTrend($now, $period, $periodStart, $bucket);
 
             $expiringItems = $this->expiringSubscriptionQuery($now)
-                ->with(['network:network_id,network_name', 'plan:plan_id,plan_name'])
-                ->orderBy('subscription_end_date')
+                ->with([
+                    'billingAccount.network:network_id,network_name',
+                    'planVersion.plan:plan_id,name',
+                ])
+                ->orderBy('current_period_end')
                 ->limit(self::ATTENTION_ITEMS_LIMIT)
                 ->get([
-                    'subscription_id',
-                    'network_id',
-                    'plan_id',
-                    'subscription_start_date',
-                    'subscription_end_date',
+                    'billing_subscription_id',
+                    'billing_account_id',
+                    'plan_version_id',
+                    'current_period_start',
+                    'current_period_end',
                 ]);
 
             $attention['expiring_subscriptions'] = [
                 'count' => $expiringSubscriptions,
-                'items' => $expiringItems->map(fn (ProviderSubscription $subscription): array => [
-                    'id' => (int) $subscription->subscription_id,
-                    'title' => $subscription->network?->network_name ?? 'شبكة غير متاحة',
-                    'subtitle' => $subscription->plan?->plan_name ?? 'اشتراك مزود',
-                    'route_key' => 'provider_subscriptions',
-                    'occurred_at' => $subscription->subscription_start_date?->toIso8601String(),
-                    'due_at' => $subscription->subscription_end_date?->toIso8601String(),
+                'items' => $expiringItems->map(fn (BillingSubscription $subscription): array => [
+                    'id' => (int) $subscription->billing_subscription_id,
+                    'title' => $subscription->billingAccount?->network?->network_name ?? 'شبكة غير متاحة',
+                    'subtitle' => $subscription->planVersion?->plan?->name ?? 'اشتراك المنصة',
+                    'route_key' => 'platform_billing_subscriptions',
+                    'occurred_at' => $subscription->current_period_start?->toIso8601String(),
+                    'due_at' => $subscription->current_period_end?->toIso8601String(),
                 ])->values()->all(),
             ];
 
-            $pendingPlanRequests = SubscriptionPlanRequest::query()
-                ->where('status', RequestStatus::PENDING->value)
+            $pendingTrialRedemptions = BillingTrialRedemption::query()
+                ->where('status', 'PENDING_APPROVAL')
                 ->with([
-                    'network:network_id,network_name',
-                    'plan:plan_id,plan_name',
+                    'subscription.billingAccount.network:network_id,network_name',
+                    'subscription.planVersion.plan:plan_id,name',
                 ])
-                ->orderBy('created_at')
+                ->orderBy('reserved_at')
                 ->limit(self::ATTENTION_ITEMS_LIMIT)
-                ->get(['request_id', 'network_id', 'plan_id', 'request_uuid', 'created_at']);
+                ->get([
+                    'trial_redemption_id',
+                    'billing_subscription_id',
+                    'reserved_at',
+                    'status',
+                ]);
 
-            $attention['pending_subscription_requests'] = [
-                'count' => SubscriptionPlanRequest::query()
-                    ->where('status', RequestStatus::PENDING->value)
+            $attention['pending_trial_redemptions'] = [
+                'count' => BillingTrialRedemption::query()
+                    ->where('status', 'PENDING_APPROVAL')
                     ->count(),
-                'items' => $pendingPlanRequests->map(fn (SubscriptionPlanRequest $request): array => [
-                    'id' => (int) $request->request_id,
-                    'title' => $request->network?->network_name ?? $request->request_uuid,
-                    'subtitle' => $request->plan?->plan_name ?? 'طلب اشتراك أو ترقية',
-                    'route_key' => 'subscription_requests',
-                    'occurred_at' => $request->created_at?->toIso8601String(),
+                'items' => $pendingTrialRedemptions->map(fn (BillingTrialRedemption $redemption): array => [
+                    'id' => (int) $redemption->trial_redemption_id,
+                    'title' => $redemption->subscription?->billingAccount?->network?->network_name ?? 'شبكة غير متاحة',
+                    'subtitle' => $redemption->subscription?->planVersion?->plan?->name ?? 'طلب تجربة',
+                    'route_key' => 'billing_trial_redemptions',
+                    'occurred_at' => $redemption->reserved_at?->toIso8601String(),
                     'due_at' => null,
                 ])->values()->all(),
             ];
@@ -283,9 +293,12 @@ class DashboardOverviewService
     /**
      * @return array<string, int>
      */
+    /**
+     * @return array<string, int>
+     */
     private function subscriptionStatusCounts(): array
     {
-        return DB::table('provider_subscriptions')
+        return DB::table('billing_subscriptions')
             ->whereNull('deleted_at')
             ->select('status')
             ->selectRaw('COUNT(*) as total')
@@ -297,19 +310,31 @@ class DashboardOverviewService
 
     private function activeSubscriptionQuery(Carbon $now)
     {
-        return ProviderSubscription::query()
-            ->where('status', ProviderSubscriptionStatus::ACTIVE->value)
+        return BillingSubscription::query()
             ->where(function ($query) use ($now): void {
-                $query->whereNull('subscription_end_date')
-                    ->orWhere('subscription_end_date', '>', $now);
+                $query->where(function ($active) use ($now): void {
+                    $active->whereIn('status', [
+                        BillingSubscriptionStatus::ACTIVE->value,
+                        BillingSubscriptionStatus::TRIALING->value,
+                    ])->where(function ($period) use ($now): void {
+                        $period->whereNull('current_period_end')
+                            ->orWhere('current_period_end', '>', $now);
+                    });
+                })->orWhere(function ($grace) use ($now): void {
+                    $grace->where('status', BillingSubscriptionStatus::PAST_DUE->value)
+                        ->where('grace_period_ends_at', '>', $now);
+                });
             });
     }
 
     private function expiringSubscriptionQuery(Carbon $now)
     {
-        return ProviderSubscription::query()
-            ->where('status', ProviderSubscriptionStatus::ACTIVE->value)
-            ->whereBetween('subscription_end_date', [
+        return BillingSubscription::query()
+            ->whereIn('status', [
+                BillingSubscriptionStatus::ACTIVE->value,
+                BillingSubscriptionStatus::TRIALING->value,
+            ])
+            ->whereBetween('current_period_end', [
                 $now,
                 $now->copy()->addDays(self::EXPIRING_WITHIN_DAYS),
             ]);
@@ -317,13 +342,15 @@ class DashboardOverviewService
 
     private function expiredSubscriptionCount(Carbon $now): int
     {
-        return ProviderSubscription::query()
+        return BillingSubscription::query()
             ->where(function ($query) use ($now): void {
-                $query->where('status', ProviderSubscriptionStatus::EXPIRED->value)
-                    ->orWhere(function ($activeQuery) use ($now): void {
-                        $activeQuery->where('status', ProviderSubscriptionStatus::ACTIVE->value)
-                            ->whereNotNull('subscription_end_date')
-                            ->where('subscription_end_date', '<=', $now);
+                $query->where('status', BillingSubscriptionStatus::EXPIRED->value)
+                    ->orWhere(function ($elapsed) use ($now): void {
+                        $elapsed->whereIn('status', [
+                            BillingSubscriptionStatus::ACTIVE->value,
+                            BillingSubscriptionStatus::TRIALING->value,
+                        ])->whereNotNull('current_period_end')
+                            ->where('current_period_end', '<=', $now);
                     });
             })
             ->count();
@@ -382,9 +409,9 @@ class DashboardOverviewService
         string $bucket
     ): array {
         $format = $this->bucketSqlFormat($bucket);
-        $rows = ProviderSubscription::query()
-            ->whereBetween('subscription_start_date', [$periodStart, $now])
-            ->selectRaw("DATE_FORMAT(subscription_start_date, '{$format}') as bucket, COUNT(*) as total")
+        $rows = BillingSubscription::query()
+            ->whereBetween('created_at', [$periodStart, $now])
+            ->selectRaw("DATE_FORMAT(created_at, '{$format}') as bucket, COUNT(*) as total")
             ->groupBy('bucket')
             ->orderBy('bucket')
             ->pluck('total', 'bucket');

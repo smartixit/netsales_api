@@ -19,6 +19,7 @@ Valid statuses are strictly:
 | **DEC-02** | 2026-11-02 | Dedicated Scoped Permissions for Network & POS Accountants | **`PROPOSED`** | Pending Review |
 | **DEC-03** | 2026-11-02 | Strict PaymentType Enum Validation and Model Cast in Repayments | **`PROPOSED`** | Pending Review |
 | **DEC-04** | 2026-11-02 | Server-Side Informational FIFO Repayment Preview Endpoint | **`PROPOSED`** | Pending Review |
+| **BILL-TRIAL-01** | 2026-11-10 | Versioned Trial and Dunning Policy Engine | **`APPROVED`** | 2026-11-10 |
 
 ---
 
@@ -100,3 +101,35 @@ Valid statuses are strictly:
 - Subscription request reads require `subscriptions.view`; approval and rejection require their respective `subscriptions.approve` and `subscriptions.reject` permissions.
 - Provider subscription reads and consumption detail require `subscriptions.view`; extension requires `subscriptions.edit`.
 - Provider request submission, request cancellation, network-scoped active-subscription lookup, feature consumption, and early activation retain their operational routes and are not assigned platform subscription permissions by this change.
+
+
+---
+
+## BILL-TRIAL-01: Versioned Trial Policy Engine and Removal from System Settings
+- **Status:** **`APPROVED`**
+- **Date:** 2026-11-10
+- **User Decision Date:** 2026-11-10
+- **Context:** Subscription trial duration and dunning behavior must not be global key/value settings. Commercial policy needs eligibility, versioning, plan/price overrides, redemption controls, approval, and auditable adjustments.
+- **Decision:** Use dedicated immutable published versions for trial and dunning policies. Resolution order is price override, plan-version assignment, then active platform default. Snapshot the resolved versions on every subscription. Trial eligibility and redemption are enforced server-side and transactionally. Trial extensions and early termination require a reason and an actor audit record. Dunning grace, suspension, reminders, and pre-renewal alerts are governed by a separate dunning policy.
+- **System Settings:** Remove the `SUBSCRIPTION` category and its trial/grace/suspension/expiry-alert keys. System Settings must reject creation, update, and lookup/filter operations for the retired category. Policy management is available only under Platform Scope billing APIs.
+- **Compatibility:** Existing plan-version trial durations are migrated to equivalent immutable policy versions; zero-day plans remain explicitly non-trial. The platform default is disabled with zero duration, so newly created plans do not receive an unintended free trial. Existing subscription records receive explicit trial and dunning policy snapshots during migration.
+- **Consequence:** Changing a policy affects only future subscriptions/assignments; existing subscriptions continue using their stored snapshots.
+
+
+### Billing collection timing and lock order — 2026-11-10
+- Dunning reminder offsets are measured from the invoice due date, not invoice creation time.
+- Grace periods are measured from the due date, then extended by the policy's configured number of days.
+- Billing lock order for invoice collection is Invoice -> Payment -> Treasury; all collection paths must preserve this order.
+- Period-end cancellation is only available while an ACTIVE/TRIALING service period is still in the future. Immediate cancellation revokes any reserved/active trial redemption and suppresses queued renewal alerts.
+- Settlement of an invoice after the originally billed period elapsed does not grant retroactive service time; the paid period restarts at settlement.
+
+
+### Credit notes and cash refund accounting — 2026-11-10
+- A cash refund must never be issued without an issued credit note authorizing the customer's credit.
+- Credit notes first offset open accounts receivable; only any remaining amount backed by net verified collections becomes refundable customer credit.
+- Credit-note amounts are allocated to original invoice lines and cannot exceed either the uncredited source line amount or the remaining invoice amount.
+- Credit-note issuance debits deferred revenue or recognized revenue reversal according to an explicit Platform Scope accounting treatment and credits Accounts Receivable.
+- Cash settlement of refundable credit debits Accounts Receivable/customer credit and credits a treasury account in the same currency.
+- Credit notes, refunds, and their accounting journal entries are immutable after posting; corrections require a new financial document/reversal.
+
+- Refund requests revalidate idempotency after acquiring the invoice lock; invoice-level serialization is the concurrency boundary for refunds on that invoice.

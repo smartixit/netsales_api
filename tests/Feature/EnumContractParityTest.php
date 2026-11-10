@@ -4,6 +4,10 @@ namespace Tests\Feature;
 
 use App\Enums\BackupStatus;
 use App\Enums\BackupType;
+use App\Enums\BillingFeatureType;
+use App\Enums\BillingInterval;
+use App\Enums\BillingPlanVersionStatus;
+use App\Enums\BillingSubscriptionStatus;
 use App\Enums\BankAccountType;
 use App\Enums\BanType;
 use App\Enums\DeviceType;
@@ -14,7 +18,6 @@ use App\Enums\NotificationType;
 use App\Enums\OtpType;
 use App\Enums\PaymentType;
 use App\Enums\PosStatus;
-use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\RequestStatus;
 use App\Enums\RoleKey;
 use App\Enums\RoleScope;
@@ -50,11 +53,15 @@ class EnumContractParityTest extends TestCase
     use DatabaseTransactions;
 
     /**
-     * Exact 24 Canonical PHP Backed Enums in app/Enums/
+     * Canonical PHP backed enums in app/Enums/
      */
-    public const ALL_24_ENUMS = [
+    public const ALL_ENUMS = [
         BackupStatus::class,
         BackupType::class,
+        BillingFeatureType::class,
+        BillingInterval::class,
+        BillingPlanVersionStatus::class,
+        BillingSubscriptionStatus::class,
         BankAccountType::class,
         BanType::class,
         DeviceType::class,
@@ -64,7 +71,6 @@ class EnumContractParityTest extends TestCase
         OtpType::class,
         PaymentType::class,
         PosStatus::class,
-        ProviderSubscriptionStatus::class,
         RequestStatus::class,
         RoleKey::class,
         RoleScope::class,
@@ -75,16 +81,15 @@ class EnumContractParityTest extends TestCase
         SmsMessageType::class,
         UserDeviceStatus::class,
         UserStatus::class,
-        ValueType::class,
         WalletOperationType::class,
         LinkingChallengeStatus::class,
     ];
 
-    public function test_all_24_enums_exist_and_are_backed(): void
+    public function test_canonical_enums_exist_and_are_backed(): void
     {
-        $this->assertCount(25, self::ALL_24_ENUMS);
+        $this->assertCount(27, self::ALL_ENUMS);
 
-        foreach (self::ALL_24_ENUMS as $enumClass) {
+        foreach (self::ALL_ENUMS as $enumClass) {
             $this->assertTrue(enum_exists($enumClass), "Enum {$enumClass} must exist.");
             $reflection = new \ReflectionEnum($enumClass);
             $this->assertTrue($reflection->isBacked(), "Enum {$enumClass} must be backed.");
@@ -92,9 +97,9 @@ class EnumContractParityTest extends TestCase
         }
     }
 
-    public function test_all_24_enums_implement_non_empty_arabic_label(): void
+    public function test_canonical_enums_implement_non_empty_arabic_label(): void
     {
-        foreach (self::ALL_24_ENUMS as $enumClass) {
+        foreach (self::ALL_ENUMS as $enumClass) {
             $cases = $enumClass::cases();
             $this->assertNotEmpty($cases, "Enum {$enumClass} must have cases.");
 
@@ -141,10 +146,8 @@ class EnumContractParityTest extends TestCase
             OtpType::class,
             BanType::class,
             BankAccountType::class,
-            ProviderSubscriptionStatus::class,
             NotificationType::class,
             SettingCategory::class,
-            ValueType::class,
             BackupStatus::class,
             BackupType::class,
             LinkingChallengeStatus::class,

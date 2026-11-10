@@ -38,3 +38,35 @@
    - Repayment collections must lock affected invoices and wallet balances using pessimistic row locking (`lockForUpdate()`) inside `DB::transaction(...)`.
 4. **Preview Non-Binding Qualification (DEC-04):**
    - Any server-side repayment preview is strictly non-binding and informational. Because concurrent transactions can mutate invoice balances, the final settlement is determined atomically at collection time.
+
+
+## Subscription Trial and Dunning Controls
+Trial eligibility, redemption, and adjustments are server-side transactional controls. A unique redemption subject is enforced by the database for each policy and configured redemption scope. Published policy versions and subscription policy snapshots are immutable. Dunning grace and suspension use the version assigned to the subscription; they must never read generic `system_settings` keys.
+
+
+## Subscription Billing Subledger Invariants
+1. Invoice open balance is the non-negative remainder after cash settlement and issued credit notes: `max(0, total_minor - paid_minor - credited_minor)`.
+2. `credited_minor` represents the full face value of issued credit notes, not only the portion applied against receivables. The allocation split is stored on the credit note as `applied_to_receivable_minor` and `refundable_minor`.
+3. Credit-note issue debits deferred revenue or recognized revenue according to the approved accounting treatment; it credits receivables only for the amount applied to open debt and credits customer-credit liability for the refundable excess.
+4. Refund settlement debits customer-credit liability and credits the same-currency treasury asset. It must not debit receivables a second time.
+5. Invoice, payment, credit note, refund, treasury, and journal currency IDs must agree. Currency conversion is a separate immutable record and cannot silently alter a posted document.
+6. Every journal entry is balanced per currency. No report may sum unlike currencies into one monetary total without an explicit functional-currency translation and recorded FX policy.
+
+
+## Deferred Revenue Recognition Invariants
+1. Recurring subscription consideration is deferred at invoice issuance and recognized only over the contractual service period. Setup fees and metered consumption are recognized on invoice issuance only after the corresponding service/usage has been performed. One-time prices are recognized immediately.
+2. Tax is never included in revenue recognition; it is posted to the currency-specific tax-payable account.
+3. A recognition schedule is unique per recurring invoice line. Every posting has a deterministic date-based idempotency key and a balanced same-currency journal entry.
+4. Recognition is cumulative and integer-based. The last service day posts the exact unrecognized remainder; no floating-point arithmetic or rounding leakage is allowed.
+5. Credit notes reduce the remaining service obligation and the net recognized amount using the original line's schedule. The service derives this automatically; no caller-supplied accounting treatment is authoritative.
+6. An invoice with recognized revenue cannot be voided. Use an immutable credit note to correct it.
+
+
+## Reconciliation Invariants
+1. The Accounts Receivable control account (1100) must equal the sum of finalized invoice `remaining_minor` balances, excluding void invoices.
+2. Deferred Revenue (2100) must equal the remaining unrecognized amount on all pending/active revenue recognition schedules.
+3. Customer Credit Liability (2200) must equal the unrefunded refundable amount across issued credit notes.
+4. Tax Payable (2300) must equal tax on finalized non-void invoices less tax reversed by issued credit notes.
+5. Each treasury asset account must equal verified payments allocated to that treasury minus completed refunds allocated from that same treasury. Every new refund must persist its treasury account.
+6. The posted trial balance must balance independently per currency. Missing treasury links are reported as reconciliation warnings, never silently allocated to another account.
+7. All reconciliation values are compared in the original transaction currency and minor units. No cross-currency total is calculated unless a separate functional-currency translation policy is established.

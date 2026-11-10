@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\NetworkStatus;
 use App\Enums\NotificationType;
-use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\SmsMessageType;
 use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
@@ -13,8 +12,6 @@ use App\Http\Requests\API\V1\Network\UpdateNetworkRequest;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\NetworkSmsSettingRepositoryInterface;
 use App\Interfaces\NetworkWalletRepositoryInterface;
-use App\Interfaces\ProviderSubscriptionRepositoryInterface;
-use App\Interfaces\SubscriptionPlanRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Models\Network;
@@ -45,9 +42,6 @@ class NetworkService
         protected FileUploadService $fileUploadService,
         protected NotificationService $notificationService,
         protected NetworkWalletRepositoryInterface $networkWalletRepository,
-        protected ProviderSubscriptionRepositoryInterface $providerSubscriptionRepository,
-        protected SubscriptionPlanRepositoryInterface $subscriptionPlanRepository,
-        protected SystemSettingService $systemSettingService,
         protected NetworkSmsSettingRepositoryInterface $networkSmsSettingRepository,
     ) {}
 
@@ -287,22 +281,7 @@ class NetworkService
                 ]);
             }
 
-            // 2. تفعيل اشتراك تجريبي مجاني للشبكة الجديدة وفق إعدادات النظام إذا لم يكن لديها اشتراك سارٍ
-            $trialDays = $this->systemSettingService->getInt('trial_period_days', 14);
-            $hasSub = $this->providerSubscriptionRepository->getActiveForNetwork($network->network_id);
-            if ($trialDays > 0 && ! $hasSub) {
-                $defaultPlan = $this->subscriptionPlanRepository->getActivePlans()->first();
-                if ($defaultPlan) {
-                    $this->providerSubscriptionRepository->create([
-                        'network_id' => $network->network_id,
-                        'plan_id' => $defaultPlan->plan_id,
-                        'subscription_start_date' => now('Asia/Aden'),
-                        'subscription_end_date' => now('Asia/Aden')->addDays($trialDays),
-                        'status' => ProviderSubscriptionStatus::ACTIVE->value,
-                        'created_by' => $adminUserId,
-                    ]);
-                }
-            }
+            // 2. لا تبدأ التجربة أو الاشتراك عند اعتماد الشبكة؛ تتم هذه العملية حصراً عبر محرك Billing.
 
             // 3. إنشاء إعدادات الرسائل النصية للشبكة (تفعيل الإشعارات افتراضياً عبر بوابة النظام العامة)
             $this->networkSmsSettingRepository->getOrCreateForNetwork($network->network_id);

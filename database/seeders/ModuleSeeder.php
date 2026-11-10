@@ -98,10 +98,10 @@ class ModuleSeeder extends Seeder
                 'status' => true,
             ],
             [
-                'module_key' => 'subscriptions',
-                'module_name' => 'خطط الاشتراكات',
-                'module_icon' => 'heroicon-o-sparkles',
-                'module_desc' => 'إدارة باقات اشتراك الشبكات، الميزات، وطلبات التجديد',
+                'module_key' => 'billing',
+                'module_name' => 'الفوترة والاشتراكات والمنصة المالية',
+                'module_icon' => 'heroicon-o-receipt-percent',
+                'module_desc' => 'إدارة العملات والتسعير والاشتراكات والفواتير والتحصيل والخزينة والدفتر المحاسبي',
                 'status' => true,
             ],
             [

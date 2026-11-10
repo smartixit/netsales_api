@@ -1,6 +1,6 @@
 # NetSales — Current Project State & Authorization Snapshot
 
-**Last Verified Date:** 2026-11-07  
+**Last Updated Date:** 2026-11-10  
 **Active Working Tree Status:** M6 Procurement Requests Lifecycle Frontend Completed & Verified (201 tests passed, 0 issues)  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
@@ -64,3 +64,67 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Role assignment is intentionally limited to the ordinary operational user role per tenant. Accountant assignment remains excluded until accountant permission sets are verified to be read-only and policy-compliant.
 - PR #20 depends on the API contract and `is_owner` response change in PR #10; merge the API PR first, then the Flutter PR.
 - CI and visual QA are pending; do not mark this feature fully verified until exact-head checks pass and rendered phone/tablet Light/Dark review is completed.
+
+
+## Active implementation — SaaS Billing and Versioned Trial/Dunning Policies (2026-11-10)
+- Active backend branch: `feat/saas-billing-multicurrency-rebuild`.
+- The subscription and billing domain is being rebuilt around immutable plan/price versions, explicit currencies, invoice/payment/ledger workflows, entitlements, usage metering, and platform-only billing administration.
+- Trial behavior is controlled by versioned `billing_trial_policies` / `billing_trial_policy_versions`, not `system_settings`. Resolution order: price override → plan-version assignment → platform default.
+- Trial eligibility, redemption uniqueness, manual approval, first-activation start, expiry behavior, and audited adjustments are server-owned.
+- Grace periods, dunning reminders, auto-suspension, and pre-renewal alerts are separately governed by versioned dunning policies.
+- `system_settings` no longer owns the `SUBSCRIPTION` category or its four legacy keys. The System Settings API rejects attempts to recreate the retired category.
+- Existing plan versions are migrated to equivalent immutable trial policy versions; plans with zero trial days remain non-trial.
+- Tests and GitHub Actions are intentionally deferred until the end of the approved implementation plan. No test or CI success is claimed in this state entry.
+
+
+### Billing integration hardening — 2026-11-10
+- Platform default trial is intentionally disabled; trial activation must be explicitly configured.
+- Existing non-zero legacy plan trial durations map to dedicated policy versions. Existing subscriptions receive policy snapshots during migration.
+- Ineligible trial customers may still purchase the paid subscription without a trial.
+- First-activation trials use RESERVED redemption state and activate atomically on the first entitlement lookup after any required manual approval.
+- Trial expiry behavior is enforced: EXPIRE closes the trial; CREATE_INVOICE begins conversion billing.
+- Billing reminders are delivered through the existing notification service from Outbox with a unique message UUID delivery guard.
+- Manual trial approval/rejection and audited trial adjustment routes are exposed under Platform Scope.
+- Automated tests, migration execution, and GitHub Actions remain pending by user instruction.
+
+
+### Billing lifecycle consistency — 2026-11-10
+- Invoice reminders and grace-period deadlines are now anchored to contractual invoice due dates.
+- Cancellation scheduling is limited to live subscriptions with a future period; pending renewal alerts are cancelled on cancellation.
+- Payment verification now uses the global Invoice -> Payment -> Treasury lock order.
+- A late settlement of an initially expired invoice can restore the subscription only by starting a fresh paid period if the original period elapsed.
+- The duplicate payment idempotency-key migration operation has been removed.
+- Automated validation and migrations remain pending by instruction.
+
+
+### Credit note and refund workflow — 2026-11-10
+- Platform credit-note issuance now records invoice-line allocations, immutable amounts, accounting treatment, receivable offsets, and refundable customer credit.
+- Refunds require a matching issued credit note and are limited by both payment and credit-note remaining refundable balances.
+- Credit note issuance and cash settlement are separately posted to the same-currency ledger.
+- Invoice API responses can expose the related credit notes and their applied/refundable/refunded balances.
+- Tests, migration execution, and CI remain pending by instruction.
+
+- Refund idempotency is checked again after invoice-level locking to handle concurrent retries safely.
+
+
+### Billing implementation closeout — 2026-11-10
+- Subscription billing implementation is functionally assembled on feat/saas-billing-multicurrency-rebuild / PR #18.
+- Closeout hardening corrected the trial policy resolver, duplicate Outbox dispatch, payment verification controller contract, invoice credit balance accounting, customer-credit liability postings, and dunning/dashboard handling for credited invoices.
+- billing_invoices.credited_minor records issued credit-note value separately from cash collections. Outstanding amount is derived as max(0, total_minor - paid_minor - credited_minor).
+- Credit-note issue allocates value against receivables first and posts any overpaid amount to customer-credit liability. Refund settlement debits that liability and credits same-currency treasury.
+- Verification status: NOT VERIFIED. Per user instruction, no tests, PHP lint/static analysis, migrations, or GitHub Actions have been run yet. Do not merge or treat as production-ready until the final validation gate passes and all failures are resolved.
+
+
+### Deferred revenue and reconciliation closeout — 2026-11-10
+- Recurring subscription invoice lines now create per-line revenue recognition schedules; daily processing recognizes the exact earned amount in integer minor units and posts balanced entries per currency.
+- Setup fees and metered usage are posted to earned revenue accounts at invoice finalization; recurring subscription consideration is initially deferred. Tax is separated to account 2300.
+- Credit-note accounting is inferred from recognized/unrecognized revenue and tax allocation, not chosen manually by the API caller. Refunds settle customer-credit liability against same-currency treasury.
+- Voiding is blocked once a service line has recognized revenue; unstarted schedules are cancelled for an otherwise eligible void.
+- Added automated revenue-recognition feature coverage. Migration `migrate:fresh --seed` passed in the workflow at SHA `2c19f61d`; Pint revealed two parse errors on a prior SHA, corrected in later commits. **Current branch head still requires an exact-SHA run completing Pint, PHPStan, the complete Laravel test suite, and all final gate checks.** PR remains Draft and unmerged.
+
+
+### Per-currency reconciliation implementation — 2026-11-10
+- Refund records now persist the treasury account that paid the refund, enabling exact treasury subledger matching.
+- Added an internal reconciliation endpoint/service comparing AR, deferred revenue, customer-credit liability, tax payable, treasury balances, and per-currency trial balance.
+- Report status is MISMATCH when balances differ or treasury allocations/ledger links are missing. Results are partitioned by currency; there is no mixed-currency aggregation.
+- Added feature tests for revenue posting, automatic credit-note accounting, refund settlement, and reconciliation after full refund. Exact-head CI is required before acceptance.

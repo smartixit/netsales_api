@@ -2,25 +2,27 @@
 
 namespace Tests\Feature;
 
+use App\Enums\BillingSubscriptionStatus;
 use App\Enums\NetworkStatus;
-use App\Enums\ProviderSubscriptionStatus;
 use App\Enums\RoleKey;
 use App\Enums\UserStatus;
+use App\Models\BillingSubscription;
 use App\Models\Network;
 use App\Models\NetworkUser;
-use App\Models\ProviderSubscription;
 use App\Models\Role;
-use App\Models\SubscriptionPlan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
 use Tests\TestCase;
+use Tests\Concerns\CreatesActiveBillingSubscription;
+use Carbon\CarbonImmutable;
 
 class DashboardOverviewTest extends TestCase
 {
     use DatabaseTransactions;
+    use CreatesActiveBillingSubscription;
 
-    public function test_super_admin_receives_real_network_and_subscription_overview_data(): void
+    public function test_super_admin_receives_real_network_and_billing_overview_data(): void
     {
         $admin = User::query()
             ->whereHas('role', fn ($query) => $query->where('role_key', RoleKey::SUPER_ADMIN->value))
@@ -30,14 +32,14 @@ class DashboardOverviewTest extends TestCase
         $activeNetworksBefore = Network::query()
             ->where('status', NetworkStatus::ACTIVE->value)
             ->count();
-        $expiringBefore = ProviderSubscription::query()
-            ->where('status', ProviderSubscriptionStatus::ACTIVE->value)
-            ->whereBetween('subscription_end_date', [
-                now('Asia/Aden'),
-                now('Asia/Aden')->copy()->addDays(7),
+        $now = CarbonImmutable::now('Asia/Aden');
+        $expiringBefore = BillingSubscription::query()
+            ->whereIn('status', [
+                BillingSubscriptionStatus::ACTIVE->value,
+                BillingSubscriptionStatus::TRIALING->value,
             ])
+            ->whereBetween('current_period_end', [$now, $now->addDays(7)])
             ->count();
-
         $network = Network::create([
             'owner_id' => $admin->user_id,
             'network_name' => 'Overview Network '.Str::random(8),
@@ -47,22 +49,12 @@ class DashboardOverviewTest extends TestCase
             'status' => NetworkStatus::ACTIVE,
         ]);
 
-        $plan = SubscriptionPlan::create([
-            'plan_name' => 'Overview Plan '.Str::uuid(),
-            'plan_price' => '100.00',
-            'plan_discount' => '0.00',
-            'plan_validity' => 30,
-            'status' => true,
-        ]);
-
-        $subscription = ProviderSubscription::create([
-            'network_id' => $network->network_id,
-            'plan_id' => $plan->plan_id,
-            'subscription_start_date' => now('Asia/Aden')->subDays(20),
-            'subscription_end_date' => now('Asia/Aden')->addDays(5),
-            'status' => ProviderSubscriptionStatus::ACTIVE,
-            'created_by' => $admin->user_id,
-        ]);
+        $subscription = $this->createActiveBillingSubscriptionForNetwork(
+            $network,
+            [],
+            $now->addDays(5),
+            $admin
+        );
 
         $response = $this->getJson('/api/v1/dashboard/overview', $headers);
 
@@ -73,8 +65,8 @@ class DashboardOverviewTest extends TestCase
             ->assertJsonPath('data.metrics.networks.active', $activeNetworksBefore + 1)
             ->assertJsonPath('data.metrics.subscriptions.expiring_within_7_days', $expiringBefore + 1)
             ->assertJsonFragment([
-                'id' => (int) $subscription->subscription_id,
-                'route_key' => 'provider_subscriptions',
+                'id' => (int) $subscription->billing_subscription_id,
+                'route_key' => 'platform_billing_subscriptions',
             ]);
 
         $this->assertCount(30, $response->json('data.charts.subscription_trend'));

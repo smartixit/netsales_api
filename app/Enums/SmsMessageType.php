@@ -13,7 +13,6 @@ enum SmsMessageType: string
     case LOW_BALANCE = 'low_balance';                 // تنبيه انخفاض الرصيد
     case DAILY_SUMMARY = 'daily_summary';             // الملخص اليومي
     case MONTHLY_SUMMARY = 'monthly_summary';         // الملخص الشهري
-    case SUBSCRIPTION_EXPIRY = 'subscription_expiry'; // انتهاء الاشتراك
     case OTP = 'otp';                                 // رموز التحقق
     case ADMIN_BROADCAST = 'admin_broadcast';         // بث إداري / رسائل النظام السيادية
 
@@ -40,7 +39,6 @@ enum SmsMessageType: string
             self::LOW_BALANCE => 'notify_low_balance',
             self::DAILY_SUMMARY => 'notify_daily_summary',
             self::MONTHLY_SUMMARY => 'notify_monthly_summary',
-            self::SUBSCRIPTION_EXPIRY => 'notify_subscription_expiry',
             self::OTP, self::ADMIN_BROADCAST => null,
         };
     }
@@ -60,7 +58,6 @@ enum SmsMessageType: string
             self::LOW_BALANCE => 'تنبيه انخفاض الرصيد',
             self::DAILY_SUMMARY => 'الملخص اليومي',
             self::MONTHLY_SUMMARY => 'الملخص الشهري',
-            self::SUBSCRIPTION_EXPIRY => 'تنبيه اشتراك الشبكة',
             self::OTP => 'رمز تحقق OTP',
             self::ADMIN_BROADCAST => 'بث إداري / رسالة نظام',
         };

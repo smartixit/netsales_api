@@ -781,3 +781,90 @@ This log documents all executed tasks, code changes, and verification command ou
 - Login, OTP verification, and `auth/me` now expose active `workspace_roles` with scope and tenant identifiers so the mobile WorkspaceGuard can route accounts whose `users.role_id` is null.
 - Permission lists include a union for client capability rendering only; all backend authorization continues to enforce exact tenant scope.
 - Added coverage for a user with simultaneous NETWORK and POS memberships and the tenant-aware network overview endpoint.
+
+
+---
+
+## 2026-11-10 — Versioned Trial and Dunning Policy Engine
+- Added dedicated trial policy and policy-version models with configurable enablement, duration unit/value, start trigger (purchase/first activation), eligibility, redemption scope, manual approval, end behavior, and entitlement mode.
+- Added transactional trial redemption uniqueness by policy/scope/subject, subscription linkage, manual approval, and audited extension/shortening/early-end adjustments.
+- Added separate versioned dunning policies for grace periods, payment reminder schedules, auto-suspension, and pre-renewal alerts.
+- Added policy resolution order: price override → plan-version assignment → platform default; snapshots are stored on subscriptions.
+- Replaced `billing_plan_versions.trial_days` with a trial-policy-version reference. Migration preserves existing zero-day and non-zero legacy trial behavior.
+- Removed the `SUBSCRIPTION` category and legacy trial/grace/suspension/expiry-alert settings from `SystemSettingSeeder` and the setting category enum; write and filter validation rejects the retired category.
+- Added Platform Scope API endpoints to list/create policies, create/publish immutable versions, assign policies to draft plan versions/prices, approve trial redemptions, and adjust active trial periods.
+- Integrated first-activation trials, trial expiry outcomes, policy-driven dunning grace/suspension, invoice reminder schedules, and pre-renewal alerts through the transactional outbox.
+- Updated plan, price, and subscription resources to expose policy references/snapshots.
+- Tests and GitHub Actions remain intentionally deferred by user instruction. Static/runtime validation has not yet been performed; do not infer passing status.
+
+
+### Integration hardening follow-up — 2026-11-10
+- Corrected first-activation redemption state: deferred trials are reserved until the first entitlement lookup activates them; manual approval is honored before the reservation can start.
+- Allowed the subscription model to update only the trial start/end lifecycle timestamps in addition to the existing mutable lifecycle fields.
+- Changed the platform-default trial policy to disabled/zero duration. Legacy non-zero trial durations are migrated to dedicated immutable policy versions rather than becoming the default for every future plan.
+- Existing subscription rows now receive resolved trial/dunning policy snapshots during migration, not only foreign-key references.
+- Trial ineligibility now removes the free-trial offer while allowing normal paid purchase; it no longer blocks the customer from purchasing.
+- Implemented explicit trial rejection and audited adjustment API routes, plus pending-redemption listing.
+- Applied the trial end behavior: EXPIRE ends the trial without creating a conversion invoice; CREATE_INVOICE continues into the paid conversion flow.
+- Added idempotent Outbox notification-delivery records and dispatch for billing invoice reminders and subscription renewal alerts through the existing NotificationService (in-app + FCM queue).
+- Retired subscription keys are rejected on create/update/read-by-key and are skipped in batch setting updates.
+- Published policy versions are now immutable, including their status field.
+- No tests, migrations, or GitHub Actions were run; they remain deferred to the final plan stage.
+
+
+### Billing lifecycle consistency pass — 2026-11-10
+- Removed the duplicate payment idempotency-key column alteration from the later treasury-ledger migration; the column and unique index are already created with billing_payments.
+- Anchored invoice dunning reminders to the invoice due date and the policy's day offsets instead of scheduling them relative to invoice creation.
+- Anchored initial and renewal grace-period deadlines to the invoice due date plus the configured grace days.
+- Prevented pre-renewal alerts from being queued after a customer schedules cancellation at period end.
+- Cancelled pending renewal alerts when cancellation is scheduled or performed immediately; revoked outstanding trial redemptions on immediate cancellation.
+- Restricted period-end cancellation scheduling to ACTIVE/TRIALING subscriptions with a future service period; other states must use immediate cancellation.
+- Standardized payment verification lock ordering to Invoice -> Payment -> Treasury, matching payment registration and reducing avoidable deadlock risk.
+- Allowed recovery from an initially expired non-payment subscription only after its full invoice is settled; if the invoiced period has already elapsed, a fresh paid period begins at settlement rather than granting expired historical access.
+- Ensured zero-value initial activation schedules its pre-renewal alerts.
+- Automated tests, migration execution, and GitHub Actions remain deferred to the final validation stage.
+
+
+### Credit note and refund settlement workflow — 2026-11-10
+- Added credit note idempotency, accounting treatment, receivable-applied amount, refundable amount, and refunded amount snapshots.
+- Added immutable issued credit note and credit note line lifecycle guards.
+- Added Platform Scope credit-note issuance endpoint with per-invoice-line and per-invoice over-credit protection.
+- Credit notes offset outstanding receivables first; only the excess against net collected funds becomes refundable customer credit.
+- Added currency, invoice, payment, and credit-note consistency checks to cash refund settlement.
+- Cash refunds now require an issued credit note, cannot exceed the payment's remaining refundable amount or the credit note's remaining refundable amount, and debit customer receivables/credit while crediting the matching treasury account.
+- Added invoice states for partially credited and fully credited invoices, and exposed credit note balances in invoice resources.
+- Allowed the final transition from partially refunded payment to fully refunded.
+- Automated tests, migration execution, and GitHub Actions remain deferred to the final validation stage.
+
+- Rechecked refund idempotency after acquiring the invoice lock to serialize concurrent retries and avoid duplicate-key race failures.
+
+
+## [2026-11-10] Billing stage closeout hardening — reconciliation and lifecycle consistency
+- Corrected malformed BillingPolicyResolver implementation and restored trial redemption metadata, eligibility, snapshots, and default policy methods.
+- Fixed Outbox dispatch so billing notification events are dispatched once per processing attempt; failures return to the Outbox retry lifecycle.
+- Corrected the Platform Finance controller to call BillingPaymentService::verify() using its actual method signature.
+- Added credited_minor to invoice balances and resources. Outstanding amount is now computed from total less verified payments and issued credit notes; partial-credit invoices remain payable.
+- Split credit-note postings between receivables and customer-credit liability (2200). Cash refunds now settle customer-credit liability rather than incorrectly debiting receivables.
+- Updated payment verification, invoice state transitions, dashboard counts, and dunning cancellation for fully credited invoices.
+- Added migration 2026_11_10_000011_add_credited_minor_to_billing_invoices.php.
+- Automated tests, PHP static analysis, migration execution, and GitHub Actions remain intentionally pending for the final validation gate. No runtime success is claimed.
+
+
+## [2026-11-10] Revenue recognition and tax-aware credit-note closeout
+- Added per-subscription-invoice-line deferred revenue schedules and immutable recognition posting records.
+- Invoice finalization now separates recurring subscription revenue (deferred, account 2100) from earned setup fees (4120) and billed metered usage (4110); one-time subscriptions are recognized immediately.
+- Tax is posted separately to tax payable (2300), not into revenue.
+- Added daily `billing:recognize-revenue` catch-up command, scheduled for 01:05 Asia/Aden. Recognition uses cumulative integer allocation and deterministic journal idempotency keys; the final service day posts the exact residual.
+- Credit-note accounting is now derived per original line: tax, unearned subscription liability, and already-earned revenue are allocated automatically. Manual treatment selection was removed from the request contract.
+- Invoice voiding is blocked after any revenue recognition; unused schedules are cancelled when an eligible invoice is voided.
+- Added `BillingRevenueRecognitionTest` for proportional recognition, repeated-run idempotency, delayed scheduler catch-up, exact residual posting, and journal balance.
+- Migration/schema validation in GitHub Actions confirmed `migrate:fresh --seed` passed at commit `2c19f61d`; Pint previously identified two PHP parse errors in the catalog/policy services, now corrected at commits `afff613f` and `b265e39`. Exact-head CI and full tests remain pending.
+
+
+## [2026-11-10] Internal financial reconciliation closeout
+- Added `treasury_account_id` to completed refund records and linked the refund model/service/API response to the actual paying treasury account.
+- Added `BillingReconciliationService` and `GET /api/v1/platform/billing/reconciliation` (Platform Scope + `billing.view`), with optional currency filter and independent per-currency output.
+- The report compares accounts receivable, deferred revenue, customer credit liability, tax payable, and each treasury asset against their corresponding billing subledgers; it also checks the trial balance.
+- Missing treasury allocation and missing treasury ledger links are surfaced as warnings. No unlike currencies are combined.
+- Added an integration assertion requiring all reconciliation checks to match after full payment, credit-note issuance, and refund settlement.
+- Exact-head CI remains pending after the latest schema, service, controller, route, and test changes. No passing result is claimed yet.

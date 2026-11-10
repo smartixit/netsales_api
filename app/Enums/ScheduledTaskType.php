@@ -7,8 +7,6 @@ namespace App\Enums;
  */
 enum ScheduledTaskType: string
 {
-    case SUBSCRIPTIONS_EXPIRE_OUTDATED = 'subscriptions_expire_outdated';
-    case SUBSCRIPTIONS_NOTIFY_EXPIRING = 'subscriptions_notify_expiring';
     case REPORTS_DAILY_SMS = 'reports_daily_sms';
     case REPORTS_MONTHLY_SMS = 'reports_monthly_sms';
     case ALERTS_LOW_BALANCE = 'alerts_low_balance';
@@ -34,8 +32,6 @@ enum ScheduledTaskType: string
     public function label(): string
     {
         return match ($this) {
-            self::SUBSCRIPTIONS_EXPIRE_OUTDATED => 'فحص وإنهاء اشتراكات الشبكات المنتهية',
-            self::SUBSCRIPTIONS_NOTIFY_EXPIRING => 'تنبيه باقتراب موعد انتهاء اشتراكات الشبكات',
             self::REPORTS_DAILY_SMS => 'إرسال الملخص المالي اليومي للشبكات (SMS)',
             self::REPORTS_MONTHLY_SMS => 'إرسال الملخص المالي الشهري للشبكات (SMS)',
             self::ALERTS_LOW_BALANCE => 'فحص وتنبيه انخفاض أرصدة محافظ نقاط البيع',
@@ -53,8 +49,6 @@ enum ScheduledTaskType: string
     public function command(): string
     {
         return match ($this) {
-            self::SUBSCRIPTIONS_EXPIRE_OUTDATED => 'subscriptions:expire-outdated',
-            self::SUBSCRIPTIONS_NOTIFY_EXPIRING => 'subscriptions:notify-expiring',
             self::REPORTS_DAILY_SMS => 'reports:daily-summary-sms',
             self::REPORTS_MONTHLY_SMS => 'reports:monthly-summary-sms',
             self::ALERTS_LOW_BALANCE => 'alerts:low-balance',
@@ -72,7 +66,6 @@ enum ScheduledTaskType: string
     public function frequency(): string
     {
         return match ($this) {
-            self::SUBSCRIPTIONS_EXPIRE_OUTDATED => 'hourly',
             self::SYSTEM_PRUNE_LOGS => 'weekly',
             self::REPORTS_MONTHLY_SMS => 'monthly',
             default => 'daily',
@@ -85,8 +78,6 @@ enum ScheduledTaskType: string
     public function defaultTargetHour(): int
     {
         return match ($this) {
-            self::SUBSCRIPTIONS_EXPIRE_OUTDATED => 0,
-            self::SUBSCRIPTIONS_NOTIFY_EXPIRING => 10,
             self::REPORTS_DAILY_SMS, self::REPORTS_MONTHLY_SMS => 20,
             self::ALERTS_LOW_BALANCE => 12,
             self::BACKUP_AUTO => 3,

@@ -1,8 +1,7 @@
 <?php
 
-use App\Enums\ProviderSubscriptionStatus;
-use App\Models\ProviderSubscription;
-use App\Services\ProviderSubscriptionService;
+use App\Services\Billing\BillingDunningService;
+use App\Services\Billing\BillingRenewalService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -11,31 +10,28 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Artisan::command('subscriptions:expire-outdated', function (ProviderSubscriptionService $subscriptionService) {
-    $now = now('Asia/Aden');
-    $expiredSubs = ProviderSubscription::where('status', ProviderSubscriptionStatus::ACTIVE)
-        ->whereNotNull('subscription_end_date')
-        ->where('subscription_end_date', '<=', $now)
-        ->get();
+Artisan::command('billing:process-renewals', function (BillingRenewalService $renewals) {
+    $result = $renewals->processDueSubscriptions((int) config('billing.renewal_batch_size', 100));
+    $this->info("تم إنشاء {$result['renewal_invoices_created']} فاتورة تجديد وإنهاء {$result['subscriptions_cancelled']} اشتراكاً عند نهاية الفترة.");
+})->purpose('إصدار فواتير التجديد وتحويل التجارب المنتهية وفق دورة الاشتراك الجديدة');
 
-    $count = 0;
-    foreach ($expiredSubs as $sub) {
-        $subscriptionService->getActiveForNetwork($sub->network_id);
-        $count++;
-    }
-
-    $this->info("تم فحص ومعالجة {$count} اشتراكاً منتهي الصلاحية وتحديث حالتها بنجاح.");
-})->purpose('فحص وإنهاء الاشتراكات المنتهية وتفعيل الباقات المجدولة في الخلفية');
+Artisan::command('billing:process-dunning', function (BillingDunningService $dunning) {
+    $result = $dunning->process((int) config('billing.dunning_batch_size', 100));
+    $this->info("تم إدراج {$result['reminders_queued']} تذكيراً بالفواتير و{$result['renewal_alerts_queued']} تنبيهاً بالتجديد في Outbox وتعليق {$result['subscriptions_suspended']} اشتراكاً بعد انتهاء السماح.");
+})->purpose('معالجة التذكيرات المالية وتعليق الاشتراكات المتأخرة بعد فترة السماح');
 
 // ═══════════════════════════════════════════════════════════════════════
 // جدولة المهام الدورية وفق توقيت صنعاء (Asia/Aden Schedule Registry)
 // ═══════════════════════════════════════════════════════════════════════
 
-// 1. فحص وإنهاء اشتراكات الشبكات المنتهية كل ساعة
-Schedule::command('subscriptions:expire-outdated')->hourly();
+// 0. الاعتراف اليومي بالإيرادات المؤجلة حسب الخدمة المقدمة
+Schedule::command('billing:recognize-revenue')->dailyAt('01:05')->withoutOverlapping()->timezone('Asia/Aden');
 
-// 2. تنبيه الشبكات باقتراب موعد انتهاء الاشتراك (يومياً الساعة 10 صباحاً)
-Schedule::command('subscriptions:notify-expiring')->dailyAt('10:00')->timezone('Asia/Aden');
+// 1. معالجة فواتير التجديد والتحويل من التجربة كل 15 دقيقة
+Schedule::command('billing:process-renewals')->everyFifteenMinutes()->withoutOverlapping()->timezone('Asia/Aden');
+
+// 2. معالجة التذكيرات المالية وفترات السماح كل 15 دقيقة
+Schedule::command('billing:process-dunning')->everyFifteenMinutes()->withoutOverlapping()->timezone('Asia/Aden');
 
 // 3. إرسال الملخص المالي اليومي للشبكات عبر SMS (يومياً الساعة 8 مساءً)
 Schedule::command('reports:daily-summary-sms')->dailyAt('20:00')->timezone('Asia/Aden');

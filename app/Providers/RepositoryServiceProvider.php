@@ -4,12 +4,14 @@ namespace App\Providers;
 
 use App\Interfaces\BackupJobRepositoryInterface;
 use App\Interfaces\BankAccountRepositoryInterface;
+use App\Interfaces\BillingCatalogRepositoryInterface;
+use App\Interfaces\BillingLedgerRepositoryInterface;
+use App\Interfaces\CurrencyRepositoryInterface;
 use App\Interfaces\DashboardRepositoryInterface;
 use App\Interfaces\DirectorateRepositoryInterface;
 use App\Interfaces\ExpenseAttachmentRepositoryInterface;
 use App\Interfaces\ExpenseItemRepositoryInterface;
 use App\Interfaces\ExpenseRepositoryInterface;
-use App\Interfaces\FeatureRepositoryInterface;
 use App\Interfaces\GovernorateRepositoryInterface;
 use App\Interfaces\NetworkPosLinkingChallengeRepositoryInterface;
 use App\Interfaces\NetworkPosRepositoryInterface;
@@ -22,17 +24,12 @@ use App\Interfaces\OtpRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\PosWalletLogRepositoryInterface;
 use App\Interfaces\PosWalletRepositoryInterface;
-use App\Interfaces\ProviderSubscriptionRepositoryInterface;
 use App\Interfaces\RequestItemRepositoryInterface;
 use App\Interfaces\RequestRepositoryInterface;
 use App\Interfaces\SaleInvoiceItemRepositoryInterface;
 use App\Interfaces\SaleInvoiceRepositoryInterface;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
 use App\Interfaces\SecurityBanRepositoryInterface;
-use App\Interfaces\SubscriptionPlanFeatureConsumptionRepositoryInterface;
-use App\Interfaces\SubscriptionPlanFeatureRepositoryInterface;
-use App\Interfaces\SubscriptionPlanRepositoryInterface;
-use App\Interfaces\SubscriptionPlanRequestRepositoryInterface;
 use App\Interfaces\SupportTicketMessageRepositoryInterface;
 use App\Interfaces\SupportTicketRepositoryInterface;
 use App\Interfaces\SystemLogRepositoryInterface;
@@ -44,12 +41,14 @@ use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Repositories\BackupJobRepository;
 use App\Repositories\BankAccountRepository;
+use App\Repositories\BillingCatalogRepository;
+use App\Repositories\BillingLedgerRepository;
+use App\Repositories\CurrencyRepository;
 use App\Repositories\DashboardRepository;
 use App\Repositories\DirectorateRepository;
 use App\Repositories\ExpenseAttachmentRepository;
 use App\Repositories\ExpenseItemRepository;
 use App\Repositories\ExpenseRepository;
-use App\Repositories\FeatureRepository;
 use App\Repositories\GovernorateRepository;
 use App\Repositories\NetworkPosLinkingChallengeRepository;
 use App\Repositories\NetworkPosRepository;
@@ -62,17 +61,12 @@ use App\Repositories\OtpRepository;
 use App\Repositories\PosRepository;
 use App\Repositories\PosWalletLogRepository;
 use App\Repositories\PosWalletRepository;
-use App\Repositories\ProviderSubscriptionRepository;
 use App\Repositories\RequestItemRepository;
 use App\Repositories\RequestRepository;
 use App\Repositories\SaleInvoiceItemRepository;
 use App\Repositories\SaleInvoiceRepository;
 use App\Repositories\ScheduledTaskRunRepository;
 use App\Repositories\SecurityBanRepository;
-use App\Repositories\SubscriptionPlanFeatureConsumptionRepository;
-use App\Repositories\SubscriptionPlanFeatureRepository;
-use App\Repositories\SubscriptionPlanRepository;
-use App\Repositories\SubscriptionPlanRequestRepository;
 use App\Repositories\SupportTicketMessageRepository;
 use App\Repositories\SupportTicketRepository;
 use App\Repositories\SystemLogRepository;
@@ -124,14 +118,11 @@ class RepositoryServiceProvider extends ServiceProvider
         ExpenseItemRepositoryInterface::class => ExpenseItemRepository::class,
         ExpenseAttachmentRepositoryInterface::class => ExpenseAttachmentRepository::class,
 
-        // Phase 6: Subscription Plans, Features, Bank Accounts & Provider Subscriptions
-        SubscriptionPlanRepositoryInterface::class => SubscriptionPlanRepository::class,
-        FeatureRepositoryInterface::class => FeatureRepository::class,
-        SubscriptionPlanFeatureRepositoryInterface::class => SubscriptionPlanFeatureRepository::class,
+        // Phase 6: Billing, Bank Accounts & Financial Ledger
         BankAccountRepositoryInterface::class => BankAccountRepository::class,
-        SubscriptionPlanRequestRepositoryInterface::class => SubscriptionPlanRequestRepository::class,
-        ProviderSubscriptionRepositoryInterface::class => ProviderSubscriptionRepository::class,
-        SubscriptionPlanFeatureConsumptionRepositoryInterface::class => SubscriptionPlanFeatureConsumptionRepository::class,
+        CurrencyRepositoryInterface::class => CurrencyRepository::class,
+        BillingCatalogRepositoryInterface::class => BillingCatalogRepository::class,
+        BillingLedgerRepositoryInterface::class => BillingLedgerRepository::class,
 
         // Phase 7: Support Tickets & Interactive Messaging Engine
         SupportTicketRepositoryInterface::class => SupportTicketRepository::class,

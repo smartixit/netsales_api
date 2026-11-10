@@ -6,7 +6,9 @@ use App\Http\Requests\API\V1\Network\StoreVoucherPackageRequest;
 use App\Http\Requests\API\V1\Network\UpdateVoucherPackageRequest;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
+use App\Models\Network;
 use App\Models\VoucherPackage;
+use App\Services\Billing\BillingEntitlementService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -27,6 +29,7 @@ class VoucherPackageService
     public function __construct(
         protected VoucherPackageRepositoryInterface $voucherPackageRepository,
         protected NetworkRepositoryInterface $networkRepository,
+        protected BillingEntitlementService $billingEntitlements,
     ) {}
 
     /**
@@ -78,15 +81,17 @@ class VoucherPackageService
         }
 
         return DB::transaction(function () use ($networkId, $data) {
-            // التحقق من وجود ونشاط الشبكة
-            try {
-                $network = $this->networkRepository->findById($networkId);
-                $network->ensureActive();
-            } catch (ModelNotFoundException) {
+            // قفل الشبكة لتسلسل إنشاء الباقات ومنع تجاوز الحصة بطلبات متزامنة.
+            $network = Network::query()->lockForUpdate()->find($networkId);
+            if (! $network) {
                 throw ValidationException::withMessages([
                     'network_id' => ['مزود الشبكة المحدد غير موجود في النظام.'],
                 ]);
             }
+            $network->ensureActive();
+
+            // تفرض حدود الخطة على مستوى خدمة المجال، بما يشمل الطلبات القادمة من أي عميل.
+            $this->assertVoucherPackageQuota($networkId);
 
             // منع تكرار اسم الباقة داخل الشبكة
             $existing = $this->voucherPackageRepository->findByNetworkAndName($networkId, $data['package_name']);
@@ -252,6 +257,28 @@ class VoucherPackageService
 
             return $package->load('network');
         });
+    }
+
+    private function assertVoucherPackageQuota(int $networkId): void
+    {
+        $subscription = $this->billingEntitlements->activeSubscriptionForNetwork($networkId);
+
+        if (! $subscription) {
+            throw ValidationException::withMessages([
+                'subscription' => ['يلزم وجود اشتراك نشط أو تجربة سارية قبل إنشاء باقات الشبكة.'],
+            ]);
+        }
+
+        // تشمل السجلات المحذوفة مؤقتاً حتى لا يؤدي الحذف والاستعادة إلى تجاوز الحصة.
+        $currentCount = VoucherPackage::withTrashed()
+            ->where('network_id', $networkId)
+            ->count();
+
+        $this->billingEntitlements->assertResourceLimit(
+            $subscription,
+            'max_voucher_packages',
+            $currentCount
+        );
     }
 
     /**
