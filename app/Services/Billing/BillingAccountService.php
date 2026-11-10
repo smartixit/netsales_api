@@ -4,6 +4,7 @@ namespace App\Services\Billing;
 
 use App\Enums\BillingSubscriptionStatus;
 use App\Models\{BillingAccount, BillingInvoice, BillingSubscription, Network, User};
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -15,7 +16,7 @@ class BillingAccountService
         private CurrencyService $currencies
     ) {}
 
-    public function forNetwork(int $networkId, User $actor): BillingAccount
+    public function accountsForNetwork(int $networkId, User $actor): Collection
     {
         $this->authorization->assertNetworkOwner($actor, $networkId);
 
@@ -23,6 +24,17 @@ class BillingAccountService
             ->with(['defaultCurrency', 'contacts'])
             ->where('network_id', $networkId)
             ->orderBy('billing_account_id')
+            ->get();
+    }
+
+    public function forNetwork(int $networkId, int $currencyId, User $actor): BillingAccount
+    {
+        $this->authorization->assertNetworkOwner($actor, $networkId);
+
+        return BillingAccount::query()
+            ->with(['defaultCurrency', 'contacts'])
+            ->where('network_id', $networkId)
+            ->where('default_currency_id', $currencyId)
             ->firstOrFail();
     }
 
@@ -71,6 +83,18 @@ class BillingAccountService
             if ($hasCommercialHistory) {
                 throw ValidationException::withMessages([
                     'currency_id' => ['لا يمكن تغيير عملة حساب الفوترة بعد وجود اشتراكات أو فواتير.'],
+                ]);
+            }
+
+            $duplicate = BillingAccount::query()
+                ->where('network_id', $account->network_id)
+                ->where('default_currency_id', $currency->currency_id)
+                ->where('billing_account_id', '!=', $account->billing_account_id)
+                ->exists();
+
+            if ($duplicate) {
+                throw ValidationException::withMessages([
+                    'currency_id' => ['يوجد حساب فوترة آخر لهذه الشبكة بهذه العملة بالفعل.'],
                 ]);
             }
 

@@ -3,7 +3,7 @@
 namespace App\Services\Billing;
 
 use App\Enums\{BillingPlanVersionStatus, BillingSubscriptionStatus, BillingInterval};
-use App\Models\{BillingAccount, BillingPlan, BillingPrice, BillingSubscription, BillingSubscriptionEvent, User};
+use App\Models\{BillingAccount, BillingPrice, BillingSubscription, BillingSubscriptionEvent, Network, User};
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -23,12 +23,24 @@ class BillingSubscriptionService
     public function purchase(int $billingAccountId, int $priceId, User $actor): array
     {
         return DB::transaction(function () use ($billingAccountId, $priceId, $actor): array {
+            $initialAccount = BillingAccount::query()->findOrFail($billingAccountId);
+            $this->authorization->assertNetworkOwner($actor, (int) $initialAccount->network_id);
+
+            $network = Network::query()->lockForUpdate()->findOrFail($initialAccount->network_id);
+            if ((int) $network->owner_id !== (int) $actor->user_id || ! $network->isActive()) {
+                throw ValidationException::withMessages([
+                    'billing_account_id' => ['الشبكة غير متاحة أو لم تعد مملوكة للمستخدم الحالي.'],
+                ]);
+            }
+
             $account = BillingAccount::query()
                 ->with('defaultCurrency')
                 ->lockForUpdate()
                 ->findOrFail($billingAccountId);
 
-            $this->authorization->assertNetworkOwner($actor, (int) $account->network_id);
+            if ((int) $account->network_id !== (int) $network->network_id) {
+                throw ValidationException::withMessages(['billing_account_id' => ['حساب الفوترة لا يتبع الشبكة المحددة.']]);
+            }
 
             if ($account->status !== 'ACTIVE') {
                 throw ValidationException::withMessages(['billing_account_id' => ['حساب الفوترة غير نشط.']]);
@@ -63,14 +75,14 @@ class BillingSubscriptionService
             ];
 
             $existing = BillingSubscription::query()
-                ->where('billing_account_id', $account->billing_account_id)
                 ->whereIn('status', $liveStatuses)
+                ->whereHas('billingAccount', fn ($query) => $query->where('network_id', $network->network_id))
                 ->lockForUpdate()
                 ->first();
 
             if ($existing) {
                 throw ValidationException::withMessages([
-                    'billing_account_id' => ['يوجد اشتراك قائم لهذا الحساب؛ يجب إنهاؤه أو تنفيذ عملية تغيير الخطة بدلاً من إنشاء اشتراك موازٍ.'],
+                    'billing_account_id' => ['توجد للشبكة رخصة اشتراك قائمة بإحدى عملاتها؛ يجب إنهاؤها أو تنفيذ تغيير الخطة بدلاً من إنشاء اشتراك متوازٍ.'],
                 ]);
             }
 
