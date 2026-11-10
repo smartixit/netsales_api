@@ -128,7 +128,20 @@ jobs:
       - name: Run targeted Larastan / PHPStan analysis
         id: targeted-phpstan
         if: ${{ always() && steps.dependencies.outcome == 'success' }}
-        run: vendor/bin/phpstan analyse app/Services/SaleInvoiceService.php tests/Feature/Milestone4CConcurrencyAndDirectInvoiceDebtTest.php --no-progress --memory-limit=1G
+        run: >-
+          vendor/bin/phpstan analyse
+          app/Services/SaleInvoiceService.php
+          tests/Feature/Milestone4CConcurrencyAndDirectInvoiceDebtTest.php
+          app/Services/Billing/BillingInvoiceService.php
+          app/Services/Billing/BillingPaymentService.php
+          app/Services/Billing/BillingCreditNoteService.php
+          app/Services/Billing/BillingRefundService.php
+          app/Services/Billing/BillingRevenueRecognitionService.php
+          app/Services/Billing/BillingPolicyResolver.php
+          app/Services/Billing/BillingPolicyManagementService.php
+          app/Services/Billing/BillingCatalogService.php
+          tests/Feature/BillingRevenueRecognitionTest.php
+          --no-progress --memory-limit=1G
         continue-on-error: true
 
       - name: Run Larastan / PHPStan analysis
