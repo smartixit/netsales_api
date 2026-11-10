@@ -48,7 +48,7 @@ return new class extends Migration
             $table->foreignId('currency_id')->constrained('currencies', 'currency_id')->restrictOnDelete();
             $table->json('terms_snapshot')->nullable();
             $table->timestamps();
-            $table->index(['billing_subscription_id', 'item_type']);
+            $table->index(['billing_subscription_id', 'item_type'], 'idx_bsi_sub_itemtype');
         });
 
         Schema::create('billing_subscription_events', function (Blueprint $table): void {
@@ -60,7 +60,7 @@ return new class extends Migration
             $table->json('payload')->nullable();
             $table->foreignId('actor_id')->nullable()->constrained('users', 'user_id')->nullOnDelete();
             $table->timestamp('occurred_at')->useCurrent();
-            $table->index(['billing_subscription_id', 'occurred_at']);
+            $table->index(['billing_subscription_id', 'occurred_at'], 'idx_bse_sub_occurred');
             $table->index(['event_type', 'occurred_at']);
         });
 
@@ -90,7 +90,7 @@ return new class extends Migration
             $table->unsignedBigInteger('source_id')->nullable();
             $table->timestamps();
             $table->unique(['billing_subscription_id', 'meter_id', 'idempotency_key'], 'uq_billing_usage_idempotency');
-            $table->index(['billing_subscription_id', 'meter_id', 'occurred_at']);
+            $table->index(['billing_subscription_id', 'meter_id', 'occurred_at'], 'idx_bue_sub_meter_time');
             $table->index(['meter_id', 'period_start', 'period_end']);
         });
 
@@ -118,7 +118,7 @@ return new class extends Migration
             $table->timestamp('expires_at')->index();
             $table->timestamp('committed_at')->nullable();
             $table->timestamps();
-            $table->index(['billing_subscription_id', 'meter_id', 'status']);
+            $table->index(['billing_subscription_id', 'meter_id', 'status'], 'idx_bur_sub_meter_status');
         });
     }
 
