@@ -176,7 +176,7 @@ class RequestController extends BaseController
                 $userId
             );
 
-            return $this->successResponse('تم احتساب عرض الأسعار الرسمي المعتمد من الخادم بنجاح.', $result);
+            return $this->successResponse('تم احتساب عرض الأسعار الرسمي المعتمد بنجاح.', $result);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {

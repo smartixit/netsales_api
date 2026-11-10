@@ -98,3 +98,4 @@ class QuoteRequestRequest extends FormRequest
         return (array) $this->input('items', []);
     }
 }
+
