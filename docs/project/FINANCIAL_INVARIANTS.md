@@ -51,3 +51,12 @@ Trial eligibility, redemption, and adjustments are server-side transactional con
 4. Refund settlement debits customer-credit liability and credits the same-currency treasury asset. It must not debit receivables a second time.
 5. Invoice, payment, credit note, refund, treasury, and journal currency IDs must agree. Currency conversion is a separate immutable record and cannot silently alter a posted document.
 6. Every journal entry is balanced per currency. No report may sum unlike currencies into one monetary total without an explicit functional-currency translation and recorded FX policy.
+
+
+## Deferred Revenue Recognition Invariants
+1. Recurring subscription consideration is deferred at invoice issuance and recognized only over the contractual service period. Setup fees and metered consumption are recognized on invoice issuance only after the corresponding service/usage has been performed. One-time prices are recognized immediately.
+2. Tax is never included in revenue recognition; it is posted to the currency-specific tax-payable account.
+3. A recognition schedule is unique per recurring invoice line. Every posting has a deterministic date-based idempotency key and a balanced same-currency journal entry.
+4. Recognition is cumulative and integer-based. The last service day posts the exact unrecognized remainder; no floating-point arithmetic or rounding leakage is allowed.
+5. Credit notes reduce the remaining service obligation and the net recognized amount using the original line's schedule. The service derives this automatically; no caller-supplied accounting treatment is authoritative.
+6. An invoice with recognized revenue cannot be voided. Use an immutable credit note to correct it.
