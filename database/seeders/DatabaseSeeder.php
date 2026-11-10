@@ -46,16 +46,12 @@ class DatabaseSeeder extends Seeder
             $this->command->line('➜ Seeding System Settings...');
             $this->call(SystemSettingSeeder::class);
 
-            // 5. Subscription Plans & Tier Features
-            $this->command->line('➜ Seeding Platform Features...');
-            $this->call(FeatureSeeder::class);
+            // 5. Multi-currency billing foundation
+            $this->command->line('➜ Seeding supported billing currencies...');
+            $this->call(CurrencySeeder::class);
 
-            $this->command->line('➜ Seeding Subscription Plans & Allocated Features...');
-            $this->call(SubscriptionPlanSeeder::class);
-
-            // 6. Financial & Payment Channels
-            $this->command->line('➜ Seeding Corporate Bank Accounts & E-Wallets...');
-            $this->call(BankAccountSeeder::class);
+            $this->command->line('➜ Seeding billing payment methods...');
+            $this->call(BillingPaymentMethodSeeder::class);
         });
 
         $this->command->info('✅ NetSales Enterprise Database Seeding Completed Successfully!');

@@ -31,7 +31,7 @@ return new class extends Migration
             $table->unsignedBigInteger('converted_amount_minor');
             $table->unsignedBigInteger('fee_amount_minor')->default(0);
             $table->string('rounding_mode', 20)->default('HALF_UP');
-            $table->decimal('rate_snapshot', 24, 12);
+            $table->string('rate_snapshot', 48);
             $table->string('source_type', 80)->nullable();
             $table->unsignedBigInteger('source_id')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users', 'user_id')->nullOnDelete();

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo,HasMany};
 class BillingPayment extends Model {
  use ExactDateSerialization;
  protected $table='billing_payments'; protected $primaryKey='payment_id';
- protected $fillable=['payment_reference','payment_intent_id','invoice_id','billing_account_id','currency_id','payment_method_id','treasury_account_id','amount_minor','status','external_reference','received_at','verified_at','recorded_by','verified_by','review_note'];
+ protected $fillable=['payment_reference','idempotency_key','payment_intent_id','invoice_id','billing_account_id','currency_id','payment_method_id','treasury_account_id','amount_minor','status','external_reference','received_at','verified_at','recorded_by','verified_by','review_note'];
  protected function casts(): array { return ['status'=>BillingPaymentStatus::class,'amount_minor'=>'integer','received_at'=>'datetime','verified_at'=>'datetime']; }
  public function intent(): BelongsTo { return $this->belongsTo(BillingPaymentIntent::class,'payment_intent_id','payment_intent_id'); }
  public function invoice(): BelongsTo { return $this->belongsTo(BillingInvoice::class,'invoice_id','invoice_id'); }
