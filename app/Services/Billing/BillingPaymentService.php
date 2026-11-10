@@ -186,7 +186,10 @@ class BillingPaymentService
                     BillingSubscriptionStatus::PAST_DUE,
                 ], true)) {
                     $oldStatus = $subscription->status->value;
-                    if ($oldStatus === BillingSubscriptionStatus::INCOMPLETE->value) {
+                    if ($invoice->period_start !== null && $invoice->period_end !== null) {
+                        $subscription->current_period_start = $invoice->period_start->startOfDay();
+                        $subscription->current_period_end = $invoice->period_end->endOfDay();
+                    } elseif ($oldStatus === BillingSubscriptionStatus::INCOMPLETE->value) {
                         $this->startPaidPeriod($subscription);
                     }
                     $subscription->status = BillingSubscriptionStatus::ACTIVE;

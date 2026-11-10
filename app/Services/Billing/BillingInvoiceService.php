@@ -17,9 +17,14 @@ class BillingInvoiceService
         private BillingLedgerChartService $chart
     ) {}
 
-    public function createForSubscription(BillingSubscription $subscription, ?User $actor = null): BillingInvoice
-    {
-        return DB::transaction(function () use ($subscription, $actor): BillingInvoice {
+    public function createForSubscription(
+        BillingSubscription $subscription,
+        ?User $actor = null,
+        ?string $periodStart = null,
+        ?string $periodEnd = null,
+        bool $includeSetupFee = true
+    ): BillingInvoice {
+        return DB::transaction(function () use ($subscription, $actor, $periodStart, $periodEnd, $includeSetupFee): BillingInvoice {
             $subscription->loadMissing([
                 'billingAccount.defaultCurrency',
                 'plan.product',
@@ -38,7 +43,10 @@ class BillingInvoiceService
 
             $price = $subscription->price;
             $subtotal = $this->multiplyAmount((int) $price->unit_amount_minor, (int) $subscription->quantity);
-            $setupFee = (int) $price->setup_fee_minor;
+            $setupFee = $includeSetupFee ? (int) $price->setup_fee_minor : 0;
+            $lineSubtotal = $this->safeAdd($subtotal, $setupFee);
+            $periodStart ??= $subscription->current_period_start?->toDateString();
+            $periodEnd ??= $subscription->current_period_end?->toDateString();
 
             $invoice = BillingInvoice::query()->create([
                 'invoice_number' => $this->nextInvoiceNumber(),
@@ -47,14 +55,14 @@ class BillingInvoiceService
                 'currency_id' => $currency->currency_id,
                 'invoice_type' => 'STANDARD',
                 'status' => BillingInvoiceStatus::DRAFT,
-                'period_start' => $subscription->current_period_start?->toDateString(),
-                'period_end' => $subscription->current_period_end?->toDateString(),
-                'subtotal_minor' => $subtotal + $setupFee,
+                'period_start' => $periodStart,
+                'period_end' => $periodEnd,
+                'subtotal_minor' => $lineSubtotal,
                 'discount_minor' => 0,
                 'tax_minor' => 0,
-                'total_minor' => $subtotal + $setupFee,
+                'total_minor' => $lineSubtotal,
                 'paid_minor' => 0,
-                'remaining_minor' => $subtotal + $setupFee,
+                'remaining_minor' => $lineSubtotal,
                 'customer_snapshot' => [
                     'billing_account_id' => $subscription->billing_account_id,
                     'account_number' => $subscription->billingAccount->account_number,
@@ -110,6 +118,8 @@ class BillingInvoiceService
                     'source_snapshot' => ['setup_fee_minor' => $setupFee],
                 ]);
             }
+
+            $this->appendMeteredUsageLines($invoice, $subscription, $periodStart, $periodEnd);
 
             return $invoice->load(['lines.currency', 'currency', 'billingAccount']);
         }, 3);
@@ -224,6 +234,48 @@ class BillingInvoiceService
 
             return $invoice->load(['lines', 'currency']);
         }, 3);
+    }
+
+    private function appendMeteredUsageLines(
+        BillingInvoice $invoice,
+        BillingSubscription $subscription,
+        ?string $periodStart,
+        ?string $periodEnd
+    ): void {
+        if ($periodStart === null || $periodEnd === null) {
+            return;
+        }
+
+        $aggregates = \App\Models\BillingUsageAggregate::query()
+            ->with('meter')
+            ->where('billing_subscription_id', $subscription->billing_subscription_id)
+            ->where('period_start', $periodStart)
+            ->where('period_end', $periodEnd)
+            ->where('amount_minor', '>', 0)
+            ->get();
+
+        foreach ($aggregates as $aggregate) {
+            $amount = (int) $aggregate->amount_minor;
+            $invoice->lines()->create([
+                'currency_id' => $invoice->currency_id,
+                'line_type' => 'METERED_USAGE',
+                'description' => 'استهلاك إضافي: '.($aggregate->meter?->name ?? $aggregate->meter?->meter_key ?? 'Metered usage'),
+                'quantity' => 1,
+                'unit_amount_minor' => $amount,
+                'subtotal_minor' => $amount,
+                'discount_minor' => 0,
+                'tax_minor' => 0,
+                'total_minor' => $amount,
+                'source_snapshot' => [
+                    'meter_id' => $aggregate->meter_id,
+                    'period_start' => $periodStart,
+                    'period_end' => $periodEnd,
+                    'quantity' => (string) $aggregate->quantity,
+                    'unit' => $aggregate->meter?->unit,
+                    'amount_minor' => $amount,
+                ],
+            ]);
+        }
     }
 
     private function nextInvoiceNumber(): string
