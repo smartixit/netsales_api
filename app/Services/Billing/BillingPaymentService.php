@@ -14,7 +14,8 @@ class BillingPaymentService
     public function __construct(
         private BillingLedgerService $ledger,
         private BillingLedgerChartService $chart,
-        private BillingAuthorizationService $authorization
+        private BillingAuthorizationService $authorization,
+        private BillingDunningService $dunning
     ) {}
 
     public function recordManualPayment(
