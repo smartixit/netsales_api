@@ -919,3 +919,7 @@ This log documents all executed tasks, code changes, and verification command ou
 - Both routes are in the existing Platform Billing read group and therefore require `billing.view`.
 - Relevant commits: `07984ab7`, `3b662a0b`, `879806fa`, `0473f303`, `c31ffeef`.
 - Verification remains pending: no Laravel runtime, Pint, PHPStan, PHPUnit, route:list, migrations, or CI were run.
+
+
+- Follow-up source inspection caught and corrected doubled PHP namespace separators in the newly introduced ProductResource and version-resource controller references before any runtime validation. This is a source correction only; syntax validity remains unverified until Pint/PHP lint and CI run.
+- Correction commit: `548c2d59`.
