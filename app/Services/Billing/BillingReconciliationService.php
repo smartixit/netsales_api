@@ -187,8 +187,8 @@ class BillingReconciliationService
 
         foreach ($accounts as $account) {
             $accountId = (int) $account->treasury_account_id;
-            $collected = (int) ($payments->get($accountId)->amount_minor ?? 0);
-            $refunded = (int) ($refunds->get($accountId)->amount_minor ?? 0);
+            $collected = (int) ($payments->get($accountId)?->amount_minor ?? 0);
+            $refunded = (int) ($refunds->get($accountId)?->amount_minor ?? 0);
             $subledger = $collected - $refunded;
             $ledger = 0;
 
