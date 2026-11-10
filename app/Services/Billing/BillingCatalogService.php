@@ -112,12 +112,12 @@ class BillingCatalogService
 
             $version = $this->catalog->createDraftVersion($planId, (int) $actor->user_id);
             if (! empty($policyVersions['trial_policy_version_id'])) {
-                $policy = \\App\\Models\\BillingTrialPolicyVersion::query()->findOrFail($policyVersions['trial_policy_version_id']);
+                $policy = \App\Models\BillingTrialPolicyVersion::query()->findOrFail($policyVersions['trial_policy_version_id']);
                 if ($policy->status !== 'PUBLISHED') throw ValidationException::withMessages(['trial_policy_version_id' => ['يجب اختيار سياسة تجربة منشورة.']]);
                 $version->trial_policy_version_id = $policy->trial_policy_version_id;
             }
             if (! empty($policyVersions['dunning_policy_version_id'])) {
-                $policy = \\App\\Models\\BillingDunningPolicyVersion::query()->findOrFail($policyVersions['dunning_policy_version_id']);
+                $policy = \App\Models\BillingDunningPolicyVersion::query()->findOrFail($policyVersions['dunning_policy_version_id']);
                 if ($policy->status !== 'PUBLISHED') throw ValidationException::withMessages(['dunning_policy_version_id' => ['يجب اختيار سياسة تحصيل منشورة.']]);
                 $version->dunning_policy_version_id = $policy->dunning_policy_version_id;
             }
