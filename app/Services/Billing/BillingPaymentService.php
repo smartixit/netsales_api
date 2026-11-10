@@ -213,26 +213,48 @@ class BillingPaymentService
                     ->lockForUpdate()
                     ->find($invoice->billing_subscription_id);
 
-                if ($subscription && in_array($subscription->status, [
-                    BillingSubscriptionStatus::INCOMPLETE,
-                    BillingSubscriptionStatus::PAST_DUE,
-                    BillingSubscriptionStatus::SUSPENDED,
-                ], true)) {
+                $expiredInitialSubscription = $subscription
+                    && $subscription->status === BillingSubscriptionStatus::EXPIRED
+                    && $subscription->events()
+                        ->where('event_type', 'INITIAL_SUBSCRIPTION_EXPIRED_FOR_NON_PAYMENT')
+                        ->exists();
+
+                if ($subscription && (
+                    in_array($subscription->status, [
+                        BillingSubscriptionStatus::INCOMPLETE,
+                        BillingSubscriptionStatus::PAST_DUE,
+                        BillingSubscriptionStatus::SUSPENDED,
+                    ], true) || $expiredInitialSubscription
+                )) {
                     $oldStatus = $subscription->status->value;
+                    $periodRestarted = false;
+
                     if ($invoice->period_start !== null && $invoice->period_end !== null) {
-                        $subscription->current_period_start = $invoice->period_start->startOfDay();
-                        $subscription->current_period_end = $invoice->period_end->endOfDay();
-                    } elseif ($oldStatus === BillingSubscriptionStatus::INCOMPLETE->value) {
+                        if ($invoice->period_end->endOfDay()->lte(now('Asia/Aden'))) {
+                            // Do not grant elapsed historical time after a late settlement.
+                            $this->startPaidPeriod($subscription);
+                            $periodRestarted = true;
+                        } else {
+                            $subscription->current_period_start = $invoice->period_start->startOfDay();
+                            $subscription->current_period_end = $invoice->period_end->endOfDay();
+                        }
+                    } else {
                         $this->startPaidPeriod($subscription);
                     }
+
                     $subscription->status = BillingSubscriptionStatus::ACTIVE;
                     $subscription->grace_period_ends_at = null;
+                    $subscription->paused_at = null;
+                    $subscription->ended_at = null;
                     $subscription->save();
                     $this->dunning->scheduleSubscriptionAlerts($subscription);
 
                     BillingSubscriptionEvent::query()->create([
                         'billing_subscription_id' => $subscription->billing_subscription_id,
-                        'event_type' => 'PAYMENT_SUCCEEDED',
+                        'event_type' => in_array($oldStatus, [
+                            BillingSubscriptionStatus::SUSPENDED->value,
+                            BillingSubscriptionStatus::EXPIRED->value,
+                        ], true) ? 'PAYMENT_RECOVERED' : 'PAYMENT_SUCCEEDED',
                         'from_status' => $oldStatus,
                         'to_status' => BillingSubscriptionStatus::ACTIVE->value,
                         'payload' => [
@@ -240,6 +262,7 @@ class BillingPaymentService
                             'payment_id' => $payment->payment_id,
                             'paid_minor' => $invoice->paid_minor,
                             'currency_id' => $invoice->currency_id,
+                            'period_restarted_after_lapse' => $periodRestarted,
                         ],
                         'actor_id' => $reviewer->user_id,
                         'occurred_at' => now('Asia/Aden'),
