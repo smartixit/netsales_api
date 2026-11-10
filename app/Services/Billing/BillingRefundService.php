@@ -120,6 +120,7 @@ class BillingRefundService
                 'idempotency_key' => $idempotencyKey,
                 'payment_id' => $payment->payment_id,
                 'credit_note_id' => $creditNote->credit_note_id,
+                'treasury_account_id' => $treasury->treasury_account_id,
                 'currency_id' => $payment->currency_id,
                 'amount_minor' => $amountMinor,
                 'status' => 'PENDING',
@@ -160,7 +161,7 @@ class BillingRefundService
                 : BillingPaymentStatus::PARTIALLY_REFUNDED;
             $payment->save();
 
-            return $refund->load(['payment', 'currency', 'creditNote']);
+            return $refund->load(['payment', 'currency', 'creditNote', 'treasuryAccount']);
         }, 3);
     }
 }
