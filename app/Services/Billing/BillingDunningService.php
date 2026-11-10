@@ -53,7 +53,11 @@ class BillingDunningService
                 $alert = BillingSubscriptionAlert::query()->lockForUpdate()->find($id);
                 if (! $alert || $alert->status !== 'PENDING') return false;
                 $subscription = BillingSubscription::query()->with('billingAccount.network')->lockForUpdate()->find($alert->billing_subscription_id);
-                if (! $subscription || ! in_array($subscription->status, [BillingSubscriptionStatus::ACTIVE, BillingSubscriptionStatus::TRIALING], true)) {
+                if (! $subscription
+                    || ! in_array($subscription->status, [BillingSubscriptionStatus::ACTIVE, BillingSubscriptionStatus::TRIALING], true)
+                    || ! $subscription->current_period_end
+                    || $subscription->current_period_end->lte(now('Asia/Aden'))
+                    || ! $subscription->current_period_end->equalTo($alert->period_end)) {
                     $alert->status = 'CANCELLED'; $alert->save(); return false;
                 }
                 $uuid = (string) Str::uuid();

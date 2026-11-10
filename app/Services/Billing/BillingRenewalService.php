@@ -112,6 +112,7 @@ class BillingRenewalService
                     $subscription->current_period_end = $end;
                     $subscription->grace_period_ends_at = null;
                     $subscription->save();
+                    $this->dunning->scheduleSubscriptionAlerts($subscription);
 
                     $subscription->events()->create([
                         'event_type' => $wasTrial ? 'TRIAL_CONVERTED_TO_FREE_PLAN' : 'ZERO_VALUE_RENEWAL_SETTLED',
