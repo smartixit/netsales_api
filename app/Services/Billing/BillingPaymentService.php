@@ -247,6 +247,38 @@ class BillingPaymentService
                     $subscription->paused_at = null;
                     $subscription->ended_at = null;
                     $subscription->save();
+
+                    $recognitionSchedules = DB::table('billing_revenue_recognition_schedules')
+                        ->where('invoice_id', $invoice->invoice_id)
+                        ->where('status', 'HOLD');
+
+                    $recognitionSchedules->where('revenue_account_code', '4120')
+                        ->update([
+                            'status' => 'PENDING',
+                            'service_start_on' => now('Asia/Aden')->toDateString(),
+                            'service_end_on' => now('Asia/Aden')->toDateString(),
+                            'updated_at' => now('Asia/Aden'),
+                        ]);
+
+                    $subscriptionSchedules = DB::table('billing_revenue_recognition_schedules')
+                        ->where('invoice_id', $invoice->invoice_id)
+                        ->where('status', 'HOLD')
+                        ->where('revenue_account_code', '4100');
+
+                    if ($periodRestarted) {
+                        $subscriptionSchedules->update([
+                            'status' => 'PENDING',
+                            'service_start_on' => $subscription->current_period_start?->toDateString(),
+                            'service_end_on' => $subscription->current_period_end?->toDateString(),
+                            'updated_at' => now('Asia/Aden'),
+                        ]);
+                    } else {
+                        $subscriptionSchedules->update([
+                            'status' => 'PENDING',
+                            'updated_at' => now('Asia/Aden'),
+                        ]);
+                    }
+
                     $this->dunning->scheduleSubscriptionAlerts($subscription);
 
                     BillingSubscriptionEvent::query()->create([
