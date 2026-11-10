@@ -848,3 +848,14 @@ This log documents all executed tasks, code changes, and verification command ou
 - Updated payment verification, invoice state transitions, dashboard counts, and dunning cancellation for fully credited invoices.
 - Added migration 2026_11_10_000011_add_credited_minor_to_billing_invoices.php.
 - Automated tests, PHP static analysis, migration execution, and GitHub Actions remain intentionally pending for the final validation gate. No runtime success is claimed.
+
+
+## [2026-11-10] Revenue recognition and tax-aware credit-note closeout
+- Added per-subscription-invoice-line deferred revenue schedules and immutable recognition posting records.
+- Invoice finalization now separates recurring subscription revenue (deferred, account 2100) from earned setup fees (4120) and billed metered usage (4110); one-time subscriptions are recognized immediately.
+- Tax is posted separately to tax payable (2300), not into revenue.
+- Added daily `billing:recognize-revenue` catch-up command, scheduled for 01:05 Asia/Aden. Recognition uses cumulative integer allocation and deterministic journal idempotency keys; the final service day posts the exact residual.
+- Credit-note accounting is now derived per original line: tax, unearned subscription liability, and already-earned revenue are allocated automatically. Manual treatment selection was removed from the request contract.
+- Invoice voiding is blocked after any revenue recognition; unused schedules are cancelled when an eligible invoice is voided.
+- Added `BillingRevenueRecognitionTest` for proportional recognition, repeated-run idempotency, delayed scheduler catch-up, exact residual posting, and journal balance.
+- Migration/schema validation in GitHub Actions confirmed `migrate:fresh --seed` passed at commit `2c19f61d`; Pint previously identified two PHP parse errors in the catalog/policy services, now corrected at commits `afff613f` and `b265e39`. Exact-head CI and full tests remain pending.
