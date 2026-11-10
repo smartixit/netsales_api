@@ -65,11 +65,12 @@ class BillingRefundService
             if ($existing) {
                 if ((int) $existing->payment_id !== $paymentId
                     || (int) $existing->credit_note_id !== $creditNoteId
+                    || (int) $existing->treasury_account_id !== $treasuryAccountId
                     || (int) $existing->amount_minor !== $amountMinor
                     || $existing->reason !== $reason) {
                     throw ValidationException::withMessages(['idempotency_key' => ['مفتاح منع التكرار مستخدم لعملية استرداد مختلفة.']]);
                 }
-                return $existing->load(['payment', 'currency', 'creditNote']);
+                return $existing->load(['payment', 'currency', 'creditNote', 'treasuryAccount']);
             }
 
             if ((int) $payment->invoice_id !== (int) $invoice->invoice_id
