@@ -132,7 +132,7 @@ class BillingSelfServiceController extends BaseController
     {
         $filters = $request->validate([
             'from' => ['nullable', 'date'],
-            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'to' => ['nullable', 'date'],
             'currency_id' => ['nullable', 'integer', 'exists:currencies,currency_id'],
         ]);
 

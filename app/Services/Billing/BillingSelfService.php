@@ -197,28 +197,6 @@ class BillingSelfService
             Currency::query()->findOrFail($currencyId);
         }
 
-        $aggregate = function (
-            string $table,
-            string $amountColumn,
-            string $dateColumn,
-            bool $beforePeriod
-        ) use ($accountId, $currencyId, $from, $to) {
-            $query = DB::table($table)
-                ->select('currency_id', DB::raw("SUM({$amountColumn}) as amount_minor"), DB::raw('COUNT(*) as item_count'))
-                ->where('billing_account_id', $accountId)
-                ->whereNotNull($dateColumn)
-                ->when($currencyId !== null, fn ($builder) => $builder->where('currency_id', $currencyId));
-
-            if ($beforePeriod) {
-                $query->whereDate($dateColumn, '<', $from->toDateString());
-            } else {
-                $query->whereDate($dateColumn, '>=', $from->toDateString())
-                    ->whereDate($dateColumn, '<=', $to->toDateString());
-            }
-
-            return $query->groupBy('currency_id')->get()->keyBy('currency_id');
-        };
-
         $invoiceBase = DB::table('billing_invoices')
             ->where('billing_account_id', $accountId)
             ->whereNotNull('finalized_at')
@@ -269,13 +247,21 @@ class BillingSelfService
             $invoiceOpening, $invoicePeriod, $paymentOpening, $paymentPeriod, $creditOpening, $creditPeriod
         ): array {
             $id = $currency->currency_id;
-            $opening = (int) ($invoiceOpening->get($id)->amount_minor ?? 0)
+            $openingNet = (int) ($invoiceOpening->get($id)->amount_minor ?? 0)
                 - (int) ($paymentOpening->get($id)->amount_minor ?? 0)
                 - (int) ($creditOpening->get($id)->amount_minor ?? 0);
             $billed = (int) ($invoicePeriod->get($id)->amount_minor ?? 0);
             $paid = (int) ($paymentPeriod->get($id)->amount_minor ?? 0);
             $credited = (int) ($creditPeriod->get($id)->amount_minor ?? 0);
-            $closing = $opening + $billed - $paid - $credited;
+            $closingNet = $openingNet + $billed - $paid - $credited;
+
+            // A negative net receivable is a customer credit balance, not a
+            // negative accounts-receivable figure. Keep both concepts explicit.
+            $openingReceivable = max(0, $openingNet);
+            $openingCustomerCredit = max(0, -$openingNet);
+            $closingReceivable = max(0, $closingNet);
+            $closingCustomerCredit = max(0, -$closingNet);
+
             $money = fn (int $minor): string => (new Money($minor, (string) $currency->code))
                 ->toDecimalString((int) $currency->decimal_places);
 
@@ -287,16 +273,20 @@ class BillingSelfService
                     'symbol' => $currency->symbol,
                     'decimal_places' => (int) $currency->decimal_places,
                 ],
-                'opening_receivable_minor' => $opening,
-                'opening_receivable' => $money($opening),
+                'opening_receivable_minor' => $openingReceivable,
+                'opening_receivable' => $money($openingReceivable),
+                'opening_customer_credit_minor' => $openingCustomerCredit,
+                'opening_customer_credit' => $money($openingCustomerCredit),
                 'invoiced_minor' => $billed,
                 'invoiced' => $money($billed),
                 'verified_payments_minor' => $paid,
                 'verified_payments' => $money($paid),
                 'credits_applied_minor' => $credited,
                 'credits_applied' => $money($credited),
-                'closing_receivable_minor' => $closing,
-                'closing_receivable' => $money($closing),
+                'closing_receivable_minor' => $closingReceivable,
+                'closing_receivable' => $money($closingReceivable),
+                'closing_customer_credit_minor' => $closingCustomerCredit,
+                'closing_customer_credit' => $money($closingCustomerCredit),
                 'counts' => [
                     'opening_invoices' => (int) ($invoiceOpening->get($id)->item_count ?? 0),
                     'invoices_issued' => (int) ($invoicePeriod->get($id)->item_count ?? 0),
