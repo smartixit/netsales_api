@@ -128,3 +128,12 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Added an internal reconciliation endpoint/service comparing AR, deferred revenue, customer-credit liability, tax payable, treasury balances, and per-currency trial balance.
 - Report status is MISMATCH when balances differ or treasury allocations/ledger links are missing. Results are partitioned by currency; there is no mixed-currency aggregation.
 - Added feature tests for revenue posting, automatic credit-note accounting, refund settlement, and reconciliation after full refund. Exact-head CI is required before acceptance.
+
+## Platform Billing administration integration — 2026-11-11
+
+- Active API review branch: feat/platform-billing-admin-contracts.
+- Platform Billing exposes a cursor-paginated product catalogue and plan-version history alongside the multi-currency billing resources.
+- Trial and dunning policies are independently versioned; policy-version history is read under billing.view, while create/version/publish/assign and redemption decisions remain billing.manage operations.
+- Plan catalogue mutations retain the permission split: billing.create for product/plan records, billing.edit for Draft version/price/feature construction, and billing.manage for publication.
+- Route declarations were reconciled to remove duplicate policy endpoints and keep policy routes inside the dedicated policies controller group.
+- Verification remains PENDING: no PHP runtime, Pint, PHPStan, PHPUnit, migration run, route:list, or exact-head CI result is available for this branch. Do not mark the billing administration track accepted or production-ready until the full API workflow passes and failures are fixed.

@@ -10,7 +10,7 @@ class BillingCatalogRepository implements BillingCatalogRepositoryInterface {
  public function createProduct(array $data): BillingProduct { return BillingProduct::query()->create($data); }
  public function createPlan(array $data): BillingPlan { return BillingPlan::query()->create($data); }
  public function findPlan(int $planId,bool $lock=false): ?BillingPlan {
-  $q=BillingPlan::query()->with(['product','currentVersion.prices.currency','currentVersion.features']);
+  $q=BillingPlan::query()->with(['product','currentVersion.trialPolicyVersion.policy','currentVersion.dunningPolicyVersion.policy','currentVersion.prices.currency','currentVersion.features']);
   if($lock){$q->lockForUpdate();}
   return $q->find($planId);
  }

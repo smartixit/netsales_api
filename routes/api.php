@@ -420,7 +420,6 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('throttle:api-write')->group(function () {
-            Route::post('requests/quote', [RequestController::class, 'quote'])->name('api.v1.requests.quote')->middleware('permission:requests.create');
             Route::post('requests', [RequestController::class, 'store'])->name('api.v1.requests.store')->middleware('permission:requests.create');
             Route::put('requests/{id}', [RequestController::class, 'update'])->whereNumber('id')->name('api.v1.requests.update')->middleware('permission:requests.edit');
             Route::post('requests/{id}/preview-modification', [RequestController::class, 'previewModification'])->whereNumber('id')->name('api.v1.requests.preview_modification')->middleware('permission:requests.approve');
@@ -488,7 +487,9 @@ Route::prefix('v1')->group(function () {
             Route::prefix('policies')->controller(BillingPolicyController::class)->group(function () {
                 Route::middleware(['throttle:api-read', 'permission:billing.view'])->group(function () {
                     Route::get('trials', 'trialPolicies')->name('api.v1.platform.billing.policies.trials.index');
+                    Route::get('trials/{policyId}/versions', 'trialPolicyVersions')->whereNumber('policyId')->name('api.v1.platform.billing.policies.trials.versions.index');
                     Route::get('dunning', 'dunningPolicies')->name('api.v1.platform.billing.policies.dunning.index');
+                    Route::get('dunning/{policyId}/versions', 'dunningPolicyVersions')->whereNumber('policyId')->name('api.v1.platform.billing.policies.dunning.versions.index');
                     Route::get('trial-redemptions/pending', 'pendingRedemptions')->name('api.v1.platform.billing.policies.trials.pending');
                 });
                 Route::middleware(['throttle:api-write', 'permission:billing.create'])->group(function () {
@@ -502,15 +503,25 @@ Route::prefix('v1')->group(function () {
                     Route::post('trial-redemptions/{redemptionId}/approve', 'approveRedemption')->name('api.v1.platform.billing.policies.trials.approve');
                     Route::post('trial-redemptions/{redemptionId}/reject', 'rejectRedemption')->name('api.v1.platform.billing.policies.trials.reject');
                     Route::post('subscriptions/{subscriptionId}/trial-adjustments', 'adjustTrial')->name('api.v1.platform.billing.policies.trials.adjust');
-                Route::post('trials', 'storeTrial')->name('api.v1.platform.billing.policies.trials.store');
-                Route::post('dunning', 'storeDunning')->name('api.v1.platform.billing.policies.dunning.store');
-                Route::post('trials/{policyId}/versions', 'storeTrialVersion')->name('api.v1.platform.billing.policies.trials.versions.store');
-                Route::post('dunning/{policyId}/versions', 'storeDunningVersion')->name('api.v1.platform.billing.policies.dunning.versions.store');
-                Route::post('trial-versions/{versionId}/publish', 'publishTrial')->name('api.v1.platform.billing.policies.trials.publish');
-                Route::post('dunning-versions/{versionId}/publish', 'publishDunning')->name('api.v1.platform.billing.policies.dunning.publish');
-                Route::put('plan-versions/{versionId}', 'assignPlanVersion')->name('api.v1.platform.billing.policies.plan_versions.assign');
-                Route::put('prices/{priceId}', 'assignPrice')->name('api.v1.platform.billing.policies.prices.assign');
+                    Route::post('trials', 'storeTrial')->name('api.v1.platform.billing.policies.trials.store');
+                    Route::post('dunning', 'storeDunning')->name('api.v1.platform.billing.policies.dunning.store');
+                    Route::post('trials/{policyId}/versions', 'storeTrialVersion')->name('api.v1.platform.billing.policies.trials.versions.store');
+                    Route::post('dunning/{policyId}/versions', 'storeDunningVersion')->name('api.v1.platform.billing.policies.dunning.versions.store');
+                    Route::post('trial-versions/{versionId}/publish', 'publishTrial')->name('api.v1.platform.billing.policies.trials.publish');
+                    Route::post('dunning-versions/{versionId}/publish', 'publishDunning')->name('api.v1.platform.billing.policies.dunning.publish');
+                    Route::put('plan-versions/{versionId}', 'assignPlanVersion')->name('api.v1.platform.billing.policies.plan_versions.assign');
+                    Route::put('prices/{priceId}', 'assignPrice')->name('api.v1.platform.billing.policies.prices.assign');
                 });
+            });
+
+            Route::middleware(['throttle:api-write', 'permission:billing.create'])->group(function () {
+                Route::post('accounts', [BillingFinanceController::class, 'createAccount'])->name('api.v1.platform.billing.accounts.store');
+                Route::post('subscriptions', [BillingFinanceController::class, 'createSubscription'])->name('api.v1.platform.billing.subscriptions.store');
+            });
+
+            Route::middleware(['throttle:api-write', 'permission:billing.manage'])->group(function () {
+                Route::post('subscriptions/{subscriptionId}/cancel', [BillingFinanceController::class, 'cancelSubscription'])
+                    ->whereNumber('subscriptionId')->name('api.v1.platform.billing.subscriptions.cancel');
             });
 
             Route::middleware(['throttle:api-read', 'permission:billing.view'])->group(function () {
@@ -518,6 +529,8 @@ Route::prefix('v1')->group(function () {
                 Route::get('overview', [BillingFinanceController::class, 'overview'])->name('api.v1.platform.billing.overview');
                 Route::get('reconciliation', [BillingFinanceController::class, 'reconciliation'])->name('api.v1.platform.billing.reconciliation');
                 Route::get('plans', [BillingCatalogController::class, 'plans'])->name('api.v1.platform.billing.plans.index');
+                Route::get('plans/{planId}/versions', [BillingCatalogController::class, 'versions'])->whereNumber('planId')->name('api.v1.platform.billing.plans.versions.index');
+                Route::get('products', [BillingCatalogController::class, 'products'])->name('api.v1.platform.billing.products.index');
 
                 Route::get('accounts', [BillingFinanceController::class, 'accounts'])->name('api.v1.platform.billing.accounts.index');
                 Route::get('subscriptions', [BillingFinanceController::class, 'subscriptions'])->name('api.v1.platform.billing.subscriptions.index');

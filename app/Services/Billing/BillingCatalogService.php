@@ -56,6 +56,60 @@ class BillingCatalogService
         return $this->catalog->getPlans($filters);
     }
 
+    public function versionsForPlan(int $planId, array $filters = []): CursorPaginator
+    {
+        $plan = BillingPlan::query()->findOrFail($planId);
+        $query = BillingPlanVersion::query()
+            ->with([
+                'plan',
+                'trialPolicyVersion.policy',
+                'dunningPolicyVersion.policy',
+                'prices.currency',
+                'features',
+            ])
+            ->where('plan_id', $plan->plan_id);
+
+        if (! empty($filters['status'])) {
+            $status = BillingPlanVersionStatus::tryFrom((string) $filters['status']);
+            if (! $status) {
+                throw ValidationException::withMessages([
+                    'status' => ['حالة إصدار الخطة غير معروفة.'],
+                ]);
+            }
+            $query->where('status', $status);
+        }
+
+        $perPage = min(max((int) ($filters['per_page'] ?? 20), 1), 100);
+
+        return $query->orderByDesc('version_number')
+            ->orderByDesc('plan_version_id')
+            ->cursorPaginate($perPage);
+    }
+
+    public function products(array $filters = []): Collection|CursorPaginator
+    {
+        $query = BillingProduct::query();
+
+        if (array_key_exists('is_active', $filters)) {
+            $query->where('is_active', (bool) $filters['is_active']);
+        }
+
+        if (! empty($filters['search'])) {
+            $term = trim((string) $filters['search']);
+            $query->where(fn ($builder) => $builder
+                ->where('name', 'like', "%{$term}%")
+                ->orWhere('product_key', 'like', "%{$term}%"));
+        }
+
+        $perPage = min(max((int) ($filters['per_page'] ?? 20), 1), 100);
+
+        if (! empty($filters['all'])) {
+            return $query->orderBy('product_id')->get();
+        }
+
+        return $query->orderBy('product_id')->cursorPaginate($perPage);
+    }
+
     public function publicPlansForCurrency(int $currencyId, array $filters = []): Collection|CursorPaginator
     {
         if (! $this->currencies->findActiveById($currencyId)) {

@@ -868,3 +868,66 @@ This log documents all executed tasks, code changes, and verification command ou
 - Missing treasury allocation and missing treasury ledger links are surfaced as warnings. No unlike currencies are combined.
 - Added an integration assertion requiring all reconciliation checks to match after full payment, credit-note issuance, and refund settlement.
 - Exact-head CI remains pending after the latest schema, service, controller, route, and test changes. No passing result is claimed yet.
+
+
+## 2026-11-11 — Platform Billing Administration Contracts
+
+**Repository:** `smartixit/netsales_api`  
+**Branch:** `feat/platform-billing-admin-contracts`
+
+### Implemented
+- Added platform-only billing account provisioning using the network's active state and selected active currency.
+- Extended subscription purchase/cancellation services with explicit platform-operation authorization while preserving network-owner authorization for self-service callers.
+- Added platform endpoints for account creation, subscription provisioning, subscription detail/event history, and audited cancellation with a required reason.
+- Added billing-account context to subscription resources.
+- Extended overview financial summaries with server-formatted decimal strings for each currency.
+
+### Important correction
+- Corrected the platform subscription administration routes so account/subscription provisioning and cancellation are registered directly under `/platform/billing`, not accidentally nested under `/platform/billing/policies`.
+
+### Verification boundary
+- No Laravel/PHP runtime was available in this GitHub-only execution. Pint, PHPStan, PHPUnit, route:list, and exact-head CI have not been run.
+- Role permission catalog already defines `billing.*`; existing role assignment keeps platform accountants at view/approve/report and SUPER_ADMIN with full platform permissions. SUPPORT_AGENT does not receive billing access by default.
+- No PR has been opened and no merge is claimed.
+
+
+## 2026-11-11 — Billing Catalog Read Contract and Subscription Search
+
+- Added cursor-paginated `GET /api/v1/platform/billing/products`, permission-gated by `billing.view`, with search and active-state filtering.
+- Added a dedicated `BillingProductResource` and product catalog read method; this closes the missing read side of the existing product-create/plan-create workflow.
+- Added server-side subscription search across subscription/account identifiers, account number/legal name, network name, and plan name/key. Existing currency/status/account/network filters and cursor pagination remain in place.
+- Dashboard integration now sends subscription search terms through the remote datasource, repository contract, use case, and controller; search refreshes subscriptions, invoices, and payments with the existing stale-response guards.
+- Verification: GitHub compare confirms the API branch is 14 commits ahead of `main` and Dashboard is 31 commits ahead, both 0 commits behind at the time of this entry. No PHP/Flutter runtime commands, automated tests, route:list, analyzer, or CI were executed in this environment. Do not treat the changes as validated or production-ready.
+
+
+## Platform billing catalogue contract completion — 2026-11-11
+
+- Added the platform billing product index contract and dedicated `BillingProductResource`; route is protected by `billing.view`.
+- Added cursor-paginated plan version history at `GET /api/v1/platform/billing/plans/{planId}/versions`, including immutable version status, policy-version references, per-currency prices, feature values, and timestamps.
+- Added safe validation for version status filters and eager-loaded policy/version relationships for the plan catalogue.
+- Corrected the platform subscriptions index controller to forward the `search` filter into `BillingPlatformReadService`; the service searches subscription/account identifiers, account number/legal name, network name, and plan name/key before cursor pagination.
+- Relevant commits: `97adf759` (version query), `42f23081` (version controller), `685674e6` (version resource), `68a0fb12` (version route), `52d519b4` (subscription search forwarding), `191eb032` (safe status filter), `9605afd8` (catalog eager loading).
+- Commands executed: GitHub source reads and file/commit operations only. No PHP runtime, Pint, PHPStan, PHPUnit, migration, route:list, or CI commands were run.
+
+
+## 2026-11-11 — Versioned Trial and Dunning Policy Read Contracts
+
+- Added cursor-paginated policy-version history endpoints:
+  - `GET /api/v1/platform/billing/policies/trials/{policyId}/versions`
+  - `GET /api/v1/platform/billing/policies/dunning/{policyId}/versions`
+- Added dedicated API Resources exposing immutable version IDs, exact policy values, publication timestamps, and version status.
+- Both routes are in the existing Platform Billing read group and therefore require `billing.view`.
+- Relevant commits: `07984ab7`, `3b662a0b`, `879806fa`, `0473f303`, `c31ffeef`.
+- Verification remains pending: no Laravel runtime, Pint, PHPStan, PHPUnit, route:list, migrations, or CI were run.
+
+
+- Follow-up source inspection caught and corrected doubled PHP namespace separators in the newly introduced ProductResource and version-resource controller references before any runtime validation. This is a source correction only; syntax validity remains unverified until Pint/PHP lint and CI run.
+- Correction commit: `548c2d59`.
+
+## 2026-11-11 — Platform Billing administration route reconciliation
+
+- Reconciled the Platform Billing route group against BillingPolicyController and the existing policy-management service contracts.
+- Removed duplicate and misplaced policy-route declarations. Canonical policy operations remain nested under /platform/billing/policies, with reads protected by billing.view and policy mutations protected by billing.manage.
+- Confirmed the plan catalogue permission boundaries: product/plan creation uses billing.create; draft version, price, and feature mutations use billing.edit; plan-version publication uses billing.manage.
+- Source-inspected trial/dunning version publication, Draft-only plan/price policy assignment, pending-redemption approval/rejection, and audited trial adjustment behavior. No service or accounting behavior was changed in this route-reconciliation step.
+- Verification: GitHub source reads and file updates only. PHP runtime, Pint, PHPStan, PHPUnit, route:list, migrations, and exact-head CI have not been run. Do not merge until the API quality workflow completes on the PR head.

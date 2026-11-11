@@ -4,7 +4,7 @@ namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
 use App\Http\Requests\API\V1\Billing\{StoreCurrencyRequest, StorePlanFeatureRequest, StorePlanRequest, StorePriceRequest, StoreProductRequest, UpdateCurrencyRequest};
-use App\Http\Resources\API\V1\Billing\{BillingPlanResource, BillingPlanFeatureResource, BillingPriceResource, CurrencyResource};
+use App\Http\Resources\API\V1\Billing\{BillingPlanResource, BillingPlanFeatureResource, BillingPriceResource, BillingProductResource, CurrencyResource};
 use App\Services\Billing\{BillingCatalogService, CurrencyService};
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,6 +54,16 @@ class BillingCatalogController extends BaseController
         }
     }
 
+    public function products(Request $request): JsonResponse
+    {
+        return $this->successResponse(
+            'تم استرجاع منتجات الفوترة.',
+            BillingProductResource::collection($this->catalog->products(
+                $request->only(['is_active', 'search', 'per_page', 'all'])
+            ))
+        );
+    }
+
     public function plans(Request $request): JsonResponse
     {
         return $this->successResponse(
@@ -61,6 +71,16 @@ class BillingCatalogController extends BaseController
             BillingPlanResource::collection($this->catalog->plans(
                 $request->only(['is_active', 'search', 'per_page', 'all'])
             ))
+        );
+    }
+
+    public function versions(Request $request, int $planId): JsonResponse
+    {
+        return $this->successResponse(
+            'تم استرجاع إصدارات الخطة.',
+            \App\Http\Resources\API\V1\Billing\BillingPlanVersionResource::collection(
+                $this->catalog->versionsForPlan($planId, $request->only(['status', 'per_page']))
+            )
         );
     }
 

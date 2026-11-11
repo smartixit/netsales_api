@@ -66,7 +66,7 @@ class BillingFinanceController extends BaseController
         return $this->successResponse(
             'تم استرجاع اشتراكات المنصة.',
             BillingSubscriptionResource::collection($this->read->subscriptions($request->only([
-                'network_id', 'billing_account_id', 'currency_id', 'status', 'per_page', 'all',
+                'network_id', 'billing_account_id', 'currency_id', 'status', 'search', 'per_page', 'all',
             ])))
         );
     }
@@ -109,7 +109,7 @@ class BillingFinanceController extends BaseController
 
     public function subscriptionDetails(int $subscriptionId): JsonResponse
     {
-        $subscription = \\App\\Models\\BillingSubscription::query()
+        $subscription = \App\Models\BillingSubscription::query()
             ->with(['billingAccount.network', 'currency', 'plan', 'planVersion', 'price', 'trialRedemption', 'events'])
             ->findOrFail($subscriptionId);
 
