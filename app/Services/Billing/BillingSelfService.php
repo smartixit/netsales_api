@@ -247,6 +247,38 @@ class BillingSelfService
             ->select('currency_id', DB::raw('SUM(applied_to_receivable_minor) as amount_minor'), DB::raw('COUNT(*) as item_count'))
             ->groupBy('currency_id')->get()->keyBy('currency_id');
 
+        // Refundable credit notes create a customer-credit liability.
+        // Completed refunds consume that liability and are recognized by processing date.
+        $refundableNoteBase = DB::table('billing_credit_notes')
+            ->where('billing_account_id', $accountId)
+            ->whereNotNull('issued_at')
+            ->when($currencyId !== null, fn ($builder) => $builder->where('currency_id', $currencyId));
+        $refundableNoteOpening = (clone $refundableNoteBase)
+            ->whereDate('issued_at', '<', $from->toDateString())
+            ->select('currency_id', DB::raw('SUM(refundable_minor) as amount_minor'), DB::raw('COUNT(*) as item_count'))
+            ->groupBy('currency_id')->get()->keyBy('currency_id');
+        $refundableNotePeriod = (clone $refundableNoteBase)
+            ->whereDate('issued_at', '>=', $from->toDateString())
+            ->whereDate('issued_at', '<=', $to->toDateString())
+            ->select('currency_id', DB::raw('SUM(refundable_minor) as amount_minor'), DB::raw('COUNT(*) as item_count'))
+            ->groupBy('currency_id')->get()->keyBy('currency_id');
+
+        $refundBase = DB::table('billing_refunds')
+            ->join('billing_credit_notes', 'billing_credit_notes.credit_note_id', '=', 'billing_refunds.credit_note_id')
+            ->where('billing_credit_notes.billing_account_id', $accountId)
+            ->where('billing_refunds.status', 'COMPLETED')
+            ->whereNotNull('billing_refunds.processed_at')
+            ->when($currencyId !== null, fn ($builder) => $builder->where('billing_refunds.currency_id', $currencyId));
+        $refundOpening = (clone $refundBase)
+            ->whereDate('billing_refunds.processed_at', '<', $from->toDateString())
+            ->select('billing_refunds.currency_id', DB::raw('SUM(billing_refunds.amount_minor) as amount_minor'), DB::raw('COUNT(*) as item_count'))
+            ->groupBy('billing_refunds.currency_id')->get()->keyBy('currency_id');
+        $refundPeriod = (clone $refundBase)
+            ->whereDate('billing_refunds.processed_at', '>=', $from->toDateString())
+            ->whereDate('billing_refunds.processed_at', '<=', $to->toDateString())
+            ->select('billing_refunds.currency_id', DB::raw('SUM(billing_refunds.amount_minor) as amount_minor'), DB::raw('COUNT(*) as item_count'))
+            ->groupBy('billing_refunds.currency_id')->get()->keyBy('currency_id');
+
         $currencyIds = collect()
             ->merge($invoiceOpening->keys())->merge($invoicePeriod->keys())
             ->merge($paymentOpening->keys())->merge($paymentPeriod->keys())
