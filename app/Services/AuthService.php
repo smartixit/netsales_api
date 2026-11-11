@@ -8,6 +8,7 @@ use App\Enums\NotificationType;
 use App\Enums\OtpType;
 use App\Enums\PosStatus;
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\SmsMessageType;
 use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
@@ -105,6 +106,241 @@ class AuthService
      * تسجيل الدخول للنظام والتحقق من المستخدم وحالة الحساب والشبكة/نقطة البيع والاشتراك والأجهزة.
      */
     public function login(LoginRequest $request): array
+    {
+        $phoneNumber = (string) $request->user_phone_number;
+        $password = (string) $request->user_password;
+        $user = $this->userRepository->findByPhone($phoneNumber, true);
+
+        if ($user) {
+
+            if($user->role_scope === RoleScope::PLATFORM->value){
+                throw ValidationException::withMessages([
+                    'user_phone_number' => ["عذراً، بيانات الاعتماد غير صحيحة."],
+                ]);
+            }
+
+            $maxAttempts = $this->getMaxLoginAttempts();
+            if ($user->user_login_attempts >= $maxAttempts) {
+                $lockoutMinutes = $this->getLockoutDurationMinutes();
+                SystemLoggerService::warning('login_lockout_exceeded', [
+                    'phone' => $phoneNumber,
+                    'attempts' => $user->user_login_attempts,
+                ], $user->user_id);
+
+                throw ValidationException::withMessages([
+                    'user_phone_number' => ["تم حظر تسجيل الدخول مؤقتاً لتجاوز الحد الأقصى للمحاولات الخاطئة ({$maxAttempts} محاولات). يرجى المحاولة بعد {$lockoutMinutes} دقيقة أو استعادة كلمة المرور."],
+                ]);
+            }
+        }
+
+        if (! $user || ! Hash::check($password, $user->getAuthPassword())) {
+            if ($user) {
+                $this->userRepository->incrementLoginAttempts($user->user_id);
+                $remaining = max(0, $this->getMaxLoginAttempts() - ($user->user_login_attempts + 1));
+                if ($remaining > 0) {
+                    throw ValidationException::withMessages([
+                        'user_phone_number' => ["بيانات الاعتماد غير صحيحة. المحاولات المتبقية: {$remaining}."],
+                    ]);
+                } else {
+                    $lockoutMinutes = $this->getLockoutDurationMinutes();
+                    throw ValidationException::withMessages([
+                        'user_phone_number' => ["تم تجاوز الحد الأقصى للمحاولات الخاطئة. تم قفل الحساب مؤقتاً لمدة {$lockoutMinutes} دقيقة."],
+                    ]);
+                }
+            }
+
+            throw ValidationException::withMessages([
+                'user_phone_number' => ['بيانات الاعتماد غير صحيحة.'],
+            ]);
+        }
+
+        // 1. فحص حالة المستخدم
+        if ($user->status === UserStatus::PENDING->value || $user->status === UserStatus::PENDING) {
+            throw ValidationException::withMessages([
+                'user_phone_number' => ['حسابك قيد المراجعة والاعتماد من قبل إدارة النظام.'],
+            ]);
+        }
+
+        if ($user->status === UserStatus::INACTIVE->value || $user->status === UserStatus::INACTIVE) {
+            throw ValidationException::withMessages([
+                'user_phone_number' => ['تم تعطيل حسابك. يرجى التواصل مع إدارة النظام.'],
+            ]);
+        }
+
+        if ($user->status === UserStatus::BANNED->value || $user->status === UserStatus::BANNED) {
+            $activeBan = $this->securityBanRepository->getActiveBanForUser($user->user_id);
+            $reason = $activeBan?->ban_reason ?? 'مخالفة الشروط والأحكام';
+
+            throw ValidationException::withMessages([
+                'user_phone_number' => ["تم حظر حسابك. السبب: {$reason}"],
+            ]);
+        }
+
+        // 2. التحقق من الحظر الأمني النشط
+        if ($this->securityBanRepository->isUserBanned($user->user_id)) {
+            $activeBan = $this->securityBanRepository->getActiveBanForUser($user->user_id);
+            $reason = $activeBan?->ban_reason ?? 'مخالفة الشروط والأحكام';
+
+            throw ValidationException::withMessages([
+                'user_phone_number' => ["تم حظر هذا الحساب من الدخول إلى النظام. السبب: {$reason}"],
+            ]);
+        }
+
+        // 3. التحقق من حالة الكيان التابع له المستخدم (شبكة / نقطة بيع / اشتراك)
+        $this->verifyUserEntityStatus($user);
+
+        // 4. التحقق من الجهاز
+        $incomingDeviceId = (string) $request->device_uuid;
+        if (empty($incomingDeviceId)) {
+            throw ValidationException::withMessages([
+                'device_uuid' => ['معرف الجهاز مطلوب لتأكيد جلسة الدخول.'],
+            ]);
+        }
+
+        $existingDevice = $this->userDeviceRepository->findByUuid($user->user_id, $incomingDeviceId);
+
+        // فحص حظر الجهاز
+        if ($existingDevice && $this->securityBanRepository->isDeviceBanned($existingDevice->device_id)) {
+            $activeDeviceBan = $this->securityBanRepository->getActiveBanForDevice($existingDevice->device_id);
+            $reason = $activeDeviceBan?->ban_reason ?? 'حظر أمني للجهاز';
+
+            throw ValidationException::withMessages([
+                'device_uuid' => ["تم حظر هذا الجهاز من الدخول إلى النظام. السبب: {$reason}"],
+            ]);
+        }
+
+        if ($existingDevice && ($existingDevice->status === UserDeviceStatus::BANNED->value || $existingDevice->status === UserDeviceStatus::BANNED)) {
+            throw ValidationException::withMessages([
+                'device_uuid' => ['تم حظر هذا الجهاز من الدخول إلى النظام.'],
+            ]);
+        }
+
+        if ($existingDevice && ($existingDevice->status === UserDeviceStatus::INACTIVE->value || $existingDevice->status === UserDeviceStatus::INACTIVE)) {
+            throw ValidationException::withMessages([
+                'device_uuid' => ['تم تعطيل هذا الجهاز من قِبل إدارة النظام. يرجى التواصل مع الدعم الفني.'],
+            ]);
+        }
+
+        if ($existingDevice && ($existingDevice->status === UserDeviceStatus::PENDING->value || $existingDevice->status === UserDeviceStatus::PENDING)) {
+            throw ValidationException::withMessages([
+                'device_uuid' => ['هذا الجهاز قيد المراجعة والاعتماد من قبل إدارة النظام.'],
+            ]);
+        }
+
+        // 5. سيناريوهات الأجهزة والمصادقة الثنائية (OTP)
+        $userDevices = $this->userDeviceRepository->getDevicesForUser($user->user_id);
+
+        // سيناريو أ: المستخدم غير مرتبط بأي جهاز مسبقاً (جهاز أول يتطلب تأكيد OTP)
+        if ($userDevices->isEmpty()) {
+            $this->otpService->generateOtpForUser($user, OtpType::OTP_2FA, $incomingDeviceId);
+
+            SystemLoggerService::warning('First device linking OTP sent', ['device_uuid' => $incomingDeviceId], $user->user_id);
+
+            return [
+                'require_2fa' => true,
+                'is_primary' => true,
+                'message' => 'يرجى إدخال رمز التحقق المرسل إلى هاتفك لربط هذا الجهاز بحسابك لأول مرة.',
+                'user_phone_number' => $user->user_phone_number,
+                'device_uuid' => $incomingDeviceId,
+            ];
+        }
+
+        // سيناريو ب: المستخدم مرتبط بجهاز آخر (الجهاز الحالي جديد وغير مسجل)
+        if (! $existingDevice) {
+            $this->otpService->generateOtpForUser($user, OtpType::OTP_2FA, $incomingDeviceId);
+
+            SystemLoggerService::warning('New device login attempt detected', ['device_uuid' => $incomingDeviceId], $user->user_id);
+
+            return [
+                'require_2fa' => true,
+                'is_new_device' => true,
+                'message' => 'تم رصد محاولة دخول من جهاز جديد. يرجى إدخال رمز التحقق المرسل إلى هاتفك.',
+                'user_phone_number' => $user->user_phone_number,
+                'device_uuid' => $incomingDeviceId,
+            ];
+        }
+
+        // سيناريو ج: المصادقة الثنائية 2FA مفعلة وكان الجهاز ثانوي
+        if ($user->user_2fa_enabled && ! $existingDevice->is_primary) {
+            $appHash = (string) ($request->app_hash ?? request()->header('X-App-Signature') ?? request()->header('X-App-Hash') ?? '');
+            $this->otpService->generateOtpForUser($user, OtpType::OTP_2FA, $incomingDeviceId, appHash: $appHash ?: null);
+
+            SystemLoggerService::warning('2FA required for secondary device login', ['device_uuid' => $incomingDeviceId], $user->user_id);
+
+            return [
+                'require_2fa' => true,
+                'is_new_device' => false,
+                'message' => 'يرجى إدخال رمز التحقق المرسل إلى هاتفك لتأكيد الدخول من جهاز ثانوي.',
+                'user_phone_number' => $user->user_phone_number,
+                'device_uuid' => $incomingDeviceId,
+            ];
+        }
+
+        // 6. تسجيل الدخول المباشر وإنشاء الجلسة داخل معاملة قاعدة بيانات
+        return DB::transaction(function () use ($user, $request, $existingDevice) {
+            $deviceName = (string) ($request->device_name ?? $existingDevice->device_name);
+
+            // تحديث وقت آخر استخدام للجهاز وتحديث رمز الإشعارات FCM
+            $this->userDeviceRepository->updateFcmToken($user->user_id, $existingDevice->device_uuid, (string) $request->fcm_token);
+            $this->userDeviceRepository->touchLastUsed($existingDevice->device_id);
+
+            // إنشاء الجلسة في user_sessions بمدة ديناميكية من إعدادات النظام
+            $session = $this->userSessionRepository->createSession(
+                userId: $user->user_id,
+                deviceUuid: $existingDevice->device_uuid,
+                ipAddress: request()->ip(),
+                userAgent: request()->userAgent(),
+                durationHours: $this->getSessionDurationHours()
+            );
+
+            // تصفير عداد المحاولات وتحديث تاريخ الدخول
+            $this->userRepository->resetLoginAttempts($user->user_id);
+            $this->userRepository->updateLastLogin($user->user_id);
+
+            // Alert for login from "Another" (secondary) device
+            $ip = request()->ip();
+            $time = now()->format('Y-m-d H:i:s');
+
+            $body = "تنبيه أمني: دخول من جهاز موثوق\n".
+            "تم تسجيل الدخول إلى حسابك من جهاز معرّف مسبقاً (جهاز ثانوي).\n".
+                "تفاصيل المحاولة:\n".
+                "• الجهاز: {$deviceName}\n".
+                "• العنوان (IP): {$ip}\n".
+                "• الوقت: {$time}";
+
+            if (! $existingDevice->is_primary) {
+                $this->notificationService->sendDirect(
+                    userId: (int) $user->user_id,
+                    type: NotificationType::SECURITY_LOGIN_ALERT,
+                    title: 'تنبيه أمني: دخول من جهاز موثوق',
+                    message: $body,
+                    inApp: true,
+                    push: true,
+                    sms: false,
+                    email: true,
+                    emailSubject: 'تنبيه أمني: دخول من جهاز موثوق'
+                );
+            }
+
+            SystemLoggerService::logAuth('user_logged_in', $user->user_id, [
+                'session_id' => $session->session_id,
+                'device_id' => $existingDevice->device_id,
+            ]);
+
+            $mustChangePassword = (bool) $user->must_change_password;
+
+            return [
+                'require_2fa' => false,
+                'require_password_change' => $mustChangePassword,
+                'user' => $user->load(['role']),
+                'session' => $session,
+                'permissions' => $mustChangePassword ? [] : $user->getAllPermissions(),
+                'workspace_roles' => $user->getWorkspaceRoles(),
+            ];
+        });
+    }
+
+    public function loginToDashboard(LoginRequest $request): array
     {
         $phoneNumber = (string) $request->user_phone_number;
         $password = (string) $request->user_password;

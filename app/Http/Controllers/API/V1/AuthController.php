@@ -229,6 +229,47 @@ class AuthController extends BaseController
         }
     }
 
+    public function loginToDashboard(LoginRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->authService->loginToDashboard($request);
+
+            if (! empty($result['require_2fa'])) {
+                return $this->successResponse($result['message'], [
+                    'require_2fa' => true,
+                    'is_new_device' => $result['is_new_device'] ?? false,
+                    'is_primary' => $result['is_primary'] ?? false,
+                    'user_phone_number' => $result['user_phone_number'],
+                    'device_uuid' => $result['device_uuid'] ?? $request->input('device_uuid'),
+                ]);
+            }
+
+            $user = $result['user'];
+            $session = $result['session'];
+            $mustChangePassword = ! empty($result['require_password_change']);
+
+            if (empty($session->plain_token)) {
+                throw new \RuntimeException('Session authentication token could not be issued securely.');
+            }
+
+            return $this->successResponse(
+                $mustChangePassword ? 'يرجى تغيير كلمة المرور المؤقتة لمتابعة الدخول.' : 'تم تسجيل الدخول بنجاح.',
+                [
+                    'session_id' => $session->plain_token,
+                    'device_uuid' => (string) $session->device_uuid,
+                    'require_password_change' => $mustChangePassword,
+                    'user' => new UserResource($user),
+                    'permissions' => $result['permissions'],
+                    'workspace_roles' => $result['workspace_roles'],
+                ]
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('عذراً، فشل تسجيل الدخول: '.$e->getMessage(), [], 422);
+        }
+    }
+
     /**
      * إتمام التحقق الثنائي أو تأكيد ربط الجهاز الجديد وإنشاء الجلسة.
      */
