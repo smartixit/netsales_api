@@ -75,7 +75,7 @@ class ReportDefinitionRegistry
                 'scope' => 'PLATFORM',
                 'title' => 'ملخص فوترة المنصة',
                 'description' => 'مؤشرات الاشتراكات والفواتير والتحصيلات مفصولة حسب العملة.',
-                'permission' => 'billing.view',
+                'permission' => 'billing.report',
                 'definition_version' => '1.0.0',
                 'artifact_format' => 'JSON',
                 'max_records' => 500,

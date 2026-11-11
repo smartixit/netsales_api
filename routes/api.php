@@ -509,14 +509,14 @@ Route::prefix('v1')->group(function () {
             ->middleware('platform.user.scope')
             ->group(function () {
                 Route::get('catalog', [ReportController::class, 'platformCatalog'])
-                    ->middleware(['throttle:api-read', 'permission:billing.view'])
+                    ->middleware(['throttle:api-read', 'permission:billing.report'])
                     ->name('api.v1.platform.reports.catalog');
                 Route::post('runs', [ReportController::class, 'storePlatformRun'])
-                    ->middleware(['throttle:api-write', 'permission:billing.view'])
+                    ->middleware(['throttle:api-write', 'permission:billing.report'])
                     ->name('api.v1.platform.reports.runs.store');
                 Route::get('runs/{reportRunId}', [ReportController::class, 'showPlatformRun'])
                     ->whereNumber('reportRunId')
-                    ->middleware(['throttle:api-read', 'permission:billing.view'])
+                    ->middleware(['throttle:api-read', 'permission:billing.report'])
                     ->name('api.v1.platform.reports.runs.show');
             });
 
