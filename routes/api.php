@@ -25,6 +25,7 @@ use App\Http\Controllers\API\V1\PosController;
 use App\Http\Controllers\API\V1\PosMembershipController;
 use App\Http\Controllers\API\V1\PosWalletController;
 use App\Http\Controllers\API\V1\RequestController;
+use App\Http\Controllers\API\V1\Reporting\ReportController;
 use App\Http\Controllers\API\V1\RoleController;
 use App\Http\Controllers\API\V1\SaleInvoiceController;
 use App\Http\Controllers\API\V1\ScheduledTaskRunController;
@@ -481,6 +482,43 @@ Route::prefix('v1')->group(function () {
             Route::delete('expenses/{id}/attachments/{attachmentId}', [ExpenseController::class, 'deleteAttachment'])->whereNumber('id')->whereNumber('attachmentId')->name('api.v1.expenses.delete_attachment')->middleware('permission:expenses.delete');
             Route::apiResource('expenses', ExpenseController::class)->parameters(['expenses' => 'id'])->except(['index', 'show']);
         });
+
+        // ==========================================
+        // Reporting — Network workspace, strictly tenant scoped
+        // ==========================================
+        Route::prefix('networks/{networkId}/reports')
+            ->whereNumber('networkId')
+            ->middleware('operational.scope')
+            ->group(function () {
+                Route::get('catalog', [ReportController::class, 'networkCatalog'])
+                    ->middleware('throttle:api-read')
+                    ->name('api.v1.networks.reports.catalog');
+                Route::post('runs', [ReportController::class, 'storeNetworkRun'])
+                    ->middleware('throttle:api-write')
+                    ->name('api.v1.networks.reports.runs.store');
+                Route::get('runs/{reportRunId}', [ReportController::class, 'showNetworkRun'])
+                    ->whereNumber('reportRunId')
+                    ->middleware('throttle:api-read')
+                    ->name('api.v1.networks.reports.runs.show');
+            });
+
+        // ==========================================
+        // Reporting — Platform Scope only (Windows dashboard)
+        // ==========================================
+        Route::prefix('platform/reports')
+            ->middleware('platform.user.scope')
+            ->group(function () {
+                Route::get('catalog', [ReportController::class, 'platformCatalog'])
+                    ->middleware(['throttle:api-read', 'permission:billing.view'])
+                    ->name('api.v1.platform.reports.catalog');
+                Route::post('runs', [ReportController::class, 'storePlatformRun'])
+                    ->middleware(['throttle:api-write', 'permission:billing.view'])
+                    ->name('api.v1.platform.reports.runs.store');
+                Route::get('runs/{reportRunId}', [ReportController::class, 'showPlatformRun'])
+                    ->whereNumber('reportRunId')
+                    ->middleware(['throttle:api-read', 'permission:billing.view'])
+                    ->name('api.v1.platform.reports.runs.show');
+            });
 
         // ==========================================
         // Platform Billing — Windows Platform Scope only
