@@ -2,7 +2,7 @@
 
 namespace App\Services\Billing;
 
-use App\Models\{BillingAccount, BillingInvoice, BillingPayment, BillingSubscription, User};
+use App\Models\{BillingAccount, BillingCreditNote, BillingInvoice, BillingPayment, BillingRefund, BillingSubscription, User};
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
