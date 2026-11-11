@@ -1,10 +1,10 @@
 <?php
 
-namespace App\\Http\\Resources\\API\\V1\\Billing;
+namespace App\Http\Resources\API\V1\Billing;
 
-use App\\Services\\Billing\\Money;
-use Illuminate\\Http\\Request;
-use Illuminate\\Http\\Resources\\Json\\JsonResource;
+use App\Services\Billing\Money;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 class BillingRefundResource extends JsonResource
 {
