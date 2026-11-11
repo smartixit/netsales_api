@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\Support\FileUploadService;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -120,6 +121,32 @@ class ReportRunService
         BuildReportRunJob::dispatch((int) $run->report_run_id)->afterCommit();
 
         return $run;
+    }
+
+    public function networkRuns(User $actor, int $networkId, int $perPage = 20): CursorPaginator
+    {
+        $this->authorization->authorizeNetworkReportHistory($actor, $networkId);
+
+        return ReportRun::query()
+            ->where('scope_type', 'NETWORK')
+            ->where('network_id', $networkId)
+            ->where('requested_by', (int) $actor->user_id)
+            ->orderByDesc('report_run_id')
+            ->cursorPaginate(min(max($perPage, 1), 100));
+    }
+
+    public function platformRuns(User $actor, int $perPage = 20): CursorPaginator
+    {
+        $this->authorization->authorizePlatformDefinition($actor, [
+            'permission' => 'billing.report',
+        ]);
+
+        return ReportRun::query()
+            ->where('scope_type', 'PLATFORM')
+            ->whereNull('network_id')
+            ->where('requested_by', (int) $actor->user_id)
+            ->orderByDesc('report_run_id')
+            ->cursorPaginate(min(max($perPage, 1), 100));
     }
 
     public function networkRun(User $actor, int $networkId, int $runId): ReportRun

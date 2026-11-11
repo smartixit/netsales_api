@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1\Reporting;
 
 use App\Http\Controllers\API\V1\BaseController;
+use App\Http\Resources\API\V1\Reporting\ReportRunResource;
 use App\Services\Reporting\ReportRunService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,6 +40,22 @@ class ReportController extends BaseController
             'تم تسجيل التقرير في قائمة التنفيذ. يمكنك متابعة حالته وتنزيله عند اكتماله.',
             $this->reports->present($run),
             202
+        );
+    }
+
+    public function networkRuns(Request $request, int $networkId): JsonResponse
+    {
+        $filters = $request->validate([
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        return $this->successResponse(
+            'تم استرجاع سجل التقارير التي أنشأها المستخدم في هذه الشبكة.',
+            ReportRunResource::collection($this->reports->networkRuns(
+                $this->requireCurrentUser(),
+                $networkId,
+                (int) ($filters['per_page'] ?? 20)
+            ))
         );
     }
 
@@ -81,6 +98,21 @@ class ReportController extends BaseController
             'تم تسجيل تقرير المنصة في قائمة التنفيذ. يمكنك متابعة حالته وتنزيله عند اكتماله.',
             $this->reports->present($run),
             202
+        );
+    }
+
+    public function platformRuns(Request $request): JsonResponse
+    {
+        $filters = $request->validate([
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        return $this->successResponse(
+            'تم استرجاع سجل تقارير فوترة المنصة التي أنشأها المستخدم.',
+            ReportRunResource::collection($this->reports->platformRuns(
+                $this->requireCurrentUser(),
+                (int) ($filters['per_page'] ?? 20)
+            ))
         );
     }
 

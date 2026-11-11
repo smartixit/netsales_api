@@ -496,6 +496,9 @@ Route::prefix('v1')->group(function () {
                 Route::post('runs', [ReportController::class, 'storeNetworkRun'])
                     ->middleware('throttle:api-write')
                     ->name('api.v1.networks.reports.runs.store');
+                Route::get('runs', [ReportController::class, 'networkRuns'])
+                    ->middleware('throttle:api-read')
+                    ->name('api.v1.networks.reports.runs.index');
                 Route::get('runs/{reportRunId}', [ReportController::class, 'showNetworkRun'])
                     ->whereNumber('reportRunId')
                     ->middleware('throttle:api-read')
@@ -514,6 +517,9 @@ Route::prefix('v1')->group(function () {
                 Route::post('runs', [ReportController::class, 'storePlatformRun'])
                     ->middleware(['throttle:api-write', 'permission:billing.report'])
                     ->name('api.v1.platform.reports.runs.store');
+                Route::get('runs', [ReportController::class, 'platformRuns'])
+                    ->middleware(['throttle:api-read', 'permission:billing.report'])
+                    ->name('api.v1.platform.reports.runs.index');
                 Route::get('runs/{reportRunId}', [ReportController::class, 'showPlatformRun'])
                     ->whereNumber('reportRunId')
                     ->middleware(['throttle:api-read', 'permission:billing.report'])

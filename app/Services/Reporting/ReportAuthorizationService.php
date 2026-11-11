@@ -47,6 +47,21 @@ class ReportAuthorizationService
         }
     }
 
+    public function authorizeNetworkReportHistory(User $actor, int $networkId): void
+    {
+        foreach (['sales.report', 'expenses.report'] as $permission) {
+            try {
+                $this->billingAuthorization->assertNetworkPermission($actor, $networkId, $permission);
+
+                return;
+            } catch (AuthorizationException) {
+                // Try the next report permission; network owners pass either check.
+            }
+        }
+
+        throw new AuthorizationException('لا تملك صلاحية الوصول إلى سجل تقارير هذه الشبكة.');
+    }
+
     public function authorizeRun(User $actor, ReportRun $run): void
     {
         if ($run->scope_type === 'NETWORK') {
