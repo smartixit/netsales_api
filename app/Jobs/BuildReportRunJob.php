@@ -25,9 +25,7 @@ class BuildReportRunJob implements ShouldQueue
 
     public function __construct(
         public readonly int $reportRunId
-    ) {
-        $this->onQueue('reports');
-    }
+    ) {}
 
     public function handle(ReportExecutionService $executor): void
     {

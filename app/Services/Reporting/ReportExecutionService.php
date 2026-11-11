@@ -162,6 +162,7 @@ class ReportExecutionService
                     ->when(! empty($filters['status']), fn (Builder $query) => $query->where('status', strtoupper((string) $filters['status'])))
                     ->when(! empty($filters['from']), fn (Builder $query) => $query->whereDate('issued_on', '>=', $filters['from']))
                     ->when(! empty($filters['to']), fn (Builder $query) => $query->whereDate('issued_on', '<=', $filters['to']))
+                    ->when(! empty($filters['search']), fn (Builder $query) => $query->where('invoice_number', 'like', '%'.trim((string) $filters['search']).'%'))
                     ->orderBy('invoice_id'),
                 $limit,
                 static fn ($model): array => (new BillingInvoiceResource($model))->toArray($request),
