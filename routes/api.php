@@ -613,6 +613,8 @@ Route::prefix('v1')->group(function () {
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.subscriptions.index');
                 Route::get('accounts/{billingAccountId}/invoices', [BillingSelfServiceController::class, 'invoices'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.invoices.index');
+                Route::get('accounts/{billingAccountId}/statement', [BillingSelfServiceController::class, 'statement'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.statement');
                 Route::get('accounts/{billingAccountId}/payments', [BillingSelfServiceController::class, 'payments'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.payments.index');
                 Route::get('accounts/{billingAccountId}/credit-notes', [BillingSelfServiceController::class, 'creditNotes'])

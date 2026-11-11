@@ -2,7 +2,10 @@
 
 namespace App\Services\Billing;
 
-use App\Models\{BillingAccount, BillingCreditNote, BillingInvoice, BillingPayment, BillingRefund, BillingSubscription, User};
+use App\Models\{BillingAccount, BillingCreditNote, BillingInvoice, BillingPayment, BillingRefund, BillingSubscription, Currency, User};
+use App\Services\Billing\Money;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
@@ -165,6 +168,155 @@ class BillingSelfService
             ->orderByDesc('occurred_at')
             ->orderByDesc('event_id')
             ->cursorPaginate(30);
+    }
+
+    /**
+     * Returns a receivables activity statement. All totals are computed on the
+     * server in integer minor units and remain separated by currency.
+     *
+     * The statement deliberately excludes unverified payment attempts and
+     * draft/void invoices. Refunds do not reduce receivables: refundable credit
+     * notes are separate from the amount applied to an invoice receivable.
+     */
+    public function statement(int $accountId, array $filters, User $actor): array
+    {
+        $account = $this->accounts->ownedAccount($accountId, $actor);
+        $from = CarbonImmutable::parse($filters['from'] ?? CarbonImmutable::now('Asia/Aden')->startOfMonth())
+            ->startOfDay();
+        $to = CarbonImmutable::parse($filters['to'] ?? CarbonImmutable::now('Asia/Aden'))
+            ->endOfDay();
+
+        if ($from->greaterThan($to)) {
+            throw ValidationException::withMessages([
+                'from' => ['يجب أن يكون تاريخ بداية التقرير قبل تاريخ نهايته أو مساوياً له.'],
+            ]);
+        }
+
+        $currencyId = isset($filters['currency_id']) ? (int) $filters['currency_id'] : null;
+        if ($currencyId !== null) {
+            Currency::query()->findOrFail($currencyId);
+        }
+
+        $aggregate = function (
+            string $table,
+            string $amountColumn,
+            string $dateColumn,
+            bool $beforePeriod
+        ) use ($accountId, $currencyId, $from, $to) {
+            $query = DB::table($table)
+                ->select('currency_id', DB::raw("SUM({$amountColumn}) as amount_minor"), DB::raw('COUNT(*) as item_count'))
+                ->where('billing_account_id', $accountId)
+                ->whereNotNull($dateColumn)
+                ->when($currencyId !== null, fn ($builder) => $builder->where('currency_id', $currencyId));
+
+            if ($beforePeriod) {
+                $query->whereDate($dateColumn, '<', $from->toDateString());
+            } else {
+                $query->whereDate($dateColumn, '>=', $from->toDateString())
+                    ->whereDate($dateColumn, '<=', $to->toDateString());
+            }
+
+            return $query->groupBy('currency_id')->get()->keyBy('currency_id');
+        };
+
+        $invoiceBase = DB::table('billing_invoices')
+            ->where('billing_account_id', $accountId)
+            ->whereNotNull('finalized_at')
+            ->where('status', '!=', 'VOID')
+            ->when($currencyId !== null, fn ($builder) => $builder->where('currency_id', $currencyId));
+
+        $invoiceOpening = (clone $invoiceBase)->whereDate('issued_on', '<', $from->toDateString())
+            ->select('currency_id', DB::raw('SUM(total_minor) as amount_minor'), DB::raw('COUNT(*) as item_count'))
+            ->groupBy('currency_id')->get()->keyBy('currency_id');
+        $invoicePeriod = (clone $invoiceBase)->whereDate('issued_on', '>=', $from->toDateString())
+            ->whereDate('issued_on', '<=', $to->toDateString())
+            ->select('currency_id', DB::raw('SUM(total_minor) as amount_minor'), DB::raw('COUNT(*) as item_count'))
+            ->groupBy('currency_id')->get()->keyBy('currency_id');
+
+        $paymentBase = DB::table('billing_payments')
+            ->where('billing_account_id', $accountId)
+            ->whereIn('status', ['VERIFIED', 'PARTIALLY_REFUNDED', 'REFUNDED'])
+            ->whereNotNull('verified_at')
+            ->when($currencyId !== null, fn ($builder) => $builder->where('currency_id', $currencyId));
+        $paymentOpening = (clone $paymentBase)->whereDate('verified_at', '<', $from->toDateString())
+            ->select('currency_id', DB::raw('SUM(amount_minor) as amount_minor'), DB::raw('COUNT(*) as item_count'))
+            ->groupBy('currency_id')->get()->keyBy('currency_id');
+        $paymentPeriod = (clone $paymentBase)->whereDate('verified_at', '>=', $from->toDateString())
+            ->whereDate('verified_at', '<=', $to->toDateString())
+            ->select('currency_id', DB::raw('SUM(amount_minor) as amount_minor'), DB::raw('COUNT(*) as item_count'))
+            ->groupBy('currency_id')->get()->keyBy('currency_id');
+
+        $creditBase = DB::table('billing_credit_notes')
+            ->where('billing_account_id', $accountId)
+            ->whereNotNull('issued_at')
+            ->when($currencyId !== null, fn ($builder) => $builder->where('currency_id', $currencyId));
+        $creditOpening = (clone $creditBase)->whereDate('issued_at', '<', $from->toDateString())
+            ->select('currency_id', DB::raw('SUM(applied_to_receivable_minor) as amount_minor'), DB::raw('COUNT(*) as item_count'))
+            ->groupBy('currency_id')->get()->keyBy('currency_id');
+        $creditPeriod = (clone $creditBase)->whereDate('issued_at', '>=', $from->toDateString())
+            ->whereDate('issued_at', '<=', $to->toDateString())
+            ->select('currency_id', DB::raw('SUM(applied_to_receivable_minor) as amount_minor'), DB::raw('COUNT(*) as item_count'))
+            ->groupBy('currency_id')->get()->keyBy('currency_id');
+
+        $currencyIds = collect()
+            ->merge($invoiceOpening->keys())->merge($invoicePeriod->keys())
+            ->merge($paymentOpening->keys())->merge($paymentPeriod->keys())
+            ->merge($creditOpening->keys())->merge($creditPeriod->keys())
+            ->unique()->map(fn ($id): int => (int) $id)->values();
+
+        $currencies = Currency::query()->whereIn('currency_id', $currencyIds)->orderBy('code')->get();
+        $balances = $currencies->map(function (Currency $currency) use (
+            $invoiceOpening, $invoicePeriod, $paymentOpening, $paymentPeriod, $creditOpening, $creditPeriod
+        ): array {
+            $id = $currency->currency_id;
+            $opening = (int) ($invoiceOpening->get($id)->amount_minor ?? 0)
+                - (int) ($paymentOpening->get($id)->amount_minor ?? 0)
+                - (int) ($creditOpening->get($id)->amount_minor ?? 0);
+            $billed = (int) ($invoicePeriod->get($id)->amount_minor ?? 0);
+            $paid = (int) ($paymentPeriod->get($id)->amount_minor ?? 0);
+            $credited = (int) ($creditPeriod->get($id)->amount_minor ?? 0);
+            $closing = $opening + $billed - $paid - $credited;
+            $money = fn (int $minor): string => (new Money($minor, (string) $currency->code))
+                ->toDecimalString((int) $currency->decimal_places);
+
+            return [
+                'currency' => [
+                    'currency_id' => (int) $id,
+                    'code' => $currency->code,
+                    'name' => $currency->name,
+                    'symbol' => $currency->symbol,
+                    'decimal_places' => (int) $currency->decimal_places,
+                ],
+                'opening_receivable_minor' => $opening,
+                'opening_receivable' => $money($opening),
+                'invoiced_minor' => $billed,
+                'invoiced' => $money($billed),
+                'verified_payments_minor' => $paid,
+                'verified_payments' => $money($paid),
+                'credits_applied_minor' => $credited,
+                'credits_applied' => $money($credited),
+                'closing_receivable_minor' => $closing,
+                'closing_receivable' => $money($closing),
+                'counts' => [
+                    'opening_invoices' => (int) ($invoiceOpening->get($id)->item_count ?? 0),
+                    'invoices_issued' => (int) ($invoicePeriod->get($id)->item_count ?? 0),
+                    'payments_verified' => (int) ($paymentPeriod->get($id)->item_count ?? 0),
+                    'credit_notes_issued' => (int) ($creditPeriod->get($id)->item_count ?? 0),
+                ],
+            ];
+        })->values()->all();
+
+        return [
+            'billing_account_id' => (int) $account->billing_account_id,
+            'account_number' => (string) $account->account_number,
+            'period' => [
+                'from' => $from->toDateString(),
+                'to' => $to->toDateString(),
+                'timezone' => 'Asia/Aden',
+            ],
+            'balances_by_currency' => $balances,
+            'currency_aggregation' => 'SEPARATE_ONLY_NO_CROSS_CURRENCY_TOTAL',
+        ];
     }
 
     public function assertInvoiceAccess(int $invoiceId, User $actor): BillingInvoice
