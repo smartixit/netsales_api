@@ -187,6 +187,34 @@ class ReportExecutionService
                 static fn ($model): array => (new BillingPaymentResource($model))->toArray($request),
                 ['currency_aggregation' => 'SEPARATE_PER_RECORD']
             ),
+            'billing-credit-notes' => $this->collectionSnapshot(
+                $run,
+                $definition,
+                BillingCreditNote::query()
+                    ->with(['billingAccount.network', 'currency', 'invoice', 'lines', 'refunds.currency'])
+                    ->when(! empty($filters['network_id']), fn (Builder $query) => $query->whereHas('billingAccount', fn (Builder $account) => $account->where('network_id', (int) $filters['network_id'])))
+                    ->when(! empty($filters['billing_account_id']), fn (Builder $query) => $query->where('billing_account_id', (int) $filters['billing_account_id']))
+                    ->when(! empty($filters['currency_id']), fn (Builder $query) => $query->where('currency_id', (int) $filters['currency_id']))
+                    ->when(! empty($filters['status']), fn (Builder $query) => $query->where('status', strtoupper((string) $filters['status'])))
+                    ->orderBy('credit_note_id'),
+                $limit,
+                static fn ($model): array => (new BillingCreditNoteResource($model))->toArray($request),
+                ['currency_aggregation' => 'SEPARATE_PER_RECORD']
+            ),
+            'billing-refunds' => $this->collectionSnapshot(
+                $run,
+                $definition,
+                BillingRefund::query()
+                    ->with(['currency', 'payment.invoice.billingAccount.network', 'creditNote'])
+                    ->when(! empty($filters['network_id']), fn (Builder $query) => $query->whereHas('payment.billingAccount', fn (Builder $account) => $account->where('network_id', (int) $filters['network_id'])))
+                    ->when(! empty($filters['billing_account_id']), fn (Builder $query) => $query->whereHas('payment', fn (Builder $payment) => $payment->where('billing_account_id', (int) $filters['billing_account_id'])))
+                    ->when(! empty($filters['currency_id']), fn (Builder $query) => $query->where('currency_id', (int) $filters['currency_id']))
+                    ->when(! empty($filters['status']), fn (Builder $query) => $query->where('status', strtoupper((string) $filters['status'])))
+                    ->orderBy('refund_id'),
+                $limit,
+                static fn ($model): array => (new BillingRefundResource($model))->toArray($request),
+                ['currency_aggregation' => 'SEPARATE_PER_RECORD']
+            ),
             'billing-journal-entries' => $this->collectionSnapshot(
                 $run,
                 $definition,
