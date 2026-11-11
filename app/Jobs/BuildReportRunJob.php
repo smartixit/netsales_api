@@ -27,6 +27,15 @@ class BuildReportRunJob implements ShouldQueue
         public readonly int $reportRunId
     ) {}
 
+    public function middleware(): array
+    {
+        return [
+            (new WithoutOverlapping("report-run:{$this->reportRunId}"))
+                ->releaseAfter(15)
+                ->expireAfter(330),
+        ];
+    }
+
     public function handle(ReportExecutionService $executor): void
     {
         $run = ReportRun::query()->findOrFail($this->reportRunId);
