@@ -283,11 +283,15 @@ class BillingSelfService
             ->merge($invoiceOpening->keys())->merge($invoicePeriod->keys())
             ->merge($paymentOpening->keys())->merge($paymentPeriod->keys())
             ->merge($creditOpening->keys())->merge($creditPeriod->keys())
+            ->merge($refundableNoteOpening->keys())->merge($refundableNotePeriod->keys())
+            ->merge($refundOpening->keys())->merge($refundPeriod->keys())
             ->unique()->map(fn ($id): int => (int) $id)->values();
 
         $currencies = Currency::query()->whereIn('currency_id', $currencyIds)->orderBy('code')->get();
         $balances = $currencies->map(function (Currency $currency) use (
-            $invoiceOpening, $invoicePeriod, $paymentOpening, $paymentPeriod, $creditOpening, $creditPeriod
+            $invoiceOpening, $invoicePeriod, $paymentOpening, $paymentPeriod,
+            $creditOpening, $creditPeriod, $refundableNoteOpening,
+            $refundableNotePeriod, $refundOpening, $refundPeriod
         ): array {
             $id = $currency->currency_id;
             $openingNet = (int) ($invoiceOpening->get($id)->amount_minor ?? 0)
@@ -301,9 +305,18 @@ class BillingSelfService
             // A negative net receivable is a customer credit balance, not a
             // negative accounts-receivable figure. Keep both concepts explicit.
             $openingReceivable = max(0, $openingNet);
-            $openingCustomerCredit = max(0, -$openingNet);
+            $openingOverpaymentCredit = max(0, -$openingNet);
             $closingReceivable = max(0, $closingNet);
-            $closingCustomerCredit = max(0, -$closingNet);
+            $closingOverpaymentCredit = max(0, -$closingNet);
+
+            $openingRefundableCredit = (int) ($refundableNoteOpening->get($id)->amount_minor ?? 0)
+                - (int) ($refundOpening->get($id)->amount_minor ?? 0);
+            $periodRefundableCredit = (int) ($refundableNotePeriod->get($id)->amount_minor ?? 0)
+                - (int) ($refundPeriod->get($id)->amount_minor ?? 0);
+            $closingRefundableCredit = max(0, $openingRefundableCredit + $periodRefundableCredit);
+
+            $openingCustomerCredit = $openingOverpaymentCredit + max(0, $openingRefundableCredit);
+            $closingCustomerCredit = $closingOverpaymentCredit + $closingRefundableCredit;
 
             $money = fn (int $minor): string => (new Money($minor, (string) $currency->code))
                 ->toDecimalString((int) $currency->decimal_places);
