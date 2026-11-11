@@ -4,7 +4,7 @@ namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
 use App\Http\Requests\API\V1\Billing\{CreateBillingAccountRequest, PurchaseSubscriptionRequest, StorePaymentRequest};
-use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingSubscriptionResource, PaymentMethodResource};
+use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingRefundResource, BillingSubscriptionEventResource, BillingSubscriptionResource, PaymentMethodResource};
 use App\Services\Billing\{BillingPaymentService, BillingPlatformReadService, BillingSelfService, BillingSubscriptionService, CurrencyService};
 use App\Services\Support\FileUploadService;
 use Illuminate\Http\JsonResponse;
@@ -125,6 +125,40 @@ class BillingSelfServiceController extends BaseController
                 $request->only(['status', 'per_page', 'all']),
                 $this->requireCurrentUser()
             ))
+        );
+    }
+
+    public function creditNotes(Request $request, int $billingAccountId): JsonResponse
+    {
+        return $this->successResponse(
+            'تم استرجاع الإشعارات الدائنة لحساب الفوترة.',
+            BillingCreditNoteResource::collection($this->self->creditNotes(
+                $billingAccountId,
+                $request->only(['status', 'per_page', 'all']),
+                $this->requireCurrentUser()
+            ))
+        );
+    }
+
+    public function refunds(Request $request, int $billingAccountId): JsonResponse
+    {
+        return $this->successResponse(
+            'تم استرجاع عمليات الاسترداد لحساب الفوترة.',
+            BillingRefundResource::collection($this->self->refunds(
+                $billingAccountId,
+                $request->only(['status', 'per_page', 'all']),
+                $this->requireCurrentUser()
+            ))
+        );
+    }
+
+    public function subscriptionEvents(int $subscriptionId): JsonResponse
+    {
+        return $this->successResponse(
+            'تم استرجاع سجل دورة الاشتراك.',
+            BillingSubscriptionEventResource::collection(
+                $this->self->subscriptionEvents($subscriptionId, $this->requireCurrentUser())
+            )
         );
     }
 
