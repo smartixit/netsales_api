@@ -339,6 +339,14 @@ class BillingSelfService
                 'verified_payments' => $money($paid),
                 'credits_applied_minor' => $credited,
                 'credits_applied' => $money($credited),
+                'opening_refundable_credit_minor' => max(0, $openingRefundableCredit),
+                'opening_refundable_credit' => $money(max(0, $openingRefundableCredit)),
+                'refundable_credit_issued_minor' => (int) ($refundableNotePeriod->get($id)->amount_minor ?? 0),
+                'refundable_credit_issued' => $money((int) ($refundableNotePeriod->get($id)->amount_minor ?? 0)),
+                'refunds_processed_minor' => (int) ($refundPeriod->get($id)->amount_minor ?? 0),
+                'refunds_processed' => $money((int) ($refundPeriod->get($id)->amount_minor ?? 0)),
+                'closing_refundable_credit_minor' => $closingRefundableCredit,
+                'closing_refundable_credit' => $money($closingRefundableCredit),
                 'closing_receivable_minor' => $closingReceivable,
                 'closing_receivable' => $money($closingReceivable),
                 'closing_customer_credit_minor' => $closingCustomerCredit,
@@ -348,6 +356,8 @@ class BillingSelfService
                     'invoices_issued' => (int) ($invoicePeriod->get($id)->item_count ?? 0),
                     'payments_verified' => (int) ($paymentPeriod->get($id)->item_count ?? 0),
                     'credit_notes_issued' => (int) ($creditPeriod->get($id)->item_count ?? 0),
+                    'refundable_credit_notes_issued' => (int) ($refundableNotePeriod->get($id)->item_count ?? 0),
+                    'refunds_processed' => (int) ($refundPeriod->get($id)->item_count ?? 0),
                 ],
             ];
         })->values()->all();
