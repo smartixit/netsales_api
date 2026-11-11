@@ -181,6 +181,17 @@ class BillingSelfService
     public function statement(int $accountId, array $filters, User $actor): array
     {
         $account = $this->accounts->ownedAccount($accountId, $actor);
+
+        return $this->statementForAuthorizedAccount($account, $filters);
+    }
+
+    /**
+     * For an already-authorized asynchronous report execution. The caller must
+     * establish both account ownership and current network scope before calling.
+     */
+    public function statementForAuthorizedAccount(BillingAccount $account, array $filters): array
+    {
+        $accountId = (int) $account->billing_account_id;
         $from = CarbonImmutable::parse($filters['from'] ?? CarbonImmutable::now('Asia/Aden')->startOfMonth())
             ->startOfDay();
         $to = CarbonImmutable::parse($filters['to'] ?? CarbonImmutable::now('Asia/Aden'))

@@ -16,8 +16,8 @@ class ReportExecutionService
     public function __construct(
         private ReportDefinitionRegistry $definitions,
         private BillingSelfService $billingSelfService,
-        private BillingAccountService $billingAccounts,
-        private BillingDashboardService $billingDashboard
+        private BillingDashboardService $billingDashboard,
+        private ReportAuthorizationService $authorization
     ) {}
 
     /**
@@ -29,6 +29,8 @@ class ReportExecutionService
     public function execute(ReportRun $run): array
     {
         $definition = $this->definitions->get($run->scope_type, $run->report_key);
+        $actor = User::query()->findOrFail((int) $run->requested_by);
+        $this->authorization->authorizeRun($actor, $run);
         $filters = $run->filters ?? [];
         $limit = (int) $definition['max_records'];
 
@@ -98,18 +100,14 @@ class ReportExecutionService
         array $filters
     ): array {
         $accountId = (int) $filters['billing_account_id'];
-        $account = $this->billingAccounts->ownedAccountForNetwork(
-            $accountId,
-            (int) $run->network_id
-        );
+        $account = BillingAccount::query()
+            ->where('billing_account_id', $accountId)
+            ->where('network_id', (int) $run->network_id)
+            ->firstOrFail();
 
-        // BillingSelfService performs actor-level authorization at request time;
-        // the queued run has already been authorized and is scoped to that
-        // exact network and immutable billing-account identifier.
-        $statement = $this->billingSelfService->statementForAuthorizedAccount(
-            $account,
-            $filters
-        );
+        // The report worker re-authorizes the requesting actor against the
+        // persisted run scope before reaching this method.
+        $statement = $this->billingSelfService->statementForAuthorizedAccount($account, $filters);
 
         return $this->snapshot($run, $definition, $statement, count($statement['balances_by_currency'] ?? []), false, [
             'currency_aggregation' => 'SEPARATE_ONLY_NO_CROSS_CURRENCY_TOTAL',
@@ -125,15 +123,11 @@ class ReportExecutionService
         $request = Request::create('/api/v1/platform/reports/snapshot', 'GET');
 
         return match ($run->report_key) {
-            'billing-overview' => $this->snapshot(
+            'billing-overview' => $this->platformOverviewSnapshot(
                 $run,
                 $definition,
-                $this->billingDashboard->overview(
-                    isset($filters['currency_id']) ? (int) $filters['currency_id'] : null
-                ),
-                1,
-                false,
-                ['currency_aggregation' => 'SEPARATE_BY_CURRENCY']
+                $filters,
+                $request
             ),
             'billing-subscriptions' => $this->collectionSnapshot(
                 $run,
@@ -178,7 +172,7 @@ class ReportExecutionService
                 $definition,
                 BillingPayment::query()
                     ->with(['invoice.billingAccount.network', 'currency', 'paymentMethod', 'treasuryAccount', 'proofs'])
-                    ->when(! empty($filters['network_id']), fn (Builder $query) => $query->where('billing_account_id', function ($subquery) use ($filters): void {
+                    ->when(! empty($filters['network_id']), fn (Builder $query) => $query->whereIn('billing_account_id', function ($subquery) use ($filters): void {
                         $subquery->select('billing_account_id')->from('billing_accounts')->where('network_id', (int) $filters['network_id']);
                     }))
                     ->when(! empty($filters['billing_account_id']), fn (Builder $query) => $query->where('billing_account_id', (int) $filters['billing_account_id']))
@@ -208,6 +202,31 @@ class ReportExecutionService
             ),
             default => throw new \InvalidArgumentException('Unsupported platform report definition.'),
         };
+    }
+
+    private function platformOverviewSnapshot(
+        ReportRun $run,
+        array $definition,
+        array $filters,
+        Request $request
+    ): array {
+        $data = $this->billingDashboard->overview(
+            isset($filters['currency_id']) ? (int) $filters['currency_id'] : null
+        );
+        $queue = $data['payment_review_queue'] ?? collect();
+        $data['payment_review_queue'] = collect($queue)
+            ->map(static fn ($payment): array => (new BillingPaymentResource($payment))->toArray($request))
+            ->values()
+            ->all();
+
+        return $this->snapshot(
+            $run,
+            $definition,
+            $data,
+            1,
+            false,
+            ['currency_aggregation' => 'SEPARATE_BY_CURRENCY']
+        );
     }
 
     private function collectionSnapshot(
