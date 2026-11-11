@@ -5,6 +5,8 @@ use App\Services\Billing\BillingRenewalService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use App\Models\ReportRun;
+use Illuminate\Support\Facades\Storage;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -19,6 +21,32 @@ Artisan::command('billing:process-dunning', function (BillingDunningService $dun
     $result = $dunning->process((int) config('billing.dunning_batch_size', 100));
     $this->info("تم إدراج {$result['reminders_queued']} تذكيراً بالفواتير و{$result['renewal_alerts_queued']} تنبيهاً بالتجديد في Outbox وتعليق {$result['subscriptions_suspended']} اشتراكاً بعد انتهاء السماح.");
 })->purpose('معالجة التذكيرات المالية وتعليق الاشتراكات المتأخرة بعد فترة السماح');
+
+Artisan::command('reports:purge-expired-artifacts', function () {
+    $purged = 0;
+
+    ReportRun::query()
+        ->whereNotNull('artifact_path')
+        ->whereNotNull('expires_at')
+        ->where('expires_at', '<=', now('Asia/Aden'))
+        ->orderBy('report_run_id')
+        ->chunkById(100, function ($runs) use (&$purged): void {
+            foreach ($runs as $run) {
+                if ($run->artifact_path !== null) {
+                    Storage::disk('protected')->delete($run->artifact_path);
+                }
+
+                $run->forceFill([
+                    'status' => 'EXPIRED',
+                    'artifact_path' => null,
+                ])->save();
+
+                $purged++;
+            }
+        }, 'report_run_id');
+
+    $this->info("تم تنظيف {$purged} ملف تقرير منتهي الصلاحية.");
+})->purpose('حذف ملفات التقارير المحمية المنتهية مع الاحتفاظ بسجل التنفيذ وبياناته الوصفية');
 
 // ═══════════════════════════════════════════════════════════════════════
 // جدولة المهام الدورية وفق توقيت صنعاء (Asia/Aden Schedule Registry)
@@ -62,6 +90,9 @@ Schedule::command('schedule:catchup')->everyFifteenMinutes();
 
 // 11. معالجة أحداث صندوق الإرسال اللحظي المالي (Transactional Outbox Processor كل دقيقة)
 Schedule::command('outbox:process')->everyMinute()->withoutOverlapping();
+
+// 11. تنظيف ملفات التقارير المحمية المنتهية مع الاحتفاظ بسجل التنفيذ
+Schedule::command('reports:purge-expired-artifacts')->dailyAt('02:45')->withoutOverlapping()->timezone('Asia/Aden');
 
 // 11. تصريف ومعالجة طوابير النظام تلقائياً عند تشغيل الجدولة القياسية
 if (config('queue.default') !== 'sync') {
