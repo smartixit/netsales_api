@@ -28,6 +28,7 @@ class PosWalletResource extends JsonResource
             'wallet_balance' => (float) $this->wallet_balance,
             'credit_limit' => $this->credit_limit !== null ? (float) $this->credit_limit : null,
             'available_overdraft_capacity' => $this->getAvailableOverdraftCapacity(),
+            'total_purchasing_power' => $this->getTotalPurchasingPower(),
             'status' => (bool) $this->status,
             'accounting_status' => $this->getAccountingStatus(),
             'accounting_status_label' => $this->getAccountingStatusLabel(),

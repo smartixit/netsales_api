@@ -204,6 +204,17 @@ class PosWallet extends Model
         return max(0.0, $limit + $balance);
     }
 
+    /**
+     * إجمالي القدرة الشرائية المتاحة المعتمدة رسمياً (الرصيد النقدي + السقف الائتماني المتاح).
+     */
+    public function getTotalPurchasingPower(): float
+    {
+        $balance = (float) $this->wallet_balance;
+        $overdraft = $this->getAvailableOverdraftCapacity();
+
+        return round($balance + $overdraft, 2);
+    }
+
     // Operations
     public function deposit(float $amount, string $statement, int $userId): PosWalletLog
     {
