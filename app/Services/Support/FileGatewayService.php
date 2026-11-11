@@ -4,6 +4,8 @@ namespace App\Services\Support;
 
 use App\Models\ExpenseAttachment;
 use App\Models\SubscriptionPlanRequest;
+use App\Models\ReportRun;
+use App\Services\Reporting\ReportAuthorizationService;
 use App\Models\User;
 use App\Services\SessionValidatorService;
 use App\Services\SystemLoggerService;
@@ -122,6 +124,24 @@ class FileGatewayService
         }
 
         if ($user->isSuperAdmin()) {
+            return;
+        }
+
+        // Report artifacts are immutable, protected, and re-authorized at
+        // download time against the exact tenant and permission saved on run.
+        if (str_starts_with($cleanPath, 'report-artifacts/')) {
+            $reportRun = ReportRun::query()
+                ->where('artifact_path', $cleanPath)
+                ->where('status', 'COMPLETED')
+                ->first();
+
+            if (! $reportRun ||
+                ($reportRun->expires_at !== null && $reportRun->expires_at->isPast())) {
+                throw new HttpException(404, 'ملف التقرير غير موجود أو انتهت صلاحيته.');
+            }
+
+            app(ReportAuthorizationService::class)->authorizeRun($user, $reportRun);
+
             return;
         }
 
