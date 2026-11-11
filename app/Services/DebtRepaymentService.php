@@ -423,6 +423,18 @@ class DebtRepaymentService
                 }
             });
 
+            // 8. حساب المديونية المتبقية الإجمالية على نقطة البيع بعد السداد
+            $remainingDebtAfter = round(
+                (float) SaleInvoice::where('network_id', $networkId)
+                    ->where('pos_id', $posId)
+                    ->where('remaining_amount', '>', 0)
+                    ->sum('remaining_amount'),
+                2
+            );
+
+            $repayment->remaining_debt_after = $remainingDebtAfter;
+            $repayment->pos_balance_after = $newPosBalance;
+
             return $repayment->load(['allocations.invoice', 'pos', 'network', 'createdBy']);
         });
     }

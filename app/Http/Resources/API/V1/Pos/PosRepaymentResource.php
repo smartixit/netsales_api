@@ -34,6 +34,8 @@ class PosRepaymentResource extends JsonResource
             'reversal_reason' => $this->reversal_reason,
             'reversal_repayment_id' => $this->reversal_repayment_id,
             'created_at' => $this->created_at?->toDateTimeString(),
+            'remaining_debt_after' => isset($this->remaining_debt_after) ? (float) $this->remaining_debt_after : null,
+            'pos_balance_after' => isset($this->pos_balance_after) ? (float) $this->pos_balance_after : null,
             'allocations' => PosRepaymentAllocationResource::collection($this->whenLoaded('allocations')),
             'network' => new NetworkResource($this->whenLoaded('network')),
             'pos' => new PosResource($this->whenLoaded('pos')),
