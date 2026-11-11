@@ -123,12 +123,9 @@ class FileGatewayService
             throw new HttpException(401, 'يجب تسجيل الدخول للوصول إلى هذا الملف المحمي.');
         }
 
-        if ($user->isSuperAdmin()) {
-            return;
-        }
-
         // Report artifacts are immutable, protected, and re-authorized at
         // download time against the exact tenant and permission saved on run.
+        // The platform super-admin bypass below must not cross scope boundaries.
         if (str_starts_with($cleanPath, 'report-artifacts/')) {
             $reportRun = ReportRun::query()
                 ->where('artifact_path', $cleanPath)
@@ -142,6 +139,10 @@ class FileGatewayService
 
             app(ReportAuthorizationService::class)->authorizeRun($user, $reportRun);
 
+            return;
+        }
+
+        if ($user->isSuperAdmin()) {
             return;
         }
 

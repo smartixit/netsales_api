@@ -55,7 +55,7 @@ class ReportExecutionService
                 $run,
                 $definition,
                 SaleInvoice::query()
-                    ->with(['network', 'pos', 'createdBy', 'items'])
+                    ->with(['network', 'pos', 'request', 'createdBy', 'items'])
                     ->where('network_id', $networkId)
                     ->when(! empty($filters['from']), fn (Builder $query) => $query->whereDate('invoice_date', '>=', $filters['from']))
                     ->when(! empty($filters['to']), fn (Builder $query) => $query->whereDate('invoice_date', '<=', $filters['to']))
