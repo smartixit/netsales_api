@@ -111,6 +111,62 @@ class BillingSelfService
         return $query->orderByDesc('payment_id')->cursorPaginate($perPage);
     }
 
+    public function creditNotes(int $accountId, array $filters, User $actor): Collection|CursorPaginator
+    {
+        $this->accounts->ownedAccount($accountId, $actor);
+
+        $query = BillingCreditNote::query()
+            ->with(['currency', 'invoice', 'lines', 'refunds.currency'])
+            ->where('billing_account_id', $accountId);
+
+        if (! empty($filters['status'])) {
+            $query->where('status', strtoupper((string) $filters['status']));
+        }
+
+        $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
+
+        if (! empty($filters['all'])) {
+            return $query->orderBy('credit_note_id')->get();
+        }
+
+        return $query->orderByDesc('credit_note_id')->cursorPaginate($perPage);
+    }
+
+    public function refunds(int $accountId, array $filters, User $actor): Collection|CursorPaginator
+    {
+        $this->accounts->ownedAccount($accountId, $actor);
+
+        $query = BillingRefund::query()
+            ->with(['currency', 'payment.invoice', 'creditNote'])
+            ->whereHas('payment', fn ($payment) => $payment->where('billing_account_id', $accountId));
+
+        if (! empty($filters['status'])) {
+            $query->where('status', strtoupper((string) $filters['status']));
+        }
+
+        $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
+
+        if (! empty($filters['all'])) {
+            return $query->orderBy('refund_id')->get();
+        }
+
+        return $query->orderByDesc('refund_id')->cursorPaginate($perPage);
+    }
+
+    public function subscriptionEvents(int $subscriptionId, User $actor): CursorPaginator
+    {
+        $subscription = BillingSubscription::query()
+            ->with('billingAccount')
+            ->findOrFail($subscriptionId);
+
+        $this->authorization->assertBillingAccountAccess($actor, $subscription->billingAccount);
+
+        return $subscription->events()
+            ->orderByDesc('occurred_at')
+            ->orderByDesc('event_id')
+            ->cursorPaginate(30);
+    }
+
     public function assertInvoiceAccess(int $invoiceId, User $actor): BillingInvoice
     {
         $invoice = BillingInvoice::query()
