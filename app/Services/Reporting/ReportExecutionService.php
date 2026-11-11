@@ -4,8 +4,8 @@ namespace App\Services\Reporting;
 
 use App\Http\Resources\API\V1\Expense\ExpenseResource;
 use App\Http\Resources\API\V1\SaleInvoice\SaleInvoiceResource;
-use App\Http\Resources\API\V1\Billing\{BillingInvoiceResource, BillingPaymentResource, BillingSubscriptionResource, LedgerJournalEntryResource};
-use App\Models\{BillingAccount, BillingInvoice, BillingPayment, BillingSubscription, Expense, LedgerJournalEntry, ReportRun, SaleInvoice, User};
+use App\Http\Resources\API\V1\Billing\{BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingRefundResource, BillingSubscriptionResource, LedgerJournalEntryResource};
+use App\Models\{BillingAccount, BillingCreditNote, BillingInvoice, BillingPayment, BillingRefund, BillingSubscription, Expense, LedgerJournalEntry, ReportRun, SaleInvoice, User};
 use App\Services\Billing\{BillingDashboardService, BillingSelfService};
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;

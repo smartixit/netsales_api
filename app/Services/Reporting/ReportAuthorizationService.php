@@ -2,7 +2,6 @@
 
 namespace App\Services\Reporting;
 
-use App\Enums\RoleScope;
 use App\Models\ReportRun;
 use App\Models\User;
 use App\Services\Billing\BillingAuthorizationService;
