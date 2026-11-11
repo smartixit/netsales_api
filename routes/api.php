@@ -615,6 +615,12 @@ Route::prefix('v1')->group(function () {
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.invoices.index');
                 Route::get('accounts/{billingAccountId}/payments', [BillingSelfServiceController::class, 'payments'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.payments.index');
+                Route::get('accounts/{billingAccountId}/credit-notes', [BillingSelfServiceController::class, 'creditNotes'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.credit_notes.index');
+                Route::get('accounts/{billingAccountId}/refunds', [BillingSelfServiceController::class, 'refunds'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.refunds.index');
+                Route::get('subscriptions/{subscriptionId}/events', [BillingSelfServiceController::class, 'subscriptionEvents'])
+                    ->whereNumber('subscriptionId')->name('api.v1.billing.subscriptions.events.index');
                 Route::get('accounts/{billingAccountId}/payment-methods', [BillingSelfServiceController::class, 'paymentMethods'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.payment_methods');
                 Route::get('invoices/{invoiceId}', [BillingSelfServiceController::class, 'invoice'])
