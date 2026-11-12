@@ -136,6 +136,7 @@ class OperationalReportController extends BaseController
             'report_type_label' => $export->report_type->label(),
             'status' => $export->status->value,
             'status_label' => $export->status->label(),
+            'failure_code' => $export->failure_code,
             'record_count' => $export->record_count,
             'artifact_size' => $export->artifact_size,
             'expires_at' => $export->expires_at?->toIso8601String(),
