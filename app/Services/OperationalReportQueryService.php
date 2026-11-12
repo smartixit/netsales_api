@@ -98,39 +98,65 @@ class OperationalReportQueryService
     {
         if ($posId === null) {
             $wallet = NetworkWallet::query()->where('network_id', $networkId)->first();
-            if (! $wallet) {
-                return ['record_count' => 0, 'deposits' => '0.00', 'withdrawals' => '0.00'];
-            }
-            $query = $wallet->logs()->getQuery();
             $type = OperationalReportType::NETWORK_WALLET;
             $operationColumn = 'log_operation';
+            $query = $wallet?->logs()->getQuery();
         } else {
             $wallet = PosWallet::query()
                 ->where('network_id', $networkId)
                 ->where('pos_id', $posId)
                 ->first();
-            if (! $wallet) {
-                return ['record_count' => 0, 'deposits' => '0.00', 'withdrawals' => '0.00'];
-            }
-            $query = $wallet->logs()->getQuery();
             $type = OperationalReportType::POS_WALLET;
             $operationColumn = 'log_operation_type';
+            $query = $wallet?->logs()->getQuery();
         }
 
-        $query = $query->when(
-            $filters['status'] ?? null,
-            fn (Builder $q, string $v): Builder => $q->where($operationColumn, $v)
-        );
-        $query = $this->applySearch($query, $type, $filters['search'] ?? null);
-        $query = $this->applyDates($query, 'log_date', $filters);
+        if (! $wallet || ! $query) {
+            return [
+                'record_count' => 0,
+                'deposits' => '0.00',
+                'withdrawals' => '0.00',
+                'opening_balance' => '0.00',
+                'closing_balance' => '0.00',
+                'current_balance' => '0.00',
+                'ledger_reconciles' => true,
+                'currency_code' => 'YER',
+            ];
+        }
 
-        $deposits = clone $query;
-        $withdrawals = clone $query;
+        $allLogs = clone $query;
+        $allLogs->when(
+            $filters['from_date'] ?? null,
+            fn (Builder $q, string $date): Builder => $q->where('log_date', '>=', Carbon::parse($date)->startOfDay())
+        );
+        $netAfterStart = (float) (clone $allLogs)->selectRaw(
+            "COALESCE(SUM(CASE WHEN {$operationColumn} = 'DEPOSIT' THEN log_amount ELSE -log_amount END), 0) as net_amount"
+        )->value('net_amount');
+
+        $periodQuery = clone $query;
+        $periodQuery = $periodQuery->when(
+            $filters['status'] ?? null,
+            fn (Builder $q, string $value): Builder => $q->where($operationColumn, $value)
+        );
+        $periodQuery = $this->applySearch($periodQuery, $type, $filters['search'] ?? null);
+        $periodQuery = $this->applyDates($periodQuery, 'log_date', $filters);
+
+        $deposits = (clone $periodQuery)->where($operationColumn, 'DEPOSIT')->sum('log_amount');
+        $withdrawals = (clone $periodQuery)->where($operationColumn, 'WITHDRAW')->sum('log_amount');
+        $currentBalance = (float) $wallet->wallet_balance;
+        $openingBalance = round($currentBalance - $netAfterStart, 2);
+        $closingBalance = round($openingBalance + (float) $deposits - (float) $withdrawals, 2);
 
         return [
-            'record_count' => (clone $query)->count(),
-            'deposits' => $deposits->where($operationColumn, 'DEPOSIT')->sum('log_amount'),
-            'withdrawals' => $withdrawals->where($operationColumn, 'WITHDRAW')->sum('log_amount'),
+            'record_count' => (clone $periodQuery)->count(),
+            'deposits' => number_format((float) $deposits, 2, '.', ''),
+            'withdrawals' => number_format((float) $withdrawals, 2, '.', ''),
+            'opening_balance' => number_format($openingBalance, 2, '.', ''),
+            'closing_balance' => number_format($closingBalance, 2, '.', ''),
+            'current_balance' => number_format($currentBalance, 2, '.', ''),
+            'ledger_reconciles' => abs($closingBalance - $currentBalance) < 0.005
+                && empty($filters['to_date']),
+            'currency_code' => 'YER',
         ];
     }
 
