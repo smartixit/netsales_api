@@ -58,6 +58,17 @@ final class OperationalDocumentSnapshotService
                 $payload,
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR
             );
+            $existing = OperationalDocumentSnapshot::query()
+                ->where('document_type', $documentType)
+                ->where('document_id', $documentId)
+                ->where('template_id', $templateId)
+                ->where('template_version', $templateVersion)
+                ->where('snapshot_sha256', hash('sha256', $encoded))
+                ->first();
+            if ($existing) {
+                return $existing;
+            }
+
             $currencyCode = $this->resolveCurrency($networkId, $posId);
 
             return OperationalDocumentSnapshot::query()->create([
