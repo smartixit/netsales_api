@@ -486,6 +486,7 @@ Route::prefix('v1')->group(function () {
         // ==========================================
         // Operational reports — Network / POS workspaces only.
         Route::prefix('reports')->middleware(['throttle:api-read', 'operational.scope'])->group(function () {
+            Route::get('catalog', [OperationalReportController::class, 'catalog'])->name('api.v1.reports.catalog');
             Route::get('/', [OperationalReportController::class, 'show'])
                 ->name('api.v1.reports.show');
             Route::get('summary', [OperationalReportController::class, 'summary'])
