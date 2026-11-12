@@ -167,7 +167,8 @@ class OperationalReportQueryService
             ->where('network_id', $networkId)
             ->where('remaining_amount', '>', 0)
             ->where('payment_status', '!=', 'PAID')
-            ->when($posId, fn (Builder $q): Builder => $q->where('pos_id', $posId));
+            ->when($posId, fn (Builder $q): Builder => $q->where('pos_id', $posId))
+            ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('payment_status', $v));
         $query = $this->applySearch($query, OperationalReportType::DEBT_AGING, $filters['search'] ?? null);
         $query = $this->applyDates($query, 'invoice_date', $filters);
         $now = Carbon::now('Asia/Aden');
