@@ -6,7 +6,7 @@ use App\Enums\OperationalReportExportStatus;
 use App\Models\OperationalReportExport;
 use App\Models\User;
 use App\Services\OperationalReportAuthorizationService;
-use App\Services\OperationalReportQueryService;
+use App\Services\Reports\OperationalReportProviderRegistry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -29,7 +29,7 @@ class GenerateOperationalReportExport implements ShouldQueue
 
     public function handle(
         OperationalReportAuthorizationService $authorization,
-        OperationalReportQueryService $queries
+        OperationalReportProviderRegistry $providers
     ): void {
         // Claim the export row under a database lock. A status read followed by
         // an ordinary update is not atomic: two workers can both observe QUEUED
@@ -93,7 +93,7 @@ class GenerateOperationalReportExport implements ShouldQueue
             $columns = [];
             $recordCount = 0;
             do {
-                $page = $queries->build($user, $export->report_type, (int) $export->network_id, $export->pos_id ? (int) $export->pos_id : null, $filters);
+                $page = $providers->get($export->report_type)->build($user, (int) $export->network_id, $export->pos_id ? (int) $export->pos_id : null, $filters);
                 if (is_array($page)) {
                     $items = collect($page);
                     $nextCursor = null;
@@ -137,39 +137,7 @@ class GenerateOperationalReportExport implements ShouldQueue
             // UTF-8 BOM allows spreadsheet applications to recognize Arabic text.
             fwrite($stream, "\xEF\xBB\xBF");
             if ($recordCount === 0) {
-                $columns = array_fill_keys(match ($export->report_type) {
-                    \App\Enums\OperationalReportType::SALES => [
-                        'invoice_id', 'invoice_uuid', 'invoice_date', 'sale_type',
-                        'payment_status', 'invoice_total_amount', 'paid_amount',
-                        'remaining_amount', 'network_id', 'pos_id',
-                    ],
-                    \App\Enums\OperationalReportType::EXPENSES => [
-                        'expense_id', 'expense_uuid', 'expense_date',
-                        'expense_total_amount', 'network_id', 'created_by',
-                    ],
-                    \App\Enums\OperationalReportType::NETWORK_WALLET => [
-                        'log_id', 'log_date', 'log_operation', 'log_amount',
-                        'log_statement', 'network_wallet_id',
-                    ],
-                    \App\Enums\OperationalReportType::POS_WALLET => [
-                        'log_id', 'log_date', 'log_operation_type', 'log_amount',
-                        'log_statement', 'pos_wallet_id',
-                    ],
-                    \App\Enums\OperationalReportType::REPAYMENTS => [
-                        'repayment_id', 'repayment_uuid', 'repayment_date',
-                        'amount', 'status', 'reference_number', 'notes',
-                    ],
-                    \App\Enums\OperationalReportType::DEBT_AGING => [
-                        'invoice_id', 'invoice_uuid', 'invoice_date',
-                        'invoice_total_amount', 'paid_amount', 'remaining_amount',
-                        'payment_status', 'network_id', 'pos_id',
-                    ],
-                    \App\Enums\OperationalReportType::REQUESTS => [
-                        'request_id', 'request_uuid', 'request_date', 'sale_type',
-                        'status', 'request_total_amount', 'request_note',
-                        'network_id', 'pos_id',
-                    ],
-                }, true);
+                $columns = $providers->get($export->report_type)->emptyExportColumns();
             }
             $columnNames = array_keys($columns);
             fputcsv($stream, $columnNames);
