@@ -31,6 +31,7 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
             ['id' => 'balance_before', 'label' => 'الرصيد قبل الحركة', 'data_type' => 'decimal'],
             ['id' => 'balance_after', 'label' => 'الرصيد بعد الحركة', 'data_type' => 'decimal'],
             ['id' => 'currency_code', 'label' => 'العملة', 'data_type' => 'text'],
+            ['id' => 'is_voided', 'label' => 'قيد محذوف ناعماً', 'data_type' => 'boolean'],
             ['id' => 'log_statement', 'label' => 'البيان', 'data_type' => 'text'],
         ];
     }
@@ -64,7 +65,7 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
     {
         $pattern = $this->pattern($filters);
         $wallet = $this->wallet($networkId, $posId);
-        $query = PosWalletLog::query()->with(['wallet', 'createdBy'])
+        $query = PosWalletLog::withTrashed()->with(['wallet', 'createdBy'])
             ->where('wallet_id', $wallet->wallet_id)
             ->when($filters['status'] ?? null, fn (Builder $q, string $value): Builder => $q->where('log_operation_type', $value))
             ->when($pattern !== null, fn (Builder $q): Builder => $q->where('log_statement', 'like', $pattern));
@@ -74,7 +75,7 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
 
     private function periodBalances(PosWallet $wallet, array $filters): array
     {
-        $ledger = PosWalletLog::query()->where('wallet_id', $wallet->wallet_id);
+        $ledger = PosWalletLog::withTrashed()->where('wallet_id', $wallet->wallet_id);
         $opening = (float) $wallet->opening_balance;
         if (! empty($filters['from_date'])) {
             $previous = (clone $ledger)
@@ -140,6 +141,7 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
             'balance_before' => 'الرصيد قبل الحركة',
             'balance_after' => 'الرصيد بعد الحركة',
             'currency_code' => 'العملة',
+            'is_voided' => 'قيد محذوف ناعماً',
             'log_statement' => 'البيان',
             'wallet_uuid' => 'مرجع المحفظة',
         ];
@@ -155,6 +157,7 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
             'balance_before' => $this->amountValue($row->balance_before),
             'balance_after' => $this->amountValue($row->balance_after),
             'currency_code' => $row->currency_code,
+            'is_voided' => $row->trashed(),
             'log_statement' => $row->log_statement,
             'wallet_uuid' => $row->wallet?->wallet_uuid,
         ];
