@@ -88,7 +88,7 @@ class PosWalletLogRepository extends BaseRepository implements PosWalletLogRepos
      */
     public function createLog(int $walletId, WalletOperationType|string $operation, float $amount, string $statement, ?int $createdBy = null, ?string $date = null, ?int $transferId = null): PosWalletLog
     {
-        $wallet = \App\Models\\PosWallet::query()->lockForUpdate()->findOrFail($walletId);
+        $wallet = \App\Models\PosWallet::query()->lockForUpdate()->findOrFail($walletId);
         $operationValue = $operation instanceof WalletOperationType ? $operation->value : $operation;
         $balanceAfter = round((float) $wallet->wallet_balance, 2);
         $balanceBefore = match ($operationValue) {
