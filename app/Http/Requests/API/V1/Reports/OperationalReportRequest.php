@@ -23,6 +23,7 @@ class OperationalReportRequest extends FormRequest
             'to_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from_date'],
             'sale_type' => ['nullable', 'in:CASH,CREDIT'],
             'status' => ['nullable', 'string', 'max:32'],
+            'search' => ['nullable', 'string', 'max:120'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
             'cursor' => ['nullable', 'string', 'max:2048'],
         ];
