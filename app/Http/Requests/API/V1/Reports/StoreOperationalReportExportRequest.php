@@ -23,6 +23,7 @@ class StoreOperationalReportExportRequest extends FormRequest
             'to_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from_date'],
             'sale_type' => ['nullable', 'in:CASH,CREDIT'],
             'status' => ['nullable', 'string', 'max:32'],
+            'search' => ['nullable', 'string', 'max:120'],
         ];
     }
 }
