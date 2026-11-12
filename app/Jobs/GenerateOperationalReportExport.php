@@ -46,12 +46,12 @@ class GenerateOperationalReportExport implements ShouldQueue
             $filters = $export->filters ?? [];
             $filters['per_page'] = 100;
             $filters['cursor'] = null;
-            $stream = fopen('php://temp', 'w+b');
-            if ($stream === false) {
+            $rowStream = fopen('php://temp', 'w+b');
+            if ($rowStream === false) {
                 throw new \RuntimeException('REPORT_EXPORT_STREAM_UNAVAILABLE');
             }
-            fwrite($stream, "\\xEF\\xBB\\xBF");
-            $headerWritten = false;
+
+            $columns = [];
             $recordCount = 0;
             do {
                 $page = $queries->build($user, $export->report_type, (int) $export->network_id, $export->pos_id ? (int) $export->pos_id : null, $filters);
@@ -62,27 +62,57 @@ class GenerateOperationalReportExport implements ShouldQueue
                     $items = collect($page->items());
                     $nextCursor = $page->nextCursor()?->encode();
                 }
+
                 foreach ($items as $row) {
                     $recordCount++;
                     if ($recordCount > 50000) {
                         throw new \RuntimeException('REPORT_EXPORT_LIMIT_EXCEEDED');
                     }
-                    $values = $row instanceof \Illuminate\Database\Eloquent\Model ? $row->toArray() : (array) $row;
-                    $flat = [];
-                    array_walk_recursive($values, function ($value, $key) use (&$flat): void {
-                        if (is_scalar($value) || $value === null) {
-                            $flat[(string) $key] = $value;
-                        }
-                    });
-                    if (! $headerWritten) {
-                        fputcsv($stream, array_keys($flat));
-                        $headerWritten = true;
+
+                    $values = $row instanceof \Illuminate\Database\Eloquent\Model
+                        ? $row->toArray()
+                        : (array) $row;
+                    $flat = $this->flattenCsvValues($values);
+                    foreach (array_keys($flat) as $column) {
+                        $columns[$column] = true;
                     }
-                    fputcsv($stream, array_values($flat));
+
+                    $encoded = json_encode(
+                        $flat,
+                        JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR
+                    );
+                    if (fwrite($rowStream, $encoded . "\n") === false) {
+                        throw new \RuntimeException('REPORT_EXPORT_STREAM_WRITE_FAILED');
+                    }
                 }
+
                 $filters['cursor'] = $nextCursor;
             } while ($nextCursor !== null);
-            
+
+            $stream = fopen('php://temp', 'w+b');
+            if ($stream === false) {
+                fclose($rowStream);
+                throw new \RuntimeException('REPORT_EXPORT_STREAM_UNAVAILABLE');
+            }
+
+            // UTF-8 BOM allows spreadsheet applications to recognize Arabic text.
+            fwrite($stream, "\xEF\xBB\xBF");
+            $columnNames = array_keys($columns);
+            if ($recordCount > 0) {
+                fputcsv($stream, $columnNames);
+                rewind($rowStream);
+
+                while (($line = fgets($rowStream)) !== false) {
+                    $flat = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+                    $csvRow = [];
+                    foreach ($columnNames as $column) {
+                        $csvRow[] = $this->safeCsvValue($flat[$column] ?? null);
+                    }
+                    fputcsv($stream, $csvRow);
+                }
+            }
+
+            fclose($rowStream);
             rewind($stream);
             $csv = stream_get_contents($stream);
             fclose($stream);
@@ -110,5 +140,46 @@ class GenerateOperationalReportExport implements ShouldQueue
             ]);
             throw $exception;
         }
+    }
+
+    /**
+     * Flattens nested model attributes using full paths so identically named
+     * fields from different relationships cannot overwrite one another.
+     */
+    private function flattenCsvValues(array $values, string $prefix = ''): array
+    {
+        $flat = [];
+
+        foreach ($values as $key => $value) {
+            $column = $prefix === '' ? (string) $key : $prefix.'.'.$key;
+
+            if ($value instanceof \BackedEnum) {
+                $value = $value->value;
+            } elseif ($value instanceof \DateTimeInterface) {
+                $value = $value->format(DATE_ATOM);
+            }
+
+            if (is_array($value)) {
+                $flat += $this->flattenCsvValues($value, $column);
+            } elseif (is_scalar($value) || $value === null) {
+                $flat[$column] = $value;
+            }
+        }
+
+        return $flat;
+    }
+
+    /**
+     * Neutralizes spreadsheet formulas without changing numeric values.
+     */
+    private function safeCsvValue(mixed $value): mixed
+    {
+        if (! is_string($value) || $value === '' || is_numeric($value)) {
+            return $value;
+        }
+
+        return preg_match('/^[\x00-\x20]*[=+\-@]/', $value) === 1
+            ? "'".$value
+            : $value;
     }
 }
