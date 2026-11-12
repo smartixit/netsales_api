@@ -31,6 +31,7 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
             ['id' => 'balance_before', 'label' => 'الرصيد قبل الحركة', 'data_type' => 'decimal'],
             ['id' => 'balance_after', 'label' => 'الرصيد بعد الحركة', 'data_type' => 'decimal'],
             ['id' => 'currency_code', 'label' => 'العملة', 'data_type' => 'text'],
+            ['id' => 'is_voided', 'label' => 'قيد محذوف ناعماً', 'data_type' => 'boolean'],
             ['id' => 'log_statement', 'label' => 'البيان', 'data_type' => 'text'],
             ['id' => 'created_by_name', 'label' => 'نفذها', 'data_type' => 'text'],
         ];
@@ -62,7 +63,7 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
         $pattern = $this->pattern($filters);
         $wallet = $this->wallet($networkId);
 
-        $query = NetworkWalletLog::query()->with(['wallet', 'createdBy'])
+        $query = NetworkWalletLog::withTrashed()->with(['wallet', 'createdBy'])
             ->where('wallet_id', $wallet->wallet_id)
             ->when($filters['status'] ?? null, fn (Builder $q, string $value): Builder => $q->where('log_operation', $value))
             ->when($pattern !== null, fn (Builder $q): Builder => $q->where('log_statement', 'like', $pattern));
@@ -72,7 +73,7 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
 
     private function periodBalances(NetworkWallet $wallet, array $filters): array
     {
-        $ledger = NetworkWalletLog::query()->where('wallet_id', $wallet->wallet_id);
+        $ledger = NetworkWalletLog::withTrashed()->where('wallet_id', $wallet->wallet_id);
         $opening = (float) $wallet->opening_balance;
         if (! empty($filters['from_date'])) {
             $previous = (clone $ledger)
@@ -137,6 +138,7 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
             'balance_before' => 'الرصيد قبل الحركة',
             'balance_after' => 'الرصيد بعد الحركة',
             'currency_code' => 'العملة',
+            'is_voided' => 'قيد محذوف ناعماً',
             'log_statement' => 'البيان',
             'wallet_uuid' => 'مرجع المحفظة',
             'created_by_name' => 'نفذها',
@@ -153,6 +155,7 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
             'balance_before' => $this->amountValue($row->balance_before),
             'balance_after' => $this->amountValue($row->balance_after),
             'currency_code' => $row->currency_code,
+            'is_voided' => $row->trashed(),
             'log_statement' => $row->log_statement,
             'wallet_uuid' => $row->wallet?->wallet_uuid,
             'created_by_name' => $row->createdBy?->user_full_name,
