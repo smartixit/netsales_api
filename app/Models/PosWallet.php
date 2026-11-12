@@ -222,11 +222,15 @@ class PosWallet extends Model
     public function deposit(float $amount, string $statement, int $userId): PosWalletLog
     {
         return DB::transaction(function () use ($amount, $statement, $userId): PosWalletLog {
+            $balanceBefore = (float) $this->wallet_balance;
             $this->increment('wallet_balance', $amount);
 
             return $this->logs()->create([
                 'log_operation_type' => WalletOperationType::DEPOSIT,
                 'log_amount' => $amount,
+                'balance_before' => $balanceBefore,
+                'balance_after' => round((float) $this->wallet_balance, 2),
+                'currency_code' => $this->currency_code ?: 'YER',
                 'log_statement' => $statement,
                 'log_date' => now('Asia/Aden'),
                 'created_by' => $userId,
@@ -237,6 +241,7 @@ class PosWallet extends Model
     public function withdraw(float $amount, string $statement, int $userId): PosWalletLog
     {
         return DB::transaction(function () use ($amount, $statement, $userId): PosWalletLog {
+            $balanceBefore = (float) $this->wallet_balance;
             $this->decrement('wallet_balance', $amount);
 
             return $this->logs()->create([
