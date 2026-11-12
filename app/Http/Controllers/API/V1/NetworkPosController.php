@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Common\BatchStatusRequest;
+use App\Http\Requests\API\V1\Network\FilterNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\ConfirmNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\CreateNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\PreviewNetworkPosLinkingChallengeRequest;
@@ -60,10 +61,10 @@ class NetworkPosController extends BaseController
             new OA\Response(response: 200, description: 'تم استرجاع قائمة الارتباطات بنجاح'),
         ]
     )]
-    public function index(Request $request): JsonResponse
+    public function index(FilterNetworkPosRequest $request): JsonResponse
     {
         try {
-            $filters = $request->only(['network_id', 'pos_id', 'status', 'search', 'per_page', 'cursor', 'all']);
+            $filters = $request->validated();
             $user = $this->currentUser();
             if ($user && ! $user->isSuperAdmin()) {
                 $networkIds = $user->networks()->pluck('networks.network_id')
@@ -428,7 +429,7 @@ class NetworkPosController extends BaseController
             new OA\Response(response: 200, description: 'تم استرجاع قائمة نقاط البيع المرتبطة بالشبكة بنجاح'),
         ]
     )]
-    public function networkPosList(int $id, Request $request): JsonResponse
+    public function networkPosList(int $id, FilterNetworkPosRequest $request): JsonResponse
     {
         try {
             $network = Network::find($id);
@@ -441,7 +442,7 @@ class NetworkPosController extends BaseController
                 return $this->errorResponse('غير مصرح لك بعرض نقاط البيع لهذه الشبكة.', [], 403);
             }
 
-            $filters = $request->only(['status', 'search', 'per_page', 'cursor', 'all']);
+            $filters = $request->validated();
             $list = $this->networkPosService->getPosForNetwork($id, $filters);
 
             return $this->successResponse('تم استرجاع قائمة نقاط البيع المرتبطة بالشبكة بنجاح.', NetworkPosResource::collection($list));
@@ -470,7 +471,7 @@ class NetworkPosController extends BaseController
             new OA\Response(response: 200, description: 'تم استرجاع قائمة الشبكات المرتبطة بنقطة البيع بنجاح'),
         ]
     )]
-    public function posNetworksList(int $id, Request $request): JsonResponse
+    public function posNetworksList(int $id, FilterNetworkPosRequest $request): JsonResponse
     {
         try {
             $pos = Pos::find($id);
@@ -483,7 +484,7 @@ class NetworkPosController extends BaseController
                 return $this->errorResponse('غير مصرح لك بعرض الشبكات المرتبطة بنقطة البيع هذه.', [], 403);
             }
 
-            $filters = $request->only(['status', 'search', 'per_page', 'cursor', 'all']);
+            $filters = $request->validated();
             $list = $this->networkPosService->getNetworksForPos($id, $filters);
 
             return $this->successResponse('تم استرجاع قائمة الشبكات المرتبطة بنقطة البيع بنجاح.', NetworkPosResource::collection($list));
