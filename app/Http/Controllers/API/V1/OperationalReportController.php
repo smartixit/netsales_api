@@ -32,7 +32,7 @@ class OperationalReportController extends BaseController
             $networkId = (int) $data['network_id'];
             $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
             $this->authorization->authorize($request->user(), $type, $networkId, $posId);
-            $filters = array_intersect_key($data, array_flip(['from_date', 'to_date', 'sale_type', 'status', 'per_page', 'cursor']));
+            $filters = array_intersect_key($data, array_flip(['from_date', 'to_date', 'sale_type', 'status', 'search', 'per_page', 'cursor']));
             $result = $this->queries->build($request->user(), $type, $networkId, $posId, $filters);
 
             return $this->successResponse('تم إنشاء بيانات التقرير بنجاح.', $result);
@@ -53,7 +53,7 @@ class OperationalReportController extends BaseController
             $networkId = (int) $data['network_id'];
             $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
             $this->authorization->authorize($request->user(), $type, $networkId, $posId, true);
-            $filters = array_intersect_key($data, array_flip(['from_date', 'to_date', 'sale_type', 'status']));
+            $filters = array_intersect_key($data, array_flip(['from_date', 'to_date', 'sale_type', 'status', 'search']));
             $export = OperationalReportExport::query()->create([
                 'export_uuid' => (string) Str::uuid(),
                 'network_id' => $networkId,
