@@ -19,7 +19,7 @@ use Illuminate\Validation\ValidationException;
 
 class OperationalReportQueryService
 {
-    public function build(
+    public function buildLegacy(
         User $user,
         OperationalReportType $type,
         int $networkId,
@@ -41,7 +41,7 @@ class OperationalReportQueryService
      * Returns authoritative aggregates for the complete filtered dataset.
      * Cursor pagination is intentionally not applied to summary metrics.
      */
-    public function summary(
+    public function summaryLegacy(
         OperationalReportType $type,
         int $networkId,
         ?int $posId,
