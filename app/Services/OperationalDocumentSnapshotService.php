@@ -34,6 +34,17 @@ final class OperationalDocumentSnapshotService
         string $templateId,
         string $templateVersion
     ): OperationalDocumentSnapshot {
+        $allowedTemplates = [
+            'sale_invoice' => ['netsales.invoice.executive' => ['1.0.0']],
+            'pos_repayment' => ['netsales.repayment.receipt.executive' => ['1.0.0']],
+            'expense' => ['netsales.expense.voucher.executive' => ['1.0.0']],
+        ];
+        if (! in_array($templateVersion, $allowedTemplates[$documentType][$templateId] ?? [], true)) {
+            throw ValidationException::withMessages([
+                'template_id' => ['قالب المستند أو إصداره غير معتمد للإصدار الرسمي.'],
+            ]);
+        }
+
         return DB::transaction(function () use (
             $user,
             $documentType,
