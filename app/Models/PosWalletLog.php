@@ -29,6 +29,9 @@ class PosWalletLog extends Model
         'transfer_id',
         'log_operation_type',
         'log_amount',
+        'balance_before',
+        'balance_after',
+        'currency_code',
         'log_statement',
         'log_date',
         'created_by',
@@ -39,6 +42,8 @@ class PosWalletLog extends Model
         return [
             'log_date' => 'datetime',
             'log_amount' => 'decimal:2',
+            'balance_before' => 'decimal:2',
+            'balance_after' => 'decimal:2',
             'log_operation_type' => WalletOperationType::class,
         ];
     }
