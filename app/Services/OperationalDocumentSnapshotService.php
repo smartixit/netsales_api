@@ -147,6 +147,7 @@ final class OperationalDocumentSnapshotService
             ->with(['network', 'pos', 'request', 'createdBy', 'items.voucherPackage'])
             ->where('network_id', $networkId)
             ->when($posId !== null, fn ($query) => $query->where('pos_id', $posId))
+            ->lockForUpdate()
             ->findOrFail($id);
 
         return [
@@ -162,6 +163,7 @@ final class OperationalDocumentSnapshotService
             ->with(['network', 'pos', 'allocations.invoice', 'createdBy', 'reversedBy'])
             ->where('network_id', $networkId)
             ->when($posId !== null, fn ($query) => $query->where('pos_id', $posId))
+            ->lockForUpdate()
             ->findOrFail($id);
 
         return [
@@ -180,6 +182,7 @@ final class OperationalDocumentSnapshotService
         $expense = Expense::query()
             ->with(['network', 'createdBy', 'items', 'attachments'])
             ->where('network_id', $networkId)
+            ->lockForUpdate()
             ->findOrFail($id);
 
         return [
