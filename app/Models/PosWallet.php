@@ -33,6 +33,8 @@ class PosWallet extends Model
         'pos_id',
         'wallet_uuid',
         'wallet_balance',
+        'opening_balance',
+        'currency_code',
         'credit_limit',
         'status',
     ];
@@ -41,6 +43,7 @@ class PosWallet extends Model
     {
         return [
             'wallet_balance' => 'decimal:2',
+            'opening_balance' => 'decimal:2',
             'credit_limit' => 'decimal:2',
             'status' => 'boolean',
         ];
