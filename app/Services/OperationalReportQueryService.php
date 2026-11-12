@@ -46,7 +46,7 @@ class OperationalReportQueryService
     {
         $query->orderBy($dateColumn, 'desc')->orderBy($key, 'desc');
 
-        return $query->cursorPaginate((int) ($filters['per_page'] ?? 25));
+        return $query->cursorPaginate((int) ($filters['per_page'] ?? 25), ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
     private function sales(int $networkId, ?int $posId, array $filters): CursorPaginator
@@ -107,7 +107,7 @@ class OperationalReportQueryService
         $query = $this->applyDates($query, 'invoice_date', $filters);
         $now = Carbon::now('Asia/Aden');
         $query->orderBy('invoice_date')->orderBy('invoice_id');
-        $page = $query->cursorPaginate((int) ($filters['per_page'] ?? 25));
+        $page = $query->cursorPaginate((int) ($filters['per_page'] ?? 25), ['*'], 'cursor', $filters['cursor'] ?? null);
         foreach ($page->items() as $invoice) {
             $age = max(0, (int) Carbon::parse($invoice->invoice_date)->diffInDays($now));
             $invoice->setAttribute('age_days', $age);

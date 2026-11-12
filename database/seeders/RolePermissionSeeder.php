@@ -101,6 +101,8 @@ class RolePermissionSeeder extends Seeder
                     'requests.approve',
                     'requests.reject',
                     'requests.report',
+                    'requests.export',
+                    'requests.export',
                     'sales.view',
                     'sales.create',
                     'sales.edit',

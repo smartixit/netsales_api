@@ -45,32 +45,44 @@ class GenerateOperationalReportExport implements ShouldQueue
             $authorization->authorize($user, $export->report_type, (int) $export->network_id, $export->pos_id ? (int) $export->pos_id : null, true);
             $filters = $export->filters ?? [];
             $filters['per_page'] = 100;
-            $page = $queries->build($user, $export->report_type, (int) $export->network_id, $export->pos_id ? (int) $export->pos_id : null, $filters);
-            $rows = is_array($page) ? collect($page) : collect($page->items());
-            if ($rows->count() > 50000) {
-                throw new \RuntimeException('REPORT_EXPORT_LIMIT_EXCEEDED');
-            }
-
+            $filters['cursor'] = null;
             $stream = fopen('php://temp', 'w+b');
             if ($stream === false) {
-                throw new \RuntimeException('REPORT_EXPORT_STREAM_UNAVAILABLE');
+                throw new \\RuntimeException('REPORT_EXPORT_STREAM_UNAVAILABLE');
             }
-            fwrite($stream, "\xEF\xBB\xBF");
-            $first = true;
-            foreach ($rows as $row) {
-                $values = $row instanceof \Illuminate\Database\Eloquent\Model ? $row->toArray() : (array) $row;
-                $flat = [];
-                array_walk_recursive($values, function ($value, $key) use (&$flat): void {
-                    if (is_scalar($value) || $value === null) {
-                        $flat[(string) $key] = $value;
-                    }
-                });
-                if ($first) {
-                    fputcsv($stream, array_keys($flat));
-                    $first = false;
+            fwrite($stream, "\\xEF\\xBB\\xBF");
+            $headerWritten = false;
+            $recordCount = 0;
+            do {
+                $page = $queries->build($user, $export->report_type, (int) $export->network_id, $export->pos_id ? (int) $export->pos_id : null, $filters);
+                if (is_array($page)) {
+                    $items = collect($page);
+                    $nextCursor = null;
+                } else {
+                    $items = collect($page->items());
+                    $nextCursor = $page->nextCursor()?->encode();
                 }
-                fputcsv($stream, array_values($flat));
-            }
+                foreach ($items as $row) {
+                    $recordCount++;
+                    if ($recordCount > 50000) {
+                        throw new \\RuntimeException('REPORT_EXPORT_LIMIT_EXCEEDED');
+                    }
+                    $values = $row instanceof \\Illuminate\\Database\\Eloquent\\Model ? $row->toArray() : (array) $row;
+                    $flat = [];
+                    array_walk_recursive($values, function ($value, $key) use (&$flat): void {
+                        if (is_scalar($value) || $value === null) {
+                            $flat[(string) $key] = $value;
+                        }
+                    });
+                    if (! $headerWritten) {
+                        fputcsv($stream, array_keys($flat));
+                        $headerWritten = true;
+                    }
+                    fputcsv($stream, array_values($flat));
+                }
+                $filters['cursor'] = $nextCursor;
+            } while ($nextCursor !== null);
+            
             rewind($stream);
             $csv = stream_get_contents($stream);
             fclose($stream);
@@ -85,7 +97,7 @@ class GenerateOperationalReportExport implements ShouldQueue
                 'artifact_path' => $path,
                 'artifact_sha256' => hash('sha256', $csv),
                 'artifact_size' => strlen($csv),
-                'record_count' => $rows->count(),
+                'record_count' => $recordCount,
                 'completed_at' => now('Asia/Aden'),
             ]);
         } catch (Throwable $exception) {
