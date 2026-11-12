@@ -86,16 +86,27 @@ class PosWalletLogRepository extends BaseRepository implements PosWalletLogRepos
     /**
      * إنشاء قيد مالي جديد في دفتر أستاذ محفظة نقطة البيع.
      */
-    public function createLog(int $walletId, WalletOperationType|string $operationType, float $amount, string $statement, ?int $createdBy = null, ?string $date = null, ?int $transferId = null): PosWalletLog
+    public function createLog(int $walletId, WalletOperationType|string $operation, float $amount, string $statement, ?int $createdBy = null, ?string $date = null, ?int $transferId = null): PosWalletLog
     {
+        $wallet = \\App\\Models\\PosWallet::query()->lockForUpdate()->findOrFail($walletId);
+        $operationValue = $operation instanceof WalletOperationType ? $operation->value : $operation;
+        $balanceAfter = round((float) $wallet->wallet_balance, 2);
+        $balanceBefore = match ($operationValue) {
+            WalletOperationType::DEPOSIT->value => round($balanceAfter - $amount, 2),
+            WalletOperationType::WITHDRAW->value => round($balanceAfter + $amount, 2),
+            default => $balanceAfter,
+        };
+
         return $this->create([
             'wallet_id' => $walletId,
             'transfer_id' => $transferId,
-            'log_operation_type' => $operationType instanceof WalletOperationType ? $operationType->value : $operationType,
-            'log_amount' => $amount,
+            'log_operation_type' => $operationValue,
+            'log_amount' => round($amount, 2),
+            'balance_before' => $balanceBefore,
+            'balance_after' => $balanceAfter,
+            'currency_code' => $wallet->currency_code ?: 'YER',
             'log_statement' => $statement,
             'log_date' => $date ?? now('Asia/Aden'),
             'created_by' => $createdBy,
         ]);
-    }
-}
+    }}
