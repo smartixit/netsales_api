@@ -42,6 +42,61 @@ class OperationalReportQueryService
             ->when($filters['to_date'] ?? null, fn (Builder $q, string $date): Builder => $q->where($column, '<=', Carbon::parse($date)->endOfDay()));
     }
 
+    private function applySearch(
+        Builder $query,
+        OperationalReportType $type,
+        ?string $rawSearch
+    ): Builder {
+        $search = trim((string) $rawSearch);
+        if ($search === '') {
+            return $query;
+        }
+
+        $pattern = '%'.$search.'%';
+
+        return match ($type) {
+            OperationalReportType::SALES,
+            OperationalReportType::DEBT_AGING => $query->where(
+                fn (Builder $q): Builder => $q
+                    ->where('invoice_uuid', 'like', $pattern)
+                    ->orWhere('invoice_id', 'like', $pattern)
+                    ->orWhereHas('pos', fn (Builder $pos): Builder => $pos->where('pos_name', 'like', $pattern))
+            ),
+            OperationalReportType::EXPENSES => $query->where(
+                fn (Builder $q): Builder => $q
+                    ->where('expense_uuid', 'like', $pattern)
+                    ->orWhere('expense_id', 'like', $pattern)
+                    ->orWhereHas('items', fn (Builder $item): Builder => $item->where('item_statement', 'like', $pattern))
+            ),
+            OperationalReportType::NETWORK_WALLET => $query->where(
+                fn (Builder $q): Builder => $q
+                    ->where('log_statement', 'like', $pattern)
+                    ->orWhere('log_operation', 'like', $pattern)
+                    ->orWhere('log_id', 'like', $pattern)
+            ),
+            OperationalReportType::POS_WALLET => $query->where(
+                fn (Builder $q): Builder => $q
+                    ->where('log_statement', 'like', $pattern)
+                    ->orWhere('log_operation_type', 'like', $pattern)
+                    ->orWhere('log_id', 'like', $pattern)
+            ),
+            OperationalReportType::REPAYMENTS => $query->where(
+                fn (Builder $q): Builder => $q
+                    ->where('repayment_uuid', 'like', $pattern)
+                    ->orWhere('repayment_id', 'like', $pattern)
+                    ->orWhere('reference_number', 'like', $pattern)
+                    ->orWhere('notes', 'like', $pattern)
+            ),
+            OperationalReportType::REQUESTS => $query->where(
+                fn (Builder $q): Builder => $q
+                    ->where('request_uuid', 'like', $pattern)
+                    ->orWhere('request_id', 'like', $pattern)
+                    ->orWhere('request_note', 'like', $pattern)
+                    ->orWhereHas('pos', fn (Builder $pos): Builder => $pos->where('pos_name', 'like', $pattern))
+            ),
+        };
+    }
+
     private function paginate(Builder $query, array $filters, string $dateColumn, string $key): CursorPaginator
     {
         $query->orderBy($dateColumn, 'desc')->orderBy($key, 'desc');
@@ -54,7 +109,9 @@ class OperationalReportQueryService
         $query = SaleInvoice::query()->with(['network', 'pos', 'createdBy', 'items.voucherPackage'])
             ->where('network_id', $networkId)
             ->when($posId, fn (Builder $q): Builder => $q->where('pos_id', $posId))
-            ->when($filters['sale_type'] ?? null, fn (Builder $q, string $v): Builder => $q->where('sale_type', $v));
+            ->when($filters['sale_type'] ?? null, fn (Builder $q, string $v): Builder => $q->where('sale_type', $v))
+            ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('payment_status', $v));
+        $query = $this->applySearch($query, OperationalReportType::SALES, $filters['search'] ?? null);
         return $this->paginate($this->applyDates($query, 'invoice_date', $filters), $filters, 'invoice_date', 'invoice_id');
     }
 
@@ -62,6 +119,7 @@ class OperationalReportQueryService
     {
         $query = Expense::query()->with(['network', 'createdBy', 'items'])
             ->where('network_id', $networkId);
+        $query = $this->applySearch($query, OperationalReportType::EXPENSES, $filters['search'] ?? null);
         return $this->paginate($this->applyDates($query, 'expense_date', $filters), $filters, 'expense_date', 'expense_id');
     }
 
@@ -72,7 +130,9 @@ class OperationalReportQueryService
         if (! $wallet) {
             return [];
         }
-        $logs = $wallet->logs()->with('createdBy');
+        $logs = $wallet->logs()->with('createdBy')->getQuery()
+            ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('log_operation', $v));
+        $logs = $this->applySearch($logs, OperationalReportType::NETWORK_WALLET, $filters['search'] ?? null);
         return $this->paginate($this->applyDates($logs, 'log_date', $filters), $filters, 'log_date', 'log_id');
     }
 
@@ -85,7 +145,9 @@ class OperationalReportQueryService
         if (! $wallet) {
             return [];
         }
-        $logs = $wallet->logs()->with('createdBy');
+        $logs = $wallet->logs()->with('createdBy')->getQuery()
+            ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('log_operation_type', $v));
+        $logs = $this->applySearch($logs, OperationalReportType::POS_WALLET, $filters['search'] ?? null);
         return $this->paginate($this->applyDates($logs, 'log_date', $filters), $filters, 'log_date', 'log_id');
     }
 
@@ -93,7 +155,9 @@ class OperationalReportQueryService
     {
         $query = PosRepayment::query()->with(['allocations.invoice', 'pos', 'network', 'createdBy', 'reversedBy'])
             ->where('network_id', $networkId)
-            ->when($posId, fn (Builder $q): Builder => $q->where('pos_id', $posId));
+            ->when($posId, fn (Builder $q): Builder => $q->where('pos_id', $posId))
+            ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('status', $v));
+        $query = $this->applySearch($query, OperationalReportType::REPAYMENTS, $filters['search'] ?? null);
         return $this->paginate($this->applyDates($query, 'repayment_date', $filters), $filters, 'repayment_date', 'repayment_id');
     }
 
@@ -104,6 +168,7 @@ class OperationalReportQueryService
             ->where('remaining_amount', '>', 0)
             ->where('payment_status', '!=', 'PAID')
             ->when($posId, fn (Builder $q): Builder => $q->where('pos_id', $posId));
+        $query = $this->applySearch($query, OperationalReportType::DEBT_AGING, $filters['search'] ?? null);
         $query = $this->applyDates($query, 'invoice_date', $filters);
         $now = Carbon::now('Asia/Aden');
         $query->orderBy('invoice_date')->orderBy('invoice_id');
@@ -127,6 +192,7 @@ class OperationalReportQueryService
             ->where('network_id', $networkId)
             ->when($posId, fn (Builder $q): Builder => $q->where('pos_id', $posId))
             ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('status', $v));
+        $query = $this->applySearch($query, OperationalReportType::REQUESTS, $filters['search'] ?? null);
         return $this->paginate($this->applyDates($query, 'request_date', $filters), $filters, 'request_date', 'request_id');
     }
 }
