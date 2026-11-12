@@ -31,16 +31,23 @@ class GenerateOperationalReportExport implements ShouldQueue
         OperationalReportQueryService $queries
     ): void {
         $export = OperationalReportExport::query()->find($this->reportExportId);
-        if (
-            ! $export ||
-            (
-                $export->status !== OperationalReportExportStatus::QUEUED &&
-                ! (
-                    $export->status === OperationalReportExportStatus::PROCESSING &&
-                    $this->attempts() > 1
-                )
-            )
-        ) {
+        if (! $export) {
+            return;
+        }
+
+        if ($export->status === OperationalReportExportStatus::PROCESSING) {
+            $startedAt = $export->started_at;
+            $processingLeaseExpired = $startedAt === null ||
+                $startedAt->lte(now('Asia/Aden')->subSeconds($this->timeout + 10));
+
+            // Queue retry_after may be shorter than this job's timeout. Do not
+            // let a redelivered reservation run concurrently with the first
+            // worker; defer it until the original processing lease expires.
+            if ($this->attempts() <= 1 || ! $processingLeaseExpired) {
+                $this->release(110);
+                return;
+            }
+        } elseif ($export->status !== OperationalReportExportStatus::QUEUED) {
             return;
         }
 
