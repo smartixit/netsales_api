@@ -11,8 +11,7 @@ interface OperationalReportProvider
     public function type(): OperationalReportType;
 
     /**
-     * Public configuration schema. It describes permitted UI choices only;
-     * authorization and execution remain enforced by Laravel.
+     * Public schema describing permitted client configuration.
      *
      * @return array<string, mixed>
      */
@@ -20,18 +19,29 @@ interface OperationalReportProvider
 
     /**
      * @param  array<string, mixed>  $filters
-     * @return CursorPaginator<int, mixed>|array<int, mixed>
+     * @return CursorPaginator<int, mixed>
      */
-    public function build(User $user, int $networkId, ?int $posId, array $filters): CursorPaginator|array;
+    public function build(User $user, int $networkId, ?int $posId, array $filters): CursorPaginator;
 
     /**
+     * Authoritative metrics and chart series for the complete filtered dataset.
+     *
      * @param  array<string, mixed>  $filters
-     * @return array<string, int|float|string>
+     * @return array<string, mixed>
      */
     public function summary(User $user, int $networkId, ?int $posId, array $filters): array;
 
     /**
+     * Stable CSV field IDs mapped to localized header labels.
+     *
      * @return array<string, string>
      */
-    public function emptyExportColumns(): array;
+    public function exportColumns(): array;
+
+    /**
+     * Serialize a report row to the provider's stable export field IDs.
+     *
+     * @return array<string, mixed>
+     */
+    public function serializeExportRow(mixed $row): array;
 }
