@@ -168,12 +168,17 @@ class GenerateOperationalReportExport implements ShouldQueue
                 'completed_at' => now('Asia/Aden'),
             ]);
         } catch (Throwable $exception) {
+            $willRetry = $this->attempts() < $this->tries;
             $export->update([
-                'status' => OperationalReportExportStatus::FAILED,
-                'failure_code' => preg_match('/^[A-Z0-9_]+$/', $exception->getMessage())
-                    ? $exception->getMessage()
-                    : 'REPORT_EXPORT_FAILED',
-                'completed_at' => now('Asia/Aden'),
+                'status' => $willRetry
+                    ? OperationalReportExportStatus::QUEUED
+                    : OperationalReportExportStatus::FAILED,
+                'failure_code' => $willRetry
+                    ? null
+                    : (preg_match('/^[A-Z0-9_]+$/', $exception->getMessage())
+                        ? $exception->getMessage()
+                        : 'REPORT_EXPORT_FAILED'),
+                'completed_at' => $willRetry ? null : now('Asia/Aden'),
             ]);
             throw $exception;
         }
