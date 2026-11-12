@@ -31,7 +31,16 @@ class GenerateOperationalReportExport implements ShouldQueue
         OperationalReportQueryService $queries
     ): void {
         $export = OperationalReportExport::query()->find($this->reportExportId);
-        if (! $export || $export->status !== OperationalReportExportStatus::QUEUED) {
+        if (
+            ! $export ||
+            (
+                $export->status !== OperationalReportExportStatus::QUEUED &&
+                ! (
+                    $export->status === OperationalReportExportStatus::PROCESSING &&
+                    $this->attempts() > 1
+                )
+            )
+        ) {
             return;
         }
 
