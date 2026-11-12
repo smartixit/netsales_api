@@ -45,6 +45,32 @@ class OperationalReportController extends BaseController
         }
     }
 
+    public function summary(OperationalReportRequest $request): JsonResponse
+    {
+        try {
+            $data = $request->validated();
+            $type = OperationalReportType::from($data['report_type']);
+            $networkId = (int) $data['network_id'];
+            $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
+            $this->authorization->authorize($request->user(), $type, $networkId, $posId);
+            $filters = array_intersect_key(
+                $data,
+                array_flip(['from_date', 'to_date', 'sale_type', 'status', 'search'])
+            );
+
+            return $this->successResponse(
+                'تم احتساب ملخص التقرير على كامل النتائج المطابقة.',
+                $this->queries->summary($type, $networkId, $posId, $filters)
+            );
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
+        } catch (ModelNotFoundException) {
+            return $this->errorResponse('الشبكة المطلوبة غير موجودة.', [], 404);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        }
+    }
+
     public function storeExport(StoreOperationalReportExportRequest $request): JsonResponse
     {
         try {
