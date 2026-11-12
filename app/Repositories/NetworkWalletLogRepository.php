@@ -88,14 +88,25 @@ class NetworkWalletLogRepository extends BaseRepository implements NetworkWallet
      */
     public function createLog(int $walletId, WalletOperationType|string $operation, float $amount, string $statement, ?int $createdBy = null, ?string $date = null, ?int $transferId = null): NetworkWalletLog
     {
+        $wallet = \\App\\Models\\NetworkWallet::query()->lockForUpdate()->findOrFail($walletId);
+        $operationValue = $operation instanceof WalletOperationType ? $operation->value : $operation;
+        $balanceAfter = round((float) $wallet->wallet_balance, 2);
+        $balanceBefore = match ($operationValue) {
+            WalletOperationType::DEPOSIT->value => round($balanceAfter - $amount, 2),
+            WalletOperationType::WITHDRAW->value => round($balanceAfter + $amount, 2),
+            default => $balanceAfter,
+        };
+
         return $this->create([
             'wallet_id' => $walletId,
             'transfer_id' => $transferId,
-            'log_operation' => $operation instanceof WalletOperationType ? $operation->value : $operation,
-            'log_amount' => $amount,
+            'log_operation' => $operationValue,
+            'log_amount' => round($amount, 2),
+            'balance_before' => $balanceBefore,
+            'balance_after' => $balanceAfter,
+            'currency_code' => $wallet->currency_code ?: 'YER',
             'log_statement' => $statement,
             'log_date' => $date ?? now('Asia/Aden'),
             'created_by' => $createdBy,
         ]);
-    }
-}
+    }}
