@@ -243,6 +243,6 @@ final class OperationalDocumentSnapshotService
 
         return is_string($currency) && $currency !== ''
             ? $currency
-            : strtoupper((string) systemSetting('base_currency', 'YER'));
+            : 'YER';
     }
 }
