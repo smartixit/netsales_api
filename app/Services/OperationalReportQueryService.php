@@ -47,6 +47,12 @@ class OperationalReportQueryService
         ?int $posId,
         array $filters
     ): array {
+        if ($type === OperationalReportType::POS_WALLET && $posId === null) {
+            throw ValidationException::withMessages([
+                'pos_id' => ['تقرير محفظة نقطة البيع يتطلب تحديد نقطة البيع.'],
+            ]);
+        }
+
         return match ($type) {
             OperationalReportType::SALES => $this->salesSummary($networkId, $posId, $filters),
             OperationalReportType::EXPENSES => $this->expensesSummary($networkId, $filters),
