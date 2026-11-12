@@ -130,7 +130,8 @@ class OperationalReportQueryService
         if (! $wallet) {
             return [];
         }
-        $logs = $wallet->logs()->with('createdBy')->getQuery()
+        $logs = $wallet->logs()->getQuery()
+            ->with('createdBy')
             ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('log_operation', $v));
         $logs = $this->applySearch($logs, OperationalReportType::NETWORK_WALLET, $filters['search'] ?? null);
         return $this->paginate($this->applyDates($logs, 'log_date', $filters), $filters, 'log_date', 'log_id');
@@ -145,7 +146,8 @@ class OperationalReportQueryService
         if (! $wallet) {
             return [];
         }
-        $logs = $wallet->logs()->with('createdBy')->getQuery()
+        $logs = $wallet->logs()->getQuery()
+            ->with('createdBy')
             ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('log_operation_type', $v));
         $logs = $this->applySearch($logs, OperationalReportType::POS_WALLET, $filters['search'] ?? null);
         return $this->paginate($this->applyDates($logs, 'log_date', $filters), $filters, 'log_date', 'log_id');
