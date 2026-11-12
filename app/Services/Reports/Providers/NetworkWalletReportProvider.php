@@ -1,26 +1,161 @@
 <?php
+
 namespace App\Services\Reports\Providers;
+
 use App\Enums\OperationalReportType;
+use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
 use App\Models\User;
 use App\Services\Reports\AbstractOperationalReportProvider;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
-final class NetworkWalletReportProvider extends AbstractOperationalReportProvider {
- public function type(): OperationalReportType{return OperationalReportType::NETWORK_WALLET;}
- protected function label():string{return 'كشف حساب محفظة الشبكة';}
- protected function description():string{return 'حركات الإيداع والسحب المسجلة على محفظة الشبكة.';}
- protected function viewPermission():string{return 'network_wallets.report';}
- protected function exportPermission():string{return 'network_wallets.export';}
- protected function scopes():array{return ['network'];}
- protected function posSelection():string{return 'forbidden';}
- protected function statusChoices():array{return ['DEPOSIT','WITHDRAW'];}
- protected function columns():array{return [['id'=>'log_id','label'=>'رقم الحركة','data_type'=>'integer'],['id'=>'log_date','label'=>'التاريخ','data_type'=>'date'],['id'=>'log_operation','label'=>'نوع الحركة','data_type'=>'text'],['id'=>'log_amount','label'=>'المبلغ','data_type'=>'decimal'],['id'=>'log_statement','label'=>'البيان','data_type'=>'text'],['id'=>'created_by_name','label'=>'نفذها','data_type'=>'text']];}
- protected function metricSlots():array{return [['id'=>'record_count','label'=>'عدد الحركات','data_type'=>'integer'],['id'=>'deposits','label'=>'إجمالي الإيداعات','data_type'=>'decimal'],['id'=>'withdrawals','label'=>'إجمالي السحوبات','data_type'=>'decimal']];}
- protected function summaryCharts():array{return [['id'=>'wallet_movements','label'=>'حركة المحفظة','chart_type'=>'bar','value_key'=>'amount','label_key'=>'operation']];}
- private function query(int $networkId,array $filters):Builder{$pattern=$this->pattern($filters);$q=NetworkWalletLog::query()->with(['wallet','createdBy'])->whereHas('wallet',fn(Builder $w):Builder=>$w->where('network_id',$networkId))->when($filters['status']??null,fn(Builder $q,string $v):Builder=>$q->where('log_operation',$v))->when($pattern!==null,fn(Builder $q):Builder=>$q->where('log_statement','like',$pattern));return $this->applyDates($q,'log_date',$filters);}
- public function build(User $user,int $networkId,?int $posId,array $filters):CursorPaginator{return $this->paginate($this->query($networkId,$filters),$filters,'log_date','log_id');}
- public function summary(User $user,int $networkId,?int $posId,array $filters):array{$q=$this->query($networkId,$filters);$groups=(clone $q)->reorder()->selectRaw('log_operation as operation, SUM(log_amount) as amount')->groupBy('log_operation')->get();return ['record_count'=>(clone $q)->count(),'deposits'=>$this->amountValue((clone $q)->where('log_operation','DEPOSIT')->sum('log_amount')),'withdrawals'=>$this->amountValue((clone $q)->where('log_operation','WITHDRAW')->sum('log_amount')),'charts'=>['wallet_movements'=>$groups->map(fn($r)=>['operation'=>$r->operation,'amount'=>$this->amountValue($r->amount)])->all()]];}
- public function exportColumns():array{return ['log_id'=>'رقم الحركة','log_date'=>'التاريخ','log_operation'=>'نوع الحركة','log_amount'=>'المبلغ','log_statement'=>'البيان','wallet_uuid'=>'مرجع المحفظة','created_by_name'=>'نفذها'];}
- public function serializeExportRow(mixed $r):array{return ['log_id'=>$r->log_id,'log_date'=>$this->dateValue($r->log_date),'log_operation'=>$this->enumValue($r->log_operation),'log_amount'=>$this->amountValue($r->log_amount),'log_statement'=>$r->log_statement,'wallet_uuid'=>$r->wallet?->wallet_uuid,'created_by_name'=>$r->createdBy?->user_full_name];}
+
+final class NetworkWalletReportProvider extends AbstractOperationalReportProvider
+{
+    public function type(): OperationalReportType { return OperationalReportType::NETWORK_WALLET; }
+    protected function label(): string { return 'كشف حساب محفظة الشبكة'; }
+    protected function description(): string { return 'كشف حركات محفظة الشبكة مع الرصيد السابق واللاحق والعملة.'; }
+    protected function viewPermission(): string { return 'network_wallets.report'; }
+    protected function exportPermission(): string { return 'network_wallets.export'; }
+    protected function scopes(): array { return ['network']; }
+    protected function posSelection(): string { return 'forbidden'; }
+    protected function statusChoices(): array { return ['DEPOSIT', 'WITHDRAW']; }
+
+    protected function columns(): array
+    {
+        return [
+            ['id' => 'log_id', 'label' => 'رقم الحركة', 'data_type' => 'integer'],
+            ['id' => 'log_date', 'label' => 'التاريخ', 'data_type' => 'date'],
+            ['id' => 'log_operation', 'label' => 'نوع الحركة', 'data_type' => 'text'],
+            ['id' => 'log_amount', 'label' => 'المبلغ', 'data_type' => 'decimal'],
+            ['id' => 'balance_before', 'label' => 'الرصيد قبل الحركة', 'data_type' => 'decimal'],
+            ['id' => 'balance_after', 'label' => 'الرصيد بعد الحركة', 'data_type' => 'decimal'],
+            ['id' => 'currency_code', 'label' => 'العملة', 'data_type' => 'text'],
+            ['id' => 'log_statement', 'label' => 'البيان', 'data_type' => 'text'],
+            ['id' => 'created_by_name', 'label' => 'نفذها', 'data_type' => 'text'],
+        ];
+    }
+
+    protected function metricSlots(): array
+    {
+        return [
+            ['id' => 'record_count', 'label' => 'عدد الحركات', 'data_type' => 'integer'],
+            ['id' => 'opening_balance', 'label' => 'الرصيد الافتتاحي للفترة', 'data_type' => 'decimal'],
+            ['id' => 'deposits', 'label' => 'إجمالي الإيداعات', 'data_type' => 'decimal'],
+            ['id' => 'withdrawals', 'label' => 'إجمالي السحوبات', 'data_type' => 'decimal'],
+            ['id' => 'closing_balance', 'label' => 'الرصيد الختامي للفترة', 'data_type' => 'decimal'],
+        ];
+    }
+
+    protected function summaryCharts(): array
+    {
+        return [['id' => 'wallet_movements', 'label' => 'حركة المحفظة', 'chart_type' => 'bar', 'value_key' => 'amount', 'label_key' => 'operation']];
+    }
+
+    private function wallet(int $networkId): NetworkWallet
+    {
+        return NetworkWallet::query()->where('network_id', $networkId)->firstOrFail();
+    }
+
+    private function query(int $networkId, array $filters): Builder
+    {
+        $pattern = $this->pattern($filters);
+        $wallet = $this->wallet($networkId);
+
+        $query = NetworkWalletLog::query()->with(['wallet', 'createdBy'])
+            ->where('wallet_id', $wallet->wallet_id)
+            ->when($filters['status'] ?? null, fn (Builder $q, string $value): Builder => $q->where('log_operation', $value))
+            ->when($pattern !== null, fn (Builder $q): Builder => $q->where('log_statement', 'like', $pattern));
+
+        return $this->applyDates($query, 'log_date', $filters);
+    }
+
+    private function periodBalances(NetworkWallet $wallet, array $filters): array
+    {
+        $ledger = NetworkWalletLog::query()->where('wallet_id', $wallet->wallet_id);
+        $opening = (float) $wallet->opening_balance;
+        if (! empty($filters['from_date'])) {
+            $previous = (clone $ledger)
+                ->where('log_date', '<', $filters['from_date'].' 00:00:00')
+                ->orderByDesc('log_date')
+                ->orderByDesc('log_id')
+                ->first();
+            $opening = $previous ? (float) $previous->balance_after : $opening;
+        }
+
+        $closing = (float) $wallet->wallet_balance;
+        if (! empty($filters['to_date'])) {
+            $last = (clone $ledger)
+                ->where('log_date', '<=', $filters['to_date'].' 23:59:59')
+                ->orderByDesc('log_date')
+                ->orderByDesc('log_id')
+                ->first();
+            $closing = $last ? (float) $last->balance_after : $opening;
+        }
+
+        return [$opening, $closing];
+    }
+
+    public function build(User $user, int $networkId, ?int $posId, array $filters): CursorPaginator
+    {
+        return $this->paginate($this->query($networkId, $filters), $filters, 'log_date', 'log_id');
+    }
+
+    public function summary(User $user, int $networkId, ?int $posId, array $filters): array
+    {
+        $wallet = $this->wallet($networkId);
+        $query = $this->query($networkId, $filters);
+        [$opening, $closing] = $this->periodBalances($wallet, $filters);
+        $groups = (clone $query)->reorder()
+            ->selectRaw('log_operation as operation, SUM(log_amount) as amount')
+            ->groupBy('log_operation')
+            ->get();
+
+        return [
+            'record_count' => (clone $query)->count(),
+            'opening_balance' => $this->amountValue($opening),
+            'deposits' => $this->amountValue((clone $query)->where('log_operation', 'DEPOSIT')->sum('log_amount')),
+            'withdrawals' => $this->amountValue((clone $query)->where('log_operation', 'WITHDRAW')->sum('log_amount')),
+            'closing_balance' => $this->amountValue($closing),
+            'currency_code' => $wallet->currency_code,
+            'charts' => [
+                'wallet_movements' => $groups->map(fn ($row): array => [
+                    'operation' => $row->operation,
+                    'amount' => $this->amountValue($row->amount),
+                ])->all(),
+            ],
+        ];
+    }
+
+    public function exportColumns(): array
+    {
+        return [
+            'log_id' => 'رقم الحركة',
+            'log_date' => 'التاريخ',
+            'log_operation' => 'نوع الحركة',
+            'log_amount' => 'المبلغ',
+            'balance_before' => 'الرصيد قبل الحركة',
+            'balance_after' => 'الرصيد بعد الحركة',
+            'currency_code' => 'العملة',
+            'log_statement' => 'البيان',
+            'wallet_uuid' => 'مرجع المحفظة',
+            'created_by_name' => 'نفذها',
+        ];
+    }
+
+    public function serializeExportRow(mixed $row): array
+    {
+        return [
+            'log_id' => $row->log_id,
+            'log_date' => $this->dateValue($row->log_date),
+            'log_operation' => $this->enumValue($row->log_operation),
+            'log_amount' => $this->amountValue($row->log_amount),
+            'balance_before' => $this->amountValue($row->balance_before),
+            'balance_after' => $this->amountValue($row->balance_after),
+            'currency_code' => $row->currency_code,
+            'log_statement' => $row->log_statement,
+            'wallet_uuid' => $row->wallet?->wallet_uuid,
+            'created_by_name' => $row->createdBy?->user_full_name,
+        ];
+    }
 }
