@@ -118,6 +118,18 @@ class OperationalReportController extends BaseController
             return $this->errorResponse('طلب التصدير غير موجود.', [], 404);
         }
 
+        try {
+            $this->authorization->authorize(
+                $request->user(),
+                $export->report_type,
+                (int) $export->network_id,
+                $export->pos_id ? (int) $export->pos_id : null,
+                true
+            );
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
+        }
+
         return $this->successResponse('حالة طلب التصدير.', [
             'export_id' => $export->export_uuid,
             'report_type' => $export->report_type->value,
