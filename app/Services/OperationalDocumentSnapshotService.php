@@ -119,6 +119,16 @@ final class OperationalDocumentSnapshotService
         }, 3);
     }
 
+    public function authorizeSnapshot(User $user, OperationalDocumentSnapshot $snapshot): void
+    {
+        $this->authorize(
+            $user,
+            $snapshot->document_type,
+            (int) $snapshot->network_id,
+            $snapshot->pos_id ? (int) $snapshot->pos_id : null
+        );
+    }
+
     private function resolveSource(string $type, int $id, int $networkId, ?int $posId): array
     {
         return match ($type) {
