@@ -505,7 +505,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Immutable operational document snapshots and issued PDF artifacts.
-        Route::prefix('documents/snapshots')->middleware(['throttle:api-read', 'operational.scope'])->group(function () {
+        Route::prefix('documents/snapshots')->middleware('throttle:api-read')->group(function () {
             Route::post('/', [\App\Http\Controllers\API\V1\OperationalDocumentSnapshotController::class, 'store'])
                 ->middleware('throttle:api-write')
                 ->name('api.v1.documents.snapshots.store');
