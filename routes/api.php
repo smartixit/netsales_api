@@ -19,6 +19,7 @@ use App\Http\Controllers\API\V1\NetworkPosController;
 use App\Http\Controllers\API\V1\NetworkSmsSettingController;
 use App\Http\Controllers\API\V1\NetworkWalletController;
 use App\Http\Controllers\API\V1\NetworkWorkspaceOverviewController;
+use App\Http\Controllers\API\V1\OperationalReportController;
 use App\Http\Controllers\API\V1\NotificationController;
 use App\Http\Controllers\API\V1\OtpController;
 use App\Http\Controllers\API\V1\PosController;
