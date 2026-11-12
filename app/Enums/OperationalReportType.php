@@ -16,16 +16,4 @@ enum OperationalReportType: string
     case DEBT_AGING = 'debt_aging';
     case REQUESTS = 'requests';
 
-    public function label(): string
-    {
-        return match ($this) {
-            self::SALES => 'تقرير المبيعات والفواتير',
-            self::EXPENSES => 'تقرير المصروفات التشغيلية',
-            self::NETWORK_WALLET => 'كشف حساب محفظة الشبكة',
-            self::POS_WALLET => 'كشف حساب محفظة نقطة البيع',
-            self::REPAYMENTS => 'تقرير سندات السداد',
-            self::DEBT_AGING => 'تقرير أعمار الديون',
-            self::REQUESTS => 'تقرير حركة الطلبات',
-        };
-    }
 }
