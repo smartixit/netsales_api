@@ -39,6 +39,14 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
     abstract protected function metricSlots(): array;
 
     /**
+     * @return list<array<string, mixed>>
+     */
+    protected function chartSlots(): array
+    {
+        return [];
+    }
+
+    /**
      * @return list<string>
      */
     protected function statusOptions(): array
@@ -109,6 +117,7 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
     final public function definition(): array
     {
         $type = $this->type();
+        $charts = $this->chartSlots();
 
         return [
             'id' => $type->value,
@@ -125,6 +134,7 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
             'filters' => $this->filters(),
             'columns' => $this->columns(),
             'metric_slots' => $this->metricSlots(),
+            'chart_slots' => $charts,
             'templates' => [
                 [
                     'id' => 'netsales.operational-report.executive',
@@ -133,7 +143,7 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
             ],
             'execution_policy' => 'server',
             'client_row_limit' => null,
-            'charts_available' => false,
+            'charts_available' => $charts !== [],
             'export_formats' => ['CSV'],
         ];
     }
@@ -174,7 +184,7 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
      * @param  array<int, string>  $labels
      * @return array<string, string>
      */
-    protected function columnLabels(array $labels): array
+    protected function exportColumnMap(array $labels): array
     {
         return $labels;
     }
