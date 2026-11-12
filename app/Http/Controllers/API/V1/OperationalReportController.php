@@ -10,7 +10,6 @@ use Illuminate\Support\MessageBag;
 use App\Jobs\GenerateOperationalReportExport;
 use App\Models\OperationalReportExport;
 use App\Services\OperationalReportAuthorizationService;
-use App\Services\OperationalReportQueryService;
 use App\Services\Reports\OperationalReportFilterValidator;
 use App\Services\Reports\OperationalReportProviderRegistry;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -25,7 +24,6 @@ class OperationalReportController extends BaseController
 {
     public function __construct(
         protected OperationalReportAuthorizationService $authorization,
-        protected OperationalReportQueryService $queries,
         protected OperationalReportProviderRegistry $providers,
         protected OperationalReportFilterValidator $filterValidator
     ) {}
