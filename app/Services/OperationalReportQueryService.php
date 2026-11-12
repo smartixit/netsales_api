@@ -347,7 +347,8 @@ class OperationalReportQueryService
         $query->orderBy('invoice_date')->orderBy('invoice_id');
         $page = $query->cursorPaginate((int) ($filters['per_page'] ?? 25), ['*'], 'cursor', $filters['cursor'] ?? null);
         foreach ($page->items() as $invoice) {
-            $age = max(0, (int) Carbon::parse($invoice->invoice_date)->diffInDays($now));
+            $invoiceDate = Carbon::parse($invoice->invoice_date, 'Asia/Aden')->startOfDay();
+            $age = max(0, (int) $invoiceDate->diffInDays($now, false));
             $invoice->setAttribute('age_days', $age);
             $invoice->setAttribute('aging_bucket', match (true) {
                 $age <= 30 => '0_30',
