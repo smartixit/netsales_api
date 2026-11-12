@@ -62,7 +62,7 @@ class NetworkPosController extends BaseController
     public function index(Request $request): JsonResponse
     {
         try {
-            $filters = $request->only(['network_id', 'pos_id', 'status', 'search', 'per_page', 'all']);
+            $filters = $request->only(['network_id', 'pos_id', 'status', 'search', 'per_page', 'cursor', 'all']);
             $user = $this->currentUser();
             if ($user && ! $user->isSuperAdmin()) {
                 $networkIds = $user->networks()->pluck('networks.network_id')
@@ -474,7 +474,7 @@ class NetworkPosController extends BaseController
                 return $this->errorResponse('غير مصرح لك بعرض الشبكات المرتبطة بنقطة البيع هذه.', [], 403);
             }
 
-            $filters = $request->only(['status', 'search', 'per_page', 'all']);
+            $filters = $request->only(['status', 'search', 'per_page', 'cursor', 'all']);
             $list = $this->networkPosService->getNetworksForPos($id, $filters);
 
             return $this->successResponse('تم استرجاع قائمة الشبكات المرتبطة بنقطة البيع بنجاح.', NetworkPosResource::collection($list));
