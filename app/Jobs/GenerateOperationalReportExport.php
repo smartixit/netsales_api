@@ -9,20 +9,19 @@ use App\Services\OperationalReportAuthorizationService;
 use App\Services\Reports\OperationalReportProviderRegistry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Throwable;
 
-class GenerateOperationalReportExport implements ShouldQueue
+final class GenerateOperationalReportExport implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
-
     public int $timeout = 180;
 
     public function __construct(public int $reportExportId) {}
@@ -31,31 +30,23 @@ class GenerateOperationalReportExport implements ShouldQueue
         OperationalReportAuthorizationService $authorization,
         OperationalReportProviderRegistry $providers
     ): void {
-        // Claim the export row under a database lock. A status read followed by
-        // an ordinary update is not atomic: two workers can both observe QUEUED
-        // and generate the same artifact concurrently.
         $claim = DB::transaction(function (): string {
-            $lockedExport = OperationalReportExport::query()
-                ->lockForUpdate()
-                ->find($this->reportExportId);
-
-            if (! $lockedExport) {
+            $export = OperationalReportExport::query()->lockForUpdate()->find($this->reportExportId);
+            if (! $export) {
                 return 'missing';
             }
 
-            if ($lockedExport->status === OperationalReportExportStatus::PROCESSING) {
-                $startedAt = $lockedExport->started_at;
-                $processingLeaseExpired = $startedAt === null ||
-                    $startedAt->lte(now('Asia/Aden')->subSeconds($this->timeout + 10));
-
-                if ($this->attempts() <= 1 || ! $processingLeaseExpired) {
+            if ($export->status === OperationalReportExportStatus::PROCESSING) {
+                $leaseExpired = $export->started_at === null
+                    || $export->started_at->lte(now('Asia/Aden')->subSeconds($this->timeout + 10));
+                if ($this->attempts() <= 1 || ! $leaseExpired) {
                     return 'release';
                 }
-            } elseif ($lockedExport->status !== OperationalReportExportStatus::QUEUED) {
+            } elseif ($export->status !== OperationalReportExportStatus::QUEUED) {
                 return 'skip';
             }
 
-            $lockedExport->update([
+            $export->update([
                 'status' => OperationalReportExportStatus::PROCESSING,
                 'started_at' => now('Asia/Aden'),
                 'completed_at' => null,
@@ -69,7 +60,6 @@ class GenerateOperationalReportExport implements ShouldQueue
             $this->release(110);
             return;
         }
-
         if ($claim !== 'claimed') {
             return;
         }
@@ -81,52 +71,41 @@ class GenerateOperationalReportExport implements ShouldQueue
 
         try {
             $user = User::query()->findOrFail($export->requested_by);
-            $authorization->authorize($user, $export->report_type, (int) $export->network_id, $export->pos_id ? (int) $export->pos_id : null, true);
+            $type = $export->report_type;
+            $networkId = (int) $export->network_id;
+            $posId = $export->pos_id ? (int) $export->pos_id : null;
+            $authorization->authorize($user, $type, $networkId, $posId, true);
+
+            $provider = $providers->get($type);
             $filters = $export->filters ?? [];
             $filters['per_page'] = 100;
             $filters['cursor'] = null;
+
             $rowStream = fopen('php://temp', 'w+b');
             if ($rowStream === false) {
                 throw new \RuntimeException('REPORT_EXPORT_STREAM_UNAVAILABLE');
             }
 
-            $columns = [];
             $recordCount = 0;
             do {
-                $page = $providers->get($export->report_type)->build($user, (int) $export->network_id, $export->pos_id ? (int) $export->pos_id : null, $filters);
-                if (is_array($page)) {
-                    $items = collect($page);
-                    $nextCursor = null;
-                } else {
-                    $items = collect($page->items());
-                    $nextCursor = $page->nextCursor()?->encode();
-                }
-
-                foreach ($items as $row) {
+                $page = $provider->build($user, $networkId, $posId, $filters);
+                foreach ($page->items() as $row) {
                     $recordCount++;
                     if ($recordCount > 50000) {
                         throw new \RuntimeException('REPORT_EXPORT_LIMIT_EXCEEDED');
                     }
 
-                    $values = $row instanceof \Illuminate\Database\Eloquent\Model
-                        ? $row->toArray()
-                        : (array) $row;
-                    $flat = $this->flattenCsvValues($values);
-                    foreach (array_keys($flat) as $column) {
-                        $columns[$column] = true;
-                    }
-
+                    $serialized = $provider->serializeExportRow($row);
                     $encoded = json_encode(
-                        $flat,
+                        $serialized,
                         JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR
                     );
-                    if (fwrite($rowStream, $encoded . "\n") === false) {
+                    if (fwrite($rowStream, $encoded."\n") === false) {
                         throw new \RuntimeException('REPORT_EXPORT_STREAM_WRITE_FAILED');
                     }
                 }
-
-                $filters['cursor'] = $nextCursor;
-            } while ($nextCursor !== null);
+                $filters['cursor'] = $page->nextCursor()?->encode();
+            } while ($filters['cursor'] !== null);
 
             $stream = fopen('php://temp', 'w+b');
             if ($stream === false) {
@@ -134,24 +113,18 @@ class GenerateOperationalReportExport implements ShouldQueue
                 throw new \RuntimeException('REPORT_EXPORT_STREAM_UNAVAILABLE');
             }
 
-            // UTF-8 BOM allows spreadsheet applications to recognize Arabic text.
             fwrite($stream, "\xEF\xBB\xBF");
-            if ($recordCount === 0) {
-                $columns = $providers->get($export->report_type)->emptyExportColumns();
-            }
-            $columnNames = array_keys($columns);
-            fputcsv($stream, $columnNames);
-            if ($recordCount > 0) {
-                rewind($rowStream);
+            $columns = $provider->exportColumns();
+            fputcsv($stream, array_values($columns));
 
-                while (($line = fgets($rowStream)) !== false) {
-                    $flat = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
-                    $csvRow = [];
-                    foreach ($columnNames as $column) {
-                        $csvRow[] = $this->safeCsvValue($flat[$column] ?? null);
-                    }
-                    fputcsv($stream, $csvRow);
+            rewind($rowStream);
+            while (($line = fgets($rowStream)) !== false) {
+                $values = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+                $csvRow = [];
+                foreach (array_keys($columns) as $field) {
+                    $csvRow[] = $this->safeCsvValue($values[$field] ?? null);
                 }
+                fputcsv($stream, $csvRow);
             }
 
             fclose($rowStream);
@@ -162,10 +135,11 @@ class GenerateOperationalReportExport implements ShouldQueue
                 throw new \RuntimeException('REPORT_EXPORT_STREAM_READ_FAILED');
             }
 
-            $path = 'operational-reports/'.$export->network_id.'/'.$export->export_uuid.'.csv';
+            $path = 'operational-reports/'.$networkId.'/'.$export->export_uuid.'.csv';
             if (! Storage::disk('protected')->put($path, $csv)) {
                 throw new \RuntimeException('REPORT_EXPORT_STORAGE_WRITE_FAILED');
             }
+
             $export->update([
                 'status' => OperationalReportExportStatus::READY,
                 'artifact_path' => $path,
@@ -177,85 +151,41 @@ class GenerateOperationalReportExport implements ShouldQueue
         } catch (Throwable $exception) {
             $willRetry = $this->attempts() < $this->tries;
             $export->update([
-                'status' => $willRetry
-                    ? OperationalReportExportStatus::QUEUED
-                    : OperationalReportExportStatus::FAILED,
-                'failure_code' => $willRetry
-                    ? null
-                    : (preg_match('/^[A-Z0-9_]+$/', $exception->getMessage())
-                        ? $exception->getMessage()
-                        : 'REPORT_EXPORT_FAILED'),
+                'status' => $willRetry ? OperationalReportExportStatus::QUEUED : OperationalReportExportStatus::FAILED,
+                'failure_code' => $willRetry ? null : $this->failureCode($exception),
                 'completed_at' => $willRetry ? null : now('Asia/Aden'),
             ]);
             throw $exception;
         }
     }
 
-    /**
-     * Persist terminal queue failures that occur outside handle() (for example,
-     * worker timeout or exhausted attempts). The timestamp guard avoids changing
-     * a lease that another worker has only just acquired.
-     */
     public function failed(?Throwable $exception): void
     {
-        $message = $exception?->getMessage() ?? 'REPORT_EXPORT_FAILED';
-        $failureCode = preg_match('/^[A-Z0-9_]+$/', $message) === 1
-            ? $message
-            : 'REPORT_EXPORT_FAILED';
-        $leaseCutoff = now('Asia/Aden')->subSeconds(max(1, $this->timeout - 5));
-
+        $cutoff = now('Asia/Aden')->subSeconds(max(1, $this->timeout - 5));
         OperationalReportExport::query()
             ->where('report_export_id', $this->reportExportId)
             ->where('status', OperationalReportExportStatus::PROCESSING->value)
-            ->where(function ($query) use ($leaseCutoff): void {
-                $query->whereNull('started_at')
-                    ->orWhere('started_at', '<=', $leaseCutoff);
-            })
+            ->where(fn ($query) => $query->whereNull('started_at')->orWhere('started_at', '<=', $cutoff))
             ->update([
                 'status' => OperationalReportExportStatus::FAILED->value,
-                'failure_code' => $failureCode,
+                'failure_code' => $this->failureCode($exception),
                 'completed_at' => now('Asia/Aden'),
             ]);
     }
 
-    /**
-     * Flattens nested model attributes using full paths so identically named
-     * fields from different relationships cannot overwrite one another.
-     */
-    private function flattenCsvValues(array $values, string $prefix = ''): array
+    private function failureCode(?Throwable $exception): string
     {
-        $flat = [];
+        $message = $exception?->getMessage() ?? 'REPORT_EXPORT_FAILED';
 
-        foreach ($values as $key => $value) {
-            $column = $prefix === '' ? (string) $key : $prefix.'.'.$key;
-
-            if ($value instanceof \BackedEnum) {
-                $value = $value->value;
-            } elseif ($value instanceof \DateTimeInterface) {
-                $value = $value->format(DATE_ATOM);
-            }
-
-            if (is_array($value)) {
-                $flat += $this->flattenCsvValues($value, $column);
-            } elseif (is_scalar($value) || $value === null) {
-                $flat[$column] = $value;
-            }
-        }
-
-        return $flat;
+        return preg_match('/^[A-Z0-9_]+$/', $message) === 1 ? $message : 'REPORT_EXPORT_FAILED';
     }
 
-    /**
-     * Neutralizes spreadsheet formulas without changing numeric values.
-     */
     private function safeCsvValue(mixed $value): mixed
     {
         if (! is_string($value) || $value === '' || is_numeric($value)) {
             return $value;
         }
 
-        return preg_match('/^[\x00-\x20]*[=+\-@]/', $value) === 1
-            ? "'".$value
-            : $value;
+        return preg_match('/^[\x00-\x20]*[=+\-@]/', $value) === 1 ? "'".$value : $value;
     }
 }
