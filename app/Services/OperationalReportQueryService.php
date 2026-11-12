@@ -190,6 +190,7 @@ class OperationalReportQueryService
             'pending_count' => (clone $query)->where('status', 'PENDING')->count(),
             'approved_count' => (clone $query)->where('status', 'APPROVED')->count(),
             'rejected_count' => (clone $query)->where('status', 'REJECTED')->count(),
+            'cancelled_count' => (clone $query)->where('status', 'CANCELLED')->count(),
         ];
     }
 
