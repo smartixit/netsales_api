@@ -54,6 +54,7 @@ class NetworkPosController extends BaseController
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
             new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'cursor', in: 'query', required: false, description: 'Cursor token returned by the previous page.', schema: new OA\Schema(type: 'string', maxLength: 2048)),
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع قائمة الارتباطات بنجاح'),
@@ -418,6 +419,10 @@ class NetworkPosController extends BaseController
         tags: ['Network POS'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string', maxLength: 120)),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15, maximum: 50)),
+            new OA\Parameter(name: 'cursor', in: 'query', required: false, description: 'Cursor token returned by the previous page.', schema: new OA\Schema(type: 'string', maxLength: 2048)),
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع قائمة نقاط البيع المرتبطة بالشبكة بنجاح'),
@@ -456,6 +461,10 @@ class NetworkPosController extends BaseController
         tags: ['Network POS'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string', maxLength: 120)),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15, maximum: 50)),
+            new OA\Parameter(name: 'cursor', in: 'query', required: false, description: 'Cursor token returned by the previous page.', schema: new OA\Schema(type: 'string', maxLength: 2048)),
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع قائمة الشبكات المرتبطة بنقطة البيع بنجاح'),
