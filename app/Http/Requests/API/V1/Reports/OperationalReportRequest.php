@@ -24,6 +24,7 @@ class OperationalReportRequest extends FormRequest
             'sale_type' => ['nullable', 'in:CASH,CREDIT'],
             'status' => ['nullable', 'string', 'max:32'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'cursor' => ['nullable', 'string', 'max:2048'],
         ];
     }
 }
