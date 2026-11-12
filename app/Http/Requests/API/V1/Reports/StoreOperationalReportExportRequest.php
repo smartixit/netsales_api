@@ -13,6 +13,44 @@ class StoreOperationalReportExportRequest extends FormRequest
         return $this->user() !== null;
     }
 
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            $type = OperationalReportType::tryFrom((string) $this->input('report_type'));
+            if ($type === null) {
+                return;
+            }
+
+            $allowedStatuses = match ($type) {
+                OperationalReportType::SALES => ['PAID', 'PARTIALLY_PAID', 'UNPAID'],
+                OperationalReportType::DEBT_AGING => ['PARTIALLY_PAID', 'UNPAID'],
+                OperationalReportType::NETWORK_WALLET,
+                OperationalReportType::POS_WALLET => ['DEPOSIT', 'WITHDRAW'],
+                OperationalReportType::REPAYMENTS => ['COMPLETED', 'REVERSED'],
+                OperationalReportType::REQUESTS => ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'],
+                OperationalReportType::EXPENSES => [],
+            };
+
+            $status = $this->input('status');
+            if ($status !== null && ! in_array($status, $allowedStatuses, true)) {
+                $validator->errors()->add(
+                    'status',
+                    'حالة التقرير المحددة غير صالحة لنوع التقرير المطلوب.'
+                );
+            }
+
+            if (
+                $type === OperationalReportType::POS_WALLET &&
+                ! $this->filled('pos_id')
+            ) {
+                $validator->errors()->add(
+                    'pos_id',
+                    'تقرير محفظة نقطة البيع يتطلب تحديد نقطة البيع.'
+                );
+            }
+        });
+    }
+
     public function rules(): array
     {
         return [
