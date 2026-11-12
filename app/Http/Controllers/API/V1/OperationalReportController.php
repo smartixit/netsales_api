@@ -156,13 +156,17 @@ class OperationalReportController extends BaseController
             return $this->errorResponse('ملف التصدير غير موجود.', [], 404);
         }
 
-        $this->authorization->authorize(
-            $request->user(),
-            $export->report_type,
-            (int) $export->network_id,
-            $export->pos_id ? (int) $export->pos_id : null,
-            true
-        );
+        try {
+            $this->authorization->authorize(
+                $request->user(),
+                $export->report_type,
+                (int) $export->network_id,
+                $export->pos_id ? (int) $export->pos_id : null,
+                true
+            );
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
+        }
 
         if ($export->status->value !== 'READY' || ! $export->artifact_path || $export->expires_at?->isPast()) {
             return $this->errorResponse('ملف التصدير غير جاهز أو انتهت صلاحيته.', [], 410);
