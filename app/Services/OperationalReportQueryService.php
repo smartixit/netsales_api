@@ -137,11 +137,15 @@ class OperationalReportQueryService
         $query = $this->applySearch($query, OperationalReportType::REPAYMENTS, $filters['search'] ?? null);
         $query = $this->applyDates($query, 'repayment_date', $filters);
 
+        $completed = (clone $query)->where('status', 'COMPLETED');
+        $reversed = (clone $query)->where('status', 'REVERSED');
+
         return [
             'record_count' => (clone $query)->count(),
-            'total_amount' => (clone $query)->sum('amount'),
-            'completed_count' => (clone $query)->where('status', 'COMPLETED')->count(),
-            'reversed_count' => (clone $query)->where('status', 'REVERSED')->count(),
+            'total_amount' => (clone $completed)->sum('amount'),
+            'completed_count' => (clone $completed)->count(),
+            'reversed_count' => (clone $reversed)->count(),
+            'reversed_amount' => (clone $reversed)->sum('amount'),
         ];
     }
 
