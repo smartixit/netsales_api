@@ -40,6 +40,19 @@ class StoreOperationalReportExportRequest extends FormRequest
             }
 
             if (
+                in_array($type, [
+                    OperationalReportType::EXPENSES,
+                    OperationalReportType::NETWORK_WALLET,
+                ], true) &&
+                $this->filled('pos_id')
+            ) {
+                $validator->errors()->add(
+                    'pos_id',
+                    'هذا التقرير على مستوى الشبكة ولا يقبل تصفية نقطة البيع.'
+                );
+            }
+
+            if (
                 $type === OperationalReportType::POS_WALLET &&
                 ! $this->filled('pos_id')
             ) {
