@@ -489,6 +489,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/', [OperationalReportController::class, 'show'])
                 ->middleware('throttle:api-read')
                 ->name('api.v1.reports.show');
+            Route::get('summary', [OperationalReportController::class, 'summary'])
+                ->middleware('throttle:api-read')
+                ->name('api.v1.reports.summary');
         });
         Route::prefix('reports/exports')->middleware(['operational.scope'])->group(function () {
             Route::post('/', [OperationalReportController::class, 'storeExport'])
