@@ -12,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
@@ -30,31 +31,53 @@ class GenerateOperationalReportExport implements ShouldQueue
         OperationalReportAuthorizationService $authorization,
         OperationalReportQueryService $queries
     ): void {
+        // Claim the export row under a database lock. A status read followed by
+        // an ordinary update is not atomic: two workers can both observe QUEUED
+        // and generate the same artifact concurrently.
+        $claim = DB::transaction(function (): string {
+            $lockedExport = OperationalReportExport::query()
+                ->lockForUpdate()
+                ->find($this->reportExportId);
+
+            if (! $lockedExport) {
+                return 'missing';
+            }
+
+            if ($lockedExport->status === OperationalReportExportStatus::PROCESSING) {
+                $startedAt = $lockedExport->started_at;
+                $processingLeaseExpired = $startedAt === null ||
+                    $startedAt->lte(now('Asia/Aden')->subSeconds($this->timeout + 10));
+
+                if ($this->attempts() <= 1 || ! $processingLeaseExpired) {
+                    return 'release';
+                }
+            } elseif ($lockedExport->status !== OperationalReportExportStatus::QUEUED) {
+                return 'skip';
+            }
+
+            $lockedExport->update([
+                'status' => OperationalReportExportStatus::PROCESSING,
+                'started_at' => now('Asia/Aden'),
+                'completed_at' => null,
+                'failure_code' => null,
+            ]);
+
+            return 'claimed';
+        }, 3);
+
+        if ($claim === 'release') {
+            $this->release(110);
+            return;
+        }
+
+        if ($claim !== 'claimed') {
+            return;
+        }
+
         $export = OperationalReportExport::query()->find($this->reportExportId);
         if (! $export) {
             return;
         }
-
-        if ($export->status === OperationalReportExportStatus::PROCESSING) {
-            $startedAt = $export->started_at;
-            $processingLeaseExpired = $startedAt === null ||
-                $startedAt->lte(now('Asia/Aden')->subSeconds($this->timeout + 10));
-
-            // Queue retry_after may be shorter than this job's timeout. Do not
-            // let a redelivered reservation run concurrently with the first
-            // worker; defer it until the original processing lease expires.
-            if ($this->attempts() <= 1 || ! $processingLeaseExpired) {
-                $this->release(110);
-                return;
-            }
-        } elseif ($export->status !== OperationalReportExportStatus::QUEUED) {
-            return;
-        }
-
-        $export->update([
-            'status' => OperationalReportExportStatus::PROCESSING,
-            'started_at' => now('Asia/Aden'),
-        ]);
 
         try {
             $user = User::query()->findOrFail($export->requested_by);
@@ -198,6 +221,33 @@ class GenerateOperationalReportExport implements ShouldQueue
             ]);
             throw $exception;
         }
+    }
+
+    /**
+     * Persist terminal queue failures that occur outside handle() (for example,
+     * worker timeout or exhausted attempts). The timestamp guard avoids changing
+     * a lease that another worker has only just acquired.
+     */
+    public function failed(?Throwable $exception): void
+    {
+        $message = $exception?->getMessage() ?? 'REPORT_EXPORT_FAILED';
+        $failureCode = preg_match('/^[A-Z0-9_]+$/', $message) === 1
+            ? $message
+            : 'REPORT_EXPORT_FAILED';
+        $leaseCutoff = now('Asia/Aden')->subSeconds(max(1, $this->timeout - 5));
+
+        OperationalReportExport::query()
+            ->where('report_export_id', $this->reportExportId)
+            ->where('status', OperationalReportExportStatus::PROCESSING->value)
+            ->where(function ($query) use ($leaseCutoff): void {
+                $query->whereNull('started_at')
+                    ->orWhere('started_at', '<=', $leaseCutoff);
+            })
+            ->update([
+                'status' => OperationalReportExportStatus::FAILED->value,
+                'failure_code' => $failureCode,
+                'completed_at' => now('Asia/Aden'),
+            ]);
     }
 
     /**
