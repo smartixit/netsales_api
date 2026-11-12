@@ -129,6 +129,7 @@ class NetworkWalletService
             $wallet = $this->networkWalletRepository->create([
                 'network_id' => $networkId,
                 'wallet_balance' => $initialBalance,
+                'currency_code' => strtoupper((string) systemSetting('base_currency', 'YER')),
                 'status' => $status,
             ]);
 
