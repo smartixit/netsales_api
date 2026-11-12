@@ -7,6 +7,7 @@ use App\Models\PosWallet;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\ValidationException;
 
 /**
  * مستودع إدارة محافظ نقاط البيع والوكلاء (POS Wallet Repository).
@@ -154,7 +155,14 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
     {
         $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
         $oldBalance = (float) $wallet->wallet_balance;
-        $wallet->wallet_balance = round($oldBalance - $amount, 2);
+        $newBalance = round($oldBalance - $amount, 2);
+        $creditLimit = $wallet->credit_limit === null ? 0.0 : (float) $wallet->credit_limit;
+        if ($amount <= 0 || $newBalance < (-$creditLimit - 0.001)) {
+            throw ValidationException::withMessages([
+                'amount' => ['تجاوزت الحركة الرصيد المتاح والسقف الائتماني المعتمد لنقطة البيع.'],
+            ]);
+        }
+        $wallet->wallet_balance = $newBalance;
         $updated = $wallet->save();
 
         if ($updated) {
