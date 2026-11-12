@@ -31,6 +31,20 @@ class OperationalReportRequest extends FormRequest
                 OperationalReportType::EXPENSES => [],
             };
 
+            $saleType = $this->input('sale_type');
+            if (
+                $saleType !== null &&
+                ! in_array($type, [
+                    OperationalReportType::SALES,
+                    OperationalReportType::REQUESTS,
+                ], true)
+            ) {
+                $validator->errors()->add(
+                    'sale_type',
+                    'نوع البيع لا ينطبق على نوع التقرير المطلوب.'
+                );
+            }
+
             $status = $this->input('status');
             if ($status !== null && ! in_array($status, $allowedStatuses, true)) {
                 $validator->errors()->add(
