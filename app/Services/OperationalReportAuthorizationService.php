@@ -22,15 +22,16 @@ final class OperationalReportAuthorizationService
         OperationalReportType $reportType,
         int $networkId,
         ?int $posId,
-        bool $forExport = false
+        bool $forExport = false,
+        bool $validateReportScope = true
     ): void {
         $definition = $this->providers->get($reportType)->definition();
         $posSelection = $definition['pos_selection'] ?? 'optional';
 
-        if ($posSelection === 'required' && $posId === null) {
+        if ($validateReportScope && $posSelection === 'required' && $posId === null) {
             throw new AuthorizationException('يتطلب هذا التقرير تحديد نقطة البيع.');
         }
-        if ($posSelection === 'forbidden' && $posId !== null) {
+        if ($validateReportScope && $posSelection === 'forbidden' && $posId !== null) {
             throw new AuthorizationException('هذا التقرير لا يقبل تحديد نقطة بيع.');
         }
 
