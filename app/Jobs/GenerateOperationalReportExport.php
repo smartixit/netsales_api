@@ -48,7 +48,7 @@ class GenerateOperationalReportExport implements ShouldQueue
             $filters['cursor'] = null;
             $stream = fopen('php://temp', 'w+b');
             if ($stream === false) {
-                throw new \\RuntimeException('REPORT_EXPORT_STREAM_UNAVAILABLE');
+                throw new \RuntimeException('REPORT_EXPORT_STREAM_UNAVAILABLE');
             }
             fwrite($stream, "\\xEF\\xBB\\xBF");
             $headerWritten = false;
@@ -65,9 +65,9 @@ class GenerateOperationalReportExport implements ShouldQueue
                 foreach ($items as $row) {
                     $recordCount++;
                     if ($recordCount > 50000) {
-                        throw new \\RuntimeException('REPORT_EXPORT_LIMIT_EXCEEDED');
+                        throw new \RuntimeException('REPORT_EXPORT_LIMIT_EXCEEDED');
                     }
-                    $values = $row instanceof \\Illuminate\\Database\\Eloquent\\Model ? $row->toArray() : (array) $row;
+                    $values = $row instanceof \Illuminate\Database\Eloquent\Model ? $row->toArray() : (array) $row;
                     $flat = [];
                     array_walk_recursive($values, function ($value, $key) use (&$flat): void {
                         if (is_scalar($value) || $value === null) {
