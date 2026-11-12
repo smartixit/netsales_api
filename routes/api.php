@@ -483,6 +483,24 @@ Route::prefix('v1')->group(function () {
         });
 
         // ==========================================
+        // Operational reports — Network / POS workspaces only.
+        Route::prefix('reports')->middleware(['throttle:api-read', 'operational.scope'])->group(function () {
+            Route::get('/', [OperationalReportController::class, 'show'])
+                ->middleware('throttle:api-read')
+                ->name('api.v1.reports.show');
+        });
+        Route::prefix('reports/exports')->middleware(['operational.scope'])->group(function () {
+            Route::post('/', [OperationalReportController::class, 'storeExport'])
+                ->middleware('throttle:api-write')
+                ->name('api.v1.reports.exports.store');
+            Route::get('{exportUuid}', [OperationalReportController::class, 'exportStatus'])
+                ->middleware('throttle:api-read')
+                ->name('api.v1.reports.exports.show');
+            Route::get('{exportUuid}/download', [OperationalReportController::class, 'download'])
+                ->middleware('throttle:api-read')
+                ->name('api.v1.reports.exports.download');
+        });
+
         // Platform Billing — Windows Platform Scope only
         // ==========================================
         Route::prefix('platform/billing')->middleware('platform.user.scope')->group(function () {

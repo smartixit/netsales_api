@@ -931,3 +931,14 @@ This log documents all executed tasks, code changes, and verification command ou
 - Confirmed the plan catalogue permission boundaries: product/plan creation uses billing.create; draft version, price, and feature mutations use billing.edit; plan-version publication uses billing.manage.
 - Source-inspected trial/dunning version publication, Draft-only plan/price policy assignment, pending-redemption approval/rejection, and audited trial adjustment behavior. No service or accounting behavior was changed in this route-reconciliation step.
 - Verification: GitHub source reads and file updates only. PHP runtime, Pint, PHPStan, PHPUnit, route:list, migrations, and exact-head CI have not been run. Do not merge until the API quality workflow completes on the PR head.
+
+
+## 2026-11-12 — Operational reporting API foundation
+
+- Added operational report type and export status enums for sales, expenses, network/POS wallet statements, repayments, debt aging, and procurement requests.
+- Added tenant/membership/permission authorization for on-screen reports and a separate export permission gate.
+- Added cursor-paginated report queries using existing operational models and backend-owned persisted values.
+- Added queued CSV export records, a queue job with cursor iteration and a 50,000-row hard limit, private protected-disk artifacts, integrity hash, seven-day expiry, requester-bound status and download endpoints.
+- Added API routes under the operational workspace scope and the missing `requests.export` permission mapping.
+- Commit: `1f26a1fff8bc3d4f8c66e7b343c7e356a3b52b68`.
+- Verification commands: none. Tests, Pint, static analysis, and GitHub Actions are intentionally deferred to the final plan stage per user instruction.
