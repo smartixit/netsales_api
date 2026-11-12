@@ -29,6 +29,17 @@ final class OperationalReportFilterValidator
             $errors->add('pos_id', 'لا يقبل هذا التقرير التصفية حسب نقطة البيع.');
         }
 
+        $allowedFilterIds = array_column($definition['filters'], 'id');
+        $allowedFilterIds = array_merge($allowedFilterIds, ['per_page', 'cursor']);
+        foreach (array_keys($input) as $inputKey) {
+            if (in_array($inputKey, ['report_type', 'network_id', 'pos_id'], true)) {
+                continue;
+            }
+            if (! in_array($inputKey, $allowedFilterIds, true)) {
+                $errors->add($inputKey, 'هذا المرشح غير مدعوم لنوع التقرير المحدد.');
+            }
+        }
+
         foreach ($definition['filters'] as $filter) {
             $id = $filter['id'];
             if (! array_key_exists($id, $input) || $input[$id] === null || $input[$id] === '') {
