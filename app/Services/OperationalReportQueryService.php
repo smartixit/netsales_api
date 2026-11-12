@@ -186,7 +186,8 @@ class OperationalReportQueryService
         $query = ProcurementRequest::query()
             ->where('network_id', $networkId)
             ->when($posId, fn (Builder $q): Builder => $q->where('pos_id', $posId))
-            ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('status', $v));
+            ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('status', $v))
+            ->when($filters['sale_type'] ?? null, fn (Builder $q, string $v): Builder => $q->where('sale_type', $v));
         $query = $this->applySearch($query, OperationalReportType::REQUESTS, $filters['search'] ?? null);
         $query = $this->applyDates($query, 'request_date', $filters);
 
@@ -363,7 +364,8 @@ class OperationalReportQueryService
         $query = ProcurementRequest::query()->with(['network', 'pos', 'createdBy', 'reviewedBy', 'items'])
             ->where('network_id', $networkId)
             ->when($posId, fn (Builder $q): Builder => $q->where('pos_id', $posId))
-            ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('status', $v));
+            ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('status', $v))
+            ->when($filters['sale_type'] ?? null, fn (Builder $q, string $v): Builder => $q->where('sale_type', $v));
         $query = $this->applySearch($query, OperationalReportType::REQUESTS, $filters['search'] ?? null);
         return $this->paginate($this->applyDates($query, 'request_date', $filters), $filters, 'request_date', 'request_id');
     }
