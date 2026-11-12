@@ -9,6 +9,8 @@ use App\Jobs\GenerateOperationalReportExport;
 use App\Models\OperationalReportExport;
 use App\Services\OperationalReportAuthorizationService;
 use App\Services\OperationalReportQueryService;
+use App\Services\Reports\OperationalReportFilterValidator;
+use App\Services\Reports\OperationalReportProviderRegistry;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -21,8 +23,37 @@ class OperationalReportController extends BaseController
 {
     public function __construct(
         protected OperationalReportAuthorizationService $authorization,
-        protected OperationalReportQueryService $queries
+        protected OperationalReportQueryService $queries,
+        protected OperationalReportProviderRegistry $providers,
+        protected OperationalReportFilterValidator $filterValidator
     ) {}
+
+    public function catalog(OperationalReportRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $definitions = [];
+
+        foreach ($this->providers->all() as $provider) {
+            $definition = $provider->definition();
+            $type = $provider->type();
+            try {
+                $this->authorization->authorize($user, $type, (int) $request->validated('network_id'), $request->filled('pos_id') ? (int) $request->validated('pos_id') : null);
+                $definition['available'] = true;
+            } catch (AuthorizationException $exception) {
+                $definition['available'] = false;
+                $definition['unavailable_reason'] = $exception->getMessage();
+            } catch (ModelNotFoundException) {
+                $definition['available'] = false;
+                $definition['unavailable_reason'] = 'الشبكة المطلوبة غير موجودة.';
+            }
+            $definitions[] = $definition;
+        }
+
+        return $this->successResponse('كتالوج التقارير المتاح ضمن نطاق العمل المحدد.', [
+            'schema_version' => 1,
+            'reports' => $definitions,
+        ]);
+    }
 
     public function show(OperationalReportRequest $request): JsonResponse
     {
@@ -32,8 +63,9 @@ class OperationalReportController extends BaseController
             $networkId = (int) $data['network_id'];
             $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
             $this->authorization->authorize($request->user(), $type, $networkId, $posId);
+            $this->filterValidator->validate($type, $posId, $data, validator([], [])->errors());
             $filters = array_intersect_key($data, array_flip(['from_date', 'to_date', 'sale_type', 'status', 'search', 'per_page', 'cursor']));
-            $result = $this->queries->build($request->user(), $type, $networkId, $posId, $filters);
+            $result = $this->providers->get($type)->build($request->user(), $networkId, $posId, $filters);
 
             return $this->successResponse('تم إنشاء بيانات التقرير بنجاح.', $result);
         } catch (AuthorizationException $e) {
@@ -60,7 +92,7 @@ class OperationalReportController extends BaseController
 
             return $this->successResponse(
                 'تم احتساب ملخص التقرير على كامل النتائج المطابقة.',
-                $this->queries->summary($type, $networkId, $posId, $filters)
+                $this->providers->get($type)->summary($request->user(), $networkId, $posId, $filters)
             );
         } catch (AuthorizationException $e) {
             return $this->errorResponse($e->getMessage(), [], 403);
@@ -79,6 +111,7 @@ class OperationalReportController extends BaseController
             $networkId = (int) $data['network_id'];
             $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
             $this->authorization->authorize($request->user(), $type, $networkId, $posId, true);
+            $this->filterValidator->validate($type, $posId, $data, validator([], [])->errors());
             $filters = array_intersect_key($data, array_flip(['from_date', 'to_date', 'sale_type', 'status', 'search']));
             $export = OperationalReportExport::query()->create([
                 'export_uuid' => (string) Str::uuid(),
