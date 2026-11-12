@@ -4,6 +4,8 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Enums\OperationalReportType;
 use App\Http\Requests\API\V1\Reports\OperationalReportRequest;
+use App\Http\Requests\API\V1\Reports\OperationalReportCatalogRequest;
+use Illuminate\Support\MessageBag;
 use App\Http\Requests\API\V1\Reports\StoreOperationalReportExportRequest;
 use App\Jobs\GenerateOperationalReportExport;
 use App\Models\OperationalReportExport;
@@ -28,7 +30,7 @@ class OperationalReportController extends BaseController
         protected OperationalReportFilterValidator $filterValidator
     ) {}
 
-    public function catalog(OperationalReportRequest $request): JsonResponse
+    public function catalog(OperationalReportCatalogRequest $request): JsonResponse
     {
         $user = $request->user();
         $definitions = [];
@@ -63,7 +65,7 @@ class OperationalReportController extends BaseController
             $networkId = (int) $data['network_id'];
             $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
             $this->authorization->authorize($request->user(), $type, $networkId, $posId);
-            $this->filterValidator->validate($type, $posId, $data, validator([], [])->errors());
+            $this->validateProviderFilters($type, $posId, $data);
             $filters = array_intersect_key($data, array_flip(['from_date', 'to_date', 'sale_type', 'status', 'search', 'per_page', 'cursor']));
             $result = $this->providers->get($type)->build($request->user(), $networkId, $posId, $filters);
 
@@ -137,6 +139,17 @@ class OperationalReportController extends BaseController
             return $this->errorResponse('الشبكة المطلوبة غير موجودة.', [], 404);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
+        }
+    }
+
+
+    private function validateProviderFilters(OperationalReportType $type, ?int $posId, array $data): void
+    {
+        $errors = new MessageBag();
+        $this->filterValidator->validate($type, $posId, $data, $errors);
+
+        if ($errors->isNotEmpty()) {
+            throw ValidationException::withMessages($errors->messages());
         }
     }
 
