@@ -114,9 +114,9 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
      */
     public function incrementBalance(int $walletId, float $amount): bool
     {
-        $wallet = $this->findById($walletId);
+        $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
         $oldBalance = (float) $wallet->wallet_balance;
-        $wallet->wallet_balance = $oldBalance + $amount;
+        $wallet->wallet_balance = round($oldBalance + $amount, 2);
         $updated = $wallet->save();
 
         if ($updated) {
@@ -126,14 +126,11 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
         return $updated;
     }
 
-    /**
-     * خصم من رصيد المحفظة بمقدار محدد.
-     */
     public function decrementBalance(int $walletId, float $amount): bool
     {
-        $wallet = $this->findById($walletId);
+        $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
         $oldBalance = (float) $wallet->wallet_balance;
-        $wallet->wallet_balance = $oldBalance - $amount;
+        $wallet->wallet_balance = round($oldBalance - $amount, 2);
         $updated = $wallet->save();
 
         if ($updated) {
@@ -142,7 +139,6 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
 
         return $updated;
     }
-
     /**
      * تحديث حالة المحفظة (تفعيل/تعطيل).
      */
