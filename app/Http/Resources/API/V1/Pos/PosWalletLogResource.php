@@ -29,6 +29,9 @@ class PosWalletLogResource extends JsonResource
                 ? $this->log_operation_type->label()
                 : (WalletOperationType::tryFrom((string) $this->log_operation_type)?->label()),
             'log_amount' => (float) $this->log_amount,
+            'balance_before' => (float) $this->balance_before,
+            'balance_after' => (float) $this->balance_after,
+            'currency_code' => $this->currency_code,
             'log_statement' => $this->log_statement,
             'log_date' => $this->log_date ? Carbon::parse($this->log_date)->toDateTimeString() : null,
             'created_by' => $this->created_by,
