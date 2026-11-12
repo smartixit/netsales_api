@@ -506,13 +506,13 @@ Route::prefix('v1')->group(function () {
 
         // Immutable operational document snapshots and issued PDF artifacts.
         Route::prefix('documents/snapshots')->middleware(['throttle:api-read', 'operational.scope'])->group(function () {
-            Route::post('/', [\\App\\Http\\Controllers\\API\\V1\\OperationalDocumentSnapshotController::class, 'store'])
+            Route::post('/', [\App\Http\Controllers\API\V1\OperationalDocumentSnapshotController::class, 'store'])
                 ->middleware('throttle:api-write')
                 ->name('api.v1.documents.snapshots.store');
-            Route::post('{snapshotUuid}/artifact', [\\App\\Http\\Controllers\\API\\V1\\OperationalDocumentSnapshotController::class, 'storeArtifact'])
+            Route::post('{snapshotUuid}/artifact', [\App\Http\Controllers\API\V1\OperationalDocumentSnapshotController::class, 'storeArtifact'])
                 ->middleware('throttle:api-write')
                 ->name('api.v1.documents.snapshots.artifact');
-            Route::get('{snapshotUuid}/download', [\\App\\Http\\Controllers\\API\\V1\\OperationalDocumentSnapshotController::class, 'download'])
+            Route::get('{snapshotUuid}/download', [\App\Http\Controllers\API\V1\OperationalDocumentSnapshotController::class, 'download'])
                 ->name('api.v1.documents.snapshots.download');
         });
 
