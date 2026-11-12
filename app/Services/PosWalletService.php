@@ -151,7 +151,7 @@ class PosWalletService
                 'network_id' => $networkId,
                 'pos_id' => $posId,
                 'wallet_balance' => $initialBalance,
-                'currency_code' => strtoupper((string) ($this->networkWalletRepository->findByNetworkId($networkId)?->currency_code ?? systemSetting('base_currency', 'YER'))),
+                'currency_code' => ($this->networkWalletRepository->findByNetworkId($networkId)?->currency_code ?? 'YER'),
                 'status' => $status,
             ]);
 
