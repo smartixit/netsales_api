@@ -166,10 +166,10 @@ class OperationalReportQueryService
         $query = $this->applySearch($query, OperationalReportType::DEBT_AGING, $filters['search'] ?? null);
         $query = $this->applyDates($query, 'invoice_date', $filters);
 
-        $now = Carbon::now('Asia/Aden');
-        $day30 = $now->copy()->subDays(30)->startOfDay();
-        $day60 = $now->copy()->subDays(60)->startOfDay();
-        $day90 = $now->copy()->subDays(90)->startOfDay();
+        $now = Carbon::now('Asia/Aden')->startOfDay();
+        $day30 = $now->copy()->subDays(30);
+        $day60 = $now->copy()->subDays(60);
+        $day90 = $now->copy()->subDays(90);
 
         return [
             'record_count' => (clone $query)->count(),
@@ -348,7 +348,7 @@ class OperationalReportQueryService
         $page = $query->cursorPaginate((int) ($filters['per_page'] ?? 25), ['*'], 'cursor', $filters['cursor'] ?? null);
         foreach ($page->items() as $invoice) {
             $invoiceDate = Carbon::parse($invoice->invoice_date, 'Asia/Aden')->startOfDay();
-            $age = max(0, (int) $invoiceDate->diffInDays($now, false));
+            $age = max(0, (int) $invoiceDate->diffInDays($now->copy()->startOfDay(), false));
             $invoice->setAttribute('age_days', $age);
             $invoice->setAttribute('aging_bucket', match (true) {
                 $age <= 30 => '0_30',
