@@ -504,6 +504,18 @@ Route::prefix('v1')->group(function () {
                 ->name('api.v1.reports.exports.download');
         });
 
+        // Immutable operational document snapshots and issued PDF artifacts.
+        Route::prefix('documents/snapshots')->middleware(['throttle:api-read', 'operational.scope'])->group(function () {
+            Route::post('/', [\\App\\Http\\Controllers\\API\\V1\\OperationalDocumentSnapshotController::class, 'store'])
+                ->middleware('throttle:api-write')
+                ->name('api.v1.documents.snapshots.store');
+            Route::post('{snapshotUuid}/artifact', [\\App\\Http\\Controllers\\API\\V1\\OperationalDocumentSnapshotController::class, 'storeArtifact'])
+                ->middleware('throttle:api-write')
+                ->name('api.v1.documents.snapshots.artifact');
+            Route::get('{snapshotUuid}/download', [\\App\\Http\\Controllers\\API\\V1\\OperationalDocumentSnapshotController::class, 'download'])
+                ->name('api.v1.documents.snapshots.download');
+        });
+
         // Platform Billing — Windows Platform Scope only
         // ==========================================
         Route::prefix('platform/billing')->middleware('platform.user.scope')->group(function () {
