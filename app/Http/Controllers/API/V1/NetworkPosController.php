@@ -436,7 +436,7 @@ class NetworkPosController extends BaseController
                 return $this->errorResponse('غير مصرح لك بعرض نقاط البيع لهذه الشبكة.', [], 403);
             }
 
-            $filters = $request->only(['status', 'search', 'per_page', 'all']);
+            $filters = $request->only(['status', 'search', 'per_page', 'cursor', 'all']);
             $list = $this->networkPosService->getPosForNetwork($id, $filters);
 
             return $this->successResponse('تم استرجاع قائمة نقاط البيع المرتبطة بالشبكة بنجاح.', NetworkPosResource::collection($list));
