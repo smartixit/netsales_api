@@ -37,7 +37,7 @@ class OperationalReportController extends BaseController
             $definition = $provider->definition();
             $type = $provider->type();
             try {
-                $this->authorization->authorize($user, $type, (int) $request->validated('network_id'), $request->filled('pos_id') ? (int) $request->validated('pos_id') : null);
+                $this->authorization->authorize($user, $type, (int) $request->validated('network_id'), $request->filled('pos_id') ? (int) $request->validated('pos_id') : null, false, false);
                 $definition['available'] = true;
             } catch (AuthorizationException $exception) {
                 $definition['available'] = false;
