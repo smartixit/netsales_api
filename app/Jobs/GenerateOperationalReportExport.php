@@ -97,9 +97,44 @@ class GenerateOperationalReportExport implements ShouldQueue
 
             // UTF-8 BOM allows spreadsheet applications to recognize Arabic text.
             fwrite($stream, "\xEF\xBB\xBF");
+            if ($recordCount === 0) {
+                $columns = array_fill_keys(match ($export->report_type) {
+                    \App\Enums\OperationalReportType::SALES => [
+                        'invoice_id', 'invoice_uuid', 'invoice_date', 'sale_type',
+                        'payment_status', 'invoice_total_amount', 'paid_amount',
+                        'remaining_amount', 'network_id', 'pos_id',
+                    ],
+                    \App\Enums\OperationalReportType::EXPENSES => [
+                        'expense_id', 'expense_uuid', 'expense_date',
+                        'expense_total_amount', 'network_id', 'created_by',
+                    ],
+                    \App\Enums\OperationalReportType::NETWORK_WALLET => [
+                        'log_id', 'log_date', 'log_operation', 'log_amount',
+                        'log_statement', 'network_wallet_id',
+                    ],
+                    \App\Enums\OperationalReportType::POS_WALLET => [
+                        'log_id', 'log_date', 'log_operation_type', 'log_amount',
+                        'log_statement', 'pos_wallet_id',
+                    ],
+                    \App\Enums\OperationalReportType::REPAYMENTS => [
+                        'repayment_id', 'repayment_uuid', 'repayment_date',
+                        'amount', 'status', 'reference_number', 'notes',
+                    ],
+                    \App\Enums\OperationalReportType::DEBT_AGING => [
+                        'invoice_id', 'invoice_uuid', 'invoice_date',
+                        'invoice_total_amount', 'paid_amount', 'remaining_amount',
+                        'payment_status', 'network_id', 'pos_id',
+                    ],
+                    \App\Enums\OperationalReportType::REQUESTS => [
+                        'request_id', 'request_uuid', 'request_date', 'sale_type',
+                        'status', 'request_total_amount', 'request_note',
+                        'network_id', 'pos_id',
+                    ],
+                }, true);
+            }
             $columnNames = array_keys($columns);
+            fputcsv($stream, $columnNames);
             if ($recordCount > 0) {
-                fputcsv($stream, $columnNames);
                 rewind($rowStream);
 
                 while (($line = fgets($rowStream)) !== false) {
@@ -121,7 +156,9 @@ class GenerateOperationalReportExport implements ShouldQueue
             }
 
             $path = 'operational-reports/'.$export->network_id.'/'.$export->export_uuid.'.csv';
-            Storage::disk('protected')->put($path, $csv);
+            if (! Storage::disk('protected')->put($path, $csv)) {
+                throw new \RuntimeException('REPORT_EXPORT_STORAGE_WRITE_FAILED');
+            }
             $export->update([
                 'status' => OperationalReportExportStatus::READY,
                 'artifact_path' => $path,
