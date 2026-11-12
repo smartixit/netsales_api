@@ -36,6 +36,15 @@ class OperationalReportAuthorizationService
         $isNetworkOwner = (int) $network->owner_id === (int) $user->user_id;
         $canUseNetworkScope = $isNetworkOwner || $networkMembership;
 
+        // These datasets are network-owned and are not filtered by POS. A
+        // POS-only membership must never receive the full network dataset.
+        if (! $canUseNetworkScope && in_array($reportType, [
+            OperationalReportType::EXPENSES,
+            OperationalReportType::NETWORK_WALLET,
+        ], true)) {
+            throw new AuthorizationException('يتطلب هذا التقرير عضوية نشطة في الشبكة المالكة للبيانات.');
+        }
+
         if ($posId !== null) {
             $activeLink = NetworkPos::query()
                 ->where('network_id', $networkId)
