@@ -178,7 +178,7 @@ class OperationalReportController extends BaseController
         return $this->successResponse('حالة طلب التصدير.', [
             'export_id' => $export->export_uuid,
             'report_type' => $export->report_type->value,
-            'report_type_label' => $export->report_type->label(),
+            'report_type_label' => $this->providers->get($export->report_type)->definition()['label'],
             'status' => $export->status->value,
             'status_label' => $export->status->label(),
             'failure_code' => $export->failure_code,
