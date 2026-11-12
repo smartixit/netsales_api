@@ -7,6 +7,7 @@ use App\Models\NetworkWallet;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\ValidationException;
 
 /**
  * مستودع إدارة محافظ مزودي الشبكات (Network Wallet Repository).
@@ -130,6 +131,11 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
     {
         $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
         $oldBalance = (float) $wallet->wallet_balance;
+        if ($amount <= 0 || $oldBalance + 0.001 < $amount) {
+            throw ValidationException::withMessages([
+                'amount' => ['رصيد محفظة الشبكة غير كافٍ لإتمام الحركة المالية.'],
+            ]);
+        }
         $wallet->wallet_balance = round($oldBalance - $amount, 2);
         $updated = $wallet->save();
 
