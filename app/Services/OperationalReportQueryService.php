@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Enums\OperationalReportType;
 use App\Models\Expense;
 use App\Models\NetworkWallet;
+use App\Models\NetworkWalletLog;
 use App\Models\PosRepayment;
 use App\Models\PosWallet;
+use App\Models\PosWalletLog;
 use App\Models\Request as ProcurementRequest;
 use App\Models\SaleInvoice;
 use App\Models\User;
@@ -280,7 +282,9 @@ class OperationalReportQueryService
         $wallet = NetworkWallet::query()->with(['network', 'logs.createdBy'])
             ->where('network_id', $networkId)->first();
         if (! $wallet) {
-            return [];
+            $emptyLogs = NetworkWalletLog::query()->whereRaw('1 = 0');
+
+            return $this->paginate($emptyLogs, $filters, 'log_date', 'log_id');
         }
         $logs = $wallet->logs()->getQuery()
             ->with('createdBy')
@@ -296,7 +300,9 @@ class OperationalReportQueryService
         }
         $wallet = PosWallet::query()->where('network_id', $networkId)->where('pos_id', $posId)->first();
         if (! $wallet) {
-            return [];
+            $emptyLogs = PosWalletLog::query()->whereRaw('1 = 0');
+
+            return $this->paginate($emptyLogs, $filters, 'log_date', 'log_id');
         }
         $logs = $wallet->logs()->getQuery()
             ->with('createdBy')
