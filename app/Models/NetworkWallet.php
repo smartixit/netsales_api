@@ -32,6 +32,8 @@ class NetworkWallet extends Model
         'network_id',
         'wallet_uuid',
         'wallet_balance',
+        'opening_balance',
+        'currency_code',
         'status',
     ];
 
@@ -39,6 +41,7 @@ class NetworkWallet extends Model
     {
         return [
             'wallet_balance' => 'decimal:2',
+            'opening_balance' => 'decimal:2',
             'status' => 'boolean',
         ];
     }
