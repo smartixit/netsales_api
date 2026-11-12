@@ -24,6 +24,8 @@ class NetworkWalletResource extends JsonResource
             'network_id' => $this->network_id,
             'wallet_uuid' => $this->wallet_uuid,
             'wallet_balance' => (float) $this->wallet_balance,
+            'opening_balance' => (float) $this->opening_balance,
+            'currency_code' => $this->currency_code,
             'status' => (bool) $this->status,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
