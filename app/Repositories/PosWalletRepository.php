@@ -138,9 +138,9 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
      */
     public function incrementBalance(int $walletId, float $amount): bool
     {
-        $wallet = $this->findById($walletId);
+        $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
         $oldBalance = (float) $wallet->wallet_balance;
-        $wallet->wallet_balance = $oldBalance + $amount;
+        $wallet->wallet_balance = round($oldBalance + $amount, 2);
         $updated = $wallet->save();
 
         if ($updated) {
@@ -150,14 +150,11 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
         return $updated;
     }
 
-    /**
-     * خصم من رصيد محفظة نقطة البيع بمقدار محدد.
-     */
     public function decrementBalance(int $walletId, float $amount): bool
     {
-        $wallet = $this->findById($walletId);
+        $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
         $oldBalance = (float) $wallet->wallet_balance;
-        $wallet->wallet_balance = $oldBalance - $amount;
+        $wallet->wallet_balance = round($oldBalance - $amount, 2);
         $updated = $wallet->save();
 
         if ($updated) {
@@ -166,7 +163,6 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
 
         return $updated;
     }
-
     /**
      * تحديث حالة المحفظة (تفعيل/تعطيل).
      */
