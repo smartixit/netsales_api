@@ -995,3 +995,13 @@ This log documents all executed tasks, code changes, and verification command ou
 - The Reports screen now constrains the schema-driven Studio viewport alongside the result list, displays criteria/presentation schema validation issues in the app design system, clears cached choice controls when filters are reset, and removes unused legacy criteria lookup helpers.
 - The Flutter implementation consumes all seven current provider schemas generically; it does not define a parallel report-specific filter list. The generic report identifier value object continues to accept valid provider identifiers beyond the current seven.
 - No Flutter formatter, analyzer, tests, PDF visual checks, or Actions were run. All remain deferred to the final validation gate.
+
+
+## 2026-11-13 — Wallet ledger and official-copy hardening
+
+- Converted the remaining public NetworkWallet/PosWallet model mutation paths to DecimalAmount minor-unit arithmetic and exact balance snapshots; invalid wallet currency codes now fail closed.
+- Corrected POS available-overdraft and total-purchasing-power calculations to avoid double-counting positive cash and to account for already-used overdraft. Sufficiency checks reject non-positive amounts.
+- Added matching-currency guards to network-to-POS transfers, POS-to-network transfers, and reversal operations. Cross-currency wallet movement is rejected; no implicit FX conversion is performed.
+- Reviewed the wallet ledger backfill and report period-balance formulas, the immutable operational-document snapshot service, protected artifact storage, first-write artifact immutability, and client-side canonical SHA-256 download verification. Confirmed invoice/repayment/expense render adapters use server snapshot data and the shared seven-weight IBM Plex Sans Arabic font service with image watermarking.
+- Updated the SMS format documentation to describe the wallet's actual currency code rather than hard-coded YER text.
+- Verification boundary: source review only; no migrations or tests executed. Final migration/database tests, static analysis, PDF text extraction, and visual checks remain deferred.

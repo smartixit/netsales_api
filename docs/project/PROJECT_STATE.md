@@ -187,9 +187,18 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 
 ## Scheduler unification update — 2026-11-13
 - Active API branch: `feat/operational-reports-contracts`.
-- Current API HEAD before this state update: `9f583ba6e842dfd75c7247cea2e0604db3d02f29`.
+- Current API HEAD before this state update: `ec3aec42ed8663f4ff1df05216b8f649b5e33c80`.
 - Current Flutter branch reference verified during this work: `feat/invoice-document-engine-integration` at `6778572fe07294d4ad534a38277521888ba8a495`.
 - Scheduler implementation is source-updated but NOT runtime-validated. It centralizes task definitions in `ScheduledTaskType`, persists exact occurrence slots and two-hour execution leases, and removes parallel recurring command declarations.
 - API activity middleware triggers bounded catch-up after successful requests when Cron is unavailable. It processes at most two successfully claimed scheduled occurrences and one queued job per throttled activity tick. Completed/locked occurrences are skipped without consuming the batch limit. The fallback still requires application traffic; it cannot run in the absence of all triggers.
 - Queue processing uses the configured connection and one-shot worker invocation; no resident worker is required for this fallback. `sync` and `null` connections are excluded.
 - Database migration, all tests, static analysis, PDF checks, and GitHub Actions remain deferred to the final validation gate. No merge or production readiness is claimed.
+
+
+## Wallet ledger and official document closure update — 2026-11-13
+- Network and POS wallet model-level mutation methods now use DecimalAmount integer minor units, record exact before/after balances, and reject invalid currency codes instead of falling back to YER.
+- Wallet sufficiency checks use positive minor-unit amounts. POS overdraft capacity and purchasing power are calculated in integer minor units; available overdraft is remaining credit after any negative balance, and total purchasing power is cash plus remaining credit.
+- All network↔POS transfer and reversal paths validate matching ISO-style currency codes before changing balances; no implicit cross-currency conversion is allowed.
+- Wallet ledger migration 000001 backfills opening balances and ordered before/after snapshots in minor units. Network/POS wallet statement providers derive period opening/closing balances from the same ledger movements and include currency/source metadata.
+- Official document snapshots bind immutable source JSON, template/schema versions, currency, and SHA-256; the client renders from the server snapshot, uploads once, then downloads the server-canonical artifact and verifies its SHA-256. Invoice, repayment, and expense adapters use all seven IBM Plex Sans Arabic weights and tenant/application logo image watermarks.
+- Source implementation only. Database migrations were not applied and no tests, static analysis, PDF text extraction, visual comparison, or Actions were run. Final validation remains pending.
