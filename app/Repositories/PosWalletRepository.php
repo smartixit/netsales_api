@@ -140,6 +140,12 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
     public function incrementBalance(int $walletId, float $amount): bool
     {
         $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
+        $wallet->ensureActive();
+        if ($amount <= 0) {
+            throw ValidationException::withMessages([
+                'amount' => ['يجب أن يكون مبلغ الحركة أكبر من الصفر.'],
+            ]);
+        }
         $oldBalance = (float) $wallet->wallet_balance;
         $wallet->wallet_balance = round($oldBalance + $amount, 2);
         $updated = $wallet->save();
@@ -154,6 +160,7 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
     public function decrementBalance(int $walletId, float $amount): bool
     {
         $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
+        $wallet->ensureActive();
         $oldBalance = (float) $wallet->wallet_balance;
         $newBalance = round($oldBalance - $amount, 2);
         $creditLimit = $wallet->credit_limit === null ? 0.0 : (float) $wallet->credit_limit;
