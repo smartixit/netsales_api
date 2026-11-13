@@ -12,6 +12,7 @@ final class BillingPlanPerformanceProvider extends ConfiguredBillingReportProvid
             ->join('currencies as c','c.currency_id','=','s.currency_id')
             ->where('s.status','ACTIVE')->where('bp.billing_interval','!=','ONE_TIME')->whereNull('s.deleted_at');
         if($networkId!==null)$query->where('ba.network_id',$networkId);
+        $this->applySearchColumns($query, $filters, ['p.name', 'p.plan_key', 's.status']);
         $mrr="CASE bp.billing_interval
           WHEN 'DAY' THEN bp.unit_amount_minor*s.quantity*30/NULLIF(bp.interval_count,0)
           WHEN 'WEEK' THEN bp.unit_amount_minor*s.quantity*52/(12*NULLIF(bp.interval_count,0))
