@@ -69,7 +69,8 @@ final class OperationalReportPresetValidator
                 'integer' => is_int($value),
                 'boolean' => is_bool($value),
                 'choices' => is_array($value) && array_is_list($value)
-                    && count(array_filter($value, 'is_string')) === count($value),
+                    && count(array_filter($value, 'is_string')) === count($value)
+                    && count($value) === count(array_unique($value)),
                 'date_range' => is_array($value)
                     && array_diff(array_keys($value), ['start', 'end']) === []
                     && array_key_exists('start', $value)
