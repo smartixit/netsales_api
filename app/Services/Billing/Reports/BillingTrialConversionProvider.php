@@ -60,7 +60,7 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
             $query->where('ba.network_id', $networkId);
         }
 
-        $this->window($query, 'e.occurred_at', $filters);
+        $this->window($query, 'r.reserved_at', $filters);
         $this->applyRedemptionSearch($query, $filters);
 
         return (int) $query->distinct()->count('r.trial_redemption_id');
@@ -107,7 +107,7 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
           ->where('e.event_type','TRIAL_CONVERSION_INVOICE_ISSUED');
         if($networkId!==null)$events->where('ba.network_id',$networkId);
         $events->whereNull('s.deleted_at');
-        $this->window($events,'e.occurred_at',$filters);
+        $this->window($events,'r.reserved_at',$filters);
         $this->applyRedemptionSearch($events, $filters);
         $invoiceIssued=(int)$events->distinct()->count('e.billing_subscription_id');
         $paid=DB::table('billing_trial_redemptions as r')
