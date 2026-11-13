@@ -4,6 +4,7 @@ namespace App\Services\Reports;
 
 use App\Contracts\Reports\OperationalReportProvider;
 use App\Enums\OperationalReportType;
+use App\Models\NetworkWallet;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -97,6 +98,17 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
         }
 
         return $value instanceof \DateTimeInterface ? $value->format('Y-m-d H:i:s') : (string) $value;
+    }
+
+    protected function currencyCode(int $networkId): string
+    {
+        $currencyCode = NetworkWallet::withTrashed()
+            ->where('network_id', $networkId)
+            ->value('currency_code');
+
+        return is_string($currencyCode) && $currencyCode !== ''
+            ? strtoupper($currencyCode)
+            : 'YER';
     }
 
     protected function amountValue(mixed $value): string
