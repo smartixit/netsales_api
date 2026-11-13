@@ -54,8 +54,8 @@ final class ConfiguredBillingReportProvider implements BillingReportProvider
             $query->where($condition[0], $condition[1], $condition[2]);
         }
         $dateColumn = $this->config['date'];
-        if (! empty($filters['from_date'])) $query->where($dateColumn, '>=', $filters['from_date'].' 00:00:00');
-        if (! empty($filters['to_date'])) $query->where($dateColumn, '<=', $filters['to_date'].' 23:59:59');
+        if (! empty($filters['from_date'])) $query->whereDate($dateColumn, '>=', $filters['from_date']);
+        if (! empty($filters['to_date'])) $query->whereDate($dateColumn, '<=', $filters['to_date']);
         if (! empty($filters['status']) && ! empty($this->config['status'])) {
             $query->where($this->config['status'], strtoupper((string) $filters['status']));
         }
