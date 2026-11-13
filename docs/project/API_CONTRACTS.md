@@ -260,3 +260,41 @@ All endpoints are under `/api/v1/platform/billing` and require Platform Scope pl
 - Treasury accounts are reconciled individually by comparing their general-ledger asset balance with verified payments assigned to that treasury less completed refunds paid from that same treasury. Every refund stores `treasury_account_id`.
 - Any verified payment or completed refund missing a treasury link is exposed in warnings and makes the currency group require attention. Treasury accounts missing their ledger link are also exposed.
 - `MATCH` means all internal ledger/subledger checks balance exactly in minor units. It is not a substitute for matching external bank statements; no bank-statement import is currently represented by this endpoint.
+
+
+## Operational Reports Provider Contract — 2026-11-13 (Implementation Pending Final Validation)
+
+### Catalog and provider ownership
+- `GET /api/v1/reports/catalog?network_id={id}[&pos_id={id}]` returns `schema_version` and a `reports[]` catalog.
+- Every report definition includes a stable `id`, `schema_version`, `title_key`, localized `label`/`description`, view/export permission keys, `supported_scopes`, `pos_selection`, filter definitions, result columns, metric slots, chart slots, template references, execution policy, client row limit, chart availability, and export formats.
+- Catalog entries add `available` and, when unavailable, `unavailable_reason` for the requested workspace context. This is display guidance only; every execution/export request is independently authorized on the server.
+- Each report has one registered `OperationalReportProvider`. It owns its query, full-result summary, filter options, export columns, and row serialization. The provider registry rejects duplicate providers and missing report types.
+- Supported report IDs: `sales`, `expenses`, `network_wallet_statement`, `pos_wallet_statement`, `repayments`, `debt_aging`, and `requests`.
+
+### Execution and export routes
+- `GET /api/v1/reports` returns a cursor-paginated result page with Laravel cursor metadata. `per_page` and `cursor` are transport pagination parameters; report filters are restricted to those declared by the selected provider.
+- `GET /api/v1/reports/summary` returns provider-owned aggregates and chart series computed over the complete filtered result set, not merely the current page.
+- `POST /api/v1/reports/exports` queues a CSV export. Status and download are available through `GET /api/v1/reports/exports/{exportUuid}` and `GET /api/v1/reports/exports/{exportUuid}/download`.
+- CSV column identifiers, order, and row serialization are owned by the provider. Exports use cursor iteration, formula-injection protection, a 50,000-row limit, private protected storage, SHA-256, and seven-day expiry.
+- Access checks use the exact network or POS membership role scope and the provider's permission key. A user with both memberships is authorized through whichever supported scope has both active membership and the required permission. Platform Scope roles are not a substitute for Network/POS workspace permissions.
+
+### Wallet statement ledger fields
+- `network_wallets` and `pos_wallets` expose `opening_balance`, `opening_balance_source`, and `currency_code`.
+- `network_wallet_logs` and `pos_wallet_logs` expose `balance_before`, `balance_after`, `balance_snapshot_source`, and `currency_code`.
+- Snapshot provenance values used by the implementation: `BACKFILLED` for reconstructed legacy rows, `INITIAL` for a newly initialized wallet opening balance, and `LIVE` for new posting-time movement snapshots.
+- `balance_before`/`balance_after` mean the balance immediately before/after the posting operation; they are not an effective-date running balance for backdated transactions. Period opening/closing balances are derived from ledger movements filtered by `log_date`.
+- Wallet statements include soft-deleted ledger entries and soft-deleted wallets for audit continuity. They include effective transaction date and posting timestamp as separate fields.
+- Operational currency is independent of Platform Billing currencies. Documents spanning a network and POS wallet reject differing currency codes rather than combining unlike currencies.
+
+### Immutable operational document snapshots
+- `POST /api/v1/documents/snapshots` accepts `document_type`, `document_id`, `network_id`, optional `pos_id`, `template_id`, and `template_version`.
+- Supported document types/template versions:
+  - `sale_invoice` → `netsales.invoice.executive@1.0.0`
+  - `pos_repayment` → `netsales.repayment.receipt.executive@1.0.0`
+  - `expense` → `netsales.expense.voucher.executive@1.0.0`
+- The response contains the immutable source payload, snapshot UUID/version, schema/template versions, currency, source SHA-256, issue timestamp, and artifact-ready state.
+- `POST /api/v1/documents/snapshots/{snapshotUuid}/artifact` accepts a PDF artifact. The server validates the PDF signature, stores it on the protected disk, and records SHA-256 and size. First successful artifact wins; a retry cannot replace it.
+- `GET /api/v1/documents/snapshots/{snapshotUuid}/download` rechecks current tenant membership and permission before streaming the canonical PDF with private/no-store headers.
+- Snapshot source and issuance metadata cannot be updated or deleted through the Eloquent model. Creator/reversal identities are minimized to user ID and display name; expense attachment paths and URLs are omitted from permanent source snapshots.
+
+**Validation status:** This contract describes the current source implementation on `feat/operational-reports-contracts`. It has not yet passed the final migration/runtime, Pint, PHPStan, PHPUnit, PDF extraction/visual, or exact-HEAD GitHub Actions gate. Do not treat it as a verified production contract until that gate passes.
