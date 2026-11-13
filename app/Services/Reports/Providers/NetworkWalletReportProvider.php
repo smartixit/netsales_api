@@ -149,7 +149,7 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
         ];
     }
 
-    public function serializeExportRow(mixed $row): array
+    public function serializeRow(mixed $row): array
     {
         return [
             'log_id' => $row->log_id,
