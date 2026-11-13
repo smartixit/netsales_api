@@ -19,6 +19,16 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
     abstract protected function posSelection(): string;
     abstract protected function columns(): array;
     abstract protected function metricSlots(): array;
+
+    protected function pageProfileIds(): array
+    {
+        return ['a4-portrait'];
+    }
+
+    protected function supportedLocaleTags(): array
+    {
+        return ['ar'];
+    }
     abstract protected function summaryCharts(): array;
     abstract protected function statusChoices(): array;
 
@@ -57,16 +67,27 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
             'id' => $type->value,
             'schema_version' => 1,
             'title_key' => 'operational_reports.'.$type->value.'.title',
+            'description_key' => 'operational_reports.'.$type->value.'.description',
+            'supported_locale_tags' => $this->supportedLocaleTags(),
             'label' => $this->label(),
             'description' => $this->description(),
             'permissions' => ['view' => $this->viewPermission(), 'export' => $this->exportPermission()],
             'supported_scopes' => $this->scopes(),
             'pos_selection' => $this->posSelection(),
             'filters' => $filters,
-            'columns' => $this->columns(),
+            'columns' => array_map(
+                static fn (array $column): array => array_merge([
+                    'visible_by_default' => true,
+                    'hideable' => true,
+                    'sortable' => false,
+                    'groupable' => false,
+                ], $column),
+                $this->columns()
+            ),
             'metric_slots' => $this->metricSlots(),
             'chart_slots' => $charts,
             'templates' => [['id' => 'netsales.operational-report.executive', 'version' => '1.0.0']],
+            'page_profile_ids' => $this->pageProfileIds(),
             'execution_policy' => 'server',
             'client_row_limit' => null,
             'charts_available' => $charts !== [],
