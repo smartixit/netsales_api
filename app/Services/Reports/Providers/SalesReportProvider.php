@@ -126,7 +126,7 @@ final class SalesReportProvider extends AbstractOperationalReportProvider
         ];
     }
 
-    public function serializeRow(mixed $row): array
+    public function serializeExportRow(mixed $row): array
     {
         return [
             'invoice_id' => $row->invoice_id,
