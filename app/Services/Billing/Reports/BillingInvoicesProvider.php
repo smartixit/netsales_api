@@ -10,6 +10,7 @@ final class BillingInvoicesProvider extends ConfiguredBillingReportProvider
         if(!empty($filters['from_date']))$q->whereDate('i.issued_on','>=',$filters['from_date']);
         if(!empty($filters['to_date']))$q->whereDate('i.issued_on','<=',$filters['to_date']);
         if(!empty($filters['status']))$q->where('i.status',strtoupper((string)$filters['status']));
+        $this->applySearchColumns($q, $filters, ['i.invoice_number', 'i.status']);
         $statuses=(clone $q)->select('i.status')->selectRaw('COUNT(*) as total')->groupBy('i.status')->get();
         $totals=(clone $q)->select('i.currency_id','c.code as currency_code','c.name as currency_name','c.decimal_places')->selectRaw('COUNT(*) as invoice_count')
           ->selectRaw('SUM(i.total_minor) as invoiced_minor')
