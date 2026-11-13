@@ -987,3 +987,11 @@ This log documents all executed tasks, code changes, and verification command ou
 
 
 - Scheduler fairness correction (commit `2ea780442bdc4dad1a80c4d5fa14576f08566e84`): bounded activity ticks continue past already-completed or concurrently-claimed occurrences and count only successfully claimed slots toward the per-tick limit, preventing starvation. The scheduled-task lease was extended to two hours to cover long-running backup execution.
+
+
+## 2026-11-13 — Flutter operational report studio integration follow-up
+
+- Flutter branch `feat/invoice-document-engine-integration` advanced to `6778572fe07294d4ad534a38277521888ba8a495`.
+- The Reports screen now constrains the schema-driven Studio viewport alongside the result list, displays criteria/presentation schema validation issues in the app design system, clears cached choice controls when filters are reset, and removes unused legacy criteria lookup helpers.
+- The Flutter implementation consumes all seven current provider schemas generically; it does not define a parallel report-specific filter list. The generic report identifier value object continues to accept valid provider identifiers beyond the current seven.
+- No Flutter formatter, analyzer, tests, PDF visual checks, or Actions were run. All remain deferred to the final validation gate.

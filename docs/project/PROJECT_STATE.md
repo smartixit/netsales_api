@@ -187,8 +187,8 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 
 ## Scheduler unification update — 2026-11-13
 - Active API branch: `feat/operational-reports-contracts`.
-- Current API HEAD before this state update: `2ea780442bdc4dad1a80c4d5fa14576f08566e84`.
-- Current Flutter branch reference verified during this work: `feat/invoice-document-engine-integration` at `60703dfe1193ca28a452207c98657f8d4e1e2012`.
+- Current API HEAD before this state update: `9f583ba6e842dfd75c7247cea2e0604db3d02f29`.
+- Current Flutter branch reference verified during this work: `feat/invoice-document-engine-integration` at `6778572fe07294d4ad534a38277521888ba8a495`.
 - Scheduler implementation is source-updated but NOT runtime-validated. It centralizes task definitions in `ScheduledTaskType`, persists exact occurrence slots and two-hour execution leases, and removes parallel recurring command declarations.
 - API activity middleware triggers bounded catch-up after successful requests when Cron is unavailable. It processes at most two successfully claimed scheduled occurrences and one queued job per throttled activity tick. Completed/locked occurrences are skipped without consuming the batch limit. The fallback still requires application traffic; it cannot run in the absence of all triggers.
 - Queue processing uses the configured connection and one-shot worker invocation; no resident worker is required for this fallback. `sync` and `null` connections are excluded.
