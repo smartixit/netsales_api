@@ -25,6 +25,7 @@ use Illuminate\Validation\ValidationException;
 
 final class OperationalDocumentSnapshotService
 {
+    public function __construct(private readonly TenantPermissionService $tenantPermissions) {}
     public function create(
         User $user,
         string $documentType,
@@ -253,8 +254,13 @@ final class OperationalDocumentSnapshotService
             'expense' => 'expenses.view',
             default => null,
         };
-        $tenantId = $networkScope ? $networkId : (int) $posId;
-        if ($permission === null || ! $user->hasPermission($permission, $tenantId)) {
+        $hasPermission = $permission !== null && (
+            $networkScope
+                ? $this->tenantPermissions->allowsNetwork($user, $networkId, $permission)
+                : $this->tenantPermissions->allowsPos($user, (int) $posId, $permission)
+        );
+
+        if (! $hasPermission) {
             throw new AuthorizationException('لا تملك صلاحية إصدار نسخة رسمية من هذا المستند.');
         }
     }
