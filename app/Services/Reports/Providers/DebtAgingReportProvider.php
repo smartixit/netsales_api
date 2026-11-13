@@ -8,7 +8,40 @@ protected function metricSlots():array{return [['id'=>'record_count','label'=>'�
 private function query(int $networkId,?int $posId,array $filters):Builder{$p=$this->pattern($filters);$q=SaleInvoice::query()->with('pos')->where('network_id',$networkId)->where('remaining_amount','>',0)->when($posId!==null,fn(Builder $q):Builder=>$q->where('pos_id',$posId))->when($filters['status']??null,fn(Builder $q,string $v):Builder=>$q->where('payment_status',$v))->when($p!==null,fn(Builder $q):Builder=>$q->where('invoice_uuid','like',$p));return $this->applyDates($q,'invoice_date',$filters);}
 public function build(User $user,int $networkId,?int $posId,array $filters):CursorPaginator{return $this->paginate($this->query($networkId,$posId,$filters),$filters,'invoice_date','invoice_id');}
 private function aging(SaleInvoice $r):array{$age=max(0,(int)Carbon::parse($r->invoice_date)->startOfDay()->diffInDays(now('Asia/Aden')->startOfDay(), false));$bucket=$age<=30?'0_30':($age<=60?'31_60':($age<=90?'61_90':'over_90'));return ['age_days'=>$age,'aging_bucket'=>$bucket];}
-public function summary(User $user,int $networkId,?int $posId,array $filters):array{$rows=$this->query($networkId,$posId,$filters)->get(['invoice_id','invoice_date','remaining_amount']);$b=['0_30'=>0.0,'31_60'=>0.0,'61_90'=>0.0,'over_90'=>0.0];foreach($rows as $r){$a=$this->aging($r);$b[$a['aging_bucket']]+=(float)$r->remaining_amount;}return ['record_count'=>$rows->count(),'total_outstanding'=>$this->amountValue(array_sum($b)),'bucket_0_30'=>$this->amountValue($b['0_30']),'bucket_31_60'=>$this->amountValue($b['31_60']),'bucket_61_90'=>$this->amountValue($b['61_90']),'bucket_over_90'=>$this->amountValue($b['over_90']),'charts'=>['debt_aging'=>[['bucket'=>'0–30','amount'=>$this->amountValue($b['0_30'])],['bucket'=>'31–60','amount'=>$this->amountValue($b['31_60'])],['bucket'=>'61–90','amount'=>$this->amountValue($b['61_90'])],['bucket'=>'>90','amount'=>$this->amountValue($b['over_90'])]]]];}
+public function summary(User $user,int $networkId,?int $posId,array $filters):array{
+ $query=$this->query($networkId,$posId,$filters);
+ $today=now('Asia/Aden')->startOfDay();
+ $d30=$today->copy()->subDays(30);
+ $d60=$today->copy()->subDays(60);
+ $d90=$today->copy()->subDays(90);
+
+ $bucket0To30=(clone $query)->where('invoice_date','>=',$d30)->sum('remaining_amount');
+ $bucket31To60=(clone $query)->where('invoice_date','<',$d30)->where('invoice_date','>=',$d60)->sum('remaining_amount');
+ $bucket61To90=(clone $query)->where('invoice_date','<',$d60)->where('invoice_date','>=',$d90)->sum('remaining_amount');
+ $bucketOver90=(clone $query)->where('invoice_date','<',$d90)->sum('remaining_amount');
+
+ $b=[
+  '0_30'=>(float)$bucket0To30,
+  '31_60'=>(float)$bucket31To60,
+  '61_90'=>(float)$bucket61To90,
+  'over_90'=>(float)$bucketOver90,
+ ];
+
+ return [
+  'record_count'=>(clone $query)->count(),
+  'total_outstanding'=>$this->amountValue(array_sum($b)),
+  'bucket_0_30'=>$this->amountValue($b['0_30']),
+  'bucket_31_60'=>$this->amountValue($b['31_60']),
+  'bucket_61_90'=>$this->amountValue($b['61_90']),
+  'bucket_over_90'=>$this->amountValue($b['over_90']),
+  'charts'=>['debt_aging'=>[
+   ['bucket'=>'0–30','amount'=>$this->amountValue($b['0_30'])],
+   ['bucket'=>'31–60','amount'=>$this->amountValue($b['31_60'])],
+   ['bucket'=>'61–90','amount'=>$this->amountValue($b['61_90'])],
+   ['bucket'=>'>90','amount'=>$this->amountValue($b['over_90'])],
+  ]],
+ ];
+}
 public function exportColumns():array{return ['invoice_id'=>'رقم الفاتورة','invoice_uuid'=>'مرجع الفاتورة','invoice_date'=>'التاريخ','pos_id'=>'نقطة البيع','invoice_total_amount'=>'الإجمالي','paid_amount'=>'المدفوع','remaining_amount'=>'المتبقي','age_days'=>'عمر الدين','aging_bucket'=>'شريحة العمر'];}
 public function serializeExportRow(mixed $r):array{return ['invoice_id'=>$r->invoice_id,'invoice_uuid'=>$r->invoice_uuid,'invoice_date'=>$this->dateValue($r->invoice_date),'pos_id'=>$r->pos_id,'invoice_total_amount'=>$this->amountValue($r->invoice_total_amount),'paid_amount'=>$this->amountValue($r->paid_amount),'remaining_amount'=>$this->amountValue($r->remaining_amount),...$this->aging($r)];}
 }
