@@ -48,7 +48,8 @@ final class OperationalReportFilterValidator
             $filterId = $filter['id'];
             $hasValue = array_key_exists($filterId, $filters)
                 && $filters[$filterId] !== null
-                && $filters[$filterId] !== '';
+                && $filters[$filterId] !== ''
+                && (! is_array($filters[$filterId]) || $filters[$filterId] !== []);
 
             if (($filter['required'] ?? false) && ! $hasValue) {
                 $errors->add("filters.{$filterId}", 'هذا المرشح مطلوب لهذا التقرير.');
