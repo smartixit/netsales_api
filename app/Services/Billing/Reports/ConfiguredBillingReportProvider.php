@@ -137,7 +137,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             );
             $result['amounts_by_currency'] = $currencyQuery
                 ->select($this->config['currency'].' as currency_id')
-                ->addSelect('billing_report_currency.code as currency_code', 'billing_report_currency.name as currency_name', 'billing_report_currency.decimal_places')
+                ->addSelect(['billing_report_currency.code as currency_code', 'billing_report_currency.name as currency_name', 'billing_report_currency.decimal_places'])
                 ->selectRaw('SUM('.$this->config['amount'].') as amount_minor')
                 ->groupBy($this->config['currency'], 'billing_report_currency.code', 'billing_report_currency.name', 'billing_report_currency.decimal_places')
                 ->orderBy($this->config['currency'])
