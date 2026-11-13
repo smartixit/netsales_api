@@ -379,6 +379,7 @@ class PosWalletService
                 ]);
             }
             $posWallet->ensureActive();
+            $this->assertMatchingWalletCurrencies($networkWallet, $posWallet);
 
             // إنشاء سجل الحوالة المالية المركزية
             $transfer = WalletTransfer::create([
@@ -474,6 +475,7 @@ class PosWalletService
                 ]);
             }
             $posWallet->ensureActive();
+            $this->assertMatchingWalletCurrencies($networkWallet, $posWallet);
 
             if (! $posWallet->hasSufficientBalance($amount)) {
                 throw ValidationException::withMessages([
@@ -563,6 +565,7 @@ class PosWalletService
 
             $posWallet = $this->posWalletRepository->findByIdForUpdate($origTransfer->pos_wallet_id);
             $posWallet->ensureActive();
+            $this->assertMatchingWalletCurrencies($networkWallet, $posWallet);
 
             $amount = (float) $origTransfer->amount;
 
@@ -768,6 +771,23 @@ class PosWalletService
      * @param  float  $amount  مبلغ الحركة
      * @param  float|null  $currentBalance  الرصيد الفعلي بعد الحركة (إن لم يحدد يُؤخذ من المحفظة)
      */
+    private function assertMatchingWalletCurrencies(NetworkWallet $networkWallet, PosWallet $posWallet): void
+    {
+        $networkCurrency = strtoupper(trim((string) $networkWallet->currency_code));
+        $posCurrency = strtoupper(trim((string) $posWallet->currency_code));
+        if (preg_match('/^[A-Z]{3}$/D', $networkCurrency) !== 1
+            || preg_match('/^[A-Z]{3}$/D', $posCurrency) !== 1) {
+            throw ValidationException::withMessages([
+                'currency_code' => ['رمز عملة إحدى المحافظ غير صالح؛ أُوقفت الحركة المالية.'],
+            ]);
+        }
+        if ($networkCurrency !== $posCurrency) {
+            throw ValidationException::withMessages([
+                'currency_code' => ['عملة محفظة الشبكة لا تطابق عملة محفظة نقطة البيع؛ لا يمكن تنفيذ تحويل بين عملتين مختلفتين.'],
+            ]);
+        }
+    }
+
     public function sendWalletSms(PosWallet $wallet, string $action, float $amount, ?float $currentBalance = null): void
     {
         $wallet->loadMissing(['pos', 'network']);

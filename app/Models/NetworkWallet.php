@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\WalletOperationType;
 use App\Services\Support\BusinessIdentifierGenerator;
+use App\Support\DecimalAmount;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use LogicException;
 
 class NetworkWallet extends Model
 {
@@ -101,7 +103,8 @@ class NetworkWallet extends Model
 
     public function hasSufficientBalance(float $amount): bool
     {
-        return (float) $this->wallet_balance >= $amount;
+        return DecimalAmount::toMinorUnits($this->wallet_balance)
+            >= DecimalAmount::toMinorUnits($amount);
     }
 
     // Operations
@@ -110,23 +113,25 @@ class NetworkWallet extends Model
         return DB::transaction(function () use ($amount, $statement, $userId): NetworkWalletLog {
             $wallet = self::query()->lockForUpdate()->findOrFail($this->getKey());
             $wallet->ensureActive();
-            if ($amount <= 0) {
-                throw ValidationException::withMessages([
-                    'amount' => ['مبلغ الإيداع يجب أن يكون أكبر من الصفر.'],
-                ]);
+            $amountMinor = DecimalAmount::toMinorUnits($amount);
+            if ($amountMinor <= 0) {
+                throw ValidationException::withMessages(['amount' => ['مبلغ الإيداع يجب أن يكون أكبر من الصفر.']]);
             }
-
-            $before = round((float) $wallet->wallet_balance, 2);
-            $wallet->wallet_balance = round($before + $amount, 2);
+            $currencyCode = strtoupper(trim((string) $wallet->currency_code));
+            if (preg_match('/^[A-Z]{3}$/D', $currencyCode) !== 1) {
+                throw new LogicException('The network wallet currency code is invalid.');
+            }
+            $beforeMinor = DecimalAmount::toMinorUnits($wallet->wallet_balance);
+            $afterMinor = DecimalAmount::add($beforeMinor, $amountMinor);
+            $wallet->wallet_balance = DecimalAmount::fromMinorUnits($afterMinor);
             $wallet->save();
-
             return $wallet->logs()->create([
                 'log_operation' => WalletOperationType::DEPOSIT,
-                'log_amount' => round($amount, 2),
-                'balance_before' => $before,
-                'balance_after' => (float) $wallet->wallet_balance,
+                'log_amount' => DecimalAmount::fromMinorUnits($amountMinor),
+                'balance_before' => DecimalAmount::fromMinorUnits($beforeMinor),
+                'balance_after' => DecimalAmount::fromMinorUnits($afterMinor),
                 'balance_snapshot_source' => 'LIVE',
-                'currency_code' => $wallet->currency_code ?: 'YER',
+                'currency_code' => $currencyCode,
                 'log_statement' => $statement,
                 'log_date' => now('Asia/Aden'),
                 'created_by' => $userId,
@@ -139,23 +144,25 @@ class NetworkWallet extends Model
         return DB::transaction(function () use ($amount, $statement, $userId): NetworkWalletLog {
             $wallet = self::query()->lockForUpdate()->findOrFail($this->getKey());
             $wallet->ensureActive();
-            $before = round((float) $wallet->wallet_balance, 2);
-            if ($amount <= 0 || $before + 0.001 < $amount) {
-                throw ValidationException::withMessages([
-                    'amount' => ['رصيد محفظة الشبكة غير كافٍ لإتمام السحب.'],
-                ]);
+            $amountMinor = DecimalAmount::toMinorUnits($amount);
+            $beforeMinor = DecimalAmount::toMinorUnits($wallet->wallet_balance);
+            if ($amountMinor <= 0 || $beforeMinor < $amountMinor) {
+                throw ValidationException::withMessages(['amount' => ['رصيد محفظة الشبكة غير كافٍ لإتمام السحب.']]);
             }
-
-            $wallet->wallet_balance = round($before - $amount, 2);
+            $currencyCode = strtoupper(trim((string) $wallet->currency_code));
+            if (preg_match('/^[A-Z]{3}$/D', $currencyCode) !== 1) {
+                throw new LogicException('The network wallet currency code is invalid.');
+            }
+            $afterMinor = DecimalAmount::add($beforeMinor, -$amountMinor);
+            $wallet->wallet_balance = DecimalAmount::fromMinorUnits($afterMinor);
             $wallet->save();
-
             return $wallet->logs()->create([
                 'log_operation' => WalletOperationType::WITHDRAW,
-                'log_amount' => round($amount, 2),
-                'balance_before' => $before,
-                'balance_after' => (float) $wallet->wallet_balance,
+                'log_amount' => DecimalAmount::fromMinorUnits($amountMinor),
+                'balance_before' => DecimalAmount::fromMinorUnits($beforeMinor),
+                'balance_after' => DecimalAmount::fromMinorUnits($afterMinor),
                 'balance_snapshot_source' => 'LIVE',
-                'currency_code' => $wallet->currency_code ?: 'YER',
+                'currency_code' => $currencyCode,
                 'log_statement' => $statement,
                 'log_date' => now('Asia/Aden'),
                 'created_by' => $userId,
