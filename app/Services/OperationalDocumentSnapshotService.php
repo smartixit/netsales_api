@@ -174,7 +174,14 @@ final class OperationalDocumentSnapshotService
     private function invoiceSource(int $id, int $networkId, ?int $posId): array
     {
         $invoice = SaleInvoice::query()
-            ->with(['network', 'pos', 'request', 'createdBy', 'items.voucherPackage'])
+            ->with([
+                'network',
+                'pos',
+                'request',
+                'createdBy',
+                'items' => fn ($query) => $query->lockForUpdate(),
+                'items.voucherPackage',
+            ])
             ->where('network_id', $networkId)
             ->when($posId !== null, fn ($query) => $query->where('pos_id', $posId))
             ->lockForUpdate()
@@ -190,7 +197,14 @@ final class OperationalDocumentSnapshotService
     private function repaymentSource(int $id, int $networkId, ?int $posId): array
     {
         $repayment = PosRepayment::query()
-            ->with(['network', 'pos', 'allocations.invoice', 'createdBy', 'reversedBy'])
+            ->with([
+                'network',
+                'pos',
+                'createdBy',
+                'reversedBy',
+                'allocations' => fn ($query) => $query->lockForUpdate(),
+                'allocations.invoice' => fn ($query) => $query->lockForUpdate(),
+            ])
             ->where('network_id', $networkId)
             ->when($posId !== null, fn ($query) => $query->where('pos_id', $posId))
             ->lockForUpdate()
@@ -210,7 +224,12 @@ final class OperationalDocumentSnapshotService
         }
 
         $expense = Expense::query()
-            ->with(['network', 'createdBy', 'items', 'attachments'])
+            ->with([
+                'network',
+                'createdBy',
+                'items' => fn ($query) => $query->lockForUpdate(),
+                'attachments' => fn ($query) => $query->lockForUpdate(),
+            ])
             ->where('network_id', $networkId)
             ->lockForUpdate()
             ->findOrFail($id);
