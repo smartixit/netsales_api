@@ -63,8 +63,12 @@ class OperationalReportController extends BaseController
             $networkId = (int) $data['network_id'];
             $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
             $this->authorization->authorize($request->user(), $type, $networkId, $posId);
-            $this->validateProviderFilters($type, $posId, $data);
-            $filters = array_intersect_key($data, array_flip(['from_date', 'to_date', 'sale_type', 'status', 'search', 'per_page', 'cursor']));
+            $filterValues = $data['filters'] ?? [];
+            $this->validateProviderFilters($type, $posId, $filterValues);
+            $filters = $filterValues + [
+                'per_page' => (int) ($data['per_page'] ?? 25),
+                'cursor' => $data['cursor'] ?? null,
+            ];
             $provider = $this->providers->get($type);
             $result = $provider->build($request->user(), $networkId, $posId, $filters);
             $result->setCollection(
@@ -91,11 +95,8 @@ class OperationalReportController extends BaseController
             $networkId = (int) $data['network_id'];
             $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
             $this->authorization->authorize($request->user(), $type, $networkId, $posId);
-            $this->validateProviderFilters($type, $posId, $data);
-            $filters = array_intersect_key(
-                $data,
-                array_flip(['from_date', 'to_date', 'sale_type', 'status', 'search'])
-            );
+            $filters = $data['filters'] ?? [];
+            $this->validateProviderFilters($type, $posId, $filters);
 
             return $this->successResponse(
                 'تم احتساب ملخص التقرير على كامل النتائج المطابقة.',
@@ -118,8 +119,8 @@ class OperationalReportController extends BaseController
             $networkId = (int) $data['network_id'];
             $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
             $this->authorization->authorize($request->user(), $type, $networkId, $posId, true);
-            $this->validateProviderFilters($type, $posId, $data);
-            $filters = array_intersect_key($data, array_flip(['from_date', 'to_date', 'sale_type', 'status', 'search']));
+            $filters = $data['filters'] ?? [];
+            $this->validateProviderFilters($type, $posId, $filters);
             $export = OperationalReportExport::query()->create([
                 'export_uuid' => (string) Str::uuid(),
                 'network_id' => $networkId,
@@ -148,10 +149,10 @@ class OperationalReportController extends BaseController
     }
 
 
-    private function validateProviderFilters(OperationalReportType $type, ?int $posId, array $data): void
+    private function validateProviderFilters(OperationalReportType $type, ?int $posId, array $filters): void
     {
         $errors = new MessageBag();
-        $this->filterValidator->validate($type, $posId, $data, $errors);
+        $this->filterValidator->validate($type, $posId, $filters, $errors);
 
         if ($errors->isNotEmpty()) {
             throw ValidationException::withMessages($errors->messages());
