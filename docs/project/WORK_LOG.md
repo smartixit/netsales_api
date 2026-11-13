@@ -986,4 +986,4 @@ This log documents all executed tasks, code changes, and verification command ou
 - Execution boundary: source changes only. No migration was applied; no PHP runtime, Pint, PHPStan, PHPUnit, route:list, or GitHub Actions were run. Tests and CI remain deferred to the final validation stage. Activity-triggered processing requires incoming API traffic; no PHP scheduler can run in the complete absence of Cron, queue workers, and application activity.
 
 
-- Scheduler fairness correction: bounded activity ticks now continue past already-completed or concurrently-claimed occurrences and count only successfully claimed slots toward the per-tick limit. This prevents the same first two completed tasks from starving later due tasks.
+- Scheduler fairness correction (commit `2ea780442bdc4dad1a80c4d5fa14576f08566e84`): bounded activity ticks continue past already-completed or concurrently-claimed occurrences and count only successfully claimed slots toward the per-tick limit, preventing starvation. The scheduled-task lease was extended to two hours to cover long-running backup execution.
