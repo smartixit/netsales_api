@@ -247,10 +247,14 @@ class BillingSelfServiceController extends BaseController
 
     public function subscription(int $subscriptionId): JsonResponse
     {
-        $subscription = $this->self->subscription($subscriptionId, $this->requireCurrentUser());
-        return $this->successResponse('تم استرجاع تفاصيل الاشتراك وتجربته وسجل أحداثه.', [
+        $actor = $this->requireCurrentUser();
+        $subscription = $this->self->subscription($subscriptionId, $actor);
+
+        return $this->successResponse('تم استرجاع تفاصيل الاشتراك وتجربته وأول صفحة من سجل أحداثه.', [
             'subscription' => new BillingSubscriptionResource($subscription),
-            'events' => BillingSubscriptionEventResource::collection($subscription->events),
+            'events' => BillingSubscriptionEventResource::collection(
+                $this->self->subscriptionEvents($subscriptionId, ['per_page' => 30], $actor)
+            ),
             'invoices' => BillingInvoiceResource::collection($subscription->invoices),
         ]);
     }
