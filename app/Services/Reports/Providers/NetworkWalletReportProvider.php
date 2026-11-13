@@ -20,6 +20,7 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
     protected function scopes(): array { return ['network']; }
     protected function posSelection(): string { return 'forbidden'; }
     protected function statusChoices(): array { return ['DEPOSIT', 'WITHDRAW']; }
+    protected function statusFilterLabel(): string { return 'نوع الحركة'; }
 
     protected function columns(): array
     {
