@@ -107,15 +107,24 @@ final class GenerateOperationalReportExport implements ShouldQueue
                 $filters['cursor'] = $page->nextCursor()?->encode();
             } while ($filters['cursor'] !== null);
 
-            $stream = fopen('php://temp', 'w+b');
+            $stream = fopen('php://temp/maxmemory:2097152', 'w+b');
             if ($stream === false) {
                 fclose($rowStream);
                 throw new \RuntimeException('REPORT_EXPORT_STREAM_UNAVAILABLE');
             }
 
-            fwrite($stream, "\xEF\xBB\xBF");
+            if (fwrite($stream, "\xEF\xBB\xBF") === false) {
+                fclose($rowStream);
+                fclose($stream);
+                throw new \RuntimeException('REPORT_EXPORT_STREAM_WRITE_FAILED');
+            }
+
             $columns = $provider->exportColumns();
-            fputcsv($stream, array_values($columns));
+            if (fputcsv($stream, array_values($columns)) === false) {
+                fclose($rowStream);
+                fclose($stream);
+                throw new \RuntimeException('REPORT_EXPORT_CSV_HEADER_FAILED');
+            }
 
             rewind($rowStream);
             while (($line = fgets($rowStream)) !== false) {
@@ -124,27 +133,36 @@ final class GenerateOperationalReportExport implements ShouldQueue
                 foreach (array_keys($columns) as $field) {
                     $csvRow[] = $this->safeCsvValue($values[$field] ?? null);
                 }
-                fputcsv($stream, $csvRow);
+                if (fputcsv($stream, $csvRow) === false) {
+                    fclose($rowStream);
+                    fclose($stream);
+                    throw new \RuntimeException('REPORT_EXPORT_CSV_ROW_FAILED');
+                }
             }
-
             fclose($rowStream);
+
             rewind($stream);
-            $csv = stream_get_contents($stream);
-            fclose($stream);
-            if ($csv === false) {
+            $hashContext = hash_init('sha256');
+            $artifactSize = hash_update_stream($hashContext, $stream);
+            if ($artifactSize === false) {
+                fclose($stream);
                 throw new \RuntimeException('REPORT_EXPORT_STREAM_READ_FAILED');
             }
+            $artifactHash = hash_final($hashContext);
 
+            rewind($stream);
             $path = 'operational-reports/'.$networkId.'/'.$export->export_uuid.'.csv';
-            if (! Storage::disk('protected')->put($path, $csv)) {
+            $stored = Storage::disk('protected')->writeStream($path, $stream);
+            fclose($stream);
+            if (! $stored) {
                 throw new \RuntimeException('REPORT_EXPORT_STORAGE_WRITE_FAILED');
             }
 
             $export->update([
                 'status' => OperationalReportExportStatus::READY,
                 'artifact_path' => $path,
-                'artifact_sha256' => hash('sha256', $csv),
-                'artifact_size' => strlen($csv),
+                'artifact_sha256' => $artifactHash,
+                'artifact_size' => $artifactSize,
                 'record_count' => $recordCount,
                 'completed_at' => now('Asia/Aden'),
             ]);
