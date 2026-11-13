@@ -22,6 +22,7 @@ use App\Models\Request as RequestModel;
 use App\Models\RequestItem;
 use App\Models\SaleInvoice;
 use App\Models\SaleInvoiceItem;
+use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -155,6 +156,7 @@ class SaleInvoiceService
                 ]);
             }
             $posWallet->ensureActive();
+            $currencyCode = $this->assertMatchingWalletCurrencies($networkWallet, $posWallet);
 
             // 4. احتساب أسعار وخصومات الباقات وحسم التسعير السيادي وفق نوع البيع الأصلي للطلب
             $effectiveSaleType = $request->sale_type ?? SaleType::CASH;
@@ -276,22 +278,31 @@ class SaleInvoiceService
             if ($isCashSale) {
                 $posBalanceAfter = (float) $posWallet->wallet_balance;
 
-                // 1. قيد استحقاق الفاتورة / صرف الكروت (WITHDRAW)
+                // قيدان متسلسلان في دفتر الأستاذ دون تغيير صافي رصيد POS في البيع النقدي.
+                $cashSaleAmountMinor = DecimalAmount::toMinorUnits($totalInvoiceAmount);
+                $posBalanceBeforeMinor = DecimalAmount::toMinorUnits($posWallet->wallet_balance);
+                $posBalanceAfterDebitMinor = DecimalAmount::add($posBalanceBeforeMinor, -$cashSaleAmountMinor);
+                $posBalanceBefore = DecimalAmount::fromMinorUnits($posBalanceBeforeMinor);
+                $posBalanceAfterDebit = DecimalAmount::fromMinorUnits($posBalanceAfterDebitMinor);
+
                 $this->posWalletLogRepository->createLog(
                     $posWallet->wallet_id,
                     WalletOperationType::WITHDRAW,
                     $totalInvoiceAmount,
                     "استحقاق فاتورة مبيعات كروت نقدية (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})",
-                    $userId
+                    $userId,
+                    balanceBefore: $posBalanceBefore,
+                    balanceAfter: $posBalanceAfterDebit
                 );
 
-                // 2. قيد سداد نقدي فوري / سند قبض (DEPOSIT)
                 $this->posWalletLogRepository->createLog(
                     $posWallet->wallet_id,
                     WalletOperationType::DEPOSIT,
                     $totalInvoiceAmount,
                     "سداد نقدي فوري للفاتورة (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})",
-                    $userId
+                    $userId,
+                    balanceBefore: $posBalanceAfterDebit,
+                    balanceAfter: $posBalanceBefore
                 );
             } else {
                 $this->posWalletRepository->decrementBalance($posWallet->wallet_id, $totalInvoiceAmount);
@@ -345,6 +356,7 @@ class SaleInvoiceService
                     'invoice_total_amount' => $totalInvoiceAmount,
                     'paid_amount' => $paidAmount,
                     'remaining_amount' => $remainingAmount,
+                    'currency_code' => $currencyCode,
                     'payment_status' => $paymentStatus->value,
                 ]
             );
@@ -503,6 +515,7 @@ class SaleInvoiceService
                 ]);
             }
             $posWallet->ensureActive();
+            $currencyCode = $this->assertMatchingWalletCurrencies($networkWallet, $posWallet);
 
             $totalInvoiceAmount = round($totalInvoiceAmount, 2);
 
@@ -564,13 +577,21 @@ class SaleInvoiceService
 
             // 5. التسوية المالية في المحافظ:
             if ($isCashSale) {
-                // البيع النقدي: محفظة نقطة البيع لا يتغير رصيدها، ويسجل قيدان مزدوجان للتوثيق المحاسبي
+                // قيدان متسلسلان في دفتر الأستاذ دون تغيير صافي رصيد POS في البيع النقدي.
+                $cashSaleAmountMinor = DecimalAmount::toMinorUnits($totalInvoiceAmount);
+                $posBalanceBeforeMinor = DecimalAmount::toMinorUnits($posWallet->wallet_balance);
+                $posBalanceAfterDebitMinor = DecimalAmount::add($posBalanceBeforeMinor, -$cashSaleAmountMinor);
+                $posBalanceBefore = DecimalAmount::fromMinorUnits($posBalanceBeforeMinor);
+                $posBalanceAfterDebit = DecimalAmount::fromMinorUnits($posBalanceAfterDebitMinor);
+
                 $this->posWalletLogRepository->createLog(
                     $posWallet->wallet_id,
                     WalletOperationType::WITHDRAW,
                     $totalInvoiceAmount,
                     "استحقاق فاتورة مبيعات مباشرة نقدية (#{$invoice->invoice_uuid})",
-                    $userId
+                    $userId,
+                    balanceBefore: $posBalanceBefore,
+                    balanceAfter: $posBalanceAfterDebit
                 );
 
                 $this->posWalletLogRepository->createLog(
@@ -578,7 +599,9 @@ class SaleInvoiceService
                     WalletOperationType::DEPOSIT,
                     $totalInvoiceAmount,
                     "سداد نقدي كاش للفاتورة المباشرة (#{$invoice->invoice_uuid})",
-                    $userId
+                    $userId,
+                    balanceBefore: $posBalanceAfterDebit,
+                    balanceAfter: $posBalanceBefore
                 );
 
                 // إيداع النقد المقبوض فعلياً كاملاً في محفظة الشبكة كسيولة متاحة
@@ -717,6 +740,22 @@ class SaleInvoiceService
 
             return $this->getById($invoiceId);
         });
+    }
+
+    private function assertMatchingWalletCurrencies(NetworkWallet $networkWallet, PosWallet $posWallet): string
+    {
+        $networkCurrency = strtoupper(trim((string) $networkWallet->currency_code));
+        $posCurrency = strtoupper(trim((string) $posWallet->currency_code));
+
+        if (preg_match('/^[A-Z]{3}$/D', $networkCurrency) !== 1
+            || preg_match('/^[A-Z]{3}$/D', $posCurrency) !== 1
+            || $networkCurrency !== $posCurrency) {
+            throw ValidationException::withMessages([
+                'currency_code' => ['عملة محفظة الشبكة لا تطابق عملة محفظة نقطة البيع أو أن رمز العملة غير صالح؛ أُوقفت الفاتورة دون أي تسوية.'],
+            ]);
+        }
+
+        return $networkCurrency;
     }
 
     /**
