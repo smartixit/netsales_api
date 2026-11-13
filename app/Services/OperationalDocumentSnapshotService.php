@@ -268,19 +268,36 @@ final class OperationalDocumentSnapshotService
 
     private function resolveCurrency(int $networkId, ?int $posId): string
     {
+        $networkCurrency = \App\Models\NetworkWallet::query()
+            ->where('network_id', $networkId)
+            ->value('currency_code');
+
+        $networkCurrency = is_string($networkCurrency) && $networkCurrency !== ''
+            ? strtoupper($networkCurrency)
+            : null;
+
         if ($posId !== null) {
-            $currency = PosWallet::query()->where('network_id', $networkId)
-                ->where('pos_id', $posId)->value('currency_code');
-            if (is_string($currency) && $currency !== '') {
-                return $currency;
+            $posCurrency = PosWallet::query()
+                ->where('network_id', $networkId)
+                ->where('pos_id', $posId)
+                ->value('currency_code');
+
+            $posCurrency = is_string($posCurrency) && $posCurrency !== ''
+                ? strtoupper($posCurrency)
+                : null;
+
+            if ($networkCurrency !== null &&
+                $posCurrency !== null &&
+                $networkCurrency !== $posCurrency) {
+                throw ValidationException::withMessages([
+                    'currency_code' => ['عملة محفظة الشبكة لا تطابق عملة محفظة نقطة البيع؛ لا يمكن إصدار مستند موحد العملة.'],
+                ]);
+            }
+
+            if ($posCurrency !== null) {
+                return $posCurrency;
             }
         }
 
-        $currency = \App\Models\NetworkWallet::query()
-            ->where('network_id', $networkId)->value('currency_code');
-
-        return is_string($currency) && $currency !== ''
-            ? $currency
-            : 'YER';
-    }
-}
+        return $networkCurrency ?? 'YER';
+    }}
