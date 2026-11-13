@@ -9,6 +9,7 @@ final class BillingDunningProvider extends ConfiguredBillingReportProvider
   if($networkId!==null)$q->where('ba.network_id',$networkId);
   if(!empty($filters['from_date']))$q->whereDate('a.scheduled_at','>=',$filters['from_date']);
   if(!empty($filters['to_date']))$q->whereDate('a.scheduled_at','<=',$filters['to_date']);
+  if(!empty($filters['status']))$q->where('a.status',strtoupper((string)$filters['status']));
   $groups=(clone $q)->select('a.status')->selectRaw('COUNT(*) as total')->groupBy('a.status')->get();
   $attempts=(int)$groups->sum('total');
   $queued=(int)($groups->firstWhere('status','QUEUED')?->total??0);
