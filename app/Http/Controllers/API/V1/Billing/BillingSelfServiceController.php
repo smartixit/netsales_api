@@ -5,7 +5,7 @@ namespace App\Http\Controllers\API\V1\Billing;
 use App\Http\Controllers\API\V1\BaseController;
 use App\Http\Requests\API\V1\Billing\{CreateBillingAccountRequest, PurchaseSubscriptionRequest, StorePaymentRequest};
 use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingRefundResource, BillingSubscriptionEventResource, BillingSubscriptionResource, BillingUsageAggregateResource, PaymentMethodResource};
-use App\Services\Billing\{BillingPaymentService, BillingPlatformReadService, BillingSelfService, BillingSubscriptionService, CurrencyService};
+use App\Services\Billing\{BillingEntitlementService, BillingPaymentService, BillingPlatformReadService, BillingSelfService, BillingSubscriptionService, CurrencyService};
 use App\Services\Support\FileUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,6 +20,7 @@ class BillingSelfServiceController extends BaseController
         private BillingPaymentService $payments,
         private BillingPlatformReadService $read,
         private CurrencyService $currencies,
+        private BillingEntitlementService $entitlements,
         private FileUploadService $files
     ) {}
 
@@ -52,6 +53,46 @@ class BillingSelfServiceController extends BaseController
         } catch (ValidationException $exception) {
             return $this->validationErrorResponse($exception);
         }
+    }
+
+    public function entitlements(int $billingAccountId): JsonResponse
+    {
+        $account = $this->self->account($billingAccountId, $this->requireCurrentUser());
+        $subscription = $this->entitlements->activeSubscriptionForAccount((int) $account->billing_account_id);
+
+        if (! $subscription) {
+            return $this->successResponse('لا توجد استحقاقات تشغيلية فعالة لحساب الفوترة حالياً.', [
+                'subscription' => null,
+                'trial' => null,
+                'features' => [],
+            ]);
+        }
+
+        $subscription->loadMissing(['planVersion.features', 'currency']);
+        $features = $subscription->planVersion->features->map(fn ($feature): array => [
+            'feature_key' => $feature->feature_key,
+            'name' => $feature->name,
+            'feature_type' => $feature->feature_type?->value,
+            'configured_value' => $this->entitlements->featureValue($subscription, $feature->feature_key),
+            'unit' => $feature->unit,
+            'aggregation' => $feature->aggregation,
+            'reset_period' => $feature->reset_period,
+            'overage_behavior' => $feature->overage_behavior,
+            'available' => $this->entitlements->allows($subscription, $feature->feature_key),
+        ])->values();
+
+        $trial = (array) $subscription->trial_policy_snapshot;
+
+        return $this->successResponse('تم استرجاع الاستحقاقات الفعلية من محرك الاشتراك.', [
+            'subscription' => new BillingSubscriptionResource($subscription),
+            'trial' => $subscription->status?->value === 'TRIALING' ? [
+                'start' => $subscription->trial_start?->toDateTimeString(),
+                'end' => $subscription->trial_end?->toDateTimeString(),
+                'entitlement_mode' => $trial['entitlement_mode'] ?? 'FULL_PLAN',
+                'allowed_features' => $trial['entitlement_config']['allowed_features'] ?? [],
+            ] : null,
+            'features' => $features,
+        ]);
     }
 
     public function plans(Request $request, int $billingAccountId): JsonResponse

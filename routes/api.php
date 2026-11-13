@@ -657,6 +657,8 @@ Route::prefix('v1')->group(function () {
                 Route::get('accounts/{billingAccountId}/prices/{priceId}/trial-eligibility', [BillingTrialEligibilityController::class, 'show'])
                     ->whereNumber('billingAccountId')->whereNumber('priceId')
                     ->name('api.v1.billing.accounts.prices.trial_eligibility');
+                Route::get('accounts/{billingAccountId}/entitlements', [BillingSelfServiceController::class, 'entitlements'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.entitlements');
                 Route::get('accounts/{billingAccountId}/plans', [BillingSelfServiceController::class, 'plans'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.plans');
                 Route::get('accounts/{billingAccountId}/subscriptions', [BillingSelfServiceController::class, 'subscriptions'])
