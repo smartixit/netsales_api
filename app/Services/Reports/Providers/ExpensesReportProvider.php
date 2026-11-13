@@ -80,6 +80,7 @@ final class ExpensesReportProvider extends AbstractOperationalReportProvider
         return [
             'record_count' => (clone $query)->count(),
             'total_amount' => $this->amountValue((clone $query)->sum('expense_total_amount')),
+            'currency_code' => $this->currencyCode($networkId),
             'charts' => ['expenses_by_day' => $daily],
         ];
     }
