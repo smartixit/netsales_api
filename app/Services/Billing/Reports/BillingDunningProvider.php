@@ -14,8 +14,8 @@ final class BillingDunningProvider extends ConfiguredBillingReportProvider
   $queued=(int)($groups->firstWhere('status','QUEUED')?->total??0);
   $pending=(int)($groups->firstWhere('status','PENDING')?->total??0);
   $cancelled=(int)($groups->firstWhere('status','CANCELLED')?->total??0);
-  $recovered=(clone $q)->where('i.status','PAID')->distinct()->count('i.invoice_id');
-  $eligible=(clone $q)->distinct()->count('i.invoice_id');
+  $recovered=(clone $q)->where('a.status','QUEUED')->where('i.status','PAID')->distinct()->count('i.invoice_id');
+  $eligible=(clone $q)->where('a.status','QUEUED')->distinct()->count('i.invoice_id');
   return ['record_count'=>$attempts,'attempts'=>$attempts,'queued_reminders'=>$queued,'pending_attempts'=>$pending,
    'cancelled_attempts'=>$cancelled,'recovered_invoices'=>(int)$recovered,
    'recovery_rate_percent'=>$eligible===0?0.0:round(((int)$recovered/(int)$eligible)*100,2),
