@@ -21,6 +21,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OperationalReportController extends BaseController
@@ -294,7 +295,7 @@ class OperationalReportController extends BaseController
     public function destroyPreset(Request $request, string $presetUuid): JsonResponse
     {
         $data = $request->validate([
-            'report_type' => ['required', 'string'],
+            'report_type' => ['required', Rule::enum(OperationalReportType::class)],
             'network_id' => ['required', 'integer', 'min:1'],
             'pos_id' => ['nullable', 'integer', 'min:1'],
         ]);
