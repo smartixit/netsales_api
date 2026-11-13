@@ -144,7 +144,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
                 'id' => 'conversion_by_plan', 'type' => 'bar', 'title' => 'أهلية التجربة حسب الخطة والسعر',
                 'series' => [['key' => 'eligible_checks', 'label' => 'حسابات مؤهلة']],
                 'data' => array_map(static fn ($item): array => [
-                    'label' => 'Plan '.$item['plan_id'].' / Price '.$item['price_id'],
+                    'label' => 'Product '.($item['product_id'] ?? '—').' / Plan '.$item['plan_id'].' / Price '.$item['price_id'].' / '.($item['redemption_scope'] ?? '—'),
                     'eligible_checks' => (int) $item['eligible_checks'],
                 ], $summary['eligible_by_policy_plan_price'] ?? []),
             ]]),
