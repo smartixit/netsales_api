@@ -14,8 +14,10 @@ final class BillingInvoicesProvider extends ConfiguredBillingReportProvider
           ->selectRaw('SUM(i.credited_minor) as credited_minor')
           ->selectRaw('SUM(i.remaining_minor) as outstanding_minor')
           ->groupBy('i.currency_id','c.code','c.name','c.decimal_places')->orderBy('i.currency_id')->get();
+        $statuses=(clone $q)->select('i.status')->selectRaw('COUNT(*) as total')->groupBy('i.status')->get();
         return [
           'record_count'=>(int)$totals->sum('invoice_count'),
+          'status_distribution'=>$statuses->map(static fn($x)=>['status'=>$x->status,'count'=>(int)$x->total])->all(),
           'amounts_by_currency'=>$totals->map(static fn($x)=>[
             'currency_id'=>(int)$x->currency_id,'currency_code'=>$x->currency_code,'currency_name'=>$x->currency_name,'decimal_places'=>(int)$x->decimal_places,'invoice_count'=>(int)$x->invoice_count,
             'invoiced_minor'=>(int)$x->invoiced_minor,'credited_minor'=>(int)$x->credited_minor,
