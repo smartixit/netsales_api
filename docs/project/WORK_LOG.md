@@ -942,3 +942,21 @@ This log documents all executed tasks, code changes, and verification command ou
 - Added API routes under the operational workspace scope and the missing `requests.export` permission mapping.
 - Commit: `1f26a1fff8bc3d4f8c66e7b343c7e356a3b52b68`.
 - Verification commands: none. Tests, Pint, static analysis, and GitHub Actions are intentionally deferred to the final plan stage per user instruction.
+
+
+## 2026-11-13 — Operational Reports Provider Registry, Ledger Snapshots & Official Documents
+
+- **Authorized branches:** `feat/operational-reports-contracts` (API) and `feat/invoice-document-engine-integration` (Flutter).
+- Replaced the old operational report query-service/adapter path with `OperationalReportProviderRegistry`, a dedicated provider per report, provider-owned definitions/filters/metrics/chart slots/columns/CSV serialization, and shared provider filter validation.
+- The seven providers cover sales, expenses, network wallet statements, POS wallet statements, repayments, debt aging, and procurement requests.
+- Reconnected catalog/show/summary/export controllers and the queued CSV job to the provider registry. CSV output is cursor streamed, CSV-injection guarded, bounded to 50,000 rows, hashed, and written as a stream to protected storage.
+- Flutter now parses the report catalog into typed `document_engine` `ReportDefinition` schemas, registers exact schema versions, and consumes typed access/filter/metric metadata. No legacy report compatibility layer remains.
+- Added wallet opening balance, currency code, posting-time before/after snapshots, and snapshot provenance fields. Historical ledger rows are reconstructed in posting order and marked `BACKFILLED`; new wallet initialization is `INITIAL`; new live entries are `LIVE`.
+- Wallet report providers preserve soft-deleted wallets and rows, calculate period opening/closing balances from movements by effective date, and distinguish those period balances from posting-time before/after snapshots.
+- Wallet mutation repositories use row locks and enforce active-wallet, positive-amount, network balance, and POS credit-limit invariants. Removed the stale service-level withdrawal precheck that incorrectly prevented POS credit-limit usage.
+- Added immutable operational document snapshots for invoices, repayments, and expenses. Source identity is minimized before storage; expense attachment paths/URLs are not copied into permanent snapshots. Snapshot/artifact metadata is immutable, PDF artifacts are first-write-only, and the client renders only from the authoritative Laravel source snapshot before downloading the canonical stored PDF and checking its SHA-256.
+- Specialized PDF templates were wired: A4 network-issued invoice with POS as recipient; A5 repayment receipt with allocations and reversal trace; A4 network expense voucher with line items and attachment metadata. All document money values use the snapshot currency.
+- Tightened scope authorization so network and POS membership/permissions are checked independently; dual-scope users may use the exact scope for which they have both active membership and permission.
+- **Source changes only:** GitHub source inspections and file operations. No migrations were applied; no PHP/Dart tests, linters, static analysis, PDF extraction/visual checks, or GitHub Actions were run.
+- **Acceptance:** Implementation source has been updated; final validation remains pending by explicit user sequencing. Do not merge or mark production-ready until the final verification gate passes on exact branch heads.
+- **Latest HEAD at log entry:** API `2d971bddd4e8f120183b1cd3c4729fb9c63722fa`; Flutter `6a5f3d4d61bcaba963bc89c1bab337ffc93222af`.
