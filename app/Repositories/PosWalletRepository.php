@@ -2,21 +2,13 @@
 
 namespace App\Repositories;
 
-use App\Support\DecimalAmount;
-
 use App\Interfaces\PosWalletRepositoryInterface;
 use App\Models\PosWallet;
+use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
-
-/**
- * مستودع إدارة محافظ نقاط البيع والوكلاء (POS Wallet Repository).
- *
- * @property PosWallet $model
- */
-class PosWalletRepository extends BaseRepository implements PosWalletRepositoryInterface
 {
     public function __construct(PosWallet $model)
     {
