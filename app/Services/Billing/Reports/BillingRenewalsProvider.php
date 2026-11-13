@@ -11,6 +11,7 @@ final class BillingRenewalsProvider extends ConfiguredBillingReportProvider
   if($networkId!==null)$q->where('ba.network_id',$networkId);
   if(!empty($filters['from_date']))$q->whereDate('e.occurred_at','>=',$filters['from_date']);
   if(!empty($filters['to_date']))$q->whereDate('e.occurred_at','<=',$filters['to_date']);
+  $this->applySearchColumns($q, $filters, ['e.event_type', 'CAST(e.billing_subscription_id AS CHAR)']);
   $groups=$q->select('e.event_type')->selectRaw('COUNT(*) as total')->groupBy('e.event_type')->get();
   $counts=$groups->keyBy('event_type');
   $count=static fn(string $type)=>(int)($counts->get($type)?->total??0);
