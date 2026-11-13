@@ -485,6 +485,17 @@ Route::prefix('v1')->group(function () {
 
         // ==========================================
         // Operational reports — Network / POS workspaces only.
+        Route::prefix('reports/presets')->middleware(['operational.scope'])->group(function () {
+            Route::get('/', [OperationalReportController::class, 'presets'])
+                ->middleware('throttle:api-read')->name('api.v1.reports.presets.index');
+            Route::post('/', [OperationalReportController::class, 'storePreset'])
+                ->middleware('throttle:api-write')->name('api.v1.reports.presets.store');
+            Route::put('{presetUuid}', [OperationalReportController::class, 'updatePreset'])
+                ->middleware('throttle:api-write')->name('api.v1.reports.presets.update');
+            Route::delete('{presetUuid}', [OperationalReportController::class, 'destroyPreset'])
+                ->middleware('throttle:api-write')->name('api.v1.reports.presets.destroy');
+        });
+
         Route::prefix('reports')->middleware(['throttle:api-read', 'operational.scope'])->group(function () {
             Route::get('catalog', [OperationalReportController::class, 'catalog'])->name('api.v1.reports.catalog');
             Route::get('/', [OperationalReportController::class, 'show'])

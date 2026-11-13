@@ -6,12 +6,15 @@ use App\Enums\OperationalReportType;
 use App\Http\Requests\API\V1\Reports\OperationalReportCatalogRequest;
 use App\Http\Requests\API\V1\Reports\OperationalReportRequest;
 use App\Http\Requests\API\V1\Reports\StoreOperationalReportExportRequest;
+use App\Http\Requests\API\V1\Reports\StoreOperationalReportPresetRequest;
 use Illuminate\Support\MessageBag;
 use App\Jobs\GenerateOperationalReportExport;
 use App\Models\OperationalReportExport;
+use App\Models\OperationalReportPreset;
 use App\Services\OperationalReportAuthorizationService;
 use App\Services\Reports\OperationalReportFilterValidator;
 use App\Services\Reports\OperationalReportProviderRegistry;
+use App\Services\Reports\OperationalReportPresetValidator;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +28,8 @@ class OperationalReportController extends BaseController
     public function __construct(
         protected OperationalReportAuthorizationService $authorization,
         protected OperationalReportProviderRegistry $providers,
-        protected OperationalReportFilterValidator $filterValidator
+        protected OperationalReportFilterValidator $filterValidator,
+        protected OperationalReportPresetValidator $presetValidator
     ) {}
 
     public function catalog(OperationalReportCatalogRequest $request): JsonResponse
@@ -148,6 +152,143 @@ class OperationalReportController extends BaseController
         }
     }
 
+
+
+    public function presets(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'report_type' => ['required', 'string'],
+            'network_id' => ['required', 'integer', 'min:1'],
+            'pos_id' => ['nullable', 'integer', 'min:1'],
+        ]);
+        $type = OperationalReportType::from($data['report_type']);
+        $networkId = (int) $data['network_id'];
+        $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
+        $this->authorization->authorize($request->user(), $type, $networkId, $posId);
+
+        $scopeKey = $posId === null ? 'network' : 'pos:'.$posId;
+        $items = OperationalReportPreset::query()
+            ->where('user_id', $request->user()->user_id)
+            ->where('network_id', $networkId)
+            ->where('scope_key', $scopeKey)
+            ->where('report_type', $type)
+            ->orderBy('name')
+            ->get()
+            ->map(fn (OperationalReportPreset $preset): array => $this->serializePreset($preset));
+
+        return $this->successResponse('الإعدادات المحفوظة للتقرير.', $items);
+    }
+
+    public function storePreset(StoreOperationalReportPresetRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+        $type = OperationalReportType::from($data['report_type']);
+        $networkId = (int) $data['network_id'];
+        $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
+        $this->authorization->authorize($request->user(), $type, $networkId, $posId);
+
+        $errors = $this->presetValidator->validate(
+            $type->value,
+            $posId,
+            $data['filters'],
+            $data['presentation'],
+            (int) $data['report_schema_version']
+        );
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        $scopeKey = $posId === null ? 'network' : 'pos:'.$posId;
+        $preset = OperationalReportPreset::query()->create([
+            'preset_uuid' => (string) Str::uuid(),
+            'user_id' => $request->user()->user_id,
+            'network_id' => $networkId,
+            'pos_id' => $posId,
+            'scope_key' => $scopeKey,
+            'report_type' => $type,
+            'name' => trim($data['name']),
+            'report_schema_version' => (int) $data['report_schema_version'],
+            'criteria' => $data['filters'],
+            'presentation' => $data['presentation'],
+        ]);
+
+        return $this->successResponse('تم حفظ إعداد التقرير.', $this->serializePreset($preset), 201);
+    }
+
+    public function updatePreset(StoreOperationalReportPresetRequest $request, string $presetUuid): JsonResponse
+    {
+        $data = $request->validated();
+        $type = OperationalReportType::from($data['report_type']);
+        $networkId = (int) $data['network_id'];
+        $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
+        $this->authorization->authorize($request->user(), $type, $networkId, $posId);
+
+        $preset = OperationalReportPreset::query()
+            ->where('preset_uuid', $presetUuid)
+            ->where('user_id', $request->user()->user_id)
+            ->where('network_id', $networkId)
+            ->where('scope_key', $posId === null ? 'network' : 'pos:'.$posId)
+            ->where('report_type', $type)
+            ->firstOrFail();
+
+        $errors = $this->presetValidator->validate(
+            $type->value,
+            $posId,
+            $data['filters'],
+            $data['presentation'],
+            (int) $data['report_schema_version']
+        );
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        $preset->fill([
+            'name' => trim($data['name']),
+            'report_schema_version' => (int) $data['report_schema_version'],
+            'criteria' => $data['filters'],
+            'presentation' => $data['presentation'],
+        ])->save();
+
+        return $this->successResponse('تم تحديث إعداد التقرير.', $this->serializePreset($preset->refresh()));
+    }
+
+    public function destroyPreset(Request $request, string $presetUuid): JsonResponse
+    {
+        $data = $request->validate([
+            'report_type' => ['required', 'string'],
+            'network_id' => ['required', 'integer', 'min:1'],
+            'pos_id' => ['nullable', 'integer', 'min:1'],
+        ]);
+        $type = OperationalReportType::from($data['report_type']);
+        $networkId = (int) $data['network_id'];
+        $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
+        $this->authorization->authorize($request->user(), $type, $networkId, $posId);
+
+        $preset = OperationalReportPreset::query()
+            ->where('preset_uuid', $presetUuid)
+            ->where('user_id', $request->user()->user_id)
+            ->where('network_id', $networkId)
+            ->where('scope_key', $posId === null ? 'network' : 'pos:'.$posId)
+            ->where('report_type', $type)
+            ->firstOrFail();
+        $preset->delete();
+
+        return $this->successResponse('تم حذف إعداد التقرير.');
+    }
+
+    private function serializePreset(OperationalReportPreset $preset): array
+    {
+        return [
+            'preset_id' => $preset->preset_uuid,
+            'name' => $preset->name,
+            'report_type' => $preset->report_type->value,
+            'report_schema_version' => $preset->report_schema_version,
+            'filters' => $preset->criteria,
+            'presentation' => $preset->presentation,
+            'created_at' => $preset->created_at?->toIso8601String(),
+            'updated_at' => $preset->updated_at?->toIso8601String(),
+        ];
+    }
 
     private function validateProviderFilters(OperationalReportType $type, ?int $posId, array $filters): void
     {
