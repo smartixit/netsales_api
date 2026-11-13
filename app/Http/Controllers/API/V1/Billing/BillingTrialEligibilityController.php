@@ -73,7 +73,7 @@ class BillingTrialEligibilityController extends BaseController
             'network_id' => $account->network_id,
             'billing_account_id' => $account->billing_account_id,
             'price_id' => $price->price_id,
-            'plan_id' => $price->plan_id,
+            'plan_id' => $price->planVersion->plan_id,
             'trial_policy_version_id' => $trialVersion?->trial_policy_version_id,
             'eligibility_status' => $eligible ? 'ELIGIBLE' : 'INELIGIBLE',
             'reason_code' => ! $trialEnabled ? 'TRIAL_NOT_AVAILABLE' : ($eligible ? null : 'TRIAL_ALREADY_REDEEMED'),
