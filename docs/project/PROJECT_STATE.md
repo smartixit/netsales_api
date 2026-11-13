@@ -1,7 +1,7 @@
 # NetSales — Current Project State & Authorization Snapshot
 
-**Last Updated Date:** 2026-11-13  
-**Active Working Tree Status:** Operational Reports Provider Registry, Exact Wallet Ledger Arithmetic, and Official Document Snapshot Integration — source implementation substantially assembled; integration gaps and final validation remain  
+**Last Updated Date:** 2026-11-14  
+**Active Working Tree Status:** Billing self-service/search pagination, subscription and Billing Reports integration, Operational Reports scope isolation, and official-document source hardening — implementation work continues; final validation remains pending  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
 
@@ -237,3 +237,33 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - The activity fallback requires an incoming application request. If there is no Cron, no queue worker, and no application traffic, no PHP process exists to execute background work; this is a platform constraint, not something the application can bypass.
 - Saved report presets are stored as schema-versioned typed criteria and presentation configuration, owned by the authenticated user and scoped to network/POS + report type. The Flutter Report Studio now loads, saves, updates, applies, and deletes these presets; stale schema presets are not silently migrated.
 - No tests, migrations, static analysis, PDF extraction, or GitHub Actions have been run; they remain deferred to the final validation stage.
+
+
+## Active implementation track — Billing self-service, subscriptions, and Billing Reports (2026-11-14)
+
+**Authorized working branches**
+- API: `feat/billing-self-service-contracts` — HEAD before this state update: `7c8d462d20aa953408de093881f96bf7f9db436`.
+- Flutter: `feat/subscriptions-network-module` — HEAD before this state update: `189a8319b5a167d3f474910fd52c6ed817a2a9be`.
+- No open PR was found for either branch at the time of the check. No PR or merge was created in this work.
+
+### Billing self-service API
+- Network-owner account access is checked before every collection query. Search predicates are grouped inside the authorized account query and use parameter bindings.
+- Plans, subscriptions, invoices, payments, credit notes, and refunds support bounded cursor pagination; the collection endpoints validate search/status inputs and pass explicit cursors to their services.
+- Server search supports the corresponding human reference/identifier fields and related plan/invoice/payment descriptors without retrieving complete collections to filter on the client.
+- Subscription details return a bounded first event page and invoice page; event and usage endpoints have cursor support.
+
+### Flutter Billing workspace
+- Six growing Billing collections own independent cursor state, first-page loading/error state, debounced search, and status criteria. The selected filters are sent with every initial page and subsequent cursor page.
+- Account/network changes cancel pending search timers and clear prior-scope filter state. Stale first-page and load-more responses are rejected by revision, account, network, and page-generation checks.
+- Shared `lib/widgets/lists/custom_collection_filter_bar.dart` and `CustomCursorLoadMore` are used instead of feature-local or stock Material controls. The workspace is composed from independent account, plan, subscription, entitlement, invoice, and financial sections.
+- Financial list rows use server decimal amount strings and nested currency metadata; no client-side minor-unit conversion or cross-currency aggregation is introduced.
+
+### Billing Reports and Operational Reports
+- Billing Reports uses the shared Report Configuration Studio and separate widgets for criteria, PDF presentation, visible columns, summaries/charts, and row results. Search preview cancels a pending debounce to avoid duplicate requests.
+- Cursor traversal for interactive results and PDF export rejects repeated cursors and stale scope/report revisions.
+- Operational Reports invalidates catalogue, preset, CSV export, export-status, and PDF actions when scope/report criteria change; older scope responses cannot update the active workspace.
+
+### Verification gate — PENDING
+- Source changes only. No database migrations were executed.
+- No PHPUnit, PHP lint/Pint/PHPStan, Dart/Flutter tests, formatter/analyzer, PDF text extraction/order checks, visual QA, or GitHub Actions were run in this work.
+- Do not create or merge PRs, and do not mark the feature production-ready, until all implementation-plan requirements are closed and the exact branch heads pass the final verification gate.
