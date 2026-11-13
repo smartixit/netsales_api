@@ -195,7 +195,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع فواتير حساب الفوترة.',
             BillingInvoiceResource::collection($this->self->invoices(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'all']),
+                $request->only(['status', 'per_page', 'cursor', 'all']),
                 $this->requireCurrentUser()
             ))
         );
@@ -215,7 +215,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع مدفوعات حساب الفوترة.',
             BillingPaymentResource::collection($this->self->payments(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'all']),
+                $request->only(['status', 'per_page', 'cursor', 'all']),
                 $this->requireCurrentUser()
             ))
         );
@@ -227,7 +227,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع الإشعارات الدائنة لحساب الفوترة.',
             BillingCreditNoteResource::collection($this->self->creditNotes(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'all']),
+                $request->only(['status', 'per_page', 'cursor', 'all']),
                 $this->requireCurrentUser()
             ))
         );
@@ -239,7 +239,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع عمليات الاسترداد لحساب الفوترة.',
             BillingRefundResource::collection($this->self->refunds(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'all']),
+                $request->only(['status', 'per_page', 'cursor', 'all']),
                 $this->requireCurrentUser()
             ))
         );
