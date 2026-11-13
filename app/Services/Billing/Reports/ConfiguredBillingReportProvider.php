@@ -46,7 +46,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             ]],
             'page_profile_ids' => ['a4-portrait'],
             'execution_policy' => 'server',
-            'export_formats' => ['CSV'],
+            'export_formats' => ['CSV', 'PDF'],
             'currency_aggregation' => 'SEPARATE_CURRENCY_BUCKETS',
             'pagination' => 'CURSOR',
         ];
