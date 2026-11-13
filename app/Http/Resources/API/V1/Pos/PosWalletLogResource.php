@@ -31,6 +31,7 @@ class PosWalletLogResource extends JsonResource
             'log_amount' => (float) $this->log_amount,
             'balance_before' => (float) $this->balance_before,
             'balance_after' => (float) $this->balance_after,
+            'balance_snapshot_source' => $this->balance_snapshot_source,
             'currency_code' => $this->currency_code,
             'log_statement' => $this->log_statement,
             'log_date' => $this->log_date ? Carbon::parse($this->log_date)->toDateTimeString() : null,
