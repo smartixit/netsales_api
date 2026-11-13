@@ -11,6 +11,7 @@ final class BillingUsageProvider extends ConfiguredBillingReportProvider
   if($networkId!==null)$q->where('ba.network_id',$networkId);
   if(!empty($filters['from_date']))$q->whereDate('r.period_start','>=',$filters['from_date']);
   if(!empty($filters['to_date']))$q->whereDate('r.period_start','<=',$filters['to_date']);
+  $this->applySearchColumns($q, $filters, ['CAST(r.billing_subscription_id AS CHAR)']);
   $recordCount=(int)(clone $q)->count('r.usage_aggregate_id');
   $quantity=(clone $q)->sum('r.quantity');
   $byMeter=(clone $q)->select('r.meter_id')->selectRaw('SUM(r.quantity) as quantity')->selectRaw('COUNT(*) as aggregates')
