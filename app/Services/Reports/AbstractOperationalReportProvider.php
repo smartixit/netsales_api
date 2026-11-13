@@ -22,6 +22,16 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
     abstract protected function summaryCharts(): array;
     abstract protected function statusChoices(): array;
 
+    protected function statusFilterLabel(): string
+    {
+        return 'الحالة';
+    }
+
+    protected function saleTypeFilterLabel(): string
+    {
+        return 'نوع البيع';
+    }
+
     protected function saleTypeChoices(): array
     {
         return [];
@@ -36,10 +46,10 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
             ['id' => 'search', 'label' => 'بحث', 'kind' => 'text', 'required' => false, 'max_length' => 120],
         ];
         if ($statuses = $this->statusChoices()) {
-            $filters[] = ['id' => 'status', 'label' => 'الحالة', 'kind' => 'single_choice', 'required' => false, 'choices' => $statuses];
+            $filters[] = ['id' => 'status', 'label' => $this->statusFilterLabel(), 'kind' => 'single_choice', 'required' => false, 'choices' => $statuses];
         }
         if ($saleTypes = $this->saleTypeChoices()) {
-            $filters[] = ['id' => 'sale_type', 'label' => 'نوع البيع', 'kind' => 'single_choice', 'required' => false, 'choices' => $saleTypes];
+            $filters[] = ['id' => 'sale_type', 'label' => $this->saleTypeFilterLabel(), 'kind' => 'single_choice', 'required' => false, 'choices' => $saleTypes];
         }
         $charts = $this->summaryCharts();
 
