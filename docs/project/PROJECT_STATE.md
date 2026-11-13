@@ -1,7 +1,7 @@
 # NetSales — Current Project State & Authorization Snapshot
 
 **Last Updated Date:** 2026-11-13  
-**Active Working Tree Status:** Operational Reports Provider Registry, Wallet Ledger Snapshots, and Official Document Snapshot Integration — source implementation in progress; final validation deferred  
+**Active Working Tree Status:** Operational Reports Provider Registry, Exact Wallet Ledger Arithmetic, and Official Document Snapshot Integration — source implementation substantially assembled; integration gaps and final validation remain  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
 
@@ -142,21 +142,29 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 ## Active implementation track — Operational Reports & Official Documents (2026-11-13)
 
 **Authorized branches**
-- API: `feat/operational-reports-contracts` — HEAD `2d971bddd4e8f120183b1cd3c4729fb9c63722fa`.
-- Flutter: `feat/invoice-document-engine-integration` — HEAD `6a5f3d4d61bcaba963bc89c1bab337ffc93222af`.
+- API: `feat/operational-reports-contracts` — HEAD `e81dfd04eeda16d20e5a535aa05487ce40f62319`.
+- Flutter: `feat/invoice-document-engine-integration` — HEAD `3be25fdbc2834241cb6bc8b5d1b9abb70e0bba56`.
 - These branches are not merged. Do not treat their code as accepted or production-ready until the final validation gate passes.
+
+**Branch relationship to main (2026-11-13):**
+- API branch is 266 commits ahead and 2 behind `main` (diverged).
+- Flutter branch is 325 commits ahead and 5 behind `main` (diverged).
+- No pull request was found for either active feature branch at the time of inspection. Do not merge directly without synchronizing and reconciling the missing base commits.
 
 ### Stage 3 — Operational report contracts
 - Implemented the provider contract, registry, factory, shared filter/schema validation, and seven dedicated providers: sales, expenses, network wallet, POS wallet, repayments, debt aging, and requests.
 - The API controller, summary execution, cursor-paginated results, authorization, and queued CSV export consume the registry and provider-owned row serialization.
 - Removed the legacy `OperationalReportQueryService` and `OperationalReportProviderAdapter`; no compatibility adapter is retained.
-- Flutter consumes the server catalog as typed `document_engine` `ReportDefinition` schemas and registers exact versions in `ReportDefinitionRegistry`. Access metadata remains separate from the definition; Laravel remains authoritative for authorization and query execution.
+- Flutter consumes the seven known report types from the server catalog as typed `document_engine` `ReportDefinition` schemas and registers exact versions in `ReportDefinitionRegistry`. Access metadata remains separate from the definition; Laravel remains authoritative for authorization and query execution.
+- API now accepts filters only inside the schema-validated nested `filters` object; the retired flat filter fields are prohibited. All seven provider serializers use the same `serializeExportRow()` contract for result rows and CSV.
+- Remaining limitation: Flutter's current report use cases/controller still map a fixed set of known filters and its `OperationalReportType` enum is finite. The generic schema studio is not integrated into the operational reports screen yet; adding arbitrary new report definitions without client code changes is not complete.
 
 ### Stage 4 — Operational ledger and official documents
 - Wallet opening balance, currency, posting-time before/after balance snapshots, and snapshot provenance are represented in the schema and resources.
 - Historical wallet rows are marked `BACKFILLED`; newly initialized wallets are marked `INITIAL`; new posting snapshots are marked `LIVE`.
 - Network/POS statements include opening and closing period balances and include soft-deleted ledger rows. The period closing balance is derived from movements by effective `log_date`, while before/after snapshots are explicitly posting-time values.
 - Wallet mutations validate active state and positive amounts under row locks; POS withdrawals use the configured credit limit rather than a stale positive-balance precheck.
+- Wallet balance mutation, posting-time snapshots, report opening/closing calculations, and debt aging use shared exact decimal arithmetic in integer minor units. POS wallet creation requires the existing network wallet currency; wallet statements, SMS notifications, report PDFs, and official snapshots no longer silently substitute the platform base currency or a hard-coded YER fallback.
 - Operational currency is separate from Platform Billing currency. Official document creation rejects a network/POS currency mismatch rather than silently combining currencies.
 - Immutable document snapshots capture source resources and a SHA-256 manifest; creator/reversal identities and expense attachment metadata are minimized before persistent storage. PDF artifacts are first-write-only, protected, hashed, and downloadable as the canonical document bytes.
 
@@ -164,6 +172,11 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Invoice PDF is network-issued with the network as supplier and POS as recipient, A4 portrait, itemized pricing/quantity/discount, currency, contacts, request reference, creator, paid and remaining amounts.
 - Repayment receipt is network-issued, A5 portrait, and includes allocations and reversal trace details.
 - Expense voucher is network-branded A4 portrait with expense lines, total, creator, currency, and attachment metadata.
+- Remaining document/report gap: operational report PDF currently prints an executive summary, not the complete row-level wallet statement/report; row-level export is CSV. A per-report reusable template family and visual validation remain outstanding.
+
+### Reports module and preset integration gaps
+- `document_engine` contains the generic `ReportConfigurationStudio` widget and versioned `SavedReportPreset` value object with package tests. NetSales' `OperationalReportsScreen` does not currently host the studio, and no API preset persistence model, migration, or save/list/update/delete contract exists. These components are reusable foundations, not a completed saved-reports feature.
+- Current report result UI continues to use NetSales custom buttons and the existing filter/list/summary widgets. No row-level PDF statement output has been proven for wallets.
 
 ### Validation gate — PENDING
 - No migrations have been applied to a database.
