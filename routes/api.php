@@ -5,6 +5,7 @@ use App\Http\Controllers\API\V1\Billing\BillingCatalogController;
 use App\Http\Controllers\API\V1\Billing\BillingPolicyController;
 use App\Http\Controllers\API\V1\Billing\BillingFinanceController;
 use App\Http\Controllers\API\V1\Billing\BillingSelfServiceController;
+use App\Http\Controllers\API\V1\Billing\BillingTrialEligibilityController;
 use App\Http\Controllers\API\V1\AuthController;
 use App\Http\Controllers\API\V1\BackupController;
 use App\Http\Controllers\API\V1\DashboardController;
@@ -653,6 +654,9 @@ Route::prefix('v1')->group(function () {
             Route::middleware('throttle:api-read')->group(function () {
                 Route::get('currencies', [BillingSelfServiceController::class, 'currencies'])
                     ->name('api.v1.billing.currencies.index');
+                Route::get('accounts/{billingAccountId}/prices/{priceId}/trial-eligibility', [BillingTrialEligibilityController::class, 'show'])
+                    ->whereNumber('billingAccountId')->whereNumber('priceId')
+                    ->name('api.v1.billing.accounts.prices.trial_eligibility');
                 Route::get('accounts/{billingAccountId}/plans', [BillingSelfServiceController::class, 'plans'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.plans');
                 Route::get('accounts/{billingAccountId}/subscriptions', [BillingSelfServiceController::class, 'subscriptions'])
