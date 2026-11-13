@@ -301,3 +301,74 @@ All endpoints are under `/api/v1/platform/billing` and require Platform Scope pl
 - Flutter renders official PDFs only from the immutable server snapshot, validates its required currency code, and downloads the canonical first-write PDF after artifact storage. Operational report PDF orientation comes from the selected catalog entry's `page_profile_ids`, not a client-side report-type switch.
 
 **Validation status:** This contract describes the current source implementation on `feat/operational-reports-contracts`. It has not yet passed the final migration/runtime, Pint, PHPStan, PHPUnit, PDF extraction/visual, or exact-HEAD GitHub Actions gate. Do not treat it as a verified production contract until that gate passes.
+
+
+## Network Billing Self-Service Collections — 2026-11-14
+
+All paths below are under `/api/v1`. They use the `operational.scope` session/workspace boundary. The `networks/{networkId}/billing/accounts` index/create routes are Network-owner only. Account-scoped reads and mutations authorize ownership of the requested Billing Account against its Network before accessing account data. A caller must not use a Billing Account ID to cross Network scope.
+
+### Account and collection routes
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/networks/{networkId}/billing/accounts` | List the current Network's Billing Accounts |
+| `POST` | `/networks/{networkId}/billing/accounts` | Create a Billing Account for the Network |
+| `GET` | `/billing/currencies` | List active currencies available for Billing Accounts |
+| `GET` | `/billing/accounts/{billingAccountId}` | Read account details and contacts |
+| `GET` | `/billing/accounts/{billingAccountId}/entitlements` | Read current subscription entitlements and trial state |
+| `GET` | `/billing/accounts/{billingAccountId}/plans` | List public plans/prices available in the account currency |
+| `GET` | `/billing/accounts/{billingAccountId}/subscriptions` | List subscriptions |
+| `GET` | `/billing/accounts/{billingAccountId}/invoices` | List invoices |
+| `GET` | `/billing/accounts/{billingAccountId}/payments` | List payments |
+| `GET` | `/billing/accounts/{billingAccountId}/credit-notes` | List credit notes |
+| `GET` | `/billing/accounts/{billingAccountId}/refunds` | List refunds |
+| `GET` | `/billing/accounts/{billingAccountId}/payment-methods` | List payment methods for the account currency |
+| `GET` | `/billing/subscriptions/{subscriptionId}` | Read subscription details, its first event page, and invoice page |
+| `GET` | `/billing/subscriptions/{subscriptionId}/events` | Read subscription lifecycle events |
+| `GET` | `/billing/subscriptions/{subscriptionId}/usage` | Read usage aggregates |
+| `GET` | `/billing/invoices/{invoiceId}` | Read one invoice |
+| `POST` | `/billing/accounts/{billingAccountId}/subscriptions` | Purchase a plan price |
+| `POST` | `/billing/subscriptions/{subscriptionId}/cancel` | Cancel now or at period end |
+| `POST` | `/billing/invoices/{invoiceId}/payments` | Register a payment request and optional proof |
+
+Account update and contact CRUD routes are:
+- `PUT /billing/accounts/{billingAccountId}`
+- `POST /billing/accounts/{billingAccountId}/contacts`
+- `PUT /billing/accounts/{billingAccountId}/contacts/{contactId}`
+- `DELETE /billing/accounts/{billingAccountId}/contacts/{contactId}`
+
+### Cursor and search query contract
+
+The six growing account collections — plans, subscriptions, invoices, payments, credit notes, and refunds — are server-filtered and cursor-paginated. The accepted transport parameters are:
+- `per_page`: optional integer, 1–50 (default is service-defined).
+- `cursor`: optional opaque Laravel cursor string, maximum 2,048 characters.
+- `search`: optional trimmed search text, maximum 120 characters.
+- `status`: optional status string, maximum 40 characters, accepted only by subscriptions, invoices, payments, credit notes, and refunds.
+
+Clients must repeat the exact same search/status criteria when requesting each next cursor page. Changing a criterion starts a new first-page query and must discard the previous cursor. Filtering is performed by Laravel within the already-authorized Billing Account query; clients must not download a full collection and filter it locally.
+
+Searchable values:
+- Plans: plan name and plan key.
+- Subscriptions: subscription identifier, status, plan name, and plan key.
+- Invoices: invoice number/identifier, status, and related plan name/key.
+- Payments: payment reference, external reference, status, payment identifier, and invoice number.
+- Credit notes: credit-note number/identifier, reason, status, and invoice number.
+- Refunds: refund reference/identifier, reason, status, and related payment reference/external reference.
+
+The exact collection status values are:
+- Subscription: `INCOMPLETE`, `TRIALING`, `ACTIVE`, `PAST_DUE`, `PAUSED`, `SUSPENDED`, `CANCELED`, `EXPIRED`.
+- Invoice: `DRAFT`, `OPEN`, `PARTIALLY_PAID`, `PARTIALLY_CREDITED`, `PAID`, `CREDITED`, `UNCOLLECTIBLE`, `VOID`.
+- Payment: `PENDING_REVIEW`, `VERIFIED`, `FAILED`, `REJECTED`, `REFUNDED`, `PARTIALLY_REFUNDED`.
+- Credit note: `ISSUED`, `PARTIALLY_REFUNDED`, `REFUNDED`. A credit note may transition from `ISSUED` to `PARTIALLY_REFUNDED` or `REFUNDED`, and from `PARTIALLY_REFUNDED` to `REFUNDED`.
+- Refund: `PENDING`, `COMPLETED`. The only permitted state transition is `PENDING` to `COMPLETED`.
+
+Subscription events accept `per_page` (1–50; default 30) and `cursor`. Usage accepts `from_date`, `to_date`, `per_page` (1–50; default 25), and `cursor`. Subscription detail embeds only its first 30 events and first 25 invoices; consumers that need full history must use the dedicated cursor endpoints/collection routes.
+
+### Money and currency resource contract
+
+Billing Account financial resources expose:
+- integer minor-unit fields such as `total_minor`, `remaining_minor`, and `amount_minor` for exact accounting and payment eligibility;
+- decimal-string display fields such as invoice `total` / `remaining`, payment `amount`, credit-note `total`, and refund `amount`;
+- a nested `currency` resource with `code` and `decimal_places`.
+
+UI presentation must use the decimal string and nested currency metadata with the shared amount widget. Minor-unit fields remain for exact comparisons and command inputs; they must not be rendered as if they were already major-unit decimal currency. Financial totals, balances, currency conversion, eligibility and trial decisions remain exclusively server-authoritative.
