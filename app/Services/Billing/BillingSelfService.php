@@ -75,7 +75,7 @@ class BillingSelfService
             return $query->orderBy('billing_subscription_id')->get();
         }
 
-        return $query->orderByDesc('billing_subscription_id')->cursorPaginate($perPage);
+        return $query->orderByDesc('billing_subscription_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
     public function invoices(int $accountId, array $filters, User $actor): Collection|CursorPaginator
@@ -96,7 +96,7 @@ class BillingSelfService
             return $query->orderBy('invoice_id')->get();
         }
 
-        return $query->orderByDesc('invoice_id')->cursorPaginate($perPage);
+        return $query->orderByDesc('invoice_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
     public function invoice(int $invoiceId, User $actor): BillingInvoice
@@ -128,7 +128,7 @@ class BillingSelfService
             return $query->orderBy('payment_id')->get();
         }
 
-        return $query->orderByDesc('payment_id')->cursorPaginate($perPage);
+        return $query->orderByDesc('payment_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
     public function creditNotes(int $accountId, array $filters, User $actor): Collection|CursorPaginator
@@ -149,7 +149,7 @@ class BillingSelfService
             return $query->orderBy('credit_note_id')->get();
         }
 
-        return $query->orderByDesc('credit_note_id')->cursorPaginate($perPage);
+        return $query->orderByDesc('credit_note_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
     public function refunds(int $accountId, array $filters, User $actor): Collection|CursorPaginator
@@ -170,7 +170,7 @@ class BillingSelfService
             return $query->orderBy('refund_id')->get();
         }
 
-        return $query->orderByDesc('refund_id')->cursorPaginate($perPage);
+        return $query->orderByDesc('refund_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
     public function subscription(int $subscriptionId, User $actor): BillingSubscription
