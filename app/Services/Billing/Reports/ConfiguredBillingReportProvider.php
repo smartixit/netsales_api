@@ -27,7 +27,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
                     'id' => 'status',
                     'kind' => ! empty($this->config['status_choices']) ? 'single_choice' : 'text',
                     'label' => 'الحالة',
-                    'choices' => $this->config['status_choices'] ?? [],
+                    'choices' => array_map(static fn ($value): array => ['value' => $value, 'label_key' => 'billing.status.'.$value], $this->config['status_choices'] ?? []),
                 ],
                 ['id' => 'search', 'kind' => 'text', 'label' => 'بحث'],
             ],
