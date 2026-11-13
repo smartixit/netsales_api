@@ -10,6 +10,7 @@ final class BillingCollectionsProvider extends ConfiguredBillingReportProvider
         if(!empty($filters['from_date']))$payments->whereDate('p.received_at','>=',$filters['from_date']);
         if(!empty($filters['to_date']))$payments->whereDate('p.received_at','<=',$filters['to_date']);
         if(!empty($filters['status']))$payments->where('p.status',strtoupper((string)$filters['status']));
+        $this->applySearchColumns($payments, $filters, ['p.payment_reference', 'p.external_reference', 'p.status']);
         $gross=$payments->select('p.currency_id','pc.code as currency_code','pc.name as currency_name','pc.decimal_places')->selectRaw('SUM(p.amount_minor) as gross_minor')->groupBy('p.currency_id','pc.code','pc.name','pc.decimal_places')->get()->keyBy('currency_id');
         $refunds=DB::table('billing_refunds as r')->join('billing_payments as p','p.payment_id','=','r.payment_id')->join('currencies as rc','rc.currency_id','=','r.currency_id')
           ->where('r.status','COMPLETED');
