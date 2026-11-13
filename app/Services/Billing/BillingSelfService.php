@@ -193,10 +193,15 @@ class BillingSelfService
         if (! empty($filters['from_date'])) $query->where('period_end', '>=', $filters['from_date']);
         if (! empty($filters['to_date'])) $query->where('period_start', '<=', $filters['to_date']);
         return $query->orderByDesc('period_start')->orderByDesc('usage_aggregate_id')
-            ->cursorPaginate(min(max((int) ($filters['per_page'] ?? 25), 1), 50));
+            ->cursorPaginate(
+                min(max((int) ($filters['per_page'] ?? 25), 1), 50),
+                ['*'],
+                'cursor',
+                $filters['cursor'] ?? null
+            );
     }
 
-    public function subscriptionEvents(int $subscriptionId, User $actor): CursorPaginator
+    public function subscriptionEvents(int $subscriptionId, array $filters, User $actor): CursorPaginator
     {
         $subscription = BillingSubscription::query()
             ->with('billingAccount')
@@ -207,7 +212,12 @@ class BillingSelfService
         return $subscription->events()
             ->orderByDesc('occurred_at')
             ->orderByDesc('event_id')
-            ->cursorPaginate(30);
+            ->cursorPaginate(
+                min(max((int) ($filters['per_page'] ?? 30), 1), 50),
+                ['*'],
+                'cursor',
+                $filters['cursor'] ?? null
+            );
     }
 
     public function assertInvoiceAccess(int $invoiceId, User $actor): BillingInvoice
