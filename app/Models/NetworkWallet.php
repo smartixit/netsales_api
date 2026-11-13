@@ -103,8 +103,10 @@ class NetworkWallet extends Model
 
     public function hasSufficientBalance(float $amount): bool
     {
-        return DecimalAmount::toMinorUnits($this->wallet_balance)
-            >= DecimalAmount::toMinorUnits($amount);
+        $amountMinor = DecimalAmount::toMinorUnits($amount);
+
+        return $amountMinor > 0
+            && DecimalAmount::toMinorUnits($this->wallet_balance) >= $amountMinor;
     }
 
     // Operations

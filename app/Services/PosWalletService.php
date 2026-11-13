@@ -758,18 +758,7 @@ class PosWalletService
     }
 
     /**
-     * إرسال إشعار SMS لمدير نقطة البيع عند حركات القبض أو الدفع على المحفظة.
-     *
-     * صيغة حركة القبض (تغذية / إيداع):
-     * "نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: لكم سند قبض بمبلغ {المبلغ}YER رصيدكم {الرصيد}YER"
-     *
-     * صيغة حركة الدفع (سحب / استرجاع / قيد فاتورة):
-     * "نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: عليكم سند دفع بمبلغ {المبلغ}YER رصيدكم {الرصيد}YER"
-     *
-     * @param  PosWallet  $wallet  كائن محفظة نقطة البيع
-     * @param  string  $action  نوع الحركة ('receipt' للقبض والإيداع، 'payment' للدفع والسحب والقيد)
-     * @param  float  $amount  مبلغ الحركة
-     * @param  float|null  $currentBalance  الرصيد الفعلي بعد الحركة (إن لم يحدد يُؤخذ من المحفظة)
+     * Reject cross-currency wallet movements; no implicit FX conversion is permitted.
      */
     private function assertMatchingWalletCurrencies(NetworkWallet $networkWallet, PosWallet $posWallet): void
     {
@@ -788,6 +777,20 @@ class PosWalletService
         }
     }
 
+    /**
+     * إرسال إشعار SMS لمدير نقطة البيع عند حركات القبض أو الدفع على المحفظة.
+     *
+     * صيغة حركة القبض (تغذية / إيداع):
+     * "نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: لكم سند قبض بمبلغ {المبلغ} {رمز_العملة} ورصيدكم {الرصيد} {رمز_العملة}"
+     *
+     * صيغة حركة الدفع (سحب / استرجاع / قيد فاتورة):
+     * "نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: عليكم سند دفع بمبلغ {المبلغ}YER رصيدكم {الرصيد}YER"
+     *
+     * @param  PosWallet  $wallet  كائن محفظة نقطة البيع
+     * @param  string  $action  نوع الحركة ('receipt' للقبض والإيداع، 'payment' للدفع والسحب والقيد)
+     * @param  float  $amount  مبلغ الحركة
+     * @param  float|null  $currentBalance  الرصيد الفعلي بعد الحركة (إن لم يحدد يُؤخذ من المحفظة)
+     */
     public function sendWalletSms(PosWallet $wallet, string $action, float $amount, ?float $currentBalance = null): void
     {
         $wallet->loadMissing(['pos', 'network']);
