@@ -353,8 +353,9 @@ class NetworkWalletService
         $networkName = $wallet->network?->network_name ?? "شبكة #{$wallet->network_id}";
         $balance = $currentBalance ?? (float) $wallet->wallet_balance;
 
-        $formattedAmount = AmountFormatter::formatWithCurrency($amount, systemSetting('base_currency', 'YER'));
-        $formattedBalance = AmountFormatter::formatWithCurrency($balance, systemSetting('base_currency', 'YER'));
+        $currencyCode = strtoupper(trim((string) $wallet->currency_code));
+        $formattedAmount = AmountFormatter::formatWithCurrency($amount, $currencyCode);
+        $formattedBalance = AmountFormatter::formatWithCurrency($balance, $currencyCode);
 
         $actionText = ($action === 'receipt') ? 'لكم سند قبض' : 'عليكم سند صرف';
         $reasonText = $reason ? " ({$reason})" : '';
