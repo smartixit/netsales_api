@@ -190,7 +190,10 @@ final class OperationalDocumentSnapshotService
         return [
             'pos_id' => $invoice->pos_id ? (int) $invoice->pos_id : null,
             'reference' => $invoice->invoice_uuid,
-            'payload' => SaleInvoiceResource::make($invoice)->resolve(request()),
+            'payload' => $this->sanitizeUserIdentities(
+                SaleInvoiceResource::make($invoice)->resolve(request()),
+                ['created_by_user']
+            ),
         ];
     }
 
@@ -213,7 +216,10 @@ final class OperationalDocumentSnapshotService
         return [
             'pos_id' => (int) $repayment->pos_id,
             'reference' => $repayment->repayment_uuid,
-            'payload' => PosRepaymentResource::make($repayment)->resolve(request()),
+            'payload' => $this->sanitizeUserIdentities(
+                PosRepaymentResource::make($repayment)->resolve(request()),
+                ['created_by_user', 'reversed_by_user']
+            ),
         ];
     }
 
@@ -237,8 +243,40 @@ final class OperationalDocumentSnapshotService
         return [
             'pos_id' => null,
             'reference' => $expense->expense_uuid,
-            'payload' => ExpenseResource::make($expense)->resolve(request()),
+            'payload' => $this->sanitizeUserIdentities(
+                ExpenseResource::make($expense)->resolve(request()),
+                ['created_by_user']
+            ),
         ];
+    }
+
+    /**
+     * Keep only the identity required to render the official audit trail.
+     * User contact, security, session and role data must not be copied into a
+     * permanent document snapshot.
+     *
+     * @param array<string, mixed> $payload
+     * @param list<string> $identityKeys
+     * @return array<string, mixed>
+     */
+    private function sanitizeUserIdentities(array $payload, array $identityKeys): array
+    {
+        foreach ($identityKeys as $key) {
+            $identity = $payload[$key] ?? null;
+            if (! is_array($identity)) {
+                $payload[$key] = null;
+                continue;
+            }
+
+            $payload[$key] = [
+                'user_id' => isset($identity['user_id']) ? (int) $identity['user_id'] : null,
+                'user_full_name' => isset($identity['user_full_name'])
+                    ? (string) $identity['user_full_name']
+                    : null,
+            ];
+        }
+
+        return $payload;
     }
 
     private function authorize(User $user, string $documentType, int $networkId, ?int $posId): void
