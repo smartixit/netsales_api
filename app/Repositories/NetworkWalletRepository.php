@@ -116,6 +116,12 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
     public function incrementBalance(int $walletId, float $amount): bool
     {
         $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
+        $wallet->ensureActive();
+        if ($amount <= 0) {
+            throw ValidationException::withMessages([
+                'amount' => ['يجب أن يكون مبلغ الحركة أكبر من الصفر.'],
+            ]);
+        }
         $oldBalance = (float) $wallet->wallet_balance;
         $wallet->wallet_balance = round($oldBalance + $amount, 2);
         $updated = $wallet->save();
@@ -130,6 +136,7 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
     public function decrementBalance(int $walletId, float $amount): bool
     {
         $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
+        $wallet->ensureActive();
         $oldBalance = (float) $wallet->wallet_balance;
         if ($amount <= 0 || $oldBalance + 0.001 < $amount) {
             throw ValidationException::withMessages([
