@@ -148,7 +148,7 @@ class BillingCatalogService
             return $query->orderBy('plan_id')->get();
         }
 
-        return $query->orderBy('plan_id')->cursorPaginate($perPage);
+        return $query->orderBy('plan_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
     public function createDraftVersion(int $planId, int $actorId, array $policyVersions = []): BillingPlanVersion
