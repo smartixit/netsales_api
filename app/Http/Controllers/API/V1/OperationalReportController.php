@@ -157,7 +157,7 @@ class OperationalReportController extends BaseController
     public function presets(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'report_type' => ['required', 'string'],
+            'report_type' => ['required', Rule::enum(OperationalReportType::class)],
             'network_id' => ['required', 'integer', 'min:1'],
             'pos_id' => ['nullable', 'integer', 'min:1'],
         ]);
@@ -199,6 +199,29 @@ class OperationalReportController extends BaseController
         }
 
         $scopeKey = $posId === null ? 'network' : 'pos:'.$posId;
+        $existingCount = OperationalReportPreset::query()
+            ->where('user_id', $request->user()->user_id)
+            ->where('network_id', $networkId)
+            ->where('scope_key', $scopeKey)
+            ->where('report_type', $type)
+            ->count();
+        if ($existingCount >= 100) {
+            throw ValidationException::withMessages([
+                'name' => ['وصلت إلى الحد الأقصى وهو 100 إعداد محفوظ لهذا التقرير ضمن نطاق العمل الحالي.'],
+            ]);
+        }
+        $duplicateName = OperationalReportPreset::query()
+            ->where('user_id', $request->user()->user_id)
+            ->where('network_id', $networkId)
+            ->where('scope_key', $scopeKey)
+            ->where('report_type', $type)
+            ->where('name', trim($data['name']))
+            ->exists();
+        if ($duplicateName) {
+            throw ValidationException::withMessages([
+                'name' => ['يوجد إعداد محفوظ بهذا الاسم ضمن نطاق العمل الحالي.'],
+            ]);
+        }
         $preset = OperationalReportPreset::query()->create([
             'preset_uuid' => (string) Str::uuid(),
             'user_id' => $request->user()->user_id,
@@ -241,6 +264,20 @@ class OperationalReportController extends BaseController
         );
         if ($errors !== []) {
             throw ValidationException::withMessages($errors);
+        }
+
+        $duplicateName = OperationalReportPreset::query()
+            ->where('user_id', $request->user()->user_id)
+            ->where('network_id', $networkId)
+            ->where('scope_key', $posId === null ? 'network' : 'pos:'.$posId)
+            ->where('report_type', $type)
+            ->where('name', trim($data['name']))
+            ->where('report_preset_id', '!=', $preset->report_preset_id)
+            ->exists();
+        if ($duplicateName) {
+            throw ValidationException::withMessages([
+                'name' => ['يوجد إعداد محفوظ بهذا الاسم ضمن نطاق العمل الحالي.'],
+            ]);
         }
 
         $preset->fill([

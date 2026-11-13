@@ -83,13 +83,25 @@ class SmartSchedulerCatchupService
                 continue;
             }
 
-            $scheduledAt = $force
-                ? $now->copy()
-                : $this->resolveScheduledOccurrence($config['schedule'], $now);
+            $schedule = $config['schedule'];
+            if ($force) {
+                $scheduledOccurrences = [$now->copy()];
+            } elseif (($schedule['kind'] ?? null) === 'twice_daily') {
+                $scheduledOccurrences = [];
+                foreach ($schedule['times'] ?? [] as $time) {
+                    $occurrence = $this->atTime($now, (string) $time);
+                    if ($occurrence->lte($now)) {
+                        $scheduledOccurrences[] = $occurrence;
+                    }
+                }
+            } else {
+                $occurrence = $this->resolveScheduledOccurrence($schedule, $now);
+                $scheduledOccurrences = $occurrence === null ? [] : [$occurrence];
+            }
 
-            if ($scheduledAt !== null) {
+            foreach ($scheduledOccurrences as $scheduledAt) {
                 $dueTasks[] = [
-                    'key' => $key,
+                    'key' => $key.'@'.$scheduledAt->format('H:i'),
                     'config' => $config,
                     'scheduled_at' => $scheduledAt,
                 ];
