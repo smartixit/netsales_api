@@ -325,24 +325,24 @@ final class OperationalDocumentSnapshotService
             || NetworkUser::query()->where('network_id', $networkId)
                 ->where('user_id', $user->user_id)->where('status', 'ACTIVE')->exists();
 
+        $posScope = false;
         if ($posId !== null) {
             $activeLink = NetworkPos::query()->where('network_id', $networkId)
                 ->where('pos_id', $posId)->where('status', true)->exists();
             if (! $activeLink) {
                 throw new AuthorizationException('نقطة البيع غير مرتبطة بهذه الشبكة أو أن الارتباط غير نشط.');
             }
-        }
 
-        if (! $networkScope) {
-            if ($documentType === 'expense' || $posId === null) {
-                throw new AuthorizationException('لا تملك عضوية الشبكة اللازمة للوصول إلى هذا المستند.');
-            }
-            $posOwner = Pos::query()->where('pos_id', $posId)->where('owner_id', $user->user_id)->exists();
-            $posMember = PosUser::query()->where('pos_id', $posId)
-                ->where('user_id', $user->user_id)->where('status', 'ACTIVE')->exists();
-            if (! $posOwner && ! $posMember) {
-                throw new AuthorizationException('لا توجد عضوية نشطة تخولك الوصول إلى المستند.');
-            }
+            $posOwner = Pos::query()
+                ->where('pos_id', $posId)
+                ->where('owner_id', $user->user_id)
+                ->exists();
+            $posMember = PosUser::query()
+                ->where('pos_id', $posId)
+                ->where('user_id', $user->user_id)
+                ->where('status', 'ACTIVE')
+                ->exists();
+            $posScope = $posOwner || $posMember;
         }
 
         $permission = match ($documentType) {
@@ -351,14 +351,19 @@ final class OperationalDocumentSnapshotService
             'expense' => 'expenses.view',
             default => null,
         };
-        $hasPermission = $permission !== null && (
-            $networkScope
-                ? $this->tenantPermissions->allowsNetwork($user, $networkId, $permission)
-                : $this->tenantPermissions->allowsPos($user, (int) $posId, $permission)
-        );
 
-        if (! $hasPermission) {
-            throw new AuthorizationException('لا تملك صلاحية إصدار نسخة رسمية من هذا المستند.');
+        $hasNetworkPermission = $permission !== null
+            && $documentType !== 'expense' || false;
+        $hasNetworkPermission = $permission !== null
+            && $networkScope
+            && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
+        $hasPosPermission = $permission !== null
+            && $posId !== null
+            && $posScope
+            && $this->tenantPermissions->allowsPos($user, (int) $posId, $permission);
+
+        if (! $hasNetworkPermission && ! $hasPosPermission) {
+            throw new AuthorizationException('لا تملك صلاحية إصدار نسخة رسمية من هذا المستند ضمن نطاق الشبكة أو نقطة البيع.');
         }
     }
 
