@@ -9,6 +9,7 @@ final class BillingTrialsProvider extends ConfiguredBillingReportProvider
         if($networkId!==null)$q->where('ba.network_id',$networkId);
         if(!empty($filters['from_date']))$q->whereDate('r.reserved_at','>=',$filters['from_date']);
         if(!empty($filters['to_date']))$q->whereDate('r.reserved_at','<=',$filters['to_date']);
+        if(!empty($filters['status']))$q->where('r.status',strtoupper((string)$filters['status']));
         $statuses=(clone $q)->select('r.status')->selectRaw('COUNT(*) as total')->groupBy('r.status')->get();
         $policies=(clone $q)->select('r.trial_policy_version_id','r.redemption_scope')->selectRaw('COUNT(*) as total')
           ->groupBy('r.trial_policy_version_id','r.redemption_scope')->get();
