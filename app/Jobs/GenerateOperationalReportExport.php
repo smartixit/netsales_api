@@ -95,7 +95,7 @@ final class GenerateOperationalReportExport implements ShouldQueue
                         throw new \RuntimeException('REPORT_EXPORT_LIMIT_EXCEEDED');
                     }
 
-                    $serialized = $provider->serializeExportRow($row);
+                    $serialized = $provider->serializeRow($row);
                     $encoded = json_encode(
                         $serialized,
                         JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR
