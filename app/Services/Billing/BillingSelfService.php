@@ -68,6 +68,17 @@ class BillingSelfService
         if (! empty($filters['status'])) {
             $query->where('status', strtoupper((string) $filters['status']));
         }
+        $search = trim((string) ($filters['search'] ?? ''));
+        if ($search !== '') {
+            $like = '%'.$search.'%';
+            $query->where(function ($matching) use ($like): void {
+                $matching->where('status', 'like', $like)
+                    ->orWhereRaw('CAST(billing_subscription_id AS CHAR) LIKE ?', [$like])
+                    ->orWhereHas('plan', fn ($plan) => $plan
+                        ->where('name', 'like', $like)
+                        ->orWhere('plan_key', 'like', $like));
+            });
+        }
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
@@ -84,6 +95,18 @@ class BillingSelfService
 
         if (! empty($filters['status'])) {
             $query->where('status', strtoupper((string) $filters['status']));
+        }
+        $search = trim((string) ($filters['search'] ?? ''));
+        if ($search !== '') {
+            $like = '%'.$search.'%';
+            $query->where(function ($matching) use ($like): void {
+                $matching->where('invoice_number', 'like', $like)
+                    ->orWhere('status', 'like', $like)
+                    ->orWhereRaw('CAST(invoice_id AS CHAR) LIKE ?', [$like])
+                    ->orWhereHas('subscription.plan', fn ($plan) => $plan
+                        ->where('name', 'like', $like)
+                        ->orWhere('plan_key', 'like', $like));
+            });
         }
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
@@ -113,6 +136,18 @@ class BillingSelfService
         if (! empty($filters['status'])) {
             $query->where('status', strtoupper((string) $filters['status']));
         }
+        $search = trim((string) ($filters['search'] ?? ''));
+        if ($search !== '') {
+            $like = '%'.$search.'%';
+            $query->where(function ($matching) use ($like): void {
+                $matching->where('payment_reference', 'like', $like)
+                    ->orWhere('external_reference', 'like', $like)
+                    ->orWhere('status', 'like', $like)
+                    ->orWhereRaw('CAST(payment_id AS CHAR) LIKE ?', [$like])
+                    ->orWhereHas('invoice', fn ($invoice) => $invoice
+                        ->where('invoice_number', 'like', $like));
+            });
+        }
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
@@ -130,6 +165,18 @@ class BillingSelfService
         if (! empty($filters['status'])) {
             $query->where('status', strtoupper((string) $filters['status']));
         }
+        $search = trim((string) ($filters['search'] ?? ''));
+        if ($search !== '') {
+            $like = '%'.$search.'%';
+            $query->where(function ($matching) use ($like): void {
+                $matching->where('credit_note_number', 'like', $like)
+                    ->orWhere('reason', 'like', $like)
+                    ->orWhere('status', 'like', $like)
+                    ->orWhereRaw('CAST(credit_note_id AS CHAR) LIKE ?', [$like])
+                    ->orWhereHas('invoice', fn ($invoice) => $invoice
+                        ->where('invoice_number', 'like', $like));
+            });
+        }
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
@@ -146,6 +193,19 @@ class BillingSelfService
 
         if (! empty($filters['status'])) {
             $query->where('status', strtoupper((string) $filters['status']));
+        }
+        $search = trim((string) ($filters['search'] ?? ''));
+        if ($search !== '') {
+            $like = '%'.$search.'%';
+            $query->where(function ($matching) use ($like): void {
+                $matching->where('refund_reference', 'like', $like)
+                    ->orWhere('reason', 'like', $like)
+                    ->orWhere('status', 'like', $like)
+                    ->orWhereRaw('CAST(refund_id AS CHAR) LIKE ?', [$like])
+                    ->orWhereHas('payment', fn ($payment) => $payment
+                        ->where('payment_reference', 'like', $like)
+                        ->orWhere('external_reference', 'like', $like));
+            });
         }
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
