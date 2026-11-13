@@ -80,7 +80,12 @@ class NetworkPosRepository extends BaseRepository implements NetworkPosRepositor
             return $query->orderBy('network_pos_id', 'desc')->get();
         }
 
-        return $query->orderBy('network_pos_id', 'desc')->cursorPaginate($perPage);
+        return $query->orderBy('network_pos_id', 'desc')->cursorPaginate(
+            $perPage,
+            ['*'],
+            'cursor',
+            $filters['cursor'] ?? null
+        );
     }
 
     /**

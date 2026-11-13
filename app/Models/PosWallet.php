@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\WalletOperationType;
 use App\Services\Support\BusinessIdentifierGenerator;
+use App\Support\DecimalAmount;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use LogicException;
 
 class PosWallet extends Model
 {
@@ -33,6 +35,9 @@ class PosWallet extends Model
         'pos_id',
         'wallet_uuid',
         'wallet_balance',
+        'opening_balance',
+        'opening_balance_source',
+        'currency_code',
         'credit_limit',
         'status',
     ];
@@ -41,6 +46,7 @@ class PosWallet extends Model
     {
         return [
             'wallet_balance' => 'decimal:2',
+            'opening_balance' => 'decimal:2',
             'credit_limit' => 'decimal:2',
             'status' => 'boolean',
         ];
@@ -115,7 +121,10 @@ class PosWallet extends Model
 
     public function hasSufficientBalance(float $amount): bool
     {
-        return (float) $this->wallet_balance >= $amount;
+        $amountMinor = DecimalAmount::toMinorUnits($amount);
+
+        return $amountMinor > 0
+            && DecimalAmount::toMinorUnits($this->wallet_balance) >= $amountMinor;
     }
 
     /**
@@ -123,7 +132,7 @@ class PosWallet extends Model
      */
     public function isOverdrawn(): bool
     {
-        return (float) $this->wallet_balance < 0;
+        return DecimalAmount::toMinorUnits($this->wallet_balance) < 0;
     }
 
     /**
@@ -133,7 +142,7 @@ class PosWallet extends Model
      */
     public function getAccountingStatus(): string
     {
-        $balance = (float) $this->wallet_balance;
+        $balance = DecimalAmount::toMinorUnits($this->wallet_balance);
         if ($balance < 0) {
             return 'DEBIT';
         }
@@ -158,9 +167,9 @@ class PosWallet extends Model
      */
     public function getDebitAmount(): float
     {
-        $balance = (float) $this->wallet_balance;
+        $balance = DecimalAmount::toMinorUnits($this->wallet_balance);
 
-        return $balance < 0 ? abs($balance) : 0.0;
+        return $balance < 0 ? (float) DecimalAmount::fromMinorUnits(abs($balance)) : 0.0;
     }
 
     /**
@@ -168,9 +177,9 @@ class PosWallet extends Model
      */
     public function getCreditAmount(): float
     {
-        $balance = (float) $this->wallet_balance;
+        $balance = DecimalAmount::toMinorUnits($this->wallet_balance);
 
-        return $balance > 0 ? $balance : 0.0;
+        return $balance > 0 ? (float) DecimalAmount::fromMinorUnits($balance) : 0.0;
     }
 
     /**
@@ -198,10 +207,12 @@ class PosWallet extends Model
             return 0.0;
         }
 
-        $limit = (float) $this->credit_limit;
-        $balance = (float) $this->wallet_balance;
+        $limitMinor = DecimalAmount::toMinorUnits($this->credit_limit);
+        $balanceMinor = DecimalAmount::toMinorUnits($this->wallet_balance);
+        $usedOverdraftMinor = max(0, -$balanceMinor);
+        $remainingMinor = max(0, $limitMinor - $usedOverdraftMinor);
 
-        return max(0.0, $limit + $balance);
+        return (float) DecimalAmount::fromMinorUnits($remainingMinor);
     }
 
     /**
@@ -209,40 +220,78 @@ class PosWallet extends Model
      */
     public function getTotalPurchasingPower(): float
     {
-        $balance = (float) $this->wallet_balance;
-        $overdraft = $this->getAvailableOverdraftCapacity();
+        $balanceMinor = DecimalAmount::toMinorUnits($this->wallet_balance);
+        $cashMinor = max(0, $balanceMinor);
+        $limitMinor = DecimalAmount::toMinorUnits($this->credit_limit ?? 0);
+        $usedOverdraftMinor = max(0, -$balanceMinor);
+        $remainingCreditMinor = max(0, $limitMinor - $usedOverdraftMinor);
 
-        return round($balance + $overdraft, 2);
+        return (float) DecimalAmount::fromMinorUnits(
+            DecimalAmount::add($cashMinor, $remainingCreditMinor)
+        );
     }
 
     // Operations
     public function deposit(float $amount, string $statement, int $userId): PosWalletLog
     {
         return DB::transaction(function () use ($amount, $statement, $userId): PosWalletLog {
-            $this->increment('wallet_balance', $amount);
-
-            return $this->logs()->create([
+            $wallet = self::query()->lockForUpdate()->findOrFail($this->getKey());
+            $wallet->ensureActive();
+            $amountMinor = DecimalAmount::toMinorUnits($amount);
+            if ($amountMinor <= 0) {
+                throw ValidationException::withMessages(['amount' => ['مبلغ الإيداع يجب أن يكون أكبر من الصفر.']]);
+            }
+            $currencyCode = strtoupper(trim((string) $wallet->currency_code));
+            if (preg_match('/^[A-Z]{3}$/D', $currencyCode) !== 1) {
+                throw new LogicException('The POS wallet currency code is invalid.');
+            }
+            $beforeMinor = DecimalAmount::toMinorUnits($wallet->wallet_balance);
+            $afterMinor = DecimalAmount::add($beforeMinor, $amountMinor);
+            $wallet->wallet_balance = DecimalAmount::fromMinorUnits($afterMinor);
+            $wallet->save();
+            return $wallet->logs()->create([
                 'log_operation_type' => WalletOperationType::DEPOSIT,
-                'log_amount' => $amount,
+                'log_amount' => DecimalAmount::fromMinorUnits($amountMinor),
+                'balance_before' => DecimalAmount::fromMinorUnits($beforeMinor),
+                'balance_after' => DecimalAmount::fromMinorUnits($afterMinor),
+                'balance_snapshot_source' => 'LIVE',
+                'currency_code' => $currencyCode,
                 'log_statement' => $statement,
                 'log_date' => now('Asia/Aden'),
                 'created_by' => $userId,
             ]);
-        });
+        }, 3);
     }
 
     public function withdraw(float $amount, string $statement, int $userId): PosWalletLog
     {
         return DB::transaction(function () use ($amount, $statement, $userId): PosWalletLog {
-            $this->decrement('wallet_balance', $amount);
-
-            return $this->logs()->create([
+            $wallet = self::query()->lockForUpdate()->findOrFail($this->getKey());
+            $wallet->ensureActive();
+            $amountMinor = DecimalAmount::toMinorUnits($amount);
+            $beforeMinor = DecimalAmount::toMinorUnits($wallet->wallet_balance);
+            $creditLimitMinor = DecimalAmount::toMinorUnits($wallet->credit_limit ?? 0);
+            $afterMinor = DecimalAmount::add($beforeMinor, -$amountMinor);
+            if ($amountMinor <= 0 || $afterMinor < -$creditLimitMinor) {
+                throw ValidationException::withMessages(['amount' => ['تجاوز السحب الرصيد المتاح والسقف الائتماني المعتمد لنقطة البيع.']]);
+            }
+            $currencyCode = strtoupper(trim((string) $wallet->currency_code));
+            if (preg_match('/^[A-Z]{3}$/D', $currencyCode) !== 1) {
+                throw new LogicException('The POS wallet currency code is invalid.');
+            }
+            $wallet->wallet_balance = DecimalAmount::fromMinorUnits($afterMinor);
+            $wallet->save();
+            return $wallet->logs()->create([
                 'log_operation_type' => WalletOperationType::WITHDRAW,
-                'log_amount' => $amount,
+                'log_amount' => DecimalAmount::fromMinorUnits($amountMinor),
+                'balance_before' => DecimalAmount::fromMinorUnits($beforeMinor),
+                'balance_after' => DecimalAmount::fromMinorUnits($afterMinor),
+                'balance_snapshot_source' => 'LIVE',
+                'currency_code' => $currencyCode,
                 'log_statement' => $statement,
                 'log_date' => now('Asia/Aden'),
                 'created_by' => $userId,
             ]);
-        });
+        }, 3);
     }
 }

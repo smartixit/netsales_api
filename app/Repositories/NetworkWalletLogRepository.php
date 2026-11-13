@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Enums\WalletOperationType;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
 use App\Models\NetworkWalletLog;
+use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -88,11 +89,33 @@ class NetworkWalletLogRepository extends BaseRepository implements NetworkWallet
      */
     public function createLog(int $walletId, WalletOperationType|string $operation, float $amount, string $statement, ?int $createdBy = null, ?string $date = null, ?int $transferId = null): NetworkWalletLog
     {
+        $wallet = \App\Models\NetworkWallet::query()->lockForUpdate()->findOrFail($walletId);
+        $operationValue = $operation instanceof WalletOperationType ? $operation->value : $operation;
+        $amountMinor = DecimalAmount::toMinorUnits($amount);
+        if ($amountMinor < 0) {
+            throw new \InvalidArgumentException('Wallet log amounts cannot be negative.');
+        }
+
+        $balanceAfterMinor = DecimalAmount::toMinorUnits($wallet->wallet_balance);
+        $balanceBeforeMinor = match ($operationValue) {
+            WalletOperationType::DEPOSIT->value => DecimalAmount::add($balanceAfterMinor, -$amountMinor),
+            WalletOperationType::WITHDRAW->value => DecimalAmount::add($balanceAfterMinor, $amountMinor),
+            default => $balanceAfterMinor,
+        };
+        $currencyCode = strtoupper(trim((string) $wallet->currency_code));
+        if (preg_match('/^[A-Z]{3}$/D', $currencyCode) !== 1) {
+            throw new \LogicException('The network wallet currency code is invalid.');
+        }
+
         return $this->create([
             'wallet_id' => $walletId,
             'transfer_id' => $transferId,
-            'log_operation' => $operation instanceof WalletOperationType ? $operation->value : $operation,
-            'log_amount' => $amount,
+            'log_operation' => $operationValue,
+            'log_amount' => DecimalAmount::fromMinorUnits($amountMinor),
+            'balance_before' => DecimalAmount::fromMinorUnits($balanceBeforeMinor),
+            'balance_after' => DecimalAmount::fromMinorUnits($balanceAfterMinor),
+            'balance_snapshot_source' => 'LIVE',
+            'currency_code' => $currencyCode,
             'log_statement' => $statement,
             'log_date' => $date ?? now('Asia/Aden'),
             'created_by' => $createdBy,

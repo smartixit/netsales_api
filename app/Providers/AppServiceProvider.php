@@ -13,6 +13,8 @@ use App\Policies\PosPolicy;
 use App\Policies\VoucherPackageDiscountPolicy;
 use App\Policies\VoucherPackagePolicy;
 use App\Services\Support\FileUploadService;
+use App\Services\Reports\OperationalReportProviderFactory;
+use App\Services\Reports\OperationalReportProviderRegistry;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -28,6 +30,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(OperationalReportProviderRegistry::class, function ($app): OperationalReportProviderRegistry {
+            return $app->make(OperationalReportProviderFactory::class)->make();
+        });
+
         if (! class_exists('App\Services\FileUploadService', false)) {
             class_alias(FileUploadService::class, 'App\Services\FileUploadService');
         }

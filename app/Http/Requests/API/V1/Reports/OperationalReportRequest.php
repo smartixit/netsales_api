@@ -19,11 +19,15 @@ class OperationalReportRequest extends FormRequest
             'report_type' => ['required', Rule::enum(OperationalReportType::class)],
             'network_id' => ['required', 'integer', 'min:1'],
             'pos_id' => ['nullable', 'integer', 'min:1'],
-            'from_date' => ['nullable', 'date_format:Y-m-d'],
-            'to_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from_date'],
-            'sale_type' => ['nullable', 'in:CASH,CREDIT'],
-            'status' => ['nullable', 'string', 'max:32'],
+            'filters' => ['sometimes', 'array'],
+            'filters.*' => ['nullable'],
+            'from_date' => ['prohibited'],
+            'to_date' => ['prohibited'],
+            'search' => ['prohibited'],
+            'status' => ['prohibited'],
+            'sale_type' => ['prohibited'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'cursor' => ['nullable', 'string', 'max:2048'],
         ];
     }
 }

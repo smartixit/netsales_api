@@ -18,54 +18,11 @@ Artisan::command('billing:process-renewals', function (BillingRenewalService $re
 Artisan::command('billing:process-dunning', function (BillingDunningService $dunning) {
     $result = $dunning->process((int) config('billing.dunning_batch_size', 100));
     $this->info("تم إدراج {$result['reminders_queued']} تذكيراً بالفواتير و{$result['renewal_alerts_queued']} تنبيهاً بالتجديد في Outbox وتعليق {$result['subscriptions_suspended']} اشتراكاً بعد انتهاء السماح.");
-})->purpose('معالجة التذكيرات المالية وتعليق الاشتراكات المتأخرة بعد فترة السماح');
+})->purpose('معالجة التذكيرات المالية وفترات السماح والتنبيهات');
 
-// ═══════════════════════════════════════════════════════════════════════
-// جدولة المهام الدورية وفق توقيت صنعاء (Asia/Aden Schedule Registry)
-// ═══════════════════════════════════════════════════════════════════════
-
-// 0. الاعتراف اليومي بالإيرادات المؤجلة حسب الخدمة المقدمة
-Schedule::command('billing:recognize-revenue')->dailyAt('01:05')->withoutOverlapping()->timezone('Asia/Aden');
-
-// 1. معالجة فواتير التجديد والتحويل من التجربة كل 15 دقيقة
-Schedule::command('billing:process-renewals')->everyFifteenMinutes()->withoutOverlapping()->timezone('Asia/Aden');
-
-// 2. معالجة التذكيرات المالية وفترات السماح كل 15 دقيقة
-Schedule::command('billing:process-dunning')->everyFifteenMinutes()->withoutOverlapping()->timezone('Asia/Aden');
-
-// 3. إرسال الملخص المالي اليومي للشبكات عبر SMS (يومياً الساعة 8 مساءً)
-Schedule::command('reports:daily-summary-sms')->dailyAt('20:00')->timezone('Asia/Aden');
-
-// 4. إرسال الملخص المالي الشهري للشبكات عبر SMS (اليوم الأول من كل شهر الساعة 8 صباحاً)
-Schedule::command('reports:monthly-summary-sms')->monthlyOn(1, '08:00')->timezone('Asia/Aden');
-
-// 5. فحص وتنبيه انخفاض أرصدة محافظ نقاط البيع (مرتين يومياً: 9 صباحاً و 3 عصراً)
-Schedule::command('alerts:low-balance')->twiceDaily(9, 15)->timezone('Asia/Aden');
-
-// 6. النسخ الاحتياطي التلقائي الشامل للنظام إلى Google Drive (يومياً الساعة 3 فجراً)
-Schedule::command('backup:auto')->dailyAt('03:00')->timezone('Asia/Aden');
-
-// 7. تنظيف جلسات المستخدمين المنتهية والمبطلة القديمة (يومياً الساعة 2 فجراً)
-Schedule::command('cleanup:user-sessions')->dailyAt('02:00')->timezone('Asia/Aden');
-
-// 8. تنظيف رموز التحقق المؤقتة (OTP) المنتهية أو المستعملة (يومياً الساعة 2:15 فجراً)
-Schedule::command('cleanup:expired-otp')->dailyAt('02:15')->timezone('Asia/Aden');
-
-// 9. رفع الحظر الأمني المنتهي تلقائياً عن المستخدمين والأجهزة (يومياً الساعة 2:30 فجراً)
-Schedule::command('security:lift-expired-bans')->dailyAt('02:30')->timezone('Asia/Aden');
-
-// 9. تنظيف وأرشفة سجلات النظام القديمة الأقدم من 60 يوماً (أسبوعياً فجر الأحد الساعة 4 فجراً)
-Schedule::command('system:prune-logs')->weeklyOn(0, '04:00')->timezone('Asia/Aden');
-
-// 10. محرك الاستدراك والتعويض الذكي للمهام الفائتة (يعمل كل 15 دقيقة)
-Schedule::command('schedule:catchup')->everyFifteenMinutes();
-
-// 11. معالجة أحداث صندوق الإرسال اللحظي المالي (Transactional Outbox Processor كل دقيقة)
-Schedule::command('outbox:process')->everyMinute()->withoutOverlapping();
-
-// 11. تصريف ومعالجة طوابير النظام تلقائياً عند تشغيل الجدولة القياسية
-if (config('queue.default') !== 'sync') {
-    Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
-        ->everyMinute()
-        ->withoutOverlapping();
-}
+// تعريف دوري واحد فقط. جميع المهام الفعلية ومواعيدها موجودة في ScheduledTaskType.
+// يعمل هذا المشغل مع Cron عند توفره، ويعمل محرك النشاط من Middleware عند غيابه.
+Schedule::command('schedule:catchup')
+    ->everyMinute()
+    ->timezone('Asia/Aden')
+    ->withoutOverlapping(35);

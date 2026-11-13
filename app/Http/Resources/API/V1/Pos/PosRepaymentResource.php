@@ -3,6 +3,7 @@
 namespace App\Http\Resources\API\V1\Pos;
 
 use App\Http\Resources\API\V1\Network\NetworkResource;
+use App\Http\Resources\API\V1\User\UserResource;
 use App\Models\PosRepayment;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -33,6 +34,8 @@ class PosRepaymentResource extends JsonResource
             'reversed_by' => $this->reversed_by,
             'reversal_reason' => $this->reversal_reason,
             'reversal_repayment_id' => $this->reversal_repayment_id,
+            'created_by_user' => $this->whenLoaded('createdBy', fn () => new UserResource($this->createdBy)),
+            'reversed_by_user' => $this->whenLoaded('reversedBy', fn () => new UserResource($this->reversedBy)),
             'created_at' => $this->created_at?->toDateTimeString(),
             'remaining_debt_after' => isset($this->remaining_debt_after) ? (float) $this->remaining_debt_after : null,
             'pos_balance_after' => isset($this->pos_balance_after) ? (float) $this->pos_balance_after : null,

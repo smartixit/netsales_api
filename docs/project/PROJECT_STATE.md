@@ -1,7 +1,7 @@
 # NetSales — Current Project State & Authorization Snapshot
 
-**Last Updated Date:** 2026-11-10  
-**Active Working Tree Status:** M6 Procurement Requests Lifecycle Frontend Completed & Verified (201 tests passed, 0 issues)  
+**Last Updated Date:** 2026-11-13  
+**Active Working Tree Status:** Operational Reports Provider Registry, Exact Wallet Ledger Arithmetic, and Official Document Snapshot Integration — source implementation substantially assembled; integration gaps and final validation remain  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
 
@@ -137,3 +137,103 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Plan catalogue mutations retain the permission split: billing.create for product/plan records, billing.edit for Draft version/price/feature construction, and billing.manage for publication.
 - Route declarations were reconciled to remove duplicate policy endpoints and keep policy routes inside the dedicated policies controller group.
 - Verification remains PENDING: no PHP runtime, Pint, PHPStan, PHPUnit, migration run, route:list, or exact-head CI result is available for this branch. Do not mark the billing administration track accepted or production-ready until the full API workflow passes and failures are fixed.
+
+
+## Active implementation track — Operational Reports & Official Documents (2026-11-13)
+
+**Authorized branches**
+- API: `feat/operational-reports-contracts` — HEAD `7ac484747b0d69dbacb608cb45ab34d707a8e3dc`.
+- Flutter: `feat/invoice-document-engine-integration` — HEAD `60703dfe1193ca28a452207c98657f8d4e1e2012`.
+- These branches are not merged. Do not treat their code as accepted or production-ready until the final validation gate passes.
+
+**Branch relationship to main (2026-11-13):**
+- API branch is 268 commits ahead and 2 behind `main` (diverged).
+- Flutter branch is 326 commits ahead and 5 behind `main` (diverged).
+- No pull request was found for either active feature branch at the time of inspection. Do not merge directly without synchronizing and reconciling the missing base commits.
+
+### Stage 3 — Operational report contracts
+- Implemented the provider contract, registry, factory, shared filter/schema validation, and seven dedicated providers: sales, expenses, network wallet, POS wallet, repayments, debt aging, and requests.
+- The API controller, summary execution, cursor-paginated results, authorization, and queued CSV export consume the registry and provider-owned row serialization.
+- Removed the legacy `OperationalReportQueryService` and `OperationalReportProviderAdapter`; no compatibility adapter is retained.
+- Flutter consumes the seven known report types from the server catalog as typed `document_engine` `ReportDefinition` schemas and registers exact versions in `ReportDefinitionRegistry`. Access metadata remains separate from the definition; Laravel remains authoritative for authorization and query execution.
+- API now accepts filters only inside the schema-validated nested `filters` object; the retired flat filter fields are prohibited. All seven provider serializers use the same `serializeExportRow()` contract for result rows and CSV.
+- Remaining limitation: Flutter's current report use cases/controller still map a fixed set of known filters and its `OperationalReportType` enum is finite. The generic schema studio is not integrated into the operational reports screen yet; adding arbitrary new report definitions without client code changes is not complete.
+
+### Stage 4 — Operational ledger and official documents
+- Wallet opening balance, currency, posting-time before/after balance snapshots, and snapshot provenance are represented in the schema and resources.
+- Historical wallet rows are marked `BACKFILLED`; newly initialized wallets are marked `INITIAL`; new posting snapshots are marked `LIVE`.
+- Network/POS statements include opening and closing period balances and include soft-deleted ledger rows. The period closing balance is derived from movements by effective `log_date`, while before/after snapshots are explicitly posting-time values.
+- Wallet mutations validate active state and positive amounts under row locks; POS withdrawals use the configured credit limit rather than a stale positive-balance precheck.
+- Wallet balance mutation, posting-time snapshots, report opening/closing calculations, and debt aging use shared exact decimal arithmetic in integer minor units. POS wallet creation requires the existing network wallet currency; wallet statements, SMS notifications, report PDFs, and official snapshots no longer silently substitute the platform base currency or a hard-coded YER fallback.
+- Operational currency is separate from Platform Billing currency. Official document creation rejects a network/POS currency mismatch rather than silently combining currencies.
+- Immutable document snapshots capture source resources and a SHA-256 manifest; creator/reversal identities and expense attachment metadata are minimized before persistent storage. PDF artifacts are first-write-only, protected, hashed, and downloadable as the canonical document bytes.
+
+### Specialized documents
+- Invoice PDF is network-issued with the network as supplier and POS as recipient, A4 portrait, itemized pricing/quantity/discount, currency, contacts, request reference, creator, paid and remaining amounts.
+- Repayment receipt is network-issued, A5 portrait, and includes allocations and reversal trace details.
+- Expense voucher is network-branded A4 portrait with expense lines, total, creator, currency, and attachment metadata.
+- Remaining document/report gap: operational report PDF currently prints an executive summary, not the complete row-level wallet statement/report; row-level export is CSV. A per-report reusable template family and visual validation remain outstanding.
+
+### Reports module and preset integration gaps
+- `document_engine` contains the generic `ReportConfigurationStudio` widget and versioned `SavedReportPreset` value object with package tests. NetSales' `OperationalReportsScreen` does not currently host the studio, and no API preset persistence model, migration, or save/list/update/delete contract exists. These components are reusable foundations, not a completed saved-reports feature.
+- Current report result UI continues to use NetSales custom buttons and the existing filter/list/summary widgets. No row-level PDF statement output has been proven for wallets.
+
+### Validation gate — PENDING
+- No migrations have been applied to a database.
+- No PHPUnit/Dart tests, PHP lint, Pint, PHPStan, Flutter analyzer, PDF extraction/visual checks, or GitHub Actions have been run for this implementation track.
+- Windows, Android, and iOS PDF behavior and Arabic extraction/order remain unverified.
+- Do not merge or claim production readiness until the final plan validation stage runs against the exact branch heads and all failures are resolved.
+
+
+## Scheduler unification update — 2026-11-13
+- Active API branch: `feat/operational-reports-contracts`.
+- Current API HEAD before this state update: `ec3aec42ed8663f4ff1df05216b8f649b5e33c80`.
+- Current Flutter branch reference verified during this work: `feat/invoice-document-engine-integration` at `6778572fe07294d4ad534a38277521888ba8a495`.
+- Scheduler implementation is source-updated but NOT runtime-validated. It centralizes task definitions in `ScheduledTaskType`, persists exact occurrence slots and two-hour execution leases, and removes parallel recurring command declarations.
+- API activity middleware triggers bounded catch-up after successful requests when Cron is unavailable. It processes at most two successfully claimed scheduled occurrences and one queued job per throttled activity tick. Completed/locked occurrences are skipped without consuming the batch limit. The fallback still requires application traffic; it cannot run in the absence of all triggers.
+- Queue processing uses the configured connection and one-shot worker invocation; no resident worker is required for this fallback. `sync` and `null` connections are excluded.
+- Database migration, all tests, static analysis, PDF checks, and GitHub Actions remain deferred to the final validation gate. No merge or production readiness is claimed.
+
+
+## Wallet ledger and official document closure update — 2026-11-13
+- Network and POS wallet model-level mutation methods now use DecimalAmount integer minor units, record exact before/after balances, and reject invalid currency codes instead of falling back to YER.
+- Wallet sufficiency checks use positive minor-unit amounts. POS overdraft capacity and purchasing power are calculated in integer minor units; available overdraft is remaining credit after any negative balance, and total purchasing power is cash plus remaining credit.
+- All network↔POS transfer and reversal paths validate matching ISO-style currency codes before changing balances; no implicit cross-currency conversion is allowed.
+- Wallet ledger migration 000001 backfills opening balances and ordered before/after snapshots in minor units. Network/POS wallet statement providers derive period opening/closing balances from the same ledger movements and include currency/source metadata.
+- Official document snapshots bind immutable source JSON, template/schema versions, currency, and SHA-256; the client renders from the server snapshot, uploads once, then downloads the server-canonical artifact and verifies its SHA-256. Invoice, repayment, and expense adapters use all seven IBM Plex Sans Arabic weights and tenant/application logo image watermarks.
+- Source implementation only. Database migrations were not applied and no tests, static analysis, PDF text extraction, visual comparison, or Actions were run. Final validation remains pending.
+
+
+## Invoice settlement ledger correction — 2026-11-13
+- SaleInvoiceService now refuses to settle an invoice unless the locked network and POS wallets have valid matching operational currency codes.
+- Cash-sale POS ledger entries now carry explicit sequential balance snapshots: withdrawal takes the balance to the temporary post-debit position, and the paired cash deposit restores the original balance. The wallet's stored balance remains unchanged; the two ledger movements net to zero without inventing two unrelated before-balances.
+- POS wallet log creation validates supplied balance snapshots against operation type and amount. The optional explicit-snapshot path is reserved for balanced journal entries; ordinary entries continue deriving snapshots from the locked wallet balance.
+- Source-only change; no database/test execution performed.
+
+
+## Detailed wallet statement templates — 2026-11-13
+- Flutter branch `feat/invoice-document-engine-integration` now contains dedicated network-wallet and POS-wallet statement templates on the shared Document Engine.
+- Statement exports read every cursor page (50 records per page, capped at 1,500 rows), then re-check the newest ledger ID and wallet state. If a new movement or wallet mutation occurs during retrieval, export is aborted rather than combining inconsistent pages and balances.
+- The renderer requires a valid wallet ISO currency, matching currency on every movement, opening balance, and per-entry before/after balance snapshots. It does not calculate or aggregate monetary totals in Flutter.
+- Output is A4 landscape with a nine-column ledger table, opening/current balances, credit limit where relevant, image watermark using POS/network logo with application-mark fallback, Arabic IBM Plex Sans weights, page numbering, and an explicit notice when the opening balance was backfilled.
+- Maximum statement size is 1,500 ledger entries per PDF. Larger ledgers are rejected without generating a partial document.
+- Flutter HEAD: `f83e8dac0ec2fcbef80f6d3d4eb3383824ecaf35`. No analyzer, formatter, tests, PDF text extraction, visual checks, or Actions were run; all remain in the final validation stage.
+
+
+## Saved operational report presets — 2026-11-13
+
+- Added per-user saved report presets scoped to network or POS workspace and report type. The database enforces unique names within user + network + scope + report type.
+- Presets persist only typed criteria and presentation choices (visible columns, sort order, grouping, template/version, locale, page profile, metrics/charts). They do not store report rows, permissions, tokens, signed URLs, or tenant authorization grants.
+- API endpoints: `GET /reports/presets`, `POST /reports/presets`, `PUT /reports/presets/{presetUuid}`, and `DELETE /reports/presets/{presetUuid}`. All require `operational.scope`, authenticated ownership, current report authorization, and current provider schema validation.
+- Preset schema version is `1`; report schema version must match the current provider definition. Criteria and presentation fields are validated against the provider allowlists before persistence. Preset records are owned by the user and cascade on user/network deletion.
+- Report catalog template references now match the type-specific executive PDF template IDs.
+
+
+## Scheduler catch-up and saved report preset closure — 2026-11-13
+
+- The scheduled-task ledger now has a schema migration for `scope_key`, `schedule_slot`, `started_at`, `finished_at`, and `locked_until`, replacing the old daily-only unique key with `(task_type, scope_key, target_date, schedule_slot)`. Existing runs are backfilled; legacy low-balance runs map to the first daily slot.
+- `SmartSchedulerCatchupService` remains the sole task registry/execution engine. Activity ticks process a bounded number of due occurrences and opportunistically drain one queued job using the configured queue connection and `queue:work --once`; the Laravel scheduler invokes the same engine when Cron exists.
+- The twice-daily low-balance task now contributes both due occurrences for the current day, each with its own durable slot and per-network idempotency record.
+- The activity fallback requires an incoming application request. If there is no Cron, no queue worker, and no application traffic, no PHP process exists to execute background work; this is a platform constraint, not something the application can bypass.
+- Saved report presets are stored as schema-versioned typed criteria and presentation configuration, owned by the authenticated user and scoped to network/POS + report type. The Flutter Report Studio now loads, saves, updates, applies, and deletes these presets; stale schema presets are not silently migrated.
+- No tests, migrations, static analysis, PDF extraction, or GitHub Actions have been run; they remain deferred to the final validation stage.

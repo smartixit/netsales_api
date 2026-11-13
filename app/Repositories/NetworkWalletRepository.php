@@ -4,9 +4,11 @@ namespace App\Repositories;
 
 use App\Interfaces\NetworkWalletRepositoryInterface;
 use App\Models\NetworkWallet;
+use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\ValidationException;
 
 /**
  * مستودع إدارة محافظ مزودي الشبكات (Network Wallet Repository).
@@ -114,30 +116,53 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
      */
     public function incrementBalance(int $walletId, float $amount): bool
     {
-        $wallet = $this->findById($walletId);
-        $oldBalance = (float) $wallet->wallet_balance;
-        $wallet->wallet_balance = $oldBalance + $amount;
+        $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
+        $wallet->ensureActive();
+
+        $amountMinor = DecimalAmount::toMinorUnits($amount);
+        if ($amountMinor <= 0) {
+            throw ValidationException::withMessages([
+                'amount' => ['يجب أن يكون مبلغ الحركة أكبر من الصفر.'],
+            ]);
+        }
+
+        $oldBalanceMinor = DecimalAmount::toMinorUnits($wallet->wallet_balance);
+        $wallet->wallet_balance = DecimalAmount::fromMinorUnits(
+            DecimalAmount::add($oldBalanceMinor, $amountMinor)
+        );
         $updated = $wallet->save();
 
         if ($updated) {
-            $this->recordModification($wallet, ['wallet_balance' => $oldBalance]);
+            $this->recordModification($wallet, [
+                'wallet_balance' => DecimalAmount::fromMinorUnits($oldBalanceMinor),
+            ]);
         }
 
         return $updated;
     }
 
-    /**
-     * خصم من رصيد المحفظة بمقدار محدد.
-     */
     public function decrementBalance(int $walletId, float $amount): bool
     {
-        $wallet = $this->findById($walletId);
-        $oldBalance = (float) $wallet->wallet_balance;
-        $wallet->wallet_balance = $oldBalance - $amount;
+        $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
+        $wallet->ensureActive();
+
+        $amountMinor = DecimalAmount::toMinorUnits($amount);
+        $oldBalanceMinor = DecimalAmount::toMinorUnits($wallet->wallet_balance);
+        if ($amountMinor <= 0 || $oldBalanceMinor < $amountMinor) {
+            throw ValidationException::withMessages([
+                'amount' => ['رصيد محفظة الشبكة غير كافٍ لإتمام الحركة المالية.'],
+            ]);
+        }
+
+        $wallet->wallet_balance = DecimalAmount::fromMinorUnits(
+            DecimalAmount::add($oldBalanceMinor, -$amountMinor)
+        );
         $updated = $wallet->save();
 
         if ($updated) {
-            $this->recordModification($wallet, ['wallet_balance' => $oldBalance]);
+            $this->recordModification($wallet, [
+                'wallet_balance' => DecimalAmount::fromMinorUnits($oldBalanceMinor),
+            ]);
         }
 
         return $updated;

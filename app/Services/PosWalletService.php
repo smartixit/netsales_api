@@ -146,11 +146,27 @@ class PosWalletService
                 ]);
             }
 
+            $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId, true);
+            if ($networkWallet === null) {
+                throw ValidationException::withMessages([
+                    'network_id' => ['يجب إنشاء محفظة الشبكة قبل إنشاء محفظة نقطة البيع.'],
+                ]);
+            }
+
+            $currencyCode = strtoupper(trim((string) $networkWallet->currency_code));
+            if (preg_match('/^[A-Z]{3}$/D', $currencyCode) !== 1) {
+                throw ValidationException::withMessages([
+                    'currency_code' => ['رمز عملة محفظة الشبكة غير صالح.'],
+                ]);
+            }
+
             /** @var PosWallet $wallet */
             $wallet = $this->posWalletRepository->create([
                 'network_id' => $networkId,
                 'pos_id' => $posId,
                 'wallet_balance' => $initialBalance,
+                'opening_balance_source' => 'INITIAL',
+                'currency_code' => $currencyCode,
                 'status' => $status,
             ]);
 
@@ -277,12 +293,6 @@ class PosWalletService
 
             $amount = $request->getAmount();
 
-            if (! $wallet->hasSufficientBalance($amount)) {
-                throw ValidationException::withMessages([
-                    'amount' => ["رصيد المحفظة غير كافٍ لإتمام السحب. الرصيد الحالي: ({$wallet->wallet_balance})"],
-                ]);
-            }
-
             $statement = $request->getStatement();
             $logDate = $request->getLogDate();
 
@@ -369,6 +379,7 @@ class PosWalletService
                 ]);
             }
             $posWallet->ensureActive();
+            $this->assertMatchingWalletCurrencies($networkWallet, $posWallet);
 
             // إنشاء سجل الحوالة المالية المركزية
             $transfer = WalletTransfer::create([
@@ -464,6 +475,7 @@ class PosWalletService
                 ]);
             }
             $posWallet->ensureActive();
+            $this->assertMatchingWalletCurrencies($networkWallet, $posWallet);
 
             if (! $posWallet->hasSufficientBalance($amount)) {
                 throw ValidationException::withMessages([
@@ -553,6 +565,7 @@ class PosWalletService
 
             $posWallet = $this->posWalletRepository->findByIdForUpdate($origTransfer->pos_wallet_id);
             $posWallet->ensureActive();
+            $this->assertMatchingWalletCurrencies($networkWallet, $posWallet);
 
             $amount = (float) $origTransfer->amount;
 
@@ -745,13 +758,33 @@ class PosWalletService
     }
 
     /**
+     * Reject cross-currency wallet movements; no implicit FX conversion is permitted.
+     */
+    private function assertMatchingWalletCurrencies(NetworkWallet $networkWallet, PosWallet $posWallet): void
+    {
+        $networkCurrency = strtoupper(trim((string) $networkWallet->currency_code));
+        $posCurrency = strtoupper(trim((string) $posWallet->currency_code));
+        if (preg_match('/^[A-Z]{3}$/D', $networkCurrency) !== 1
+            || preg_match('/^[A-Z]{3}$/D', $posCurrency) !== 1) {
+            throw ValidationException::withMessages([
+                'currency_code' => ['رمز عملة إحدى المحافظ غير صالح؛ أُوقفت الحركة المالية.'],
+            ]);
+        }
+        if ($networkCurrency !== $posCurrency) {
+            throw ValidationException::withMessages([
+                'currency_code' => ['عملة محفظة الشبكة لا تطابق عملة محفظة نقطة البيع؛ لا يمكن تنفيذ تحويل بين عملتين مختلفتين.'],
+            ]);
+        }
+    }
+
+    /**
      * إرسال إشعار SMS لمدير نقطة البيع عند حركات القبض أو الدفع على المحفظة.
      *
      * صيغة حركة القبض (تغذية / إيداع):
-     * "نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: لكم سند قبض بمبلغ {المبلغ}YER رصيدكم {الرصيد}YER"
+     * "نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: لكم سند قبض بمبلغ {المبلغ} {رمز_العملة} ورصيدكم {الرصيد} {رمز_العملة}"
      *
      * صيغة حركة الدفع (سحب / استرجاع / قيد فاتورة):
-     * "نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: عليكم سند دفع بمبلغ {المبلغ}YER رصيدكم {الرصيد}YER"
+     * "نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: عليكم سند دفع بمبلغ {المبلغ} {رمز_العملة} ورصيدكم {الرصيد} {رمز_العملة}"
      *
      * @param  PosWallet  $wallet  كائن محفظة نقطة البيع
      * @param  string  $action  نوع الحركة ('receipt' للقبض والإيداع، 'payment' للدفع والسحب والقيد)
@@ -772,8 +805,9 @@ class PosWalletService
 
         $balance = $currentBalance ?? (float) $wallet->wallet_balance;
 
-        $formattedAmount = AmountFormatter::formatWithCurrency($amount, systemSetting('base_currency', 'YER'));
-        $formattedBalance = AmountFormatter::formatWithCurrency($balance, systemSetting('base_currency', 'YER'));
+        $currencyCode = strtoupper(trim((string) $wallet->currency_code));
+        $formattedAmount = AmountFormatter::formatWithCurrency($amount, $currencyCode);
+        $formattedBalance = AmountFormatter::formatWithCurrency($balance, $currencyCode);
 
         $actionText = ($action === 'receipt') ? 'لكم سند قبض' : 'عليكم سند صرف';
 

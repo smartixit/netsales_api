@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Enums\WalletOperationType;
 use App\Interfaces\PosWalletLogRepositoryInterface;
 use App\Models\PosWalletLog;
+use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -86,13 +87,53 @@ class PosWalletLogRepository extends BaseRepository implements PosWalletLogRepos
     /**
      * إنشاء قيد مالي جديد في دفتر أستاذ محفظة نقطة البيع.
      */
-    public function createLog(int $walletId, WalletOperationType|string $operationType, float $amount, string $statement, ?int $createdBy = null, ?string $date = null, ?int $transferId = null): PosWalletLog
+    public function createLog(int $walletId, WalletOperationType|string $operation, string|int|float $amount, string $statement, ?int $createdBy = null, ?string $date = null, ?int $transferId = null, string|int|float|null $balanceBefore = null, string|int|float|null $balanceAfter = null): PosWalletLog
     {
+        $wallet = \App\Models\PosWallet::query()->lockForUpdate()->findOrFail($walletId);
+        $operationValue = $operation instanceof WalletOperationType ? $operation->value : $operation;
+        $amountMinor = DecimalAmount::toMinorUnits($amount);
+        if ($amountMinor < 0) {
+            throw new \InvalidArgumentException('Wallet log amounts cannot be negative.');
+        }
+
+        if (($balanceBefore === null) !== ($balanceAfter === null)) {
+            throw new \\InvalidArgumentException('Both explicit wallet balance snapshots must be provided together.');
+        }
+
+        if ($balanceBefore !== null && $balanceAfter !== null) {
+            $balanceBeforeMinor = DecimalAmount::toMinorUnits($balanceBefore);
+            $balanceAfterMinor = DecimalAmount::toMinorUnits($balanceAfter);
+            $expectedAfterMinor = match ($operationValue) {
+                WalletOperationType::DEPOSIT->value => DecimalAmount::add($balanceBeforeMinor, $amountMinor),
+                WalletOperationType::WITHDRAW->value => DecimalAmount::add($balanceBeforeMinor, -$amountMinor),
+                default => $balanceBeforeMinor,
+            };
+
+            if ($expectedAfterMinor !== $balanceAfterMinor) {
+                throw new \\InvalidArgumentException('Explicit wallet balance snapshots do not match the operation amount.');
+            }
+        } else {
+            $balanceAfterMinor = DecimalAmount::toMinorUnits($wallet->wallet_balance);
+            $balanceBeforeMinor = match ($operationValue) {
+                WalletOperationType::DEPOSIT->value => DecimalAmount::add($balanceAfterMinor, -$amountMinor),
+                WalletOperationType::WITHDRAW->value => DecimalAmount::add($balanceAfterMinor, $amountMinor),
+                default => $balanceAfterMinor,
+            };
+        }
+        $currencyCode = strtoupper(trim((string) $wallet->currency_code));
+        if (preg_match('/^[A-Z]{3}$/D', $currencyCode) !== 1) {
+            throw new \LogicException('The POS wallet currency code is invalid.');
+        }
+
         return $this->create([
             'wallet_id' => $walletId,
             'transfer_id' => $transferId,
-            'log_operation_type' => $operationType instanceof WalletOperationType ? $operationType->value : $operationType,
-            'log_amount' => $amount,
+            'log_operation_type' => $operationValue,
+            'log_amount' => DecimalAmount::fromMinorUnits($amountMinor),
+            'balance_before' => DecimalAmount::fromMinorUnits($balanceBeforeMinor),
+            'balance_after' => DecimalAmount::fromMinorUnits($balanceAfterMinor),
+            'balance_snapshot_source' => 'LIVE',
+            'currency_code' => $currencyCode,
             'log_statement' => $statement,
             'log_date' => $date ?? now('Asia/Aden'),
             'created_by' => $createdBy,

@@ -942,3 +942,102 @@ This log documents all executed tasks, code changes, and verification command ou
 - Added API routes under the operational workspace scope and the missing `requests.export` permission mapping.
 - Commit: `1f26a1fff8bc3d4f8c66e7b343c7e356a3b52b68`.
 - Verification commands: none. Tests, Pint, static analysis, and GitHub Actions are intentionally deferred to the final plan stage per user instruction.
+
+
+## 2026-11-13 — Operational Reports Provider Registry, Ledger Snapshots & Official Documents
+
+- **Authorized branches:** `feat/operational-reports-contracts` (API) and `feat/invoice-document-engine-integration` (Flutter).
+- Replaced the old operational report query-service/adapter path with `OperationalReportProviderRegistry`, a dedicated provider per report, provider-owned definitions/filters/metrics/chart slots/columns/CSV serialization, and shared provider filter validation.
+- The seven providers cover sales, expenses, network wallet statements, POS wallet statements, repayments, debt aging, and procurement requests.
+- Reconnected catalog/show/summary/export controllers and the queued CSV job to the provider registry. CSV output is cursor streamed, CSV-injection guarded, bounded to 50,000 rows, hashed, and written as a stream to protected storage.
+- Flutter now parses the report catalog into typed `document_engine` `ReportDefinition` schemas, registers exact schema versions, and consumes typed access/filter/metric metadata. No legacy report compatibility layer remains.
+- Added wallet opening balance, currency code, posting-time before/after snapshots, and snapshot provenance fields. Historical ledger rows are reconstructed in posting order and marked `BACKFILLED`; new wallet initialization is `INITIAL`; new live entries are `LIVE`.
+- Wallet report providers preserve soft-deleted wallets and rows, calculate period opening/closing balances from movements by effective date, and distinguish those period balances from posting-time before/after snapshots.
+- Wallet mutation repositories use row locks and enforce active-wallet, positive-amount, network balance, and POS credit-limit invariants. Removed the stale service-level withdrawal precheck that incorrectly prevented POS credit-limit usage.
+- Added immutable operational document snapshots for invoices, repayments, and expenses. Source identity is minimized before storage; expense attachment paths/URLs are not copied into permanent snapshots. Snapshot/artifact metadata is immutable, PDF artifacts are first-write-only, and the client renders only from the authoritative Laravel source snapshot before downloading the canonical stored PDF and checking its SHA-256.
+- Specialized PDF templates were wired: A4 network-issued invoice with POS as recipient; A5 repayment receipt with allocations and reversal trace; A4 network expense voucher with line items and attachment metadata. All document money values use the snapshot currency.
+- Tightened scope authorization so network and POS membership/permissions are checked independently; dual-scope users may use the exact scope for which they have both active membership and permission.
+- **Source changes only:** GitHub source inspections and file operations. No migrations were applied; no PHP/Dart tests, linters, static analysis, PDF extraction/visual checks, or GitHub Actions were run.
+- **Acceptance:** Implementation source has been updated; final validation remains pending by explicit user sequencing. Do not merge or mark production-ready until the final verification gate passes on exact branch heads.
+- **Latest HEAD at log entry:** API `2d971bddd4e8f120183b1cd3c4729fb9c63722fa`; Flutter `6a5f3d4d61bcaba963bc89c1bab337ffc93222af`.
+
+## 2026-11-13 — Operational report contract and exact-ledger closeout corrections
+
+- Replaced the report-provider row method mismatch with one contract: `serializeExportRow()` is now implemented by all seven providers and used by the API result controller and CSV queue job.
+- Replaced the previous flat report filter request shape with nested `filters`, provider-schema ID/type/choice validation, and explicit prohibition of the old top-level filter keys. The Flutter repository now sends nested filters for report results, summaries, and CSV export.
+- Added shared `App\\Support\\DecimalAmount` integer-minor-unit arithmetic. Network/POS wallet balance mutation, live before/after ledger snapshots, wallet statement opening/closing balances, and debt-aging bucket totals use the shared helper. Historical wallet migration reconstruction now uses integer minor units rather than floating-point accumulation.
+- POS wallet creation now requires an existing network wallet and copies its validated operational currency. Official document snapshots reject missing/invalid network/POS wallet currency codes and mismatched currencies. Network/POS wallet SMS messages format using the wallet currency rather than Platform Billing's base currency.
+- Flutter official-document snapshot handling rejects missing/invalid currency codes; invoice, repayment, and expense PDF services consume the server-issued snapshot currency without a YER fallback. Operational report summary PDF orientation now follows the selected catalog page profile rather than report-type branching.
+- Hardened report export cleanup for non-canonical partial artifacts after failed queue attempts.
+- Corrected the API and Flutter active branch references in `PROJECT_STATE.md`. Current refs at the end of this work: API `e81dfd04eeda16d20e5a535aa05487ce40f62319`; Flutter `3be25fdbc2834241cb6bc8b5d1b9abb70e0bba56`.
+- Branch comparison: API is 266 commits ahead / 2 behind `main`; Flutter is 325 ahead / 5 behind `main`. Both branches are diverged, and no PR was found for either active feature branch.
+- Remaining gaps recorded: the Flutter operational report controller still uses a finite report-type and filter mapping; `ReportConfigurationStudio` and `SavedReportPreset` exist as package components/value contracts but are not integrated into the reports feature; there is no server-side saved-preset persistence; wallet statements do not yet have row-level PDF output (only CSV rows and executive summary PDF); final migration/runtime, API tests, Flutter tests/analyzer, PDF extraction/visual checks, and exact-HEAD Actions remain pending.
+- **Verification boundary:** source reads and GitHub file/commit operations only. No migration was executed; no PHPUnit, PHP lint, Pint, PHPStan, Flutter test/analyzer, or GitHub Actions run was started, in accordance with the approved sequence.
+
+
+## 2026-11-13 — Unified scheduler and activity-driven hosting fallback
+
+- Replaced parallel per-command Laravel schedule definitions with one canonical schedule:catchup tick. ScheduledTaskType now owns recurring definitions for Outbox, Billing renewals/dunning/revenue recognition, reports, low-balance alerts, backups, cleanup, security, and log pruning.
+- Added database-backed scheduled occurrence slots with atomic claims, running leases, completion/failure states, retry delay, and explicit global/network scope keys. Historical rows are preserved and the previous nullable-network unique key is replaced with a slot-aware key.
+- Added an API terminable middleware activity trigger with a 30-second atomic throttle. It executes a maximum of two due task slots and at most one queue job per activity tick, after successful API responses. The ordinary Cron scheduler remains supported and invokes the same engine.
+- Queue fallback now inspects the configured queue connection rather than assuming a database jobs table, and attempts one job per tick with a 60-second worker timeout and a two-hour scheduled-slot lease. sync and null connections are not drained.
+- Low-balance alerts now distinguish the 09:00 and 15:00 occurrence slots so both daily runs can be independently idempotent. Daily and monthly SMS commands return failure when one or more network deliveries fail, allowing the scheduler ledger to retry failed work while successful networks remain protected by their own delivery records.
+- Implementation commits: `9f57feddfea7505f7466ec4de9824a8e16e16c05` (scheduler foundation) and `7ac484747b0d69dbacb608cb45ab34d707a8e3dc` (partial-delivery retries and bounded queue work).
+- Execution boundary: source changes only. No migration was applied; no PHP runtime, Pint, PHPStan, PHPUnit, route:list, or GitHub Actions were run. Tests and CI remain deferred to the final validation stage. Activity-triggered processing requires incoming API traffic; no PHP scheduler can run in the complete absence of Cron, queue workers, and application activity.
+
+
+- Scheduler fairness correction (commit `2ea780442bdc4dad1a80c4d5fa14576f08566e84`): bounded activity ticks continue past already-completed or concurrently-claimed occurrences and count only successfully claimed slots toward the per-tick limit, preventing starvation. The scheduled-task lease was extended to two hours to cover long-running backup execution.
+
+
+## 2026-11-13 — Flutter operational report studio integration follow-up
+
+- Flutter branch `feat/invoice-document-engine-integration` advanced to `6778572fe07294d4ad534a38277521888ba8a495`.
+- The Reports screen now constrains the schema-driven Studio viewport alongside the result list, displays criteria/presentation schema validation issues in the app design system, clears cached choice controls when filters are reset, and removes unused legacy criteria lookup helpers.
+- The Flutter implementation consumes all seven current provider schemas generically; it does not define a parallel report-specific filter list. The generic report identifier value object continues to accept valid provider identifiers beyond the current seven.
+- No Flutter formatter, analyzer, tests, PDF visual checks, or Actions were run. All remain deferred to the final validation gate.
+
+
+## 2026-11-13 — Wallet ledger and official-copy hardening
+
+- Converted the remaining public NetworkWallet/PosWallet model mutation paths to DecimalAmount minor-unit arithmetic and exact balance snapshots; invalid wallet currency codes now fail closed.
+- Corrected POS available-overdraft and total-purchasing-power calculations to avoid double-counting positive cash and to account for already-used overdraft. Sufficiency checks reject non-positive amounts.
+- Added matching-currency guards to network-to-POS transfers, POS-to-network transfers, and reversal operations. Cross-currency wallet movement is rejected; no implicit FX conversion is performed.
+- Reviewed the wallet ledger backfill and report period-balance formulas, the immutable operational-document snapshot service, protected artifact storage, first-write artifact immutability, and client-side canonical SHA-256 download verification. Confirmed invoice/repayment/expense render adapters use server snapshot data and the shared seven-weight IBM Plex Sans Arabic font service with image watermarking.
+- Updated the SMS format documentation to describe the wallet's actual currency code rather than hard-coded YER text.
+- Verification boundary: source review only; no migrations or tests executed. Final migration/database tests, static analysis, PDF text extraction, and visual checks remain deferred.
+
+
+## 2026-11-13 — Invoice settlement ledger correction
+
+- Added currency equality/format validation to both invoice-generation flows after acquiring the network-wallet then POS-wallet locks. No cross-currency invoice settlement is allowed.
+- Corrected cash-sale paired POS ledger records to form a sequential debit/credit chain with a zero net balance effect. The actual POS wallet balance is not mutated for cash sales.
+- Extended POS wallet log repository contract to accept optional explicit before/after snapshots and verify that the operation amount exactly reconciles the supplied pair. Normal wallet logs retain their existing database-derived snapshots.
+- Follow-up import correction included in this commit. No tests or Actions run.
+
+
+## 2026-11-13 — Specialized wallet statement templates
+
+- Added a dedicated network-wallet and POS-wallet statement document path in Flutter: domain repository, use case, data adapter, Document Engine renderer, and FinanceBinding registration.
+- Extended wallet and ledger entities/models to consume server opening balance/source, currency code, brand image paths, per-entry balance-before/after, and balance snapshot source.
+- Added full cursor traversal for statement export, with a 1,500-row document bound, repeated-cursor protection, newest-ledger-ID recheck, and wallet-state recheck. The export fails closed on concurrent changes, missing snapshots, or mixed currencies.
+- Templates render a landscape ledger table, authoritative opening/current balances, POS credit limit, server snapshot provenance, tenant logo/application watermark, and all seven Arabic IBM Plex Sans weights. No totals are computed on the client.
+- Flutter commit: `f83e8dac0ec2fcbef80f6d3d4eb3383824ecaf35`. No tests or Actions run.
+
+
+## 2026-11-13 — Saved operational report presets
+
+- Added `operational_report_presets` with UUID identity, user/network/POS scope, report type, schema versions, typed criteria, presentation settings, timestamps, and unique scoped-name constraint.
+- Added index/store/update/delete API endpoints, authenticated user ownership checks, tenant authorization checks, provider schema validation, filter type/choice validation, and presentation allowlist validation.
+- Saved criteria use the Document Engine `ReportCriteria` JSON shape; presentation uses `ReportPresentationOptions`. No report rows or authorization data are stored in a preset.
+- Updated provider catalog template references to the matching report-type-specific executive PDF template IDs.
+- Validation commands/tests were not run; they remain deferred to the final validation gate.
+
+
+## 2026-11-13 — Scheduler durable-slot schema and activity catch-up
+
+- Added `2026_11_13_000002_upgrade_scheduled_task_runs_for_durable_slots.php` to backfill scope and slot keys, add execution lease timestamps, and replace the daily-only uniqueness constraint with a durable occurrence key. Rollback refuses to destroy multiple per-network daily slots.
+- Updated the unified scheduler to enumerate both due `twice_daily` occurrences for the current day. The activity middleware is registered on the API pipeline; it throttles ticks, executes a bounded number of due slots, and opportunistically drains one job from the configured queue connection.
+- Confirmed the hard platform boundary: with no Cron, no worker, and no inbound application traffic, scheduled execution cannot occur because no PHP process is running.
+- Added saved report preset API CRUD and Flutter Report Studio integration. Typed criteria, report schema version, and presentation settings are validated against the active provider definition before persistence. Duplicate names are scoped and bounded to 100 presets per user/report/workspace.
+- Added provider-template ID alignment and strict typed filter validation (including open-ended date ranges and duplicate-choice rejection).
+- Tests and GitHub Actions remain intentionally unrun until the final validation gate.

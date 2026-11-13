@@ -129,6 +129,8 @@ class NetworkWalletService
             $wallet = $this->networkWalletRepository->create([
                 'network_id' => $networkId,
                 'wallet_balance' => $initialBalance,
+                'opening_balance_source' => 'INITIAL',
+                'currency_code' => 'YER',
                 'status' => $status,
             ]);
 
@@ -210,12 +212,6 @@ class NetworkWalletService
             $wallet->ensureActive();
 
             $amount = $request->getAmount();
-
-            if (! $wallet->hasSufficientBalance($amount)) {
-                throw ValidationException::withMessages([
-                    'amount' => ["رصيد المحفظة غير كافٍ لإتمام السحب. الرصيد الحالي: ({$wallet->wallet_balance})"],
-                ]);
-            }
 
             $statement = $request->getStatement();
             $logDate = $request->getLogDate();
@@ -357,8 +353,9 @@ class NetworkWalletService
         $networkName = $wallet->network?->network_name ?? "شبكة #{$wallet->network_id}";
         $balance = $currentBalance ?? (float) $wallet->wallet_balance;
 
-        $formattedAmount = AmountFormatter::formatWithCurrency($amount, systemSetting('base_currency', 'YER'));
-        $formattedBalance = AmountFormatter::formatWithCurrency($balance, systemSetting('base_currency', 'YER'));
+        $currencyCode = strtoupper(trim((string) $wallet->currency_code));
+        $formattedAmount = AmountFormatter::formatWithCurrency($amount, $currencyCode);
+        $formattedBalance = AmountFormatter::formatWithCurrency($balance, $currencyCode);
 
         $actionText = ($action === 'receipt') ? 'لكم سند قبض' : 'عليكم سند صرف';
         $reasonText = $reason ? " ({$reason})" : '';

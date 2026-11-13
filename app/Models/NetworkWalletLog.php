@@ -29,6 +29,10 @@ class NetworkWalletLog extends Model
         'transfer_id',
         'log_operation',
         'log_amount',
+        'balance_before',
+        'balance_after',
+        'balance_snapshot_source',
+        'currency_code',
         'log_statement',
         'log_date',
         'created_by',
@@ -40,6 +44,8 @@ class NetworkWalletLog extends Model
             'log_date' => 'datetime',
             'log_operation' => WalletOperationType::class,
             'log_amount' => 'decimal:2',
+            'balance_before' => 'decimal:2',
+            'balance_after' => 'decimal:2',
         ];
     }
 
