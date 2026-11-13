@@ -77,19 +77,21 @@ return new class extends Migration
                     ->orderBy('log_id')
                     ->get(['log_id', 'log_amount', $operationColumn]);
 
-                $netMovement = 0.0;
+                $netMovementMinor = 0;
                 foreach ($logs as $log) {
-                    $amount = (float) $log->log_amount;
-                    $netMovement += match ($log->{$operationColumn}) {
-                        $depositValue => $amount,
-                        $withdrawValue => -$amount,
-                        default => 0.0,
+                    $amountMinor = $this->decimalToMinorUnits($log->log_amount);
+                    $movementMinor = match ($log->{$operationColumn}) {
+                        $depositValue => $amountMinor,
+                        $withdrawValue => -$amountMinor,
+                        default => 0,
                     };
+                    $netMovementMinor = $this->addMinorUnits($netMovementMinor, $movementMinor);
                 }
 
-                // Preserve the live wallet balance as the accounting truth. The
-                // residual becomes the opening balance before the first ledger row.
-                $openingBalance = round((float) $wallet->wallet_balance - $netMovement, 2);
+                $walletBalanceMinor = $this->decimalToMinorUnits($wallet->wallet_balance);
+                $openingBalanceMinor = $this->addMinorUnits($walletBalanceMinor, -$netMovementMinor);
+                $openingBalance = $this->minorUnitsToDecimal($openingBalanceMinor);
+
                 DB::table($walletTable)
                     ->where('wallet_id', $wallet->wallet_id)
                     ->update([
@@ -98,16 +100,19 @@ return new class extends Migration
                         'currency_code' => 'YER',
                     ]);
 
-                $runningBalance = $openingBalance;
+                $runningBalanceMinor = $openingBalanceMinor;
                 foreach ($logs as $log) {
-                    $before = round($runningBalance, 2);
-                    $amount = (float) $log->log_amount;
-                    $runningBalance = match ($log->{$operationColumn}) {
-                        $depositValue => $runningBalance + $amount,
-                        $withdrawValue => $runningBalance - $amount,
-                        default => $runningBalance,
-                    };
-                    $after = round($runningBalance, 2);
+                    $before = $this->minorUnitsToDecimal($runningBalanceMinor);
+                    $amountMinor = $this->decimalToMinorUnits($log->log_amount);
+                    $runningBalanceMinor = $this->addMinorUnits(
+                        $runningBalanceMinor,
+                        match ($log->{$operationColumn}) {
+                            $depositValue => $amountMinor,
+                            $withdrawValue => -$amountMinor,
+                            default => 0,
+                        }
+                    );
+                    $after = $this->minorUnitsToDecimal($runningBalanceMinor);
 
                     DB::table($logTable)
                         ->where('log_id', $log->log_id)
@@ -120,6 +125,50 @@ return new class extends Migration
                 }
             }
         }, 'wallet_id');
+    }
+
+    private function decimalToMinorUnits(string|int|float|null $value): int
+    {
+        $decimal = trim((string) ($value ?? '0'));
+        if (preg_match('/^([+-]?)(\\d+)(?:\\.(\\d+))?$/D', $decimal, $matches) !== 1) {
+            throw new \\InvalidArgumentException('Invalid wallet ledger amount.');
+        }
+
+        $fraction = $matches[3] ?? '';
+        if (strlen($fraction) > 2 && trim(substr($fraction, 2), '0') !== '') {
+            throw new \\InvalidArgumentException('Wallet ledger amounts support two decimal places.');
+        }
+
+        $whole = ltrim($matches[2], '0') ?: '0';
+        $maximumWhole = intdiv(PHP_INT_MAX - 99, 100);
+        if (strlen($whole) > strlen((string) $maximumWhole)
+            || (strlen($whole) === strlen((string) $maximumWhole) && strcmp($whole, (string) $maximumWhole) > 0)) {
+            throw new \\OverflowException('Wallet ledger amount exceeds the supported integer range.');
+        }
+
+        $minorUnits = ((int) $whole * 100) + (int) str_pad(substr($fraction, 0, 2), 2, '0');
+        return ($matches[1] ?? '') === '-' ? -$minorUnits : $minorUnits;
+    }
+
+    private function minorUnitsToDecimal(int $minorUnits): string
+    {
+        $negative = $minorUnits < 0;
+        $absolute = abs($minorUnits);
+
+        return ($negative ? '-' : '')
+            .intdiv($absolute, 100)
+            .'.'
+            .str_pad((string) ($absolute % 100), 2, '0', STR_PAD_LEFT);
+    }
+
+    private function addMinorUnits(int $left, int $right): int
+    {
+        if (($right > 0 && $left > PHP_INT_MAX - $right)
+            || ($right < 0 && $left < PHP_INT_MIN - $right)) {
+            throw new \\OverflowException('Wallet ledger total exceeds the supported integer range.');
+        }
+
+        return $left + $right;
     }
 
     public function down(): void
