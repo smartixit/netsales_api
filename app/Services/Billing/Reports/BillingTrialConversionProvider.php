@@ -90,14 +90,16 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
         $segments=DB::table('billing_trial_eligibility_checks as c')
           ->where('c.eligibility_status','ELIGIBLE')
           ->join('billing_plans as p','p.plan_id','=','c.plan_id')
-          ->select('c.trial_policy_version_id','p.product_id','c.plan_id','c.price_id')
+          ->leftJoin('billing_trial_policy_versions as tpv','tpv.trial_policy_version_id','=','c.trial_policy_version_id')
+          ->select('c.trial_policy_version_id','p.product_id','c.plan_id','c.price_id','tpv.redemption_scope')
           ->selectRaw('COUNT(DISTINCT c.billing_account_id) as checks');
         if($networkId!==null)$segments->where('c.network_id',$networkId);
         $this->window($segments,'c.checked_at',$filters);
-        $segments=$segments->groupBy('c.trial_policy_version_id','p.product_id','c.plan_id','c.price_id')
+        $segments=$segments->groupBy('c.trial_policy_version_id','p.product_id','c.plan_id','c.price_id','tpv.redemption_scope')
           ->orderBy('c.trial_policy_version_id')->get()->map(static fn($x)=>[
             'trial_policy_version_id'=>$x->trial_policy_version_id,'product_id'=>$x->product_id,
-            'plan_id'=>$x->plan_id,'price_id'=>$x->price_id,'eligible_checks'=>(int)$x->checks,
+            'plan_id'=>$x->plan_id,'price_id'=>$x->price_id,'redemption_scope'=>$x->redemption_scope,
+            'eligible_checks'=>(int)$x->checks,
           ])->all();
         $rate=static fn(int $n,int $d):float=>$d===0?0.0:round($n/$d*100,2);
         return [
