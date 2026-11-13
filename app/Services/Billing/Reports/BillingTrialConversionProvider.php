@@ -134,9 +134,18 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
         if($networkId!==null)$approvalEvents->where('ba.network_id',$networkId);
         $this->window($approvalEvents,'r.reserved_at',$filters);
         $this->applyRedemptionSearch($approvalEvents, $filters);
-        $approvalWaitHours=(float)($approvalEvents->selectRaw('AVG(TIMESTAMPDIFF(SECOND,r.reserved_at,e.occurred_at))/3600 as average_hours')->value('average_hours')??0);
-        $startWaitHours=(float)(clone $approvalEvents)->whereNotNull('r.started_at')
-          ->selectRaw('AVG(TIMESTAMPDIFF(SECOND,e.occurred_at,r.started_at))/3600 as average_hours')->value('average_hours')??0;
+        $approvalBase = clone $approvalEvents;
+        $approvalWaitHours = (float) (
+            (clone $approvalBase)
+                ->selectRaw('AVG(TIMESTAMPDIFF(SECOND,r.reserved_at,e.occurred_at))/3600 as average_hours')
+                ->value('average_hours') ?? 0
+        );
+        $startWaitHours = (float) (
+            (clone $approvalBase)
+                ->whereNotNull('r.started_at')
+                ->selectRaw('AVG(TIMESTAMPDIFF(SECOND,e.occurred_at,r.started_at))/3600 as average_hours')
+                ->value('average_hours') ?? 0
+        );
         $segments=DB::table('billing_trial_eligibility_checks as c')
           ->where('c.eligibility_status','ELIGIBLE')
           ->join('billing_plans as p','p.plan_id','=','c.plan_id')
