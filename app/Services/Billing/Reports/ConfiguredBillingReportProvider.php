@@ -20,7 +20,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             'description' => $this->config['description'],
             'schema_version' => 1,
             'scope' => ['NETWORK_OWNER', 'PLATFORM'],
-            'filters' => [
+            'filters' => array_values(array_filter([
                 ['id' => 'from_date', 'kind' => 'date', 'label' => 'من تاريخ'],
                 ['id' => 'to_date', 'kind' => 'date', 'label' => 'إلى تاريخ'],
                 [
@@ -30,7 +30,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
                     'choices' => array_map(static fn ($value): array => ['value' => $value, 'label_key' => 'billing.status.'.$value], $this->config['status_choices'] ?? []),
                 ],
                 ['id' => 'search', 'kind' => 'text', 'label' => 'بحث'],
-            ],
+            ], fn (array $filter): bool => in_array($filter['id'], $this->config['filter_ids'] ?? ['from_date','to_date','status','search'], true))),
             'columns' => $this->config['columns'],
             'metrics' => $this->config['metrics'] ?? [],
             'chart_slots' => $this->config['chart_slots'] ?? [],
