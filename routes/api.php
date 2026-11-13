@@ -491,8 +491,10 @@ Route::prefix('v1')->group(function () {
             Route::post('/', [OperationalReportController::class, 'storePreset'])
                 ->middleware('throttle:api-write')->name('api.v1.reports.presets.store');
             Route::put('{presetUuid}', [OperationalReportController::class, 'updatePreset'])
+                ->whereUuid('presetUuid')
                 ->middleware('throttle:api-write')->name('api.v1.reports.presets.update');
             Route::delete('{presetUuid}', [OperationalReportController::class, 'destroyPreset'])
+                ->whereUuid('presetUuid')
                 ->middleware('throttle:api-write')->name('api.v1.reports.presets.destroy');
         });
 

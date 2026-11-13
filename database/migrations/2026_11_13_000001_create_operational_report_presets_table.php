@@ -13,7 +13,7 @@ return new class extends Migration
             $table->uuid('preset_uuid')->unique();
             $table->foreignId('user_id')->constrained('users', 'user_id')->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('network_id')->constrained('networks', 'network_id')->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('pos_id')->nullable()->constrained('pos', 'pos_id')->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('pos_id')->nullable()->constrained('pos', 'pos_id')->cascadeOnUpdate()->cascadeOnDelete();
             $table->string('scope_key', 40);
             $table->string('report_type', 48);
             $table->string('name', 120);
