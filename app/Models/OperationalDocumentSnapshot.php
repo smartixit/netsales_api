@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
 final class OperationalDocumentSnapshot extends Model
 {
@@ -30,6 +31,30 @@ final class OperationalDocumentSnapshot extends Model
         'issued_at',
         'created_by',
     ];
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $snapshot): void {
+            $allowed = ['artifact_path', 'artifact_sha256', 'artifact_size', 'updated_at'];
+            $changed = array_diff(array_keys($snapshot->getDirty()), $allowed);
+            if ($changed !== []) {
+                throw new LogicException(
+                    'Official document snapshot source and issuance metadata are immutable.'
+                );
+            }
+
+            if ($snapshot->getOriginal('artifact_path') !== null &&
+                $snapshot->isDirty(['artifact_path', 'artifact_sha256', 'artifact_size'])) {
+                throw new LogicException(
+                    'An issued official document artifact cannot be replaced.'
+                );
+            }
+        });
+
+        static::deleting(function (): never {
+            throw new LogicException('Official document snapshots cannot be deleted.');
+        });
+    }
 
     protected function casts(): array
     {
