@@ -50,10 +50,7 @@ final class OperationalReportAuthorizationService
             ->exists();
         $canUseNetworkScope = (int) $network->owner_id === (int) $user->user_id || $networkMembership;
 
-        if (! $canUseNetworkScope && $posId === null) {
-            throw new AuthorizationException('يجب تحديد نقطة البيع للوصول إلى تقارير نطاق نقطة البيع.');
-        }
-
+        $canUsePosScope = false;
         if ($posId !== null) {
             $activeLink = NetworkPos::query()
                 ->where('network_id', $networkId)
@@ -63,25 +60,18 @@ final class OperationalReportAuthorizationService
             if (! $activeLink) {
                 throw new AuthorizationException('نقطة البيع غير مرتبطة بهذه الشبكة أو أن الارتباط غير نشط.');
             }
-        }
 
-        if (! $canUseNetworkScope) {
-            if (! in_array('pos', $definition['supported_scopes'] ?? [], true)) {
-                throw new AuthorizationException('هذا التقرير متاح ضمن نطاق الشبكة فقط.');
-            }
-
-            $isPosOwner = Pos::query()
-                ->where('pos_id', $posId)
-                ->where('owner_id', $user->user_id)
-                ->exists();
-            $posMembership = PosUser::query()
-                ->where('pos_id', $posId)
-                ->where('user_id', $user->user_id)
-                ->where('status', 'ACTIVE')
-                ->exists();
-
-            if (! $isPosOwner && ! $posMembership) {
-                throw new AuthorizationException('لا توجد عضوية نشطة تخولك الوصول إلى بيانات نقطة البيع المحددة.');
+            if (in_array('pos', $definition['supported_scopes'] ?? [], true)) {
+                $isPosOwner = Pos::query()
+                    ->where('pos_id', $posId)
+                    ->where('owner_id', $user->user_id)
+                    ->exists();
+                $posMembership = PosUser::query()
+                    ->where('pos_id', $posId)
+                    ->where('user_id', $user->user_id)
+                    ->where('status', 'ACTIVE')
+                    ->exists();
+                $canUsePosScope = $isPosOwner || $posMembership;
             }
         }
 
@@ -90,12 +80,16 @@ final class OperationalReportAuthorizationService
             throw new AuthorizationException('لم تُعرّف صلاحية هذا التقرير.');
         }
 
-        $hasPermission = $canUseNetworkScope
-            ? $this->tenantPermissions->allowsNetwork($user, $networkId, $permission)
-            : $this->tenantPermissions->allowsPos($user, (int) $posId, $permission);
+        $supportedScopes = $definition['supported_scopes'] ?? [];
+        $hasNetworkPermission = in_array('network', $supportedScopes, true)
+            && $canUseNetworkScope
+            && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
+        $hasPosPermission = in_array('pos', $supportedScopes, true)
+            && $canUsePosScope
+            && $this->tenantPermissions->allowsPos($user, (int) $posId, $permission);
 
-        if (! $hasPermission) {
-            throw new AuthorizationException('لا تملك صلاحية الوصول إلى هذا التقرير أو تصديره ضمن نطاق العمل المحدد.');
+        if (! $hasNetworkPermission && ! $hasPosPermission) {
+            throw new AuthorizationException('لا تملك عضوية وصلاحية التقرير ضمن نطاق الشبكة أو نقطة البيع المحدد.');
         }
     }
 }
