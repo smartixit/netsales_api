@@ -20,10 +20,11 @@ final class BillingRevenueRecognitionProvider extends ConfiguredBillingReportPro
   if($networkId!==null)$entries->where('ba.network_id',$networkId);
   if(!empty($filters['from_date']))$entries->whereDate('e.recognized_through','>=',$filters['from_date']);
   if(!empty($filters['to_date']))$entries->whereDate('e.recognized_through','<=',$filters['to_date']);
-  $recognized=$entries->select('s.currency_id','c.code as currency_code','c.name as currency_name','c.decimal_places')->selectRaw('SUM(e.amount_minor) as recognized_in_period_minor')
+  $recordCount=(int)(clone $entries)->count('e.revenue_recognition_entry_id');
+  $recognized=(clone $entries)->select('s.currency_id','c.code as currency_code','c.name as currency_name','c.decimal_places')->selectRaw('SUM(e.amount_minor) as recognized_in_period_minor')
    ->groupBy('s.currency_id','c.code','c.name','c.decimal_places')->get()->keyBy('currency_id');
   $ids=$balances->keys()->merge($recognized->keys())->unique()->sort()->values();
-  return ['record_count'=>(int)$entries->count(),'revenue_by_currency'=>$ids->map(function($id)use($balances,$recognized):array{
+  return ['record_count'=>$recordCount,'revenue_by_currency'=>$ids->map(function($id)use($balances,$recognized):array{
    $b=$balances->get($id);$r=(int)($recognized->get($id)?->recognized_in_period_minor??0);
    return ['currency_id'=>(int)$id,'currency_code'=>$balances->get($id)?->currency_code??$recognized->get($id)?->currency_code,'currency_name'=>$balances->get($id)?->currency_name??$recognized->get($id)?->currency_name,'decimal_places'=>(int)($balances->get($id)?->decimal_places??$recognized->get($id)?->decimal_places??2),'recognized_in_period_minor'=>$r,
     'recognized_to_date_minor'=>(int)($b?->recognized_to_date_minor??0),
