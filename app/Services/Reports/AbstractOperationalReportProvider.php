@@ -113,7 +113,7 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
             ),
             'metric_slots' => $this->metricSlots(),
             'chart_slots' => $charts,
-            'templates' => [['id' => 'netsales.operational-report.executive', 'version' => '1.0.0']],
+            'templates' => [['id' => 'netsales.operational-report.'.$type->value.'.executive', 'version' => '1.0.0']],
             'page_profile_ids' => $this->pageProfileIds(),
             'execution_policy' => 'server',
             'client_row_limit' => null,
