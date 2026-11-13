@@ -11,7 +11,9 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
     {
         $query = DB::table('billing_subscription_events as e')
             ->join('billing_trial_redemptions as r', 'r.billing_subscription_id', '=', 'e.billing_subscription_id')
+            ->join('billing_subscriptions as s', 's.billing_subscription_id', '=', 'e.billing_subscription_id')
             ->join('billing_accounts as ba', 'ba.billing_account_id', '=', 'r.billing_account_id')
+            ->whereNull('s.deleted_at')
             ->where('e.event_type', $eventType);
 
         if ($networkId !== null) {
