@@ -144,7 +144,6 @@ class BillingCatalogService
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
-
         return $query->orderBy('plan_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
