@@ -15,7 +15,10 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 final class OperationalReportAuthorizationService
 {
-    public function __construct(private readonly OperationalReportProviderRegistry $providers) {}
+    public function __construct(
+        private readonly OperationalReportProviderRegistry $providers,
+        private readonly TenantPermissionService $tenantPermissions
+    ) {}
 
     public function authorize(
         User $user,
@@ -87,8 +90,11 @@ final class OperationalReportAuthorizationService
             throw new AuthorizationException('لم تُعرّف صلاحية هذا التقرير.');
         }
 
-        $tenantId = $canUseNetworkScope ? $networkId : (int) $posId;
-        if (! $user->hasPermission($permission, $tenantId)) {
+        $hasPermission = $canUseNetworkScope
+            ? $this->tenantPermissions->allowsNetwork($user, $networkId, $permission)
+            : $this->tenantPermissions->allowsPos($user, (int) $posId, $permission);
+
+        if (! $hasPermission) {
             throw new AuthorizationException('لا تملك صلاحية الوصول إلى هذا التقرير أو تصديره ضمن نطاق العمل المحدد.');
         }
     }
