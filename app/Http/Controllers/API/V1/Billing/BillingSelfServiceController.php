@@ -4,7 +4,7 @@ namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
 use App\Http\Requests\API\V1\Billing\{CreateBillingAccountRequest, PurchaseSubscriptionRequest, StorePaymentRequest, StoreBillingAccountContactRequest, UpdateBillingAccountContactRequest, UpdateBillingAccountRequest};
-use App\Http\Resources\API\V1\Billing\{BillingAccountContactResource, BillingAccountResource, BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingRefundResource, BillingSubscriptionEventResource, BillingSubscriptionResource, BillingUsageAggregateResource, PaymentMethodResource};
+use App\Http\Resources\API\V1\Billing\{BillingAccountContactResource, BillingAccountResource, BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingRefundResource, BillingSubscriptionEventResource, BillingSubscriptionResource, BillingUsageAggregateResource, CurrencyResource, PaymentMethodResource};
 use App\Services\Billing\{BillingEntitlementService, BillingPaymentService, BillingPlatformReadService, BillingSelfService, BillingSubscriptionService, CurrencyService};
 use App\Services\Support\FileUploadService;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +23,22 @@ class BillingSelfServiceController extends BaseController
         private BillingEntitlementService $entitlements,
         private FileUploadService $files
     ) {}
+
+    /**
+     * Validate bounded cursor collection parameters before passing them to the
+     * self-service domain service.
+     *
+     * @param array<string, array<int, string>> $extra
+     * @return array<string, mixed>
+     */
+    private function collectionFilters(Request $request, array $extra = []): array
+    {
+        return $request->validate(array_merge([
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
+            'cursor' => ['nullable', 'string', 'max:2048'],
+            'all' => ['sometimes', 'boolean'],
+        ], $extra));
+    }
 
     public function currencies(): JsonResponse
     {
@@ -153,7 +169,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع الخطط والأسعار المتاحة بعملة حساب الفوترة.',
             BillingPlanResource::collection($this->self->plans(
                 $billingAccountId,
-                $request->only(['search', 'per_page', 'cursor', 'all']),
+                $this->collectionFilters($request, ['search' => ['nullable', 'string', 'max:120']]),
                 $this->requireCurrentUser()
             ))
         );
@@ -183,7 +199,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع اشتراكات حساب الفوترة.',
             BillingSubscriptionResource::collection($this->self->subscriptions(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'cursor', 'all']),
+                $this->collectionFilters($request, ['status' => ['nullable', 'string', 'max:40']]),
                 $this->requireCurrentUser()
             ))
         );
@@ -195,7 +211,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع فواتير حساب الفوترة.',
             BillingInvoiceResource::collection($this->self->invoices(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'cursor', 'all']),
+                $this->collectionFilters($request, ['status' => ['nullable', 'string', 'max:40']]),
                 $this->requireCurrentUser()
             ))
         );
@@ -215,7 +231,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع مدفوعات حساب الفوترة.',
             BillingPaymentResource::collection($this->self->payments(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'cursor', 'all']),
+                $this->collectionFilters($request, ['status' => ['nullable', 'string', 'max:40']]),
                 $this->requireCurrentUser()
             ))
         );
@@ -227,7 +243,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع الإشعارات الدائنة لحساب الفوترة.',
             BillingCreditNoteResource::collection($this->self->creditNotes(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'cursor', 'all']),
+                $this->collectionFilters($request, ['status' => ['nullable', 'string', 'max:40']]),
                 $this->requireCurrentUser()
             ))
         );
@@ -239,7 +255,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع عمليات الاسترداد لحساب الفوترة.',
             BillingRefundResource::collection($this->self->refunds(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'cursor', 'all']),
+                $this->collectionFilters($request, ['status' => ['nullable', 'string', 'max:40']]),
                 $this->requireCurrentUser()
             ))
         );
