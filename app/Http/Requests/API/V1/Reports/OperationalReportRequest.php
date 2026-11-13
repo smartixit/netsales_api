@@ -21,6 +21,11 @@ class OperationalReportRequest extends FormRequest
             'pos_id' => ['nullable', 'integer', 'min:1'],
             'filters' => ['sometimes', 'array'],
             'filters.*' => ['nullable'],
+            'from_date' => ['prohibited'],
+            'to_date' => ['prohibited'],
+            'search' => ['prohibited'],
+            'status' => ['prohibited'],
+            'sale_type' => ['prohibited'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
             'cursor' => ['nullable', 'string', 'max:2048'],
         ];
