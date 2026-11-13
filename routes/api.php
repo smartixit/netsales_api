@@ -536,6 +536,7 @@ Route::prefix('v1')->group(function () {
             Route::get('catalog', [BillingReportController::class, 'platformCatalog'])->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.catalog');
             Route::get('{reportType}', [BillingReportController::class, 'platformShow'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.show');
             Route::get('{reportType}/summary', [BillingReportController::class, 'platformSummary'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.summary');
+            Route::get('{reportType}/export.csv', [BillingReportController::class, 'platformExportCsv'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.export');
         });
 
         // Platform Billing — Windows Platform Scope only
@@ -651,6 +652,7 @@ Route::prefix('v1')->group(function () {
             Route::get('catalog', [BillingReportController::class, 'networkCatalog'])->whereNumber('networkId')->middleware('throttle:api-read')->name('api.v1.networks.billing.reports.catalog');
             Route::get('{reportType}', [BillingReportController::class, 'networkShow'])->whereNumber('networkId')->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.networks.billing.reports.show');
             Route::get('{reportType}/summary', [BillingReportController::class, 'networkSummary'])->whereNumber('networkId')->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.networks.billing.reports.summary');
+            Route::get('{reportType}/export.csv', [BillingReportController::class, 'networkExportCsv'])->whereNumber('networkId')->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.networks.billing.reports.export');
         });
 
         // Network Billing Self-Service — Network Owner only
