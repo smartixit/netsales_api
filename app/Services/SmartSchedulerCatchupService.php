@@ -104,7 +104,12 @@ class SmartSchedulerCatchupService
                 : strcmp($left['key'], $right['key']);
         });
 
-        foreach (array_slice($dueTasks, 0, max(0, $maxTasks)) as $task) {
+        $processedSlots = 0;
+
+        foreach ($dueTasks as $task) {
+            if ($processedSlots >= max(0, $maxTasks)) {
+                break;
+            }
             $key = $task['key'];
             $config = $task['config'];
             /** @var Carbon $scheduledAt */
@@ -121,6 +126,7 @@ class SmartSchedulerCatchupService
                 continue;
             }
 
+            $processedSlots++;
             $arguments = $this->commandArguments($type, $scheduledAt);
 
             try {

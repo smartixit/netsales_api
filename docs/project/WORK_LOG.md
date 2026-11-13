@@ -984,3 +984,6 @@ This log documents all executed tasks, code changes, and verification command ou
 - Low-balance alerts now distinguish the 09:00 and 15:00 occurrence slots so both daily runs can be independently idempotent. Daily and monthly SMS commands return failure when one or more network deliveries fail, allowing the scheduler ledger to retry failed work while successful networks remain protected by their own delivery records.
 - Implementation commits: `9f57feddfea7505f7466ec4de9824a8e16e16c05` (scheduler foundation) and `7ac484747b0d69dbacb608cb45ab34d707a8e3dc` (partial-delivery retries and bounded queue work).
 - Execution boundary: source changes only. No migration was applied; no PHP runtime, Pint, PHPStan, PHPUnit, route:list, or GitHub Actions were run. Tests and CI remain deferred to the final validation stage. Activity-triggered processing requires incoming API traffic; no PHP scheduler can run in the complete absence of Cron, queue workers, and application activity.
+
+
+- Scheduler fairness correction: bounded activity ticks now continue past already-completed or concurrently-claimed occurrences and count only successfully claimed slots toward the per-tick limit. This prevents the same first two completed tasks from starving later due tasks.
