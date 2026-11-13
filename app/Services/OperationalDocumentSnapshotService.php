@@ -70,6 +70,8 @@ final class OperationalDocumentSnapshotService
             $hashableSnapshot = [
                 'schema_version' => 1,
                 'currency_code' => $currencyCode,
+                'template_id' => $templateId,
+                'template_version' => $templateVersion,
                 'source_snapshot' => $payload,
             ];
             $encoded = json_encode(
@@ -123,9 +125,8 @@ final class OperationalDocumentSnapshotService
             $this->authorize($user, $snapshot->document_type, (int) $snapshot->network_id, $snapshot->pos_id ? (int) $snapshot->pos_id : null);
 
             if ($snapshot->artifact_path !== null) {
-                throw ValidationException::withMessages([
-                    'artifact' => ['تم تثبيت ملف هذه النسخة ولا يمكن استبداله. أنشئ نسخة مستندية جديدة لإصدار ملف آخر.'],
-                ]);
+                // Idempotent retry: the first immutable artifact remains canonical.
+                return $snapshot;
             }
 
             $path = 'operational-documents/'.$snapshot->network_id.'/'.$snapshot->document_type.'/'.$snapshot->snapshot_uuid.'.pdf';
