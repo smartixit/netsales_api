@@ -57,7 +57,7 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
 
     private function wallet(int $networkId): NetworkWallet
     {
-        return NetworkWallet::query()->where('network_id', $networkId)->firstOrFail();
+        return NetworkWallet::withTrashed()->where('network_id', $networkId)->firstOrFail();
     }
 
     private function query(int $networkId, array $filters): Builder
@@ -65,7 +65,7 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
         $pattern = $this->pattern($filters);
         $wallet = $this->wallet($networkId);
 
-        $query = NetworkWalletLog::withTrashed()->with(['wallet', 'createdBy'])
+        $query = NetworkWalletLog::withTrashed()->with(['wallet' => fn ($relation) => $relation->withTrashed(), 'createdBy'])
             ->where('wallet_id', $wallet->wallet_id)
             ->when($filters['status'] ?? null, fn (Builder $q, string $value): Builder => $q->where('log_operation', $value))
             ->when($pattern !== null, fn (Builder $q): Builder => $q->where('log_statement', 'like', $pattern));
