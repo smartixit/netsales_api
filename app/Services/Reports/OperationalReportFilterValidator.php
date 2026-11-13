@@ -47,7 +47,8 @@ final class OperationalReportFilterValidator
             }
 
             if (($filter['kind'] ?? null) === 'single_choice') {
-                $allowed = $filter['choices'] ?? [];
+                $allowedChoices = $filter['choices'] ?? [];
+                $allowed = array_column($allowedChoices, 'value');
                 if (! in_array((string) $input[$id], $allowed, true)) {
                     $errors->add($id, 'القيمة المحددة غير مدعومة لهذا التقرير.');
                 }
