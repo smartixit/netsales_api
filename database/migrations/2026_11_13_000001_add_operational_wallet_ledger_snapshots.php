@@ -164,7 +164,7 @@ return new class extends Migration
     private function addMinorUnits(int $left, int $right): int
     {
         if (($right > 0 && $left > PHP_INT_MAX - $right)
-            || ($right < 0 && $left < PHP_INT_MIN - $right)) {
+            || ($right < 0 && $left < -PHP_INT_MAX - $right)) {
             throw new \OverflowException('Wallet ledger total exceeds the supported integer range.');
         }
 
