@@ -56,7 +56,7 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
         $segments=DB::table('billing_trial_eligibility_checks as c')
           ->where('c.eligibility_status','ELIGIBLE')
           ->select('c.trial_policy_version_id','c.plan_id','c.price_id')
-          ->selectRaw('COUNT(*) as checks');
+          ->selectRaw('COUNT(DISTINCT c.billing_account_id) as checks');
         if($networkId!==null)$segments->where('c.network_id',$networkId);
         $this->window($segments,'c.checked_at',$filters);
         $segments=$segments->groupBy('c.trial_policy_version_id','c.plan_id','c.price_id')
