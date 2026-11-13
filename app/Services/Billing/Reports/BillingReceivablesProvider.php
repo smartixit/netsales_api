@@ -11,6 +11,7 @@ final class BillingReceivablesProvider extends ConfiguredBillingReportProvider
   if(!empty($filters['from_date']))$q->whereDate('i.issued_on','>=',$filters['from_date']);
   if(!empty($filters['to_date']))$q->whereDate('i.issued_on','<=',$filters['to_date']);
   if(!empty($filters['status']))$q->where('i.status',strtoupper((string)$filters['status']));
+  $this->applySearchColumns($q, $filters, ['i.invoice_number', 'i.status']);
   $asOf=now('Asia/Aden')->toDateString();
   $aging=$q->select('i.currency_id','c.code as currency_code','c.name as currency_name','c.decimal_places')
    ->selectRaw('SUM(CASE WHEN i.due_on >= ? THEN i.remaining_minor ELSE 0 END) as current_minor',[$asOf])
