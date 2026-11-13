@@ -70,7 +70,7 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
     {
         $pattern = $this->pattern($filters);
         $wallet = $this->wallet($networkId, $posId);
-        $query = PosWalletLog::withTrashed()->with(['wallet' => fn ($relation) => $relation->withTrashed(), 'createdBy'])
+        $query = PosWalletLog::withTrashed()->with(['wallet' => fn ($relation) => $relation->withTrashed()->with('pos'), 'createdBy'])
             ->where('wallet_id', $wallet->wallet_id)
             ->when($filters['status'] ?? null, fn (Builder $q, string $value): Builder => $q->where('log_operation_type', $value))
             ->when($pattern !== null, fn (Builder $q): Builder => $q->where('log_statement', 'like', $pattern));
@@ -147,6 +147,7 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
             'created_at' => 'وقت الترحيل',
             'is_voided' => 'قيد محذوف ناعماً',
             'log_statement' => 'البيان',
+            'pos_name' => 'نقطة البيع',
             'wallet_uuid' => 'مرجع المحفظة',
         ];
     }
@@ -165,6 +166,7 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
             'currency_code' => $row->currency_code,
             'is_voided' => $row->trashed(),
             'log_statement' => $row->log_statement,
+            'pos_name' => $row->wallet?->pos?->pos_name,
             'wallet_uuid' => $row->wallet?->wallet_uuid,
         ];
     }
