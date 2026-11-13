@@ -163,9 +163,16 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
             ->where('network_id', $networkId)
             ->value('currency_code');
 
-        return is_string($currencyCode) && $currencyCode !== ''
-            ? strtoupper($currencyCode)
-            : 'YER';
+        if (! is_string($currencyCode)) {
+            throw new \LogicException('The operational network currency is not configured.');
+        }
+
+        $normalized = strtoupper(trim($currencyCode));
+        if (preg_match('/^[A-Z]{3}$/D', $normalized) !== 1) {
+            throw new \LogicException('The operational network currency code is invalid.');
+        }
+
+        return $normalized;
     }
 
     protected function amountValue(mixed $value): string
