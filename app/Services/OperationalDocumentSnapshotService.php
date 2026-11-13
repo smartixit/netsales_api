@@ -65,22 +65,28 @@ final class OperationalDocumentSnapshotService
                 ->max('document_version');
 
             $payload = $source['payload'];
+            $currencyCode = $this->resolveCurrency($networkId, $posId);
+            $hashableSnapshot = [
+                'schema_version' => 1,
+                'currency_code' => $currencyCode,
+                'source_snapshot' => $payload,
+            ];
             $encoded = json_encode(
-                $payload,
+                $hashableSnapshot,
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR
             );
+            $snapshotHash = hash('sha256', $encoded);
+
             $existing = OperationalDocumentSnapshot::query()
                 ->where('document_type', $documentType)
                 ->where('document_id', $documentId)
                 ->where('template_id', $templateId)
                 ->where('template_version', $templateVersion)
-                ->where('snapshot_sha256', hash('sha256', $encoded))
+                ->where('snapshot_sha256', $snapshotHash)
                 ->first();
             if ($existing) {
                 return $existing;
             }
-
-            $currencyCode = $this->resolveCurrency($networkId, $posId);
 
             return OperationalDocumentSnapshot::query()->create([
                 'snapshot_uuid' => (string) Str::uuid(),
@@ -95,7 +101,7 @@ final class OperationalDocumentSnapshotService
                 'schema_version' => 1,
                 'currency_code' => $currencyCode,
                 'source_snapshot' => $payload,
-                'snapshot_sha256' => hash('sha256', $encoded),
+                'snapshot_sha256' => $snapshotHash,
                 'issued_at' => now('Asia/Aden'),
                 'created_by' => $user->user_id,
             ]);
