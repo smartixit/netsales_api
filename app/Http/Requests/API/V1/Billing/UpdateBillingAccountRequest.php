@@ -12,7 +12,7 @@ class UpdateBillingAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'legal_name' => ['sometimes','nullable','string','max:160'],
+            'legal_name' => ['sometimes','required','string','max:160'],
             'billing_email' => ['sometimes','nullable','email','max:160'],
             'tax_number' => ['sometimes','nullable','string','max:80'],
             'billing_address' => ['sometimes','nullable','string','max:5000'],
