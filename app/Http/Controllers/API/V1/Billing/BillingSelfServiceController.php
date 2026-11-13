@@ -103,7 +103,7 @@ class BillingSelfServiceController extends BaseController
     public function entitlements(int $billingAccountId): JsonResponse
     {
         $account = $this->self->account($billingAccountId, $this->requireCurrentUser());
-        $subscription = $this->entitlements->activeSubscriptionForAccount((int) $account->billing_account_id);
+        $subscription = $this->entitlements->previewSubscriptionForAccount((int) $account->billing_account_id);
 
         if (! $subscription) {
             return $this->successResponse('لا توجد استحقاقات تشغيلية فعالة لحساب الفوترة حالياً.', [
@@ -113,28 +113,35 @@ class BillingSelfServiceController extends BaseController
             ]);
         }
 
-        $subscription->loadMissing(['planVersion.features', 'currency']);
-        $features = $subscription->planVersion->features->map(fn ($feature): array => [
-            'feature_key' => $feature->feature_key,
-            'name' => $feature->name,
-            'feature_type' => $feature->feature_type?->value,
-            'configured_value' => $this->entitlements->featureValue($subscription, $feature->feature_key),
-            'unit' => $feature->unit,
-            'aggregation' => $feature->aggregation,
-            'reset_period' => $feature->reset_period,
-            'overage_behavior' => $feature->overage_behavior,
-            'available' => $this->entitlements->allows($subscription, $feature->feature_key),
-        ])->values();
+        $subscription->loadMissing(['planVersion.features', 'currency', 'trialRedemption.policyVersion']);
+        $status = $subscription->status?->value;
+        $canUseFeatures = in_array($status, ['ACTIVE', 'TRIALING', 'PAST_DUE'], true);
+        $features = $canUseFeatures ? $subscription->planVersion->features
+            ->map(fn ($feature): array => [
+                'feature_key' => $feature->feature_key,
+                'name' => $feature->name,
+                'feature_type' => $feature->feature_type?->value,
+                'configured_value' => $this->entitlements->featureValue($subscription, $feature->feature_key),
+                'unit' => $feature->unit,
+                'aggregation' => $feature->aggregation,
+                'reset_period' => $feature->reset_period,
+                'overage_behavior' => $feature->overage_behavior,
+                'available' => $this->entitlements->allows($subscription, $feature->feature_key),
+            ])->values() : collect();
 
         $trial = (array) $subscription->trial_policy_snapshot;
+        $redemption = $subscription->trialRedemption;
 
-        return $this->successResponse('تم استرجاع الاستحقاقات الفعلية من محرك الاشتراك.', [
+        return $this->successResponse('تم استرجاع حالة الاشتراك والاستحقاقات دون بدء أي تجربة معلقة.', [
             'subscription' => new BillingSubscriptionResource($subscription),
-            'trial' => $subscription->status?->value === 'TRIALING' ? [
+            'trial' => $trial !== [] || $redemption ? [
+                'status' => $redemption?->status,
                 'start' => $subscription->trial_start?->toDateTimeString(),
                 'end' => $subscription->trial_end?->toDateTimeString(),
                 'entitlement_mode' => $trial['entitlement_mode'] ?? 'FULL_PLAN',
                 'allowed_features' => $trial['entitlement_config']['allowed_features'] ?? [],
+                'awaiting_first_activation' => $status === 'INCOMPLETE'
+                    && ($trial['start_trigger'] ?? null) === 'FIRST_ACTIVATION',
             ] : null,
             'features' => $features,
         ]);
