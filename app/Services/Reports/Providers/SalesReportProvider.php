@@ -66,8 +66,7 @@ final class SalesReportProvider extends AbstractOperationalReportProvider
             ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('payment_status', $v))
             ->when($pattern !== null, fn (Builder $q): Builder => $q->where(
                 fn (Builder $nested): Builder => $nested
-                    ->where('invoice_uuid', 'like', $pattern)
-                    ->orWhere('invoice_id', 'like', $pattern)
+                   ->where('invoice_uuid', 'like', $pattern)
                     ->orWhereHas('pos', fn (Builder $pos): Builder => $pos->where('pos_name', 'like', $pattern))
             ));
 
