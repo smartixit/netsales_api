@@ -1041,3 +1041,15 @@ This log documents all executed tasks, code changes, and verification command ou
 - Added saved report preset API CRUD and Flutter Report Studio integration. Typed criteria, report schema version, and presentation settings are validated against the active provider definition before persistence. Duplicate names are scoped and bounded to 100 presets per user/report/workspace.
 - Added provider-template ID alignment and strict typed filter validation (including open-ended date ranges and duplicate-choice rejection).
 - Tests and GitHub Actions remain intentionally unrun until the final validation gate.
+
+
+## 2026-11-14 — Billing self-service collections, report safety, and filter hardening
+
+- The network-owned Billing self-service list contract now accepts bounded `search`, `status`, `per_page`, and `cursor` inputs. Search is applied inside each already-authorized billing-account query; it does not widen account scope.
+- Server-side search now covers subscription ID/status/plan name and key; invoice number/ID/status/plan; payment reference/external reference/invoice number/status/ID; credit-note number/reason/invoice number/status/ID; and refund reference/reason/payment references/status/ID.
+- Cursor pagination uses an explicit cursor parameter and stable unique-ID ordering for plans, subscriptions, invoices, payments, credit notes, and refunds. Subscription event and usage endpoints accept explicit cursor/per-page values. The subscription detail response is bounded to an initial events page and invoice page instead of eager-loading unbounded history.
+- Billing trial-conversion summary search is aligned with the lifecycle event/redemption queries and its eligibility segments. Approval-wait and approval-to-start means are computed from independent base queries so one aggregate SELECT cannot leak into the next aggregate.
+- API implementation HEAD immediately before this log update: `7c8d462d20aa953408de093881f96bf7f9db436`; active branch: `feat/billing-self-service-contracts`.
+- Flutter implementation branch: `feat/subscriptions-network-module`, HEAD immediately before this log update: `189a8319b5a167d3f474910fd52c6ed817a2a9be`. It contains independent cursor/search/status state for six Billing collections, a shared custom filter bar/load-more tail, workspace/report composition widgets, and workspace-context stale-response guards.
+- Both feature branches have no open PR at the time of this entry. No PR was created and no merge was performed.
+- **Verification boundary:** source reads and GitHub file operations only. No database migration was applied; no PHPUnit, PHP lint/Pint/PHPStan, Flutter test/analyzer/formatter, PDF extraction/visual QA, or GitHub Actions were run. All remain pending for the final exact-HEAD validation gate. No production-readiness claim is made.
