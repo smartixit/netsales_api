@@ -45,7 +45,7 @@ class BillingSelfServiceCursorPaginationTest extends TestCase
         $service = app(BillingSelfService::class);
         $firstPage = $service->subscriptions(
             (int) $firstSubscription->billing_account_id,
-            ['per_page' => 1],
+            ['per_page' => 1, 'all' => true],
             $actor,
         );
 
