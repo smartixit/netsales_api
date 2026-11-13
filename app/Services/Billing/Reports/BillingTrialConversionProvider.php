@@ -14,6 +14,7 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
         $eligible=(int)$eligible->distinct()->count(DB::raw("CONCAT(c.billing_account_id,':',c.price_id,':',COALESCE(c.trial_policy_version_id,0))"));
         $r=DB::table('billing_trial_redemptions as r')->join('billing_accounts as ba','ba.billing_account_id','=','r.billing_account_id')->join('billing_subscriptions as s','s.billing_subscription_id','=','r.billing_subscription_id');
         if($networkId!==null)$r->where('ba.network_id',$networkId);
+        $r->whereNull('s.deleted_at');
         $this->window($r,'r.reserved_at',$filters);
         $stageCount=static fn($q)=>(int)$q->distinct()->count(DB::raw("CONCAT(r.billing_account_id,':',s.price_id,':',r.trial_policy_version_id)"));
         $reserved=$stageCount(clone $r);
@@ -28,6 +29,7 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
           ->join('billing_accounts as ba','ba.billing_account_id','=','s.billing_account_id')
           ->where('e.event_type','TRIAL_CONVERSION_INVOICE_ISSUED');
         if($networkId!==null)$events->where('ba.network_id',$networkId);
+        $events->whereNull('s.deleted_at');
         $this->window($events,'e.occurred_at',$filters);
         $invoiceIssued=(int)$events->distinct()->count('e.billing_subscription_id');
         $paid=DB::table('billing_trial_redemptions as r')
@@ -42,6 +44,7 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
                   ->whereRaw("CAST(JSON_UNQUOTE(JSON_EXTRACT(e.payload, '$.invoice_id')) AS UNSIGNED) = i.invoice_id");
           });
         if($networkId!==null)$paid->where('ba.network_id',$networkId);
+        $paid->whereNull('s.deleted_at');
         $this->window($paid,'r.reserved_at',$filters);
         $paid=(int)$paid->distinct()->count('r.trial_redemption_id');
         $approvalEvents=DB::table('billing_subscription_events as e')
