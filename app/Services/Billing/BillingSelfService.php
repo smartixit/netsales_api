@@ -50,14 +50,14 @@ class BillingSelfService
         $this->accounts->deleteContact($accountId, $contactId, $actor);
     }
 
-    public function plans(int $accountId, array $filters, User $actor): Collection|CursorPaginator
+    public function plans(int $accountId, array $filters, User $actor): CursorPaginator
     {
         $account = $this->accounts->ownedAccount($accountId, $actor);
 
         return $this->catalog->publicPlansForCurrency((int) $account->default_currency_id, $filters);
     }
 
-    public function subscriptions(int $accountId, array $filters, User $actor): Collection|CursorPaginator
+    public function subscriptions(int $accountId, array $filters, User $actor): CursorPaginator
     {
         $this->accounts->ownedAccount($accountId, $actor);
 
@@ -71,14 +71,11 @@ class BillingSelfService
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
-        if (! empty($filters['all'])) {
-            return $query->orderBy('billing_subscription_id')->get();
-        }
 
         return $query->orderByDesc('billing_subscription_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
-    public function invoices(int $accountId, array $filters, User $actor): Collection|CursorPaginator
+    public function invoices(int $accountId, array $filters, User $actor): CursorPaginator
     {
         $this->accounts->ownedAccount($accountId, $actor);
 
@@ -92,9 +89,6 @@ class BillingSelfService
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
-        if (! empty($filters['all'])) {
-            return $query->orderBy('invoice_id')->get();
-        }
 
         return $query->orderByDesc('invoice_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
@@ -110,7 +104,7 @@ class BillingSelfService
         return $invoice;
     }
 
-    public function payments(int $accountId, array $filters, User $actor): Collection|CursorPaginator
+    public function payments(int $accountId, array $filters, User $actor): CursorPaginator
     {
         $this->accounts->ownedAccount($accountId, $actor);
 
@@ -124,14 +118,11 @@ class BillingSelfService
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
-        if (! empty($filters['all'])) {
-            return $query->orderBy('payment_id')->get();
-        }
 
         return $query->orderByDesc('payment_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
-    public function creditNotes(int $accountId, array $filters, User $actor): Collection|CursorPaginator
+    public function creditNotes(int $accountId, array $filters, User $actor): CursorPaginator
     {
         $this->accounts->ownedAccount($accountId, $actor);
 
@@ -145,14 +136,11 @@ class BillingSelfService
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
-        if (! empty($filters['all'])) {
-            return $query->orderBy('credit_note_id')->get();
-        }
 
         return $query->orderByDesc('credit_note_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
-    public function refunds(int $accountId, array $filters, User $actor): Collection|CursorPaginator
+    public function refunds(int $accountId, array $filters, User $actor): CursorPaginator
     {
         $this->accounts->ownedAccount($accountId, $actor);
 
@@ -166,9 +154,6 @@ class BillingSelfService
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
-        if (! empty($filters['all'])) {
-            return $query->orderBy('refund_id')->get();
-        }
 
         return $query->orderByDesc('refund_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
