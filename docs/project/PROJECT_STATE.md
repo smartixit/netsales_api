@@ -142,8 +142,8 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 ## Active implementation track — Operational Reports & Official Documents (2026-11-13)
 
 **Authorized branches**
-- API: `feat/operational-reports-contracts` — HEAD `1699842df80b87c2395410728c63b6e1764d8fe9`.
-- Flutter: `feat/invoice-document-engine-integration` — HEAD `ef79e2acd2fb1ea7ccb3a9f456ee101a0ebc8e1c`.
+- API: `feat/operational-reports-contracts` — HEAD `7ac484747b0d69dbacb608cb45ab34d707a8e3dc`.
+- Flutter: `feat/invoice-document-engine-integration` — HEAD `60703dfe1193ca28a452207c98657f8d4e1e2012`.
 - These branches are not merged. Do not treat their code as accepted or production-ready until the final validation gate passes.
 
 **Branch relationship to main (2026-11-13):**
@@ -183,3 +183,13 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - No PHPUnit/Dart tests, PHP lint, Pint, PHPStan, Flutter analyzer, PDF extraction/visual checks, or GitHub Actions have been run for this implementation track.
 - Windows, Android, and iOS PDF behavior and Arabic extraction/order remain unverified.
 - Do not merge or claim production readiness until the final plan validation stage runs against the exact branch heads and all failures are resolved.
+
+
+## Scheduler unification update — 2026-11-13
+- Active API branch: `feat/operational-reports-contracts`.
+- Current API HEAD before this state update: `7ac484747b0d69dbacb608cb45ab34d707a8e3dc`.
+- Current Flutter branch reference verified during this work: `feat/invoice-document-engine-integration` at `60703dfe1193ca28a452207c98657f8d4e1e2012`.
+- Scheduler implementation is source-updated but NOT runtime-validated. It centralizes task definitions in `ScheduledTaskType`, persists exact occurrence slots and execution leases, and removes parallel recurring command declarations.
+- API activity middleware triggers bounded catch-up after successful requests when Cron is unavailable. It processes at most two scheduled occurrences and one queued job per throttled activity tick. The fallback still requires application traffic; it cannot run in the absence of all triggers.
+- Queue processing uses the configured connection and one-shot worker invocation; no resident worker is required for this fallback. `sync` and `null` connections are excluded.
+- Database migration, all tests, static analysis, PDF checks, and GitHub Actions remain deferred to the final validation gate. No merge or production readiness is claimed.
