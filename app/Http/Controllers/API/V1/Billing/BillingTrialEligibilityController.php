@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
-use App\Models\{BillingAccount, BillingPrice, BillingSubscription};
+use App\Models\{BillingAccount, BillingPrice, BillingSubscription, BillingTrialEligibilityCheck};
 use App\Services\Billing\{BillingAuthorizationService, BillingPolicyResolver};
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
