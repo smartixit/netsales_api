@@ -136,19 +136,42 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         return match ($this->key()) {
             'subscriptions' => [$pie('subscription_status_distribution', 'توزيع حالات الاشتراك', $summary['status_distribution'] ?? [], 'status', 'count')],
             'trials' => [$pie('trial_status_distribution', 'توزيع حالات التجارب', $summary['status_distribution'] ?? [], 'status', 'count')],
-            'trial_conversion' => [[
+            'trial_conversion' => array_merge([[
                 'id' => 'trial_conversion_funnel', 'type' => 'bar', 'title' => 'قمع تحويل التجربة',
                 'series' => [['key' => 'count', 'label' => 'عدد الحالات']],
                 'data' => array_map(static fn ($key, $value): array => ['label' => str_replace('_', ' ', $key), 'count' => (int) $value], array_keys($summary['funnel'] ?? []), array_values($summary['funnel'] ?? [])),
-            ]],
+            ]], [[
+                'id' => 'conversion_by_plan', 'type' => 'bar', 'title' => 'أهلية التجربة حسب الخطة والسعر',
+                'series' => [['key' => 'eligible_checks', 'label' => 'حسابات مؤهلة']],
+                'data' => array_map(static fn ($item): array => [
+                    'label' => 'Plan '.$item['plan_id'].' / Price '.$item['price_id'],
+                    'eligible_checks' => (int) $item['eligible_checks'],
+                ], $summary['eligible_by_policy_plan_price'] ?? []),
+            ]]),
             'renewals' => [$pie('renewal_outcomes', 'نتائج أحداث التجديد', $summary['event_distribution'] ?? [], 'event_type', 'count')],
             'plan_performance' => collect($summary['mrr_arr_by_plan_and_currency'] ?? [])->groupBy('currency_code')->map(
                 fn ($items, $currency): array => $bar('mrr_arr_'.$currency, 'الإيراد الشهري والسنوي حسب الخطة', (string) $currency, $items->map(static fn ($item): array => [
                     'label' => $item['plan_name'], 'mrr' => (int) $item['mrr_minor'], 'arr' => (int) $item['arr_minor'],
                 ])->values()->all(), [['key' => 'mrr', 'label' => 'MRR'], ['key' => 'arr', 'label' => 'ARR']])
             )->values()->all(),
-            'invoices' => [$pie('invoice_status_distribution', 'توزيع حالات الفواتير', $summary['status_distribution'] ?? [], 'status', 'count')],
-            'collections' => [$pie('collection_status_distribution', 'حالات التحصيل', $summary['collection_statuses'] ?? [], 'status', 'count')],
+            'invoices' => array_merge(
+                [$pie('invoice_status_distribution', 'توزيع حالات الفواتير', $summary['status_distribution'] ?? [], 'status', 'count')],
+                collect($summary['amounts_by_currency'] ?? [])->map(
+                    fn ($item): array => $bar('invoice_amounts_'.$item['currency_code'], 'الفواتير والرصيد المستحق', (string) $item['currency_code'], [[
+                        'label'=>'الفواتير','invoiced'=>(int)$item['invoiced_minor'],
+                        'credited'=>(int)$item['credited_minor'],'outstanding'=>(int)$item['outstanding_minor'],
+                    ]], [['key'=>'invoiced','label'=>'إجمالي الفواتير'],['key'=>'credited','label'=>'الإشعارات الدائنة'],['key'=>'outstanding','label'=>'المستحق']])
+                )->all()
+            ),
+            'collections' => array_merge(
+                [$pie('collection_status_distribution', 'حالات التحصيل', $summary['collection_statuses'] ?? [], 'status', 'count')],
+                collect($summary['collections_by_currency'] ?? [])->map(
+                    fn ($item): array => $bar('collections_'.$item['currency_code'], 'إجمالي وصافي التحصيل', (string) $item['currency_code'], [[
+                        'label'=>'التحصيل','gross'=>(int)$item['gross_collected_minor'],
+                        'refunded'=>(int)$item['refunded_minor'],'net'=>(int)$item['net_collected_minor'],
+                    ]], [['key'=>'gross','label'=>'إجمالي التحصيل'],['key'=>'refunded','label'=>'المسترد'],['key'=>'net','label'=>'الصافي']])
+                )->all()
+            ),
             'receivables' => collect($summary['aging_by_currency'] ?? [])->map(
                 fn ($item): array => $bar('receivables_aging_'.$item['currency_code'], 'أعمار الذمم المدينة', (string) $item['currency_code'], [[
                     'label' => 'الذمم المستحقة',
