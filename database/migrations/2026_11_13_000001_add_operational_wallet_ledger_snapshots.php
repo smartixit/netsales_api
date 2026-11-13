@@ -131,19 +131,19 @@ return new class extends Migration
     {
         $decimal = trim((string) ($value ?? '0'));
         if (preg_match('/^([+-]?)(\\d+)(?:\\.(\\d+))?$/D', $decimal, $matches) !== 1) {
-            throw new \\InvalidArgumentException('Invalid wallet ledger amount.');
+            throw new \InvalidArgumentException('Invalid wallet ledger amount.');
         }
 
         $fraction = $matches[3] ?? '';
         if (strlen($fraction) > 2 && trim(substr($fraction, 2), '0') !== '') {
-            throw new \\InvalidArgumentException('Wallet ledger amounts support two decimal places.');
+            throw new \InvalidArgumentException('Wallet ledger amounts support two decimal places.');
         }
 
         $whole = ltrim($matches[2], '0') ?: '0';
         $maximumWhole = intdiv(PHP_INT_MAX - 99, 100);
         if (strlen($whole) > strlen((string) $maximumWhole)
             || (strlen($whole) === strlen((string) $maximumWhole) && strcmp($whole, (string) $maximumWhole) > 0)) {
-            throw new \\OverflowException('Wallet ledger amount exceeds the supported integer range.');
+            throw new \OverflowException('Wallet ledger amount exceeds the supported integer range.');
         }
 
         $minorUnits = ((int) $whole * 100) + (int) str_pad(substr($fraction, 0, 2), 2, '0');
@@ -165,7 +165,7 @@ return new class extends Migration
     {
         if (($right > 0 && $left > PHP_INT_MAX - $right)
             || ($right < 0 && $left < PHP_INT_MIN - $right)) {
-            throw new \\OverflowException('Wallet ledger total exceeds the supported integer range.');
+            throw new \OverflowException('Wallet ledger total exceeds the supported integer range.');
         }
 
         return $left + $right;
