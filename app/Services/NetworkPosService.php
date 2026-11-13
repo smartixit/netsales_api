@@ -33,6 +33,7 @@ class NetworkPosService
         protected NetworkRepositoryInterface $networkRepository,
         protected PosRepositoryInterface $posRepository,
         protected PosWalletRepositoryInterface $posWalletRepository,
+        protected NetworkWalletRepositoryInterface $networkWalletRepository,
         protected BillingEntitlementService $billingEntitlements,
     ) {}
 
@@ -124,10 +125,13 @@ class NetworkPosService
             // إنشاء محفظة مالية لنقطة البيع لدى هذه الشبكة برصيد 0.00 تلقائياً إذا لم تكن موجودة مسبقاً
             $wallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId);
             if (! $wallet) {
+                $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId);
                 $this->posWalletRepository->create([
                     'network_id' => $networkId,
                     'pos_id' => $posId,
                     'wallet_balance' => 0.00,
+                    'opening_balance_source' => 'INITIAL',
+                    'currency_code' => $networkWallet?->currency_code ?: 'YER',
                     'status' => true,
                 ]);
             }
