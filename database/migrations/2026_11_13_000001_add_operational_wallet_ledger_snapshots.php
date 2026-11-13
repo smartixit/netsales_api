@@ -17,7 +17,8 @@ return new class extends Migration
 
         Schema::table('pos_wallets', function (Blueprint $table): void {
             $table->decimal('opening_balance', 15, 2)->default(0)->after('wallet_balance');
-            $table->char('currency_code', 3)->default('YER')->after('opening_balance');
+            $table->string('opening_balance_source', 20)->default('BACKFILLED')->after('opening_balance');
+            $table->char('currency_code', 3)->default('YER')->after('opening_balance_source');
         });
 
         Schema::table('network_wallet_logs', function (Blueprint $table): void {
@@ -25,6 +26,7 @@ return new class extends Migration
             $table->decimal('balance_after', 15, 2)->default(0)->after('balance_before');
             $table->string('balance_snapshot_source', 20)->default('BACKFILLED')->after('balance_after');
             $table->char('currency_code', 3)->default('YER')->after('balance_after');
+            $table->index(['wallet_id', 'created_at', 'log_id'], 'idx_network_wallet_posting_sequence');
             $table->index(['wallet_id', 'log_date', 'log_id'], 'idx_network_wallet_ledger_sequence');
         });
 
@@ -32,6 +34,7 @@ return new class extends Migration
             $table->decimal('balance_before', 15, 2)->default(0)->after('log_amount');
             $table->decimal('balance_after', 15, 2)->default(0)->after('balance_before');
             $table->char('currency_code', 3)->default('YER')->after('balance_after');
+            $table->index(['wallet_id', 'created_at', 'log_id'], 'idx_pos_wallet_posting_sequence');
             $table->index(['wallet_id', 'log_date', 'log_id'], 'idx_pos_wallet_ledger_sequence');
         });
 
@@ -122,17 +125,19 @@ return new class extends Migration
     {
         Schema::table('network_wallet_logs', function (Blueprint $table): void {
             $table->dropIndex('idx_network_wallet_ledger_sequence');
+            $table->dropIndex('idx_network_wallet_posting_sequence');
             $table->dropColumn(['balance_before', 'balance_after', 'balance_snapshot_source', 'currency_code']);
         });
         Schema::table('pos_wallet_logs', function (Blueprint $table): void {
             $table->dropIndex('idx_pos_wallet_ledger_sequence');
+            $table->dropIndex('idx_pos_wallet_posting_sequence');
             $table->dropColumn(['balance_before', 'balance_after', 'currency_code']);
         });
         Schema::table('network_wallets', function (Blueprint $table): void {
             $table->dropColumn(['opening_balance', 'opening_balance_source', 'currency_code']);
         });
         Schema::table('pos_wallets', function (Blueprint $table): void {
-            $table->dropColumn(['opening_balance', 'currency_code']);
+            $table->dropColumn(['opening_balance', 'opening_balance_source', 'currency_code']);
         });
     }
 };
