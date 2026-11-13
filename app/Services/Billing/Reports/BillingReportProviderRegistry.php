@@ -51,6 +51,10 @@ final class BillingReportProviderRegistry
                 'search'=>$search,'joins'=>$joins ?? [],
                 'amount'=>$amount,'currency'=>$currency,'where'=>$where,
                 'status'=>str_contains($select, 'r.status') ? 'r.status' : null,
+                'filter_ids' => $key === 'plan_performance' ? ['search'] : match ($key) {
+                    'renewals','revenue_recognition' => ['from_date','to_date','search'],
+                    default => ['from_date','to_date','status','search'],
+                },
                 'status_choices' => match ($key) {
                     'subscriptions' => ['INCOMPLETE','TRIALING','ACTIVE','PAST_DUE','PAUSED','SUSPENDED','CANCELED','ENDED'],
                     'trials','trial_conversion' => ['RESERVED','PENDING_APPROVAL','ACTIVE','COMPLETED','EXPIRED','REJECTED','REVOKED'],
