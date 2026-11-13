@@ -142,13 +142,13 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 ## Active implementation track — Operational Reports & Official Documents (2026-11-13)
 
 **Authorized branches**
-- API: `feat/operational-reports-contracts` — HEAD `e81dfd04eeda16d20e5a535aa05487ce40f62319`.
-- Flutter: `feat/invoice-document-engine-integration` — HEAD `3be25fdbc2834241cb6bc8b5d1b9abb70e0bba56`.
+- API: `feat/operational-reports-contracts` — HEAD `1699842df80b87c2395410728c63b6e1764d8fe9`.
+- Flutter: `feat/invoice-document-engine-integration` — HEAD `ef79e2acd2fb1ea7ccb3a9f456ee101a0ebc8e1c`.
 - These branches are not merged. Do not treat their code as accepted or production-ready until the final validation gate passes.
 
 **Branch relationship to main (2026-11-13):**
-- API branch is 266 commits ahead and 2 behind `main` (diverged).
-- Flutter branch is 325 commits ahead and 5 behind `main` (diverged).
+- API branch is 268 commits ahead and 2 behind `main` (diverged).
+- Flutter branch is 326 commits ahead and 5 behind `main` (diverged).
 - No pull request was found for either active feature branch at the time of inspection. Do not merge directly without synchronizing and reconciling the missing base commits.
 
 ### Stage 3 — Operational report contracts
