@@ -34,6 +34,7 @@ public function summary(User $user,int $networkId,?int $posId,array $filters):ar
   'bucket_31_60'=>$this->amountValue($b['31_60']),
   'bucket_61_90'=>$this->amountValue($b['61_90']),
   'bucket_over_90'=>$this->amountValue($b['over_90']),
+  'currency_code'=>$this->currencyCode($networkId),
   'charts'=>['debt_aging'=>[
    ['bucket'=>'0–30','amount'=>$this->amountValue($b['0_30'])],
    ['bucket'=>'31–60','amount'=>$this->amountValue($b['31_60'])],
