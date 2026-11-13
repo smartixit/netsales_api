@@ -129,14 +129,24 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         $count = (clone $query)->count();
         $result = ['record_count' => $count, 'amounts_by_currency' => []];
         if (! empty($this->config['amount']) && ! empty($this->config['currency'])) {
-            $result['amounts_by_currency'] = (clone $query)
+            $currencyQuery = (clone $query)->leftJoin(
+                'currencies as billing_report_currency',
+                'billing_report_currency.currency_id',
+                '=',
+                $this->config['currency']
+            );
+            $result['amounts_by_currency'] = $currencyQuery
                 ->select($this->config['currency'].' as currency_id')
+                ->addSelect('billing_report_currency.code as currency_code', 'billing_report_currency.name as currency_name', 'billing_report_currency.decimal_places')
                 ->selectRaw('SUM('.$this->config['amount'].') as amount_minor')
-                ->groupBy($this->config['currency'])
+                ->groupBy($this->config['currency'], 'billing_report_currency.code', 'billing_report_currency.name', 'billing_report_currency.decimal_places')
                 ->orderBy($this->config['currency'])
                 ->get()
                 ->map(static fn ($row): array => [
                     'currency_id' => (int) $row->currency_id,
+                    'currency_code' => $row->currency_code,
+                    'currency_name' => $row->currency_name,
+                    'decimal_places' => (int) $row->decimal_places,
                     'amount_minor' => (int) $row->amount_minor,
                 ])->all();
         }
