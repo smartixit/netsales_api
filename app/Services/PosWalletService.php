@@ -151,6 +151,7 @@ class PosWalletService
                 'network_id' => $networkId,
                 'pos_id' => $posId,
                 'wallet_balance' => $initialBalance,
+                'opening_balance_source' => 'INITIAL',
                 'currency_code' => ($this->networkWalletRepository->findByNetworkId($networkId)?->currency_code ?? 'YER'),
                 'status' => $status,
             ]);
