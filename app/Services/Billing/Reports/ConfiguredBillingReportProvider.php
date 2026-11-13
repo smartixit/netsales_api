@@ -103,6 +103,15 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             ->cursorPaginate(min(max((int) ($filters['per_page'] ?? 25), 1), 100), ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
+    public function exportRows(?int $networkId, array $filters): iterable
+    {
+        $query = $this->query($networkId, $filters);
+        $query->select($this->config['select']);
+        return $query->orderByDesc($this->config['date'])
+            ->orderByDesc($this->config['key_column'])
+            ->cursor();
+    }
+
     public function summary(?int $networkId, array $filters): array
     {
         $query = $this->query($networkId, $filters);
