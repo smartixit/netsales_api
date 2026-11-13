@@ -31,6 +31,7 @@ class PosWalletLog extends Model
         'log_amount',
         'balance_before',
         'balance_after',
+        'balance_snapshot_source',
         'currency_code',
         'log_statement',
         'log_date',
