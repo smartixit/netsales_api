@@ -69,7 +69,7 @@ class OperationalReportController extends BaseController
             $result = $provider->build($request->user(), $networkId, $posId, $filters);
             $result->setCollection(
                 $result->getCollection()->map(
-                    fn ($row): array => $provider->serializeExportRow($row)
+                    fn ($row): array => $provider->serializeRow($row)
                 )
             );
 
