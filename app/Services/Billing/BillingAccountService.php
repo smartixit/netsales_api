@@ -119,6 +119,10 @@ class BillingAccountService
             $contact = BillingAccountContact::query()->where('billing_account_id', $accountId)->lockForUpdate()->findOrFail($contactId);
             if (($data['is_primary'] ?? false) === true) {
                 $account->contacts()->where('contact_id', '!=', $contactId)->update(['is_primary' => false]);
+            } elseif (($data['is_primary'] ?? null) === false && $contact->is_primary) {
+                throw ValidationException::withMessages([
+                    'is_primary' => ['عيّن جهة اتصال أساسية بديلة قبل إلغاء صفة الجهة الأساسية الحالية.'],
+                ]);
             }
             $contact->fill(array_intersect_key($data, array_flip(['name', 'email', 'phone', 'is_primary', 'receives_invoices'])));
             $contact->save();
