@@ -209,3 +209,12 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Cash-sale POS ledger entries now carry explicit sequential balance snapshots: withdrawal takes the balance to the temporary post-debit position, and the paired cash deposit restores the original balance. The wallet's stored balance remains unchanged; the two ledger movements net to zero without inventing two unrelated before-balances.
 - POS wallet log creation validates supplied balance snapshots against operation type and amount. The optional explicit-snapshot path is reserved for balanced journal entries; ordinary entries continue deriving snapshots from the locked wallet balance.
 - Source-only change; no database/test execution performed.
+
+
+## Detailed wallet statement templates — 2026-11-13
+- Flutter branch `feat/invoice-document-engine-integration` now contains dedicated network-wallet and POS-wallet statement templates on the shared Document Engine.
+- Statement exports read every cursor page (50 records per page, capped at 1,500 rows), then re-check the newest ledger ID and wallet state. If a new movement or wallet mutation occurs during retrieval, export is aborted rather than combining inconsistent pages and balances.
+- The renderer requires a valid wallet ISO currency, matching currency on every movement, opening balance, and per-entry before/after balance snapshots. It does not calculate or aggregate monetary totals in Flutter.
+- Output is A4 landscape with a nine-column ledger table, opening/current balances, credit limit where relevant, image watermark using POS/network logo with application-mark fallback, Arabic IBM Plex Sans weights, page numbering, and an explicit notice when the opening balance was backfilled.
+- Maximum statement size is 1,500 ledger entries per PDF. Larger ledgers are rejected without generating a partial document.
+- Flutter HEAD: `f83e8dac0ec2fcbef80f6d3d4eb3383824ecaf35`. No analyzer, formatter, tests, PDF text extraction, visual checks, or Actions were run; all remain in the final validation stage.

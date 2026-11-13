@@ -1013,3 +1013,12 @@ This log documents all executed tasks, code changes, and verification command ou
 - Corrected cash-sale paired POS ledger records to form a sequential debit/credit chain with a zero net balance effect. The actual POS wallet balance is not mutated for cash sales.
 - Extended POS wallet log repository contract to accept optional explicit before/after snapshots and verify that the operation amount exactly reconciles the supplied pair. Normal wallet logs retain their existing database-derived snapshots.
 - Follow-up import correction included in this commit. No tests or Actions run.
+
+
+## 2026-11-13 — Specialized wallet statement templates
+
+- Added a dedicated network-wallet and POS-wallet statement document path in Flutter: domain repository, use case, data adapter, Document Engine renderer, and FinanceBinding registration.
+- Extended wallet and ledger entities/models to consume server opening balance/source, currency code, brand image paths, per-entry balance-before/after, and balance snapshot source.
+- Added full cursor traversal for statement export, with a 1,500-row document bound, repeated-cursor protection, newest-ledger-ID recheck, and wallet-state recheck. The export fails closed on concurrent changes, missing snapshots, or mixed currencies.
+- Templates render a landscape ledger table, authoritative opening/current balances, POS credit limit, server snapshot provenance, tenant logo/application watermark, and all seven Arabic IBM Plex Sans weights. No totals are computed on the client.
+- Flutter commit: `f83e8dac0ec2fcbef80f6d3d4eb3383824ecaf35`. No tests or Actions run.
