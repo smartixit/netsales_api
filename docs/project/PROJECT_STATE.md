@@ -1,7 +1,7 @@
 # NetSales — Current Project State & Authorization Snapshot
 
-**Last Updated Date:** 2026-11-10  
-**Active Working Tree Status:** M6 Procurement Requests Lifecycle Frontend Completed & Verified (201 tests passed, 0 issues)  
+**Last Updated Date:** 2026-11-13  
+**Active Working Tree Status:** Operational Reports Provider Registry, Wallet Ledger Snapshots, and Official Document Snapshot Integration — source implementation in progress; final validation deferred  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
 
@@ -137,3 +137,36 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Plan catalogue mutations retain the permission split: billing.create for product/plan records, billing.edit for Draft version/price/feature construction, and billing.manage for publication.
 - Route declarations were reconciled to remove duplicate policy endpoints and keep policy routes inside the dedicated policies controller group.
 - Verification remains PENDING: no PHP runtime, Pint, PHPStan, PHPUnit, migration run, route:list, or exact-head CI result is available for this branch. Do not mark the billing administration track accepted or production-ready until the full API workflow passes and failures are fixed.
+
+
+## Active implementation track — Operational Reports & Official Documents (2026-11-13)
+
+**Authorized branches**
+- API: `feat/operational-reports-contracts` — HEAD `2d971bddd4e8f120183b1cd3c4729fb9c63722fa`.
+- Flutter: `feat/invoice-document-engine-integration` — HEAD `6a5f3d4d61bcaba963bc89c1bab337ffc93222af`.
+- These branches are not merged. Do not treat their code as accepted or production-ready until the final validation gate passes.
+
+### Stage 3 — Operational report contracts
+- Implemented the provider contract, registry, factory, shared filter/schema validation, and seven dedicated providers: sales, expenses, network wallet, POS wallet, repayments, debt aging, and requests.
+- The API controller, summary execution, cursor-paginated results, authorization, and queued CSV export consume the registry and provider-owned row serialization.
+- Removed the legacy `OperationalReportQueryService` and `OperationalReportProviderAdapter`; no compatibility adapter is retained.
+- Flutter consumes the server catalog as typed `document_engine` `ReportDefinition` schemas and registers exact versions in `ReportDefinitionRegistry`. Access metadata remains separate from the definition; Laravel remains authoritative for authorization and query execution.
+
+### Stage 4 — Operational ledger and official documents
+- Wallet opening balance, currency, posting-time before/after balance snapshots, and snapshot provenance are represented in the schema and resources.
+- Historical wallet rows are marked `BACKFILLED`; newly initialized wallets are marked `INITIAL`; new posting snapshots are marked `LIVE`.
+- Network/POS statements include opening and closing period balances and include soft-deleted ledger rows. The period closing balance is derived from movements by effective `log_date`, while before/after snapshots are explicitly posting-time values.
+- Wallet mutations validate active state and positive amounts under row locks; POS withdrawals use the configured credit limit rather than a stale positive-balance precheck.
+- Operational currency is separate from Platform Billing currency. Official document creation rejects a network/POS currency mismatch rather than silently combining currencies.
+- Immutable document snapshots capture source resources and a SHA-256 manifest; creator/reversal identities and expense attachment metadata are minimized before persistent storage. PDF artifacts are first-write-only, protected, hashed, and downloadable as the canonical document bytes.
+
+### Specialized documents
+- Invoice PDF is network-issued with the network as supplier and POS as recipient, A4 portrait, itemized pricing/quantity/discount, currency, contacts, request reference, creator, paid and remaining amounts.
+- Repayment receipt is network-issued, A5 portrait, and includes allocations and reversal trace details.
+- Expense voucher is network-branded A4 portrait with expense lines, total, creator, currency, and attachment metadata.
+
+### Validation gate — PENDING
+- No migrations have been applied to a database.
+- No PHPUnit/Dart tests, PHP lint, Pint, PHPStan, Flutter analyzer, PDF extraction/visual checks, or GitHub Actions have been run for this implementation track.
+- Windows, Android, and iOS PDF behavior and Arabic extraction/order remain unverified.
+- Do not merge or claim production readiness until the final plan validation stage runs against the exact branch heads and all failures are resolved.
