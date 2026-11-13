@@ -69,6 +69,8 @@ final class GenerateOperationalReportExport implements ShouldQueue
             return;
         }
 
+        $artifactPath = null;
+
         try {
             $user = User::query()->findOrFail($export->requested_by);
             $type = $export->report_type;
@@ -95,7 +97,7 @@ final class GenerateOperationalReportExport implements ShouldQueue
                         throw new \RuntimeException('REPORT_EXPORT_LIMIT_EXCEEDED');
                     }
 
-                    $serialized = $provider->serializeRow($row);
+                    $serialized = $provider->serializeExportRow($row);
                     $encoded = json_encode(
                         $serialized,
                         JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR
@@ -152,6 +154,7 @@ final class GenerateOperationalReportExport implements ShouldQueue
 
             rewind($stream);
             $path = 'operational-reports/'.$networkId.'/'.$export->export_uuid.'.csv';
+            $artifactPath = $path;
             $stored = Storage::disk('protected')->writeStream($path, $stream);
             fclose($stream);
             if (! $stored) {
@@ -167,6 +170,14 @@ final class GenerateOperationalReportExport implements ShouldQueue
                 'completed_at' => now('Asia/Aden'),
             ]);
         } catch (Throwable $exception) {
+            $persistedStatus = OperationalReportExport::query()
+                ->where('report_export_id', $this->reportExportId)
+                ->value('status');
+
+            if ($artifactPath !== null && $persistedStatus !== OperationalReportExportStatus::READY->value) {
+                Storage::disk('protected')->delete($artifactPath);
+            }
+
             $willRetry = $this->attempts() < $this->tries;
             $export->update([
                 'status' => $willRetry ? OperationalReportExportStatus::QUEUED : OperationalReportExportStatus::FAILED,
