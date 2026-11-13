@@ -2,6 +2,8 @@
 
 namespace App\Repositories;
 
+use App\Support\DecimalAmount;
+
 use App\Interfaces\PosWalletRepositoryInterface;
 use App\Models\PosWallet;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -141,17 +143,24 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
     {
         $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
         $wallet->ensureActive();
-        if ($amount <= 0) {
+
+        $amountMinor = DecimalAmount::toMinorUnits($amount);
+        if ($amountMinor <= 0) {
             throw ValidationException::withMessages([
                 'amount' => ['يجب أن يكون مبلغ الحركة أكبر من الصفر.'],
             ]);
         }
-        $oldBalance = (float) $wallet->wallet_balance;
-        $wallet->wallet_balance = round($oldBalance + $amount, 2);
+
+        $oldBalanceMinor = DecimalAmount::toMinorUnits($wallet->wallet_balance);
+        $wallet->wallet_balance = DecimalAmount::fromMinorUnits(
+            DecimalAmount::add($oldBalanceMinor, $amountMinor)
+        );
         $updated = $wallet->save();
 
         if ($updated) {
-            $this->recordModification($wallet, ['wallet_balance' => $oldBalance]);
+            $this->recordModification($wallet, [
+                'wallet_balance' => DecimalAmount::fromMinorUnits($oldBalanceMinor),
+            ]);
         }
 
         return $updated;
@@ -161,23 +170,30 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
     {
         $wallet = $this->model->newQuery()->lockForUpdate()->findOrFail($walletId);
         $wallet->ensureActive();
-        $oldBalance = (float) $wallet->wallet_balance;
-        $newBalance = round($oldBalance - $amount, 2);
-        $creditLimit = $wallet->credit_limit === null ? 0.0 : (float) $wallet->credit_limit;
-        if ($amount <= 0 || $newBalance < (-$creditLimit - 0.001)) {
+
+        $amountMinor = DecimalAmount::toMinorUnits($amount);
+        $oldBalanceMinor = DecimalAmount::toMinorUnits($wallet->wallet_balance);
+        $creditLimitMinor = DecimalAmount::toMinorUnits($wallet->credit_limit ?? 0);
+        $newBalanceMinor = DecimalAmount::add($oldBalanceMinor, -$amountMinor);
+
+        if ($amountMinor <= 0 || $newBalanceMinor < -$creditLimitMinor) {
             throw ValidationException::withMessages([
                 'amount' => ['تجاوزت الحركة الرصيد المتاح والسقف الائتماني المعتمد لنقطة البيع.'],
             ]);
         }
-        $wallet->wallet_balance = $newBalance;
+
+        $wallet->wallet_balance = DecimalAmount::fromMinorUnits($newBalanceMinor);
         $updated = $wallet->save();
 
         if ($updated) {
-            $this->recordModification($wallet, ['wallet_balance' => $oldBalance]);
+            $this->recordModification($wallet, [
+                'wallet_balance' => DecimalAmount::fromMinorUnits($oldBalanceMinor),
+            ]);
         }
 
         return $updated;
     }
+
     /**
      * تحديث حالة المحفظة (تفعيل/تعطيل).
      */
