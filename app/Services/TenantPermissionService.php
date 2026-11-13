@@ -63,7 +63,9 @@ final class TenantPermissionService
         return $user->role()
             ->where('scope', $scope->value)
             ->where('status', true)
-            ->whereHas('permissions', fn ($query) => $query->where('permission_key', $permission))
+            ->whereHas('permissions', fn ($query) => $query
+                ->where('permission_key', $permission)
+                ->where('status', true))
             ->exists();
     }
 }
