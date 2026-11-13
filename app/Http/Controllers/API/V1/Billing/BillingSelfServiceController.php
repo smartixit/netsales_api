@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1\Billing;
 
+use App\Enums\{BillingInvoiceStatus, BillingPaymentStatus, BillingSubscriptionStatus};
 use App\Http\Controllers\API\V1\BaseController;
 use App\Http\Requests\API\V1\Billing\{CreateBillingAccountRequest, PurchaseSubscriptionRequest, StorePaymentRequest, StoreBillingAccountContactRequest, UpdateBillingAccountContactRequest, UpdateBillingAccountRequest};
 use App\Http\Resources\API\V1\Billing\{BillingAccountContactResource, BillingAccountResource, BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingRefundResource, BillingSubscriptionEventResource, BillingSubscriptionResource, BillingUsageAggregateResource, CurrencyResource, PaymentMethodResource};
@@ -9,6 +10,7 @@ use App\Services\Billing\{BillingEntitlementService, BillingPaymentService, Bill
 use App\Services\Support\FileUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -28,7 +30,7 @@ class BillingSelfServiceController extends BaseController
      * Validate bounded cursor collection parameters before passing them to the
      * self-service domain service.
      *
-     * @param array<string, array<int, string>> $extra
+     * @param array<string, array<int, mixed>> $extra
      * @return array<string, mixed>
      */
     private function collectionFilters(Request $request, array $extra = []): array
@@ -199,7 +201,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع اشتراكات حساب الفوترة.',
             BillingSubscriptionResource::collection($this->self->subscriptions(
                 $billingAccountId,
-                $this->collectionFilters($request, ['status' => ['nullable', 'string', 'max:40']]),
+                $this->collectionFilters($request, ['status' => ['nullable', Rule::enum(BillingSubscriptionStatus::class)]]),
                 $this->requireCurrentUser()
             ))
         );
@@ -211,7 +213,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع فواتير حساب الفوترة.',
             BillingInvoiceResource::collection($this->self->invoices(
                 $billingAccountId,
-                $this->collectionFilters($request, ['status' => ['nullable', 'string', 'max:40']]),
+                $this->collectionFilters($request, ['status' => ['nullable', Rule::enum(BillingInvoiceStatus::class)]]),
                 $this->requireCurrentUser()
             ))
         );
@@ -231,7 +233,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع مدفوعات حساب الفوترة.',
             BillingPaymentResource::collection($this->self->payments(
                 $billingAccountId,
-                $this->collectionFilters($request, ['status' => ['nullable', 'string', 'max:40']]),
+                $this->collectionFilters($request, ['status' => ['nullable', Rule::enum(BillingPaymentStatus::class)]]),
                 $this->requireCurrentUser()
             ))
         );
@@ -243,7 +245,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع الإشعارات الدائنة لحساب الفوترة.',
             BillingCreditNoteResource::collection($this->self->creditNotes(
                 $billingAccountId,
-                $this->collectionFilters($request, ['status' => ['nullable', 'string', 'max:40']]),
+                $this->collectionFilters($request, ['status' => ['nullable', Rule::in(['ISSUED', 'PARTIALLY_REFUNDED', 'REFUNDED'])]]),
                 $this->requireCurrentUser()
             ))
         );
@@ -255,7 +257,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع عمليات الاسترداد لحساب الفوترة.',
             BillingRefundResource::collection($this->self->refunds(
                 $billingAccountId,
-                $this->collectionFilters($request, ['status' => ['nullable', 'string', 'max:40']]),
+                $this->collectionFilters($request, ['status' => ['nullable', Rule::in(['PENDING', 'COMPLETED'])]]),
                 $this->requireCurrentUser()
             ))
         );
