@@ -21,6 +21,11 @@ class StoreOperationalReportExportRequest extends FormRequest
             'pos_id' => ['nullable', 'integer', 'min:1'],
             'filters' => ['sometimes', 'array'],
             'filters.*' => ['nullable'],
+            'from_date' => ['prohibited'],
+            'to_date' => ['prohibited'],
+            'search' => ['prohibited'],
+            'status' => ['prohibited'],
+            'sale_type' => ['prohibited'],
         ];
     }
 }
