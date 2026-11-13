@@ -64,6 +64,42 @@ class BillingReportController extends BaseController
         return $this->successResponse('بيانات تقرير فوترة المنصة.', $this->providers->get($reportType)->build(null, $this->filters($request)));
     }
 
+    private function csvResponse(string $reportType, ?int $networkId, array $filters): mixed
+    {
+        $provider = $this->providers->get($reportType);
+        $definition = $provider->definition();
+        $columns = $definition['columns'];
+        return response()->streamDownload(function () use ($provider, $networkId, $filters, $columns): void {
+            $stream = fopen('php://output', 'wb');
+            fwrite($stream, "\xEF\xBB\xBF");
+            fputcsv($stream, array_map(static fn ($column) => $column['label'] ?? $column['key'], $columns));
+            foreach ($provider->exportRows($networkId, $filters) as $row) {
+                $values = [];
+                foreach ($columns as $column) {
+                    $key = $column['key'];
+                    $value = data_get($row, $key);
+                    if (is_array($value) || is_object($value)) $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                    if (is_string($value) && ! is_numeric($value) && preg_match('/^[=+@\\-]/', $value)) $value = "'".$value;
+                    $values[] = $value;
+                }
+                fputcsv($stream, $values);
+            }
+            fclose($stream);
+        }, 'billing-'.$reportType.'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function networkExportCsv(Request $request, int $networkId): mixed
+    {
+        $this->authorization->assertNetworkOwner($this->requireCurrentUser(), $networkId);
+        return $this->csvResponse($request->route('reportType'), $networkId, $this->filters($request));
+    }
+
+    public function platformExportCsv(Request $request, string $reportType): mixed
+    {
+        $this->authorization->assertPlatform($this->requireCurrentUser());
+        return $this->csvResponse($reportType, null, $this->filters($request));
+    }
+
     public function platformSummary(Request $request, string $reportType): JsonResponse
     {
         $this->authorization->assertPlatform($this->requireCurrentUser());
