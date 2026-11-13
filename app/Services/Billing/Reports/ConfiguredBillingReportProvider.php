@@ -23,7 +23,12 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             'filters' => [
                 ['id' => 'from_date', 'kind' => 'date', 'label' => 'من تاريخ'],
                 ['id' => 'to_date', 'kind' => 'date', 'label' => 'إلى تاريخ'],
-                ['id' => 'status', 'kind' => 'text', 'label' => 'الحالة'],
+                [
+                    'id' => 'status',
+                    'kind' => ! empty($this->config['status_choices']) ? 'single_choice' : 'text',
+                    'label' => 'الحالة',
+                    'choices' => $this->config['status_choices'] ?? [],
+                ],
                 ['id' => 'search', 'kind' => 'text', 'label' => 'بحث'],
             ],
             'columns' => $this->config['columns'],

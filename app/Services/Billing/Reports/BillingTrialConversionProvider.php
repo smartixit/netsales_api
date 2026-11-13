@@ -34,7 +34,7 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
           ->join('billing_subscriptions as s','s.billing_subscription_id','=','r.billing_subscription_id')
           ->join('billing_accounts as ba','ba.billing_account_id','=','s.billing_account_id')
           ->join('billing_invoices as i','i.billing_subscription_id','=','s.billing_subscription_id')
-          ->where('s.status','ACTIVE')->where('i.status','PAID')
+          ->where('r.status','COMPLETED')->where('s.status','ACTIVE')->where('i.status','PAID')
           ->whereExists(function ($eventQuery): void {
               $eventQuery->selectRaw('1')->from('billing_subscription_events as e')
                   ->whereColumn('e.billing_subscription_id','s.billing_subscription_id')
