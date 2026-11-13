@@ -279,12 +279,6 @@ class PosWalletService
 
             $amount = $request->getAmount();
 
-            if (! $wallet->hasSufficientBalance($amount)) {
-                throw ValidationException::withMessages([
-                    'amount' => ["رصيد المحفظة غير كافٍ لإتمام السحب. الرصيد الحالي: ({$wallet->wallet_balance})"],
-                ]);
-            }
-
             $statement = $request->getStatement();
             $logDate = $request->getLogDate();
 
