@@ -6,7 +6,7 @@ use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
-final class ConfiguredBillingReportProvider implements BillingReportProvider
+class ConfiguredBillingReportProvider implements BillingReportProvider
 {
     public function __construct(private readonly array $config) {}
 
@@ -27,6 +27,12 @@ final class ConfiguredBillingReportProvider implements BillingReportProvider
                 ['id' => 'search', 'kind' => 'text', 'label' => 'بحث'],
             ],
             'columns' => $this->config['columns'],
+            'metrics' => $this->config['metrics'] ?? [],
+            'chart_slots' => $this->config['chart_slots'] ?? [],
+            'templates' => [['id' => 'netsales.billing-report.'.$this->key().'.executive', 'version' => '1.0.0']],
+            'page_profile_ids' => ['a4-portrait'],
+            'execution_policy' => 'server',
+            'export_formats' => ['CSV'],
             'currency_aggregation' => 'SEPARATE_CURRENCY_BUCKETS',
             'pagination' => 'CURSOR',
         ];

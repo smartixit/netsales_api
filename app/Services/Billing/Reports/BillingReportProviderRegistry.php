@@ -13,7 +13,7 @@ final class BillingReportProviderRegistry
     {
         $configs = [
             ['subscriptions','الاشتراكات','دورة حياة الاشتراكات وحالاتها','billing_subscriptions','r.billing_account_id','account','created_at','billing_subscription_id','r.billing_subscription_id,r.billing_account_id,r.plan_id,r.plan_version_id,r.price_id,r.currency_id,r.status,r.current_period_start,r.current_period_end,r.trial_start,r.trial_end,r.cancel_at_period_end,r.created_at',['r.status','r.billing_subscription_id'],null,null,[]],
-            ['trial_redemptions','استخدام التجارب','حجوزات التجارب وحالات اعتمادها وبدئها','billing_trial_redemptions','r.billing_account_id','account','r.reserved_at','r.trial_redemption_id','r.trial_redemption_id,r.billing_account_id,r.billing_subscription_id,r.trial_policy_id,r.trial_policy_version_id,r.status,r.redemption_scope,r.reserved_at,r.started_at,r.completed_at',['r.status','r.trial_redemption_id'],null,null,[]],
+            ['trials','التجارب','حجوزات التجارب وحالات اعتمادها وبدئها وانتهائها','billing_trial_redemptions','r.billing_account_id','account','r.reserved_at','r.trial_redemption_id','r.trial_redemption_id,r.billing_account_id,r.billing_subscription_id,r.trial_policy_id,r.trial_policy_version_id,r.status,r.redemption_scope,r.reserved_at,r.started_at,r.completed_at',['r.status','r.trial_redemption_id'],null,null,[]],
             ['trial_conversion','تحويل التجارب','تحويل التجارب إلى اشتراكات مدفوعة بعد اعتماد التحصيل','billing_trial_redemptions','r.billing_account_id','account','r.reserved_at','r.trial_redemption_id','r.trial_redemption_id,r.billing_subscription_id,r.status as redemption_status,r.started_at,r.completed_at,s.status as subscription_status,s.current_period_start,s.current_period_end',['r.status','s.status','r.trial_redemption_id'],[['billing_subscriptions as s','s.billing_subscription_id','=','r.billing_subscription_id']],null,null,[]],
             ['renewals','التجديدات','أحداث تجديد الاشتراك والفواتير المرتبطة بها','billing_subscription_events','ba.network_id','joined','r.occurred_at','r.event_id','r.event_id,r.billing_subscription_id,r.event_type,r.from_status,r.to_status,r.payload,r.occurred_at',['r.event_type','r.billing_subscription_id'],[['billing_subscriptions as s','s.billing_subscription_id','=','r.billing_subscription_id'],['billing_accounts as ba','ba.billing_account_id','=','s.billing_account_id']],null,null,[['r.event_type','like','%RENEWAL%']]],
             ['invoices','الفواتير','فواتير الاشتراكات ومبالغها وأرصدتها','billing_invoices','r.billing_account_id','account','r.created_at','r.invoice_id','r.invoice_id,r.invoice_number,r.billing_account_id,r.billing_subscription_id,r.currency_id,r.status,r.invoice_type,r.issued_on,r.due_on,r.total_minor,r.paid_minor,r.credited_minor,r.remaining_minor',['r.invoice_number','r.status'],null,null,null,[]],
@@ -23,13 +23,28 @@ final class BillingReportProviderRegistry
             ['dunning','التعثر والتحصيل الآلي','محاولات التذكير والتحصيل ومعالجة التأخر','billing_dunning_attempts','ba.network_id','joined','r.scheduled_at','r.dunning_attempt_id','r.dunning_attempt_id,r.invoice_id,r.attempt_number,r.status,r.channel,r.scheduled_at,r.attempted_at,r.result_message',['r.result_message','r.status'],[['billing_invoices as i','i.invoice_id','=','r.invoice_id'],['billing_accounts as ba','ba.billing_account_id','=','i.billing_account_id']],null,null,[]],
             ['refunds','الاستردادات','الاستردادات المكتملة ومبالغها حسب العملة','billing_refunds','ba.network_id','joined','r.created_at','r.refund_id','r.refund_id,r.refund_reference,r.payment_id,r.credit_note_id,r.currency_id,r.amount_minor,r.status,r.reason,r.processed_at',['r.refund_reference','r.reason','r.status'],[['billing_payments as p','p.payment_id','=','r.payment_id'],['billing_accounts as ba','ba.billing_account_id','=','p.billing_account_id']], 'r.amount_minor','r.currency_id',[['r.status','=','COMPLETED']]],
             ['revenue_recognition','الاعتراف بالإيراد','قيود الاعتراف بالإيراد ومواعيدها ومبالغها','billing_revenue_recognition_entries','ba.network_id','joined','r.recognized_through','r.revenue_recognition_entry_id','r.revenue_recognition_entry_id,r.revenue_schedule_id,r.journal_entry_id,r.recognized_through,r.amount_minor',['r.idempotency_key'],[['billing_revenue_recognition_schedules as s','s.revenue_schedule_id','=','r.revenue_schedule_id'],['billing_invoices as i','i.invoice_id','=','s.invoice_id'],['billing_accounts as ba','ba.billing_account_id','=','i.billing_account_id']], 'r.amount_minor','s.currency_id',[]],
-            ['subscription_events','أحداث الاشتراك','سجل أحداث دورة حياة الاشتراك والتغييرات','billing_subscription_events','ba.network_id','joined','r.occurred_at','r.event_id','r.event_id,r.billing_subscription_id,r.event_type,r.from_status,r.to_status,r.actor_id,r.occurred_at',['r.event_type','r.from_status','r.to_status'],[['billing_subscriptions as s','s.billing_subscription_id','=','r.billing_subscription_id'],['billing_accounts as ba','ba.billing_account_id','=','s.billing_account_id']],null,null,[]],
+            ['plan_performance','أداء الخطط','أداء الخطط والاشتراكات النشطة والقيمة الشهرية والسنوية المكافئة','billing_subscriptions','ba.network_id','joined','r.created_at','r.billing_subscription_id','r.billing_subscription_id,r.billing_account_id,r.plan_id,p.plan_key,p.name as plan_name,r.price_id,bp.billing_interval,bp.interval_count,bp.unit_amount_minor,r.quantity,r.currency_id,r.status,r.current_period_start,r.current_period_end',['p.name','p.plan_key','r.status'],[['billing_plans as p','p.plan_id','=','r.plan_id'],['billing_prices as bp','bp.price_id','=','r.price_id'],['billing_accounts as ba','ba.billing_account_id','=','r.billing_account_id']],null,null,[]],
         ];
 
         $this->providers = [];
         foreach ($configs as $c) {
             [$key,$label,$description,$table,$scopeColumn,$scopeKind,$date,$keyColumn,$select,$search,$joins,$amount,$currency,$where] = $c;
-            $this->providers[$key] = new ConfiguredBillingReportProvider([
+            $providerClass = match ($key) {
+                'subscriptions' => BillingSubscriptionsProvider::class,
+                'trials' => BillingTrialsProvider::class,
+                'trial_conversion' => BillingTrialConversionProvider::class,
+                'renewals' => BillingRenewalsProvider::class,
+                'plan_performance' => BillingPlanPerformanceProvider::class,
+                'invoices' => BillingInvoicesProvider::class,
+                'collections' => BillingCollectionsProvider::class,
+                'receivables' => BillingReceivablesProvider::class,
+                'usage' => BillingUsageProvider::class,
+                'dunning' => BillingDunningProvider::class,
+                'refunds' => BillingRefundsProvider::class,
+                'revenue_recognition' => BillingRevenueRecognitionProvider::class,
+                default => ConfiguredBillingReportProvider::class,
+            };
+            $this->providers[$key] = new $providerClass([
                 'key'=>$key,'label'=>$label,'description'=>$description,'table'=>$table,
                 'scope'=>['kind'=>$scopeKind,'column'=>$scopeColumn],
                 'date'=>$date,'key_column'=>$keyColumn,'select'=>explode(',', $select),
