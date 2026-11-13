@@ -1005,3 +1005,11 @@ This log documents all executed tasks, code changes, and verification command ou
 - Reviewed the wallet ledger backfill and report period-balance formulas, the immutable operational-document snapshot service, protected artifact storage, first-write artifact immutability, and client-side canonical SHA-256 download verification. Confirmed invoice/repayment/expense render adapters use server snapshot data and the shared seven-weight IBM Plex Sans Arabic font service with image watermarking.
 - Updated the SMS format documentation to describe the wallet's actual currency code rather than hard-coded YER text.
 - Verification boundary: source review only; no migrations or tests executed. Final migration/database tests, static analysis, PDF text extraction, and visual checks remain deferred.
+
+
+## 2026-11-13 — Invoice settlement ledger correction
+
+- Added currency equality/format validation to both invoice-generation flows after acquiring the network-wallet then POS-wallet locks. No cross-currency invoice settlement is allowed.
+- Corrected cash-sale paired POS ledger records to form a sequential debit/credit chain with a zero net balance effect. The actual POS wallet balance is not mutated for cash sales.
+- Extended POS wallet log repository contract to accept optional explicit before/after snapshots and verify that the operation amount exactly reconciles the supplied pair. Normal wallet logs retain their existing database-derived snapshots.
+- Follow-up import correction included in this commit. No tests or Actions run.

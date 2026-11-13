@@ -202,3 +202,10 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Wallet ledger migration 000001 backfills opening balances and ordered before/after snapshots in minor units. Network/POS wallet statement providers derive period opening/closing balances from the same ledger movements and include currency/source metadata.
 - Official document snapshots bind immutable source JSON, template/schema versions, currency, and SHA-256; the client renders from the server snapshot, uploads once, then downloads the server-canonical artifact and verifies its SHA-256. Invoice, repayment, and expense adapters use all seven IBM Plex Sans Arabic weights and tenant/application logo image watermarks.
 - Source implementation only. Database migrations were not applied and no tests, static analysis, PDF text extraction, visual comparison, or Actions were run. Final validation remains pending.
+
+
+## Invoice settlement ledger correction — 2026-11-13
+- SaleInvoiceService now refuses to settle an invoice unless the locked network and POS wallets have valid matching operational currency codes.
+- Cash-sale POS ledger entries now carry explicit sequential balance snapshots: withdrawal takes the balance to the temporary post-debit position, and the paired cash deposit restores the original balance. The wallet's stored balance remains unchanged; the two ledger movements net to zero without inventing two unrelated before-balances.
+- POS wallet log creation validates supplied balance snapshots against operation type and amount. The optional explicit-snapshot path is reserved for balanced journal entries; ordinary entries continue deriving snapshots from the locked wallet balance.
+- Source-only change; no database/test execution performed.

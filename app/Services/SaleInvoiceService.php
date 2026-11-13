@@ -20,6 +20,8 @@ use App\Interfaces\SaleInvoiceRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Models\Request as RequestModel;
 use App\Models\RequestItem;
+use App\Models\NetworkWallet;
+use App\Models\PosWallet;
 use App\Models\SaleInvoice;
 use App\Models\SaleInvoiceItem;
 use App\Support\DecimalAmount;
