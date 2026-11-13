@@ -97,7 +97,7 @@ final class ExpensesReportProvider extends AbstractOperationalReportProvider
         ];
     }
 
-    public function serializeExportRow(mixed $row): array
+    public function serializeRow(mixed $row): array
     {
         return [
             'expense_id' => $row->expense_id,
