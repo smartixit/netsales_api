@@ -30,7 +30,8 @@ final class TenantPermissionService
                 ->where('scope', RoleScope::NETWORK->value)
                 ->where('status', true)
                 ->whereHas('permissions', fn ($permissions) => $permissions
-                    ->where('permission_key', $permission)))
+                    ->where('permission_key', $permission)
+                    ->where('status', true)))
             ->exists();
     }
 
@@ -53,7 +54,7 @@ final class TenantPermissionService
                 ->where('scope', RoleScope::POS->value)
                 ->where('status', true)
                 ->whereHas('permissions', fn ($permissions) => $permissions
-                    ->where('permission_key', $permission)))
+                    ->where('permission_key', $permission)->where('status', true)))
             ->exists();
     }
 
