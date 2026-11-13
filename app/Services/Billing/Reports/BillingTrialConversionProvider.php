@@ -7,6 +7,46 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
         if(!empty($filters['from_date']))$q->whereDate($column,'>=',$filters['from_date']);
         if(!empty($filters['to_date']))$q->whereDate($column,'<=',$filters['to_date']);
     }
+    private function applyRedemptionSearch($query, array $filters): void
+    {
+        $term = trim((string) ($filters['search'] ?? ''));
+        if ($term === '') {
+            return;
+        }
+
+        $like = '%'.$term.'%';
+        $query->where(function ($matching) use ($like): void {
+            $matching->where('r.status', 'like', $like)
+                ->orWhere('s.status', 'like', $like)
+                ->orWhereRaw('CAST(r.trial_redemption_id AS CHAR) LIKE ?', [$like]);
+        });
+    }
+
+    private function applyEligibleSearch($query, array $filters): void
+    {
+        $term = trim((string) ($filters['search'] ?? ''));
+        if ($term === '') {
+            return;
+        }
+
+        $like = '%'.$term.'%';
+        $query->whereExists(function ($matching) use ($like): void {
+            $matching->selectRaw('1')
+                ->from('billing_trial_redemptions as sr')
+                ->join('billing_subscriptions as ss', 'ss.billing_subscription_id', '=', 'sr.billing_subscription_id')
+                ->whereColumn('sr.billing_account_id', 'c.billing_account_id')
+                ->whereColumn('ss.plan_id', 'c.plan_id')
+                ->whereColumn('ss.price_id', 'c.price_id')
+                ->whereRaw('COALESCE(sr.trial_policy_version_id, 0) = COALESCE(c.trial_policy_version_id, 0)')
+                ->whereNull('ss.deleted_at')
+                ->where(function ($matches) use ($like): void {
+                    $matches->where('sr.status', 'like', $like)
+                        ->orWhere('ss.status', 'like', $like)
+                        ->orWhereRaw('CAST(sr.trial_redemption_id AS CHAR) LIKE ?', [$like]);
+                });
+        });
+    }
+
     private function eventCount(?int $networkId, array $filters, string $eventType): int
     {
         $query = DB::table('billing_subscription_events as e')
@@ -21,6 +61,7 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
         }
 
         $this->window($query, 'e.occurred_at', $filters);
+        $this->applyRedemptionSearch($query, $filters);
 
         return (int) $query->distinct()->count('r.trial_redemption_id');
     }
@@ -31,6 +72,7 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
           ->where('c.eligibility_status','ELIGIBLE');
         if($networkId!==null)$eligible->where('c.network_id',$networkId);
         $this->window($eligible,'c.checked_at',$filters);
+        $this->applyEligibleSearch($eligible, $filters);
         $eligible=(int)$eligible->distinct()->count(DB::raw("CONCAT(c.billing_account_id,':',COALESCE(ep.product_id,0),':',c.plan_id,':',c.price_id,':',COALESCE(c.trial_policy_version_id,0))"));
         $r=DB::table('billing_trial_redemptions as r')
           ->join('billing_accounts as ba','ba.billing_account_id','=','r.billing_account_id')
@@ -39,6 +81,7 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
         if($networkId!==null)$r->where('ba.network_id',$networkId);
         $r->whereNull('s.deleted_at');
         $this->window($r,'r.reserved_at',$filters);
+        $this->applyRedemptionSearch($r, $filters);
         $stageCount=static fn($q)=>(int)$q->distinct()->count(DB::raw("CONCAT(r.billing_account_id,':',COALESCE(rp.product_id,0),':',s.plan_id,':',s.price_id,':',COALESCE(r.trial_policy_version_id,0),':',COALESCE(r.redemption_scope,'UNKNOWN'))"));
         $reserved=$stageCount(clone $r);
         $pending=$stageCount((clone $r)->where('r.status','PENDING_APPROVAL'));
@@ -59,11 +102,13 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
         $revoked=$stageCount($revokedQuery);
         $events=DB::table('billing_subscription_events as e')
           ->join('billing_subscriptions as s','s.billing_subscription_id','=','e.billing_subscription_id')
+          ->join('billing_trial_redemptions as r','r.billing_subscription_id','=','s.billing_subscription_id')
           ->join('billing_accounts as ba','ba.billing_account_id','=','s.billing_account_id')
           ->where('e.event_type','TRIAL_CONVERSION_INVOICE_ISSUED');
         if($networkId!==null)$events->where('ba.network_id',$networkId);
         $events->whereNull('s.deleted_at');
         $this->window($events,'e.occurred_at',$filters);
+        $this->applyRedemptionSearch($events, $filters);
         $invoiceIssued=(int)$events->distinct()->count('e.billing_subscription_id');
         $paid=DB::table('billing_trial_redemptions as r')
           ->join('billing_subscriptions as s','s.billing_subscription_id','=','r.billing_subscription_id')
@@ -79,13 +124,16 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
         if($networkId!==null)$paid->where('ba.network_id',$networkId);
         $paid->whereNull('s.deleted_at');
         $this->window($paid,'r.reserved_at',$filters);
+        $this->applyRedemptionSearch($paid, $filters);
         $paid=(int)$paid->distinct()->count('r.trial_redemption_id');
         $approvalEvents=DB::table('billing_subscription_events as e')
           ->join('billing_trial_redemptions as r','r.billing_subscription_id','=','e.billing_subscription_id')
+          ->join('billing_subscriptions as s','s.billing_subscription_id','=','e.billing_subscription_id')
           ->join('billing_accounts as ba','ba.billing_account_id','=','r.billing_account_id')
           ->whereIn('e.event_type',['TRIAL_APPROVED_WAITING_FIRST_ACTIVATION','TRIAL_APPROVED_AND_STARTED']);
         if($networkId!==null)$approvalEvents->where('ba.network_id',$networkId);
         $this->window($approvalEvents,'r.reserved_at',$filters);
+        $this->applyRedemptionSearch($approvalEvents, $filters);
         $approvalWaitHours=(float)($approvalEvents->selectRaw('AVG(TIMESTAMPDIFF(SECOND,r.reserved_at,e.occurred_at))/3600 as average_hours')->value('average_hours')??0);
         $startWaitHours=(float)(clone $approvalEvents)->whereNotNull('r.started_at')
           ->selectRaw('AVG(TIMESTAMPDIFF(SECOND,e.occurred_at,r.started_at))/3600 as average_hours')->value('average_hours')??0;
@@ -97,6 +145,7 @@ final class BillingTrialConversionProvider extends ConfiguredBillingReportProvid
           ->selectRaw('COUNT(DISTINCT c.billing_account_id) as checks');
         if($networkId!==null)$segments->where('c.network_id',$networkId);
         $this->window($segments,'c.checked_at',$filters);
+        $this->applyEligibleSearch($segments, $filters);
         $segments=$segments->groupBy('c.trial_policy_version_id','p.product_id','c.plan_id','c.price_id','tpv.redemption_scope')
           ->orderBy('c.trial_policy_version_id')->get()->map(static fn($x)=>[
             'trial_policy_version_id'=>$x->trial_policy_version_id,'product_id'=>$x->product_id,
