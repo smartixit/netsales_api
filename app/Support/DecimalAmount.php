@@ -59,7 +59,7 @@ final class DecimalAmount
     public static function add(int $left, int $right): int
     {
         if (($right > 0 && $left > PHP_INT_MAX - $right)
-            || ($right < 0 && $left < PHP_INT_MIN - $right)) {
+            || ($right < 0 && $left < -PHP_INT_MAX - $right)) {
             throw new OverflowException('The decimal amount total exceeds the supported integer range.');
         }
 
