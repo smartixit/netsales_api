@@ -28,8 +28,10 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
             ['id' => 'log_date', 'label' => 'التاريخ', 'data_type' => 'date'],
             ['id' => 'log_operation', 'label' => 'نوع الحركة', 'data_type' => 'text'],
             ['id' => 'log_amount', 'label' => 'المبلغ', 'data_type' => 'decimal'],
-            ['id' => 'balance_before', 'label' => 'الرصيد قبل الحركة', 'data_type' => 'decimal'],
-            ['id' => 'balance_after', 'label' => 'الرصيد بعد الحركة', 'data_type' => 'decimal'],
+            ['id' => 'balance_before', 'label' => 'الرصيد وقت الترحيل قبل الحركة', 'data_type' => 'decimal'],
+            ['id' => 'balance_after', 'label' => 'الرصيد وقت الترحيل بعد الحركة', 'data_type' => 'decimal'],
+            ['id' => 'balance_snapshot_source', 'label' => 'مصدر لقطة الرصيد', 'data_type' => 'text'],
+            ['id' => 'created_at', 'label' => 'وقت الترحيل', 'data_type' => 'datetime'],
             ['id' => 'currency_code', 'label' => 'العملة', 'data_type' => 'text'],
             ['id' => 'is_voided', 'label' => 'قيد محذوف ناعماً', 'data_type' => 'boolean'],
             ['id' => 'log_statement', 'label' => 'البيان', 'data_type' => 'text'],
@@ -75,31 +77,27 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
     {
         $ledger = NetworkWalletLog::withTrashed()->where('wallet_id', $wallet->wallet_id);
         $opening = (float) $wallet->opening_balance;
+
         if (! empty($filters['from_date'])) {
-            $previous = (clone $ledger)
-                ->where('log_date', '<', $filters['from_date'].' 00:00:00')
-                ->orderByDesc('log_date')
-                ->orderByDesc('log_id')
-                ->first();
-            $opening = $previous ? (float) $previous->balance_after : $opening;
+            $beforePeriod = (clone $ledger)->where('log_date', '<', $filters['from_date'].' 00:00:00');
+            $opening += (float) (clone $beforePeriod)->where('log_operation', 'DEPOSIT')->sum('log_amount');
+            $opening -= (float) (clone $beforePeriod)->where('log_operation', 'WITHDRAW')->sum('log_amount');
         }
 
         $closing = (float) $wallet->wallet_balance;
         if (! empty($filters['to_date'])) {
-            $last = (clone $ledger)
-                ->where('log_date', '<=', $filters['to_date'].' 23:59:59')
-                ->orderByDesc('log_date')
-                ->orderByDesc('log_id')
-                ->first();
-            $closing = $last ? (float) $last->balance_after : $opening;
+            $throughPeriod = (clone $ledger)->where('log_date', '<=', $filters['to_date'].' 23:59:59');
+            $closing = (float) $wallet->opening_balance
+                + (float) (clone $throughPeriod)->where('log_operation', 'DEPOSIT')->sum('log_amount')
+                - (float) (clone $throughPeriod)->where('log_operation', 'WITHDRAW')->sum('log_amount');
         }
 
-        return [$opening, $closing];
+        return [round($opening, 2), round($closing, 2)];
     }
 
     public function build(User $user, int $networkId, ?int $posId, array $filters): CursorPaginator
     {
-        return $this->paginate($this->query($networkId, $filters), $filters, 'log_date', 'log_id');
+        return $this->paginate($this->query($networkId, $filters), $filters, 'created_at', 'log_id');
     }
 
     public function summary(User $user, int $networkId, ?int $posId, array $filters): array
@@ -115,6 +113,7 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
         return [
             'record_count' => (clone $query)->count(),
             'opening_balance' => $this->amountValue($opening),
+            'opening_balance_source' => $wallet->opening_balance_source,
             'deposits' => $this->amountValue((clone $query)->where('log_operation', 'DEPOSIT')->sum('log_amount')),
             'withdrawals' => $this->amountValue((clone $query)->where('log_operation', 'WITHDRAW')->sum('log_amount')),
             'closing_balance' => $this->amountValue($closing),
@@ -138,6 +137,8 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
             'balance_before' => 'الرصيد قبل الحركة',
             'balance_after' => 'الرصيد بعد الحركة',
             'currency_code' => 'العملة',
+            'balance_snapshot_source' => 'مصدر لقطة الرصيد',
+            'created_at' => 'وقت الترحيل',
             'is_voided' => 'قيد محذوف ناعماً',
             'log_statement' => 'البيان',
             'wallet_uuid' => 'مرجع المحفظة',
@@ -154,6 +155,8 @@ final class NetworkWalletReportProvider extends AbstractOperationalReportProvide
             'log_amount' => $this->amountValue($row->log_amount),
             'balance_before' => $this->amountValue($row->balance_before),
             'balance_after' => $this->amountValue($row->balance_after),
+            'balance_snapshot_source' => $row->balance_snapshot_source,
+            'created_at' => $this->dateValue($row->created_at),
             'currency_code' => $row->currency_code,
             'is_voided' => $row->trashed(),
             'log_statement' => $row->log_statement,
