@@ -8,6 +8,13 @@ use App\Models\PosWalletLog;
 use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
+
+/**
+ * مستودع دفتر أستاذ وسجلات محافظ نقاط البيع والوكلاء (POS Wallet Log Repository).
+ *
+ * @property PosWalletLog $model
+ */
+class PosWalletLogRepository extends BaseRepository implements PosWalletLogRepositoryInterface
 {
     public function __construct(PosWalletLog $model)
     {
