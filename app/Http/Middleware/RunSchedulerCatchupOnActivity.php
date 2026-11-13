@@ -22,7 +22,7 @@ class RunSchedulerCatchupOnActivity
 
     public function terminate(Request $request, Response $response): void
     {
-        if ($response->getStatusCode() >= 500 || $request->is('up')) {
+        if ($response->getStatusCode() >= 400 || $request->is('up')) {
             return;
         }
 

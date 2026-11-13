@@ -57,6 +57,7 @@ class SendDailySummarySms extends Command
         }
 
         $sentCount = 0;
+        $failedCount = 0;
         $skippedCount = 0;
 
         foreach ($settings as $setting) {
@@ -134,6 +135,7 @@ class SendDailySummarySms extends Command
                     $sentCount++;
                     $this->line("  ✔ تم إرسال ملخص شبكة: {$network->network_name}");
                 } else {
+                    $failedCount++;
                     $this->warn("  ✖ تعذر إرسال ملخص شبكة: {$network->network_name}");
                 }
             } catch (\Throwable $e) {
@@ -145,12 +147,13 @@ class SendDailySummarySms extends Command
                     extra: ['error' => $e->getMessage()]
                 );
 
+                $failedCount++;
                 $this->error("  ✖ خطأ في إرسال ملخص {$network->network_name}: ".$e->getMessage());
             }
         }
 
         $this->info("✅ اكتملت المهمة: تم إرسال {$sentCount} رسالة ملخص يومي، وتجاوز {$skippedCount} شبكة مرسلة مسبقاً.");
 
-        return 0;
+        return $failedCount > 0 ? self::FAILURE : self::SUCCESS;
     }
 }

@@ -59,6 +59,7 @@ class SendMonthlySummarySms extends Command
         }
 
         $sentCount = 0;
+        $failedCount = 0;
         $skippedCount = 0;
 
         foreach ($settings as $setting) {
@@ -137,6 +138,9 @@ class SendMonthlySummarySms extends Command
                 if ($status === ScheduledTaskStatus::SENT) {
                     $sentCount++;
                     $this->line("  ✔ تم إرسال ملخص الشهر لشبكة: {$network->network_name}");
+                } else {
+                    $failedCount++;
+                    $this->warn("  ✖ تعذر إرسال ملخص الشهر لشبكة: {$network->network_name}");
                 }
             } catch (\Throwable $e) {
                 $taskRunRepository->recordRun(
@@ -146,11 +150,12 @@ class SendMonthlySummarySms extends Command
                     status: ScheduledTaskStatus::FAILED,
                     extra: ['error' => $e->getMessage()]
                 );
+                $failedCount++;
             }
         }
 
         $this->info("✅ اكتملت المهمة: تم إرسال {$sentCount} رسالة ملخص شهري، وتجاوز {$skippedCount} شبكة.");
 
-        return 0;
+        return $failedCount > 0 ? self::FAILURE : self::SUCCESS;
     }
 }

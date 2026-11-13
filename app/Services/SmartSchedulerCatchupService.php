@@ -343,7 +343,7 @@ class SmartSchedulerCatchupService
                 'connection' => $connection,
                 '--once' => true,
                 '--tries' => 3,
-                '--timeout' => 180,
+                '--timeout' => 60,
                 '--sleep' => 0,
             ]);
             $output = trim(Artisan::output());
