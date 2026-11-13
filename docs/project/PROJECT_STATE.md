@@ -218,3 +218,12 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Output is A4 landscape with a nine-column ledger table, opening/current balances, credit limit where relevant, image watermark using POS/network logo with application-mark fallback, Arabic IBM Plex Sans weights, page numbering, and an explicit notice when the opening balance was backfilled.
 - Maximum statement size is 1,500 ledger entries per PDF. Larger ledgers are rejected without generating a partial document.
 - Flutter HEAD: `f83e8dac0ec2fcbef80f6d3d4eb3383824ecaf35`. No analyzer, formatter, tests, PDF text extraction, visual checks, or Actions were run; all remain in the final validation stage.
+
+
+## Saved operational report presets — 2026-11-13
+
+- Added per-user saved report presets scoped to network or POS workspace and report type. The database enforces unique names within user + network + scope + report type.
+- Presets persist only typed criteria and presentation choices (visible columns, sort order, grouping, template/version, locale, page profile, metrics/charts). They do not store report rows, permissions, tokens, signed URLs, or tenant authorization grants.
+- API endpoints: `GET /reports/presets`, `POST /reports/presets`, `PUT /reports/presets/{presetUuid}`, and `DELETE /reports/presets/{presetUuid}`. All require `operational.scope`, authenticated ownership, current report authorization, and current provider schema validation.
+- Preset schema version is `1`; report schema version must match the current provider definition. Criteria and presentation fields are validated against the provider allowlists before persistence. Preset records are owned by the user and cascade on user/network deletion.
+- Report catalog template references now match the type-specific executive PDF template IDs.

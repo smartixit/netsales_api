@@ -1022,3 +1022,12 @@ This log documents all executed tasks, code changes, and verification command ou
 - Added full cursor traversal for statement export, with a 1,500-row document bound, repeated-cursor protection, newest-ledger-ID recheck, and wallet-state recheck. The export fails closed on concurrent changes, missing snapshots, or mixed currencies.
 - Templates render a landscape ledger table, authoritative opening/current balances, POS credit limit, server snapshot provenance, tenant logo/application watermark, and all seven Arabic IBM Plex Sans weights. No totals are computed on the client.
 - Flutter commit: `f83e8dac0ec2fcbef80f6d3d4eb3383824ecaf35`. No tests or Actions run.
+
+
+## 2026-11-13 — Saved operational report presets
+
+- Added `operational_report_presets` with UUID identity, user/network/POS scope, report type, schema versions, typed criteria, presentation settings, timestamps, and unique scoped-name constraint.
+- Added index/store/update/delete API endpoints, authenticated user ownership checks, tenant authorization checks, provider schema validation, filter type/choice validation, and presentation allowlist validation.
+- Saved criteria use the Document Engine `ReportCriteria` JSON shape; presentation uses `ReportPresentationOptions`. No report rows or authorization data are stored in a preset.
+- Updated provider catalog template references to the matching report-type-specific executive PDF template IDs.
+- Validation commands/tests were not run; they remain deferred to the final validation gate.
