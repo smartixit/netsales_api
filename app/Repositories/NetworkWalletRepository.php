@@ -9,6 +9,13 @@ use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
+
+/**
+ * مستودع إدارة محافظ مزودي الشبكات (Network Wallet Repository).
+ *
+ * @property NetworkWallet $model
+ */
+class NetworkWalletRepository extends BaseRepository implements NetworkWalletRepositoryInterface
 {
     public function __construct(NetworkWallet $model)
     {
