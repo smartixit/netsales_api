@@ -57,7 +57,7 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
 
     private function wallet(int $networkId, int $posId): PosWallet
     {
-        return PosWallet::query()
+        return PosWallet::withTrashed()
             ->where('network_id', $networkId)
             ->where('pos_id', $posId)
             ->firstOrFail();
@@ -67,7 +67,7 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
     {
         $pattern = $this->pattern($filters);
         $wallet = $this->wallet($networkId, $posId);
-        $query = PosWalletLog::withTrashed()->with(['wallet', 'createdBy'])
+        $query = PosWalletLog::withTrashed()->with(['wallet' => fn ($relation) => $relation->withTrashed(), 'createdBy'])
             ->where('wallet_id', $wallet->wallet_id)
             ->when($filters['status'] ?? null, fn (Builder $q, string $value): Builder => $q->where('log_operation_type', $value))
             ->when($pattern !== null, fn (Builder $q): Builder => $q->where('log_statement', 'like', $pattern));
