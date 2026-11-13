@@ -152,7 +152,7 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
         ];
     }
 
-    public function serializeExportRow(mixed $row): array
+    public function serializeRow(mixed $row): array
     {
         return [
             'log_id' => $row->log_id,
