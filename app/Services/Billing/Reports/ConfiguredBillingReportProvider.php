@@ -34,7 +34,16 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             'columns' => $this->config['columns'],
             'metrics' => $this->config['metrics'] ?? [],
             'chart_slots' => $this->config['chart_slots'] ?? [],
-            'templates' => [['id' => 'netsales.billing-report.'.$this->key().'.executive', 'version' => '1.0.0']],
+            'supported_locale_tags' => ['ar-YE', 'en'],
+            'metric_slots' => array_map(static fn ($metric): array => [
+                'id' => $metric,
+                'label_key' => 'billing.report.metric.'.$metric,
+                'data_type' => 'integer',
+            ], $this->config['metrics'] ?? []),
+            'templates' => [[
+                'id' => 'netsales.billing-report.'.$this->key().'.executive',
+                'version' => ['major' => 1, 'minor' => 0, 'patch' => 0],
+            ]],
             'page_profile_ids' => ['a4-portrait'],
             'execution_policy' => 'server',
             'export_formats' => ['CSV'],
