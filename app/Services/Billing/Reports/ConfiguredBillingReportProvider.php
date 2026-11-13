@@ -114,6 +114,71 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             ->cursorPaginate(min(max((int) ($filters['per_page'] ?? 25), 1), 100), ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
+    public function charts(array $summary): array
+    {
+        $pie = static function (string $id, string $title, array $items, string $labelKey, string $valueKey): array {
+            return [
+                'id' => $id, 'type' => 'pie', 'title' => $title,
+                'data' => array_map(static fn ($item): array => [
+                    'label' => (string) ($item[$labelKey] ?? '—'),
+                    'value' => (int) ($item[$valueKey] ?? 0),
+                ], $items),
+            ];
+        };
+        $bar = static function (string $id, string $title, string $currencyCode, array $items, array $series): array {
+            return [
+                'id' => $id, 'type' => 'bar', 'title' => $title.' — '.$currencyCode,
+                'series' => $series,
+                'data' => $items,
+            ];
+        };
+
+        return match ($this->key()) {
+            'subscriptions' => [$pie('subscription_status_distribution', 'توزيع حالات الاشتراك', $summary['status_distribution'] ?? [], 'status', 'count')],
+            'trials' => [$pie('trial_status_distribution', 'توزيع حالات التجارب', $summary['status_distribution'] ?? [], 'status', 'count')],
+            'trial_conversion' => [[
+                'id' => 'trial_conversion_funnel', 'type' => 'bar', 'title' => 'قمع تحويل التجربة',
+                'series' => [['key' => 'count', 'label' => 'عدد الحالات']],
+                'data' => array_map(static fn ($key, $value): array => ['label' => str_replace('_', ' ', $key), 'count' => (int) $value], array_keys($summary['funnel'] ?? []), array_values($summary['funnel'] ?? [])),
+            ]],
+            'renewals' => [$pie('renewal_outcomes', 'نتائج أحداث التجديد', $summary['event_distribution'] ?? [], 'event_type', 'count')],
+            'plan_performance' => collect($summary['mrr_arr_by_plan_and_currency'] ?? [])->groupBy('currency_code')->map(
+                fn ($items, $currency): array => $bar('mrr_arr_'.$currency, 'الإيراد الشهري والسنوي حسب الخطة', (string) $currency, $items->map(static fn ($item): array => [
+                    'label' => $item['plan_name'], 'mrr' => (int) $item['mrr_minor'], 'arr' => (int) $item['arr_minor'],
+                ])->values()->all(), [['key' => 'mrr', 'label' => 'MRR'], ['key' => 'arr', 'label' => 'ARR']])
+            )->values()->all(),
+            'invoices' => [$pie('invoice_status_distribution', 'توزيع حالات الفواتير', $summary['status_distribution'] ?? [], 'status', 'count')],
+            'collections' => [$pie('collection_status_distribution', 'حالات التحصيل', $summary['collection_statuses'] ?? [], 'status', 'count')],
+            'receivables' => collect($summary['aging_by_currency'] ?? [])->map(
+                fn ($item): array => $bar('receivables_aging_'.$item['currency_code'], 'أعمار الذمم المدينة', (string) $item['currency_code'], [[
+                    'label' => 'الذمم المستحقة',
+                    'current' => (int) $item['current_minor'],
+                    'days_1_30' => (int) $item['days_1_30_minor'],
+                    'days_31_60' => (int) $item['days_31_60_minor'],
+                    'days_61_90' => (int) $item['days_61_90_minor'],
+                    'over_90' => (int) $item['over_90_minor'],
+                ]], [['key'=>'current','label'=>'غير متأخر'],['key'=>'days_1_30','label'=>'1–30'],['key'=>'days_31_60','label'=>'31–60'],['key'=>'days_61_90','label'=>'61–90'],['key'=>'over_90','label'=>'+90']])
+            )->values()->all(),
+            'usage' => collect($summary['amounts_by_currency'] ?? [])->map(
+                fn ($item): array => $bar('usage_amount_'.$item['currency_code'], 'قيمة الاستخدام', (string) $item['currency_code'], [[
+                    'label'=>'الاستخدام','amount'=>(int)$item['amount_minor'],
+                ]], [['key'=>'amount','label'=>'قيمة الاستخدام']])
+            )->values()->all(),
+            'dunning' => [$pie('dunning_outcomes', 'نتائج محاولات التحصيل', $summary['status_distribution'] ?? [], 'status', 'count')],
+            'refunds' => collect($summary['amounts_by_currency'] ?? [])->map(
+                fn ($item): array => $bar('refunds_'.$item['currency_code'], 'مبالغ الاسترداد', (string) $item['currency_code'], [[
+                    'label'=>'الاستردادات','amount'=>(int)$item['amount_minor'],
+                ]], [['key'=>'amount','label'=>'المبلغ المسترد']])
+            )->values()->all(),
+            'revenue_recognition' => collect($summary['revenue_by_currency'] ?? [])->map(
+                fn ($item): array => $bar('revenue_'.$item['currency_code'], 'الإيراد المعترف به والمؤجل', (string) $item['currency_code'], [[
+                    'label'=>'الإيراد','recognized'=>(int)$item['recognized_in_period_minor'],'deferred'=>(int)$item['deferred_revenue_minor'],
+                ]], [['key'=>'recognized','label'=>'معترف به'],['key'=>'deferred','label'=>'مؤجل']])
+            )->values()->all(),
+            default => [],
+        };
+    }
+
     public function exportRows(?int $networkId, array $filters): iterable
     {
         $query = $this->query($networkId, $filters);
