@@ -108,36 +108,58 @@ class NetworkWallet extends Model
     public function deposit(float $amount, string $statement, int $userId): NetworkWalletLog
     {
         return DB::transaction(function () use ($amount, $statement, $userId): NetworkWalletLog {
-            $balanceBefore = (float) $this->wallet_balance;
-            $this->increment('wallet_balance', $amount);
+            $wallet = self::query()->lockForUpdate()->findOrFail($this->getKey());
+            $wallet->ensureActive();
+            if ($amount <= 0) {
+                throw ValidationException::withMessages([
+                    'amount' => ['مبلغ الإيداع يجب أن يكون أكبر من الصفر.'],
+                ]);
+            }
 
-            return $this->logs()->create([
+            $before = round((float) $wallet->wallet_balance, 2);
+            $wallet->wallet_balance = round($before + $amount, 2);
+            $wallet->save();
+
+            return $wallet->logs()->create([
                 'log_operation' => WalletOperationType::DEPOSIT,
-                'log_amount' => $amount,
-                'balance_before' => $balanceBefore,
-                'balance_after' => round((float) $this->wallet_balance, 2),
+                'log_amount' => round($amount, 2),
+                'balance_before' => $before,
+                'balance_after' => (float) $wallet->wallet_balance,
                 'balance_snapshot_source' => 'LIVE',
-                'currency_code' => $this->currency_code ?: 'YER',
+                'currency_code' => $wallet->currency_code ?: 'YER',
                 'log_statement' => $statement,
                 'log_date' => now('Asia/Aden'),
                 'created_by' => $userId,
             ]);
-        });
+        }, 3);
     }
 
     public function withdraw(float $amount, string $statement, int $userId): NetworkWalletLog
     {
         return DB::transaction(function () use ($amount, $statement, $userId): NetworkWalletLog {
-            $balanceBefore = (float) $this->wallet_balance;
-            $this->decrement('wallet_balance', $amount);
+            $wallet = self::query()->lockForUpdate()->findOrFail($this->getKey());
+            $wallet->ensureActive();
+            $before = round((float) $wallet->wallet_balance, 2);
+            if ($amount <= 0 || $before + 0.001 < $amount) {
+                throw ValidationException::withMessages([
+                    'amount' => ['رصيد محفظة الشبكة غير كافٍ لإتمام السحب.'],
+                ]);
+            }
 
-            return $this->logs()->create([
+            $wallet->wallet_balance = round($before - $amount, 2);
+            $wallet->save();
+
+            return $wallet->logs()->create([
                 'log_operation' => WalletOperationType::WITHDRAW,
-                'log_amount' => $amount,
+                'log_amount' => round($amount, 2),
+                'balance_before' => $before,
+                'balance_after' => (float) $wallet->wallet_balance,
+                'balance_snapshot_source' => 'LIVE',
+                'currency_code' => $wallet->currency_code ?: 'YER',
                 'log_statement' => $statement,
                 'log_date' => now('Asia/Aden'),
                 'created_by' => $userId,
             ]);
-        });
+        }, 3);
     }
 }
