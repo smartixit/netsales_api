@@ -116,6 +116,7 @@ class NetworkWallet extends Model
                 'log_amount' => $amount,
                 'balance_before' => $balanceBefore,
                 'balance_after' => round((float) $this->wallet_balance, 2),
+                'balance_snapshot_source' => 'LIVE',
                 'currency_code' => $this->currency_code ?: 'YER',
                 'log_statement' => $statement,
                 'log_date' => now('Asia/Aden'),
