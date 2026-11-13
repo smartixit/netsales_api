@@ -34,6 +34,7 @@ class PosWallet extends Model
         'wallet_uuid',
         'wallet_balance',
         'opening_balance',
+        'opening_balance_source',
         'currency_code',
         'credit_limit',
         'status',
