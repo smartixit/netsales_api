@@ -57,7 +57,7 @@ final class BillingReportProviderRegistry
                 },
                 'status_choices' => match ($key) {
                     'subscriptions' => ['INCOMPLETE','TRIALING','ACTIVE','PAST_DUE','PAUSED','SUSPENDED','CANCELED','ENDED'],
-                    'trials','trial_conversion' => ['RESERVED','PENDING_APPROVAL','ACTIVE','COMPLETED','EXPIRED','REJECTED','REVOKED'],
+                    'trials','trial_conversion' => ['RESERVED','PENDING_APPROVAL','ACTIVE','COMPLETED','REVOKED'],
                     'invoices' => ['OPEN','PARTIALLY_PAID','PARTIALLY_CREDITED','PAID','CREDITED','UNCOLLECTIBLE'],
                     'receivables' => ['OPEN','PARTIALLY_PAID','PARTIALLY_CREDITED'],
                     'collections' => ['PENDING_REVIEW','VERIFIED','FAILED','REJECTED','REFUNDED','PARTIALLY_REFUNDED'],
