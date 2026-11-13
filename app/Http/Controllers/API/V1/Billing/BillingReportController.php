@@ -45,7 +45,14 @@ class BillingReportController extends BaseController
     public function networkSummary(Request $request, int $networkId, string $reportType): JsonResponse
     {
         $this->authorization->assertNetworkOwner($this->requireCurrentUser(), $networkId);
-        return $this->successResponse('ملخص تقرير فوترة الشبكة.', $this->providers->get($reportType)->summary($networkId, $this->filters($request)));
+        $provider = $this->providers->get($reportType);
+        $filters = $this->filters($request);
+        $summary = $provider->summary($networkId, $filters);
+
+        return $this->successResponse('ملخص تقرير فوترة الشبكة.', [
+            'summary' => $summary,
+            'charts' => $provider->charts($summary),
+        ]);
     }
 
     public function platformCatalog(): JsonResponse
@@ -102,6 +109,13 @@ class BillingReportController extends BaseController
     public function platformSummary(Request $request, string $reportType): JsonResponse
     {
         $this->authorization->assertPlatform($this->requireCurrentUser());
-        return $this->successResponse('ملخص تقرير فوترة المنصة.', $this->providers->get($reportType)->summary(null, $this->filters($request)));
+        $provider = $this->providers->get($reportType);
+        $filters = $this->filters($request);
+        $summary = $provider->summary(null, $filters);
+
+        return $this->successResponse('ملخص تقرير فوترة المنصة.', [
+            'summary' => $summary,
+            'charts' => $provider->charts($summary),
+        ]);
     }
 }
