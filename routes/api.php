@@ -530,6 +530,13 @@ Route::prefix('v1')->group(function () {
                 ->name('api.v1.documents.snapshots.download');
         });
 
+        // Billing reports are isolated from operational reports and remain currency-aware.
+        Route::prefix('platform/billing/reports')->middleware(['platform.user.scope', 'permission:billing.view'])->group(function () {
+            Route::get('catalog', [BillingReportController::class, 'platformCatalog'])->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.catalog');
+            Route::get('{reportType}', [BillingReportController::class, 'platformShow'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.show');
+            Route::get('{reportType}/summary', [BillingReportController::class, 'platformSummary'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.summary');
+        });
+
         // Platform Billing — Windows Platform Scope only
         // ==========================================
         Route::prefix('platform/billing')->middleware('platform.user.scope')->group(function () {
@@ -639,6 +646,12 @@ Route::prefix('v1')->group(function () {
         });
 
         // ==========================================
+        Route::prefix('networks/{networkId}/billing/reports')->middleware(['operational.scope'])->group(function () {
+            Route::get('catalog', [BillingReportController::class, 'networkCatalog'])->whereNumber('networkId')->middleware('throttle:api-read')->name('api.v1.networks.billing.reports.catalog');
+            Route::get('{reportType}', [BillingReportController::class, 'networkShow'])->whereNumber('networkId')->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.networks.billing.reports.show');
+            Route::get('{reportType}/summary', [BillingReportController::class, 'networkSummary'])->whereNumber('networkId')->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.networks.billing.reports.summary');
+        });
+
         // Network Billing Self-Service — Network Owner only
         // ==========================================
         Route::prefix('networks/{networkId}/billing')->middleware(['operational.scope'])->group(function () {
