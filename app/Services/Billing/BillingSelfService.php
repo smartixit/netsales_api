@@ -71,7 +71,6 @@ class BillingSelfService
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
-
         return $query->orderByDesc('billing_subscription_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
@@ -88,7 +87,6 @@ class BillingSelfService
         }
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
-
 
         return $query->orderByDesc('invoice_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
@@ -118,7 +116,6 @@ class BillingSelfService
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
-
         return $query->orderByDesc('payment_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
@@ -136,7 +133,6 @@ class BillingSelfService
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
-
         return $query->orderByDesc('credit_note_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
@@ -153,7 +149,6 @@ class BillingSelfService
         }
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
-
 
         return $query->orderByDesc('refund_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
