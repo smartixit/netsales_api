@@ -110,7 +110,7 @@ class BillingCatalogService
         return $query->orderBy('product_id')->cursorPaginate($perPage);
     }
 
-    public function publicPlansForCurrency(int $currencyId, array $filters = []): Collection|CursorPaginator
+    public function publicPlansForCurrency(int $currencyId, array $filters = []): CursorPaginator
     {
         if (! $this->currencies->findActiveById($currencyId)) {
             throw ValidationException::withMessages([
@@ -144,9 +144,6 @@ class BillingCatalogService
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
-        if (! empty($filters['all'])) {
-            return $query->orderBy('plan_id')->get();
-        }
 
         return $query->orderBy('plan_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
