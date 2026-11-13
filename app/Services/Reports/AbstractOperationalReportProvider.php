@@ -176,12 +176,12 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
 
         $decimal = trim((string) $value);
         if (preg_match('/^([+-]?)(\\d+)(?:\\.(\\d+))?$/D', $decimal, $matches) !== 1) {
-            throw new \\InvalidArgumentException('Invalid decimal amount.');
+            throw new \InvalidArgumentException('Invalid decimal amount.');
         }
 
         $fraction = $matches[3] ?? '';
         if (strlen($fraction) > 2 && trim(substr($fraction, 2), '0') !== '') {
-            throw new \\InvalidArgumentException('The amount exceeds the supported two decimal places.');
+            throw new \InvalidArgumentException('The amount exceeds the supported two decimal places.');
         }
 
         $whole = ltrim($matches[2], '0') ?: '0';
@@ -201,7 +201,7 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
         $wholeUnits = (int) $whole;
 
         if ($wholeUnits > intdiv(PHP_INT_MAX - 99, 100)) {
-            throw new \\OverflowException('The amount exceeds the supported integer range.');
+            throw new \OverflowException('The amount exceeds the supported integer range.');
         }
 
         $minorUnits = ($wholeUnits * 100) + (int) $fraction;
@@ -224,7 +224,7 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
     {
         if (($right > 0 && $left > PHP_INT_MAX - $right)
             || ($right < 0 && $left < PHP_INT_MIN - $right)) {
-            throw new \\OverflowException('The ledger amount exceeds the supported integer range.');
+            throw new \OverflowException('The ledger amount exceeds the supported integer range.');
         }
 
         return $left + $right;
