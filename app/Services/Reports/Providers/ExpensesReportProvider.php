@@ -54,8 +54,7 @@ final class ExpensesReportProvider extends AbstractOperationalReportProvider
             ->where('network_id', $networkId)
             ->when($pattern !== null, fn (Builder $q): Builder => $q->where(
                 fn (Builder $nested): Builder => $nested
-                    ->where('expense_uuid', 'like', $pattern)
-                    ->orWhere('expense_id', 'like', $pattern)
+                   ->where('expense_uuid', 'like', $pattern)
                     ->orWhereHas('items', fn (Builder $item): Builder => $item->where('item_statement', 'like', $pattern))
             ));
 
