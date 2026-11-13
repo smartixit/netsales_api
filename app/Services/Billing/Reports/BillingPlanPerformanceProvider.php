@@ -9,7 +9,7 @@ final class BillingPlanPerformanceProvider extends ConfiguredBillingReportProvid
             ->join('billing_accounts as ba','ba.billing_account_id','=','s.billing_account_id')
             ->join('billing_plans as p','p.plan_id','=','s.plan_id')
             ->join('billing_prices as bp','bp.price_id','=','s.price_id')
-            ->where('s.status','ACTIVE')->where('bp.billing_interval','!=','ONE_TIME');
+            ->where('s.status','ACTIVE')->where('bp.billing_interval','!=','ONE_TIME')->whereNull('s.deleted_at');
         if($networkId!==null)$query->where('ba.network_id',$networkId);
         $mrr="CASE bp.billing_interval
           WHEN 'DAY' THEN bp.unit_amount_minor*s.quantity*30/NULLIF(bp.interval_count,0)
