@@ -42,6 +42,32 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
         return 'نوع البيع';
     }
 
+    protected function choiceLabel(string $filterId, string $value): string
+    {
+        return match ($filterId) {
+            'sale_type' => match ($value) {
+                'CASH' => 'نقدي',
+                'CREDIT' => 'آجل',
+                default => $value,
+            },
+            'status' => match ($value) {
+                'PAID' => 'مدفوعة',
+                'PARTIALLY_PAID' => 'مدفوعة جزئياً',
+                'UNPAID' => 'غير مدفوعة',
+                'PENDING' => 'قيد الانتظار',
+                'APPROVED' => 'معتمدة',
+                'REJECTED' => 'مرفوضة',
+                'CANCELLED' => 'ملغاة',
+                'DEPOSIT' => 'إيداع',
+                'WITHDRAW' => 'سحب',
+                'COMPLETED' => 'مكتمل',
+                'REVERSED' => 'معكوس',
+                default => $value,
+            },
+            default => $value,
+        };
+    }
+
     protected function saleTypeChoices(): array
     {
         return [];
@@ -56,10 +82,10 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
             ['id' => 'search', 'label' => 'بحث', 'kind' => 'text', 'required' => false, 'max_length' => 120],
         ];
         if ($statuses = $this->statusChoices()) {
-            $filters[] = ['id' => 'status', 'label' => $this->statusFilterLabel(), 'kind' => 'single_choice', 'required' => false, 'choices' => $statuses];
+            $filters[] = ['id' => 'status', 'label' => $this->statusFilterLabel(), 'kind' => 'single_choice', 'required' => false, 'choices' => array_map(fn (string $value): array => ['value' => $value, 'label' => $this->choiceLabel('status', $value)], $statuses)];
         }
         if ($saleTypes = $this->saleTypeChoices()) {
-            $filters[] = ['id' => 'sale_type', 'label' => $this->saleTypeFilterLabel(), 'kind' => 'single_choice', 'required' => false, 'choices' => $saleTypes];
+            $filters[] = ['id' => 'sale_type', 'label' => $this->saleTypeFilterLabel(), 'kind' => 'single_choice', 'required' => false, 'choices' => array_map(fn (string $value): array => ['value' => $value, 'label' => $this->choiceLabel('sale_type', $value)], $saleTypes)];
         }
         $charts = $this->summaryCharts();
 
