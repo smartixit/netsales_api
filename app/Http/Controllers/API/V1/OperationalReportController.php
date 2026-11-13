@@ -65,7 +65,13 @@ class OperationalReportController extends BaseController
             $this->authorization->authorize($request->user(), $type, $networkId, $posId);
             $this->validateProviderFilters($type, $posId, $data);
             $filters = array_intersect_key($data, array_flip(['from_date', 'to_date', 'sale_type', 'status', 'search', 'per_page', 'cursor']));
-            $result = $this->providers->get($type)->build($request->user(), $networkId, $posId, $filters);
+            $provider = $this->providers->get($type);
+            $result = $provider->build($request->user(), $networkId, $posId, $filters);
+            $result->setCollection(
+                $result->getCollection()->map(
+                    fn ($row): array => $provider->serializeExportRow($row)
+                )
+            );
 
             return $this->successResponse('تم إنشاء بيانات التقرير بنجاح.', $result);
         } catch (AuthorizationException $e) {
