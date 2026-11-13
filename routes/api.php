@@ -6,6 +6,7 @@ use App\Http\Controllers\API\V1\Billing\BillingPolicyController;
 use App\Http\Controllers\API\V1\Billing\BillingFinanceController;
 use App\Http\Controllers\API\V1\Billing\BillingSelfServiceController;
 use App\Http\Controllers\API\V1\Billing\BillingTrialEligibilityController;
+use App\Http\Controllers\API\V1\Billing\BillingReportController;
 use App\Http\Controllers\API\V1\AuthController;
 use App\Http\Controllers\API\V1\BackupController;
 use App\Http\Controllers\API\V1\DashboardController;
