@@ -5,6 +5,7 @@ namespace App\Services\Reports;
 use App\Contracts\Reports\OperationalReportProvider;
 use App\Enums\OperationalReportType;
 use App\Models\NetworkWallet;
+use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -177,64 +178,22 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
 
     protected function amountValue(mixed $value): string
     {
-        if ($value === null || $value === '') {
-            return '0.00';
-        }
-
-        $decimal = trim((string) $value);
-        if (preg_match('/^([+-]?)(\\d+)(?:\\.(\\d+))?$/D', $decimal, $matches) !== 1) {
-            throw new \InvalidArgumentException('Invalid decimal amount.');
-        }
-
-        $fraction = $matches[3] ?? '';
-        if (strlen($fraction) > 2 && trim(substr($fraction, 2), '0') !== '') {
-            throw new \InvalidArgumentException('The amount exceeds the supported two decimal places.');
-        }
-
-        $whole = ltrim($matches[2], '0') ?: '0';
-        $fraction = str_pad(substr($fraction, 0, 2), 2, '0');
-        $isZero = $whole === '0' && $fraction === '00';
-        $sign = ($matches[1] ?? '') === '-' && ! $isZero ? '-' : '';
-
-        return $sign.$whole.'.'.$fraction;
+        return DecimalAmount::format($value);
     }
 
     protected function toMinorUnits(mixed $value): int
     {
-        $decimal = $this->amountValue($value);
-        $negative = str_starts_with($decimal, '-');
-        $unsigned = $negative ? substr($decimal, 1) : $decimal;
-        [$whole, $fraction] = explode('.', $unsigned, 2);
-        $wholeUnits = (int) $whole;
-
-        if ($wholeUnits > intdiv(PHP_INT_MAX - 99, 100)) {
-            throw new \OverflowException('The amount exceeds the supported integer range.');
-        }
-
-        $minorUnits = ($wholeUnits * 100) + (int) $fraction;
-
-        return $negative ? -$minorUnits : $minorUnits;
+        return DecimalAmount::toMinorUnits($value);
     }
 
     protected function fromMinorUnits(int $minorUnits): string
     {
-        $negative = $minorUnits < 0;
-        $absolute = abs($minorUnits);
-
-        return ($negative ? '-' : '')
-            .intdiv($absolute, 100)
-            .'.'
-            .str_pad((string) ($absolute % 100), 2, '0', STR_PAD_LEFT);
+        return DecimalAmount::fromMinorUnits($minorUnits);
     }
 
     protected function addMinorUnits(int $left, int $right): int
     {
-        if (($right > 0 && $left > PHP_INT_MAX - $right)
-            || ($right < 0 && $left < PHP_INT_MIN - $right)) {
-            throw new \OverflowException('The ledger amount exceeds the supported integer range.');
-        }
-
-        return $left + $right;
+        return DecimalAmount::add($left, $right);
     }
 
     protected function chartPoint(string $label, string|int|float $value, ?string $series = null): array
