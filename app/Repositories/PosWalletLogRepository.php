@@ -104,6 +104,7 @@ class PosWalletLogRepository extends BaseRepository implements PosWalletLogRepos
             'log_amount' => round($amount, 2),
             'balance_before' => $balanceBefore,
             'balance_after' => $balanceAfter,
+            'balance_snapshot_source' => 'LIVE',
             'currency_code' => $wallet->currency_code ?: 'YER',
             'log_statement' => $statement,
             'log_date' => $date ?? now('Asia/Aden'),
