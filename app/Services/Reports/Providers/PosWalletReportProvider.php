@@ -19,6 +19,8 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
     protected function exportPermission(): string { return 'pos_wallets.export'; }
     protected function scopes(): array { return ['network', 'pos']; }
     protected function posSelection(): string { return 'required'; }
+    protected function pageProfileIds(): array { return ['a4-landscape']; }
+
     protected function statusChoices(): array { return ['DEPOSIT', 'WITHDRAW']; }
     protected function statusFilterLabel(): string { return 'نوع الحركة'; }
 
