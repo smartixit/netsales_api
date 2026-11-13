@@ -76,6 +76,10 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
                 $query->whereIn($condition[0], $condition[2]);
             } elseif ($operator === 'not in') {
                 $query->whereNotIn($condition[0], $condition[2]);
+            } elseif ($operator === 'is null') {
+                $query->whereNull($condition[0]);
+            } elseif ($operator === 'is not null') {
+                $query->whereNotNull($condition[0]);
             } else {
                 $query->where($condition[0], $condition[1], $condition[2]);
             }
