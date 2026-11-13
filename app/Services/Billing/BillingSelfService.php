@@ -178,7 +178,7 @@ class BillingSelfService
         $subscription = BillingSubscription::query()->with([
             'billingAccount.network', 'currency', 'plan', 'planVersion.features', 'price',
             'trialRedemption.policyVersion.policy', 'trialRedemption.adjustments',
-            'items.currency', 'events', 'invoices.currency', 'invoices.lines.currency',
+            'items.currency', 'invoices.currency', 'invoices.lines.currency',
         ])->findOrFail($subscriptionId);
         $this->authorization->assertBillingAccountAccess($actor, $subscription->billingAccount);
         return $subscription;
