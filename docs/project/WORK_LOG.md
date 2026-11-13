@@ -1031,3 +1031,13 @@ This log documents all executed tasks, code changes, and verification command ou
 - Saved criteria use the Document Engine `ReportCriteria` JSON shape; presentation uses `ReportPresentationOptions`. No report rows or authorization data are stored in a preset.
 - Updated provider catalog template references to the matching report-type-specific executive PDF template IDs.
 - Validation commands/tests were not run; they remain deferred to the final validation gate.
+
+
+## 2026-11-13 — Scheduler durable-slot schema and activity catch-up
+
+- Added `2026_11_13_000002_upgrade_scheduled_task_runs_for_durable_slots.php` to backfill scope and slot keys, add execution lease timestamps, and replace the daily-only uniqueness constraint with a durable occurrence key. Rollback refuses to destroy multiple per-network daily slots.
+- Updated the unified scheduler to enumerate both due `twice_daily` occurrences for the current day. The activity middleware is registered on the API pipeline; it throttles ticks, executes a bounded number of due slots, and opportunistically drains one job from the configured queue connection.
+- Confirmed the hard platform boundary: with no Cron, no worker, and no inbound application traffic, scheduled execution cannot occur because no PHP process is running.
+- Added saved report preset API CRUD and Flutter Report Studio integration. Typed criteria, report schema version, and presentation settings are validated against the active provider definition before persistence. Duplicate names are scoped and bounded to 100 presets per user/report/workspace.
+- Added provider-template ID alignment and strict typed filter validation (including open-ended date ranges and duplicate-choice rejection).
+- Tests and GitHub Actions remain intentionally unrun until the final validation gate.

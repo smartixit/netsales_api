@@ -227,3 +227,13 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - API endpoints: `GET /reports/presets`, `POST /reports/presets`, `PUT /reports/presets/{presetUuid}`, and `DELETE /reports/presets/{presetUuid}`. All require `operational.scope`, authenticated ownership, current report authorization, and current provider schema validation.
 - Preset schema version is `1`; report schema version must match the current provider definition. Criteria and presentation fields are validated against the provider allowlists before persistence. Preset records are owned by the user and cascade on user/network deletion.
 - Report catalog template references now match the type-specific executive PDF template IDs.
+
+
+## Scheduler catch-up and saved report preset closure — 2026-11-13
+
+- The scheduled-task ledger now has a schema migration for `scope_key`, `schedule_slot`, `started_at`, `finished_at`, and `locked_until`, replacing the old daily-only unique key with `(task_type, scope_key, target_date, schedule_slot)`. Existing runs are backfilled; legacy low-balance runs map to the first daily slot.
+- `SmartSchedulerCatchupService` remains the sole task registry/execution engine. Activity ticks process a bounded number of due occurrences and opportunistically drain one queued job using the configured queue connection and `queue:work --once`; the Laravel scheduler invokes the same engine when Cron exists.
+- The twice-daily low-balance task now contributes both due occurrences for the current day, each with its own durable slot and per-network idempotency record.
+- The activity fallback requires an incoming application request. If there is no Cron, no queue worker, and no application traffic, no PHP process exists to execute background work; this is a platform constraint, not something the application can bypass.
+- Saved report presets are stored as schema-versioned typed criteria and presentation configuration, owned by the authenticated user and scoped to network/POS + report type. The Flutter Report Studio now loads, saves, updates, applies, and deletes these presets; stale schema presets are not silently migrated.
+- No tests, migrations, static analysis, PDF extraction, or GitHub Actions have been run; they remain deferred to the final validation stage.
