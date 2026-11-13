@@ -190,7 +190,7 @@ class OperationalReportController extends BaseController
         $errors = $this->presetValidator->validate(
             $type->value,
             $posId,
-            $data['filters'],
+            $data['criteria'],
             $data['presentation'],
             (int) $data['report_schema_version']
         );
@@ -208,7 +208,8 @@ class OperationalReportController extends BaseController
             'report_type' => $type,
             'name' => trim($data['name']),
             'report_schema_version' => (int) $data['report_schema_version'],
-            'criteria' => $data['filters'],
+            'preset_schema_version' => 1,
+            'criteria' => $data['criteria'],
             'presentation' => $data['presentation'],
         ]);
 
@@ -279,11 +280,12 @@ class OperationalReportController extends BaseController
     private function serializePreset(OperationalReportPreset $preset): array
     {
         return [
-            'preset_id' => $preset->preset_uuid,
+            'preset_schema_version' => $preset->preset_schema_version,
+            'id' => $preset->preset_uuid,
             'name' => $preset->name,
-            'report_type' => $preset->report_type->value,
+            'report_id' => $preset->report_type->value,
             'report_schema_version' => $preset->report_schema_version,
-            'filters' => $preset->criteria,
+            'criteria' => $preset->criteria,
             'presentation' => $preset->presentation,
             'created_at' => $preset->created_at?->toIso8601String(),
             'updated_at' => $preset->updated_at?->toIso8601String(),

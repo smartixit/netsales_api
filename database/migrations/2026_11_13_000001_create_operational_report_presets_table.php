@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('scope_key', 40);
             $table->string('report_type', 48);
             $table->string('name', 120);
+            $table->unsignedSmallInteger('preset_schema_version')->default(1);
             $table->unsignedInteger('report_schema_version');
             $table->json('criteria');
             $table->json('presentation');

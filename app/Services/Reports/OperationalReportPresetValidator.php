@@ -11,16 +11,55 @@ final class OperationalReportPresetValidator
         private readonly OperationalReportFilterValidator $filters
     ) {}
 
-    public function validate(string $reportType, ?int $posId, array $criteria, array $presentation, int $schemaVersion): array
-    {
+    public function validate(
+        string $reportType,
+        ?int $posId,
+        array $criteria,
+        array $presentation,
+        int $schemaVersion
+    ): array {
         $provider = $this->providers->get($reportType);
         $definition = $provider->definition();
         $errors = new MessageBag();
 
-        $this->filters->validate($provider->type(), $posId, $criteria, $errors);
-
         if ($schemaVersion !== (int) ($definition['schema_version'] ?? 1)) {
-            $errors->add('report_schema_version', 'تغير تعريف التقرير؛ أعد فتح التقرير واحفظ الإعدادات وفق المخطط الحالي.');
+            $errors->add('report_schema_version', 'تغير تعريف التقرير؛ أعد تحميل التعريف ثم احفظ الإعدادات وفق المخطط الحالي.');
+        }
+
+        $typedFilters = $criteria['filters'] ?? null;
+        if (! is_array($typedFilters)) {
+            $errors->add('criteria.filters', 'قائمة المرشحات المحفوظة غير صالحة.');
+            $typedFilters = [];
+        }
+
+        $rawFilters = [];
+        foreach ($typedFilters as $filterId => $typedValue) {
+            if (! is_array($typedValue)
+                || array_diff(array_keys($typedValue), ['type', 'value']) !== []
+                || ! array_key_exists('type', $typedValue)
+                || ! array_key_exists('value', $typedValue)) {
+                $errors->add('criteria.filters.'.$filterId, 'قيمة المرشح يجب أن تتضمن النوع والقيمة فقط.');
+                continue;
+            }
+
+            $value = $typedValue['value'];
+            $rawFilters[$filterId] = match ($typedValue['type']) {
+                'text', 'integer', 'decimal', 'boolean', 'choice', 'choices' => $value,
+                'date' => is_string($value) ? substr($value, 0, 10) : $value,
+                'date_range' => is_array($value) ? [
+                    'from' => isset($value['start']) && is_string($value['start']) ? substr($value['start'], 0, 10) : null,
+                    'to' => isset($value['end']) && is_string($value['end']) ? substr($value['end'], 0, 10) : null,
+                ] : $value,
+                default => $value,
+            };
+        }
+
+        $filterErrors = new MessageBag();
+        $this->filters->validate($provider->type(), $posId, $rawFilters, $filterErrors);
+        foreach ($filterErrors->messages() as $field => $messages) {
+            foreach ($messages as $message) {
+                $errors->add($field, $message);
+            }
         }
 
         $columns = collect($definition['columns'] ?? [])->keyBy('id');
@@ -33,8 +72,11 @@ final class OperationalReportPresetValidator
                 $errors->add('presentation.visible_column_ids', 'يتضمن الإعداد عموداً غير معرف في التقرير.');
             }
         }
+        $effectiveVisible = $visible === []
+            ? collect($definition['columns'] ?? [])->filter(fn (array $column) => ($column['visible_by_default'] ?? true) === true)->pluck('id')->all()
+            : $visible;
         foreach ($columns as $id => $column) {
-            if (($column['hideable'] ?? true) === false && ! in_array($id, $visible, true)) {
+            if (($column['hideable'] ?? true) === false && ! in_array($id, $effectiveVisible, true)) {
                 $errors->add('presentation.visible_column_ids', 'يتضمن الإعداد إخفاء عمود إلزامي.');
             }
         }
@@ -65,13 +107,9 @@ final class OperationalReportPresetValidator
                 $version['minor'] ?? -1,
                 $version['patch'] ?? -1,
             ]);
-            $allowed = collect($definition['templates'] ?? [])->contains(function (array $item) use ($key): bool {
-                $version = (string) ($item['version'] ?? '');
-                $normalized = preg_match('/^\d+\.\d+\.\d+$/', $version) === 1
-                    ? $version
-                    : '0.0.0';
-                return ($item['id'] ?? '').'@'.$normalized === $key;
-            });
+            $allowed = collect($definition['templates'] ?? [])->contains(
+                fn (array $item): bool => ($item['id'] ?? '').'@'.(string) ($item['version'] ?? '') === $key
+            );
             if (! $allowed) {
                 $errors->add('presentation.template', 'قالب المستند المحدد غير معتمد لهذا التقرير.');
             }
