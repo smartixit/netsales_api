@@ -255,7 +255,12 @@ class BillingSelfServiceController extends BaseController
             'events' => BillingSubscriptionEventResource::collection(
                 $this->self->subscriptionEvents($subscriptionId, ['per_page' => 30], $actor)
             ),
-            'invoices' => BillingInvoiceResource::collection($subscription->invoices),
+                        'invoices' => BillingInvoiceResource::collection(
+                $subscription->invoices()
+                    ->with(['currency', 'lines.currency'])
+                    ->orderByDesc('invoice_id')
+                    ->cursorPaginate(25)
+            ),
         ]);
     }
 
