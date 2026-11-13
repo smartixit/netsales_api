@@ -90,7 +90,16 @@ final class BillingReportProviderRegistry
                     'revenue_recognition' => ['recognized_revenue_trend','deferred_revenue_balance'],
                     default => [],
                 },
-                'columns'=>array_map(static fn ($field): array => ['key'=>trim($field),'label'=>trim($field)], explode(',', $select)),
+                'columns'=>array_map(static function ($field): array {
+                    $field = trim($field);
+                    $parts = preg_split('/\\s+as\\s+/i', $field);
+                    $expression = trim($parts[0]);
+                    $id = count($parts) > 1 ? trim($parts[1]) : substr($expression, strrpos($expression, '.') !== false ? strrpos($expression, '.') + 1 : 0);
+                    $type = str_ends_with($id, '_minor') || str_ends_with($id, '_id') || str_contains($id, 'quantity') || str_contains($id, 'count')
+                        ? 'number'
+                        : ((str_ends_with($id, '_at') || str_ends_with($id, '_on') || str_contains($id, 'period_start') || str_contains($id, 'period_end')) ? 'date_time' : 'text');
+                    return ['id'=>$id,'key'=>$id,'label'=>$id,'label_key'=>'billing.report.column.'.$id,'data_type'=>$type,'sortable'=>true];
+                }, explode(',', $select)),
             ]);
         }
     }
