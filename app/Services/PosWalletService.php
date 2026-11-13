@@ -146,13 +146,27 @@ class PosWalletService
                 ]);
             }
 
+            $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId, true);
+            if ($networkWallet === null) {
+                throw ValidationException::withMessages([
+                    'network_id' => ['يجب إنشاء محفظة الشبكة قبل إنشاء محفظة نقطة البيع.'],
+                ]);
+            }
+
+            $currencyCode = strtoupper(trim((string) $networkWallet->currency_code));
+            if (preg_match('/^[A-Z]{3}$/D', $currencyCode) !== 1) {
+                throw ValidationException::withMessages([
+                    'currency_code' => ['رمز عملة محفظة الشبكة غير صالح.'],
+                ]);
+            }
+
             /** @var PosWallet $wallet */
             $wallet = $this->posWalletRepository->create([
                 'network_id' => $networkId,
                 'pos_id' => $posId,
                 'wallet_balance' => $initialBalance,
                 'opening_balance_source' => 'INITIAL',
-                'currency_code' => ($this->networkWalletRepository->findByNetworkId($networkId)?->currency_code ?? 'YER'),
+                'currency_code' => $currencyCode,
                 'status' => $status,
             ]);
 
