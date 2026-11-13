@@ -1,14 +1,14 @@
 <?php
 
-namespace App\\Services\\Reports\\Providers;
+namespace App\Services\Reports\Providers;
 
-use App\\Enums\\OperationalReportType;
-use App\\Models\\SaleInvoice;
-use App\\Models\\User;
-use App\\Services\\Reports\\AbstractOperationalReportProvider;
-use Illuminate\\Contracts\\Pagination\\CursorPaginator;
-use Illuminate\\Database\\Eloquent\\Builder;
-use Illuminate\\Support\\Carbon;
+use App\Enums\OperationalReportType;
+use App\Models\SaleInvoice;
+use App\Models\User;
+use App\Services\Reports\AbstractOperationalReportProvider;
+use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 final class DebtAgingReportProvider extends AbstractOperationalReportProvider
 {
