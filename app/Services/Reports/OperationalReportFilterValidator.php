@@ -116,8 +116,10 @@ final class OperationalReportFilterValidator
 
                 case 'multi_choice':
                     $allowed = array_column($filter['choices'] ?? [], 'value');
-                    if (! is_array($value)
-                        || array_diff(array_map('strval', $value), $allowed) !== []) {
+                    $valuesAreScalar = is_array($value)
+                        && count(array_filter($value, static fn ($item): bool => ! is_scalar($item))) === 0;
+                    if (! $valuesAreScalar
+                        || array_diff(array_map(static fn ($item): string => (string) $item, $value), $allowed) !== []) {
                         $errors->add("filters.{$filterId}", 'تحتوي القائمة على قيمة غير مدعومة لهذا التقرير.');
                     }
                     break;
