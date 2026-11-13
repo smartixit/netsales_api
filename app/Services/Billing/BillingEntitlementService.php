@@ -34,6 +34,27 @@ class BillingEntitlementService
             ->first();
     }
 
+    /**
+     * Read-only subscription preview for the billing center. Unlike the operational
+     * entitlement resolver, this method must never start FIRST_ACTIVATION trials.
+     */
+    public function previewSubscriptionForAccount(int $billingAccountId): ?BillingSubscription
+    {
+        return BillingSubscription::query()
+            ->with(['planVersion.features', 'currency', 'trialRedemption.policyVersion'])
+            ->where('billing_account_id', $billingAccountId)
+            ->whereIn('status', [
+                BillingSubscriptionStatus::INCOMPLETE,
+                BillingSubscriptionStatus::TRIALING,
+                BillingSubscriptionStatus::ACTIVE,
+                BillingSubscriptionStatus::PAST_DUE,
+                BillingSubscriptionStatus::PAUSED,
+                BillingSubscriptionStatus::SUSPENDED,
+            ])
+            ->latest('billing_subscription_id')
+            ->first();
+    }
+
     public function activeSubscriptionForNetwork(int $networkId): ?BillingSubscription
     {
         // Resolve the subscription first; never choose an arbitrary account on a multi-currency network.
