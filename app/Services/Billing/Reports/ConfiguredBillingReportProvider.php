@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class ConfiguredBillingReportProvider implements BillingReportProvider
 {
-    public function __construct(private readonly array $config) {}
+    public function __construct(protected readonly array $config) {}
 
     public function key(): string { return $this->config['key']; }
 
@@ -50,6 +50,32 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             'currency_aggregation' => 'SEPARATE_CURRENCY_BUCKETS',
             'pagination' => 'CURSOR',
         ];
+    }
+
+    /**
+     * Apply the same configured free-text search to specialized summary queries.
+     * The caller supplies aliases matching its own query shape.
+     *
+     * @param array<int, string> $columns
+     */
+    protected function applySearchColumns(
+        Builder $query,
+        array $filters,
+        array $columns
+    ): void {
+        $term = trim((string) ($filters['search'] ?? ''));
+        if ($term === '' || $columns === []) {
+            return;
+        }
+
+        $like = '%'.$term.'%';
+        $query->where(function (Builder $nested) use ($columns, $like): void {
+            foreach ($columns as $index => $column) {
+                $index === 0
+                    ? $nested->where($column, 'like', $like)
+                    : $nested->orWhere($column, 'like', $like);
+            }
+        });
     }
 
     private function query(?int $networkId, array $filters): Builder
