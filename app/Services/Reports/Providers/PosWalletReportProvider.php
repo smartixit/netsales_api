@@ -20,6 +20,7 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
     protected function scopes(): array { return ['network', 'pos']; }
     protected function posSelection(): string { return 'required'; }
     protected function statusChoices(): array { return ['DEPOSIT', 'WITHDRAW']; }
+    protected function statusFilterLabel(): string { return 'نوع الحركة'; }
 
     protected function columns(): array
     {
