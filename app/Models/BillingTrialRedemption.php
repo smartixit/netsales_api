@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
 
 class BillingTrialRedemption extends Model
 {
@@ -27,6 +27,12 @@ class BillingTrialRedemption extends Model
     public function policyVersion(): BelongsTo
     {
         return $this->belongsTo(BillingTrialPolicyVersion::class, 'trial_policy_version_id', 'trial_policy_version_id');
+    }
+
+    public function adjustments(): HasMany
+    {
+        return $this->hasMany(BillingTrialAdjustment::class, 'trial_redemption_id', 'trial_redemption_id')
+            ->orderByDesc('occurred_at')->orderByDesc('trial_adjustment_id');
     }
 
     public function subscription(): BelongsTo

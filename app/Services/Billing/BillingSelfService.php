@@ -2,7 +2,7 @@
 
 namespace App\Services\Billing;
 
-use App\Models\{BillingAccount, BillingCreditNote, BillingInvoice, BillingPayment, BillingRefund, BillingSubscription, User};
+use App\Models\{BillingAccount, BillingCreditNote, BillingInvoice, BillingPayment, BillingRefund, BillingSubscription, BillingUsageAggregate, User};
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
@@ -151,6 +151,29 @@ class BillingSelfService
         }
 
         return $query->orderByDesc('refund_id')->cursorPaginate($perPage);
+    }
+
+    public function subscription(int $subscriptionId, User $actor): BillingSubscription
+    {
+        $subscription = BillingSubscription::query()->with([
+            'billingAccount.network', 'currency', 'plan', 'planVersion.features', 'price',
+            'trialRedemption.policyVersion.policy', 'trialRedemption.adjustments',
+            'items.currency', 'events', 'invoices.currency', 'invoices.lines.currency',
+        ])->findOrFail($subscriptionId);
+        $this->authorization->assertBillingAccountAccess($actor, $subscription->billingAccount);
+        return $subscription;
+    }
+
+    public function usage(int $subscriptionId, array $filters, User $actor): CursorPaginator
+    {
+        $subscription = BillingSubscription::query()->with('billingAccount')->findOrFail($subscriptionId);
+        $this->authorization->assertBillingAccountAccess($actor, $subscription->billingAccount);
+        $query = BillingUsageAggregate::query()->with(['meter', 'currency'])
+            ->where('billing_subscription_id', $subscriptionId);
+        if (! empty($filters['from_date'])) $query->where('period_end', '>=', $filters['from_date']);
+        if (! empty($filters['to_date'])) $query->where('period_start', '<=', $filters['to_date']);
+        return $query->orderByDesc('period_start')->orderByDesc('usage_aggregate_id')
+            ->cursorPaginate(min(max((int) ($filters['per_page'] ?? 25), 1), 50));
     }
 
     public function subscriptionEvents(int $subscriptionId, User $actor): CursorPaginator

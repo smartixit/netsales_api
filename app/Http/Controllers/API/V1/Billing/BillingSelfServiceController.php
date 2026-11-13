@@ -4,7 +4,7 @@ namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
 use App\Http\Requests\API\V1\Billing\{CreateBillingAccountRequest, PurchaseSubscriptionRequest, StorePaymentRequest};
-use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingRefundResource, BillingSubscriptionEventResource, BillingSubscriptionResource, PaymentMethodResource};
+use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingRefundResource, BillingSubscriptionEventResource, BillingSubscriptionResource, BillingUsageAggregateResource, PaymentMethodResource};
 use App\Services\Billing\{BillingPaymentService, BillingPlatformReadService, BillingSelfService, BillingSubscriptionService, CurrencyService};
 use App\Services\Support\FileUploadService;
 use Illuminate\Http\JsonResponse;
@@ -149,6 +149,29 @@ class BillingSelfServiceController extends BaseController
                 $request->only(['status', 'per_page', 'all']),
                 $this->requireCurrentUser()
             ))
+        );
+    }
+
+    public function subscription(int $subscriptionId): JsonResponse
+    {
+        $subscription = $this->self->subscription($subscriptionId, $this->requireCurrentUser());
+        return $this->successResponse('تم استرجاع تفاصيل الاشتراك وتجربته وسجل أحداثه.', [
+            'subscription' => new BillingSubscriptionResource($subscription),
+            'events' => BillingSubscriptionEventResource::collection($subscription->events),
+            'invoices' => BillingInvoiceResource::collection($subscription->invoices),
+        ]);
+    }
+
+    public function usage(Request $request, int $subscriptionId): JsonResponse
+    {
+        $filters = $request->validate([
+            'from_date' => ['nullable', 'date_format:Y-m-d'],
+            'to_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from_date'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
+        ]);
+        return $this->successResponse(
+            'تم استرجاع تجميعات استخدام الاشتراك حسب العداد والفترة.',
+            BillingUsageAggregateResource::collection($this->self->usage($subscriptionId, $filters, $this->requireCurrentUser()))
         );
     }
 
