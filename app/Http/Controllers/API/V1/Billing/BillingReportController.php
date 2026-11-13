@@ -7,7 +7,6 @@ use App\Services\Billing\BillingAuthorizationService;
 use App\Services\Billing\Reports\BillingReportProviderRegistry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class BillingReportController extends BaseController
 {
@@ -88,10 +87,10 @@ class BillingReportController extends BaseController
         }, 'billing-'.$reportType.'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
-    public function networkExportCsv(Request $request, int $networkId): mixed
+    public function networkExportCsv(Request $request, int $networkId, string $reportType): mixed
     {
         $this->authorization->assertNetworkOwner($this->requireCurrentUser(), $networkId);
-        return $this->csvResponse($request->route('reportType'), $networkId, $this->filters($request));
+        return $this->csvResponse($reportType, $networkId, $this->filters($request));
     }
 
     public function platformExportCsv(Request $request, string $reportType): mixed
