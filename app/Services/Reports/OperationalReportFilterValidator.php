@@ -126,10 +126,13 @@ final class OperationalReportFilterValidator
                     break;
 
                 case 'date_range':
+                    $from = is_array($value) ? ($value['from'] ?? null) : null;
+                    $to = is_array($value) ? ($value['to'] ?? null) : null;
                     if (! is_array($value)
-                        || ! $this->isValidDate($value['from'] ?? null)
-                        || ! $this->isValidDate($value['to'] ?? null)
-                        || $value['to'] < $value['from']) {
+                        || ($from === null && $to === null)
+                        || ($from !== null && ! $this->isValidDate($from))
+                        || ($to !== null && ! $this->isValidDate($to))
+                        || ($from !== null && $to !== null && $to < $from)) {
                         $errors->add("filters.{$filterId}", 'نطاق التاريخ غير صالح.');
                     }
                     break;

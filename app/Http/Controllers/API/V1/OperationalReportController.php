@@ -326,8 +326,6 @@ class OperationalReportController extends BaseController
             'report_schema_version' => $preset->report_schema_version,
             'criteria' => $preset->criteria,
             'presentation' => $preset->presentation,
-            'created_at' => $preset->created_at?->toIso8601String(),
-            'updated_at' => $preset->updated_at?->toIso8601String(),
         ];
     }
 

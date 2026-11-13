@@ -33,6 +33,18 @@ final class OperationalReportPresetValidator
         }
 
         $rawFilters = [];
+        $expectedTypes = [
+            'text' => 'text',
+            'integer' => 'integer',
+            'decimal' => 'decimal',
+            'date' => 'date',
+            'date_range' => 'date_range',
+            'boolean' => 'boolean',
+            'single_choice' => 'choice',
+            'multi_choice' => 'choices',
+        ];
+        $filterDefinitions = collect($definition['filters'] ?? [])->keyBy('id');
+
         foreach ($typedFilters as $filterId => $typedValue) {
             if (! is_array($typedValue)
                 || array_diff(array_keys($typedValue), ['type', 'value']) !== []
@@ -42,7 +54,35 @@ final class OperationalReportPresetValidator
                 continue;
             }
 
+            $filterDefinition = $filterDefinitions->get($filterId);
+            $expectedType = $filterDefinition === null
+                ? null
+                : ($expectedTypes[$filterDefinition['kind'] ?? ''] ?? null);
+            if ($expectedType === null || $typedValue['type'] !== $expectedType) {
+                $errors->add('criteria.filters.'.$filterId.'.type', 'نوع القيمة المحفوظة لا يطابق تعريف المرشح الحالي.');
+                continue;
+            }
+
             $value = $typedValue['value'];
+            $validTypedValue = match ($expectedType) {
+                'text', 'decimal', 'date', 'choice' => is_string($value),
+                'integer' => is_int($value),
+                'boolean' => is_bool($value),
+                'choices' => is_array($value) && array_is_list($value)
+                    && count(array_filter($value, 'is_string')) === count($value),
+                'date_range' => is_array($value)
+                    && array_diff(array_keys($value), ['start', 'end']) === []
+                    && array_key_exists('start', $value)
+                    && array_key_exists('end', $value)
+                    && ($value['start'] === null || is_string($value['start']))
+                    && ($value['end'] === null || is_string($value['end'])),
+                default => false,
+            };
+            if (! $validTypedValue) {
+                $errors->add('criteria.filters.'.$filterId.'.value', 'القيمة لا تطابق النوع المعلن للمرشح.');
+                continue;
+            }
+
             $rawFilters[$filterId] = match ($typedValue['type']) {
                 'text', 'integer', 'decimal', 'boolean', 'choice', 'choices' => $value,
                 'date' => is_string($value) ? substr($value, 0, 10) : $value,
