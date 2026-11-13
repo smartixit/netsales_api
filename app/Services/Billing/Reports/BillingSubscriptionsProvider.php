@@ -9,6 +9,7 @@ final class BillingSubscriptionsProvider extends ConfiguredBillingReportProvider
         if($networkId!==null)$q->where('ba.network_id',$networkId);
         if(!empty($filters['from_date']))$q->whereDate('s.created_at','>=',$filters['from_date']);
         if(!empty($filters['to_date']))$q->whereDate('s.created_at','<=',$filters['to_date']);
+        if(!empty($filters['status']))$q->where('s.status',strtoupper((string)$filters['status']));
         $counts=(clone $q)->select('s.status')->selectRaw('COUNT(*) as total')->groupBy('s.status')->get();
         $byCurrency=(clone $q)->select('s.currency_id')->selectRaw('COUNT(*) as total')->groupBy('s.currency_id')->get();
         $status=fn(string $v)=>(int)($counts->firstWhere('status',$v)?->total??0);
