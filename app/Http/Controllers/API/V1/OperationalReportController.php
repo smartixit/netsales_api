@@ -235,7 +235,7 @@ class OperationalReportController extends BaseController
         $errors = $this->presetValidator->validate(
             $type->value,
             $posId,
-            $data['filters'],
+            $data['criteria'],
             $data['presentation'],
             (int) $data['report_schema_version']
         );
@@ -246,7 +246,8 @@ class OperationalReportController extends BaseController
         $preset->fill([
             'name' => trim($data['name']),
             'report_schema_version' => (int) $data['report_schema_version'],
-            'criteria' => $data['filters'],
+            'preset_schema_version' => 1,
+            'criteria' => $data['criteria'],
             'presentation' => $data['presentation'],
         ])->save();
 
