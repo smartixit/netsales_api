@@ -129,6 +129,20 @@ final class OperationalDocumentSnapshotService
                 return $snapshot;
             }
 
+            $realPath = $artifact->getRealPath();
+            $signature = $realPath === false ? false : file_get_contents($realPath, false, null, 0, 5);
+            if ($signature !== '%PDF-') {
+                throw ValidationException::withMessages([
+                    'artifact' => ['الملف المرفوع لا يحمل ترويسة PDF صالحة.'],
+                ]);
+            }
+
+            $artifactHash = hash_file('sha256', $realPath);
+            $artifactSize = $artifact->getSize();
+            if (! is_string($artifactHash) || $artifactSize === false || $artifactSize < 5) {
+                throw new \RuntimeException('DOCUMENT_ARTIFACT_INTEGRITY_READ_FAILED');
+            }
+
             $path = 'operational-documents/'.$snapshot->network_id.'/'.$snapshot->document_type.'/'.$snapshot->snapshot_uuid.'.pdf';
             $storedPath = Storage::disk('protected')->putFileAs(
                 dirname($path),
@@ -139,11 +153,16 @@ final class OperationalDocumentSnapshotService
                 throw new \RuntimeException('DOCUMENT_ARTIFACT_STORAGE_FAILED');
             }
 
-            $snapshot->forceFill([
-                'artifact_path' => $storedPath,
-                'artifact_sha256' => hash_file('sha256', $artifact->getRealPath()),
-                'artifact_size' => $artifact->getSize(),
-            ])->save();
+            try {
+                $snapshot->forceFill([
+                    'artifact_path' => $storedPath,
+                    'artifact_sha256' => $artifactHash,
+                    'artifact_size' => $artifactSize,
+                ])->save();
+            } catch (\Throwable $exception) {
+                Storage::disk('protected')->delete($storedPath);
+                throw $exception;
+            }
 
             return $snapshot->fresh();
         }, 3);
