@@ -57,7 +57,7 @@ final class BillingReportProviderRegistry
                     'invoices','receivables' => ['DRAFT','OPEN','PARTIALLY_PAID','PARTIALLY_CREDITED','PAID','CREDITED','UNCOLLECTIBLE','VOID'],
                     'collections' => ['PENDING_REVIEW','VERIFIED','FAILED','REJECTED','REFUNDED','PARTIALLY_REFUNDED'],
                     'refunds' => ['PENDING','COMPLETED'],
-                    'dunning' => ['SCHEDULED','PROCESSING','SUCCEEDED','FAILED','CANCELLED'],
+                    'dunning' => ['PENDING','QUEUED','CANCELLED'],
                     default => [],
                 },
                 'metrics' => match ($key) {
