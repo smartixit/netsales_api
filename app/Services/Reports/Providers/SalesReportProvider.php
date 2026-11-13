@@ -102,6 +102,7 @@ final class SalesReportProvider extends AbstractOperationalReportProvider
             'total_amount' => $this->amountValue((clone $query)->sum('invoice_total_amount')),
             'paid_amount' => $this->amountValue((clone $query)->sum('paid_amount')),
             'remaining_amount' => $this->amountValue((clone $query)->sum('remaining_amount')),
+            'currency_code' => $this->currencyCode($networkId),
             'charts' => [
                 'sales_by_day' => $daily,
                 'sales_by_payment_status' => $statuses,
