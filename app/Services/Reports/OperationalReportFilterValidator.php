@@ -3,6 +3,8 @@
 namespace App\Services\Reports;
 
 use App\Enums\OperationalReportType;
+use App\Support\DecimalAmount;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\MessageBag;
 
 final class OperationalReportFilterValidator
@@ -12,12 +14,16 @@ final class OperationalReportFilterValidator
     ) {}
 
     /**
-     * Adds report-specific validation errors to the supplied MessageBag.
+     * Validate the filter values against the selected provider's public schema.
      *
-     * @param  array<string, mixed>  $input
+     * @param  array<string, mixed>  $filters
      */
-    public function validate(OperationalReportType $type, ?int $posId, array $input, MessageBag $errors): void
-    {
+    public function validate(
+        OperationalReportType $type,
+        ?int $posId,
+        array $filters,
+        MessageBag $errors
+    ): void {
         $definition = $this->registry->get($type)->definition();
         $posSelection = $definition['pos_selection'] ?? 'optional';
 
@@ -29,37 +35,128 @@ final class OperationalReportFilterValidator
             $errors->add('pos_id', 'لا يقبل هذا التقرير التصفية حسب نقطة البيع.');
         }
 
-        $allowedFilterIds = array_column($definition['filters'], 'id');
-        $allowedFilterIds = array_merge($allowedFilterIds, ['per_page', 'cursor']);
-        foreach (array_keys($input) as $inputKey) {
-            if (in_array($inputKey, ['report_type', 'network_id', 'pos_id'], true)) {
-                continue;
-            }
-            if (! in_array($inputKey, $allowedFilterIds, true)) {
-                $errors->add($inputKey, 'هذا المرشح غير مدعوم لنوع التقرير المحدد.');
+        $filterDefinitions = $definition['filters'] ?? [];
+        $allowedFilterIds = array_column($filterDefinitions, 'id');
+
+        foreach (array_keys($filters) as $filterId) {
+            if (! in_array($filterId, $allowedFilterIds, true)) {
+                $errors->add("filters.{$filterId}", 'هذا المرشح غير مدعوم لنوع التقرير المحدد.');
             }
         }
 
-        foreach ($definition['filters'] as $filter) {
-            $id = $filter['id'];
-            if (! array_key_exists($id, $input) || $input[$id] === null || $input[$id] === '') {
+        foreach ($filterDefinitions as $filter) {
+            $filterId = $filter['id'];
+            $hasValue = array_key_exists($filterId, $filters)
+                && $filters[$filterId] !== null
+                && $filters[$filterId] !== '';
+
+            if (($filter['required'] ?? false) && ! $hasValue) {
+                $errors->add("filters.{$filterId}", 'هذا المرشح مطلوب لهذا التقرير.');
                 continue;
             }
 
-            if (($filter['kind'] ?? null) === 'single_choice') {
-                $allowedChoices = $filter['choices'] ?? [];
-                $allowed = array_column($allowedChoices, 'value');
-                if (! in_array((string) $input[$id], $allowed, true)) {
-                    $errors->add($id, 'القيمة المحددة غير مدعومة لهذا التقرير.');
-                }
+            if (! $hasValue) {
+                continue;
             }
 
-            if (($filter['kind'] ?? null) === 'text') {
-                $maxLength = (int) ($filter['max_length'] ?? 0);
-                if ($maxLength > 0 && mb_strlen(trim((string) $input[$id])) > $maxLength) {
-                    $errors->add($id, "يجب ألا يتجاوز البحث {$maxLength} محرفاً.");
-                }
+            $value = $filters[$filterId];
+            $kind = $filter['kind'] ?? null;
+
+            switch ($kind) {
+                case 'text':
+                    if (! is_string($value)) {
+                        $errors->add("filters.{$filterId}", 'يجب أن تكون قيمة المرشح نصاً.');
+                        break;
+                    }
+
+                    $length = mb_strlen(trim($value));
+                    $minLength = (int) ($filter['min_length'] ?? 0);
+                    $maxLength = (int) ($filter['max_length'] ?? 0);
+
+                    if ($minLength > 0 && $length < $minLength) {
+                        $errors->add("filters.{$filterId}", "يجب ألا يقل النص عن {$minLength} محرفاً.");
+                    }
+                    if ($maxLength > 0 && $length > $maxLength) {
+                        $errors->add("filters.{$filterId}", "يجب ألا يتجاوز النص {$maxLength} محرفاً.");
+                    }
+                    break;
+
+                case 'date':
+                    if (! $this->isValidDate($value)) {
+                        $errors->add("filters.{$filterId}", 'يجب إدخال التاريخ بصيغة YYYY-MM-DD.');
+                    }
+                    break;
+
+                case 'integer':
+                    if (filter_var($value, FILTER_VALIDATE_INT) === false) {
+                        $errors->add("filters.{$filterId}", 'يجب إدخال عدد صحيح.');
+                    }
+                    break;
+
+                case 'decimal':
+                    try {
+                        DecimalAmount::toMinorUnits($value);
+                    } catch (\Throwable) {
+                        $errors->add("filters.{$filterId}", 'يجب إدخال مبلغ عشري صالح بخانتين كحد أقصى.');
+                    }
+                    break;
+
+                case 'boolean':
+                    if (! is_bool($value) && ! in_array($value, [0, 1, '0', '1', 'true', 'false'], true)) {
+                        $errors->add("filters.{$filterId}", 'قيمة منطقية غير صالحة.');
+                    }
+                    break;
+
+                case 'single_choice':
+                    $allowed = array_column($filter['choices'] ?? [], 'value');
+                    if (! is_scalar($value) || ! in_array((string) $value, $allowed, true)) {
+                        $errors->add("filters.{$filterId}", 'القيمة المحددة غير مدعومة لهذا التقرير.');
+                    }
+                    break;
+
+                case 'multi_choice':
+                    $allowed = array_column($filter['choices'] ?? [], 'value');
+                    if (! is_array($value)
+                        || array_diff(array_map('strval', $value), $allowed) !== []) {
+                        $errors->add("filters.{$filterId}", 'تحتوي القائمة على قيمة غير مدعومة لهذا التقرير.');
+                    }
+                    break;
+
+                case 'date_range':
+                    if (! is_array($value)
+                        || ! $this->isValidDate($value['from'] ?? null)
+                        || ! $this->isValidDate($value['to'] ?? null)
+                        || $value['to'] < $value['from']) {
+                        $errors->add("filters.{$filterId}", 'نطاق التاريخ غير صالح.');
+                    }
+                    break;
+
+                default:
+                    $errors->add("filters.{$filterId}", 'نوع المرشح غير مدعوم في تعريف التقرير.');
+                    break;
             }
         }
+
+        if (isset($filters['from_date'], $filters['to_date'])
+            && $this->isValidDate($filters['from_date'])
+            && $this->isValidDate($filters['to_date'])
+            && $filters['to_date'] < $filters['from_date']) {
+            $errors->add('filters.to_date', 'يجب أن يكون تاريخ النهاية مساوياً لتاريخ البداية أو بعده.');
+        }
+    }
+
+    private function isValidDate(mixed $value): bool
+    {
+        if (! is_string($value)) {
+            return false;
+        }
+
+        try {
+            $date = Carbon::createFromFormat('!Y-m-d', $value);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return $date !== false && $date->format('Y-m-d') === $value;
     }
 }
