@@ -153,7 +153,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع الخطط والأسعار المتاحة بعملة حساب الفوترة.',
             BillingPlanResource::collection($this->self->plans(
                 $billingAccountId,
-                $request->only(['search', 'per_page', 'all']),
+                $request->only(['search', 'per_page', 'cursor', 'all']),
                 $this->requireCurrentUser()
             ))
         );
@@ -183,7 +183,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع اشتراكات حساب الفوترة.',
             BillingSubscriptionResource::collection($this->self->subscriptions(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'all']),
+                $request->only(['status', 'per_page', 'cursor', 'all']),
                 $this->requireCurrentUser()
             ))
         );
