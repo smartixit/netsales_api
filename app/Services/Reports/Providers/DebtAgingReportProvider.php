@@ -44,5 +44,5 @@ public function summary(User $user,int $networkId,?int $posId,array $filters):ar
  ];
 }
 public function exportColumns():array{return ['invoice_id'=>'رقم الفاتورة','invoice_uuid'=>'مرجع الفاتورة','invoice_date'=>'التاريخ','pos_name'=>'نقطة البيع','invoice_total_amount'=>'الإجمالي','paid_amount'=>'المدفوع','remaining_amount'=>'المتبقي','age_days'=>'عمر الدين','aging_bucket'=>'شريحة العمر'];}
-public function serializeExportRow(mixed $r):array{return ['invoice_id'=>$r->invoice_id,'invoice_uuid'=>$r->invoice_uuid,'invoice_date'=>$this->dateValue($r->invoice_date),'pos_name'=>$r->pos?->pos_name,'invoice_total_amount'=>$this->amountValue($r->invoice_total_amount),'paid_amount'=>$this->amountValue($r->paid_amount),'remaining_amount'=>$this->amountValue($r->remaining_amount),...$this->aging($r)];}
+public function serializeRow(mixed $r):array{return ['invoice_id'=>$r->invoice_id,'invoice_uuid'=>$r->invoice_uuid,'invoice_date'=>$this->dateValue($r->invoice_date),'pos_name'=>$r->pos?->pos_name,'invoice_total_amount'=>$this->amountValue($r->invoice_total_amount),'paid_amount'=>$this->amountValue($r->paid_amount),'remaining_amount'=>$this->amountValue($r->remaining_amount),...$this->aging($r)];}
 }
