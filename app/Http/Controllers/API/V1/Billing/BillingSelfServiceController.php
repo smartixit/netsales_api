@@ -36,7 +36,6 @@ class BillingSelfServiceController extends BaseController
         return $request->validate(array_merge([
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
             'cursor' => ['nullable', 'string', 'max:2048'],
-            'all' => ['sometimes', 'boolean'],
         ], $extra));
     }
 
