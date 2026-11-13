@@ -43,5 +43,5 @@ interface OperationalReportProvider
      *
      * @return array<string, mixed>
      */
-    public function serializeExportRow(mixed $row): array;
+    public function serializeRow(mixed $row): array;
 }
