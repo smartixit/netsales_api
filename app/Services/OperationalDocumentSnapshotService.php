@@ -386,36 +386,47 @@ final class OperationalDocumentSnapshotService
 
     private function resolveCurrency(int $networkId, ?int $posId): string
     {
-        $networkCurrency = \App\Models\NetworkWallet::query()
+        $networkCurrency = \App\Models\NetworkWallet::withTrashed()
             ->where('network_id', $networkId)
             ->value('currency_code');
+        $networkCurrency = $this->requireCurrencyCode($networkCurrency, 'network_wallet');
 
-        $networkCurrency = is_string($networkCurrency) && $networkCurrency !== ''
-            ? strtoupper($networkCurrency)
-            : null;
-
-        if ($posId !== null) {
-            $posCurrency = PosWallet::query()
-                ->where('network_id', $networkId)
-                ->where('pos_id', $posId)
-                ->value('currency_code');
-
-            $posCurrency = is_string($posCurrency) && $posCurrency !== ''
-                ? strtoupper($posCurrency)
-                : null;
-
-            if ($networkCurrency !== null &&
-                $posCurrency !== null &&
-                $networkCurrency !== $posCurrency) {
-                throw ValidationException::withMessages([
-                    'currency_code' => ['عملة محفظة الشبكة لا تطابق عملة محفظة نقطة البيع؛ لا يمكن إصدار مستند موحد العملة.'],
-                ]);
-            }
-
-            if ($posCurrency !== null) {
-                return $posCurrency;
-            }
+        if ($posId === null) {
+            return $networkCurrency;
         }
 
-        return $networkCurrency ?? 'YER';
-    }}
+        $posCurrency = PosWallet::withTrashed()
+            ->where('network_id', $networkId)
+            ->where('pos_id', $posId)
+            ->value('currency_code');
+        $posCurrency = $this->requireCurrencyCode($posCurrency, 'pos_wallet');
+
+        if ($networkCurrency !== $posCurrency) {
+            throw ValidationException::withMessages([
+                'currency_code' => [
+                    'عملة محفظة الشبكة لا تطابق عملة محفظة نقطة البيع؛ لا يمكن إصدار مستند موحد العملة.',
+                ],
+            ]);
+        }
+
+        return $networkCurrency;
+    }
+
+    private function requireCurrencyCode(mixed $value, string $source): string
+    {
+        if (! is_string($value)) {
+            throw ValidationException::withMessages([
+                'currency_code' => ["تعذر تحديد رمز العملة من مصدر العملة المعتمد: {$source}."],
+            ]);
+        }
+
+        $currencyCode = strtoupper(trim($value));
+        if (preg_match('/^[A-Z]{3}$/D', $currencyCode) !== 1) {
+            throw ValidationException::withMessages([
+                'currency_code' => ["رمز العملة غير صالح في مصدر العملة المعتمد: {$source}."],
+            ]);
+        }
+
+        return $currencyCode;
+    }
+}
