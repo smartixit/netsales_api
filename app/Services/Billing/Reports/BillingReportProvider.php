@@ -10,4 +10,5 @@ interface BillingReportProvider
     public function definition(): array;
     public function build(?int $networkId, array $filters): CursorPaginator;
     public function summary(?int $networkId, array $filters): array;
+    public function exportRows(?int $networkId, array $filters): iterable;
 }
