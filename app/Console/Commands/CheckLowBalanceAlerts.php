@@ -18,9 +18,11 @@ use Illuminate\Console\Command;
  */
 class CheckLowBalanceAlerts extends Command
 {
-    protected $signature = 'alerts:low-balance 
+    protected $signature = 'alerts:low-balance
                             {--threshold= : Minimum balance threshold (defaults to system setting)}
-                            {--force : Force sending even if already alerted today}';
+                            {--date= : Scheduled target date (YYYY-MM-DD)}
+                            {--slot=default : Scheduled occurrence slot (e.g. 09:00 or 15:00)}
+                            {--force : Force sending even if already alerted for this slot}';
 
     protected $description = 'يفحص أرصدة محافظ نقاط البيع وينبه الشبكة ونقطة البيع عند انخفاض الرصيد عن الحد الأدنى';
 
@@ -34,7 +36,10 @@ class CheckLowBalanceAlerts extends Command
         $threshold = $this->option('threshold') !== null ? (float) $this->option('threshold') : $defaultThreshold;
         $currencySymbol = systemSetting('currency_symbol', 'ر.ي');
         $force = (bool) $this->option('force');
-        $targetDate = $now->toDateString();
+        $targetDate = $this->option('date')
+            ? Carbon::parse((string) $this->option('date'), 'Asia/Aden')->toDateString()
+            : $now->toDateString();
+        $scheduleSlot = (string) ($this->option('slot') ?: 'default');
 
         $this->info("🚀 فحص أرصدة المحافظ التي تقل عن {$threshold} {$currencySymbol}...");
 
@@ -48,20 +53,25 @@ class CheckLowBalanceAlerts extends Command
         if ($lowWallets->isEmpty()) {
             $this->info('ℹ️ جميع أرصدة المحافظ أعلى من الحد الأدنى.');
 
-            return 0;
+            return self::SUCCESS;
         }
 
         $alertCount = 0;
         $taskType = ScheduledTaskType::ALERTS_LOW_BALANCE;
         $walletsByNetwork = $lowWallets->groupBy('network_id');
 
-        foreach ($walletsByNetwork as $networkId => $wallets) {
+        foreach ($walletsByNetwork as $wallets) {
             $network = $wallets->first()->network;
             if (! $network) {
                 continue;
             }
 
-            if (! $force && $taskRunRepository->wasExecuted($taskType, $network->network_id, $targetDate)) {
+            if (! $force && $taskRunRepository->wasExecuted(
+                $taskType,
+                $network->network_id,
+                $targetDate,
+                $scheduleSlot
+            )) {
                 continue;
             }
 
@@ -75,7 +85,7 @@ class CheckLowBalanceAlerts extends Command
 
                 $message = "⚠️ تنبيه انخفاض الرصيد:\n"
                     ."رصيد المحفظة لدى ({$posName}) في شبكة ({$network->network_name}) قد انخفض إلى: {$balanceFormatted} {$currencySymbol}.\n"
-                    .'يرجى تغذية المحفظة لضمان استمرار مبيعات الكروت.';
+                    .'يرجى تغذية المحفظة لضمان استمرار المبيعات.';
 
                 $smsSent = false;
                 if ($smsSetting?->is_enabled && $smsSetting->notify_low_balance && $network->network_phone_number) {
@@ -119,12 +129,13 @@ class CheckLowBalanceAlerts extends Command
                 extra: [
                     'wallets_count' => count($alertedWallets),
                     'wallets' => $alertedWallets,
-                ]
+                ],
+                scheduleSlot: $scheduleSlot
             );
         }
 
         $this->info("✅ اكتملت المهمة: تم إرسال {$alertCount} تنبيهاً لانخفاض الرصيد.");
 
-        return 0;
+        return self::SUCCESS;
     }
 }

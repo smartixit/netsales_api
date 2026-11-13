@@ -7,6 +7,7 @@ namespace App\Enums;
  */
 enum ScheduledTaskStatus: string
 {
+    case RUNNING = 'running';
     case SENT = 'sent';
     case COMPLETED = 'completed';
     case FAILED = 'failed';
@@ -25,6 +26,7 @@ enum ScheduledTaskStatus: string
     public function label(): string
     {
         return match ($this) {
+            self::RUNNING => 'قيد التنفيذ',
             self::SENT => 'تم الإرسال',
             self::COMPLETED => 'مكتمل بنجاح',
             self::FAILED => 'فشل التنفيذ',
@@ -45,5 +47,10 @@ enum ScheduledTaskStatus: string
     public function isSkipped(): bool
     {
         return $this === self::SKIPPED;
+    }
+
+    public function isRunning(): bool
+    {
+        return $this === self::RUNNING;
     }
 }

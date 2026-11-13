@@ -5,45 +5,40 @@ namespace App\Services;
 use App\Enums\ScheduledTaskStatus;
 use App\Enums\ScheduledTaskType;
 use App\Interfaces\ScheduledTaskRunRepositoryInterface;
-use App\Interfaces\SystemSettingRepositoryInterface;
 use App\Services\Backup\BackupSettingsService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Queue;
+use Throwable;
 
 /**
- * محرك التعويض الذكي للمهام المجدولة (Smart Scheduler Catch-up Engine).
+ * محرك الجدولة المركزي والاستدراك الذكي لجميع مهام NetSales.
  *
- * يحل مشكلة تفويت المهام المجدولة عند غياب الـ OS Crontab المستمر أو عند إعادة تشغيل السيرفر.
- * يفحص استحقاق المهام (ساعية، يومية، أسبوعية، شهرية) وينفذ المهام الفائتة فوراً
- * مع حماية تامة من التكرار والتداخل (Anti-Overlapping) وتسجيل السجلات في scheduled_task_runs.
+ * مصدر الحقيقة لدورات التنفيذ هو سجل قاعدة البيانات schedule_slot؛ ويستخدم
+ * Cache فقط للتخفيف من التنافس وتصريف Queue، وليس لتحديد آخر تشغيل ناجح.
  */
 class SmartSchedulerCatchupService
 {
     public function __construct(
         protected ScheduledTaskRunRepositoryInterface $taskRunRepository,
-        protected SystemSettingRepositoryInterface $systemSettingRepository,
         protected BackupSettingsService $backupSettings
     ) {}
 
     /**
-     * جلب سجل كل المهام المجدولة في نظام NetSales وقواعد استحقاقها من ScheduledTaskType Enum
-     *
-     * @return array<string, array{type: ScheduledTaskType, name: string, command: string, frequency: string, target_hour: int}>
+     * @return array<string, array{type: ScheduledTaskType, name: string, command: string, schedule: array}>
      */
     public function getTasks(): array
     {
         $tasks = [];
+
         foreach (ScheduledTaskType::cases() as $type) {
             $tasks[$type->value] = [
                 'type' => $type,
                 'name' => $type->label(),
                 'command' => $type->command(),
-                'frequency' => $type->frequency(),
-                'target_hour' => $type->defaultTargetHour(),
+                'schedule' => $type->schedule(),
             ];
         }
 
@@ -51,57 +46,97 @@ class SmartSchedulerCatchupService
     }
 
     /**
-     * تشغيل فحص التعويض لكل المهام المجدولة
+     * نقطة تشغيل خفيفة لطلبات التطبيق: تعالج أقدم دورتين مستحقتين ثم محاولة Queue واحدة.
      */
-    public function runAllCatchupTasks(bool $force = false, ?string $singleTask = null): array
+    public function runActivityTick(): array
     {
+        return $this->runAllCatchupTasks(false, null, 2, true);
+    }
+
+    /**
+     * يشغل الدورات المستحقة بترتيب موعدها، مع إمكانية تحديد المهمة أو فرض تشغيل يدوي.
+     *
+     * @return array{executed:array<string,array>,skipped:array<string,array>,server_time:string}
+     */
+    public function runAllCatchupTasks(
+        bool $force = false,
+        ?string $singleTask = null,
+        int $maxTasks = PHP_INT_MAX,
+        bool $drainQueue = true
+    ): array {
         $now = Carbon::now('Asia/Aden');
         $executedTasks = [];
         $skippedTasks = [];
+        $dueTasks = [];
 
         foreach ($this->getTasks() as $key => $config) {
-            if ($singleTask && $key !== $singleTask && $config['command'] !== $singleTask) {
+            if ($singleTask !== null && $key !== $singleTask && $config['command'] !== $singleTask) {
                 continue;
             }
 
-            $isDue = $force || $this->isTaskDue($key, $config, $now);
-
-            if (! $isDue) {
+            if ($key === ScheduledTaskType::BACKUP_AUTO->value && ! $this->backupSettings->enabled()) {
                 $skippedTasks[$key] = [
                     'name' => $config['name'],
-                    'reason' => 'not_due_or_already_executed',
-                    'last_run' => $this->getLastRunKey($key),
+                    'reason' => 'disabled_by_backup_settings',
                 ];
 
                 continue;
             }
 
-            // قفل تزامني لمنع التداخل بين العمليات المتزامنة
-            $lockKey = "smart_catchup_lock_{$key}";
-            $lock = Cache::lock($lockKey, 180);
+            $scheduledAt = $force
+                ? $now->copy()
+                : $this->resolveScheduledOccurrence($config['schedule'], $now);
 
-            if (! $lock->get()) {
+            if ($scheduledAt !== null) {
+                $dueTasks[] = [
+                    'key' => $key,
+                    'config' => $config,
+                    'scheduled_at' => $scheduledAt,
+                ];
+            }
+        }
+
+        usort($dueTasks, static function (array $left, array $right): int {
+            $timeComparison = $left['scheduled_at']->getTimestamp() <=> $right['scheduled_at']->getTimestamp();
+
+            return $timeComparison !== 0
+                ? $timeComparison
+                : strcmp($left['key'], $right['key']);
+        });
+
+        foreach (array_slice($dueTasks, 0, max(0, $maxTasks)) as $task) {
+            $key = $task['key'];
+            $config = $task['config'];
+            /** @var Carbon $scheduledAt */
+            $scheduledAt = $task['scheduled_at'];
+            $type = $config['type'];
+
+            if (! $this->taskRunRepository->claimScheduledSlot($type, $scheduledAt)) {
                 $skippedTasks[$key] = [
                     'name' => $config['name'],
-                    'reason' => 'locked_by_concurrent_process',
+                    'reason' => 'slot_already_claimed_or_completed',
+                    'scheduled_for' => $scheduledAt->toDateTimeString(),
                 ];
 
                 continue;
             }
+
+            $arguments = $this->commandArguments($type, $scheduledAt);
 
             try {
-                if (! $force && ! $this->isTaskDue($key, $config, $now)) {
-                    continue;
-                }
-
-                // تنفيذ الأمر الفعلي
-                $exitCode = Artisan::call($config['command']);
+                $exitCode = Artisan::call($config['command'], $arguments);
                 $output = trim(Artisan::output());
+                $status = $exitCode === 0
+                    ? ScheduledTaskStatus::COMPLETED
+                    : ScheduledTaskStatus::FAILED;
 
-                $status = $exitCode === 0 ? ScheduledTaskStatus::COMPLETED : ScheduledTaskStatus::FAILED;
-
-                // تسجيل إتمام التنفيذ في قاعدة البيانات وذاكرة النظام
-                $this->markTaskExecuted($key, $config, $now, $status, ['output' => $output]);
+                $this->taskRunRepository->finishScheduledSlot($type, $scheduledAt, $status, [
+                    'command' => $config['command'],
+                    'arguments' => $arguments,
+                    'scheduled_for' => $scheduledAt->toDateTimeString(),
+                    'exit_code' => $exitCode,
+                    'output' => $output,
+                ]);
 
                 $executedTasks[$key] = [
                     'name' => $config['name'],
@@ -109,40 +144,58 @@ class SmartSchedulerCatchupService
                     'status' => $exitCode === 0 ? 'success' : 'failed',
                     'exit_code' => $exitCode,
                     'output' => $output,
-                    'executed_at' => $now->toDateTimeString(),
+                    'scheduled_for' => $scheduledAt->toDateTimeString(),
+                    'executed_at' => Carbon::now('Asia/Aden')->toDateTimeString(),
                 ];
 
-                SystemLoggerService::log(
-                    module: 'scheduler',
-                    action: 'catchup_task_executed',
-                    newData: [
-                        'task' => $config['name'],
-                        'command' => $config['command'],
-                        'exit_code' => $exitCode,
-                        'output' => $output,
-                    ]
-                );
-            } catch (\Throwable $e) {
-                Log::error("❌ [SmartSchedulerCatchup] فشل في تنفيذ {$config['command']}: ".$e->getMessage(), [
-                    'trace' => $e->getTraceAsString(),
+                try {
+                    SystemLoggerService::log(
+                        module: 'scheduler',
+                        action: 'catchup_task_executed',
+                        newData: [
+                            'task' => $config['name'],
+                            'command' => $config['command'],
+                            'scheduled_for' => $scheduledAt->toDateTimeString(),
+                            'exit_code' => $exitCode,
+                            'output' => $output,
+                        ]
+                    );
+                } catch (Throwable $loggingException) {
+                    Log::warning('تعذر تسجيل أثر تنفيذ المهمة المجدولة: '.$loggingException->getMessage());
+                }
+            } catch (Throwable $exception) {
+                Log::error("فشل تنفيذ {$config['command']}: ".$exception->getMessage(), [
+                    'scheduled_for' => $scheduledAt->toDateTimeString(),
+                    'trace' => $exception->getTraceAsString(),
                 ]);
 
-                $this->markTaskExecuted($key, $config, $now, ScheduledTaskStatus::FAILED, ['error' => $e->getMessage()]);
+                try {
+                    $this->taskRunRepository->finishScheduledSlot(
+                        $type,
+                        $scheduledAt,
+                        ScheduledTaskStatus::FAILED,
+                        [
+                            'command' => $config['command'],
+                            'scheduled_for' => $scheduledAt->toDateTimeString(),
+                            'error' => $exception->getMessage(),
+                        ]
+                    );
+                } catch (Throwable $recordException) {
+                    Log::critical('تعذر تثبيت فشل المهمة في سجل الجدولة: '.$recordException->getMessage());
+                }
 
                 $executedTasks[$key] = [
                     'name' => $config['name'],
                     'command' => $config['command'],
                     'status' => 'error',
-                    'error' => $e->getMessage(),
-                    'executed_at' => $now->toDateTimeString(),
+                    'error' => $exception->getMessage(),
+                    'scheduled_for' => $scheduledAt->toDateTimeString(),
+                    'executed_at' => Carbon::now('Asia/Aden')->toDateTimeString(),
                 ];
-            } finally {
-                optional($lock)->release();
             }
         }
 
-        // فحص وتصريف مهام الطابور المعلقة ذاتياً عند غياب معالج الطوابير الدائم
-        if ($drainResult = $this->drainPendingQueueJobs($now)) {
+        if ($drainQueue && ($drainResult = $this->drainPendingQueueJob($now)) !== null) {
             $executedTasks['queue_worker_drain'] = $drainResult;
         }
 
@@ -153,22 +206,133 @@ class SmartSchedulerCatchupService
         ];
     }
 
+    private function resolveScheduledOccurrence(array $schedule, Carbon $now): ?Carbon
+    {
+        $kind = $schedule['kind'] ?? null;
+
+        if ($kind === 'every_minute') {
+            return $now->copy()->startOfMinute();
+        }
+
+        if ($kind === 'every_fifteen_minutes') {
+            $minute = intdiv($now->minute, 15) * 15;
+
+            return $now->copy()->setTime($now->hour, $minute, 0);
+        }
+
+        if ($kind === 'twice_daily') {
+            $times = $schedule['times'] ?? [];
+            sort($times);
+
+            $todayOccurrences = [];
+            foreach ($times as $time) {
+                $todayOccurrences[] = $this->atTime($now, $time);
+            }
+
+            foreach (array_reverse($todayOccurrences) as $occurrence) {
+                if ($occurrence->lte($now)) {
+                    return $occurrence;
+                }
+            }
+
+            return $this->atTime($now->copy()->subDay(), end($times) ?: '00:00');
+        }
+
+        $time = $schedule['time'] ?? null;
+        if ($time === null) {
+            $time = $this->backupSettings->scheduleTime();
+        }
+
+        if ($kind === 'daily_at') {
+            $occurrence = $this->atTime($now, $time);
+
+            return $occurrence->gt($now) ? $occurrence->subDay() : $occurrence;
+        }
+
+        if ($kind === 'weekly_on') {
+            $day = (int) ($schedule['day'] ?? 0);
+            $daysBack = ($now->dayOfWeek - $day + 7) % 7;
+            $occurrence = $now->copy()->startOfDay()->subDays($daysBack);
+            $occurrence = $this->atTime($occurrence, $time);
+
+            return $occurrence->gt($now) ? $occurrence->subWeek() : $occurrence;
+        }
+
+        if ($kind === 'monthly_on') {
+            $day = max(1, (int) ($schedule['day'] ?? 1));
+            $monthStart = $now->copy()->startOfMonth();
+            $occurrence = $this->atTime($monthStart, $time)
+                ->day(min($day, $monthStart->daysInMonth));
+
+            if ($occurrence->gt($now)) {
+                $previousMonth = $now->copy()->subMonthNoOverflow()->startOfMonth();
+                $occurrence = $this->atTime($previousMonth, $time)
+                    ->day(min($day, $previousMonth->daysInMonth));
+            }
+
+            return $occurrence;
+        }
+
+        return null;
+    }
+
+    private function atTime(Carbon $date, string $time): Carbon
+    {
+        [$hour, $minute] = array_pad(array_map('intval', explode(':', $time)), 2, 0);
+
+        return $date->copy()->setTime($hour, $minute, 0);
+    }
+
+    private function commandArguments(ScheduledTaskType $type, Carbon $scheduledAt): array
+    {
+        return match ($type) {
+            ScheduledTaskType::BACKUP_AUTO,
+            ScheduledTaskType::REPORTS_DAILY_SMS => [
+                '--date' => $scheduledAt->toDateString(),
+            ],
+            ScheduledTaskType::REPORTS_MONTHLY_SMS => [
+                '--month' => $scheduledAt->format('Y-m'),
+            ],
+            ScheduledTaskType::ALERTS_LOW_BALANCE => [
+                '--date' => $scheduledAt->toDateString(),
+                '--slot' => $scheduledAt->format('H:i'),
+            ],
+            default => [],
+        };
+    }
+
     /**
-     * فحص وتصريف مهام الطابور المعلقة بأمان عند غياب الـ Worker الدائم (Self-Healing Queue Worker)
+     * يعالج عنصراً واحداً فقط في كل نبضة لتجنب تحويل طلب HTTP إلى عامل طوابير دائم.
      *
      * @return array<string, mixed>|null
      */
-    protected function drainPendingQueueJobs(Carbon $now): ?array
+    protected function drainPendingQueueJob(Carbon $now): ?array
     {
-        if (config('queue.default') === 'sync' || ! Schema::hasTable('jobs')) {
+        $connection = (string) config('queue.default');
+
+        if ($connection === '' || in_array($connection, ['sync', 'null'], true)) {
             return null;
         }
 
-        if (! DB::table('jobs')->exists()) {
+        try {
+            if (Queue::connection($connection)->size() < 1) {
+                return null;
+            }
+        } catch (Throwable $exception) {
+            Log::warning('تعذر فحص حجم اتصال الطابور قبل التصريف: '.$exception->getMessage(), [
+                'queue_connection' => $connection,
+            ]);
+
             return null;
         }
 
-        $jobLock = Cache::lock('smart_catchup_queue_worker_lock', 60);
+        try {
+            $jobLock = Cache::lock('smart_catchup_queue_worker_lock', 240);
+        } catch (Throwable $exception) {
+            Log::warning('تعذر إنشاء قفل تصريف الطابور: '.$exception->getMessage());
+
+            return null;
+        }
 
         if (! $jobLock->get()) {
             return null;
@@ -176,152 +340,40 @@ class SmartSchedulerCatchupService
 
         try {
             $exitCode = Artisan::call('queue:work', [
-                '--stop-when-empty' => true,
-                '--max-time' => 15,
+                'connection' => $connection,
+                '--once' => true,
                 '--tries' => 3,
+                '--timeout' => 180,
+                '--sleep' => 0,
             ]);
-
             $output = trim(Artisan::output());
 
             SystemLoggerService::log(
                 module: 'scheduler',
                 action: 'queue_worker_drained',
                 newData: [
-                    'command' => 'queue:work --stop-when-empty',
+                    'command' => 'queue:work '.$connection.' --once',
                     'exit_code' => $exitCode,
                     'output' => $output,
                 ]
             );
 
             return [
-                'name' => 'معالجة وتصريف طوابير المهام المعلقة',
-                'command' => 'queue:work --stop-when-empty',
+                'name' => 'معالجة عنصر واحد من طابور المهام',
+                'command' => 'queue:work '.$connection.' --once',
                 'status' => $exitCode === 0 ? 'success' : 'failed',
                 'exit_code' => $exitCode,
                 'output' => $output,
                 'executed_at' => $now->toDateTimeString(),
             ];
-        } catch (\Throwable $e) {
-            Log::warning('❌ [SmartSchedulerCatchup] تعذر تصريف الطابور: '.$e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
+        } catch (Throwable $exception) {
+            Log::warning('تعذر تصريف عنصر من الطابور: '.$exception->getMessage(), [
+                'trace' => $exception->getTraceAsString(),
             ]);
 
             return null;
         } finally {
             optional($jobLock)->release();
         }
-    }
-
-    /**
-     * هل المهمة مستحقة للتنفيذ الآن؟
-     */
-    public function isTaskDue(string $key, array $config, Carbon $now): bool
-    {
-        // التحقق الخاص بمهمة النسخ الاحتياطي التلقائي
-        if ($key === 'backup_auto') {
-            if (! $this->backupSettings->enabled()) {
-                return false;
-            }
-
-            [$schedHour, $schedMinute] = array_pad(array_map('intval', explode(':', $this->backupSettings->scheduleTime())), 2, 0);
-
-            // أ) إذا كنا قبل ساعة الاستحقاق، هل فات موعد الأمس؟
-            if ($now->hour < $schedHour) {
-                $yesterday = $now->copy()->subDay();
-
-                return ! $this->backupSettings->isBackupCompletedToday($yesterday);
-            }
-
-            // ب) هل حان موعد اليوم ولم يكتمل بعد؟
-            return ! $this->backupSettings->isBackupCompletedToday($now);
-        }
-
-        $frequency = $config['frequency'];
-        $targetHour = $config['target_hour'] ?? 0;
-        $lastRun = $this->getLastRunKey($key);
-
-        switch ($frequency) {
-            case 'hourly':
-                $currentHourStr = $now->format('Y-m-d H');
-
-                return $lastRun !== $currentHourStr;
-
-            case 'daily':
-                $todayStr = $now->toDateString();
-                if ($lastRun === $todayStr) {
-                    return false;
-                }
-
-                return $now->hour >= $targetHour;
-
-            case 'weekly':
-                $currentWeekStr = $now->format('o-\WW');
-
-                return $lastRun !== $currentWeekStr;
-
-            case 'monthly':
-                $currentMonthStr = $now->format('Y-m');
-
-                return $lastRun !== $currentMonthStr;
-
-            default:
-                return false;
-        }
-    }
-
-    /**
-     * تسجيل أن المهمة نُفذت في الدورة الحالية وتخزينها في قاعدة البيانات والذاكرة
-     */
-    public function markTaskExecuted(
-        string $key,
-        array $config,
-        Carbon $now,
-        ScheduledTaskStatus|string $status = ScheduledTaskStatus::COMPLETED,
-        ?array $extra = null
-    ): void {
-        $frequency = $config['frequency'];
-        $targetDate = $now->toDateString();
-
-        if ($key === 'backup_auto') {
-            [$schedHour] = array_pad(array_map('intval', explode(':', $this->backupSettings->scheduleTime())), 1, 0);
-            if ($now->hour < $schedHour) {
-                $targetDate = $now->copy()->subDay()->toDateString();
-            }
-        }
-
-        $value = match ($frequency) {
-            'hourly' => $now->format('Y-m-d H'),
-            'daily' => $targetDate,
-            'weekly' => $now->format('o-\WW'),
-            'monthly' => $now->format('Y-m'),
-            default => $now->toDateTimeString(),
-        };
-
-        // 1. تسجيل القيمة في الكاش لسرعة التحقق
-        $cacheKey = "scheduler_last_run_{$key}";
-        Cache::put($cacheKey, $value, now()->addDays(35));
-
-        // 2. توثيق التنفيذ في جدول scheduled_task_runs لضمان عدم التكرار (Idempotency)
-        try {
-            $this->taskRunRepository->recordRun(
-                taskType: $config['type'] ?? $key,
-                networkId: null,
-                targetDate: $targetDate,
-                status: $status,
-                extra: array_merge(['frequency' => $frequency, 'value' => $value], $extra ?? [])
-            );
-        } catch (\Throwable $e) {
-            Log::warning("تعذر تسجيل تشغيل المهمة المجدولة {$key} في جدول scheduled_task_runs: ".$e->getMessage());
-        }
-    }
-
-    /**
-     * جلب آخر دورة تم فيها تنفيذ المهمة
-     */
-    public function getLastRunKey(string $key): ?string
-    {
-        $cacheKey = "scheduler_last_run_{$key}";
-
-        return Cache::get($cacheKey);
     }
 }

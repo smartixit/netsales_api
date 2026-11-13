@@ -24,6 +24,7 @@ use App\Http\Middleware\EnsurePlatformUserScope;
 use App\Http\Middleware\EnsurePermissionMiddleware;
 use App\Http\Middleware\IdempotencyMiddleware;
 use App\Http\Middleware\InputSanitization;
+use App\Http\Middleware\RunSchedulerCatchupOnActivity;
 use App\Http\Middleware\SessionAuthMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -55,6 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
             EncryptDecryptPayload::class,
             InputSanitization::class,
             IdempotencyMiddleware::class,
+            RunSchedulerCatchupOnActivity::class,
         ]);
 
         $middleware->alias([
@@ -74,8 +76,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (ValidationException $e, Request $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
-                // نعرض أول رسالة تحقق فعلية (مترجمة بالعربية عبر lang/ar) بدل
-                // رسالة عامة مبهمة؛ طالما لا يوجد خطأ نبقى على النص الاحتياطي.
                 $message = collect($e->errors())->flatten()->first()
                     ?? 'عذراً، حدث خطأ في المدخلات المزودة.';
 
@@ -165,7 +165,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'عذراً، الطريقة المستخدمة في الطلب غير مدعومة لهذا المسار.',
+                    'message' => 'عذراً، الطريقة المستخدمة غير مدعومة لهذا المسار.',
                     'data' => (object) [],
                     'errors' => [],
                 ], 405);
