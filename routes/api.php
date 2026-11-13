@@ -671,6 +671,8 @@ Route::prefix('v1')->group(function () {
                 Route::get('accounts/{billingAccountId}/prices/{priceId}/trial-eligibility', [BillingTrialEligibilityController::class, 'show'])
                     ->whereNumber('billingAccountId')->whereNumber('priceId')
                     ->name('api.v1.billing.accounts.prices.trial_eligibility');
+                Route::get('accounts/{billingAccountId}', [BillingSelfServiceController::class, 'account'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.show');
                 Route::get('accounts/{billingAccountId}/entitlements', [BillingSelfServiceController::class, 'entitlements'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.entitlements');
                 Route::get('accounts/{billingAccountId}/plans', [BillingSelfServiceController::class, 'plans'])
@@ -698,6 +700,14 @@ Route::prefix('v1')->group(function () {
             });
 
             Route::middleware('throttle:api-write')->group(function () {
+                Route::put('accounts/{billingAccountId}', [BillingSelfServiceController::class, 'updateAccount'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.update');
+                Route::post('accounts/{billingAccountId}/contacts', [BillingSelfServiceController::class, 'storeContact'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.contacts.store');
+                Route::put('accounts/{billingAccountId}/contacts/{contactId}', [BillingSelfServiceController::class, 'updateContact'])
+                    ->whereNumber('billingAccountId')->whereNumber('contactId')->name('api.v1.billing.accounts.contacts.update');
+                Route::delete('accounts/{billingAccountId}/contacts/{contactId}', [BillingSelfServiceController::class, 'destroyContact'])
+                    ->whereNumber('billingAccountId')->whereNumber('contactId')->name('api.v1.billing.accounts.contacts.destroy');
                 Route::post('accounts/{billingAccountId}/subscriptions', [BillingSelfServiceController::class, 'purchase'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.subscriptions.purchase');
                 Route::post('subscriptions/{subscriptionId}/cancel', [BillingSelfServiceController::class, 'cancelSubscription'])

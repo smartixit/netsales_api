@@ -3,7 +3,7 @@
 namespace App\Services\Billing;
 
 use App\Enums\BillingSubscriptionStatus;
-use App\Models\{BillingAccount, BillingInvoice, BillingSubscription, Network, User};
+use App\Models\{BillingAccount, BillingAccountContact, BillingInvoice, BillingSubscription, Network, User};
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -75,6 +75,69 @@ class BillingAccountService
             );
 
             return $account->load(['defaultCurrency', 'contacts']);
+        }, 3);
+    }
+
+    public function updateDetails(int $accountId, array $data, User $actor): BillingAccount
+    {
+        return DB::transaction(function () use ($accountId, $data, $actor): BillingAccount {
+            $account = BillingAccount::query()->lockForUpdate()->findOrFail($accountId);
+            $this->authorization->assertNetworkOwner($actor, (int) $account->network_id);
+            $account->fill(array_intersect_key($data, array_flip([
+                'legal_name', 'billing_email', 'tax_number', 'billing_address', 'payment_terms_days',
+            ])));
+            $account->save();
+            return $account->fresh()->load(['network', 'defaultCurrency', 'contacts']);
+        }, 3);
+    }
+
+    public function createContact(int $accountId, array $data, User $actor): BillingAccountContact
+    {
+        return DB::transaction(function () use ($accountId, $data, $actor): BillingAccountContact {
+            $account = BillingAccount::query()->lockForUpdate()->findOrFail($accountId);
+            $this->authorization->assertNetworkOwner($actor, (int) $account->network_id);
+            $hasPrimary = $account->contacts()->where('is_primary', true)->exists();
+            $isPrimary = (bool) ($data['is_primary'] ?? false) || ! $hasPrimary;
+            if ($isPrimary) {
+                $account->contacts()->update(['is_primary' => false]);
+            }
+            return $account->contacts()->create([
+                'name' => trim((string) $data['name']),
+                'email' => $data['email'] ?? null,
+                'phone' => $data['phone'] ?? null,
+                'is_primary' => $isPrimary,
+                'receives_invoices' => (bool) ($data['receives_invoices'] ?? true),
+            ]);
+        }, 3);
+    }
+
+    public function updateContact(int $accountId, int $contactId, array $data, User $actor): BillingAccountContact
+    {
+        return DB::transaction(function () use ($accountId, $contactId, $data, $actor): BillingAccountContact {
+            $account = BillingAccount::query()->lockForUpdate()->findOrFail($accountId);
+            $this->authorization->assertNetworkOwner($actor, (int) $account->network_id);
+            $contact = BillingAccountContact::query()->where('billing_account_id', $accountId)->lockForUpdate()->findOrFail($contactId);
+            if (($data['is_primary'] ?? false) === true) {
+                $account->contacts()->where('contact_id', '!=', $contactId)->update(['is_primary' => false]);
+            }
+            $contact->fill(array_intersect_key($data, array_flip(['name', 'email', 'phone', 'is_primary', 'receives_invoices'])));
+            $contact->save();
+            return $contact->fresh();
+        }, 3);
+    }
+
+    public function deleteContact(int $accountId, int $contactId, User $actor): void
+    {
+        DB::transaction(function () use ($accountId, $contactId, $actor): void {
+            $account = BillingAccount::query()->lockForUpdate()->findOrFail($accountId);
+            $this->authorization->assertNetworkOwner($actor, (int) $account->network_id);
+            $contact = BillingAccountContact::query()->where('billing_account_id', $accountId)->lockForUpdate()->findOrFail($contactId);
+            $wasPrimary = (bool) $contact->is_primary;
+            $contact->delete();
+            if ($wasPrimary) {
+                $next = $account->contacts()->orderBy('contact_id')->first();
+                if ($next) $next->update(['is_primary' => true]);
+            }
         }, 3);
     }
 

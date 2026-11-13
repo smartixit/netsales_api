@@ -2,7 +2,7 @@
 
 namespace App\Services\Billing;
 
-use App\Models\{BillingAccount, BillingCreditNote, BillingInvoice, BillingPayment, BillingRefund, BillingSubscription, BillingUsageAggregate, User};
+use App\Models\{BillingAccount, BillingAccountContact, BillingCreditNote, BillingInvoice, BillingPayment, BillingRefund, BillingSubscription, BillingUsageAggregate, User};
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
@@ -28,6 +28,26 @@ class BillingSelfService
     public function account(int $accountId, User $actor): BillingAccount
     {
         return $this->accounts->ownedAccount($accountId, $actor);
+    }
+
+    public function updateAccount(int $accountId, array $data, User $actor): BillingAccount
+    {
+        return $this->accounts->updateDetails($accountId, $data, $actor);
+    }
+
+    public function createContact(int $accountId, array $data, User $actor): BillingAccountContact
+    {
+        return $this->accounts->createContact($accountId, $data, $actor);
+    }
+
+    public function updateContact(int $accountId, int $contactId, array $data, User $actor): BillingAccountContact
+    {
+        return $this->accounts->updateContact($accountId, $contactId, $data, $actor);
+    }
+
+    public function deleteContact(int $accountId, int $contactId, User $actor): void
+    {
+        $this->accounts->deleteContact($accountId, $contactId, $actor);
     }
 
     public function plans(int $accountId, array $filters, User $actor): Collection|CursorPaginator

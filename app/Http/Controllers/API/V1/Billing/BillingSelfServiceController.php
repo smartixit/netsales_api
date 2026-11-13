@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
-use App\Http\Requests\API\V1\Billing\{CreateBillingAccountRequest, PurchaseSubscriptionRequest, StorePaymentRequest};
-use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingRefundResource, BillingSubscriptionEventResource, BillingSubscriptionResource, BillingUsageAggregateResource, PaymentMethodResource};
+use App\Http\Requests\API\V1\Billing\{CreateBillingAccountRequest, PurchaseSubscriptionRequest, StorePaymentRequest, StoreBillingAccountContactRequest, UpdateBillingAccountContactRequest, UpdateBillingAccountRequest};
+use App\Http\Resources\API\V1\Billing\{BillingAccountContactResource, BillingAccountResource, BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingRefundResource, BillingSubscriptionEventResource, BillingSubscriptionResource, BillingUsageAggregateResource, PaymentMethodResource};
 use App\Services\Billing\{BillingEntitlementService, BillingPaymentService, BillingPlatformReadService, BillingSelfService, BillingSubscriptionService, CurrencyService};
 use App\Services\Support\FileUploadService;
 use Illuminate\Http\JsonResponse;
@@ -50,6 +50,51 @@ class BillingSelfServiceController extends BaseController
             );
 
             return $this->successResponse('تم إنشاء حساب الفوترة بالعملة المحددة.', new BillingAccountResource($account), 201);
+        } catch (ValidationException $exception) {
+            return $this->validationErrorResponse($exception);
+        }
+    }
+
+    public function account(int $billingAccountId): JsonResponse
+    {
+        return $this->successResponse('تم استرجاع ملف حساب الفوترة وجهات الاتصال.', new BillingAccountResource($this->self->account($billingAccountId, $this->requireCurrentUser())));
+    }
+
+    public function updateAccount(UpdateBillingAccountRequest $request, int $billingAccountId): JsonResponse
+    {
+        try {
+            $account = $this->self->updateAccount($billingAccountId, $request->validated(), $this->requireCurrentUser());
+            return $this->successResponse('تم تحديث بيانات حساب الفوترة.', new BillingAccountResource($account));
+        } catch (ValidationException $exception) {
+            return $this->validationErrorResponse($exception);
+        }
+    }
+
+    public function storeContact(StoreBillingAccountContactRequest $request, int $billingAccountId): JsonResponse
+    {
+        try {
+            $contact = $this->self->createContact($billingAccountId, $request->validated(), $this->requireCurrentUser());
+            return $this->successResponse('تمت إضافة جهة اتصال لحساب الفوترة.', new BillingAccountContactResource($contact), 201);
+        } catch (ValidationException $exception) {
+            return $this->validationErrorResponse($exception);
+        }
+    }
+
+    public function updateContact(UpdateBillingAccountContactRequest $request, int $billingAccountId, int $contactId): JsonResponse
+    {
+        try {
+            $contact = $this->self->updateContact($billingAccountId, $contactId, $request->validated(), $this->requireCurrentUser());
+            return $this->successResponse('تم تحديث جهة اتصال حساب الفوترة.', new BillingAccountContactResource($contact));
+        } catch (ValidationException $exception) {
+            return $this->validationErrorResponse($exception);
+        }
+    }
+
+    public function destroyContact(int $billingAccountId, int $contactId): JsonResponse
+    {
+        try {
+            $this->self->deleteContact($billingAccountId, $contactId, $this->requireCurrentUser());
+            return $this->successResponse('تم حذف جهة اتصال حساب الفوترة.', null);
         } catch (ValidationException $exception) {
             return $this->validationErrorResponse($exception);
         }
