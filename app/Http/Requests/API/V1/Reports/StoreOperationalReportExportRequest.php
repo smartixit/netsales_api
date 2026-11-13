@@ -19,11 +19,8 @@ class StoreOperationalReportExportRequest extends FormRequest
             'report_type' => ['required', Rule::enum(OperationalReportType::class)],
             'network_id' => ['required', 'integer', 'min:1'],
             'pos_id' => ['nullable', 'integer', 'min:1'],
-            'from_date' => ['nullable', 'date_format:Y-m-d'],
-            'to_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from_date'],
-            'sale_type' => ['nullable', 'string', 'max:32'],
-            'status' => ['nullable', 'string', 'max:32'],
-            'search' => ['nullable', 'string', 'max:120'],
+            'filters' => ['sometimes', 'array'],
+            'filters.*' => ['nullable'],
         ];
     }
 }
