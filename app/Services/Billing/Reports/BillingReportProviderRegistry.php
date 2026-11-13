@@ -52,7 +52,7 @@ final class BillingReportProviderRegistry
                 'amount'=>$amount,'currency'=>$currency,'where'=>$where,
                 'status'=>str_contains($select, 'r.status') ? 'r.status' : null,
                 'filter_ids' => $key === 'plan_performance' ? ['search'] : match ($key) {
-                    'renewals','revenue_recognition' => ['from_date','to_date','search'],
+                    'renewals','revenue_recognition','trial_conversion','usage' => ['from_date','to_date','search'],
                     default => ['from_date','to_date','status','search'],
                 },
                 'status_choices' => match ($key) {
