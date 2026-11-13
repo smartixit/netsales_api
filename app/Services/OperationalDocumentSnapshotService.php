@@ -353,8 +353,6 @@ final class OperationalDocumentSnapshotService
         };
 
         $hasNetworkPermission = $permission !== null
-            && $documentType !== 'expense' || false;
-        $hasNetworkPermission = $permission !== null
             && $networkScope
             && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
         $hasPosPermission = $permission !== null
