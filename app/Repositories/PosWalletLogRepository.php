@@ -97,7 +97,7 @@ class PosWalletLogRepository extends BaseRepository implements PosWalletLogRepos
         }
 
         if (($balanceBefore === null) !== ($balanceAfter === null)) {
-            throw new \\InvalidArgumentException('Both explicit wallet balance snapshots must be provided together.');
+            throw new \InvalidArgumentException('Both explicit wallet balance snapshots must be provided together.');
         }
 
         if ($balanceBefore !== null && $balanceAfter !== null) {
@@ -110,7 +110,7 @@ class PosWalletLogRepository extends BaseRepository implements PosWalletLogRepos
             };
 
             if ($expectedAfterMinor !== $balanceAfterMinor) {
-                throw new \\InvalidArgumentException('Explicit wallet balance snapshots do not match the operation amount.');
+                throw new \InvalidArgumentException('Explicit wallet balance snapshots do not match the operation amount.');
             }
         } else {
             $balanceAfterMinor = DecimalAmount::toMinorUnits($wallet->wallet_balance);
