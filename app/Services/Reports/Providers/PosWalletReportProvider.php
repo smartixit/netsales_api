@@ -81,23 +81,42 @@ final class PosWalletReportProvider extends AbstractOperationalReportProvider
     private function periodBalances(PosWallet $wallet, array $filters): array
     {
         $ledger = PosWalletLog::withTrashed()->where('wallet_id', $wallet->wallet_id);
-        $opening = (float) $wallet->opening_balance;
+        $openingMinor = $this->toMinorUnits($wallet->opening_balance);
 
         if (! empty($filters['from_date'])) {
             $beforePeriod = (clone $ledger)->where('log_date', '<', $filters['from_date'].' 00:00:00');
-            $opening += (float) (clone $beforePeriod)->where('log_operation_type', 'DEPOSIT')->sum('log_amount');
-            $opening -= (float) (clone $beforePeriod)->where('log_operation_type', 'WITHDRAW')->sum('log_amount');
+            $deposits = $this->toMinorUnits(
+                (clone $beforePeriod)->where('log_operation_type', 'DEPOSIT')->sum('log_amount')
+            );
+            $withdrawals = $this->toMinorUnits(
+                (clone $beforePeriod)->where('log_operation_type', 'WITHDRAW')->sum('log_amount')
+            );
+
+            $openingMinor = $this->addMinorUnits($openingMinor, $deposits);
+            $openingMinor = $this->addMinorUnits($openingMinor, -$withdrawals);
         }
 
-        $closing = (float) $wallet->wallet_balance;
+        $closingMinor = $this->toMinorUnits($wallet->wallet_balance);
         if (! empty($filters['to_date'])) {
             $throughPeriod = (clone $ledger)->where('log_date', '<=', $filters['to_date'].' 23:59:59');
-            $closing = (float) $wallet->opening_balance
-                + (float) (clone $throughPeriod)->where('log_operation_type', 'DEPOSIT')->sum('log_amount')
-                - (float) (clone $throughPeriod)->where('log_operation_type', 'WITHDRAW')->sum('log_amount');
+            $deposits = $this->toMinorUnits(
+                (clone $throughPeriod)->where('log_operation_type', 'DEPOSIT')->sum('log_amount')
+            );
+            $withdrawals = $this->toMinorUnits(
+                (clone $throughPeriod)->where('log_operation_type', 'WITHDRAW')->sum('log_amount')
+            );
+
+            $closingMinor = $this->addMinorUnits(
+                $this->toMinorUnits($wallet->opening_balance),
+                $deposits
+            );
+            $closingMinor = $this->addMinorUnits($closingMinor, -$withdrawals);
         }
 
-        return [round($opening, 2), round($closing, 2)];
+        return [
+            $this->fromMinorUnits($openingMinor),
+            $this->fromMinorUnits($closingMinor),
+        ];
     }
 
     public function build(User $user, int $networkId, ?int $posId, array $filters): CursorPaginator
