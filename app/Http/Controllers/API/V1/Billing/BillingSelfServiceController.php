@@ -261,6 +261,7 @@ class BillingSelfServiceController extends BaseController
             'from_date' => ['nullable', 'date_format:Y-m-d'],
             'to_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from_date'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
+            'cursor' => ['nullable', 'string', 'max:2048'],
         ]);
         return $this->successResponse(
             'تم استرجاع تجميعات استخدام الاشتراك حسب العداد والفترة.',
@@ -268,12 +269,21 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
-    public function subscriptionEvents(int $subscriptionId): JsonResponse
+    public function subscriptionEvents(Request $request, int $subscriptionId): JsonResponse
     {
+        $filters = $request->validate([
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
+            'cursor' => ['nullable', 'string', 'max:2048'],
+        ]);
+
         return $this->successResponse(
             'تم استرجاع سجل دورة الاشتراك.',
             BillingSubscriptionEventResource::collection(
-                $this->self->subscriptionEvents($subscriptionId, $this->requireCurrentUser())
+                $this->self->subscriptionEvents(
+                    $subscriptionId,
+                    $filters,
+                    $this->requireCurrentUser()
+                )
             )
         );
     }
