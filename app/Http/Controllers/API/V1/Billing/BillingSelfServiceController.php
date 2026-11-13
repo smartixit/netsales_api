@@ -36,6 +36,7 @@ class BillingSelfServiceController extends BaseController
         return $request->validate(array_merge([
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
             'cursor' => ['nullable', 'string', 'max:2048'],
+            'search' => ['nullable', 'string', 'max:120'],
         ], $extra));
     }
 
@@ -168,7 +169,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع الخطط والأسعار المتاحة بعملة حساب الفوترة.',
             BillingPlanResource::collection($this->self->plans(
                 $billingAccountId,
-                $this->collectionFilters($request, ['search' => ['nullable', 'string', 'max:120']]),
+                $this->collectionFilters($request),
                 $this->requireCurrentUser()
             ))
         );
