@@ -2,7 +2,7 @@
 
 namespace App\Services\Billing\Reports;
 
-use InvalidArgumentException;
+use Illuminate\\Validation\\ValidationException;
 
 final class BillingReportProviderRegistry
 {
@@ -43,7 +43,7 @@ final class BillingReportProviderRegistry
 
     public function get(string $key): BillingReportProvider
     {
-        return $this->providers[$key] ?? throw new InvalidArgumentException('تقرير الفوترة المطلوب غير معروف.');
+        return $this->providers[$key] ?? throw ValidationException::withMessages(['report_type' => ['تقرير الفوترة المطلوب غير معروف.']]);
     }
 
     public function all(): array { return array_values($this->providers); }
