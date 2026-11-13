@@ -2,7 +2,7 @@
 
 namespace App\Services\Billing\Reports;
 
-use Illuminate\\Validation\\ValidationException;
+use Illuminate\Validation\ValidationException;
 
 final class BillingReportProviderRegistry
 {
