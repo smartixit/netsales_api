@@ -14,6 +14,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
@@ -175,7 +176,20 @@ final class GenerateOperationalReportExport implements ShouldQueue
                 ->value('status');
 
             if ($artifactPath !== null && $persistedStatus !== OperationalReportExportStatus::READY->value) {
-                Storage::disk('protected')->delete($artifactPath);
+                try {
+                    if (! Storage::disk('protected')->delete($artifactPath)) {
+                        Log::warning('Operational report export artifact cleanup failed.', [
+                            'report_export_id' => $this->reportExportId,
+                            'artifact_path' => $artifactPath,
+                        ]);
+                    }
+                } catch (Throwable $cleanupException) {
+                    Log::warning('Operational report export artifact cleanup raised an exception.', [
+                        'report_export_id' => $this->reportExportId,
+                        'artifact_path' => $artifactPath,
+                        'exception' => $cleanupException->getMessage(),
+                    ]);
+                }
             }
 
             $willRetry = $this->attempts() < $this->tries;
@@ -191,15 +205,32 @@ final class GenerateOperationalReportExport implements ShouldQueue
     public function failed(?Throwable $exception): void
     {
         $cutoff = now('Asia/Aden')->subSeconds(max(1, $this->timeout - 5));
-        OperationalReportExport::query()
+        $export = OperationalReportExport::query()
             ->where('report_export_id', $this->reportExportId)
             ->where('status', OperationalReportExportStatus::PROCESSING->value)
             ->where(fn ($query) => $query->whereNull('started_at')->orWhere('started_at', '<=', $cutoff))
-            ->update([
-                'status' => OperationalReportExportStatus::FAILED->value,
-                'failure_code' => $this->failureCode($exception),
-                'completed_at' => now('Asia/Aden'),
+            ->first();
+
+        if ($export === null) {
+            return;
+        }
+
+        $artifactPath = 'operational-reports/'.$export->network_id.'/'.$export->export_uuid.'.csv';
+        try {
+            Storage::disk('protected')->delete($artifactPath);
+        } catch (Throwable $cleanupException) {
+            Log::warning('Failed operational report export left an artifact that could not be removed.', [
+                'report_export_id' => $this->reportExportId,
+                'artifact_path' => $artifactPath,
+                'exception' => $cleanupException->getMessage(),
             ]);
+        }
+
+        $export->update([
+            'status' => OperationalReportExportStatus::FAILED,
+            'failure_code' => $this->failureCode($exception),
+            'completed_at' => now('Asia/Aden'),
+        ]);
     }
 
     private function failureCode(?Throwable $exception): string
