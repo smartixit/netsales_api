@@ -2,20 +2,12 @@
 
 namespace App\Repositories;
 
-use App\Support\DecimalAmount;
-
 use App\Enums\WalletOperationType;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
 use App\Models\NetworkWalletLog;
+use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
-
-/**
- * مستودع دفتر أستاذ وسجلات محافظ مزودي الشبكات (Network Wallet Log Repository).
- *
- * @property NetworkWalletLog $model
- */
-class NetworkWalletLogRepository extends BaseRepository implements NetworkWalletLogRepositoryInterface
 {
     public function __construct(NetworkWalletLog $model)
     {
