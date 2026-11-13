@@ -71,7 +71,14 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         }
 
         foreach ($this->config['where'] ?? [] as $condition) {
-            $query->where($condition[0], $condition[1], $condition[2]);
+            $operator = strtolower((string) $condition[1]);
+            if ($operator === 'in') {
+                $query->whereIn($condition[0], $condition[2]);
+            } elseif ($operator === 'not in') {
+                $query->whereNotIn($condition[0], $condition[2]);
+            } else {
+                $query->where($condition[0], $condition[1], $condition[2]);
+            }
         }
         $dateColumn = $this->config['date'];
         if (! empty($filters['from_date'])) $query->whereDate($dateColumn, '>=', $filters['from_date']);
