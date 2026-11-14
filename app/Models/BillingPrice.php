@@ -17,6 +17,8 @@ use LogicException;
  * @property int $interval_count
  * @property int $unit_amount_minor
  * @property int $setup_fee_minor
+ * @property int|null $trial_policy_version_id
+ * @property int|null $dunning_policy_version_id
  * @property string $tax_behavior
  * @property bool $is_active
  * @property-read Currency $currency
