@@ -190,7 +190,8 @@ class ReportRunService
             'definition_version' => $run->definition_version,
             'status' => $run->status,
             'filters' => $run->filters ?? [],
-            'artifact' => $run->status === 'COMPLETED' ? [
+            'artifact' => $run->status === 'COMPLETED'
+                && ($run->expires_at === null || ! $run->expires_at->isPast()) ? [
                 'format' => $run->artifact_format,
                 'bytes' => (int) $run->artifact_bytes,
                 'sha256' => $run->artifact_sha256,
