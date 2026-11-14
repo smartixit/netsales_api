@@ -131,7 +131,7 @@ class BillingSelfServiceController extends BaseController
             ]);
         }
 
-        $subscription->loadMissing(['planVersion.features', 'currency', 'trialRedemption.policyVersion']);
+        $subscription->loadMissing(['planVersion.features', 'currency', 'trialRedemption.policyVersion', 'trialRedemption.adjustments']);
         $status = $subscription->status?->value;
         $canUseFeatures = in_array($status, ['ACTIVE', 'TRIALING', 'PAST_DUE'], true);
         $features = $canUseFeatures ? $subscription->planVersion->features
@@ -154,12 +154,36 @@ class BillingSelfServiceController extends BaseController
             'subscription' => new BillingSubscriptionResource($subscription),
             'trial' => $trial !== [] || $redemption ? [
                 'status' => $redemption?->status,
+                'trial_redemption_id' => $redemption?->trial_redemption_id,
+                'redemption_scope' => $redemption?->redemption_scope
+                    ?? $trial['redemption_scope']
+                    ?? null,
                 'start' => $subscription->trial_start?->toDateTimeString(),
                 'end' => $subscription->trial_end?->toDateTimeString(),
-                'entitlement_mode' => $trial['entitlement_mode'] ?? 'FULL_PLAN',
+                'duration_value' => $trial['duration_value'] ?? $redemption?->policyVersion?->duration_value,
+                'duration_unit' => $trial['duration_unit'] ?? $redemption?->policyVersion?->duration_unit,
+                'start_trigger' => $trial['start_trigger'] ?? $redemption?->policyVersion?->start_trigger,
+                'eligibility_mode' => $trial['eligibility_mode'] ?? $redemption?->policyVersion?->eligibility_mode,
+                'requires_manual_approval' => (bool) (
+                    $trial['requires_manual_approval']
+                    ?? $redemption?->policyVersion?->requires_manual_approval
+                    ?? false
+                ),
+                'end_behavior' => $trial['end_behavior'] ?? $redemption?->policyVersion?->end_behavior,
+                'entitlement_mode' => $trial['entitlement_mode']
+                    ?? $redemption?->policyVersion?->entitlement_mode
+                    ?? 'FULL_PLAN',
                 'allowed_features' => $trial['entitlement_config']['allowed_features'] ?? [],
                 'awaiting_first_activation' => $status === 'INCOMPLETE'
-                    && ($trial['start_trigger'] ?? null) === 'FIRST_ACTIVATION',
+                    && ($trial['start_trigger'] ?? $redemption?->policyVersion?->start_trigger) === 'FIRST_ACTIVATION',
+                'adjustments' => $redemption?->adjustments->map(static fn ($adjustment): array => [
+                    'trial_adjustment_id' => $adjustment->trial_adjustment_id,
+                    'adjustment_type' => $adjustment->adjustment_type,
+                    'previous_trial_end' => $adjustment->previous_trial_end?->toDateTimeString(),
+                    'new_trial_end' => $adjustment->new_trial_end?->toDateTimeString(),
+                    'reason' => $adjustment->reason,
+                    'occurred_at' => $adjustment->occurred_at?->toDateTimeString(),
+                ])->values() ?? [],
             ] : null,
             'features' => $features,
         ]);
