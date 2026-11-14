@@ -9,6 +9,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
 use LogicException;
 
+/**
+ * @property int $journal_line_id
+ * @property int $journal_entry_id
+ * @property int $ledger_account_id
+ * @property int $currency_id
+ * @property int $debit_minor
+ * @property int $credit_minor
+ * @property-read LedgerAccount $account
+ */
 class LedgerJournalLine extends Model
 {
     use ExactDateSerialization;
