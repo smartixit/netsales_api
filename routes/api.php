@@ -28,6 +28,7 @@ use App\Http\Controllers\API\V1\PosController;
 use App\Http\Controllers\API\V1\PosMembershipController;
 use App\Http\Controllers\API\V1\PosWalletController;
 use App\Http\Controllers\API\V1\RequestController;
+use App\Http\Controllers\API\V1\Reporting\ReportController;
 use App\Http\Controllers\API\V1\RoleController;
 use App\Http\Controllers\API\V1\SaleInvoiceController;
 use App\Http\Controllers\API\V1\ScheduledTaskRunController;
@@ -531,6 +532,20 @@ Route::prefix('v1')->group(function () {
                 ->name('api.v1.documents.snapshots.download');
         });
 
+        // Asynchronous report runs are isolated by network/platform scope.
+        Route::prefix('networks/{networkId}/reports')->whereNumber('networkId')->middleware('operational.scope')->group(function () {
+            Route::get('catalog', [ReportController::class, 'networkCatalog'])->middleware('throttle:api-read')->name('api.v1.networks.reports.catalog');
+            Route::post('runs', [ReportController::class, 'storeNetworkRun'])->middleware('throttle:api-write')->name('api.v1.networks.reports.runs.store');
+            Route::get('runs', [ReportController::class, 'networkRuns'])->middleware('throttle:api-read')->name('api.v1.networks.reports.runs.index');
+            Route::get('runs/{reportRunId}', [ReportController::class, 'showNetworkRun'])->whereNumber('reportRunId')->middleware('throttle:api-read')->name('api.v1.networks.reports.runs.show');
+        });
+        Route::prefix('platform/reports')->middleware('platform.user.scope')->group(function () {
+            Route::get('catalog', [ReportController::class, 'platformCatalog'])->middleware(['throttle:api-read', 'permission:billing.report'])->name('api.v1.platform.reports.catalog');
+            Route::post('runs', [ReportController::class, 'storePlatformRun'])->middleware(['throttle:api-write', 'permission:billing.report'])->name('api.v1.platform.reports.runs.store');
+            Route::get('runs', [ReportController::class, 'platformRuns'])->middleware(['throttle:api-read', 'permission:billing.report'])->name('api.v1.platform.reports.runs.index');
+            Route::get('runs/{reportRunId}', [ReportController::class, 'showPlatformRun'])->whereNumber('reportRunId')->middleware(['throttle:api-read', 'permission:billing.report'])->name('api.v1.platform.reports.runs.show');
+        });
+
         // Billing reports are isolated from operational reports and remain currency-aware.
         Route::prefix('platform/billing/reports')->middleware(['platform.user.scope', 'permission:billing.view'])->group(function () {
             Route::get('catalog', [BillingReportController::class, 'platformCatalog'])->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.catalog');
@@ -683,6 +698,8 @@ Route::prefix('v1')->group(function () {
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.subscriptions.index');
                 Route::get('accounts/{billingAccountId}/invoices', [BillingSelfServiceController::class, 'invoices'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.invoices.index');
+                Route::get('accounts/{billingAccountId}/statement', [BillingSelfServiceController::class, 'statement'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.statement');
                 Route::get('accounts/{billingAccountId}/payments', [BillingSelfServiceController::class, 'payments'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.payments.index');
                 Route::get('accounts/{billingAccountId}/credit-notes', [BillingSelfServiceController::class, 'creditNotes'])
