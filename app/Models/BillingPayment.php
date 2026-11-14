@@ -13,15 +13,15 @@ use LogicException;
  * @property int $payment_method_id
  * @property int|null $treasury_account_id
  * @property int $amount_minor
- * @property \\App\\Enums\\BillingPaymentStatus $status
- * @property \\Illuminate\\Support\\Carbon|null $received_at
- * @property \\Illuminate\\Support\\Carbon|null $verified_at
+ * @property \App\Enums\BillingPaymentStatus $status
+ * @property \Illuminate\Support\Carbon|null $received_at
+ * @property \Illuminate\Support\Carbon|null $verified_at
  * @property-read BillingInvoice $invoice
  * @property-read BillingAccount $billingAccount
  * @property-read Currency $currency
  * @property-read BillingPaymentMethod $paymentMethod
  * @property-read TreasuryAccount|null $treasuryAccount
- * @property-read \\Illuminate\\Database\\Eloquent\\Collection<int, BillingPaymentProof> $proofs
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPaymentProof> $proofs
  */
 class BillingPayment extends Model {
  use ExactDateSerialization;
