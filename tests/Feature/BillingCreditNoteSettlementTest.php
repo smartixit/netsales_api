@@ -43,6 +43,7 @@ class BillingCreditNoteSettlementTest extends TestCase
 
     private BillingInvoiceLine $line;
 
+    /** @var array<string, LedgerAccount> */
     private array $accounts;
 
     protected function setUp(): void
@@ -264,13 +265,21 @@ class BillingCreditNoteSettlementTest extends TestCase
 
         $this->assertLedgerEntryBalanced($refundEntry);
         $this->assertLedgerAmount($refundEntry, '2200', 'debit_minor', 1000);
-        $this->assertLedgerAmount($refundEntry, $treasury->ledgerAccount->account_code ?? '', 'credit_minor', 1000);
+        $this->assertLedgerAmount($refundEntry, $treasury->ledgerAccount->account_code, 'credit_minor', 1000);
 
         $reconciliation = app(BillingReconciliationService::class)->report((int) $this->currency->currency_id);
-        $currencyReport = collect($reconciliation['currencies'])->first();
-        $this->assertNotNull($currencyReport);
+        /** @var array<int, array<string, mixed>> $currencyReports */
+        $currencyReports = (array) $reconciliation['currencies'];
+        $currencyReport = $currencyReports[0] ?? null;
+        $this->assertIsArray($currencyReport);
         $this->assertSame('MATCH', $currencyReport['status'], json_encode($currencyReport, JSON_THROW_ON_ERROR));
-        $this->assertSame(0, collect($currencyReport['checks'])->sum('difference_minor'));
+        /** @var array<int, array<string, mixed>> $checks */
+        $checks = (array) $currencyReport['checks'];
+        $totalDifference = array_sum(array_map(
+            static fn (array $check): int => (int) $check['difference_minor'],
+            $checks
+        ));
+        $this->assertSame(0, $totalDifference);
     }
 
     private function createInvoiceLine(string $type, int $subtotal, int $tax, int $total): void
@@ -350,7 +359,7 @@ class BillingCreditNoteSettlementTest extends TestCase
     private function assertLedgerAmount(LedgerJournalEntry $entry, string $accountCode, string $side, int $expected): void
     {
         $actual = (int) $entry->lines
-            ->filter(fn (LedgerJournalLine $line): bool => $line->account?->account_code === $accountCode)
+            ->filter(fn (LedgerJournalLine $line): bool => $line->account->account_code === $accountCode)
             ->sum($side);
         $this->assertSame($expected, $actual, "Unexpected {$side} balance for ledger account {$accountCode}.");
     }
