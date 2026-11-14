@@ -299,7 +299,9 @@ class BillingCatalogService
             $configuration = (array) ($data['configuration'] ?? []);
             if ($type === BillingFeatureType::METERED && $overageBehavior === 'INVOICE') {
                 $priceCurrencyIds = $version->prices->pluck('currency_id')->map(fn ($id) => (int) $id)->unique()->sort()->values();
-                $overagePrices = collect($configuration['overage_prices'] ?? []);
+                /** @var array<int, array<string, mixed>> $overagePriceRows */
+                $overagePriceRows = $configuration['overage_prices'] ?? [];
+                $overagePrices = collect($overagePriceRows);
                 $configuredCurrencyIds = $overagePrices->pluck('currency_id')->map(fn ($id) => (int) $id)->unique()->sort()->values();
 
                 foreach ($overagePrices as $overagePrice) {
