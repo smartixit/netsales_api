@@ -10,6 +10,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
+/**
+ * @property int $journal_entry_id
+ * @property int $currency_id
+ * @property \App\Enums\LedgerEntryStatus $status
+ * @property \Illuminate\Support\Carbon $entry_date
+ * @property-read Currency $currency
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, LedgerJournalLine> $lines
+ */
 class LedgerJournalEntry extends Model
 {
     use ExactDateSerialization;
