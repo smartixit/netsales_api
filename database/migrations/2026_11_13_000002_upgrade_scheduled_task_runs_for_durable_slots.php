@@ -5,7 +5,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
-use RuntimeException;
 
 return new class extends Migration
 {
@@ -91,7 +90,7 @@ return new class extends Migration
             ->exists();
 
         if ($duplicates) {
-            throw new RuntimeException(
+            throw new \RuntimeException(
                 'Cannot restore the legacy daily unique key while multiple scheduled slots exist for the same task/network/date. Reconcile these records before rollback.'
             );
         }
