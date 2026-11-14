@@ -266,6 +266,24 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    public function statement(Request $request, int $billingAccountId): JsonResponse
+    {
+        $filters = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+            'currency_id' => ['nullable', 'integer', 'exists:currencies,currency_id'],
+        ]);
+
+        return $this->successResponse(
+            'تم إنشاء كشف نشاط حساب الفوترة للفترة المحددة وبحسب العملة.',
+            $this->self->statement(
+                $billingAccountId,
+                $filters,
+                $this->requireCurrentUser()
+            )
+        );
+    }
+
     public function creditNotes(Request $request, int $billingAccountId): JsonResponse
     {
         return $this->successResponse(
