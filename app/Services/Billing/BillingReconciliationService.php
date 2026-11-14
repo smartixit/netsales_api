@@ -115,7 +115,7 @@ class BillingReconciliationService
         ];
     }
 
-    /** @return array<string, int> */
+    /** @return array<int|string, int> */
     private function controlLedgerBalances(int $currencyId): array
     {
         $rows = DB::table('ledger_journal_lines as lines')
