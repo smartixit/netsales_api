@@ -38,12 +38,14 @@ class BillingPaymentService
             throw ValidationException::withMessages(['amount_minor' => ['يجب أن تكون قيمة الدفعة أكبر من صفر.']]);
         }
 
-        return DB::transaction(function () use ($invoiceId, $paymentMethodId, $amountMinor, $idempotencyKey, $actor, $externalReference, $proof): BillingPayment {
+        $authorization = $this->authorization;
+
+        return DB::transaction(function () use ($invoiceId, $paymentMethodId, $amountMinor, $idempotencyKey, $actor, $externalReference, $proof, $authorization): BillingPayment {
             $invoice = BillingInvoice::query()
                 ->with('billingAccount')
                 ->lockForUpdate()
                 ->findOrFail($invoiceId);
-            $this->authorization->assertBillingAccountAccess($actor, $invoice->billingAccount);
+            $authorization->assertBillingAccountAccess($actor, $invoice->billingAccount);
 
             $existing = BillingPayment::query()
                 ->with(['currency', 'proofs'])
@@ -126,8 +128,11 @@ class BillingPaymentService
     public function verify(int $paymentId, int $treasuryAccountId, User $reviewer, ?string $note = null): BillingPayment
     {
         $this->authorization->assertPlatform($reviewer);
+        $ledger = $this->ledger;
+        $chart = $this->chart;
+        $dunning = $this->dunning;
 
-        return DB::transaction(function () use ($paymentId, $treasuryAccountId, $reviewer, $note): BillingPayment {
+        return DB::transaction(function () use ($paymentId, $treasuryAccountId, $reviewer, $note, $ledger, $chart, $dunning): BillingPayment {
             // Keep the global billing lock order consistent: Invoice -> Payment -> Treasury.
             // The payment's invoice_id is immutable after creation, so the initial read only locates its parent.
             $paymentInvoiceId = BillingPayment::query()
@@ -179,10 +184,10 @@ class BillingPaymentService
                 throw ValidationException::withMessages(['treasury_account_id' => ['عملة حساب الخزينة لا تطابق عملة الدفعة.']]);
             }
 
-            $accountReceivable = $this->chart->ensureForCurrency($payment->currency)['1100'];
-            $treasuryLedger = $this->chart->ensureTreasuryAccount($treasury);
+            $accountReceivable = $chart->ensureForCurrency($payment->currency)['1100'];
+            $treasuryLedger = $chart->ensureTreasuryAccount($treasury);
 
-            $this->ledger->post(
+            $ledger->post(
                 (int) $payment->currency_id,
                 'تحصيل دفعة '.$payment->payment_reference,
                 'billing-payment-verified-'.$payment->payment_id,
@@ -283,7 +288,7 @@ class BillingPaymentService
                         ]);
                     }
 
-                    $this->dunning->scheduleSubscriptionAlerts($subscription);
+                    $dunning->scheduleSubscriptionAlerts($subscription);
 
                     BillingSubscriptionEvent::query()->create([
                         'billing_subscription_id' => $subscription->billing_subscription_id,
