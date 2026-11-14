@@ -43,7 +43,7 @@ class BillingCreditNoteSettlementTest extends TestCase
 
     private BillingInvoiceLine $line;
 
-    /** @var array<string, LedgerAccount> */
+    /** @var array<int, \App\Models\LedgerAccount> */
     private array $accounts;
 
     protected function setUp(): void
@@ -323,7 +323,7 @@ class BillingCreditNoteSettlementTest extends TestCase
         $this->invoice->save();
 
         $lines = [
-            ['ledger_account_id' => $this->accounts['1100']->ledger_account_id, 'debit_minor' => $total, 'credit_minor' => 0],
+            ['ledger_account_id' => $this->accounts[1100]->ledger_account_id, 'debit_minor' => $total, 'credit_minor' => 0],
         ];
 
         $accountCode = match ($type) {
@@ -337,7 +337,7 @@ class BillingCreditNoteSettlementTest extends TestCase
             $lines[] = ['ledger_account_id' => $this->accounts[$accountCode]->ledger_account_id, 'debit_minor' => 0, 'credit_minor' => $subtotal];
         }
         if ($tax > 0) {
-            $lines[] = ['ledger_account_id' => $this->accounts['2300']->ledger_account_id, 'debit_minor' => 0, 'credit_minor' => $tax];
+            $lines[] = ['ledger_account_id' => $this->accounts[2300]->ledger_account_id, 'debit_minor' => 0, 'credit_minor' => $tax];
         }
 
         app(BillingLedgerService::class)->post(
