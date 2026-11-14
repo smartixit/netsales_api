@@ -382,6 +382,12 @@ class AuthService
             ]);
         }
 
+        if ($user->role_scope !== RoleScope::PLATFORM->value) {
+            throw ValidationException::withMessages([
+                'user_phone_number' => ['عذراً، بيانات الاعتماد غير صحيحة.'],
+            ]);
+        }
+
         // 1. فحص حالة المستخدم
         if ($user->status === UserStatus::PENDING->value || $user->status === UserStatus::PENDING) {
             throw ValidationException::withMessages([
