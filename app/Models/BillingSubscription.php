@@ -20,6 +20,11 @@ use LogicException;
  * @property \App\Enums\BillingSubscriptionStatus $status
  * @property \Illuminate\Support\Carbon|null $current_period_start
  * @property \Illuminate\Support\Carbon|null $current_period_end
+ * @property \Illuminate\Support\Carbon|null $trial_start
+ * @property \Illuminate\Support\Carbon|null $trial_end
+ * @property \Illuminate\Support\Carbon|null $ended_at
+ * @property \Illuminate\Support\Carbon|null $paused_at
+ * @property \Illuminate\Support\Carbon|null $grace_period_ends_at
  * @property array<string, mixed>|null $metadata
  * @property-read BillingAccount $billingAccount
  * @property-read BillingPlan $plan
