@@ -26,7 +26,7 @@ class BillingPolicyResolver
                 ? BillingDunningPolicyVersion::query()->with('policy')->find($planVersion->dunning_policy_version_id)
                 : $this->defaultDunningPolicy());
 
-        if (! $dunningVersion || $dunningVersion->status !== 'PUBLISHED' || ! $dunningVersion->policy?->is_active) {
+        if (! $dunningVersion || $dunningVersion->status !== 'PUBLISHED' || ! $dunningVersion->policy->is_active) {
             throw ValidationException::withMessages([
                 'dunning_policy' => ['لا توجد سياسة تحصيل منشورة وفعالة لهذا السعر.'],
             ]);
@@ -34,7 +34,7 @@ class BillingPolicyResolver
 
         $trialEnabled = $trialVersion
             && $trialVersion->status === 'PUBLISHED'
-            && $trialVersion->policy?->is_active
+            && $trialVersion->policy->is_active
             && $trialVersion->is_enabled
             && $trialVersion->duration_value > 0;
 
@@ -148,7 +148,7 @@ class BillingPolicyResolver
         return [
             'trial_policy_id' => (int) $version->trial_policy_id,
             'trial_policy_version_id' => (int) $version->trial_policy_version_id,
-            'policy_key' => $version->policy?->policy_key,
+            'policy_key' => $version->policy->policy_key,
             'version_number' => (int) $version->version_number,
             'is_enabled' => (bool) $version->is_enabled,
             'duration_value' => (int) $version->duration_value,
