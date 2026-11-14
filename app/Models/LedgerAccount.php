@@ -5,6 +5,15 @@ use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo,HasMany};
+/**
+ * @property int $ledger_account_id
+ * @property string $account_code
+ * @property string $name
+ * @property \\App\\Enums\\LedgerAccountClass $account_class
+ * @property bool $is_control_account
+ * @property bool $is_active
+ * @property-read Currency|null $currency
+ */
 class LedgerAccount extends Model {
  use ExactDateSerialization;
  protected $table='ledger_accounts'; protected $primaryKey='ledger_account_id';
