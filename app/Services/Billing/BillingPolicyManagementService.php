@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Enums\BillingPlanVersionStatus;
 use App\Enums\BillingSubscriptionStatus;
 use App\Models\BillingDunningPolicy;
 use App\Models\BillingDunningPolicyVersion;
@@ -80,7 +81,7 @@ class BillingPolicyManagementService
         return DB::transaction(function () use ($versionId, $actor): BillingTrialPolicyVersion {
             $this->assertPlatform($actor);
             $version = BillingTrialPolicyVersion::query()->with('policy')->lockForUpdate()->findOrFail($versionId);
-            if ($version->status !== 'DRAFT') throw ValidationException::withMessages(['version_id' => ['لا يمكن نشر نسخة ليست مسودة.']]);
+            if ($version->status !== BillingPlanVersionStatus::DRAFT) throw ValidationException::withMessages(['version_id' => ['لا يمكن نشر نسخة ليست مسودة.']]);
             $version->status = 'PUBLISHED'; $version->published_at = now('Asia/Aden'); $version->save();
             $version->policy->current_version_id = $version->trial_policy_version_id; $version->policy->save();
             return $version->refresh();
@@ -120,7 +121,7 @@ class BillingPolicyManagementService
         return DB::transaction(function () use ($priceId, $data, $actor): BillingPrice {
             $this->assertPlatform($actor);
             $price = BillingPrice::query()->with('planVersion')->lockForUpdate()->findOrFail($priceId);
-            if ($price->planVersion?->status !== 'DRAFT') throw ValidationException::withMessages(['price_id' => ['لا يمكن تغيير سياسات سعر تابع لنسخة خطة منشورة.']]);
+            if ($price->planVersion->status !== BillingPlanVersionStatus::DRAFT) throw ValidationException::withMessages(['price_id' => ['لا يمكن تغيير سياسات سعر تابع لنسخة خطة منشورة.']]);
             $this->assertPublishedReferences($data);
             $price->trial_policy_version_id = $data['trial_policy_version_id'] ?? null;
             $price->dunning_policy_version_id = $data['dunning_policy_version_id'] ?? null;
@@ -154,7 +155,7 @@ class BillingPolicyManagementService
                 ]);
                 return $subscription->refresh();
             }
-            $end = $this->calculateTrialEnd(\Carbon\CarbonImmutable::instance($now), $snapshot);
+            $end = \Illuminate\Support\Carbon::instance($this->calculateTrialEnd(\Carbon\CarbonImmutable::instance($now), $snapshot));
             $subscription->status = BillingSubscriptionStatus::TRIALING;
             $subscription->trial_start = $now;
             $subscription->trial_end = $end;
