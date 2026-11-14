@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
  * @property int $billing_subscription_id
  * @property string $status
  * @property array<string, mixed>|null $metadata
+ * @property \Illuminate\Support\Carbon|null $reserved_at
+ * @property \Illuminate\Support\Carbon|null $started_at
+ * @property \Illuminate\Support\Carbon|null $completed_at
  * @property-read BillingTrialPolicy $policy
  * @property-read BillingTrialPolicyVersion $policyVersion
  * @property-read BillingSubscription $subscription
