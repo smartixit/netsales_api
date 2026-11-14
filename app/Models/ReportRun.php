@@ -24,12 +24,12 @@ use Illuminate\Database\Eloquent\Model;
  * @property array<string, mixed>|null $result_metadata
  * @property string|null $error_code
  * @property string|null $error_message
- * @property \\Illuminate\\Support\\Carbon $queued_at
- * @property \\Illuminate\\Support\\Carbon|null $started_at
- * @property \\Illuminate\\Support\\Carbon|null $completed_at
- * @property \\Illuminate\\Support\\Carbon|null $expires_at
- * @property \\Illuminate\\Support\\Carbon $created_at
- * @property \\Illuminate\\Support\\Carbon $updated_at
+ * @property \Illuminate\Support\Carbon $queued_at
+ * @property \Illuminate\Support\Carbon|null $started_at
+ * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property \Illuminate\Support\Carbon|null $expires_at
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
  */
 class ReportRun extends Model
 {
