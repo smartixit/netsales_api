@@ -9,6 +9,13 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
 /**
  * @property int $trial_redemption_id
  * @property int $billing_subscription_id
+ * @property int $trial_policy_id
+ * @property int $trial_policy_version_id
+ * @property int $network_id
+ * @property int $billing_account_id
+ * @property int $product_id
+ * @property string $redemption_scope
+ * @property string $redemption_subject_key
  * @property string $status
  * @property array<string, mixed>|null $metadata
  * @property \Illuminate\Support\Carbon|null $reserved_at
