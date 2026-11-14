@@ -405,8 +405,8 @@ class BillingCreditNoteService
         string $reason
     ): void {
         $expected = collect($lines)->map(fn (array $line): array => [
-            'invoice_line_id' => (int) ($line['invoice_line_id'] ?? 0),
-            'amount_minor' => (int) ($line['amount_minor'] ?? 0),
+            'invoice_line_id' => (int) ($line['invoice_line_id']),
+            'amount_minor' => (int) ($line['amount_minor']),
         ])->sortBy('invoice_line_id')->values()->all();
 
         $actual = $existing->lines->map(fn ($line): array => [
