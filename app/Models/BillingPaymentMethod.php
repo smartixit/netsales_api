@@ -3,6 +3,13 @@ namespace App\Models;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsToMany,HasMany};
+/**
+ * @property int $payment_method_id
+ * @property string $name
+ * @property bool $is_active
+ * @property bool $requires_proof
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Currency> $currencies
+ */
 class BillingPaymentMethod extends Model {
  use ExactDateSerialization;
  protected $table='billing_payment_methods'; protected $primaryKey='payment_method_id';
