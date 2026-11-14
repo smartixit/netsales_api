@@ -59,6 +59,9 @@ class ReportRunService
         return $available;
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     */
     public function queueNetworkReport(
         User $actor,
         int $networkId,
@@ -95,6 +98,9 @@ class ReportRunService
         return $run;
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     */
     public function queuePlatformReport(
         User $actor,
         string $reportKey,
@@ -123,6 +129,9 @@ class ReportRunService
         return $run;
     }
 
+    /**
+     * @return CursorPaginator<int, ReportRun>
+     */
     public function networkRuns(User $actor, int $networkId, int $perPage = 20): CursorPaginator
     {
         $this->authorization->authorizeNetworkReportHistory($actor, $networkId);
@@ -135,6 +144,9 @@ class ReportRunService
             ->cursorPaginate(min(max($perPage, 1), 100));
     }
 
+    /**
+     * @return CursorPaginator<int, ReportRun>
+     */
     public function platformRuns(User $actor, int $perPage = 20): CursorPaginator
     {
         $this->authorization->authorizePlatformDefinition($actor, [
@@ -207,7 +219,7 @@ class ReportRunService
                 'code' => $run->error_code,
                 'message' => $run->error_message,
             ] : null,
-            'queued_at' => $run->queued_at?->toDateTimeString(),
+            'queued_at' => $run->queued_at->toDateTimeString(),
             'started_at' => $run->started_at?->toDateTimeString(),
             'completed_at' => $run->completed_at?->toDateTimeString(),
         ];
@@ -215,6 +227,7 @@ class ReportRunService
 
     /**
      * @param array<string, mixed> $definition
+     * @param array<string, mixed> $filters
      * @return array<string, mixed>
      */
     private function validateFilters(array $definition, array $filters): array
