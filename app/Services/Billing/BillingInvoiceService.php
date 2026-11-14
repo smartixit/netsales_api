@@ -423,7 +423,7 @@ class BillingInvoiceService
             $invoice->lines()->create([
                 'currency_id' => $invoice->currency_id,
                 'line_type' => 'METERED_USAGE',
-                'description' => 'استهلاك إضافي: '.($aggregate->meter?->name ?? $aggregate->meter?->meter_key ?? 'Metered usage'),
+                'description' => 'استهلاك إضافي: '.$aggregate->meter->name,
                 'quantity' => 1,
                 'unit_amount_minor' => $amount,
                 'subtotal_minor' => $amount,
@@ -435,7 +435,7 @@ class BillingInvoiceService
                     'period_start' => $periodStart,
                     'period_end' => $periodEnd,
                     'quantity' => (string) $aggregate->quantity,
-                    'unit' => $aggregate->meter?->unit,
+                    'unit' => $aggregate->meter->unit,
                     'amount_minor' => $amount,
                 ],
             ]);
