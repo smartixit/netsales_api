@@ -11,7 +11,17 @@ use LogicException;
  * @property int $trial_policy_version_id
  * @property int $trial_policy_id
  * @property string $status
+ * @property int $version_number
  * @property bool $is_enabled
+ * @property string $duration_unit
+ * @property int $duration_value
+ * @property string $start_trigger
+ * @property string $redemption_scope
+ * @property string $eligibility_mode
+ * @property bool $requires_manual_approval
+ * @property string $end_behavior
+ * @property string $entitlement_mode
+ * @property array<string, mixed>|null $entitlement_config
  * @property int $duration_value
  * @property array<string, mixed>|null $entitlement_config
  * @property \Illuminate\Support\Carbon|null $published_at
