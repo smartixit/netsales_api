@@ -195,7 +195,7 @@ class BillingInvoiceRevenuePostingTest extends TestCase
         int $expected
     ): void {
         $actual = (int) $entry->lines
-            ->filter(fn ($line): bool => $line->account?->account_code === $accountCode)
+            ->filter(fn ($line): bool => $line->account->account_code === $accountCode)
             ->sum($side);
 
         $this->assertSame($expected, $actual, "Unexpected {$side} on ledger account {$accountCode}.");
