@@ -861,54 +861,56 @@ Route::prefix('v1')->group(function () {
         // ==========================================
         // 23. إعدادات وبوابات الرسائل النصية للشبكات (Network SMS Settings)
         // ==========================================
-        Route::middleware('throttle:api-read')->group(function () {
-            Route::get('sms-settings', [NetworkSmsSettingController::class, 'getOverview'])->name('api.v1.sms_settings.overview');
-            Route::get('sms-settings/networks/{id}', [NetworkSmsSettingController::class, 'show'])->whereNumber('id')->name('api.v1.sms_settings.network');
-        });
-
-        Route::middleware('throttle:api-write')->group(function () {
-            Route::put('sms-settings/global', [NetworkSmsSettingController::class, 'updateGlobal'])->name('api.v1.sms_settings.update_global');
-            Route::put('sms-settings/networks/{id}', [NetworkSmsSettingController::class, 'update'])->whereNumber('id')->name('api.v1.sms_settings.update');
-            Route::post('sms-settings/networks/{id}/test', [NetworkSmsSettingController::class, 'testSms'])->whereNumber('id')->name('api.v1.sms_settings.test');
+        Route::prefix('sms-settings')->middleware('platform.user.scope')->group(function () {
+            Route::middleware(['throttle:api-read', 'permission:sms_settings.view'])->group(function () {
+                Route::get('/', [NetworkSmsSettingController::class, 'index'])->name('api.v1.sms_settings.overview');
+                Route::get('networks/{id}', [NetworkSmsSettingController::class, 'show'])->whereNumber('id')->name('api.v1.sms_settings.network');
+            });
+            Route::middleware(['throttle:api-write', 'permission:sms_settings.manage'])->group(function () {
+                Route::put('global', [NetworkSmsSettingController::class, 'updateGlobal'])->name('api.v1.sms_settings.update_global');
+                Route::put('networks/{id}', [NetworkSmsSettingController::class, 'update'])->whereNumber('id')->name('api.v1.sms_settings.update');
+                Route::post('networks/{id}/test', [NetworkSmsSettingController::class, 'test'])->whereNumber('id')->name('api.v1.sms_settings.test');
+            });
         });
 
         // ==========================================
         // 24. محرك النسخ الاحتياطي السحابي الشامل (Cloud Backup & Disaster Recovery)
         // ==========================================
-        Route::middleware('throttle:api-read')->group(function () {
-            Route::get('backups/settings', [BackupController::class, 'settings'])->name('api.v1.backups.settings');
-            Route::get('backups/health', [BackupController::class, 'health'])->name('api.v1.backups.health');
-            Route::get('backups/drive/auth', [BackupController::class, 'driveAuthUrl'])->name('api.v1.backups.drive_auth');
-            Route::get('backups', [BackupController::class, 'index'])->name('api.v1.backups.index');
-            Route::get('backups/{id}', [BackupController::class, 'show'])->whereNumber('id')->name('api.v1.backups.show');
-        });
-
-        Route::middleware('throttle:api-write')->group(function () {
-            Route::post('backups/drive/token', [BackupController::class, 'storeDriveToken'])->name('api.v1.backups.drive_token');
-            Route::post('backups/drive/disconnect', [BackupController::class, 'disconnectDrive'])->name('api.v1.backups.drive_disconnect');
-            Route::put('backups/config', [BackupController::class, 'updateConfig'])->name('api.v1.backups.update_config');
-            Route::post('backups/run', [BackupController::class, 'runBackup'])->name('api.v1.backups.run');
-            Route::delete('backups/{id}', [BackupController::class, 'destroy'])->whereNumber('id')->name('api.v1.backups.destroy');
+        Route::prefix('backups')->middleware('platform.user.scope')->group(function () {
+            Route::middleware(['throttle:api-read', 'permission:backups.view'])->group(function () {
+                Route::get('settings', [BackupController::class, 'settings'])->name('api.v1.backups.settings');
+                Route::get('health', [BackupController::class, 'health'])->name('api.v1.backups.health');
+                Route::get('drive/auth', [BackupController::class, 'driveAuth'])->name('api.v1.backups.drive_auth');
+                Route::get('/', [BackupController::class, 'index'])->name('api.v1.backups.index');
+                Route::get('{id}', [BackupController::class, 'show'])->whereNumber('id')->name('api.v1.backups.show');
+            });
+            Route::middleware(['throttle:api-write', 'permission:backups.manage'])->group(function () {
+                Route::post('drive/token', [BackupController::class, 'driveToken'])->name('api.v1.backups.drive_token');
+                Route::post('drive/disconnect', [BackupController::class, 'driveDisconnect'])->name('api.v1.backups.drive_disconnect');
+                Route::put('config', [BackupController::class, 'updateConfig'])->name('api.v1.backups.update_config');
+                Route::post('run', [BackupController::class, 'run'])->name('api.v1.backups.run');
+            });
         });
 
         // ==========================================
         // 25. سجلات ومحرك المهام المجدولة (Scheduled Tasks & Catch-up Engine)
         // ==========================================
-        Route::middleware('throttle:api-read')->group(function () {
-            Route::get('scheduled-tasks', [ScheduledTaskRunController::class, 'index'])->name('api.v1.scheduled_tasks.index');
-            Route::get('scheduled-tasks/stats', [ScheduledTaskRunController::class, 'stats'])->name('api.v1.scheduled_tasks.stats');
-        });
-
-        Route::middleware('throttle:api-write')->group(function () {
-            Route::post('scheduled-tasks/catchup', [ScheduledTaskRunController::class, 'catchup'])->name('api.v1.scheduled_tasks.catchup');
+        Route::prefix('scheduled-tasks')->middleware('platform.user.scope')->group(function () {
+            Route::middleware(['throttle:api-read', 'permission:scheduled_tasks.view'])->group(function () {
+                Route::get('/', [ScheduledTaskRunController::class, 'index'])->name('api.v1.scheduled_tasks.index');
+                Route::get('stats', [ScheduledTaskRunController::class, 'stats'])->name('api.v1.scheduled_tasks.stats');
+            });
+            Route::post('catchup', [ScheduledTaskRunController::class, 'catchup'])
+                ->middleware(['throttle:api-write', 'permission:scheduled_tasks.manage'])
+                ->name('api.v1.scheduled_tasks.catchup');
         });
 
         // ==========================================
         // 26. إشعارات ورسائل الإدارة الموجهة (Admin Multi-Channel Notifications)
         // ==========================================
-        Route::middleware('throttle:api-write')->group(function () {
-            Route::post('admin/notifications/send', [AdminNotificationController::class, 'send'])->name('api.v1.admin_notifications.send');
-            Route::post('admin/notifications/user', [AdminNotificationController::class, 'sendToUser'])->name('api.v1.admin_notifications.user');
+        Route::prefix('admin/notifications')->middleware(['platform.user.scope', 'permission:notifications.create', 'throttle:api-write'])->group(function () {
+            Route::post('send', [AdminNotificationController::class, 'send'])->name('api.v1.admin_notifications.send');
+            Route::post('user', [AdminNotificationController::class, 'sendToUser'])->name('api.v1.admin_notifications.user');
         });
 
     });

@@ -139,6 +139,27 @@ class ModuleSeeder extends Seeder
                 'module_desc' => 'تخصيص الإعدادات العامة، المالية، الأمان، والرسائل',
                 'status' => true,
             ],
+            [
+                'module_key' => 'backups',
+                'module_name' => 'النسخ الاحتياطي والاستعادة',
+                'module_icon' => 'heroicon-o-cloud-arrow-up',
+                'module_desc' => 'إدارة إعدادات النسخ الاحتياطي السحابي وسجلات النسخ وعمليات الاستعادة',
+                'status' => true,
+            ],
+            [
+                'module_key' => 'sms_settings',
+                'module_name' => 'بوابات الرسائل النصية',
+                'module_icon' => 'heroicon-o-chat-bubble-left-right',
+                'module_desc' => 'إدارة المفتاح العام وبوابات SMS وإعداداتها على مستوى المنصة والشبكات',
+                'status' => true,
+            ],
+            [
+                'module_key' => 'scheduled_tasks',
+                'module_name' => 'المهام المجدولة والطوابير',
+                'module_icon' => 'heroicon-o-clock',
+                'module_desc' => 'مراقبة سجلات المهام المجدولة وتشغيل محرك الاستدراك والتعويض',
+                'status' => true,
+            ],
         ];
 
         foreach ($modules as $module) {

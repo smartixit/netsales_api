@@ -148,6 +148,18 @@ class PermissionSeeder extends Seeder
                 'edit' => 'تعديل وحفظ إعدادات النظام',
                 'manage' => 'إدارة التهيئة الشاملة للنظام',
             ],
+            'backups' => [
+                'view' => 'عرض النسخ الاحتياطي',
+                'manage' => 'إدارة النسخ الاحتياطي',
+            ],
+            'sms_settings' => [
+                'view' => 'عرض إعدادات SMS',
+                'manage' => 'إدارة بوابات SMS',
+            ],
+            'scheduled_tasks' => [
+                'view' => 'عرض المهام المجدولة',
+                'manage' => 'إدارة المهام المجدولة',
+            ],
         ];
 
         foreach ($matrix as $modKey => $actionMap) {
