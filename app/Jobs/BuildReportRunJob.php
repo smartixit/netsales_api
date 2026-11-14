@@ -28,6 +28,9 @@ class BuildReportRunJob implements ShouldQueue
         public readonly int $reportRunId
     ) {}
 
+    /**
+     * @return array<int, WithoutOverlapping>
+     */
     public function middleware(): array
     {
         return [
