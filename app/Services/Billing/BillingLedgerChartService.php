@@ -18,7 +18,18 @@ class BillingLedgerChartService
         ['code' => '4190', 'name' => 'تكلفة واستردادات الاشتراكات', 'class' => 'EXPENSE', 'normal' => 'DEBIT'],
     ];
 
-    /** @return array<string, LedgerAccount> */
+    /**
+     * @return array{
+     *     1100: LedgerAccount,
+     *     2100: LedgerAccount,
+     *     2200: LedgerAccount,
+     *     2300: LedgerAccount,
+     *     4100: LedgerAccount,
+     *     4110: LedgerAccount,
+     *     4120: LedgerAccount,
+     *     4190: LedgerAccount
+     * }
+     */
     public function ensureForCurrency(Currency $currency): array
     {
         $accounts = [];
