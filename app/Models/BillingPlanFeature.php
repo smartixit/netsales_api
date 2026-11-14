@@ -9,6 +9,20 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
+/**
+ * @property int $plan_feature_id
+ * @property int $plan_version_id
+ * @property string $feature_key
+ * @property string $name
+ * @property \App\Enums\BillingFeatureType $feature_type
+ * @property string $value
+ * @property string|null $unit
+ * @property string|null $aggregation
+ * @property string|null $reset_period
+ * @property string $overage_behavior
+ * @property array<string, mixed>|null $configuration
+ * @property-read BillingPlanVersion $planVersion
+ */
 class BillingPlanFeature extends Model
 {
     use ExactDateSerialization;
