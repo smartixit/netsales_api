@@ -7,13 +7,16 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
 class BillingCatalogRepository implements BillingCatalogRepositoryInterface {
+ /** @param array<string, mixed> $data */
  public function createProduct(array $data): BillingProduct { return BillingProduct::query()->create($data); }
+ /** @param array<string, mixed> $data */
  public function createPlan(array $data): BillingPlan { return BillingPlan::query()->create($data); }
  public function findPlan(int $planId,bool $lock=false): ?BillingPlan {
   $q=BillingPlan::query()->with(['product','currentVersion.trialPolicyVersion.policy','currentVersion.dunningPolicyVersion.policy','currentVersion.prices.currency','currentVersion.features']);
   if($lock){$q->lockForUpdate();}
   return $q->find($planId);
  }
+ /** @param array<string, mixed> $filters @return Collection<int, BillingPlan>|CursorPaginator<int, BillingPlan> */
  public function getPlans(array $filters=[]): Collection|CursorPaginator {
   $q=BillingPlan::query()->with(['product','currentVersion.prices.currency','currentVersion.features']);
   if(array_key_exists('is_active',$filters)){$q->where('is_active',(bool)$filters['is_active']);}
@@ -31,7 +34,9 @@ class BillingCatalogRepository implements BillingCatalogRepositoryInterface {
   if($lock){$q->lockForUpdate();}
   return $q->find($versionId);
  }
+ /** @param array<string, mixed> $data */
  public function createPrice(array $data): BillingPrice { return BillingPrice::query()->create($data); }
+ /** @param array<string, mixed> $data */
  public function createFeature(array $data): BillingPlanFeature { return BillingPlanFeature::query()->create($data); }
  public function publishVersion(BillingPlanVersion $version,int $actorId): BillingPlanVersion {
   $version->status=BillingPlanVersionStatus::PUBLISHED;
