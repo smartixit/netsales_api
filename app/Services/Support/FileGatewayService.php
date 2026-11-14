@@ -3,6 +3,8 @@
 namespace App\Services\Support;
 
 use App\Models\ExpenseAttachment;
+use App\Models\ReportRun;
+use App\Services\Reporting\ReportAuthorizationService;
 use App\Models\SubscriptionPlanRequest;
 use App\Models\User;
 use App\Services\SessionValidatorService;
@@ -119,6 +121,25 @@ class FileGatewayService
         $user = $this->resolveAuthenticatedUser($request);
         if (! $user) {
             throw new HttpException(401, 'يجب تسجيل الدخول للوصول إلى هذا الملف المحمي.');
+        }
+
+        // Report artifacts require the exact persisted tenant and permission scope,
+        // including for platform super-admin accounts. Never let the generic admin
+        // bypass grant cross-scope access to immutable report files.
+        if (str_starts_with($cleanPath, 'report-artifacts/')) {
+            $reportRun = ReportRun::query()
+                ->where('artifact_path', $cleanPath)
+                ->where('status', 'COMPLETED')
+                ->first();
+
+            if (! $reportRun ||
+                ($reportRun->expires_at !== null && $reportRun->expires_at->isPast())) {
+                throw new HttpException(404, 'ملف التقرير غير موجود أو انتهت صلاحيته.');
+            }
+
+            app(ReportAuthorizationService::class)->authorizeRun($user, $reportRun);
+
+            return;
         }
 
         if ($user->isSuperAdmin()) {
