@@ -141,6 +141,16 @@ jobs:
           app/Services/Billing/BillingPolicyResolver.php
           app/Services/Billing/BillingPolicyManagementService.php
           app/Services/Billing/BillingCatalogService.php
+          app/Console/Commands/PurgeExpiredReportArtifacts.php
+          app/Http/Controllers/API/V1/Reporting/ReportController.php
+          app/Http/Resources/API/V1/Reporting/ReportRunResource.php
+          app/Jobs/BuildReportRunJob.php
+          app/Models/ReportRun.php
+          app/Services/Reporting/ReportAuthorizationService.php
+          app/Services/Reporting/ReportDefinitionRegistry.php
+          app/Services/Reporting/ReportExecutionService.php
+          app/Services/Reporting/ReportRunService.php
+          app/Services/Support/FileGatewayService.php
           tests/Feature/BillingRevenueRecognitionTest.php
           tests/Feature/BillingCreditNoteSettlementTest.php
           tests/Feature/BillingInvoiceRevenuePostingTest.php

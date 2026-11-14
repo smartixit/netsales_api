@@ -43,7 +43,7 @@ class SessionSecurityHardeningTest extends TestCase
             ]);
         }
 
-        $response = $this->postJson('/api/v1/auth/login', [
+        $response = $this->postJson('/api/v1/auth/login-to-dashboard', [
             'user_phone_number' => $user->user_phone_number,
             'user_password' => 'Hh$2002Hh',
             'device_uuid' => $deviceUuid,
@@ -139,7 +139,7 @@ class SessionSecurityHardeningTest extends TestCase
         }
 
         // تسجيل الدخول بالجهاز الأصلي
-        $loginResponse = $this->postJson('/api/v1/auth/login', [
+        $loginResponse = $this->postJson('/api/v1/auth/login-to-dashboard', [
             'user_phone_number' => $user->user_phone_number,
             'user_password' => 'Hh$2002Hh',
             'device_uuid' => $validDeviceUuid,
@@ -191,7 +191,7 @@ class SessionSecurityHardeningTest extends TestCase
         $initiatorDeviceUuid = 'INITIATOR-DEVICE-UUID-12345';
 
         // 1. طلب تسجيل الدخول من الجهاز الأصلي -> يطلب 2FA
-        $loginResponse = $this->postJson('/api/v1/auth/login', [
+        $loginResponse = $this->postJson('/api/v1/auth/login-to-dashboard', [
             'user_phone_number' => $user->user_phone_number,
             'user_password' => 'Hh$2002Hh',
             'device_uuid' => $initiatorDeviceUuid,
@@ -301,7 +301,7 @@ class SessionSecurityHardeningTest extends TestCase
         $tempPassword = 'TempSecretPassword@1';
         $user->update(['user_password' => Hash::make($tempPassword)]);
 
-        $loginResp = $this->postJson('/api/v1/auth/login', [
+        $loginResp = $this->postJson('/api/v1/auth/login-to-dashboard', [
             'user_phone_number' => $user->user_phone_number,
             'user_password' => $tempPassword,
             'device_uuid' => $deviceUuid,

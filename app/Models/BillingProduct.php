@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $product_id
+ * @property string $product_key
+ * @property string $name
+ * @property bool $is_active
+ */
 class BillingProduct extends Model
 {
     use ExactDateSerialization;

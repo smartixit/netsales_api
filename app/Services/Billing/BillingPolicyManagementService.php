@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Enums\BillingPlanVersionStatus;
 use App\Enums\BillingSubscriptionStatus;
 use App\Models\BillingDunningPolicy;
 use App\Models\BillingDunningPolicyVersion;
@@ -19,6 +20,7 @@ use Illuminate\Validation\ValidationException;
 
 class BillingPolicyManagementService
 {
+    /** @param array<string, mixed> $data */
     public function createTrialPolicy(array $data, User $actor): BillingTrialPolicyVersion
     {
         return DB::transaction(function () use ($data, $actor): BillingTrialPolicyVersion {
@@ -33,6 +35,7 @@ class BillingPolicyManagementService
         }, 3);
     }
 
+    /** @param array<string, mixed> $data */
     public function createDunningPolicy(array $data, User $actor): BillingDunningPolicyVersion
     {
         return DB::transaction(function () use ($data, $actor): BillingDunningPolicyVersion {
@@ -47,6 +50,7 @@ class BillingPolicyManagementService
         }, 3);
     }
 
+    /** @param array<string, mixed> $data */
     public function createTrialVersion(int $policyId, array $data, User $actor): BillingTrialPolicyVersion
     {
         return DB::transaction(function () use ($policyId, $data, $actor): BillingTrialPolicyVersion {
@@ -59,6 +63,7 @@ class BillingPolicyManagementService
         }, 3);
     }
 
+    /** @param array<string, mixed> $data */
     public function createDunningVersion(int $policyId, array $data, User $actor): BillingDunningPolicyVersion
     {
         return DB::transaction(function () use ($policyId, $data, $actor): BillingDunningPolicyVersion {
@@ -95,12 +100,13 @@ class BillingPolicyManagementService
         }, 3);
     }
 
+    /** @param array<string, mixed> $data */
     public function assignToPlanVersion(int $versionId, array $data, User $actor): BillingPlanVersion
     {
         return DB::transaction(function () use ($versionId, $data, $actor): BillingPlanVersion {
             $this->assertPlatform($actor);
             $version = BillingPlanVersion::query()->lockForUpdate()->findOrFail($versionId);
-            if ($version->status !== 'DRAFT') throw ValidationException::withMessages(['plan_version_id' => ['لا يمكن تغيير سياسات نسخة خطة منشورة. أنشئ نسخة خطة جديدة.']]);
+            if ($version->status !== BillingPlanVersionStatus::DRAFT) throw ValidationException::withMessages(['plan_version_id' => ['لا يمكن تغيير سياسات نسخة خطة منشورة. أنشئ نسخة خطة جديدة.']]);
             $this->assertPublishedReferences($data);
             $version->trial_policy_version_id = $data['trial_policy_version_id'] ?? null;
             $version->dunning_policy_version_id = $data['dunning_policy_version_id'] ?? null;
@@ -109,12 +115,13 @@ class BillingPolicyManagementService
         }, 3);
     }
 
+    /** @param array<string, mixed> $data */
     public function assignToPrice(int $priceId, array $data, User $actor): BillingPrice
     {
         return DB::transaction(function () use ($priceId, $data, $actor): BillingPrice {
             $this->assertPlatform($actor);
             $price = BillingPrice::query()->with('planVersion')->lockForUpdate()->findOrFail($priceId);
-            if ($price->planVersion?->status !== 'DRAFT') throw ValidationException::withMessages(['price_id' => ['لا يمكن تغيير سياسات سعر تابع لنسخة خطة منشورة.']]);
+            if ($price->planVersion->status !== BillingPlanVersionStatus::DRAFT) throw ValidationException::withMessages(['price_id' => ['لا يمكن تغيير سياسات سعر تابع لنسخة خطة منشورة.']]);
             $this->assertPublishedReferences($data);
             $price->trial_policy_version_id = $data['trial_policy_version_id'] ?? null;
             $price->dunning_policy_version_id = $data['dunning_policy_version_id'] ?? null;
@@ -148,7 +155,7 @@ class BillingPolicyManagementService
                 ]);
                 return $subscription->refresh();
             }
-            $end = $this->calculateTrialEnd(\Carbon\CarbonImmutable::instance($now), $snapshot);
+            $end = \Illuminate\Support\Carbon::instance($this->calculateTrialEnd(\Carbon\CarbonImmutable::instance($now), $snapshot));
             $subscription->status = BillingSubscriptionStatus::TRIALING;
             $subscription->trial_start = $now;
             $subscription->trial_end = $end;
@@ -246,6 +253,7 @@ class BillingPolicyManagementService
         }, 3);
     }
 
+    /** @param array<string, mixed> $snapshot */
     private function calculateTrialEnd(\Carbon\CarbonImmutable $start, array $snapshot): \Carbon\CarbonImmutable
     {
         return match ($snapshot['duration_unit']) {
@@ -257,6 +265,10 @@ class BillingPolicyManagementService
         };
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function trialValues(array $data): array
     {
         return [
@@ -273,6 +285,10 @@ class BillingPolicyManagementService
         ];
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function dunningValues(array $data): array
     {
         return [
@@ -283,12 +299,30 @@ class BillingPolicyManagementService
         ];
     }
 
+    /** @param array<string, mixed> $data */
+    /**
+     * @param array<string, mixed> $data
+     */
     private function assertPublishedReferences(array $data): void
     {
-        foreach (['trial_policy_version_id' => BillingTrialPolicyVersion::class, 'dunning_policy_version_id' => BillingDunningPolicyVersion::class] as $key => $model) {
-            if (! array_key_exists($key, $data) || $data[$key] === null) continue;
-            $version = $model::query()->find($data[$key]);
-            if (! $version || $version->status !== 'PUBLISHED') throw ValidationException::withMessages([$key => ['يجب اختيار إصدار سياسة منشور.']]);
+        $trialPolicyVersionId = $data['trial_policy_version_id'] ?? null;
+        if ($trialPolicyVersionId !== null) {
+            $trialVersion = BillingTrialPolicyVersion::query()->find($trialPolicyVersionId);
+            if (! $trialVersion || $trialVersion->status !== 'PUBLISHED') {
+                throw ValidationException::withMessages([
+                    'trial_policy_version_id' => ['يجب اختيار إصدار سياسة تجربة منشور.'],
+                ]);
+            }
+        }
+
+        $dunningPolicyVersionId = $data['dunning_policy_version_id'] ?? null;
+        if ($dunningPolicyVersionId !== null) {
+            $dunningVersion = BillingDunningPolicyVersion::query()->find($dunningPolicyVersionId);
+            if (! $dunningVersion || $dunningVersion->status !== 'PUBLISHED') {
+                throw ValidationException::withMessages([
+                    'dunning_policy_version_id' => ['يجب اختيار إصدار سياسة تحصيل منشور.'],
+                ]);
+            }
         }
     }
 

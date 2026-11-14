@@ -6,6 +6,24 @@ use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $revenue_schedule_id
+ * @property int $invoice_id
+ * @property int|null $invoice_line_id
+ * @property int $currency_id
+ * @property string $revenue_account_code
+ * @property int $total_minor
+ * @property int $recognized_minor
+ * @property \Illuminate\Support\Carbon|null $last_recognized_on
+ * @property string $status
+ * @property \Illuminate\Support\Carbon $service_start_on
+ * @property \Illuminate\Support\Carbon $service_end_on
+ * @property \Illuminate\Support\Carbon|null $last_recognized_on
+ * @property string $status
+ * @property-read BillingInvoice $invoice
+ * @property-read BillingInvoiceLine|null $invoiceLine
+ * @property-read Currency $currency
+ */
 class BillingRevenueRecognitionSchedule extends Model
 {
     use ExactDateSerialization;

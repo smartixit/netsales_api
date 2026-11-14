@@ -7,6 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
+/**
+ * @property int $credit_note_line_id
+ * @property int $credit_note_id
+ * @property int $invoice_line_id
+ * @property int $quantity
+ * @property int $unit_amount_minor
+ * @property int $subtotal_minor
+ * @property int $tax_minor
+ * @property int $total_minor
+ * @property-read BillingCreditNote $creditNote
+ * @property-read BillingInvoiceLine $invoiceLine
+ */
 class BillingCreditNoteLine extends Model
 {
     use ExactDateSerialization;

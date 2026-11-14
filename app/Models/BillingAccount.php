@@ -8,6 +8,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $billing_account_id
+ * @property int $network_id
+ * @property string $account_number
+ * @property string $legal_name
+ * @property string|null $billing_email
+ * @property string|null $billing_address
+ * @property int $default_currency_id
+ * @property int $payment_terms_days
+ * @property-read Network $network
+ * @property-read Currency $defaultCurrency
+ */
 class BillingAccount extends Model
 {
     use ExactDateSerialization;

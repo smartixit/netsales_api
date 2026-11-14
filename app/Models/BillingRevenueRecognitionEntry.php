@@ -6,6 +6,15 @@ use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $revenue_recognition_entry_id
+ * @property int $revenue_schedule_id
+ * @property int $journal_entry_id
+ * @property-read LedgerJournalEntry $journalEntry
+ * @property string $idempotency_key
+ * @property \Illuminate\Support\Carbon $recognized_through
+ * @property int $amount_minor
+ */
 class BillingRevenueRecognitionEntry extends Model
 {
     use ExactDateSerialization;

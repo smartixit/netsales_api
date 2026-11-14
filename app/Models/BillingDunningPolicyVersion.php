@@ -7,6 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
+/**
+ * @property int $dunning_policy_version_id
+ * @property int $dunning_policy_id
+ * @property string $status
+ * @property int $version_number
+ * @property int $grace_period_days
+ * @property array<int, int> $reminder_schedule_days
+ * @property array<int, int> $pre_renewal_alert_days
+ * @property bool $auto_suspend_after_grace
+ * @property array<int, int> $reminder_schedule_days
+ * @property array<int, int> $pre_renewal_alert_days
+ * @property-read BillingDunningPolicy $policy
+ */
 class BillingDunningPolicyVersion extends Model
 {
     use ExactDateSerialization;

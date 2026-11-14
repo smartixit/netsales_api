@@ -7,6 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $trial_policy_id
+ * @property string $policy_key
+ * @property string $name
+ * @property int|null $current_version_id
+ * @property bool $is_active
+ * @property-read BillingTrialPolicyVersion|null $currentVersion
+ */
 class BillingTrialPolicy extends Model
 {
     use ExactDateSerialization;
@@ -20,11 +28,13 @@ class BillingTrialPolicy extends Model
         return ['is_active' => 'boolean'];
     }
 
+    /** @return BelongsTo<BillingTrialPolicyVersion, BillingTrialPolicy> */
     public function currentVersion(): BelongsTo
     {
         return $this->belongsTo(BillingTrialPolicyVersion::class, 'current_version_id', 'trial_policy_version_id');
     }
 
+    /** @return HasMany<BillingTrialPolicyVersion, BillingTrialPolicy> */
     public function versions(): HasMany
     {
         return $this->hasMany(BillingTrialPolicyVersion::class, 'trial_policy_id');

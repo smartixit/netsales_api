@@ -6,6 +6,14 @@ use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $subscription_alert_id
+ * @property int $billing_subscription_id
+ * @property string $alert_type
+ * @property string $status
+ * @property \Illuminate\Support\Carbon $scheduled_at
+ * @property \Illuminate\Support\Carbon|null $sent_at
+ */
 class BillingSubscriptionAlert extends Model
 {
     use ExactDateSerialization;

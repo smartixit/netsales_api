@@ -8,6 +8,22 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
+/**
+ * @property int $invoice_line_id
+ * @property int $invoice_id
+ * @property int $currency_id
+ * @property string $line_type
+ * @property string $description
+ * @property string $quantity
+ * @property int $unit_amount_minor
+ * @property int $subtotal_minor
+ * @property int $discount_minor
+ * @property int $tax_minor
+ * @property int $total_minor
+ * @property array<string, mixed>|null $source_snapshot
+ * @property-read BillingInvoice $invoice
+ * @property-read Currency $currency
+ */
 class BillingInvoiceLine extends Model
 {
     use ExactDateSerialization;

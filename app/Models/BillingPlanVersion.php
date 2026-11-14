@@ -9,6 +9,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
+/**
+ * @property int $plan_version_id
+ * @property int $plan_id
+ * @property int $version_number
+ * @property \Illuminate\Support\Carbon|null $published_at
+ * @property \App\Enums\BillingPlanVersionStatus $status
+ * @property int|null $trial_policy_version_id
+ * @property int|null $dunning_policy_version_id
+ * @property-read BillingPlan $plan
+ * @property-read BillingTrialPolicyVersion|null $trialPolicyVersion
+ * @property-read BillingDunningPolicyVersion|null $dunningPolicyVersion
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPrice> $prices
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPlanFeature> $features
+ */
 class BillingPlanVersion extends Model
 {
     use ExactDateSerialization;

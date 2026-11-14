@@ -18,6 +18,7 @@ class BillingCatalogService
         private BillingAuthorizationService $authorization
     ) {}
 
+    /** @param array<string, mixed> $data */
     public function createProduct(array $data, int $actorId): BillingProduct
     {
         $actor = $this->platformActor($actorId);
@@ -28,6 +29,7 @@ class BillingCatalogService
         ]));
     }
 
+    /** @param array<string, mixed> $data */
     public function createPlan(array $data, int $actorId): BillingPlan
     {
         $actor = $this->platformActor($actorId);
@@ -51,11 +53,19 @@ class BillingCatalogService
         });
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     * @return Collection<int, BillingPlan>|CursorPaginator<int, BillingPlan>
+     */
     public function plans(array $filters = []): Collection|CursorPaginator
     {
         return $this->catalog->getPlans($filters);
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     * @return CursorPaginator<int, BillingPlanVersion>
+     */
     public function versionsForPlan(int $planId, array $filters = []): CursorPaginator
     {
         $plan = BillingPlan::query()->findOrFail($planId);
@@ -86,6 +96,10 @@ class BillingCatalogService
             ->cursorPaginate($perPage);
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     * @return Collection<int, BillingProduct>|CursorPaginator<int, BillingProduct>
+     */
     public function products(array $filters = []): Collection|CursorPaginator
     {
         $query = BillingProduct::query();
@@ -110,7 +124,11 @@ class BillingCatalogService
         return $query->orderBy('product_id')->cursorPaginate($perPage);
     }
 
-    public function publicPlansForCurrency(int $currencyId, array $filters = []): Collection|CursorPaginator
+    /**
+     * @param array<string, mixed> $filters
+     * @return CursorPaginator<int, BillingPlan>
+     */
+    public function publicPlansForCurrency(int $currencyId, array $filters = []): CursorPaginator
     {
         if (! $this->currencies->findActiveById($currencyId)) {
             throw ValidationException::withMessages([
@@ -144,13 +162,10 @@ class BillingCatalogService
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
-        if (! empty($filters['all'])) {
-            return $query->orderBy('plan_id')->get();
-        }
-
-        return $query->orderBy('plan_id')->cursorPaginate($perPage);
+        return $query->orderBy('plan_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
+    /** @param array<string, mixed> $policyVersions */
     public function createDraftVersion(int $planId, int $actorId, array $policyVersions = []): BillingPlanVersion
     {
         $actor = $this->platformActor($actorId);
@@ -181,6 +196,7 @@ class BillingCatalogService
         }, 3);
     }
 
+    /** @param array<string, mixed> $data */
     public function addPrice(int $versionId, array $data, int $actorId): BillingPrice
     {
         $this->platformActor($actorId);
@@ -244,6 +260,7 @@ class BillingCatalogService
         }, 3);
     }
 
+    /** @param array<string, mixed> $data */
     public function addFeature(int $versionId, array $data, int $actorId): BillingPlanFeature
     {
         $this->platformActor($actorId);
@@ -282,7 +299,9 @@ class BillingCatalogService
             $configuration = (array) ($data['configuration'] ?? []);
             if ($type === BillingFeatureType::METERED && $overageBehavior === 'INVOICE') {
                 $priceCurrencyIds = $version->prices->pluck('currency_id')->map(fn ($id) => (int) $id)->unique()->sort()->values();
-                $overagePrices = collect($configuration['overage_prices'] ?? []);
+                /** @var array<int, array<string, mixed>> $overagePriceRows */
+                $overagePriceRows = $configuration['overage_prices'] ?? [];
+                $overagePrices = collect($overagePriceRows);
                 $configuredCurrencyIds = $overagePrices->pluck('currency_id')->map(fn ($id) => (int) $id)->unique()->sort()->values();
 
                 foreach ($overagePrices as $overagePrice) {

@@ -31,8 +31,11 @@ class BillingRefundService
             throw ValidationException::withMessages(['refund' => ['مبلغ الاسترداد ومفتاح منع التكرار غير صالحين.']]);
         }
 
+        $ledger = $this->ledger;
+        $chart = $this->chart;
+
         return DB::transaction(function () use (
-            $paymentId, $creditNoteId, $treasuryAccountId, $amountMinor, $reason, $idempotencyKey, $actor
+            $paymentId, $creditNoteId, $treasuryAccountId, $amountMinor, $reason, $idempotencyKey, $actor, $ledger, $chart
         ): BillingRefund {
             $existing = BillingRefund::query()->where('idempotency_key', $idempotencyKey)->first();
             if ($existing) {
@@ -114,8 +117,8 @@ class BillingRefundService
                 throw ValidationException::withMessages(['treasury_account_id' => ['عملة حساب الخزينة لا تطابق عملة الدفعة.']]);
             }
 
-            $treasuryLedger = $this->chart->ensureTreasuryAccount($treasury);
-            $accounts = $this->chart->ensureForCurrency($payment->currency);
+            $treasuryLedger = $chart->ensureTreasuryAccount($treasury);
+            $accounts = $chart->ensureForCurrency($payment->currency);
 
             $refund = BillingRefund::query()->create([
                 'refund_reference' => 'NS-REF-'.now('Asia/Aden')->format('Ymd').'-'.Str::upper(Str::random(8)),
@@ -132,7 +135,7 @@ class BillingRefundService
 
             // The credit note already reduced A/R (and created a customer credit when overpaid).
             // Cash settlement consumes that customer credit: Dr customer-credit liability, Cr Treasury.
-            $this->ledger->post(
+            $ledger->post(
                 (int) $payment->currency_id,
                 'تسوية استرداد '.$refund->refund_reference.' من الإشعار '.$creditNote->credit_note_number,
                 'billing-refund-'.$refund->refund_id,

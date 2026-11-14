@@ -10,6 +10,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $plan_id
+ * @property int $product_id
+ * @property string $plan_key
+ * @property string $name
+ * @property int|null $current_version_id
+ * @property bool $is_active
+ * @property bool $is_public
+ * @property-read BillingProduct $product
+ * @property-read BillingPlanVersion|null $currentVersion
+ */
 class BillingPlan extends Model
 {
     use ExactDateSerialization;

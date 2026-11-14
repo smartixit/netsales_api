@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $currency_id
+ * @property string $code
+ * @property string $name
+ * @property int $decimal_places
+ * @property bool $is_active
+ */
 class Currency extends Model
 {
     use ExactDateSerialization;

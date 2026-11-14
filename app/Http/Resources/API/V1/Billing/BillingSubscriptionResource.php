@@ -38,8 +38,43 @@ class BillingSubscriptionResource extends JsonResource
             'current_period_end' => $this->current_period_end?->toDateTimeString(),
             'trial_start' => $this->trial_start?->toDateTimeString(),
             'trial_end' => $this->trial_end?->toDateTimeString(),
+            'trial_start_at' => $this->trial_start?->toIso8601String(),
+            'trial_end_at' => $this->trial_end?->toIso8601String(),
+            'server_now' => now('Asia/Aden')->toIso8601String(),
             'cancel_at_period_end' => (bool) $this->cancel_at_period_end,
             'grace_period_ends_at' => $this->grace_period_ends_at?->toDateTimeString(),
+            'trial_policy_snapshot' => $this->trial_policy_snapshot,
+            'dunning_policy_snapshot' => $this->dunning_policy_snapshot,
+            'trial_redemption' => $this->whenLoaded('trialRedemption', function () {
+                if (! $this->trialRedemption) return null;
+                $r = $this->trialRedemption;
+                return [
+                    'trial_redemption_id' => $r->trial_redemption_id,
+                    'status' => $r->status,
+                    'redemption_scope' => $r->redemption_scope,
+                    'reserved_at' => $r->reserved_at?->toDateTimeString(),
+                    'started_at' => $r->started_at?->toDateTimeString(),
+                    'completed_at' => $r->completed_at?->toDateTimeString(),
+                    'metadata' => $r->metadata,
+                    'policy_version' => $r->policyVersion ? [
+                        'version_number' => (int) $r->policyVersion->version_number,
+                        'duration_value' => (int) $r->policyVersion->duration_value,
+                        'duration_unit' => $r->policyVersion->duration_unit,
+                        'start_trigger' => $r->policyVersion->start_trigger,
+                        'requires_manual_approval' => (bool) $r->policyVersion->requires_manual_approval,
+                        'end_behavior' => $r->policyVersion->end_behavior,
+                        'entitlement_mode' => $r->policyVersion->entitlement_mode,
+                    ] : null,
+                    'adjustments' => $r->adjustments->map(static fn ($a) => [
+                        'trial_adjustment_id' => $a->trial_adjustment_id,
+                        'adjustment_type' => $a->adjustment_type,
+                        'previous_trial_end' => $a->previous_trial_end?->toDateTimeString(),
+                        'new_trial_end' => $a->new_trial_end?->toDateTimeString(),
+                        'reason' => $a->reason,
+                        'occurred_at' => $a->occurred_at?->toDateTimeString(),
+                    ])->values(),
+                ];
+            }),
             'created_at' => $this->created_at?->toDateTimeString(),
         ];
     }

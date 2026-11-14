@@ -5,6 +5,32 @@ use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo,HasMany};
 use LogicException;
+/**
+ * @property int $payment_id
+ * @property string $payment_reference
+ * @property string $idempotency_key
+ * @property string|null $external_reference
+ * @property string|null $review_note
+ * @property int|null $recorded_by
+ * @property int|null $verified_by
+ * @property int|null $payment_intent_id
+ * @property int $invoice_id
+ * @property int $billing_account_id
+ * @property int $currency_id
+ * @property int $payment_method_id
+ * @property int|null $treasury_account_id
+ * @property int $amount_minor
+ * @property \App\Enums\BillingPaymentStatus $status
+ * @property \Illuminate\Support\Carbon|null $received_at
+ * @property \Illuminate\Support\Carbon|null $verified_at
+ * @property-read BillingInvoice $invoice
+ * @property-read BillingAccount $billingAccount
+ * @property-read Currency $currency
+ * @property-read BillingPaymentMethod $paymentMethod
+ * @property-read BillingPaymentIntent|null $paymentIntent
+ * @property-read TreasuryAccount|null $treasuryAccount
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPaymentProof> $proofs
+ */
 class BillingPayment extends Model {
  use ExactDateSerialization;
  protected $table='billing_payments'; protected $primaryKey='payment_id';

@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers\API\V1\Billing;
 
+use App\Enums\{BillingInvoiceStatus, BillingPaymentStatus, BillingSubscriptionStatus};
 use App\Http\Controllers\API\V1\BaseController;
-use App\Http\Requests\API\V1\Billing\{CreateBillingAccountRequest, PurchaseSubscriptionRequest, StorePaymentRequest};
-use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingRefundResource, BillingSubscriptionEventResource, BillingSubscriptionResource, PaymentMethodResource};
-use App\Services\Billing\{BillingPaymentService, BillingPlatformReadService, BillingSelfService, BillingSubscriptionService, CurrencyService};
+use App\Http\Requests\API\V1\Billing\{CreateBillingAccountRequest, PurchaseSubscriptionRequest, StorePaymentRequest, StoreBillingAccountContactRequest, UpdateBillingAccountContactRequest, UpdateBillingAccountRequest};
+use App\Http\Resources\API\V1\Billing\{BillingAccountContactResource, BillingAccountResource, BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingRefundResource, BillingSubscriptionEventResource, BillingSubscriptionResource, BillingUsageAggregateResource, CurrencyResource, PaymentMethodResource};
+use App\Services\Billing\{BillingEntitlementService, BillingPaymentService, BillingPlatformReadService, BillingSelfService, BillingSubscriptionService, CurrencyService};
 use App\Services\Support\FileUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -20,8 +22,25 @@ class BillingSelfServiceController extends BaseController
         private BillingPaymentService $payments,
         private BillingPlatformReadService $read,
         private CurrencyService $currencies,
+        private BillingEntitlementService $entitlements,
         private FileUploadService $files
     ) {}
+
+    /**
+     * Validate bounded cursor collection parameters before passing them to the
+     * self-service domain service.
+     *
+     * @param array<string, array<int, mixed>> $extra
+     * @return array<string, mixed>
+     */
+    private function collectionFilters(Request $request, array $extra = []): array
+    {
+        return $request->validate(array_merge([
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
+            'cursor' => ['nullable', 'string', 'max:2048'],
+            'search' => ['nullable', 'string', 'max:120'],
+        ], $extra));
+    }
 
     public function currencies(): JsonResponse
     {
@@ -54,13 +73,132 @@ class BillingSelfServiceController extends BaseController
         }
     }
 
+    public function account(int $billingAccountId): JsonResponse
+    {
+        return $this->successResponse('تم استرجاع ملف حساب الفوترة وجهات الاتصال.', new BillingAccountResource($this->self->account($billingAccountId, $this->requireCurrentUser())));
+    }
+
+    public function updateAccount(UpdateBillingAccountRequest $request, int $billingAccountId): JsonResponse
+    {
+        try {
+            $account = $this->self->updateAccount($billingAccountId, $request->validated(), $this->requireCurrentUser());
+            return $this->successResponse('تم تحديث بيانات حساب الفوترة.', new BillingAccountResource($account));
+        } catch (ValidationException $exception) {
+            return $this->validationErrorResponse($exception);
+        }
+    }
+
+    public function storeContact(StoreBillingAccountContactRequest $request, int $billingAccountId): JsonResponse
+    {
+        try {
+            $contact = $this->self->createContact($billingAccountId, $request->validated(), $this->requireCurrentUser());
+            return $this->successResponse('تمت إضافة جهة اتصال لحساب الفوترة.', new BillingAccountContactResource($contact), 201);
+        } catch (ValidationException $exception) {
+            return $this->validationErrorResponse($exception);
+        }
+    }
+
+    public function updateContact(UpdateBillingAccountContactRequest $request, int $billingAccountId, int $contactId): JsonResponse
+    {
+        try {
+            $contact = $this->self->updateContact($billingAccountId, $contactId, $request->validated(), $this->requireCurrentUser());
+            return $this->successResponse('تم تحديث جهة اتصال حساب الفوترة.', new BillingAccountContactResource($contact));
+        } catch (ValidationException $exception) {
+            return $this->validationErrorResponse($exception);
+        }
+    }
+
+    public function destroyContact(int $billingAccountId, int $contactId): JsonResponse
+    {
+        try {
+            $this->self->deleteContact($billingAccountId, $contactId, $this->requireCurrentUser());
+            return $this->successResponse('تم حذف جهة اتصال حساب الفوترة.', null);
+        } catch (ValidationException $exception) {
+            return $this->validationErrorResponse($exception);
+        }
+    }
+
+    public function entitlements(int $billingAccountId): JsonResponse
+    {
+        $account = $this->self->account($billingAccountId, $this->requireCurrentUser());
+        $subscription = $this->entitlements->previewSubscriptionForAccount((int) $account->billing_account_id);
+
+        if (! $subscription) {
+            return $this->successResponse('لا توجد استحقاقات تشغيلية فعالة لحساب الفوترة حالياً.', [
+                'subscription' => null,
+                'trial' => null,
+                'features' => [],
+            ]);
+        }
+
+        $subscription->loadMissing(['planVersion.features', 'currency', 'trialRedemption.policyVersion', 'trialRedemption.adjustments']);
+        $status = $subscription->status?->value;
+        $canUseFeatures = in_array($status, ['ACTIVE', 'TRIALING', 'PAST_DUE'], true);
+        $features = $canUseFeatures ? $subscription->planVersion->features
+            ->map(fn ($feature): array => [
+                'feature_key' => $feature->feature_key,
+                'name' => $feature->name,
+                'feature_type' => $feature->feature_type?->value,
+                'configured_value' => $this->entitlements->featureValue($subscription, $feature->feature_key),
+                'unit' => $feature->unit,
+                'aggregation' => $feature->aggregation,
+                'reset_period' => $feature->reset_period,
+                'overage_behavior' => $feature->overage_behavior,
+                'available' => $this->entitlements->allows($subscription, $feature->feature_key),
+            ])->values() : collect();
+
+        $trial = (array) $subscription->trial_policy_snapshot;
+        $redemption = $subscription->trialRedemption;
+
+        return $this->successResponse('تم استرجاع حالة الاشتراك والاستحقاقات دون بدء أي تجربة معلقة.', [
+            'subscription' => new BillingSubscriptionResource($subscription),
+            'trial' => $trial !== [] || $redemption ? [
+                'status' => $redemption?->status,
+                'trial_redemption_id' => $redemption?->trial_redemption_id,
+                'redemption_scope' => $redemption?->redemption_scope
+                    ?? $trial['redemption_scope']
+                    ?? null,
+                'start' => $subscription->trial_start?->toDateTimeString(),
+                'end' => $subscription->trial_end?->toDateTimeString(),
+                'start_at' => $subscription->trial_start?->toIso8601String(),
+                'end_at' => $subscription->trial_end?->toIso8601String(),
+                'server_now' => now('Asia/Aden')->toIso8601String(),
+                'duration_value' => $trial['duration_value'] ?? $redemption?->policyVersion?->duration_value,
+                'duration_unit' => $trial['duration_unit'] ?? $redemption?->policyVersion?->duration_unit,
+                'start_trigger' => $trial['start_trigger'] ?? $redemption?->policyVersion?->start_trigger,
+                'eligibility_mode' => $trial['eligibility_mode'] ?? $redemption?->policyVersion?->eligibility_mode,
+                'requires_manual_approval' => (bool) (
+                    $trial['requires_manual_approval']
+                    ?? $redemption?->policyVersion?->requires_manual_approval
+                    ?? false
+                ),
+                'end_behavior' => $trial['end_behavior'] ?? $redemption?->policyVersion?->end_behavior,
+                'entitlement_mode' => $trial['entitlement_mode']
+                    ?? $redemption?->policyVersion?->entitlement_mode
+                    ?? 'FULL_PLAN',
+                'allowed_features' => $trial['entitlement_config']['allowed_features'] ?? [],
+                'awaiting_first_activation' => $status === 'INCOMPLETE'
+                    && ($trial['start_trigger'] ?? $redemption?->policyVersion?->start_trigger) === 'FIRST_ACTIVATION',
+                'adjustments' => $redemption?->adjustments->map(static fn ($adjustment): array => [
+                    'trial_adjustment_id' => $adjustment->trial_adjustment_id,
+                    'adjustment_type' => $adjustment->adjustment_type,
+                    'previous_trial_end' => $adjustment->previous_trial_end?->toDateTimeString(),
+                    'new_trial_end' => $adjustment->new_trial_end?->toDateTimeString(),
+                    'reason' => $adjustment->reason,
+                    'occurred_at' => $adjustment->occurred_at?->toDateTimeString(),
+                ])->values() ?? [],
+            ] : null,
+            'features' => $features,
+        ]);
+    }
+
     public function plans(Request $request, int $billingAccountId): JsonResponse
     {
         return $this->successResponse(
             'تم استرجاع الخطط والأسعار المتاحة بعملة حساب الفوترة.',
             BillingPlanResource::collection($this->self->plans(
                 $billingAccountId,
-                $request->only(['search', 'per_page', 'all']),
+                $this->collectionFilters($request),
                 $this->requireCurrentUser()
             ))
         );
@@ -90,7 +228,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع اشتراكات حساب الفوترة.',
             BillingSubscriptionResource::collection($this->self->subscriptions(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'all']),
+                $this->collectionFilters($request, ['status' => ['nullable', Rule::enum(BillingSubscriptionStatus::class)]]),
                 $this->requireCurrentUser()
             ))
         );
@@ -102,7 +240,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع فواتير حساب الفوترة.',
             BillingInvoiceResource::collection($this->self->invoices(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'all']),
+                $this->collectionFilters($request, ['status' => ['nullable', Rule::enum(BillingInvoiceStatus::class)]]),
                 $this->requireCurrentUser()
             ))
         );
@@ -122,9 +260,27 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع مدفوعات حساب الفوترة.',
             BillingPaymentResource::collection($this->self->payments(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'all']),
+                $this->collectionFilters($request, ['status' => ['nullable', Rule::enum(BillingPaymentStatus::class)]]),
                 $this->requireCurrentUser()
             ))
+        );
+    }
+
+    public function statement(Request $request, int $billingAccountId): JsonResponse
+    {
+        $filters = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+            'currency_id' => ['nullable', 'integer', 'exists:currencies,currency_id'],
+        ]);
+
+        return $this->successResponse(
+            'تم إنشاء كشف نشاط حساب الفوترة للفترة المحددة وبحسب العملة.',
+            $this->self->statement(
+                $billingAccountId,
+                $filters,
+                $this->requireCurrentUser()
+            )
         );
     }
 
@@ -134,7 +290,7 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع الإشعارات الدائنة لحساب الفوترة.',
             BillingCreditNoteResource::collection($this->self->creditNotes(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'all']),
+                $this->collectionFilters($request, ['status' => ['nullable', Rule::in(['ISSUED', 'PARTIALLY_REFUNDED', 'REFUNDED'])]]),
                 $this->requireCurrentUser()
             ))
         );
@@ -146,18 +302,60 @@ class BillingSelfServiceController extends BaseController
             'تم استرجاع عمليات الاسترداد لحساب الفوترة.',
             BillingRefundResource::collection($this->self->refunds(
                 $billingAccountId,
-                $request->only(['status', 'per_page', 'all']),
+                $this->collectionFilters($request, ['status' => ['nullable', Rule::in(['PENDING', 'COMPLETED'])]]),
                 $this->requireCurrentUser()
             ))
         );
     }
 
-    public function subscriptionEvents(int $subscriptionId): JsonResponse
+    public function subscription(int $subscriptionId): JsonResponse
     {
+        $actor = $this->requireCurrentUser();
+        $subscription = $this->self->subscription($subscriptionId, $actor);
+
+        return $this->successResponse('تم استرجاع تفاصيل الاشتراك وتجربته وأول صفحة من سجل أحداثه.', [
+            'subscription' => new BillingSubscriptionResource($subscription),
+            'events' => BillingSubscriptionEventResource::collection(
+                $this->self->subscriptionEvents($subscriptionId, ['per_page' => 30], $actor)
+            ),
+                        'invoices' => BillingInvoiceResource::collection(
+                $subscription->invoices()
+                    ->with(['currency', 'lines.currency'])
+                    ->orderByDesc('invoice_id')
+                    ->cursorPaginate(25)
+            ),
+        ]);
+    }
+
+    public function usage(Request $request, int $subscriptionId): JsonResponse
+    {
+        $filters = $request->validate([
+            'from_date' => ['nullable', 'date_format:Y-m-d'],
+            'to_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from_date'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
+            'cursor' => ['nullable', 'string', 'max:2048'],
+        ]);
+        return $this->successResponse(
+            'تم استرجاع تجميعات استخدام الاشتراك حسب العداد والفترة.',
+            BillingUsageAggregateResource::collection($this->self->usage($subscriptionId, $filters, $this->requireCurrentUser()))
+        );
+    }
+
+    public function subscriptionEvents(Request $request, int $subscriptionId): JsonResponse
+    {
+        $filters = $request->validate([
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
+            'cursor' => ['nullable', 'string', 'max:2048'],
+        ]);
+
         return $this->successResponse(
             'تم استرجاع سجل دورة الاشتراك.',
             BillingSubscriptionEventResource::collection(
-                $this->self->subscriptionEvents($subscriptionId, $this->requireCurrentUser())
+                $this->self->subscriptionEvents(
+                    $subscriptionId,
+                    $filters,
+                    $this->requireCurrentUser()
+                )
             )
         );
     }

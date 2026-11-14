@@ -15,6 +15,7 @@ class BillingReconciliationService
         '2300' => ['key' => 'tax_payable', 'label' => 'الضرائب المستحقة', 'normal' => 'CREDIT'],
     ];
 
+    /** @return array<string, mixed> */
     public function report(?int $currencyId = null): array
     {
         $currencies = Currency::query()
@@ -33,6 +34,7 @@ class BillingReconciliationService
         ];
     }
 
+    /** @return array<string, mixed> */
     private function reconcileCurrency(Currency $currency): array
     {
         $ledgerBalances = $this->controlLedgerBalances((int) $currency->currency_id);
@@ -68,11 +70,11 @@ class BillingReconciliationService
         $checks = [];
         foreach (self::CONTROL_ACCOUNTS as $code => $definition) {
             $glBalance = (int) ($ledgerBalances[$code] ?? 0);
-            $subledger = (int) ($subledgerBalances[$definition['key']] ?? 0);
+            $subledger = (int) $subledgerBalances[$definition['key']];
             $checks[] = $this->check(
                 $definition['key'],
                 $definition['label'],
-                $code,
+                (string) $code,
                 $glBalance,
                 $subledger
             );
@@ -113,6 +115,7 @@ class BillingReconciliationService
         ];
     }
 
+    /** @return array<int|string, int> */
     private function controlLedgerBalances(int $currencyId): array
     {
         $rows = DB::table('ledger_journal_lines as lines')
@@ -137,6 +140,9 @@ class BillingReconciliationService
         return $balances;
     }
 
+    /**
+     * @return array{checks: array<int, array<string, mixed>>, accounts: array<int, array<string, mixed>>, unassigned_payment_minor: int, unassigned_refund_minor: int, missing_ledger_account_count: int}
+     */
     private function reconcileTreasuryAccounts(int $currencyId): array
     {
         $payments = DB::table('billing_payments')
@@ -187,8 +193,8 @@ class BillingReconciliationService
 
         foreach ($accounts as $account) {
             $accountId = (int) $account->treasury_account_id;
-            $collected = (int) ($payments->get($accountId)?->amount_minor ?? 0);
-            $refunded = (int) ($refunds->get($accountId)?->amount_minor ?? 0);
+            $collected = (int) ($payments->get($accountId)->amount_minor ?? 0);
+            $refunded = (int) ($refunds->get($accountId)->amount_minor ?? 0);
             $subledger = $collected - $refunded;
             $ledger = 0;
 
@@ -237,6 +243,7 @@ class BillingReconciliationService
         ];
     }
 
+    /** @return array{debit_minor: int, credit_minor: int} */
     private function trialBalance(int $currencyId): array
     {
         $row = DB::table('ledger_journal_lines as lines')
@@ -252,6 +259,7 @@ class BillingReconciliationService
         ];
     }
 
+    /** @return array{key: string, label: string, account_code: string|null, ledger_balance_minor: int, subledger_balance_minor: int, difference_minor: int, status: string} */
     private function check(
         string $key,
         string $label,

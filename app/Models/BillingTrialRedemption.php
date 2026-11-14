@@ -4,8 +4,27 @@ namespace App\Models;
 
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
 
+/**
+ * @property int $trial_redemption_id
+ * @property int $billing_subscription_id
+ * @property int $trial_policy_id
+ * @property int $trial_policy_version_id
+ * @property int $network_id
+ * @property int $billing_account_id
+ * @property int $product_id
+ * @property string $redemption_scope
+ * @property string $redemption_subject_key
+ * @property string $status
+ * @property array<string, mixed>|null $metadata
+ * @property \Illuminate\Support\Carbon|null $reserved_at
+ * @property \Illuminate\Support\Carbon|null $started_at
+ * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property-read BillingTrialPolicy $policy
+ * @property-read BillingTrialPolicyVersion $policyVersion
+ * @property-read BillingSubscription $subscription
+ */
 class BillingTrialRedemption extends Model
 {
     use ExactDateSerialization;
@@ -27,6 +46,12 @@ class BillingTrialRedemption extends Model
     public function policyVersion(): BelongsTo
     {
         return $this->belongsTo(BillingTrialPolicyVersion::class, 'trial_policy_version_id', 'trial_policy_version_id');
+    }
+
+    public function adjustments(): HasMany
+    {
+        return $this->hasMany(BillingTrialAdjustment::class, 'trial_redemption_id', 'trial_redemption_id')
+            ->orderByDesc('occurred_at')->orderByDesc('trial_adjustment_id');
     }
 
     public function subscription(): BelongsTo

@@ -3,6 +3,14 @@ namespace App\Models;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+/**
+ * @property int $meter_id
+ * @property string $meter_key
+ * @property string $name
+ * @property string $unit
+ * @property string $aggregation
+ * @property bool $is_active
+ */
 class BillingUsageMeter extends Model {
  use ExactDateSerialization;
  protected $table='billing_usage_meters'; protected $primaryKey='meter_id';

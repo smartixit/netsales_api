@@ -3,6 +3,16 @@ namespace App\Models;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo,HasMany};
+/**
+ * @property int $payment_intent_id
+ * @property int $invoice_id
+ * @property int $billing_account_id
+ * @property int $currency_id
+ * @property int $amount_minor
+ * @property string $status
+ * @property \Illuminate\Support\Carbon|null $expires_at
+ * @property \Illuminate\Support\Carbon|null $succeeded_at
+ */
 class BillingPaymentIntent extends Model {
  use ExactDateSerialization;
  protected $table='billing_payment_intents'; protected $primaryKey='payment_intent_id';

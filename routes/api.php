@@ -5,6 +5,8 @@ use App\Http\Controllers\API\V1\Billing\BillingCatalogController;
 use App\Http\Controllers\API\V1\Billing\BillingPolicyController;
 use App\Http\Controllers\API\V1\Billing\BillingFinanceController;
 use App\Http\Controllers\API\V1\Billing\BillingSelfServiceController;
+use App\Http\Controllers\API\V1\Billing\BillingTrialEligibilityController;
+use App\Http\Controllers\API\V1\Billing\BillingReportController;
 use App\Http\Controllers\API\V1\AuthController;
 use App\Http\Controllers\API\V1\BackupController;
 use App\Http\Controllers\API\V1\DashboardController;
@@ -26,6 +28,7 @@ use App\Http\Controllers\API\V1\PosController;
 use App\Http\Controllers\API\V1\PosMembershipController;
 use App\Http\Controllers\API\V1\PosWalletController;
 use App\Http\Controllers\API\V1\RequestController;
+use App\Http\Controllers\API\V1\Reporting\ReportController;
 use App\Http\Controllers\API\V1\RoleController;
 use App\Http\Controllers\API\V1\SaleInvoiceController;
 use App\Http\Controllers\API\V1\ScheduledTaskRunController;
@@ -529,6 +532,28 @@ Route::prefix('v1')->group(function () {
                 ->name('api.v1.documents.snapshots.download');
         });
 
+        // Asynchronous report runs are isolated by network/platform scope.
+        Route::prefix('networks/{networkId}/reports')->whereNumber('networkId')->middleware('operational.scope')->group(function () {
+            Route::get('catalog', [ReportController::class, 'networkCatalog'])->middleware('throttle:api-read')->name('api.v1.networks.reports.catalog');
+            Route::post('runs', [ReportController::class, 'storeNetworkRun'])->middleware('throttle:api-write')->name('api.v1.networks.reports.runs.store');
+            Route::get('runs', [ReportController::class, 'networkRuns'])->middleware('throttle:api-read')->name('api.v1.networks.reports.runs.index');
+            Route::get('runs/{reportRunId}', [ReportController::class, 'showNetworkRun'])->whereNumber('reportRunId')->middleware('throttle:api-read')->name('api.v1.networks.reports.runs.show');
+        });
+        Route::prefix('platform/reports')->middleware('platform.user.scope')->group(function () {
+            Route::get('catalog', [ReportController::class, 'platformCatalog'])->middleware(['throttle:api-read', 'permission:billing.report'])->name('api.v1.platform.reports.catalog');
+            Route::post('runs', [ReportController::class, 'storePlatformRun'])->middleware(['throttle:api-write', 'permission:billing.report'])->name('api.v1.platform.reports.runs.store');
+            Route::get('runs', [ReportController::class, 'platformRuns'])->middleware(['throttle:api-read', 'permission:billing.report'])->name('api.v1.platform.reports.runs.index');
+            Route::get('runs/{reportRunId}', [ReportController::class, 'showPlatformRun'])->whereNumber('reportRunId')->middleware(['throttle:api-read', 'permission:billing.report'])->name('api.v1.platform.reports.runs.show');
+        });
+
+        // Billing reports are isolated from operational reports and remain currency-aware.
+        Route::prefix('platform/billing/reports')->middleware(['platform.user.scope', 'permission:billing.view'])->group(function () {
+            Route::get('catalog', [BillingReportController::class, 'platformCatalog'])->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.catalog');
+            Route::get('{reportType}', [BillingReportController::class, 'platformShow'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.show');
+            Route::get('{reportType}/summary', [BillingReportController::class, 'platformSummary'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.summary');
+            Route::get('{reportType}/export.csv', [BillingReportController::class, 'platformExportCsv'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.export');
+        });
+
         // Platform Billing — Windows Platform Scope only
         // ==========================================
         Route::prefix('platform/billing')->middleware('platform.user.scope')->group(function () {
@@ -638,6 +663,13 @@ Route::prefix('v1')->group(function () {
         });
 
         // ==========================================
+        Route::prefix('networks/{networkId}/billing/reports')->middleware(['operational.scope'])->group(function () {
+            Route::get('catalog', [BillingReportController::class, 'networkCatalog'])->whereNumber('networkId')->middleware('throttle:api-read')->name('api.v1.networks.billing.reports.catalog');
+            Route::get('{reportType}', [BillingReportController::class, 'networkShow'])->whereNumber('networkId')->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.networks.billing.reports.show');
+            Route::get('{reportType}/summary', [BillingReportController::class, 'networkSummary'])->whereNumber('networkId')->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.networks.billing.reports.summary');
+            Route::get('{reportType}/export.csv', [BillingReportController::class, 'networkExportCsv'])->whereNumber('networkId')->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.networks.billing.reports.export');
+        });
+
         // Network Billing Self-Service — Network Owner only
         // ==========================================
         Route::prefix('networks/{networkId}/billing')->middleware(['operational.scope'])->group(function () {
@@ -653,18 +685,31 @@ Route::prefix('v1')->group(function () {
             Route::middleware('throttle:api-read')->group(function () {
                 Route::get('currencies', [BillingSelfServiceController::class, 'currencies'])
                     ->name('api.v1.billing.currencies.index');
+                Route::get('accounts/{billingAccountId}/prices/{priceId}/trial-eligibility', [BillingTrialEligibilityController::class, 'show'])
+                    ->whereNumber('billingAccountId')->whereNumber('priceId')
+                    ->name('api.v1.billing.accounts.prices.trial_eligibility');
+                Route::get('accounts/{billingAccountId}', [BillingSelfServiceController::class, 'account'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.show');
+                Route::get('accounts/{billingAccountId}/entitlements', [BillingSelfServiceController::class, 'entitlements'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.entitlements');
                 Route::get('accounts/{billingAccountId}/plans', [BillingSelfServiceController::class, 'plans'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.plans');
                 Route::get('accounts/{billingAccountId}/subscriptions', [BillingSelfServiceController::class, 'subscriptions'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.subscriptions.index');
                 Route::get('accounts/{billingAccountId}/invoices', [BillingSelfServiceController::class, 'invoices'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.invoices.index');
+                Route::get('accounts/{billingAccountId}/statement', [BillingSelfServiceController::class, 'statement'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.statement');
                 Route::get('accounts/{billingAccountId}/payments', [BillingSelfServiceController::class, 'payments'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.payments.index');
                 Route::get('accounts/{billingAccountId}/credit-notes', [BillingSelfServiceController::class, 'creditNotes'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.credit_notes.index');
                 Route::get('accounts/{billingAccountId}/refunds', [BillingSelfServiceController::class, 'refunds'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.refunds.index');
+                Route::get('subscriptions/{subscriptionId}', [BillingSelfServiceController::class, 'subscription'])
+                    ->whereNumber('subscriptionId')->name('api.v1.billing.subscriptions.show');
+                Route::get('subscriptions/{subscriptionId}/usage', [BillingSelfServiceController::class, 'usage'])
+                    ->whereNumber('subscriptionId')->name('api.v1.billing.subscriptions.usage');
                 Route::get('subscriptions/{subscriptionId}/events', [BillingSelfServiceController::class, 'subscriptionEvents'])
                     ->whereNumber('subscriptionId')->name('api.v1.billing.subscriptions.events.index');
                 Route::get('accounts/{billingAccountId}/payment-methods', [BillingSelfServiceController::class, 'paymentMethods'])
@@ -674,6 +719,14 @@ Route::prefix('v1')->group(function () {
             });
 
             Route::middleware('throttle:api-write')->group(function () {
+                Route::put('accounts/{billingAccountId}', [BillingSelfServiceController::class, 'updateAccount'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.update');
+                Route::post('accounts/{billingAccountId}/contacts', [BillingSelfServiceController::class, 'storeContact'])
+                    ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.contacts.store');
+                Route::put('accounts/{billingAccountId}/contacts/{contactId}', [BillingSelfServiceController::class, 'updateContact'])
+                    ->whereNumber('billingAccountId')->whereNumber('contactId')->name('api.v1.billing.accounts.contacts.update');
+                Route::delete('accounts/{billingAccountId}/contacts/{contactId}', [BillingSelfServiceController::class, 'destroyContact'])
+                    ->whereNumber('billingAccountId')->whereNumber('contactId')->name('api.v1.billing.accounts.contacts.destroy');
                 Route::post('accounts/{billingAccountId}/subscriptions', [BillingSelfServiceController::class, 'purchase'])
                     ->whereNumber('billingAccountId')->name('api.v1.billing.accounts.subscriptions.purchase');
                 Route::post('subscriptions/{subscriptionId}/cancel', [BillingSelfServiceController::class, 'cancelSubscription'])

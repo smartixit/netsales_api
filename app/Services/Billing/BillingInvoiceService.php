@@ -35,7 +35,7 @@ class BillingInvoiceService
             ]);
 
             $currency = $subscription->currency;
-            if (! $currency || (int) $currency->currency_id !== (int) $subscription->price->currency_id) {
+            if ((int) $currency->currency_id !== (int) $subscription->price->currency_id) {
                 throw ValidationException::withMessages(['currency_id' => ['عملة الاشتراك لا تطابق عملة السعر.']]);
             }
 
@@ -131,7 +131,10 @@ class BillingInvoiceService
 
     public function finalize(int $invoiceId, ?User $actor = null): BillingInvoice
     {
-        return DB::transaction(function () use ($invoiceId, $actor): BillingInvoice {
+        $ledger = $this->ledger;
+        $chart = $this->chart;
+
+        return DB::transaction(function () use ($invoiceId, $actor, $ledger, $chart): BillingInvoice {
             $invoice = BillingInvoice::query()
                 ->with(['lines', 'currency'])
                 ->lockForUpdate()
@@ -182,7 +185,7 @@ class BillingInvoiceService
             $invoice->paid_minor = 0;
             $invoice->credited_minor = 0;
             $invoice->remaining_minor = $total;
-            $invoice->issued_on = now('Asia/Aden')->toDateString();
+            $invoice->issued_on = now('Asia/Aden');
             $invoice->finalized_at = now('Asia/Aden');
 
             if ($total === 0) {
@@ -197,7 +200,7 @@ class BillingInvoiceService
             $invoice->status = BillingInvoiceStatus::OPEN;
             $invoice->save();
 
-            $accounts = $this->chart->ensureForCurrency($invoice->currency);
+            $accounts = $chart->ensureForCurrency($invoice->currency);
             $holdRevenueRecognition = ($invoice->pricing_snapshot['revenue_recognition_activation'] ?? 'PERIOD_START') === 'ON_PAYMENT';
             $deferredMinor = 0;
             $immediateRevenueByAccount = [];
@@ -317,7 +320,7 @@ class BillingInvoiceService
                 ];
             }
 
-            $this->ledger->post(
+            $ledger->post(
                 (int) $invoice->currency_id,
                 'إصدار فاتورة اشتراك '.$invoice->invoice_number,
                 'billing-invoice-issued-'.$invoice->invoice_id,
@@ -338,8 +341,9 @@ class BillingInvoiceService
     public function void(int $invoiceId, string $reason, User $actor): BillingInvoice
     {
         $this->authorization->assertPlatform($actor);
+        $ledger = $this->ledger;
 
-        return DB::transaction(function () use ($invoiceId, $reason, $actor): BillingInvoice {
+        return DB::transaction(function () use ($invoiceId, $reason, $actor, $ledger): BillingInvoice {
             $invoice = BillingInvoice::query()->with('currency')->lockForUpdate()->findOrFail($invoiceId);
 
             if (! in_array($invoice->status, [BillingInvoiceStatus::DRAFT, BillingInvoiceStatus::OPEN], true)
@@ -382,7 +386,7 @@ class BillingInvoiceService
                     ->first();
 
                 if ($entry) {
-                    $this->ledger->reverse(
+                    $ledger->reverse(
                         (int) $entry->journal_entry_id,
                         $reason,
                         'billing-invoice-void-'.$invoice->invoice_id,
@@ -423,7 +427,7 @@ class BillingInvoiceService
             $invoice->lines()->create([
                 'currency_id' => $invoice->currency_id,
                 'line_type' => 'METERED_USAGE',
-                'description' => 'استهلاك إضافي: '.($aggregate->meter?->name ?? $aggregate->meter?->meter_key ?? 'Metered usage'),
+                'description' => 'استهلاك إضافي: '.$aggregate->meter->name,
                 'quantity' => 1,
                 'unit_amount_minor' => $amount,
                 'subtotal_minor' => $amount,
@@ -435,7 +439,7 @@ class BillingInvoiceService
                     'period_start' => $periodStart,
                     'period_end' => $periodEnd,
                     'quantity' => (string) $aggregate->quantity,
-                    'unit' => $aggregate->meter?->unit,
+                    'unit' => $aggregate->meter->unit,
                     'amount_minor' => $amount,
                 ],
             ]);
@@ -449,7 +453,7 @@ class BillingInvoiceService
 
     private function multiplyAmount(int $amount, int $quantity): int
     {
-        if ($amount < 0 || $quantity < 1 || ($quantity > 0 && $amount > intdiv(PHP_INT_MAX, $quantity))) {
+        if ($amount < 0 || $quantity < 1 || $amount > intdiv(PHP_INT_MAX, $quantity)) {
             throw new OverflowException('مبلغ بند الفاتورة يتجاوز الحدود الرقمية المسموحة.');
         }
 
@@ -458,7 +462,7 @@ class BillingInvoiceService
 
     private function safeAdd(int $left, int $right): int
     {
-        if ($right > 0 && $left > PHP_INT_MAX - $right) {
+        if ($left > PHP_INT_MAX - $right) {
             throw new OverflowException('إجمالي الفاتورة يتجاوز الحدود الرقمية المسموحة.');
         }
 

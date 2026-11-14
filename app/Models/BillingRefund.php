@@ -4,6 +4,23 @@ use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
+/**
+ * @property int $refund_id
+ * @property string $refund_reference
+ * @property string $idempotency_key
+ * @property string $reason
+ * @property int $processed_by
+ * @property \Illuminate\Support\Carbon|null $processed_at
+ * @property int $payment_id
+ * @property int $credit_note_id
+ * @property int $treasury_account_id
+ * @property int $currency_id
+ * @property int $amount_minor
+ * @property string $status
+ * @property-read BillingPayment $payment
+ * @property-read BillingCreditNote $creditNote
+ * @property-read Currency $currency
+ */
 class BillingRefund extends Model {
  use ExactDateSerialization;
  protected $table='billing_refunds'; protected $primaryKey='refund_id';

@@ -2,8 +2,10 @@
 
 namespace App\Services\Support;
 
+use App\Models\Expense;
 use App\Models\ExpenseAttachment;
-use App\Models\SubscriptionPlanRequest;
+use App\Models\ReportRun;
+use App\Services\Reporting\ReportAuthorizationService;
 use App\Models\User;
 use App\Services\SessionValidatorService;
 use App\Services\SystemLoggerService;
@@ -121,6 +123,25 @@ class FileGatewayService
             throw new HttpException(401, 'يجب تسجيل الدخول للوصول إلى هذا الملف المحمي.');
         }
 
+        // Report artifacts require the exact persisted tenant and permission scope,
+        // including for platform super-admin accounts. Never let the generic admin
+        // bypass grant cross-scope access to immutable report files.
+        if (str_starts_with($cleanPath, 'report-artifacts/')) {
+            $reportRun = ReportRun::query()
+                ->where('artifact_path', $cleanPath)
+                ->where('status', 'COMPLETED')
+                ->first();
+
+            if (! $reportRun ||
+                ($reportRun->expires_at !== null && $reportRun->expires_at->isPast())) {
+                throw new HttpException(404, 'ملف التقرير غير موجود أو انتهت صلاحيته.');
+            }
+
+            app(ReportAuthorizationService::class)->authorizeRun($user, $reportRun);
+
+            return;
+        }
+
         if ($user->isSuperAdmin()) {
             return;
         }
@@ -128,10 +149,11 @@ class FileGatewayService
         // عزل ملفات مرفقات المصروفات
         if (str_starts_with($cleanPath, 'expenses/')) {
             $attachment = ExpenseAttachment::where('file_path', $cleanPath)->with('expense')->first();
-            if ($attachment && $attachment->expense) {
-                $networkId = $attachment->expense->network_id;
+            $expense = $attachment?->expense;
+            if ($expense instanceof Expense) {
+                $networkId = (int) $expense->getAttribute('network_id');
                 $hasAccess = $user->networks()->where('networks.network_id', $networkId)->exists()
-                    || (method_exists($user, 'networkUsers') && $user->networkUsers()->where('network_id', $networkId)->exists());
+                    || $user->networkUsers()->where('network_id', $networkId)->exists();
 
                 if (! $hasAccess) {
                     throw new HttpException(403, 'غير مصرح لك بالوصول إلى مرفقات مصروفات هذه الشبكة.');
@@ -139,18 +161,6 @@ class FileGatewayService
             }
         }
 
-        // عزل ملفات إيصالات سداد الاشتراكات
-        if (str_starts_with($cleanPath, 'subscription_receipts/')) {
-            $planRequest = SubscriptionPlanRequest::where('payment_receipt', $cleanPath)->first();
-            if ($planRequest) {
-                $hasAccess = (int) $planRequest->requested_by === (int) $user->user_id
-                    || $user->networks()->where('networks.network_id', $planRequest->network_id)->exists();
-
-                if (! $hasAccess) {
-                    throw new HttpException(403, 'غير مصرح لك بالوصول إلى إيصال سداد هذا الاشتراك.');
-                }
-            }
-        }
     }
 
     /**
@@ -169,7 +179,9 @@ class FileGatewayService
             if ($session) {
                 $session->loadMissing('user');
 
-                return $session->user;
+                $sessionUser = $session->user;
+
+                return $sessionUser instanceof User ? $sessionUser : null;
             }
         }
 

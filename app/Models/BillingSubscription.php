@@ -10,6 +10,34 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
 use Illuminate\Database\Eloquent\SoftDeletes;
 use LogicException;
 
+/**
+ * @property int $billing_subscription_id
+ * @property int $billing_account_id
+ * @property int $plan_id
+ * @property int $plan_version_id
+ * @property int $price_id
+ * @property int $quantity
+ * @property array<string, mixed>|null $trial_policy_snapshot
+ * @property array<string, mixed>|null $dunning_policy_snapshot
+ * @property int $currency_id
+ * @property \App\Enums\BillingSubscriptionStatus $status
+ * @property \Illuminate\Support\Carbon|null $current_period_start
+ * @property \Illuminate\Support\Carbon|null $current_period_end
+ * @property \Illuminate\Support\Carbon|null $trial_start
+ * @property \Illuminate\Support\Carbon|null $trial_end
+ * @property \Illuminate\Support\Carbon|null $ended_at
+ * @property \Illuminate\Support\Carbon|null $paused_at
+ * @property \Illuminate\Support\Carbon|null $grace_period_ends_at
+ * @property \Illuminate\Support\Carbon|null $next_billing_at
+ * @property array<string, mixed>|null $metadata
+ * @property-read BillingAccount $billingAccount
+ * @property-read BillingPlan $plan
+ * @property-read BillingPlanVersion $planVersion
+ * @property-read BillingPrice $price
+ * @property-read Currency $currency
+ * @property-read BillingTrialRedemption|null $trialRedemption
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingSubscriptionEvent> $events
+ */
 class BillingSubscription extends Model
 {
     use ExactDateSerialization, SoftDeletes;

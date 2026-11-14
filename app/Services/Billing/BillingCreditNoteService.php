@@ -42,12 +42,17 @@ class BillingCreditNoteService
             throw ValidationException::withMessages(['lines' => ['يجب أن يحتوي الإشعار الدائن على بند واحد على الأقل.']]);
         }
 
+        $ledger = $this->ledger;
+        $chart = $this->chart;
+
         return DB::transaction(function () use (
             $invoiceId,
             $lines,
             $reason,
             $idempotencyKey,
-            $actor
+            $actor,
+            $ledger,
+            $chart
         ): BillingCreditNote {
             $invoice = BillingInvoice::query()
                 ->with('currency')
@@ -75,8 +80,8 @@ class BillingCreditNoteService
 
             $normalized = collect($lines)
                 ->map(fn (array $line): array => [
-                    'invoice_line_id' => (int) ($line['invoice_line_id'] ?? 0),
-                    'amount_minor' => (int) ($line['amount_minor'] ?? 0),
+                    'invoice_line_id' => (int) $line['invoice_line_id'],
+                    'amount_minor' => (int) $line['amount_minor'],
                 ])
                 ->sortBy('invoice_line_id')
                 ->values();
@@ -299,7 +304,7 @@ class BillingCreditNoteService
                 ]);
             }
 
-            $accounts = $this->chart->ensureForCurrency($invoice->currency);
+            $accounts = $chart->ensureForCurrency($invoice->currency);
             $journalLines = [];
 
             if ($deferredCreditMinor > 0) {
@@ -346,7 +351,7 @@ class BillingCreditNoteService
                 ];
             }
 
-            $this->ledger->post(
+            $ledger->post(
                 (int) $invoice->currency_id,
                 'إصدار إشعار دائن '.$note->credit_note_number.' للفاتورة '.$invoice->invoice_number,
                 'billing-credit-note-issued-'.$note->credit_note_id,
@@ -390,6 +395,9 @@ class BillingCreditNoteService
         }, 3);
     }
 
+    /**
+     * @param array<int, array{invoice_line_id: int, amount_minor: int}> $lines
+     */
     private function assertSameRequest(
         BillingCreditNote $existing,
         int $invoiceId,
@@ -397,8 +405,8 @@ class BillingCreditNoteService
         string $reason
     ): void {
         $expected = collect($lines)->map(fn (array $line): array => [
-            'invoice_line_id' => (int) ($line['invoice_line_id'] ?? 0),
-            'amount_minor' => (int) ($line['amount_minor'] ?? 0),
+            'invoice_line_id' => (int) ($line['invoice_line_id']),
+            'amount_minor' => (int) ($line['amount_minor']),
         ])->sortBy('invoice_line_id')->values()->all();
 
         $actual = $existing->lines->map(fn ($line): array => [
