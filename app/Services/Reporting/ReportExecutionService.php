@@ -63,7 +63,7 @@ class ReportExecutionService
                     ->when(! empty($filters['sale_type']), fn (Builder $query) => $query->where('sale_type', strtoupper((string) $filters['sale_type'])))
                     ->orderBy('invoice_id'),
                 $limit,
-                static fn ($model): array => (new SaleInvoiceResource($model))->toArray($request),
+                fn ($model): array => (new SaleInvoiceResource($model))->toArray($request),
                 [
                     'financial_currency_context' => 'UNSPECIFIED_BY_SALE_INVOICE_API',
                     'financial_aggregation' => 'NOT_PERFORMED',
@@ -79,7 +79,7 @@ class ReportExecutionService
                     ->when(! empty($filters['to']), fn (Builder $query) => $query->whereDate('expense_date', '<=', $filters['to']))
                     ->orderBy('expense_id'),
                 $limit,
-                static fn ($model): array => (new ExpenseResource($model))->toArray($request),
+                fn ($model): array => (new ExpenseResource($model))->toArray($request),
                 [
                     'financial_currency_context' => 'UNSPECIFIED_BY_EXPENSE_API',
                     'financial_aggregation' => 'NOT_PERFORMED',
@@ -147,7 +147,7 @@ class ReportExecutionService
                     })
                     ->orderBy('billing_subscription_id'),
                 $limit,
-                static fn ($model): array => (new BillingSubscriptionResource($model))->toArray($request),
+                fn ($model): array => (new BillingSubscriptionResource($model))->toArray($request),
                 ['currency_aggregation' => 'NOT_PERFORMED']
             ),
             'billing-invoices' => $this->collectionSnapshot(
@@ -165,7 +165,7 @@ class ReportExecutionService
                     ->when(! empty($filters['search']), fn (Builder $query) => $query->where('invoice_number', 'like', '%'.trim((string) $filters['search']).'%'))
                     ->orderBy('invoice_id'),
                 $limit,
-                static fn ($model): array => (new BillingInvoiceResource($model))->toArray($request),
+                fn ($model): array => (new BillingInvoiceResource($model))->toArray($request),
                 ['currency_aggregation' => 'SEPARATE_PER_RECORD']
             ),
             'billing-payments' => $this->collectionSnapshot(
@@ -184,7 +184,7 @@ class ReportExecutionService
                     ->when(! empty($filters['to']), fn (Builder $query) => $query->whereDate('received_at', '<=', $filters['to']))
                     ->orderBy('payment_id'),
                 $limit,
-                static fn ($model): array => (new BillingPaymentResource($model))->toArray($request),
+                fn ($model): array => (new BillingPaymentResource($model))->toArray($request),
                 ['currency_aggregation' => 'SEPARATE_PER_RECORD']
             ),
             'billing-credit-notes' => $this->collectionSnapshot(
@@ -198,7 +198,7 @@ class ReportExecutionService
                     ->when(! empty($filters['status']), fn (Builder $query) => $query->where('status', strtoupper((string) $filters['status'])))
                     ->orderBy('credit_note_id'),
                 $limit,
-                static fn ($model): array => (new BillingCreditNoteResource($model))->toArray($request),
+                fn ($model): array => (new BillingCreditNoteResource($model))->toArray($request),
                 ['currency_aggregation' => 'SEPARATE_PER_RECORD']
             ),
             'billing-refunds' => $this->collectionSnapshot(
@@ -212,7 +212,7 @@ class ReportExecutionService
                     ->when(! empty($filters['status']), fn (Builder $query) => $query->where('status', strtoupper((string) $filters['status'])))
                     ->orderBy('refund_id'),
                 $limit,
-                static fn ($model): array => (new BillingRefundResource($model))->toArray($request),
+                fn ($model): array => (new BillingRefundResource($model))->toArray($request),
                 ['currency_aggregation' => 'SEPARATE_PER_RECORD']
             ),
             'billing-journal-entries' => $this->collectionSnapshot(
@@ -226,7 +226,7 @@ class ReportExecutionService
                     ->when(! empty($filters['to_date']), fn (Builder $query) => $query->whereDate('entry_date', '<=', $filters['to_date']))
                     ->orderBy('journal_entry_id'),
                 $limit,
-                static fn ($model): array => (new LedgerJournalEntryResource($model))->toArray($request),
+                fn ($model): array => (new LedgerJournalEntryResource($model))->toArray($request),
                 ['currency_aggregation' => 'SEPARATE_PER_ENTRY']
             ),
             default => throw new \InvalidArgumentException('Unsupported platform report definition.'),
