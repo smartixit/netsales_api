@@ -9,7 +9,7 @@ use App\Models\User;
 use App\Services\Support\FileUploadService;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
