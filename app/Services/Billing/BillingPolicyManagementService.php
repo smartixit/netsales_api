@@ -19,6 +19,7 @@ use Illuminate\Validation\ValidationException;
 
 class BillingPolicyManagementService
 {
+    /** @param array<string, mixed> $data */
     public function createTrialPolicy(array $data, User $actor): BillingTrialPolicyVersion
     {
         return DB::transaction(function () use ($data, $actor): BillingTrialPolicyVersion {
@@ -33,6 +34,7 @@ class BillingPolicyManagementService
         }, 3);
     }
 
+    /** @param array<string, mixed> $data */
     public function createDunningPolicy(array $data, User $actor): BillingDunningPolicyVersion
     {
         return DB::transaction(function () use ($data, $actor): BillingDunningPolicyVersion {
@@ -47,6 +49,7 @@ class BillingPolicyManagementService
         }, 3);
     }
 
+    /** @param array<string, mixed> $data */
     public function createTrialVersion(int $policyId, array $data, User $actor): BillingTrialPolicyVersion
     {
         return DB::transaction(function () use ($policyId, $data, $actor): BillingTrialPolicyVersion {
@@ -59,6 +62,7 @@ class BillingPolicyManagementService
         }, 3);
     }
 
+    /** @param array<string, mixed> $data */
     public function createDunningVersion(int $policyId, array $data, User $actor): BillingDunningPolicyVersion
     {
         return DB::transaction(function () use ($policyId, $data, $actor): BillingDunningPolicyVersion {
@@ -95,6 +99,7 @@ class BillingPolicyManagementService
         }, 3);
     }
 
+    /** @param array<string, mixed> $data */
     public function assignToPlanVersion(int $versionId, array $data, User $actor): BillingPlanVersion
     {
         return DB::transaction(function () use ($versionId, $data, $actor): BillingPlanVersion {
@@ -109,6 +114,7 @@ class BillingPolicyManagementService
         }, 3);
     }
 
+    /** @param array<string, mixed> $data */
     public function assignToPrice(int $priceId, array $data, User $actor): BillingPrice
     {
         return DB::transaction(function () use ($priceId, $data, $actor): BillingPrice {
@@ -246,6 +252,7 @@ class BillingPolicyManagementService
         }, 3);
     }
 
+    /** @param array<string, mixed> $snapshot */
     private function calculateTrialEnd(\Carbon\CarbonImmutable $start, array $snapshot): \Carbon\CarbonImmutable
     {
         return match ($snapshot['duration_unit']) {
@@ -257,6 +264,10 @@ class BillingPolicyManagementService
         };
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function trialValues(array $data): array
     {
         return [
@@ -273,6 +284,10 @@ class BillingPolicyManagementService
         ];
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function dunningValues(array $data): array
     {
         return [
@@ -283,6 +298,7 @@ class BillingPolicyManagementService
         ];
     }
 
+    /** @param array<string, mixed> $data */
     private function assertPublishedReferences(array $data): void
     {
         foreach (['trial_policy_version_id' => BillingTrialPolicyVersion::class, 'dunning_policy_version_id' => BillingDunningPolicyVersion::class] as $key => $model) {
