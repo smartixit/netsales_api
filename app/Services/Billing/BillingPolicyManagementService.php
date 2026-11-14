@@ -299,12 +299,29 @@ class BillingPolicyManagementService
     }
 
     /** @param array<string, mixed> $data */
+    /**
+     * @param array<string, mixed> $data
+     */
     private function assertPublishedReferences(array $data): void
     {
-        foreach (['trial_policy_version_id' => BillingTrialPolicyVersion::class, 'dunning_policy_version_id' => BillingDunningPolicyVersion::class] as $key => $model) {
-            if (! array_key_exists($key, $data) || $data[$key] === null) continue;
-            $version = $model::query()->find($data[$key]);
-            if (! $version || $version->status !== 'PUBLISHED') throw ValidationException::withMessages([$key => ['يجب اختيار إصدار سياسة منشور.']]);
+        $trialPolicyVersionId = $data['trial_policy_version_id'] ?? null;
+        if ($trialPolicyVersionId !== null) {
+            $trialVersion = BillingTrialPolicyVersion::query()->find($trialPolicyVersionId);
+            if (! $trialVersion || $trialVersion->status !== 'PUBLISHED') {
+                throw ValidationException::withMessages([
+                    'trial_policy_version_id' => ['يجب اختيار إصدار سياسة تجربة منشور.'],
+                ]);
+            }
+        }
+
+        $dunningPolicyVersionId = $data['dunning_policy_version_id'] ?? null;
+        if ($dunningPolicyVersionId !== null) {
+            $dunningVersion = BillingDunningPolicyVersion::query()->find($dunningPolicyVersionId);
+            if (! $dunningVersion || $dunningVersion->status !== 'PUBLISHED') {
+                throw ValidationException::withMessages([
+                    'dunning_policy_version_id' => ['يجب اختيار إصدار سياسة تحصيل منشور.'],
+                ]);
+            }
         }
     }
 
