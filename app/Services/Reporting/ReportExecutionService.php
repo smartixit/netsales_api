@@ -41,6 +41,11 @@ class ReportExecutionService
         return $this->executePlatform($run, $definition, $filters, $limit);
     }
 
+    /**
+     * @param array<string, mixed> $definition
+     * @param array<string, mixed> $filters
+     * @return array{payload: array<string, mixed>, records_count: int, is_truncated: bool}
+     */
     private function executeNetwork(
         ReportRun $run,
         array $definition,
@@ -94,6 +99,11 @@ class ReportExecutionService
         };
     }
 
+    /**
+     * @param array<string, mixed> $definition
+     * @param array<string, mixed> $filters
+     * @return array{payload: array<string, mixed>, records_count: int, is_truncated: bool}
+     */
     private function networkBillingStatement(
         ReportRun $run,
         array $definition,
@@ -114,6 +124,11 @@ class ReportExecutionService
         ]);
     }
 
+    /**
+     * @param array<string, mixed> $definition
+     * @param array<string, mixed> $filters
+     * @return array{payload: array<string, mixed>, records_count: int, is_truncated: bool}
+     */
     private function executePlatform(
         ReportRun $run,
         array $definition,
@@ -233,6 +248,11 @@ class ReportExecutionService
         };
     }
 
+    /**
+     * @param array<string, mixed> $definition
+     * @param array<string, mixed> $filters
+     * @return array{payload: array<string, mixed>, records_count: int, is_truncated: bool}
+     */
     private function platformOverviewSnapshot(
         ReportRun $run,
         array $definition,
@@ -258,6 +278,12 @@ class ReportExecutionService
         );
     }
 
+    /**
+     * @param array<string, mixed> $definition
+     * @param callable(mixed): array<string, mixed> $serialize
+     * @param array<string, mixed> $extraMetadata
+     * @return array{payload: array<string, mixed>, records_count: int, is_truncated: bool}
+     */
     private function collectionSnapshot(
         ReportRun $run,
         array $definition,
@@ -280,6 +306,11 @@ class ReportExecutionService
         );
     }
 
+    /**
+     * @param array<string, mixed> $definition
+     * @param array<string, mixed> $extraMetadata
+     * @return array{payload: array<string, mixed>, records_count: int, is_truncated: bool}
+     */
     private function snapshot(
         ReportRun $run,
         array $definition,
@@ -299,7 +330,7 @@ class ReportExecutionService
                 ],
                 'run' => [
                     'uuid' => $run->report_run_uuid,
-                    'requested_at' => $run->queued_at?->toDateTimeString(),
+                    'requested_at' => $run->queued_at->toDateTimeString(),
                     'generated_at' => CarbonImmutable::now('Asia/Aden')->toDateTimeString(),
                     'timezone' => 'Asia/Aden',
                 ],
