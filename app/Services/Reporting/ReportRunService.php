@@ -185,44 +185,45 @@ class ReportRunService
         return $run;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function present(ReportRun $run): array
+    public function toData(ReportRun $run): ReportRunData
     {
         $definition = $this->definitions->get($run->scope_type, $run->report_key);
+        $artifactAvailable = $run->status === 'COMPLETED'
+            && $run->artifact_path !== null
+            && ($run->expires_at === null || ! $run->expires_at->isPast());
 
-        return [
-            'report_run_id' => (int) $run->report_run_id,
-            'report_run_uuid' => (string) $run->report_run_uuid,
-            'scope_type' => $run->scope_type,
-            'network_id' => $run->network_id,
-            'report_key' => $run->report_key,
-            'report_title' => $definition['title'],
-            'definition_version' => $run->definition_version,
-            'status' => $run->status,
-            'filters' => $run->filters ?? [],
-            'artifact' => $run->status === 'COMPLETED'
-                && ($run->expires_at === null || ! $run->expires_at->isPast()) ? [
-                'format' => $run->artifact_format,
-                'bytes' => (int) $run->artifact_bytes,
-                'sha256' => $run->artifact_sha256,
-                'records_count' => (int) $run->records_count,
-                'is_truncated' => (bool) $run->is_truncated,
-                'expires_at' => $run->expires_at?->toDateTimeString(),
-                'download_url' => $run->artifact_path
-                    ? $this->files->temporarySignedUrl($run->artifact_path)
-                    : null,
-            ] : null,
-            'result_metadata' => $run->result_metadata,
-            'error' => $run->status === 'FAILED' ? [
-                'code' => $run->error_code,
-                'message' => $run->error_message,
-            ] : null,
-            'queued_at' => $run->queued_at->toDateTimeString(),
-            'started_at' => $run->started_at?->toDateTimeString(),
-            'completed_at' => $run->completed_at?->toDateTimeString(),
-        ];
+        $artifact = $artifactAvailable ? [
+            'format' => $run->artifact_format,
+            'bytes' => (int) $run->artifact_bytes,
+            'sha256' => $run->artifact_sha256,
+            'records_count' => (int) $run->records_count,
+            'is_truncated' => (bool) $run->is_truncated,
+            'expires_at' => $run->expires_at?->toDateTimeString(),
+            'download_url' => $this->files->temporarySignedUrl((string) $run->artifact_path),
+        ] : null;
+
+        $error = $run->status === 'FAILED' ? [
+            'code' => $run->error_code,
+            'message' => $run->error_message,
+        ] : null;
+
+        return new ReportRunData(
+            reportRunId: (int) $run->report_run_id,
+            reportRunUuid: (string) $run->report_run_uuid,
+            scopeType: (string) $run->scope_type,
+            networkId: $run->network_id === null ? null : (int) $run->network_id,
+            reportKey: (string) $run->report_key,
+            reportTitle: (string) $definition['title'],
+            definitionVersion: (string) $run->definition_version,
+            status: (string) $run->status,
+            filters: $run->filters ?? [],
+            artifact: $artifact,
+            resultMetadata: $run->result_metadata,
+            error: $error,
+            queuedAt: $run->queued_at->toDateTimeString(),
+            startedAt: $run->started_at?->toDateTimeString(),
+            completedAt: $run->completed_at?->toDateTimeString(),
+        );
     }
 
     /**
