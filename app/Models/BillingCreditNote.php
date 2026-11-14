@@ -13,6 +13,7 @@ use LogicException;
  * @property int $billing_account_id
  * @property int $currency_id
  * @property string $status
+ * @property string $reason
  * @property int $subtotal_minor
  * @property int $tax_minor
  * @property int $total_minor
@@ -21,7 +22,9 @@ use LogicException;
  * @property int $refunded_minor
  * @property-read BillingInvoice $invoice
  * @property-read Currency $currency
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingCreditNoteLine> $lines
  */
+
 class BillingCreditNote extends Model
 {
     use ExactDateSerialization;
