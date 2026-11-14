@@ -17,9 +17,9 @@ use LogicException;
  * @property int $plan_version_id
  * @property int $price_id
  * @property int $currency_id
- * @property \\App\\Enums\\BillingSubscriptionStatus $status
- * @property \\Illuminate\\Support\\Carbon|null $current_period_start
- * @property \\Illuminate\\Support\\Carbon|null $current_period_end
+ * @property \App\Enums\BillingSubscriptionStatus $status
+ * @property \Illuminate\Support\Carbon|null $current_period_start
+ * @property \Illuminate\Support\Carbon|null $current_period_end
  * @property array<string, mixed>|null $metadata
  * @property-read BillingAccount $billingAccount
  * @property-read BillingPlan $plan
