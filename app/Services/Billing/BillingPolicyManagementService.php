@@ -81,7 +81,7 @@ class BillingPolicyManagementService
         return DB::transaction(function () use ($versionId, $actor): BillingTrialPolicyVersion {
             $this->assertPlatform($actor);
             $version = BillingTrialPolicyVersion::query()->with('policy')->lockForUpdate()->findOrFail($versionId);
-            if ($version->status !== BillingPlanVersionStatus::DRAFT) throw ValidationException::withMessages(['version_id' => ['لا يمكن نشر نسخة ليست مسودة.']]);
+            if ($version->status !== 'DRAFT') throw ValidationException::withMessages(['version_id' => ['لا يمكن نشر نسخة ليست مسودة.']]);
             $version->status = 'PUBLISHED'; $version->published_at = now('Asia/Aden'); $version->save();
             $version->policy->current_version_id = $version->trial_policy_version_id; $version->policy->save();
             return $version->refresh();
@@ -106,7 +106,7 @@ class BillingPolicyManagementService
         return DB::transaction(function () use ($versionId, $data, $actor): BillingPlanVersion {
             $this->assertPlatform($actor);
             $version = BillingPlanVersion::query()->lockForUpdate()->findOrFail($versionId);
-            if ($version->status !== 'DRAFT') throw ValidationException::withMessages(['plan_version_id' => ['لا يمكن تغيير سياسات نسخة خطة منشورة. أنشئ نسخة خطة جديدة.']]);
+            if ($version->status !== BillingPlanVersionStatus::DRAFT) throw ValidationException::withMessages(['plan_version_id' => ['لا يمكن تغيير سياسات نسخة خطة منشورة. أنشئ نسخة خطة جديدة.']]);
             $this->assertPublishedReferences($data);
             $version->trial_policy_version_id = $data['trial_policy_version_id'] ?? null;
             $version->dunning_policy_version_id = $data['dunning_policy_version_id'] ?? null;
