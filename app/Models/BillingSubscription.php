@@ -10,6 +10,23 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
 use Illuminate\Database\Eloquent\SoftDeletes;
 use LogicException;
 
+/**
+ * @property int $billing_subscription_id
+ * @property int $billing_account_id
+ * @property int $plan_id
+ * @property int $plan_version_id
+ * @property int $price_id
+ * @property int $currency_id
+ * @property \\App\\Enums\\BillingSubscriptionStatus $status
+ * @property \\Illuminate\\Support\\Carbon|null $current_period_start
+ * @property \\Illuminate\\Support\\Carbon|null $current_period_end
+ * @property array<string, mixed>|null $metadata
+ * @property-read BillingAccount $billingAccount
+ * @property-read BillingPlan $plan
+ * @property-read BillingPlanVersion $planVersion
+ * @property-read BillingPrice $price
+ * @property-read Currency $currency
+ */
 class BillingSubscription extends Model
 {
     use ExactDateSerialization, SoftDeletes;
