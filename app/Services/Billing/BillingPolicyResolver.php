@@ -169,7 +169,7 @@ class BillingPolicyResolver
         return [
             'dunning_policy_id' => (int) $version->dunning_policy_id,
             'dunning_policy_version_id' => (int) $version->dunning_policy_version_id,
-            'policy_key' => $version->policy?->policy_key,
+            'policy_key' => $version->policy->policy_key,
             'version_number' => (int) $version->version_number,
             'grace_period_days' => (int) $version->grace_period_days,
             'auto_suspend_after_grace' => (bool) $version->auto_suspend_after_grace,
