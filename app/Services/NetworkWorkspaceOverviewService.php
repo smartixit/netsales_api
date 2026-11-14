@@ -139,11 +139,41 @@ class NetworkWorkspaceOverviewService
                 )
                 ->first();
 
+            $currentTotal = (float) ($sales?->total_amount ?? 0);
+
+            // حساب المبيعات للفترة السابقة المماثلة لحساب نسبة النمو الحقيقية
+            $previousFrom = $from->subDays($days);
+            $previousTotal = (float) SaleInvoice::query()
+                ->where('network_id', $networkId)
+                ->whereBetween('invoice_date', [$previousFrom, $from])
+                ->sum('invoice_total_amount');
+
+            $growthRate = $previousTotal > 0
+                ? round((($currentTotal - $previousTotal) / $previousTotal) * 100, 1)
+                : ($currentTotal > 0 ? 100.0 : 0.0);
+
+            $trend = DB::table('sale_invoices')
+                ->where('network_id', $networkId)
+                ->whereBetween('invoice_date', [$from, $now])
+                ->groupBy(DB::raw('DATE(invoice_date)'))
+                ->orderBy(DB::raw('DATE(invoice_date)'), 'asc')
+                ->selectRaw('DATE(invoice_date) as date, COUNT(*) as count, COALESCE(SUM(invoice_total_amount), 0) as total')
+                ->get()
+                ->map(fn ($row) => [
+                    'date' => (string) $row->date,
+                    'count' => (int) $row->count,
+                    'total' => (float) $row->total,
+                ])
+                ->values()
+                ->all();
+
             $metrics['sales'] = [
                 'invoice_count' => (int) ($sales?->invoice_count ?? 0),
                 'total_amount' => $this->formatAmount($sales?->total_amount),
                 'paid_amount' => $this->formatAmount($sales?->paid_amount),
                 'outstanding_amount' => $this->formatAmount($sales?->outstanding_amount),
+                'growth_rate' => $growthRate,
+                'trend' => $trend,
             ];
         }
 
