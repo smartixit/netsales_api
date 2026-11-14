@@ -1,11 +1,11 @@
 <?php
 
-namespace App\\Console\\Commands;
+namespace App\Console\Commands;
 
-use App\\Models\\ReportRun;
-use Illuminate\\Console\\Command;
-use Illuminate\\Support\\Facades\\Log;
-use Illuminate\\Support\\Facades\\Storage;
+use App\Models\ReportRun;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class PurgeExpiredReportArtifacts extends Command
 {
