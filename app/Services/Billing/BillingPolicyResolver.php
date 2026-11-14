@@ -8,6 +8,9 @@ use Illuminate\Validation\ValidationException;
 
 class BillingPolicyResolver
 {
+    /**
+     * @return array{trial_version: BillingTrialPolicyVersion|null, dunning_version: BillingDunningPolicyVersion}
+     */
     public function resolveForPurchase(BillingPrice $price, BillingAccount $account, Network $network): array
     {
         $planVersion = $price->planVersion;
@@ -139,6 +142,7 @@ class BillingPolicyResolver
         return $policy?->currentVersion()->first();
     }
 
+    /** @return array<string, mixed> */
     public function snapshot(BillingTrialPolicyVersion $version): array
     {
         return [
@@ -159,6 +163,7 @@ class BillingPolicyResolver
         ];
     }
 
+    /** @return array<string, mixed> */
     public function dunningSnapshot(BillingDunningPolicyVersion $version): array
     {
         return [
