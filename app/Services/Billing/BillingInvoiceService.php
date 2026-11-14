@@ -35,7 +35,7 @@ class BillingInvoiceService
             ]);
 
             $currency = $subscription->currency;
-            if (! $currency || (int) $currency->currency_id !== (int) $subscription->price->currency_id) {
+            if ((int) $currency->currency_id !== (int) $subscription->price->currency_id) {
                 throw ValidationException::withMessages(['currency_id' => ['عملة الاشتراك لا تطابق عملة السعر.']]);
             }
 
@@ -453,7 +453,7 @@ class BillingInvoiceService
 
     private function multiplyAmount(int $amount, int $quantity): int
     {
-        if ($amount < 0 || $quantity < 1 || ($quantity > 0 && $amount > intdiv(PHP_INT_MAX, $quantity))) {
+        if ($amount < 0 || $quantity < 1 || $amount > intdiv(PHP_INT_MAX, $quantity)) {
             throw new OverflowException('مبلغ بند الفاتورة يتجاوز الحدود الرقمية المسموحة.');
         }
 
