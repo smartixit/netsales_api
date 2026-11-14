@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $treasury_account_id
+ * @property string $account_code
+ * @property string $name
+ * @property string $status
+ * @property int $currency_id
+ * @property int|null $ledger_account_id
+ * @property-read Currency $currency
+ * @property-read LedgerAccount|null $ledgerAccount
+ */
 class TreasuryAccount extends Model
 {
     use ExactDateSerialization;
