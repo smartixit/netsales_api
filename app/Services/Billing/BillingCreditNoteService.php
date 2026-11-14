@@ -42,12 +42,17 @@ class BillingCreditNoteService
             throw ValidationException::withMessages(['lines' => ['يجب أن يحتوي الإشعار الدائن على بند واحد على الأقل.']]);
         }
 
+        $ledger = $this->ledger;
+        $chart = $this->chart;
+
         return DB::transaction(function () use (
             $invoiceId,
             $lines,
             $reason,
             $idempotencyKey,
-            $actor
+            $actor,
+            $ledger,
+            $chart
         ): BillingCreditNote {
             $invoice = BillingInvoice::query()
                 ->with('currency')
@@ -299,7 +304,7 @@ class BillingCreditNoteService
                 ]);
             }
 
-            $accounts = $this->chart->ensureForCurrency($invoice->currency);
+            $accounts = $chart->ensureForCurrency($invoice->currency);
             $journalLines = [];
 
             if ($deferredCreditMinor > 0) {
@@ -346,7 +351,7 @@ class BillingCreditNoteService
                 ];
             }
 
-            $this->ledger->post(
+            $ledger->post(
                 (int) $invoice->currency_id,
                 'إصدار إشعار دائن '.$note->credit_note_number.' للفاتورة '.$invoice->invoice_number,
                 'billing-credit-note-issued-'.$note->credit_note_id,
