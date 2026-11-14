@@ -281,8 +281,10 @@ class ReportExecutionService
     }
 
     /**
+     * @template TModel of Model
      * @param array<string, mixed> $definition
-     * @param callable(mixed): array<string, mixed> $serialize
+     * @param Builder<TModel> $query
+     * @param callable(TModel): array<string, mixed> $serialize
      * @param array<string, mixed> $extraMetadata
      * @return array{payload: array<string, mixed>, records_count: int, is_truncated: bool}
      */
