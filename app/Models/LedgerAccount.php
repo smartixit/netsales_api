@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo,HasMany};
  * @property int $ledger_account_id
  * @property string $account_code
  * @property string $name
+ * @property string $normal_balance
+ * @property int|null $currency_id
  * @property \App\Enums\LedgerAccountClass $account_class
  * @property bool $is_control_account
  * @property bool $is_active
