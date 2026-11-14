@@ -9,6 +9,7 @@ use App\Models\{BillingAccount, BillingCreditNote, BillingInvoice, BillingPaymen
 use App\Services\Billing\{BillingDashboardService, BillingSelfService};
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
 class ReportExecutionService
@@ -262,11 +263,12 @@ class ReportExecutionService
         $data = $this->billingDashboard->overview(
             isset($filters['currency_id']) ? (int) $filters['currency_id'] : null
         );
-        $queue = $data['payment_review_queue'] ?? collect();
-        $data['payment_review_queue'] = collect($queue)
-            ->map(static fn ($payment): array => (new BillingPaymentResource($payment))->toArray($request))
-            ->values()
-            ->all();
+        /** @var list<BillingPayment> $queue */
+        $queue = array_values((array) ($data['payment_review_queue'] ?? []));
+        $data['payment_review_queue'] = array_map(
+            static fn (BillingPayment $payment): array => (new BillingPaymentResource($payment))->toArray($request),
+            $queue
+        );
 
         return $this->snapshot(
             $run,
