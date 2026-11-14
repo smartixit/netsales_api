@@ -15,11 +15,11 @@ use LogicException;
  * @property int $billing_account_id
  * @property int|null $billing_subscription_id
  * @property int $currency_id
- * @property \\App\\Enums\\BillingInvoiceStatus $status
- * @property \\Illuminate\\Support\\Carbon $period_start
- * @property \\Illuminate\\Support\\Carbon $period_end
- * @property \\Illuminate\\Support\\Carbon $issued_on
- * @property \\Illuminate\\Support\\Carbon $due_on
+ * @property \App\Enums\BillingInvoiceStatus $status
+ * @property \Illuminate\Support\Carbon $period_start
+ * @property \Illuminate\Support\Carbon $period_end
+ * @property \Illuminate\Support\Carbon $issued_on
+ * @property \Illuminate\Support\Carbon $due_on
  * @property int $subtotal_minor
  * @property int $discount_minor
  * @property int $tax_minor
@@ -27,12 +27,12 @@ use LogicException;
  * @property int $paid_minor
  * @property int $credited_minor
  * @property int $remaining_minor
- * @property \\Illuminate\\Support\\Carbon|null $paid_at
+ * @property \Illuminate\Support\Carbon|null $paid_at
  * @property-read BillingAccount $billingAccount
  * @property-read Currency $currency
  * @property-read BillingSubscription|null $subscription
- * @property-read \\Illuminate\\Database\\Eloquent\\Collection<int, BillingInvoiceLine> $lines
- * @property-read \\Illuminate\\Database\\Eloquent\\Collection<int, BillingPayment> $payments
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingInvoiceLine> $lines
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPayment> $payments
  */
 class BillingInvoice extends Model
 {
