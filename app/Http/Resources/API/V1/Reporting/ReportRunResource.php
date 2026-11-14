@@ -49,7 +49,7 @@ class ReportRunResource extends JsonResource
                 'code' => $this->error_code,
                 'message' => $this->error_message,
             ] : null,
-            'queued_at' => $this->queued_at?->toDateTimeString(),
+            'queued_at' => $this->queued_at->toDateTimeString(),
             'started_at' => $this->started_at?->toDateTimeString(),
             'completed_at' => $this->completed_at?->toDateTimeString(),
         ];
