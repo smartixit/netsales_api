@@ -185,7 +185,7 @@ class BillingInvoiceService
             $invoice->paid_minor = 0;
             $invoice->credited_minor = 0;
             $invoice->remaining_minor = $total;
-            $invoice->issued_on = now('Asia/Aden')->toDateString();
+            $invoice->issued_on = now('Asia/Aden');
             $invoice->finalized_at = now('Asia/Aden');
 
             if ($total === 0) {
@@ -462,7 +462,7 @@ class BillingInvoiceService
 
     private function safeAdd(int $left, int $right): int
     {
-        if ($right > 0 && $left > PHP_INT_MAX - $right) {
+        if ($left > PHP_INT_MAX - $right) {
             throw new OverflowException('إجمالي الفاتورة يتجاوز الحدود الرقمية المسموحة.');
         }
 
