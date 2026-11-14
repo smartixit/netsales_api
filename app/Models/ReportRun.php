@@ -4,6 +4,33 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $report_run_id
+ * @property string $report_run_uuid
+ * @property string $scope_type
+ * @property int|null $network_id
+ * @property int $requested_by
+ * @property string $permission_key
+ * @property string $report_key
+ * @property string $definition_version
+ * @property string $status
+ * @property array<string, mixed> $filters
+ * @property string $artifact_format
+ * @property string|null $artifact_path
+ * @property string|null $artifact_sha256
+ * @property int $artifact_bytes
+ * @property int $records_count
+ * @property bool $is_truncated
+ * @property array<string, mixed>|null $result_metadata
+ * @property string|null $error_code
+ * @property string|null $error_message
+ * @property \\Illuminate\\Support\\Carbon $queued_at
+ * @property \\Illuminate\\Support\\Carbon|null $started_at
+ * @property \\Illuminate\\Support\\Carbon|null $completed_at
+ * @property \\Illuminate\\Support\\Carbon|null $expires_at
+ * @property \\Illuminate\\Support\\Carbon $created_at
+ * @property \\Illuminate\\Support\\Carbon $updated_at
+ */
 class ReportRun extends Model
 {
     protected $table = 'report_runs';
