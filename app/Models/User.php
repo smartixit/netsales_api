@@ -212,20 +212,20 @@ class User extends Authenticatable
         return $this->hasMany(SaleInvoice::class, 'created_by', 'user_id');
     }
 
-    public function subscriptionPlanRequests(): HasMany
-    {
-        return $this->hasMany(SubscriptionPlanRequest::class, 'requested_by', 'user_id');
-    }
+    // public function subscriptionPlanRequests(): HasMany
+    // {
+    //     return $this->hasMany(SubscriptionPlanRequest::class, 'requested_by', 'user_id');
+    // }
 
-    public function reviewedSubscriptionPlanRequests(): HasMany
-    {
-        return $this->hasMany(SubscriptionPlanRequest::class, 'reviewed_by', 'user_id');
-    }
+    // public function reviewedSubscriptionPlanRequests(): HasMany
+    // {
+    //     return $this->hasMany(SubscriptionPlanRequest::class, 'reviewed_by', 'user_id');
+    // }
 
-    public function providerSubscriptions(): HasMany
-    {
-        return $this->hasMany(ProviderSubscription::class, 'created_by', 'user_id');
-    }
+    // public function providerSubscriptions(): HasMany
+    // {
+    //     return $this->hasMany(ProviderSubscription::class, 'user_id', 'user_id');
+    // }
 
     public function supportTicketMessages(): HasMany
     {

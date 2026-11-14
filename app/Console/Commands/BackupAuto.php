@@ -128,7 +128,7 @@ class BackupAuto extends Command
             // التنفيذ الفعلي بأسلوب صامت أثناء المحاولات البينية لمنع هدر الرسائل
             $job = $orchestrator->run(BackupType::AUTO->value, null, silentOnFailure: true);
 
-            if ($job->status === BackupStatus::SUCCESS->value) {
+            if ($job->status === BackupStatus::SUCCESS) {
                 $settings->markBackupCompletedToday($targetDate);
                 $settings->updateRuntime(['next_run_at' => $settings->calculateNextRunAt($now)]);
 

@@ -116,8 +116,6 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read string|null $logo_url
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubscriptionPlanRequest> $subscriptionPlanRequests
- * @property-read int|null $subscription_plan_requests_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount byCurrency(string $currency)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount byType(\App\Enums\BankAccountType|string $type)
@@ -142,6 +140,1538 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount withoutTrashed()
  */
 	class BankAccount extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $billing_account_id
+ * @property int $network_id
+ * @property string $account_number
+ * @property string $legal_name
+ * @property string|null $billing_email
+ * @property string|null $billing_address
+ * @property int $default_currency_id
+ * @property int $payment_terms_days
+ * @property-read Network $network
+ * @property-read Currency $defaultCurrency
+ * @property string|null $tax_number
+ * @property string $status
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingAccountContact> $contacts
+ * @property-read int|null $contacts_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingInvoice> $invoices
+ * @property-read int|null $invoices_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingPayment> $payments
+ * @property-read int|null $payments_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingSubscription> $subscriptions
+ * @property-read int|null $subscriptions_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount whereAccountNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount whereBillingAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount whereBillingAddress($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount whereBillingEmail($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount whereDefaultCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount whereLegalName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount wherePaymentTermsDays($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount whereTaxNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccount withoutTrashed()
+ */
+	class BillingAccount extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $contact_id
+ * @property int $billing_account_id
+ * @property string $name
+ * @property string|null $email
+ * @property string|null $phone
+ * @property bool $is_primary
+ * @property bool $receives_invoices
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\BillingAccount|null $billingAccount
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccountContact newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccountContact newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccountContact query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccountContact whereBillingAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccountContact whereContactId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccountContact whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccountContact whereEmail($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccountContact whereIsPrimary($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccountContact whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccountContact wherePhone($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccountContact whereReceivesInvoices($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAccountContact whereUpdatedAt($value)
+ */
+	class BillingAccountContact extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $billing_job_id
+ * @property string $job_type
+ * @property string $aggregate_type
+ * @property int $aggregate_id
+ * @property string $status
+ * @property \Illuminate\Support\Carbon $scheduled_at
+ * @property int $attempt_count
+ * @property string|null $last_error
+ * @property array<array-key, mixed>|null $payload
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob whereAggregateId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob whereAggregateType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob whereAttemptCount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob whereBillingJobId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob whereJobType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob whereLastError($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob wherePayload($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob whereScheduledAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingAutomationJob whereUpdatedAt($value)
+ */
+	class BillingAutomationJob extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $credit_note_id
+ * @property int $invoice_id
+ * @property int $billing_account_id
+ * @property int $currency_id
+ * @property string $status
+ * @property string $reason
+ * @property int $subtotal_minor
+ * @property int $tax_minor
+ * @property int $total_minor
+ * @property int $applied_to_receivable_minor
+ * @property int $refundable_minor
+ * @property int $refunded_minor
+ * @property-read BillingInvoice $invoice
+ * @property-read Currency $currency
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingCreditNoteLine> $lines
+ * @property string $credit_note_number
+ * @property string $idempotency_key
+ * @property string $accounting_treatment
+ * @property \Illuminate\Support\Carbon|null $issued_at
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\BillingAccount|null $billingAccount
+ * @property-read int|null $lines_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingRefund> $refunds
+ * @property-read int|null $refunds_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereAccountingTreatment($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereAppliedToReceivableMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereBillingAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereCreditNoteId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereCreditNoteNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereIdempotencyKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereInvoiceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereIssuedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereReason($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereRefundableMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereRefundedMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereSubtotalMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereTaxMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereTotalMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNote whereUpdatedAt($value)
+ */
+	class BillingCreditNote extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $credit_note_line_id
+ * @property int $credit_note_id
+ * @property int $invoice_line_id
+ * @property int $quantity
+ * @property int $unit_amount_minor
+ * @property int $subtotal_minor
+ * @property int $tax_minor
+ * @property int $total_minor
+ * @property-read BillingCreditNote $creditNote
+ * @property-read BillingInvoiceLine $invoiceLine
+ * @property string $description
+ * @property int $quantity_micros
+ * @property int $amount_minor
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNoteLine newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNoteLine newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNoteLine query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNoteLine whereAmountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNoteLine whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNoteLine whereCreditNoteId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNoteLine whereCreditNoteLineId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNoteLine whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNoteLine whereInvoiceLineId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNoteLine whereQuantityMicros($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingCreditNoteLine whereUpdatedAt($value)
+ */
+	class BillingCreditNoteLine extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $dunning_attempt_id
+ * @property int $invoice_id
+ * @property int $attempt_number
+ * @property string $status
+ * @property string $channel
+ * @property \Illuminate\Support\Carbon $scheduled_at
+ * @property \Illuminate\Support\Carbon|null $attempted_at
+ * @property string|null $result_message
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\BillingInvoice $invoice
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningAttempt newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningAttempt newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningAttempt query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningAttempt whereAttemptNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningAttempt whereAttemptedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningAttempt whereChannel($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningAttempt whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningAttempt whereDunningAttemptId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningAttempt whereInvoiceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningAttempt whereResultMessage($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningAttempt whereScheduledAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningAttempt whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningAttempt whereUpdatedAt($value)
+ */
+	class BillingDunningAttempt extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $dunning_policy_id
+ * @property string $policy_key
+ * @property string $name
+ * @property int|null $current_version_id
+ * @property bool $is_active
+ * @property-read BillingDunningPolicyVersion|null $currentVersion
+ * @property string|null $description
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property string|null $deleted_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingDunningPolicyVersion> $versions
+ * @property-read int|null $versions_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicy newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicy newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicy query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicy whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicy whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicy whereCurrentVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicy whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicy whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicy whereDunningPolicyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicy whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicy whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicy wherePolicyKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicy whereUpdatedAt($value)
+ */
+	class BillingDunningPolicy extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $dunning_policy_version_id
+ * @property int $dunning_policy_id
+ * @property string $status
+ * @property int $version_number
+ * @property int $grace_period_days
+ * @property array<int, int> $reminder_schedule_days
+ * @property array<int, int> $pre_renewal_alert_days
+ * @property bool $auto_suspend_after_grace
+ * @property array<int, int> $reminder_schedule_days
+ * @property array<int, int> $pre_renewal_alert_days
+ * @property-read BillingDunningPolicy $policy
+ * @property \Illuminate\Support\Carbon|null $published_at
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion whereAutoSuspendAfterGrace($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion whereDunningPolicyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion whereDunningPolicyVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion whereGracePeriodDays($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion wherePreRenewalAlertDays($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion wherePublishedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion whereReminderScheduleDays($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingDunningPolicyVersion whereVersionNumber($value)
+ */
+	class BillingDunningPolicyVersion extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $invoice_id
+ * @property string $invoice_number
+ * @property string $invoice_type
+ * @property int $billing_account_id
+ * @property int|null $billing_subscription_id
+ * @property int $currency_id
+ * @property \App\Enums\BillingInvoiceStatus $status
+ * @property \Illuminate\Support\Carbon|null $period_start
+ * @property \Illuminate\Support\Carbon|null $period_end
+ * @property \Illuminate\Support\Carbon $issued_on
+ * @property \Illuminate\Support\Carbon $due_on
+ * @property int $subtotal_minor
+ * @property int $discount_minor
+ * @property int $tax_minor
+ * @property int $total_minor
+ * @property int $paid_minor
+ * @property int $credited_minor
+ * @property int $remaining_minor
+ * @property array<string, mixed>|null $customer_snapshot
+ * @property array<string, mixed>|null $pricing_snapshot
+ * @property string|null $memo
+ * @property \Illuminate\Support\Carbon|null $finalized_at
+ * @property \Illuminate\Support\Carbon|null $voided_at
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon|null $paid_at
+ * @property-read BillingAccount $billingAccount
+ * @property-read Currency $currency
+ * @property-read BillingSubscription|null $subscription
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingInvoiceLine> $lines
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPayment> $payments
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingCreditNote> $creditNotes
+ * @property-read int|null $credit_notes_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingDunningAttempt> $dunningAttempts
+ * @property-read int|null $dunning_attempts_count
+ * @property-read int|null $lines_count
+ * @property-read int|null $payments_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice forAccount(int $id)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereBillingAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereBillingSubscriptionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereCreditedMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereCustomerSnapshot($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereDiscountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereDueOn($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereFinalizedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereInvoiceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereInvoiceNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereInvoiceType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereIssuedOn($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereMemo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice wherePaidAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice wherePaidMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice wherePeriodEnd($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice wherePeriodStart($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice wherePricingSnapshot($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereRemainingMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereSubtotalMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereTaxMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereTotalMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoice whereVoidedAt($value)
+ */
+	class BillingInvoice extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $invoice_line_id
+ * @property int $invoice_id
+ * @property int $currency_id
+ * @property string $line_type
+ * @property string $description
+ * @property string $quantity
+ * @property int $unit_amount_minor
+ * @property int $subtotal_minor
+ * @property int $discount_minor
+ * @property int $tax_minor
+ * @property int $total_minor
+ * @property array<string, mixed>|null $source_snapshot
+ * @property-read BillingInvoice $invoice
+ * @property-read Currency $currency
+ * @property int|null $plan_version_id
+ * @property int|null $price_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\BillingPlanVersion|null $planVersion
+ * @property-read \App\Models\BillingPrice|null $price
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereDiscountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereInvoiceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereInvoiceLineId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereLineType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine wherePlanVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine wherePriceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereQuantity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereSourceSnapshot($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereSubtotalMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereTaxMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereTotalMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereUnitAmountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingInvoiceLine whereUpdatedAt($value)
+ */
+	class BillingInvoiceLine extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $payment_id
+ * @property string $payment_reference
+ * @property string $idempotency_key
+ * @property string|null $external_reference
+ * @property string|null $review_note
+ * @property int|null $recorded_by
+ * @property int|null $verified_by
+ * @property int|null $payment_intent_id
+ * @property int $invoice_id
+ * @property int $billing_account_id
+ * @property int $currency_id
+ * @property int $payment_method_id
+ * @property int|null $treasury_account_id
+ * @property int $amount_minor
+ * @property \App\Enums\BillingPaymentStatus $status
+ * @property \Illuminate\Support\Carbon|null $received_at
+ * @property \Illuminate\Support\Carbon|null $verified_at
+ * @property-read BillingInvoice $invoice
+ * @property-read BillingAccount $billingAccount
+ * @property-read Currency $currency
+ * @property-read BillingPaymentMethod $paymentMethod
+ * @property-read BillingPaymentIntent|null $paymentIntent
+ * @property-read TreasuryAccount|null $treasuryAccount
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPaymentProof> $proofs
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\BillingPaymentIntent|null $intent
+ * @property-read int|null $proofs_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingRefund> $refunds
+ * @property-read int|null $refunds_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereAmountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereBillingAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereExternalReference($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereIdempotencyKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereInvoiceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment wherePaymentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment wherePaymentIntentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment wherePaymentMethodId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment wherePaymentReference($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereReceivedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereRecordedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereReviewNote($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereTreasuryAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereVerifiedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPayment whereVerifiedBy($value)
+ */
+	class BillingPayment extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $payment_attempt_id
+ * @property int $payment_intent_id
+ * @property int $attempt_number
+ * @property string $status
+ * @property string|null $provider_reference
+ * @property string|null $failure_code
+ * @property string|null $failure_message
+ * @property \Illuminate\Support\Carbon|null $attempted_at
+ * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\BillingPaymentIntent $intent
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt whereAttemptNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt whereAttemptedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt whereCompletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt whereFailureCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt whereFailureMessage($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt wherePaymentAttemptId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt wherePaymentIntentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt whereProviderReference($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentAttempt whereUpdatedAt($value)
+ */
+	class BillingPaymentAttempt extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $payment_intent_id
+ * @property int $invoice_id
+ * @property int $billing_account_id
+ * @property int $currency_id
+ * @property int $amount_minor
+ * @property string $status
+ * @property \Illuminate\Support\Carbon|null $expires_at
+ * @property \Illuminate\Support\Carbon|null $succeeded_at
+ * @property string $intent_uuid
+ * @property int $payment_method_id
+ * @property string $idempotency_key
+ * @property array<array-key, mixed>|null $metadata
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingPaymentAttempt> $attempts
+ * @property-read int|null $attempts_count
+ * @property-read \App\Models\BillingAccount|null $billingAccount
+ * @property-read \App\Models\Currency $currency
+ * @property-read \App\Models\BillingInvoice $invoice
+ * @property-read \App\Models\BillingPaymentMethod $paymentMethod
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingPayment> $payments
+ * @property-read int|null $payments_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent whereAmountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent whereBillingAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent whereExpiresAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent whereIdempotencyKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent whereIntentUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent whereInvoiceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent whereMetadata($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent wherePaymentIntentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent wherePaymentMethodId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent whereSucceededAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentIntent whereUpdatedAt($value)
+ */
+	class BillingPaymentIntent extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $payment_method_id
+ * @property string $name
+ * @property bool $is_active
+ * @property bool $requires_proof
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Currency> $currencies
+ * @property string $method_key
+ * @property string $method_type
+ * @property array<array-key, mixed>|null $instructions
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read int|null $currencies_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingPaymentIntent> $intents
+ * @property-read int|null $intents_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingPayment> $payments
+ * @property-read int|null $payments_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentMethod newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentMethod newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentMethod query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentMethod whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentMethod whereInstructions($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentMethod whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentMethod whereMethodKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentMethod whereMethodType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentMethod whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentMethod wherePaymentMethodId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentMethod whereRequiresProof($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentMethod whereUpdatedAt($value)
+ */
+	class BillingPaymentMethod extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $payment_proof_id
+ * @property int $payment_id
+ * @property string $file_path
+ * @property string|null $original_name
+ * @property string|null $mime_type
+ * @property int|null $file_size
+ * @property string|null $sha256
+ * @property int $uploaded_by
+ * @property \Illuminate\Support\Carbon $uploaded_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\BillingPayment $payment
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof whereFilePath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof whereFileSize($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof whereMimeType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof whereOriginalName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof wherePaymentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof wherePaymentProofId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof whereSha256($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof whereUploadedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPaymentProof whereUploadedBy($value)
+ */
+	class BillingPaymentProof extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $plan_id
+ * @property int $product_id
+ * @property string $plan_key
+ * @property string $name
+ * @property int|null $current_version_id
+ * @property bool $is_active
+ * @property bool $is_public
+ * @property-read BillingProduct $product
+ * @property-read BillingPlanVersion|null $currentVersion
+ * @property string|null $description
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingPlanVersion> $versions
+ * @property-read int|null $versions_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan whereCurrentVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan whereIsPublic($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan wherePlanId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan wherePlanKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan whereProductId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlan withoutTrashed()
+ */
+	class BillingPlan extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $plan_feature_id
+ * @property int $plan_version_id
+ * @property string $feature_key
+ * @property string $name
+ * @property \App\Enums\BillingFeatureType $feature_type
+ * @property string $value
+ * @property string|null $unit
+ * @property string|null $aggregation
+ * @property string|null $reset_period
+ * @property string $overage_behavior
+ * @property array<string, mixed>|null $configuration
+ * @property-read BillingPlanVersion $planVersion
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature whereAggregation($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature whereConfiguration($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature whereFeatureKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature whereFeatureType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature whereOverageBehavior($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature wherePlanFeatureId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature wherePlanVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature whereResetPeriod($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature whereUnit($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanFeature whereValue($value)
+ */
+	class BillingPlanFeature extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $plan_version_id
+ * @property int $plan_id
+ * @property int $version_number
+ * @property \Illuminate\Support\Carbon|null $published_at
+ * @property \App\Enums\BillingPlanVersionStatus $status
+ * @property int|null $trial_policy_version_id
+ * @property int|null $dunning_policy_version_id
+ * @property-read BillingPlan $plan
+ * @property-read BillingTrialPolicyVersion|null $trialPolicyVersion
+ * @property-read BillingDunningPolicyVersion|null $dunningPolicyVersion
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPrice> $prices
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPlanFeature> $features
+ * @property array<array-key, mixed>|null $terms_snapshot
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read int|null $features_count
+ * @property-read int|null $prices_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion whereDunningPolicyVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion wherePlanId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion wherePlanVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion wherePublishedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion whereTermsSnapshot($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion whereTrialPolicyVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPlanVersion whereVersionNumber($value)
+ */
+	class BillingPlanVersion extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $price_id
+ * @property int $plan_version_id
+ * @property int $currency_id
+ * @property \App\Enums\BillingInterval $billing_interval
+ * @property int $interval_count
+ * @property int $unit_amount_minor
+ * @property int $setup_fee_minor
+ * @property int|null $trial_policy_version_id
+ * @property int|null $dunning_policy_version_id
+ * @property string $tax_behavior
+ * @property bool $is_active
+ * @property-read Currency $currency
+ * @property-read BillingPlanVersion $planVersion
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\BillingDunningPolicyVersion|null $dunningPolicyVersion
+ * @property-read \App\Models\BillingTrialPolicyVersion|null $trialPolicyVersion
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice whereBillingInterval($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice whereDunningPolicyVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice whereIntervalCount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice wherePlanVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice wherePriceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice whereSetupFeeMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice whereTaxBehavior($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice whereTrialPolicyVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice whereUnitAmountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingPrice whereUpdatedAt($value)
+ */
+	class BillingPrice extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $product_id
+ * @property string $product_key
+ * @property string $name
+ * @property bool $is_active
+ * @property string|null $description
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingPlan> $plans
+ * @property-read int|null $plans_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct whereProductId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct whereProductKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingProduct withoutTrashed()
+ */
+	class BillingProduct extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $refund_id
+ * @property string $refund_reference
+ * @property string $idempotency_key
+ * @property string $reason
+ * @property int $processed_by
+ * @property \Illuminate\Support\Carbon|null $processed_at
+ * @property int $payment_id
+ * @property int $credit_note_id
+ * @property int $treasury_account_id
+ * @property int $currency_id
+ * @property int $amount_minor
+ * @property string $status
+ * @property-read BillingPayment $payment
+ * @property-read BillingCreditNote $creditNote
+ * @property-read Currency $currency
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\TreasuryAccount|null $treasuryAccount
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund whereAmountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund whereCreditNoteId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund whereIdempotencyKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund wherePaymentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund whereProcessedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund whereProcessedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund whereReason($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund whereRefundId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund whereRefundReference($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund whereTreasuryAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRefund whereUpdatedAt($value)
+ */
+	class BillingRefund extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $revenue_recognition_entry_id
+ * @property int $revenue_schedule_id
+ * @property int $journal_entry_id
+ * @property-read LedgerJournalEntry $journalEntry
+ * @property string $idempotency_key
+ * @property \Illuminate\Support\Carbon $recognized_through
+ * @property int $amount_minor
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\BillingRevenueRecognitionSchedule $schedule
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionEntry newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionEntry newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionEntry query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionEntry whereAmountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionEntry whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionEntry whereIdempotencyKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionEntry whereJournalEntryId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionEntry whereRecognizedThrough($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionEntry whereRevenueRecognitionEntryId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionEntry whereRevenueScheduleId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionEntry whereUpdatedAt($value)
+ */
+	class BillingRevenueRecognitionEntry extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $revenue_schedule_id
+ * @property int $invoice_id
+ * @property int|null $invoice_line_id
+ * @property int $currency_id
+ * @property string $revenue_account_code
+ * @property int $total_minor
+ * @property int $recognized_minor
+ * @property \Illuminate\Support\Carbon|null $last_recognized_on
+ * @property string $status
+ * @property \Illuminate\Support\Carbon $service_start_on
+ * @property \Illuminate\Support\Carbon $service_end_on
+ * @property \Illuminate\Support\Carbon|null $last_recognized_on
+ * @property string $status
+ * @property-read BillingInvoice $invoice
+ * @property-read BillingInvoiceLine|null $invoiceLine
+ * @property-read Currency $currency
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule whereInvoiceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule whereInvoiceLineId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule whereLastRecognizedOn($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule whereRecognizedMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule whereRevenueAccountCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule whereRevenueScheduleId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule whereServiceEndOn($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule whereServiceStartOn($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule whereTotalMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingRevenueRecognitionSchedule whereUpdatedAt($value)
+ */
+	class BillingRevenueRecognitionSchedule extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $billing_subscription_id
+ * @property int $billing_account_id
+ * @property int $plan_id
+ * @property int $plan_version_id
+ * @property int $price_id
+ * @property int $quantity
+ * @property array<string, mixed>|null $trial_policy_snapshot
+ * @property array<string, mixed>|null $dunning_policy_snapshot
+ * @property int $currency_id
+ * @property \App\Enums\BillingSubscriptionStatus $status
+ * @property \Illuminate\Support\Carbon|null $current_period_start
+ * @property \Illuminate\Support\Carbon|null $current_period_end
+ * @property \Illuminate\Support\Carbon|null $trial_start
+ * @property \Illuminate\Support\Carbon|null $trial_end
+ * @property \Illuminate\Support\Carbon|null $ended_at
+ * @property \Illuminate\Support\Carbon|null $paused_at
+ * @property \Illuminate\Support\Carbon|null $grace_period_ends_at
+ * @property \Illuminate\Support\Carbon|null $next_billing_at
+ * @property array<string, mixed>|null $metadata
+ * @property-read BillingAccount $billingAccount
+ * @property-read BillingPlan $plan
+ * @property-read BillingPlanVersion $planVersion
+ * @property-read BillingPrice $price
+ * @property-read Currency $currency
+ * @property-read BillingTrialRedemption|null $trialRedemption
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingSubscriptionEvent> $events
+ * @property int|null $trial_policy_version_id
+ * @property int|null $dunning_policy_version_id
+ * @property string $collection_method
+ * @property bool $cancel_at_period_end
+ * @property \Illuminate\Support\Carbon|null $canceled_at
+ * @property array<array-key, mixed> $terms_snapshot
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read \App\Models\BillingDunningPolicyVersion|null $dunningPolicyVersion
+ * @property-read int|null $events_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingInvoice> $invoices
+ * @property-read int|null $invoices_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingSubscriptionItem> $items
+ * @property-read int|null $items_count
+ * @property-read \App\Models\BillingTrialPolicyVersion|null $trialPolicyVersion
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingUsageEvent> $usageEvents
+ * @property-read int|null $usage_events_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription forAccount(int $id)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereBillingAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereBillingSubscriptionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereCancelAtPeriodEnd($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereCanceledAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereCollectionMethod($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereCurrentPeriodEnd($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereCurrentPeriodStart($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereDunningPolicySnapshot($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereDunningPolicyVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereEndedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereGracePeriodEndsAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereMetadata($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription wherePausedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription wherePlanId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription wherePlanVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription wherePriceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereQuantity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereTermsSnapshot($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereTrialEnd($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereTrialPolicySnapshot($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereTrialPolicyVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereTrialStart($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscription withoutTrashed()
+ */
+	class BillingSubscription extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $subscription_alert_id
+ * @property int $billing_subscription_id
+ * @property string $alert_type
+ * @property string $status
+ * @property \Illuminate\Support\Carbon $scheduled_at
+ * @property \Illuminate\Support\Carbon|null $sent_at
+ * @property int $dunning_policy_version_id
+ * @property \Illuminate\Support\Carbon $period_end
+ * @property int $alert_days
+ * @property \Illuminate\Support\Carbon|null $queued_at
+ * @property string|null $message_uuid
+ * @property string|null $result_message
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\BillingDunningPolicyVersion $policyVersion
+ * @property-read \App\Models\BillingSubscription|null $subscription
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert whereAlertDays($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert whereBillingSubscriptionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert whereDunningPolicyVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert whereMessageUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert wherePeriodEnd($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert whereQueuedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert whereResultMessage($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert whereScheduledAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert whereSubscriptionAlertId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionAlert whereUpdatedAt($value)
+ */
+	class BillingSubscriptionAlert extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $subscription_event_id
+ * @property int $billing_subscription_id
+ * @property string $event_type
+ * @property string|null $from_status
+ * @property string|null $to_status
+ * @property array<string, mixed>|null $payload
+ * @property int|null $actor_id
+ * @property \Illuminate\Support\Carbon $occurred_at
+ * @property int $event_id
+ * @property-read \App\Models\BillingSubscription|null $subscription
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionEvent newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionEvent newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionEvent query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionEvent whereActorId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionEvent whereBillingSubscriptionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionEvent whereEventId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionEvent whereEventType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionEvent whereFromStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionEvent whereOccurredAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionEvent wherePayload($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionEvent whereToStatus($value)
+ */
+	class BillingSubscriptionEvent extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $subscription_item_id
+ * @property int $billing_subscription_id
+ * @property int|null $plan_feature_id
+ * @property string $item_type
+ * @property string $description
+ * @property numeric $quantity
+ * @property int $unit_amount_minor
+ * @property int $amount_minor
+ * @property int $currency_id
+ * @property array<array-key, mixed>|null $terms_snapshot
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Currency $currency
+ * @property-read \App\Models\BillingPlanFeature|null $feature
+ * @property-read \App\Models\BillingSubscription|null $subscription
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem whereAmountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem whereBillingSubscriptionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem whereItemType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem wherePlanFeatureId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem whereQuantity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem whereSubscriptionItemId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem whereTermsSnapshot($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem whereUnitAmountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionItem whereUpdatedAt($value)
+ */
+	class BillingSubscriptionItem extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $trial_adjustment_id
+ * @property int $trial_redemption_id
+ * @property int $billing_subscription_id
+ * @property string $adjustment_type
+ * @property \Illuminate\Support\Carbon|null $previous_trial_end
+ * @property \Illuminate\Support\Carbon $new_trial_end
+ * @property string $reason
+ * @property int $actor_id
+ * @property \Illuminate\Support\Carbon $occurred_at
+ * @property array<array-key, mixed>|null $metadata
+ * @property-read \App\Models\BillingTrialRedemption $redemption
+ * @property-read \App\Models\BillingSubscription|null $subscription
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialAdjustment newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialAdjustment newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialAdjustment query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialAdjustment whereActorId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialAdjustment whereAdjustmentType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialAdjustment whereBillingSubscriptionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialAdjustment whereMetadata($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialAdjustment whereNewTrialEnd($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialAdjustment whereOccurredAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialAdjustment wherePreviousTrialEnd($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialAdjustment whereReason($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialAdjustment whereTrialAdjustmentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialAdjustment whereTrialRedemptionId($value)
+ */
+	class BillingTrialAdjustment extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $trial_eligibility_check_id
+ * @property int $network_id
+ * @property int $billing_account_id
+ * @property int $price_id
+ * @property int $plan_id
+ * @property int|null $trial_policy_version_id
+ * @property int|null $checked_by
+ * @property string $eligibility_status
+ * @property string|null $reason_code
+ * @property string $source
+ * @property \Illuminate\Support\Carbon $checked_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\BillingAccount|null $billingAccount
+ * @property-read \App\Models\BillingTrialPolicyVersion|null $policyVersion
+ * @property-read \App\Models\BillingPrice $price
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck whereBillingAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck whereCheckedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck whereCheckedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck whereEligibilityStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck wherePlanId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck wherePriceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck whereReasonCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck whereSource($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck whereTrialEligibilityCheckId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck whereTrialPolicyVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialEligibilityCheck whereUpdatedAt($value)
+ */
+	class BillingTrialEligibilityCheck extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $trial_policy_id
+ * @property string $policy_key
+ * @property string $name
+ * @property int|null $current_version_id
+ * @property bool $is_active
+ * @property-read BillingTrialPolicyVersion|null $currentVersion
+ * @property string|null $description
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property string|null $deleted_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingTrialPolicyVersion> $versions
+ * @property-read int|null $versions_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicy newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicy newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicy query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicy whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicy whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicy whereCurrentVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicy whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicy whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicy whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicy whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicy wherePolicyKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicy whereTrialPolicyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicy whereUpdatedAt($value)
+ */
+	class BillingTrialPolicy extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $trial_policy_version_id
+ * @property int $trial_policy_id
+ * @property string $status
+ * @property int $version_number
+ * @property bool $is_enabled
+ * @property string $duration_unit
+ * @property int $duration_value
+ * @property string $start_trigger
+ * @property string $redemption_scope
+ * @property string $eligibility_mode
+ * @property bool $requires_manual_approval
+ * @property string $end_behavior
+ * @property string $entitlement_mode
+ * @property array<string, mixed>|null $entitlement_config
+ * @property int $duration_value
+ * @property array<string, mixed>|null $entitlement_config
+ * @property \Illuminate\Support\Carbon|null $published_at
+ * @property-read BillingTrialPolicy $policy
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereDurationUnit($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereDurationValue($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereEligibilityMode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereEndBehavior($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereEntitlementConfig($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereEntitlementMode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereIsEnabled($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion wherePublishedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereRedemptionScope($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereRequiresManualApproval($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereStartTrigger($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereTrialPolicyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereTrialPolicyVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialPolicyVersion whereVersionNumber($value)
+ */
+	class BillingTrialPolicyVersion extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $trial_redemption_id
+ * @property int $billing_subscription_id
+ * @property int $trial_policy_id
+ * @property int $trial_policy_version_id
+ * @property int $network_id
+ * @property int $billing_account_id
+ * @property int $product_id
+ * @property string $redemption_scope
+ * @property string $redemption_subject_key
+ * @property string $status
+ * @property array<string, mixed>|null $metadata
+ * @property \Illuminate\Support\Carbon|null $reserved_at
+ * @property \Illuminate\Support\Carbon|null $started_at
+ * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property-read BillingTrialPolicy $policy
+ * @property-read BillingTrialPolicyVersion $policyVersion
+ * @property-read BillingSubscription $subscription
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingTrialAdjustment> $adjustments
+ * @property-read int|null $adjustments_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereBillingAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereBillingSubscriptionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereCompletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereMetadata($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereProductId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereRedemptionScope($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereRedemptionSubjectKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereReservedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereStartedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereTrialPolicyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereTrialPolicyVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereTrialRedemptionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingTrialRedemption whereUpdatedAt($value)
+ */
+	class BillingTrialRedemption extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $usage_aggregate_id
+ * @property int $billing_subscription_id
+ * @property int $meter_id
+ * @property \Illuminate\Support\Carbon $period_start
+ * @property \Illuminate\Support\Carbon $period_end
+ * @property string $quantity
+ * @property int $amount_minor
+ * @property-read BillingUsageMeter $meter
+ * @property int|null $currency_id
+ * @property \Illuminate\Support\Carbon|null $last_event_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Currency|null $currency
+ * @property-read \App\Models\BillingSubscription|null $subscription
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate whereAmountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate whereBillingSubscriptionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate whereLastEventAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate whereMeterId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate wherePeriodEnd($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate wherePeriodStart($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate whereQuantity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageAggregate whereUsageAggregateId($value)
+ */
+	class BillingUsageAggregate extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $usage_event_id
+ * @property int $billing_subscription_id
+ * @property int $meter_id
+ * @property string $idempotency_key
+ * @property numeric $quantity
+ * @property \Illuminate\Support\Carbon $occurred_at
+ * @property \Illuminate\Support\Carbon|null $period_start
+ * @property \Illuminate\Support\Carbon|null $period_end
+ * @property array<array-key, mixed>|null $dimensions
+ * @property string|null $source_type
+ * @property int|null $source_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\BillingUsageMeter $meter
+ * @property-read \App\Models\BillingSubscription|null $subscription
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent whereBillingSubscriptionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent whereDimensions($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent whereIdempotencyKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent whereMeterId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent whereOccurredAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent wherePeriodEnd($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent wherePeriodStart($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent whereQuantity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent whereSourceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent whereSourceType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageEvent whereUsageEventId($value)
+ */
+	class BillingUsageEvent extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $meter_id
+ * @property string $meter_key
+ * @property string $name
+ * @property string $unit
+ * @property string $aggregation
+ * @property bool $is_active
+ * @property string|null $reset_period
+ * @property string|null $description
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingUsageAggregate> $aggregates
+ * @property-read int|null $aggregates_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingUsageEvent> $events
+ * @property-read int|null $events_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageMeter newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageMeter newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageMeter query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageMeter whereAggregation($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageMeter whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageMeter whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageMeter whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageMeter whereMeterId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageMeter whereMeterKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageMeter whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageMeter whereResetPeriod($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageMeter whereUnit($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageMeter whereUpdatedAt($value)
+ */
+	class BillingUsageMeter extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $reservation_id
+ * @property int $billing_subscription_id
+ * @property int $meter_id
+ * @property string $reservation_key
+ * @property numeric $quantity
+ * @property string $status
+ * @property \Illuminate\Support\Carbon $expires_at
+ * @property \Illuminate\Support\Carbon|null $committed_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\BillingUsageMeter $meter
+ * @property-read \App\Models\BillingSubscription|null $subscription
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageReservation newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageReservation newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageReservation query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageReservation whereBillingSubscriptionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageReservation whereCommittedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageReservation whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageReservation whereExpiresAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageReservation whereMeterId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageReservation whereQuantity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageReservation whereReservationId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageReservation whereReservationKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageReservation whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingUsageReservation whereUpdatedAt($value)
+ */
+	class BillingUsageReservation extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $currency_id
+ * @property string $code
+ * @property string $name
+ * @property int $decimal_places
+ * @property bool $is_active
+ * @property string|null $numeric_code
+ * @property string|null $native_name
+ * @property string|null $symbol
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingAccount> $billingAccounts
+ * @property-read int|null $billing_accounts_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingPrice> $prices
+ * @property-read int|null $prices_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency whereCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency whereDecimalPlaces($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency whereNativeName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency whereNumericCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency whereSymbol($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Currency whereUpdatedAt($value)
+ */
+	class Currency extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $conversion_id
+ * @property int $exchange_rate_id
+ * @property int $from_currency_id
+ * @property int $to_currency_id
+ * @property int $source_amount_minor
+ * @property int $converted_amount_minor
+ * @property int $fee_amount_minor
+ * @property string $rounding_mode
+ * @property string $rate_snapshot
+ * @property string|null $source_type
+ * @property int|null $source_id
+ * @property int|null $created_by
+ * @property \Illuminate\Support\Carbon $converted_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\CurrencyExchangeRate $exchangeRate
+ * @property-read \App\Models\Currency $fromCurrency
+ * @property-read \App\Models\Currency $toCurrency
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereConversionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereConvertedAmountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereConvertedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereExchangeRateId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereFeeAmountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereFromCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereRateSnapshot($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereRoundingMode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereSourceAmountMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereSourceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereSourceType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereToCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyConversion whereUpdatedAt($value)
+ */
+	class CurrencyConversion extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $exchange_rate_id
+ * @property int $base_currency_id
+ * @property int $quote_currency_id
+ * @property int $rate_numerator
+ * @property int $rate_denominator
+ * @property string $source
+ * @property \Illuminate\Support\Carbon $effective_at
+ * @property \Illuminate\Support\Carbon|null $expires_at
+ * @property int|null $recorded_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Currency $baseCurrency
+ * @property-read \App\Models\Currency $quoteCurrency
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate whereBaseCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate whereEffectiveAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate whereExchangeRateId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate whereExpiresAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate whereQuoteCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate whereRateDenominator($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate whereRateNumerator($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate whereRecordedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate whereSource($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CurrencyExchangeRate whereUpdatedAt($value)
+ */
+	class CurrencyExchangeRate extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -271,42 +1801,6 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * @property int $feature_id
- * @property string $feature_name
- * @property \App\Enums\ValueType $feature_value_type
- * @property string|null $feature_value
- * @property string|null $feature_desc
- * @property bool $status
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubscriptionPlanFeature> $planFeatures
- * @property-read int|null $plan_features_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubscriptionPlan> $plans
- * @property-read int|null $plans_count
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature active()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature inactive()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature onlyTrashed()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature whereDeletedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature whereFeatureDesc($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature whereFeatureId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature whereFeatureName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature whereFeatureValue($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature whereFeatureValueType($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature whereStatus($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature withTrashed(bool $withTrashed = true)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Feature withoutTrashed()
- */
-	class Feature extends \Eloquent {}
-}
-
-namespace App\Models{
-/**
  * @property int $governorate_id
  * @property string $governorate_name
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -374,6 +1868,111 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IdempotencyKey whereUserId($value)
  */
 	class IdempotencyKey extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $ledger_account_id
+ * @property string $account_code
+ * @property string $name
+ * @property string $normal_balance
+ * @property int|null $currency_id
+ * @property \App\Enums\LedgerAccountClass $account_class
+ * @property bool $is_control_account
+ * @property bool $is_active
+ * @property-read Currency|null $currency
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\LedgerJournalLine> $lines
+ * @property-read int|null $lines_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount forCurrency(int $id)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount whereAccountClass($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount whereAccountCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount whereIsControlAccount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount whereLedgerAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount whereNormalBalance($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerAccount whereUpdatedAt($value)
+ */
+	class LedgerAccount extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $journal_entry_id
+ * @property int $currency_id
+ * @property \App\Enums\LedgerEntryStatus $status
+ * @property \Illuminate\Support\Carbon $entry_date
+ * @property-read Currency $currency
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, LedgerJournalLine> $lines
+ * @property string $entry_number
+ * @property string|null $source_type
+ * @property int|null $source_id
+ * @property string $idempotency_key
+ * @property string $description
+ * @property int|null $reversal_of_id
+ * @property int|null $posted_by
+ * @property \Illuminate\Support\Carbon|null $posted_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read int|null $lines_count
+ * @property-read LedgerJournalEntry|null $reversalOf
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry forCurrency(int $id)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry whereEntryDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry whereEntryNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry whereIdempotencyKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry whereJournalEntryId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry wherePostedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry wherePostedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry whereReversalOfId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry whereSourceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry whereSourceType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalEntry whereUpdatedAt($value)
+ */
+	class LedgerJournalEntry extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $journal_line_id
+ * @property int $journal_entry_id
+ * @property int $ledger_account_id
+ * @property int $currency_id
+ * @property int $debit_minor
+ * @property int $credit_minor
+ * @property-read LedgerAccount $account
+ * @property string|null $description
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Currency $currency
+ * @property-read \App\Models\LedgerJournalEntry $entry
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalLine newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalLine newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalLine query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalLine whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalLine whereCreditMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalLine whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalLine whereDebitMinor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalLine whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalLine whereJournalEntryId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalLine whereJournalLineId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalLine whereLedgerAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|LedgerJournalLine whereUpdatedAt($value)
+ */
+	class LedgerJournalLine extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -452,10 +2051,6 @@ namespace App\Models{
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SaleInvoice> $saleInvoices
  * @property-read int|null $sale_invoices_count
  * @property-read \App\Models\NetworkSmsSetting|null $smsSetting
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubscriptionPlanRequest> $subscriptionRequests
- * @property-read int|null $subscription_requests_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProviderSubscription> $subscriptions
- * @property-read int|null $subscriptions_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SupportTicket> $supportTickets
  * @property-read int|null $support_tickets_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
@@ -567,7 +2162,7 @@ namespace App\Models{
  * @property int $created_by_user_id
  * @property string $challenge_nonce
  * @property string $payload_token
- * @property string $status
+ * @property \App\Enums\LinkingChallengeStatus $status
  * @property \Illuminate\Support\Carbon $expires_at
  * @property \Illuminate\Support\Carbon|null $consumed_at
  * @property int|null $consumed_by_user_id
@@ -616,7 +2211,6 @@ namespace App\Models{
  * @property bool $notify_low_balance
  * @property bool $notify_daily_summary
  * @property bool $notify_monthly_summary
- * @property bool $notify_subscription_expiry
  * @property bool $use_custom_gateway
  * @property string $server_type
  * @property string $base_url
@@ -656,7 +2250,6 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifyPosWithdraw($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifyReceipt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifySaleInvoice($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifySubscriptionExpiry($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereNotifyVoucherRequest($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting wherePassword($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkSmsSetting whereRefreshToken($value)
@@ -709,6 +2302,9 @@ namespace App\Models{
  * @property int $network_id
  * @property string $wallet_uuid
  * @property numeric $wallet_balance
+ * @property numeric $opening_balance
+ * @property string $currency_code
+ * @property string $opening_balance_source
  * @property bool $status
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -724,8 +2320,11 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet whereCurrencyCode($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet whereOpeningBalance($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet whereOpeningBalanceSource($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWallet whereWalletBalance($value)
@@ -744,6 +2343,10 @@ namespace App\Models{
  * @property int|null $transfer_id
  * @property \App\Enums\WalletOperationType $log_operation
  * @property numeric $log_amount
+ * @property numeric $balance_before
+ * @property numeric $balance_after
+ * @property string $currency_code
+ * @property string $balance_snapshot_source
  * @property string $log_statement
  * @property \Illuminate\Support\Carbon $log_date
  * @property int|null $created_by
@@ -759,8 +2362,12 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereBalanceAfter($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereBalanceBefore($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereBalanceSnapshotSource($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereCurrencyCode($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereLogAmount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NetworkWalletLog whereLogDate($value)
@@ -813,6 +2420,145 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification withoutTrashed()
  */
 	class Notification extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $snapshot_id
+ * @property string $snapshot_uuid
+ * @property int $network_id
+ * @property int|null $pos_id
+ * @property string $document_type
+ * @property int $document_id
+ * @property int $document_version
+ * @property string $document_reference
+ * @property string $template_id
+ * @property string $template_version
+ * @property int $schema_version
+ * @property string $currency_code
+ * @property array<array-key, mixed> $source_snapshot
+ * @property string $snapshot_sha256
+ * @property string|null $artifact_path
+ * @property string|null $artifact_sha256
+ * @property int|null $artifact_size
+ * @property \Illuminate\Support\Carbon $issued_at
+ * @property int $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\User|null $createdBy
+ * @property-read \App\Models\Network|null $network
+ * @property-read \App\Models\Pos|null $pos
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereArtifactPath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereArtifactSha256($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereArtifactSize($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereCurrencyCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereDocumentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereDocumentReference($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereDocumentType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereDocumentVersion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereIssuedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot wherePosId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereSchemaVersion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereSnapshotId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereSnapshotSha256($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereSnapshotUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereSourceSnapshot($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereTemplateId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereTemplateVersion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalDocumentSnapshot whereUpdatedAt($value)
+ */
+	final class OperationalDocumentSnapshot extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $report_export_id
+ * @property string $export_uuid
+ * @property int $network_id
+ * @property int|null $pos_id
+ * @property int $requested_by
+ * @property \App\Enums\OperationalReportType $report_type
+ * @property array<array-key, mixed> $filters
+ * @property \App\Enums\OperationalReportExportStatus $status
+ * @property string|null $artifact_path
+ * @property string|null $artifact_sha256
+ * @property int|null $artifact_size
+ * @property int $record_count
+ * @property string|null $failure_code
+ * @property \Illuminate\Support\Carbon|null $started_at
+ * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property \Illuminate\Support\Carbon|null $expires_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Network|null $network
+ * @property-read \App\Models\Pos|null $pos
+ * @property-read \App\Models\User|null $requestedBy
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereArtifactPath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereArtifactSha256($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereArtifactSize($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereCompletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereExpiresAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereExportUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereFailureCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereFilters($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport wherePosId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereRecordCount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereReportExportId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereReportType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereRequestedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereStartedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportExport whereUpdatedAt($value)
+ */
+	class OperationalReportExport extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $report_preset_id
+ * @property string $preset_uuid
+ * @property int $user_id
+ * @property int $network_id
+ * @property int|null $pos_id
+ * @property string $scope_key
+ * @property \App\Enums\OperationalReportType $report_type
+ * @property string $name
+ * @property int $preset_schema_version
+ * @property int $report_schema_version
+ * @property array<array-key, mixed> $criteria
+ * @property array<array-key, mixed> $presentation
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset whereCriteria($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset wherePosId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset wherePresentation($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset wherePresetSchemaVersion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset wherePresetUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset whereReportPresetId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset whereReportSchemaVersion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset whereReportType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset whereScopeKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OperationalReportPreset whereUserId($value)
+ */
+	final class OperationalReportPreset extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -1170,6 +2916,9 @@ namespace App\Models{
  * @property int $pos_id
  * @property string $wallet_uuid
  * @property numeric $wallet_balance
+ * @property numeric $opening_balance
+ * @property string $opening_balance_source
+ * @property string $currency_code
  * @property numeric|null $credit_limit
  * @property bool $status
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -1190,8 +2939,11 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet whereCreditLimit($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet whereCurrencyCode($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet whereOpeningBalance($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet whereOpeningBalanceSource($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet wherePosId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWallet whereUpdatedAt($value)
@@ -1211,6 +2963,10 @@ namespace App\Models{
  * @property int|null $transfer_id
  * @property \App\Enums\WalletOperationType $log_operation_type
  * @property numeric $log_amount
+ * @property numeric $balance_before
+ * @property numeric $balance_after
+ * @property string $balance_snapshot_source
+ * @property string $currency_code
  * @property string $log_statement
  * @property \Illuminate\Support\Carbon $log_date
  * @property int|null $created_by
@@ -1226,8 +2982,12 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereBalanceAfter($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereBalanceBefore($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereBalanceSnapshotSource($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereCurrencyCode($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereLogAmount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PosWalletLog whereLogDate($value)
@@ -1246,44 +3006,61 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * @property int $subscription_id
- * @property int $network_id
- * @property int $plan_id
- * @property \Illuminate\Support\Carbon $subscription_start_date
- * @property \Illuminate\Support\Carbon|null $subscription_end_date
- * @property \App\Enums\ProviderSubscriptionStatus $status
- * @property int $created_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubscriptionPlanFeatureConsumption> $consumptions
- * @property-read int|null $consumptions_count
- * @property-read \App\Models\User|null $createdBy
- * @property-read \App\Models\Network|null $network
- * @property-read \App\Models\SubscriptionPlan|null $plan
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription active()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription expired()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription forNetwork(int $networkId)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription onlyTrashed()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription queued()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription status(\App\Enums\ProviderSubscriptionStatus|string $status)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription whereCreatedBy($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription whereDeletedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription whereNetworkId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription wherePlanId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription whereStatus($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription whereSubscriptionEndDate($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription whereSubscriptionId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription whereSubscriptionStartDate($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription withTrashed(bool $withTrashed = true)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ProviderSubscription withoutTrashed()
+ * @property int $report_run_id
+ * @property string $report_run_uuid
+ * @property string $scope_type
+ * @property int|null $network_id
+ * @property int $requested_by
+ * @property string $permission_key
+ * @property string $report_key
+ * @property string $definition_version
+ * @property string $status
+ * @property array<string, mixed> $filters
+ * @property string $artifact_format
+ * @property string|null $artifact_path
+ * @property string|null $artifact_sha256
+ * @property int $artifact_bytes
+ * @property int $records_count
+ * @property bool $is_truncated
+ * @property array<string, mixed>|null $result_metadata
+ * @property string|null $error_code
+ * @property string|null $error_message
+ * @property \Illuminate\Support\Carbon $queued_at
+ * @property \Illuminate\Support\Carbon|null $started_at
+ * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property \Illuminate\Support\Carbon|null $expires_at
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereArtifactBytes($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereArtifactFormat($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereArtifactPath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereArtifactSha256($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereCompletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereDefinitionVersion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereErrorCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereErrorMessage($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereExpiresAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereFilters($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereIsTruncated($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun wherePermissionKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereQueuedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereRecordsCount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereReportKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereReportRunId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereReportRunUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereRequestedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereResultMetadata($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereScopeType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereStartedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun whereUpdatedAt($value)
  */
-	class ProviderSubscription extends \Eloquent {}
+	class ReportRun extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -1385,7 +3162,7 @@ namespace App\Models{
  * @property int $role_id
  * @property string $role_key
  * @property string $role_name
- * @property string $scope
+ * @property \App\Enums\RoleScope $scope
  * @property string|null $role_desc
  * @property bool $is_system
  * @property bool $status
@@ -1535,10 +3312,15 @@ namespace App\Models{
  * @property int $id
  * @property ScheduledTaskType|string $task_type
  * @property int|null $network_id
+ * @property string $scope_key
  * @property Carbon $target_date
+ * @property string $schedule_slot
  * @property ScheduledTaskStatus|string $status
  * @property array|null $extra
  * @property Carbon|null $sent_at
+ * @property Carbon|null $started_at
+ * @property Carbon|null $finished_at
+ * @property Carbon|null $locked_until
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Network|null $network
@@ -1554,9 +3336,14 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun targetDate(string $date)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereExtra($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereFinishedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereLockedUntil($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereNetworkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereScheduleSlot($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereScopeKey($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereSentAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereStartedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereTargetDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduledTaskRun whereTaskType($value)
@@ -1604,172 +3391,6 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SecurityBan withoutTrashed()
  */
 	class SecurityBan extends \Eloquent {}
-}
-
-namespace App\Models{
-/**
- * @property int $plan_id
- * @property string $plan_uuid
- * @property string $plan_name
- * @property numeric $plan_price
- * @property numeric $plan_discount
- * @property int $plan_validity
- * @property string|null $plan_desc
- * @property bool $status
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Feature> $features
- * @property-read int|null $features_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubscriptionPlanFeature> $planFeatures
- * @property-read int|null $plan_features_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubscriptionPlanRequest> $subscriptionRequests
- * @property-read int|null $subscription_requests_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProviderSubscription> $subscriptions
- * @property-read int|null $subscriptions_count
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan active()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan inactive()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan onlyTrashed()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan whereDeletedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan wherePlanDesc($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan wherePlanDiscount($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan wherePlanId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan wherePlanName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan wherePlanPrice($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan wherePlanUuid($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan wherePlanValidity($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan whereStatus($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan withTrashed(bool $withTrashed = true)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlan withoutTrashed()
- */
-	class SubscriptionPlan extends \Eloquent {}
-}
-
-namespace App\Models{
-/**
- * @property int $subscription_plan_feature_id
- * @property int $plan_id
- * @property int $feature_id
- * @property string $plan_feature_value
- * @property bool $status
- * @property int $created_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubscriptionPlanFeatureConsumption> $consumptions
- * @property-read int|null $consumptions_count
- * @property-read \App\Models\User|null $createdBy
- * @property-read \App\Models\Feature|null $feature
- * @property-read \App\Models\SubscriptionPlan|null $plan
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature active()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature forPlan(int $planId)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature onlyTrashed()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature whereCreatedBy($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature whereDeletedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature whereFeatureId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature wherePlanFeatureValue($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature wherePlanId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature whereStatus($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature whereSubscriptionPlanFeatureId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature withTrashed(bool $withTrashed = true)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeature withoutTrashed()
- */
-	class SubscriptionPlanFeature extends \Eloquent {}
-}
-
-namespace App\Models{
-/**
- * @property int $consumption_id
- * @property int $subscription_id
- * @property int $feature_id
- * @property int $consumption_value
- * @property \Illuminate\Support\Carbon|null $last_consumption_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\SubscriptionPlanFeature|null $planFeature
- * @property-read \App\Models\ProviderSubscription|null $subscription
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption forFeature(int $featureId)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption forSubscription(int $subscriptionId)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereConsumptionId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereConsumptionValue($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereFeatureId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereLastConsumptionAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereSubscriptionId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanFeatureConsumption whereUpdatedAt($value)
- */
-	class SubscriptionPlanFeatureConsumption extends \Eloquent {}
-}
-
-namespace App\Models{
-/**
- * @property int $request_id
- * @property int $network_id
- * @property int $plan_id
- * @property int $requested_by
- * @property string $request_uuid
- * @property numeric $request_total_amount
- * @property \App\Enums\PaymentType $request_payment_type
- * @property int|null $account_id
- * @property string|null $transaction_reference
- * @property string|null $transaction_receipt
- * @property \App\Enums\RequestStatus $status
- * @property string|null $rejection_reason
- * @property int|null $reviewed_by
- * @property string|null $request_note
- * @property \Illuminate\Support\Carbon|null $review_date
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property-read \App\Models\BankAccount|null $bankAccount
- * @property-read \App\Models\Network|null $network
- * @property-read \App\Models\SubscriptionPlan|null $plan
- * @property-read \App\Models\User|null $requestedBy
- * @property-read \App\Models\User|null $reviewedBy
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest approved()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest forNetwork(int $networkId)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest onlyTrashed()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest pending()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest rejected()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest status(\App\Enums\RequestStatus|string $status)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereAccountId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereDeletedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereNetworkId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest wherePlanId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereRejectionReason($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereRequestId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereRequestNote($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereRequestPaymentType($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereRequestTotalAmount($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereRequestUuid($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereRequestedBy($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereReviewDate($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereReviewedBy($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereStatus($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereTransactionReceipt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereTransactionReference($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest withTrashed(bool $withTrashed = true)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SubscriptionPlanRequest withoutTrashed()
- */
-	class SubscriptionPlanRequest extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -1914,6 +3535,48 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property int $treasury_account_id
+ * @property string $account_code
+ * @property string $name
+ * @property string $status
+ * @property int $currency_id
+ * @property int|null $ledger_account_id
+ * @property-read Currency $currency
+ * @property-read LedgerAccount|null $ledgerAccount
+ * @property string $account_type
+ * @property string|null $institution_name
+ * @property string|null $account_reference
+ * @property array<array-key, mixed>|null $metadata
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingPayment> $payments
+ * @property-read int|null $payments_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount whereAccountCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount whereAccountReference($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount whereAccountType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount whereCurrencyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount whereInstitutionName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount whereLedgerAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount whereMetadata($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount whereTreasuryAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TreasuryAccount withoutTrashed()
+ */
+	class TreasuryAccount extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
  * @property int $user_id
  * @property int|null $role_id
  * @property string|null $role_scope
@@ -1961,16 +3624,12 @@ namespace App\Models{
  * @property-read \App\Models\Pos|null $pos
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PosUser> $posUsers
  * @property-read int|null $pos_users_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProviderSubscription> $providerSubscriptions
- * @property-read int|null $provider_subscriptions_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Network> $rejectedNetworks
  * @property-read int|null $rejected_networks_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Pos> $rejectedPos
  * @property-read int|null $rejected_pos_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Request> $reviewedRequests
  * @property-read int|null $reviewed_requests_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubscriptionPlanRequest> $reviewedSubscriptionPlanRequests
- * @property-read int|null $reviewed_subscription_plan_requests_count
  * @property-read \App\Models\Role|null $role
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SaleInvoice> $saleInvoices
  * @property-read int|null $sale_invoices_count
@@ -1978,8 +3637,6 @@ namespace App\Models{
  * @property-read int|null $security_bans_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\UserSession> $sessions
  * @property-read int|null $sessions_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubscriptionPlanRequest> $subscriptionPlanRequests
- * @property-read int|null $subscription_plan_requests_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SupportTicketMessage> $supportTicketMessages
  * @property-read int|null $support_ticket_messages_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SystemLog> $systemLogs

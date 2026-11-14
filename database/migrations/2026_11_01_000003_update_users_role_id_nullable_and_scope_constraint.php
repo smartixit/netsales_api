@@ -35,7 +35,6 @@ return new class extends Migration
         // 4. Add stored role_scope generated column with composite FK
         Schema::table('users', function (Blueprint $table) {
             $table->string('role_scope', 20)
-                ->storedAs("CASE WHEN role_id IS NOT NULL THEN 'PLATFORM' ELSE NULL END")
                 ->after('role_id');
 
             $table->foreign(['role_id', 'role_scope'])

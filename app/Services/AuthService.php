@@ -29,13 +29,14 @@ use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\UserSessionRepositoryInterface;
 use App\Models\Network;
 use App\Models\NetworkUser;
-use App\Models\PosUser;
 use App\Models\Pos;
+use App\Models\PosUser;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserDevice;
 use App\Services\Support\EmailNotificationService;
 use App\Services\Support\FileUploadService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -113,9 +114,9 @@ class AuthService
 
         if ($user) {
 
-            if($user->role_scope === RoleScope::PLATFORM->value){
+            if ($user->role_scope === RoleScope::PLATFORM->value) {
                 throw ValidationException::withMessages([
-                    'user_phone_number' => ["عذراً، بيانات الاعتماد غير صحيحة."],
+                    'user_phone_number' => ['عذراً، بيانات الاعتماد غير صحيحة.'],
                 ]);
             }
 
@@ -758,7 +759,7 @@ class AuthService
 
             // 3. إنشاء حساب المستخدم أولاً بحالة PENDING عبر المستودع
             $user = $this->userRepository->create([
-                'role_id' => null,
+                'role_id' => $role->role_id,
                 'user_full_name' => (string) $request->user_full_name,
                 'user_phone_number' => (string) $request->user_phone_number,
                 'user_email' => $request->user_email,
@@ -849,7 +850,7 @@ class AuthService
 
             // 3. إنشاء حساب المستخدم أولاً بحالة PENDING عبر المستودع
             $user = $this->userRepository->create([
-                'role_id' => null,
+                'role_id' => $role->role_id,
                 'user_full_name' => (string) $request->user_full_name,
                 'user_phone_number' => (string) $request->user_phone_number,
                 'user_email' => $request->user_email,
@@ -1163,7 +1164,7 @@ class AuthService
     /**
      * طلب رمز تحقق (OTP) لتفعيل أو إدارة المصادقة الثنائية للمستخدم المصادق عليه.
      *
-     * @return array{code: string, expires_at: \Carbon\Carbon}
+     * @return array{code: string, expires_at: Carbon}
      */
     public function requestTwoFactorOtp(User $user, string $deviceUuid, ?string $appHash = null): array
     {
