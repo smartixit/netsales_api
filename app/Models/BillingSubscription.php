@@ -35,6 +35,8 @@ use LogicException;
  * @property-read BillingPlanVersion $planVersion
  * @property-read BillingPrice $price
  * @property-read Currency $currency
+ * @property-read BillingTrialRedemption|null $trialRedemption
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingSubscriptionEvent> $events
  */
 class BillingSubscription extends Model
 {
