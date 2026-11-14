@@ -7,6 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
+/**
+ * @property int $subscription_event_id
+ * @property int $billing_subscription_id
+ * @property string $event_type
+ * @property string|null $from_status
+ * @property string|null $to_status
+ * @property array<string, mixed>|null $payload
+ * @property int|null $actor_id
+ * @property \Illuminate\Support\Carbon $occurred_at
+ */
 class BillingSubscriptionEvent extends Model
 {
     use ExactDateSerialization;
