@@ -3,6 +3,16 @@ namespace App\Models;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+/**
+ * @property int $usage_aggregate_id
+ * @property int $billing_subscription_id
+ * @property int $meter_id
+ * @property \Illuminate\Support\Carbon $period_start
+ * @property \Illuminate\Support\Carbon $period_end
+ * @property string $quantity
+ * @property int $amount_minor
+ * @property-read BillingUsageMeter $meter
+ */
 class BillingUsageAggregate extends Model {
  use ExactDateSerialization;
  protected $table='billing_usage_aggregates'; protected $primaryKey='usage_aggregate_id';
