@@ -12,6 +12,8 @@ use LogicException;
 /**
  * @property int $plan_version_id
  * @property int $plan_id
+ * @property int $version_number
+ * @property \Illuminate\Support\Carbon|null $published_at
  * @property \App\Enums\BillingPlanVersionStatus $status
  * @property int|null $trial_policy_version_id
  * @property int|null $dunning_policy_version_id
