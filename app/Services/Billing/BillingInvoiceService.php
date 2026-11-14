@@ -131,7 +131,10 @@ class BillingInvoiceService
 
     public function finalize(int $invoiceId, ?User $actor = null): BillingInvoice
     {
-        return DB::transaction(function () use ($invoiceId, $actor): BillingInvoice {
+        $ledger = $this->ledger;
+        $chart = $this->chart;
+
+        return DB::transaction(function () use ($invoiceId, $actor, $ledger, $chart): BillingInvoice {
             $invoice = BillingInvoice::query()
                 ->with(['lines', 'currency'])
                 ->lockForUpdate()
@@ -197,7 +200,7 @@ class BillingInvoiceService
             $invoice->status = BillingInvoiceStatus::OPEN;
             $invoice->save();
 
-            $accounts = $this->chart->ensureForCurrency($invoice->currency);
+            $accounts = $chart->ensureForCurrency($invoice->currency);
             $holdRevenueRecognition = ($invoice->pricing_snapshot['revenue_recognition_activation'] ?? 'PERIOD_START') === 'ON_PAYMENT';
             $deferredMinor = 0;
             $immediateRevenueByAccount = [];
@@ -317,7 +320,7 @@ class BillingInvoiceService
                 ];
             }
 
-            $this->ledger->post(
+            $ledger->post(
                 (int) $invoice->currency_id,
                 'إصدار فاتورة اشتراك '.$invoice->invoice_number,
                 'billing-invoice-issued-'.$invoice->invoice_id,
@@ -338,8 +341,9 @@ class BillingInvoiceService
     public function void(int $invoiceId, string $reason, User $actor): BillingInvoice
     {
         $this->authorization->assertPlatform($actor);
+        $ledger = $this->ledger;
 
-        return DB::transaction(function () use ($invoiceId, $reason, $actor): BillingInvoice {
+        return DB::transaction(function () use ($invoiceId, $reason, $actor, $ledger): BillingInvoice {
             $invoice = BillingInvoice::query()->with('currency')->lockForUpdate()->findOrFail($invoiceId);
 
             if (! in_array($invoice->status, [BillingInvoiceStatus::DRAFT, BillingInvoiceStatus::OPEN], true)
@@ -382,7 +386,7 @@ class BillingInvoiceService
                     ->first();
 
                 if ($entry) {
-                    $this->ledger->reverse(
+                    $ledger->reverse(
                         (int) $entry->journal_entry_id,
                         $reason,
                         'billing-invoice-void-'.$invoice->invoice_id,
