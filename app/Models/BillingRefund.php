@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 /**
  * @property int $refund_id
+ * @property string $refund_reference
+ * @property string $idempotency_key
+ * @property string $reason
+ * @property int $processed_by
+ * @property \Illuminate\Support\Carbon|null $processed_at
  * @property int $payment_id
  * @property int $credit_note_id
  * @property int $treasury_account_id
