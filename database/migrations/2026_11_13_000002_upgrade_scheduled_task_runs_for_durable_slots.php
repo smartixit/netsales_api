@@ -69,8 +69,15 @@ return new class extends Migration
             }
         }
 
+        // The checked-in MySQL schema dump can predate this legacy index even
+        // though the original migration declares it. Drop it only when present.
+        if (Schema::hasIndex('scheduled_task_runs', 'scheduled_task_network_date_unique')) {
+            Schema::table('scheduled_task_runs', function (Blueprint $table): void {
+                $table->dropUnique('scheduled_task_network_date_unique');
+            });
+        }
+
         Schema::table('scheduled_task_runs', function (Blueprint $table): void {
-            $table->dropUnique('scheduled_task_network_date_unique');
             $table->string('scope_key', 64)->nullable(false)->change();
             $table->unique(
                 ['task_type', 'scope_key', 'target_date', 'schedule_slot'],
