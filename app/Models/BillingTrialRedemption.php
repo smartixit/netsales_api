@@ -6,6 +6,15 @@ use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
 
+/**
+ * @property int $trial_redemption_id
+ * @property int $billing_subscription_id
+ * @property string $status
+ * @property array<string, mixed>|null $metadata
+ * @property-read BillingTrialPolicy $policy
+ * @property-read BillingTrialPolicyVersion $policyVersion
+ * @property-read BillingSubscription $subscription
+ */
 class BillingTrialRedemption extends Model
 {
     use ExactDateSerialization;
