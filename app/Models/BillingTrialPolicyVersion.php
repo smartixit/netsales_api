@@ -7,6 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
+/**
+ * @property int $trial_policy_version_id
+ * @property int $trial_policy_id
+ * @property string $status
+ * @property bool $is_enabled
+ * @property int $duration_value
+ * @property array<string, mixed>|null $entitlement_config
+ * @property \Illuminate\Support\Carbon|null $published_at
+ * @property-read BillingTrialPolicy $policy
+ */
 class BillingTrialPolicyVersion extends Model
 {
     use ExactDateSerialization;
