@@ -13,6 +13,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class ReportRunResource extends JsonResource
 {
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(Request $request): array
     {
         $definition = app(ReportDefinitionRegistry::class)
