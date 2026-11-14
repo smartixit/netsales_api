@@ -18,6 +18,9 @@ class BillingPaymentService
         private BillingDunningService $dunning
     ) {}
 
+    /**
+     * @param array{file_path: string, original_name?: string|null, mime_type?: string|null, file_size?: int|null, sha256?: string|null}|null $proof
+     */
     public function recordManualPayment(
         int $invoiceId,
         int $paymentMethodId,
