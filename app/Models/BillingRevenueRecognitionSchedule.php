@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $revenue_account_code
  * @property int $total_minor
  * @property int $recognized_minor
+ * @property \Illuminate\Support\Carbon|null $last_recognized_on
+ * @property string $status
  * @property \Illuminate\Support\Carbon $service_start_on
  * @property \Illuminate\Support\Carbon $service_end_on
  * @property \Illuminate\Support\Carbon|null $last_recognized_on
