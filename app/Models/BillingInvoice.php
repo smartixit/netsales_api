@@ -12,6 +12,8 @@ use LogicException;
 
 /**
  * @property int $invoice_id
+ * @property string $invoice_number
+ * @property string $invoice_type
  * @property int $billing_account_id
  * @property int|null $billing_subscription_id
  * @property int $currency_id
@@ -27,6 +29,12 @@ use LogicException;
  * @property int $paid_minor
  * @property int $credited_minor
  * @property int $remaining_minor
+ * @property array<string, mixed>|null $customer_snapshot
+ * @property array<string, mixed>|null $pricing_snapshot
+ * @property string|null $memo
+ * @property \Illuminate\Support\Carbon|null $finalized_at
+ * @property \Illuminate\Support\Carbon|null $voided_at
+ * @property int|null $created_by
  * @property \Illuminate\Support\Carbon|null $paid_at
  * @property-read BillingAccount $billingAccount
  * @property-read Currency $currency
