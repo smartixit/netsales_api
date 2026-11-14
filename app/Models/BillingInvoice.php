@@ -18,8 +18,8 @@ use LogicException;
  * @property int|null $billing_subscription_id
  * @property int $currency_id
  * @property \App\Enums\BillingInvoiceStatus $status
- * @property \Illuminate\Support\Carbon $period_start
- * @property \Illuminate\Support\Carbon $period_end
+ * @property \Illuminate\Support\Carbon|null $period_start
+ * @property \Illuminate\Support\Carbon|null $period_end
  * @property \Illuminate\Support\Carbon $issued_on
  * @property \Illuminate\Support\Carbon $due_on
  * @property int $subtotal_minor
