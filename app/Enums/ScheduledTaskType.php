@@ -19,6 +19,7 @@ enum ScheduledTaskType: string
     case CLEANUP_EXPIRED_OTP = 'cleanup_expired_otp';
     case SECURITY_LIFT_BANS = 'security_lift_bans';
     case SYSTEM_PRUNE_LOGS = 'system_prune_logs';
+    case REPORTS_PURGE_EXPIRED_ARTIFACTS = 'reports_purge_expired_artifacts';
 
     public static function values(): array
     {
@@ -45,6 +46,7 @@ enum ScheduledTaskType: string
             self::CLEANUP_EXPIRED_OTP => 'تنظيف رموز التحقق المؤقتة (OTP) المنتهية أو المستعملة',
             self::SECURITY_LIFT_BANS => 'رفع الحظر الأمني المنتهي تلقائياً عن المستخدمين والأجهزة',
             self::SYSTEM_PRUNE_LOGS => 'أرشفة وتنظيف سجلات النظام القديمة',
+            self::REPORTS_PURGE_EXPIRED_ARTIFACTS => 'تنظيف ملفات التقارير المحمية المنتهية الصلاحية',
         };
     }
 
@@ -63,6 +65,7 @@ enum ScheduledTaskType: string
             self::CLEANUP_EXPIRED_OTP => 'cleanup:expired-otp',
             self::SECURITY_LIFT_BANS => 'security:lift-expired-bans',
             self::SYSTEM_PRUNE_LOGS => 'system:prune-logs',
+            self::REPORTS_PURGE_EXPIRED_ARTIFACTS => 'reports:purge-expired-artifacts',
         };
     }
 
@@ -89,6 +92,7 @@ enum ScheduledTaskType: string
             self::CLEANUP_EXPIRED_OTP => ['kind' => 'daily_at', 'time' => '02:15'],
             self::SECURITY_LIFT_BANS => ['kind' => 'daily_at', 'time' => '02:30'],
             self::SYSTEM_PRUNE_LOGS => ['kind' => 'weekly_on', 'day' => 0, 'time' => '04:00'],
+            self::REPORTS_PURGE_EXPIRED_ARTIFACTS => ['kind' => 'daily_at', 'time' => '02:45'],
         };
     }
 
