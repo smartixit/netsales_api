@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Enums\RoleScope;
 use App\Http\Controllers\API\V1\BaseController;
 use App\Models\Directorate;
 use App\Models\Governorate;
