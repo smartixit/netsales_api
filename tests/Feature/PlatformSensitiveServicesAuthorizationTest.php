@@ -71,12 +71,17 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
     {
         $role = Role::byKey($roleKey)->firstOrFail();
 
-        return User::query()->create([
+        $user = new User();
+        $user->forceFill([
             'role_id' => $role->role_id,
+            'role_scope' => $role->scope->value,
             'user_full_name' => 'Authorization Test '.$roleKey->value,
-            'user_phone_number' => '77'.random_int(1000000, 9999999),
+            'user_phone_number' => '77'.str_pad((string) $role->role_id, 7, '0', STR_PAD_LEFT),
             'user_password' => Hash::make('SecurePassword123'),
             'status' => UserStatus::ACTIVE,
         ]);
+        $user->save();
+
+        return $user;
     }
 }
