@@ -100,27 +100,7 @@ jobs:
           git --no-pager diff -- "${files[@]}"
           git checkout -- "${files[@]}"
 
-      - name: Apply Pint and prepare exact source artifact
-        run: |
-          vendor/bin/pint
-          mkdir -p /tmp/netsales-api-maintenance
-          cp composer.lock /tmp/netsales-api-maintenance/composer.lock
-          while IFS= read -r file; do
-            [ -n "$file" ] || continue
-            mkdir -p "/tmp/netsales-api-maintenance/$(dirname "$file")"
-            cp "$file" "/tmp/netsales-api-maintenance/$file"
-          done < <(git diff --name-only -- '*.php')
-          tar -czf /tmp/netsales-api-maintenance.tar.gz -C /tmp netsales-api-maintenance
-
-      - name: Upload exact Composer and Pint output
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: netsales-api-maintenance-output
-          path: /tmp/netsales-api-maintenance.tar.gz
-          if-no-files-found: ignore
-
-      - name: Check PHP code style
+      - name: Check PHP code style against committed sources
         id: php-style
         continue-on-error: true
         run: vendor/bin/pint --test
@@ -169,7 +149,7 @@ jobs:
 
       # Keep every check visible, then fail the job if any required gate fails.
       - name: Enforce Composer audit, PHP style, static-analysis, and test gates
-        if: always() && (steps.composer-audit.outcome == 'failure' || steps.php-style.outcome == 'failure' || steps.targeted-phpstan.outcome == 'failure' || steps.php-tests.outcome == 'failure')
+        if: always() && (steps.composer-audit.outcome == 'failure' || steps.php-style.outcome == 'failure' || steps.targeted-phpstan.outcome == 'failure' || steps.full-phpstan.outcome == 'failure' || steps.php-tests.outcome == 'failure')
         run: |
-          echo "Composer audit, Pint, PHPStan, and/or PHPUnit reported a required quality-gate failure."
+          echo "Composer audit, committed-source Pint, targeted/full PHPStan, and/or PHPUnit reported a required quality-gate failure."
           exit 1
