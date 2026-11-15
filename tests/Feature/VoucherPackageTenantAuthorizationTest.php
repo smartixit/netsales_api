@@ -72,11 +72,11 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
         $suffix = uniqid();
 
         // 1. Create Users
-        [$this->networkOwnerA, $this->headersNetA] = $this->createUserWithSession('net_owner_a_'.$suffix);
-        [$this->networkOwnerB, $this->headersNetB] = $this->createUserWithSession('net_owner_b_'.$suffix);
-        [$this->posOwnerA, $this->headersPosA] = $this->createUserWithSession('pos_owner_a_'.$suffix);
-        [$posOwnerB, $headersPosB] = $this->createUserWithSession('pos_owner_b_'.$suffix);
-        [$this->networkAccountantA, $this->headersAccountantA] = $this->createUserWithSession('net_acc_a_'.$suffix);
+        [$this->networkOwnerA, $this->headersNetA] = $this->createUserWithSession('net_owner_a_'.$suffix, \\App\\Enums\\RoleScope::NETWORK);
+        [$this->networkOwnerB, $this->headersNetB] = $this->createUserWithSession('net_owner_b_'.$suffix, \\App\\Enums\\RoleScope::NETWORK);
+        [$this->posOwnerA, $this->headersPosA] = $this->createUserWithSession('pos_owner_a_'.$suffix, \\App\\Enums\\RoleScope::POS);
+        [$posOwnerB, $headersPosB] = $this->createUserWithSession('pos_owner_b_'.$suffix, \\App\\Enums\\RoleScope::POS);
+        [$this->networkAccountantA, $this->headersAccountantA] = $this->createUserWithSession('net_acc_a_'.$suffix, \\App\\Enums\\RoleScope::NETWORK);
 
         // 2. Create Networks
         $this->networkA = Network::create([
@@ -99,7 +99,7 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
 
         // Assign Network memberships for owners
         $netOwnerRoleId = Role::where('role_key', 'NETWORK_OWNER')->value('role_id');
-        NetworkUser::create([
+        Network$this->createUserWithScope($scope, [
             'network_id' => $this->networkA->network_id,
             'user_id' => $this->networkOwnerA->user_id,
             'role_id' => $netOwnerRoleId,
@@ -216,7 +216,7 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
         ]);
     }
 
-    protected function createUserWithSession(string $username): array
+    protected function createUserWithSession(string $username, \\App\\Enums\\RoleScope $scope): array
     {
         $user = User::create([
             'user_full_name' => $username,
