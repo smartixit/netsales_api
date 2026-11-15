@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Enums\RoleScope;
 use App\Models\User;
 use App\Models\UserDevice;
 use App\Models\UserSession;
