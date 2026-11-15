@@ -31,8 +31,8 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             ]
         );
 
-        $user = User::create([
-            'role_id' => $role->scope === 'PLATFORM' ? $role->role_id : null,
+        $user = $this->createUserWithScope($role->scope, [
+            'role_id' => $role->scope === \\App\\Enums\\RoleScope::PLATFORM ? $role->role_id : null,
             'user_full_name' => "User {$roleKey->value} {$suffix}",
             'user_phone_number' => '77'.rand(1000000, 9999999),
             'user_password' => bcrypt('password123'),
@@ -64,7 +64,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'status' => 'ACTIVE',
         ]);
 
-        NetworkUser::create([
+        Network$this->createUserWithScope($role->scope, [
             'network_id' => $network->network_id,
             'user_id' => $user->user_id,
             'role_id' => $auth['role']->role_id,
@@ -104,7 +104,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'status' => 'ACTIVE',
         ]);
 
-        NetworkUser::create([
+        Network$this->createUserWithScope($role->scope, [
             'network_id' => $victimNetwork->network_id,
             'user_id' => $victimAuth['user']->user_id,
             'role_id' => $victimAuth['role']->role_id,
@@ -158,7 +158,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'status' => 'ACTIVE',
         ]);
 
-        PosUser::create([
+        Pos$this->createUserWithScope($role->scope, [
             'pos_id' => $pos->pos_id,
             'user_id' => $posAgentAuth['user']->user_id,
             'role_id' => $posAgentAuth['role']->role_id,
@@ -207,13 +207,13 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'status' => 'ACTIVE',
         ]);
 
-        NetworkUser::create([
+        Network$this->createUserWithScope($role->scope, [
             'network_id' => $networkA->network_id,
             'user_id' => $ownerA['user']->user_id,
             'role_id' => $ownerA['role']->role_id,
             'status' => 'ACTIVE',
         ]);
-        NetworkUser::create([
+        Network$this->createUserWithScope($role->scope, [
             'network_id' => $networkB->network_id,
             'user_id' => $ownerB['user']->user_id,
             'role_id' => $ownerB['role']->role_id,
@@ -235,7 +235,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
 
         // A member with an ACTIVE network membership can see that tenant.
         $activeMember = $this->createAuthenticatedUser(RoleKey::NETWORK_USER, 'active-network-member');
-        NetworkUser::create([
+        Network$this->createUserWithScope($role->scope, [
             'network_id' => $networkA->network_id,
             'user_id' => $activeMember['user']->user_id,
             'role_id' => $activeMember['role']->role_id,
@@ -249,7 +249,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
 
         // Inactive memberships must not authorize wallet list access.
         $inactiveMember = $this->createAuthenticatedUser(RoleKey::NETWORK_USER, 'inactive-network-member');
-        NetworkUser::create([
+        Network$this->createUserWithScope($role->scope, [
             'network_id' => $networkA->network_id,
             'user_id' => $inactiveMember['user']->user_id,
             'role_id' => $inactiveMember['role']->role_id,
@@ -305,13 +305,13 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'status' => 'ACTIVE',
         ]);
 
-        PosUser::create([
+        Pos$this->createUserWithScope($role->scope, [
             'pos_id' => $posA->pos_id,
             'user_id' => $posOwnerA['user']->user_id,
             'role_id' => $posOwnerA['role']->role_id,
             'status' => 'ACTIVE',
         ]);
-        PosUser::create([
+        Pos$this->createUserWithScope($role->scope, [
             'pos_id' => $posB->pos_id,
             'user_id' => $posOwnerB['user']->user_id,
             'role_id' => $posOwnerB['role']->role_id,
@@ -335,7 +335,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
 
         // An active POS member can see the assigned POS wallet without owning it.
         $activePosMember = $this->createAuthenticatedUser(RoleKey::POS_USER, 'active-pos-member');
-        PosUser::create([
+        Pos$this->createUserWithScope($role->scope, [
             'pos_id' => $posA->pos_id,
             'user_id' => $activePosMember['user']->user_id,
             'role_id' => $activePosMember['role']->role_id,
@@ -349,7 +349,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
 
         // Inactive POS memberships must not authorize wallet list access.
         $inactivePosMember = $this->createAuthenticatedUser(RoleKey::POS_USER, 'inactive-pos-member');
-        PosUser::create([
+        Pos$this->createUserWithScope($role->scope, [
             'pos_id' => $posA->pos_id,
             'user_id' => $inactivePosMember['user']->user_id,
             'role_id' => $inactivePosMember['role']->role_id,
@@ -397,7 +397,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             'status' => 'ACTIVE',
         ]);
 
-        PosUser::create([
+        Pos$this->createUserWithScope($role->scope, [
             'pos_id' => $victimPos->pos_id,
             'user_id' => $victimPosAuth['user']->user_id,
             'role_id' => $victimPosAuth['role']->role_id,
