@@ -32,7 +32,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
         );
 
         $user = $this->createUserWithScope($role->scope, [
-            'role_id' => $role->scope === \\App\\Enums\\RoleScope::PLATFORM ? $role->role_id : null,
+            'role_id' => $role->scope === \App\Enums\RoleScope::PLATFORM ? $role->role_id : null,
             'user_full_name' => "User {$roleKey->value} {$suffix}",
             'user_phone_number' => '77'.rand(1000000, 9999999),
             'user_password' => bcrypt('password123'),
