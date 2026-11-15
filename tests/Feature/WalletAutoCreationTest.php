@@ -98,8 +98,8 @@ class WalletAutoCreationTest extends TestCase
         $dir = Directorate::firstOrCreate(['governorate_id' => $gov->governorate_id, 'directorate_name' => 'Crater']);
 
         $admin = User::firstOrFail();
-        $posUser = User::create([
-            'role_id' => $admin->role_id,
+        $posUser = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+            'role_id' => null,
             'user_full_name' => 'Retailer 1',
             'user_phone_number' => '733999888',
             'user_password' => bcrypt('password'),
@@ -147,8 +147,8 @@ class WalletAutoCreationTest extends TestCase
         $dir = Directorate::firstOrCreate(['governorate_id' => $gov->governorate_id, 'directorate_name' => 'Al-Qahirah']);
         $admin = User::firstOrFail();
 
-        $posUser2 = User::create([
-            'role_id' => $admin->role_id,
+        $posUser2 = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+            'role_id' => null,
             'user_full_name' => 'Pending Retailer',
             'user_phone_number' => '711999888',
             'user_password' => bcrypt('password'),
