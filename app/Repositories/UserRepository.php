@@ -29,6 +29,22 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
     }
 
     /**
+     * Create a user while assigning the server-selected account scope before persistence.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function createForScope(array $data, RoleScope $scope): User
+    {
+        $user = new User($data);
+        $user->setAttribute('role_scope', $scope->value);
+        $user->save();
+
+        $this->recordAddition($user);
+
+        return $user;
+    }
+
+    /**
      * جلب قائمة المستخدمين مع تطبيق الفلاتر والبحث والترقيم.
      */
     public function getFiltered(array $filters = [], array $relations = []): Collection|CursorPaginator
