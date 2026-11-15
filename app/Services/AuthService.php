@@ -759,7 +759,7 @@ class AuthService
 
             // 3. إنشاء حساب المستخدم أولاً بحالة PENDING عبر المستودع
             $user = $this->userRepository->create([
-                'role_id' => $role->role_id,
+                'role_id' => null,
                 'user_full_name' => (string) $request->user_full_name,
                 'user_phone_number' => (string) $request->user_phone_number,
                 'user_email' => $request->user_email,
@@ -850,7 +850,7 @@ class AuthService
 
             // 3. إنشاء حساب المستخدم أولاً بحالة PENDING عبر المستودع
             $user = $this->userRepository->create([
-                'role_id' => $role->role_id,
+                'role_id' => null,
                 'user_full_name' => (string) $request->user_full_name,
                 'user_phone_number' => (string) $request->user_phone_number,
                 'user_email' => $request->user_email,
