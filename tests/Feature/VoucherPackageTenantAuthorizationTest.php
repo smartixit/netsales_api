@@ -599,7 +599,7 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
     public function mixed_user_retains_network_visibility_and_pos_relationship_restrictions()
     {
         $suffix = uniqid();
-        [$mixedUser, $mixedHeaders] = $this->createUserWithSession('mixed_user_'.$suffix);
+        [$mixedUser, $mixedHeaders] = $this->createUserWithSession('mixed_user_'.$suffix, RoleScope::NETWORK);
 
         // Network B membership (Network-side access)
         $netUserRoleId = Role::where('role_key', 'NETWORK_USER')->value('role_id');
