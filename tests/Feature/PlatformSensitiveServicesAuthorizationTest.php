@@ -1,24 +1,18 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\\Feature;
 
-use App\Enums\RoleKey;
-use App\Enums\UserStatus;
-use App\Models\Role;
-use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
-use Tests\TestCase;
+use App\\Enums\\RoleKey;
+use App\\Enums\\UserStatus;
+use App\\Models\\Role;
+use App\\Models\\User;
+use Illuminate\\Foundation\\Testing\\RefreshDatabase;
+use Illuminate\\Support\\Facades\\Hash;
+use Tests\\TestCase;
 
 class PlatformSensitiveServicesAuthorizationTest extends TestCase
 {
     use RefreshDatabase;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->seed();
-    }
 
     public function test_support_agent_cannot_access_global_backup_sms_or_scheduler_services(): void
     {
@@ -70,13 +64,17 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
     private function makePlatformUser(RoleKey $roleKey): User
     {
         $role = Role::byKey($roleKey)->firstOrFail();
-
-        return User::query()->create([
+        $user = new User([
             'role_id' => $role->role_id,
             'user_full_name' => 'Authorization Test '.$roleKey->value,
-            'user_phone_number' => '77'.random_int(1000000, 9999999),
-            'user_password' => Hash::make('SecurePassword123'),
+            'user_phone_number' => sprintf('77%07d', $role->role_id),
+            'user_password' => 'AuthorizationTestPassword',
             'status' => UserStatus::ACTIVE,
         ]);
+
+        $user->role_scope = $role->scope->value;
+        $user->save();
+
+        return $user;
     }
 }
