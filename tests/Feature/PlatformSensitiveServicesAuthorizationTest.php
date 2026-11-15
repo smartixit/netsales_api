@@ -1,14 +1,18 @@
 <?php
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Enums\\RoleKey;
-use App\\Enums\\UserStatus;
-use App\\Models\\Role;
-use App\\Models\\User;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Illuminate\\Support\\Facades\\Hash;
-use Tests\\TestCase;
+use App\Enums\RoleKey;
+use App\Enums\RoleScope;
+use App\Enums\UserStatus;
+use App\Models\Directorate;
+use App\Models\Governorate;
+use App\Models\Network;
+use App\Models\NetworkUser;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class PlatformSensitiveServicesAuthorizationTest extends TestCase
 {
@@ -16,7 +20,7 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
 
     public function test_support_agent_cannot_access_global_backup_sms_or_scheduler_services(): void
     {
-        $support = $this->makePlatformUser(RoleKey::SUPPORT_AGENT);
+        $support = $this->makeUserWithRole(RoleKey::SUPPORT_AGENT);
         $headers = $this->createAuthenticatedSession($support)['headers'];
 
         $this->getJson('/api/v1/backups/settings', $headers)->assertForbidden();
@@ -28,7 +32,7 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
 
     public function test_platform_accountant_cannot_change_global_sms_or_backup_configuration(): void
     {
-        $accountant = $this->makePlatformUser(RoleKey::ACCOUNTANT);
+        $accountant = $this->makeUserWithRole(RoleKey::ACCOUNTANT);
         $headers = $this->createAuthenticatedSession($accountant)['headers'];
 
         $this->putJson('/api/v1/sms-settings/global', [], $headers)->assertForbidden();
@@ -42,7 +46,7 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
 
     public function test_operational_network_owner_cannot_access_platform_global_services(): void
     {
-        $owner = $this->makePlatformUser(RoleKey::NETWORK_OWNER);
+        $owner = $this->makeUserWithRole(RoleKey::NETWORK_OWNER);
         $headers = $this->createAuthenticatedSession($owner)['headers'];
 
         $this->getJson('/api/v1/backups', $headers)->assertForbidden();
@@ -54,26 +58,51 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
 
     public function test_admin_notification_routes_require_platform_scope_and_create_permission(): void
     {
-        $accountant = $this->makePlatformUser(RoleKey::ACCOUNTANT);
+        $accountant = $this->makeUserWithRole(RoleKey::ACCOUNTANT);
         $headers = $this->createAuthenticatedSession($accountant)['headers'];
 
         $this->postJson('/api/v1/admin/notifications/send', [], $headers)->assertForbidden();
         $this->postJson('/api/v1/admin/notifications/user', [], $headers)->assertForbidden();
     }
 
-    private function makePlatformUser(RoleKey $roleKey): User
+    private function makeUserWithRole(RoleKey $roleKey): User
     {
         $role = Role::byKey($roleKey)->firstOrFail();
+        $phoneNumber = '77'.str_pad((string) $role->role_id, 7, '0', STR_PAD_LEFT);
+
         $user = new User([
-            'role_id' => $role->role_id,
+            'role_id' => $role->scope === RoleScope::PLATFORM ? $role->role_id : null,
             'user_full_name' => 'Authorization Test '.$roleKey->value,
-            'user_phone_number' => sprintf('77%07d', $role->role_id),
+            'user_phone_number' => $phoneNumber,
             'user_password' => 'AuthorizationTestPassword',
             'status' => UserStatus::ACTIVE,
         ]);
 
         $user->role_scope = $role->scope->value;
         $user->save();
+
+        if ($role->scope === RoleScope::NETWORK) {
+            $governorate = Governorate::query()->firstOrFail();
+            $directorate = Directorate::query()
+                ->where('governorate_id', $governorate->governorate_id)
+                ->firstOrFail();
+
+            $network = Network::query()->create([
+                'owner_id' => $user->user_id,
+                'network_name' => 'Authorization Test Network '.$user->user_id,
+                'network_phone_number' => $phoneNumber,
+                'governorate_id' => $governorate->governorate_id,
+                'directorate_id' => $directorate->directorate_id,
+                'status' => 'ACTIVE',
+            ]);
+
+            NetworkUser::query()->create([
+                'network_id' => $network->network_id,
+                'user_id' => $user->user_id,
+                'role_id' => $role->role_id,
+                'status' => 'ACTIVE',
+            ]);
+        }
 
         return $user;
     }
