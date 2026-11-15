@@ -99,7 +99,7 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
 
         // Assign Network memberships for owners
         $netOwnerRoleId = Role::where('role_key', 'NETWORK_OWNER')->value('role_id');
-        Network$this->createUserWithScope($scope, [
+        NetworkUser::create([
             'network_id' => $this->networkA->network_id,
             'user_id' => $this->networkOwnerA->user_id,
             'role_id' => $netOwnerRoleId,
