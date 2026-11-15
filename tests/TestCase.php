@@ -33,6 +33,20 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
+     * Persist a test user with an explicit server-controlled account scope.
+     *
+     * @param array<string, mixed> $attributes
+     */
+    protected function createUserWithScope(RoleScope $scope, array $attributes): User
+    {
+        $user = new User($attributes);
+        $user->role_scope = $scope->value;
+        $user->save();
+
+        return $user;
+    }
+
+    /**
      * إعداد جلسة مصادقة صالحة تشمل جهاز نشط وترويسات X-Session-Id و X-Device-Uuid.
      *
      * @return array{session: UserSession, headers: array<string, string>, device: UserDevice}
