@@ -1053,3 +1053,19 @@ This log documents all executed tasks, code changes, and verification command ou
 - Flutter implementation branch: `feat/subscriptions-network-module`, HEAD immediately before this log update: `189a8319b5a167d3f474910fd52c6ed817a2a9be`. It contains independent cursor/search/status state for six Billing collections, a shared custom filter bar/load-more tail, workspace/report composition widgets, and workspace-context stale-response guards.
 - Both feature branches have no open PR at the time of this entry. No PR was created and no merge was performed.
 - **Verification boundary:** source reads and GitHub file operations only. No database migration was applied; no PHPUnit, PHP lint/Pint/PHPStan, Flutter test/analyzer/formatter, PDF extraction/visual QA, or GitHub Actions were run. All remain pending for the final exact-HEAD validation gate. No production-readiness claim is made.
+
+
+---
+
+## 2026-11-15 — Phase 0: Restore role-scope and tenant-membership contract
+
+- **Authorized scope:** User authorized execution of the phased Clean Architecture / Code Quality recovery plan. This entry covers only the baseline repair required before the full architecture inventory and later implementation phases.
+- **Mandatory Git workflow:** Created `fix/phase-0-role-scope-db-contract` directly from `netsales_api/main` at `8a8dbe08fb2dd4473650ba51a82b97243fbddf8e`. The branch was not based on PR #27, PR #28, or any prior feature branch.
+- **Regression established from source history and schema:** The `users.role_scope` generated/stored expression was removed while tenant registration also began assigning NETWORK/POS roles to `users.role_id`. The existing contract reserves `users.role_id` for PLATFORM roles and places tenant roles in `network_users` / `pos_users`.
+- **Files changed:**
+  - `database/migrations/2026_11_01_000003_update_users_role_id_nullable_and_scope_constraint.php`: restore generated `role_scope = PLATFORM` only for non-null global `role_id`.
+  - `app/Services/AuthService.php`: keep the user-level role ID null for Network and POS registrations; keep the operational role on its membership record.
+  - `tests/Feature/PlatformSensitiveServicesAuthorizationTest.php`: create a real Network and active NetworkUser membership for the operational Network Owner fixture; platform fixtures retain only global role IDs.
+- **Verification on exact head `fa7569f56f09e3d344c48043c2932e9249408e73`:** GitHub Actions run #390 completed successfully. MySQL migration/seeding PASS; Composer validation/audit PASS; Pint PASS; configured blocking/targeted PHPStan PASS; Laravel suite 335 passed (2,700 assertions). Full-project PHPStan emits 1,000+ diagnostics but is explicitly report-only in the current workflow. No PHP or PHPUnit was run locally.
+- **PR:** [smartixit/netsales_api PR #29](https://github.com/smartixit/netsales_api/pull/29), targeting `main`. PR #28 was superseded and closed without merge.
+- **Status:** Awaiting user review. No merge performed. No Phase 1 branch created.
