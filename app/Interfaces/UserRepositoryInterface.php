@@ -2,6 +2,7 @@
 
 namespace App\Interfaces;
 
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Models\User;
 use App\Models\UserDevice;
