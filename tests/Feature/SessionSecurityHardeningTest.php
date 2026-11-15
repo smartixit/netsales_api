@@ -248,7 +248,7 @@ class SessionSecurityHardeningTest extends TestCase
     public function test_reset_password_sets_must_change_password_and_forces_change_on_login(): void
     {
         $role = Role::byKey(RoleKey::SUPER_ADMIN)->first();
-        $user = User::create([
+        $user = $this->createUserWithScope($role->scope, [
             'role_id' => $role->role_id,
             'user_full_name' => 'Must Change Test User',
             'user_phone_number' => '773000999',

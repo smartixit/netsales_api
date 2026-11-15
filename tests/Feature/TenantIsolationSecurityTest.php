@@ -58,7 +58,7 @@ class TenantIsolationSecurityTest extends TestCase
         $dir = Directorate::first() ?? Directorate::create(['governorate_id' => $gov->governorate_id, 'directorate_name' => 'Main']);
 
         // 1. Create Network Owners
-        $this->networkOwnerA = User::create([
+        $this->networkOwnerA = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net Owner A',
             'user_phone_number' => '77111111'.rand(10, 99),
@@ -66,7 +66,7 @@ class TenantIsolationSecurityTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $this->networkOwnerB = User::create([
+        $this->networkOwnerB = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net Owner B',
             'user_phone_number' => '77222222'.rand(10, 99),
@@ -75,7 +75,7 @@ class TenantIsolationSecurityTest extends TestCase
         ]);
 
         // 2. Create POS Owners
-        $this->posOwnerA = User::create([
+        $this->posOwnerA = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Owner A',
             'user_phone_number' => '77333333'.rand(10, 99),
@@ -83,7 +83,7 @@ class TenantIsolationSecurityTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $this->posOwnerB = User::create([
+        $this->posOwnerB = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Owner B',
             'user_phone_number' => '77444444'.rand(10, 99),

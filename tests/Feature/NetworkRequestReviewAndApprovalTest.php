@@ -490,7 +490,7 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
         $requestId = $createRes->json('data.request_id');
 
         // محاولة استدعاء المعاينة بمستخدم آخر غير مرتبط بالشبكة
-        $otherUser = User::create([
+        $otherUser = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'مستخدم آخر',

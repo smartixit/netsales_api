@@ -75,8 +75,8 @@ class VoucherRequestAndInvoicingTest extends TestCase
             'X-Bypass-Encryption' => 'true',
         ];
 
-        $posUser = User::create([
-            'role_id' => $this->user->role_id,
+        $posUser = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+            'role_id' => null,
             'user_full_name' => 'POS Agent '.$suffix,
             'user_phone_number' => '73'.rand(1000000, 9999999),
             'user_password' => bcrypt('password'),

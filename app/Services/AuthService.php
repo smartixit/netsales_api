@@ -758,8 +758,8 @@ class AuthService
             }
 
             // 3. إنشاء حساب المستخدم أولاً بحالة PENDING عبر المستودع
-            $user = $this->userRepository->create([
-                'role_id' => $role->role_id,
+            $user = $this->userRepository->createForScope([
+                'role_id' => null,
                 'user_full_name' => (string) $request->user_full_name,
                 'user_phone_number' => (string) $request->user_phone_number,
                 'user_email' => $request->user_email,
@@ -768,7 +768,7 @@ class AuthService
                 'user_2fa_enabled' => false,
                 'user_login_attempts' => 0,
                 'status' => UserStatus::PENDING,
-            ]);
+            ], RoleScope::NETWORK);
 
             // 4. رفع شعار الشبكة إن وُجد
             $networkProfileLogo = $request->file('network_profile_logo');
@@ -849,8 +849,8 @@ class AuthService
             }
 
             // 3. إنشاء حساب المستخدم أولاً بحالة PENDING عبر المستودع
-            $user = $this->userRepository->create([
-                'role_id' => $role->role_id,
+            $user = $this->userRepository->createForScope([
+                'role_id' => null,
                 'user_full_name' => (string) $request->user_full_name,
                 'user_phone_number' => (string) $request->user_phone_number,
                 'user_email' => $request->user_email,
@@ -859,7 +859,7 @@ class AuthService
                 'user_2fa_enabled' => false,
                 'user_login_attempts' => 0,
                 'status' => UserStatus::PENDING,
-            ]);
+            ], RoleScope::POS);
 
             // 4. رفع شعار نقطة البيع إن وُجد
             $posProfileLogo = $request->file('pos_profile_logo');
