@@ -44,8 +44,8 @@ class UserSeeder extends Seeder
             ]
         );
 
-        $adminPhone = env('NETSALES_PLATFORM_ADMIN_PHONE');
-        $adminPassword = env('NETSALES_PLATFORM_ADMIN_PASSWORD');
+        $adminPhone = config('netsales.platform_admin.phone');
+        $adminPassword = config('netsales.platform_admin.password');
 
         if (! is_string($adminPhone) || trim($adminPhone) === '' || ! is_string($adminPassword) || $adminPassword === '') {
             return;
@@ -56,9 +56,9 @@ class UserSeeder extends Seeder
             [
                 'role_id' => $superAdminRole->role_id,
                 'role_scope' => $superAdminRole->scope,
-                'user_full_name' => (string) env('NETSALES_PLATFORM_ADMIN_NAME', 'Platform Administrator'),
+                'user_full_name' => (string) config('netsales.platform_admin.name'),
                 'user_password' => Hash::make($adminPassword),
-                'user_email' => env('NETSALES_PLATFORM_ADMIN_EMAIL'),
+                'user_email' => config('netsales.platform_admin.email'),
                 'user_profile_logo' => null,
                 'user_2fa_enabled' => false,
                 'user_login_attempts' => 0,
