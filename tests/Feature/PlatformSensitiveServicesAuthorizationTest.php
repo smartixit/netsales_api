@@ -76,7 +76,7 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
             'role_id' => $role->role_id,
             'role_scope' => $role->scope->value,
             'user_full_name' => 'Authorization Test '.$roleKey->value,
-            'user_phone_number' => '77'.str_pad((string) $role->role_id, 7, '0', STR_PAD_LEFT),
+            'user_phone_number' => '77'.random_int(1000000, 9999999),
             'user_password' => Hash::make('SecurePassword123'),
             'status' => UserStatus::ACTIVE,
         ]);
