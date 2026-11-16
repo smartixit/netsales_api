@@ -7,6 +7,7 @@ use App\Http\Resources\API\V1\Geography\DirectorateResource;
 use App\Http\Resources\API\V1\Geography\GovernorateResource;
 use App\Http\Resources\API\V1\User\UserResource;
 use App\Models\Network;
+use App\Services\Support\FileUploadService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -28,7 +29,7 @@ class NetworkResource extends JsonResource
             'owner_id' => $this->owner_id,
             'network_uuid' => $this->network_uuid,
             'network_name' => $this->network_name,
-            'network_profile_logo' => $this->network_profile_logo,
+            'network_profile_logo' => app(FileUploadService::class)->url($this->network_profile_logo),
             'network_holder_name' => $this->owner?->user_full_name,
             'network_phone_number' => $this->network_phone_number,
             'network_email' => $this->network_email,

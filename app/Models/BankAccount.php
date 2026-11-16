@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\BankAccountType;
-use App\Services\Support\FileUploadService;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -93,14 +92,5 @@ class BankAccount extends Model
     public function hasSufficientBalance(float $amount): bool
     {
         return (float) $this->account_balance >= $amount;
-    }
-
-    public function getLogoUrlAttribute(): ?string
-    {
-        if (empty($this->bank_logo)) {
-            return null;
-        }
-
-        return app(FileUploadService::class)->url($this->bank_logo);
     }
 }

@@ -6,6 +6,7 @@ use App\Enums\UserStatus;
 use App\Http\Resources\API\V1\RBAC\RoleResource;
 use App\Http\Resources\API\V1\System\SecurityBanResource;
 use App\Models\User;
+use App\Services\Support\FileUploadService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -26,7 +27,7 @@ class UserResource extends JsonResource
             'user_id' => $this->user_id,
             'role_id' => $this->role_id,
             'user_full_name' => $this->user_full_name,
-            'user_profile_logo' => $this->user_profile_logo,
+            'user_profile_logo' => app(FileUploadService::class)->url($this->user_profile_logo),
             'user_phone_number' => $this->user_phone_number,
             'user_email' => $this->user_email,
             'user_2fa_enabled' => (bool) $this->user_2fa_enabled,

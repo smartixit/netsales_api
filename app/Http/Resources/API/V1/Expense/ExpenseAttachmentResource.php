@@ -3,6 +3,7 @@
 namespace App\Http\Resources\API\V1\Expense;
 
 use App\Models\ExpenseAttachment;
+use App\Services\Support\FileUploadService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -26,7 +27,7 @@ class ExpenseAttachmentResource extends JsonResource
             'attachment_path' => $this->attachment_path,
             'attachment_size' => $this->attachment_size,
             'attachment_mime' => $this->attachment_mime,
-            'file_url' => $this->file_url,
+            'file_url' => app(FileUploadService::class)->temporarySignedUrl($this->attachment_path),
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
         ];

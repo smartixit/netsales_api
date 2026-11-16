@@ -115,7 +115,6 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property-read string|null $logo_url
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount active()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount byCurrency(string $currency)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BankAccount byType(\App\Enums\BankAccountType|string $type)
@@ -2034,7 +2033,6 @@ namespace App\Models{
  * @property-read \App\Models\Directorate|null $directorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Expense> $expenses
  * @property-read int|null $expenses_count
- * @property-read string|null $logo_url
  * @property-read \App\Models\Governorate|null $governorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkUser> $memberships
  * @property-read int|null $memberships_count
@@ -2701,7 +2699,6 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read \App\Models\User|null $approvedBy
  * @property-read \App\Models\Directorate|null $directorate
- * @property-read string|null $logo_url
  * @property-read \App\Models\Governorate|null $governorate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PosUser> $memberships
  * @property-read int|null $memberships_count
@@ -3610,7 +3607,6 @@ namespace App\Models{
  * @property-read string $display_name
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Expense> $expenses
  * @property-read int|null $expenses_count
- * @property-read string|null $user_profile_logo_url
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\NetworkUser> $networkUsers
  * @property-read int|null $network_users_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Network> $networks

@@ -2,6 +2,7 @@
 
 namespace App\Services\Support;
 
+use App\Models\BillingPaymentProof;
 use App\Models\Expense;
 use App\Models\ExpenseAttachment;
 use App\Models\ReportRun;
@@ -37,6 +38,8 @@ class FileGatewayService
         '#^pos/logos/[a-zA-Z0-9_\.-]+$#',
         '#^users/[a-zA-Z0-9_\.-]+/avatar/[a-zA-Z0-9_\.-]+$#',
         '#^users/avatars/[a-zA-Z0-9_\.-]+$#',
+        '#^banks/[a-zA-Z0-9_\.-]+$#',
+        '#^banks/logos/[a-zA-Z0-9_\.-]+$#',
         '#^notifications/[a-zA-Z0-9_\.-]+/[a-zA-Z0-9_\.-]+$#',
     ];
 
@@ -148,7 +151,7 @@ class FileGatewayService
 
         // عزل ملفات مرفقات المصروفات
         if (str_starts_with($cleanPath, 'expenses/')) {
-            $attachment = ExpenseAttachment::where('file_path', $cleanPath)->with('expense')->first();
+            $attachment = ExpenseAttachment::where('attachment_path', $cleanPath)->with('expense')->first();
             $expense = $attachment?->expense;
             if ($expense instanceof Expense) {
                 $networkId = (int) $expense->getAttribute('network_id');
@@ -157,6 +160,23 @@ class FileGatewayService
 
                 if (! $hasAccess) {
                     throw new HttpException(403, 'غير مصرح لك بالوصول إلى مرفقات مصروفات هذه الشبكة.');
+                }
+            }
+        }
+
+        // عزل ملفات إثباتات سداد الفواتير (Billing Payment Proofs)
+        if (str_starts_with($cleanPath, 'billing/') || str_starts_with($cleanPath, 'proofs/')) {
+            $proof = BillingPaymentProof::where('file_path', $cleanPath)->with('payment.invoice.billingAccount')->first();
+            if ($proof) {
+                $hasAccess = (int) $proof->uploaded_by === (int) $user->user_id;
+                if (! $hasAccess && $proof->payment?->invoice?->billingAccount) {
+                    $networkId = (int) $proof->payment->invoice->billingAccount->network_id;
+                    $hasAccess = $user->networks()->where('networks.network_id', $networkId)->exists()
+                        || $user->networkUsers()->where('network_id', $networkId)->exists();
+                }
+
+                if (! $hasAccess) {
+                    throw new HttpException(403, 'غير مصرح لك بالوصول إلى إثبات الدفع هذا.');
                 }
             }
         }

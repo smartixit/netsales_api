@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Enums\NetworkStatus;
 use App\Services\Support\BusinessIdentifierGenerator;
-use App\Services\Support\FileUploadService;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -158,16 +157,6 @@ class Network extends Model
         return $this->hasMany(Expense::class, 'network_id', 'network_id');
     }
 
-    public function subscriptionRequests(): HasMany
-    {
-        return $this->hasMany(SubscriptionPlanRequest::class, 'network_id', 'network_id');
-    }
-
-    public function subscriptions(): HasMany
-    {
-        return $this->hasMany(ProviderSubscription::class, 'network_id', 'network_id');
-    }
-
     public function supportTickets(): HasMany
     {
         return $this->hasMany(SupportTicket::class, 'network_id', 'network_id');
@@ -251,14 +240,5 @@ class Network extends Model
     public function smsSetting(): HasOne
     {
         return $this->hasOne(NetworkSmsSetting::class, 'network_id', 'network_id');
-    }
-
-    public function getLogoUrlAttribute(): ?string
-    {
-        if (empty($this->network_profile_logo)) {
-            return null;
-        }
-
-        return app(FileUploadService::class)->url($this->network_profile_logo);
     }
 }
