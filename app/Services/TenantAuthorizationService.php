@@ -331,7 +331,7 @@ class TenantAuthorizationService
     /**
      * التحقق الصارم من تخويل احتساب الخصم الفعلي (Effective Discount).
      */
-    public function authorizeEffectiveDiscount(User $user, int $networkId, int $posId, int $packageId): void
+    public function authorizeNetworkPosPricing(User $user, int $networkId, int $posId): void
     {
         if ($this->isSuperAdmin($user)) {
             return;
@@ -339,15 +339,13 @@ class TenantAuthorizationService
 
         $userNetworkIds = $this->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
         $userPosIds = $this->getUserAuthorizedPosIds($user, 'voucher_packages.view') ?? [];
-
         $isNetworkActor = in_array($networkId, $userNetworkIds, true);
         $isPosActor = in_array($posId, $userPosIds, true);
 
         if (! $isNetworkActor && ! $isPosActor) {
-            throw new AuthorizationException('عذراً، ليس لديك الصلاحية لاحتساب الخصم لنقطة بيع أو شبكة خارج نطاقك المصرح.');
+            throw new AuthorizationException('عذراً، ليس لديك الصلاحية لعرض تعرفة نقطة البيع المحددة.');
         }
 
-        // التحقق من وجود ارتباط تجاري نشط
         $isLinked = NetworkPos::where('network_id', $networkId)
             ->where('pos_id', $posId)
             ->where('status', true)
@@ -356,21 +354,22 @@ class TenantAuthorizationService
         if (! $isLinked) {
             throw new AuthorizationException('عذراً، لا يوجد ارتباط تجاري نشط بين نقطة البيع ومزود الشبكة المحدد.');
         }
+    }
 
-        // التحقق من أن الباقة تتبع الشبكة
+    public function authorizeEffectiveDiscount(User $user, int $networkId, int $posId, int $packageId): void
+    {
+        $this->authorizeNetworkPosPricing($user, $networkId, $posId);
+        if ($this->isSuperAdmin($user)) {
+            return;
+        }
+
         $package = VoucherPackage::where('package_id', $packageId)
             ->where('network_id', $networkId)
             ->first();
 
-        if (! $package) {
+        if (! $package || ! $package->isActive()) {
             throw ValidationException::withMessages([
-                'package_id' => ['باقة الكروت المحددة غير موجودة أو لا تنتمي لمزود الشبكة المحدد.'],
-            ]);
-        }
-
-        if (! $package->isActive()) {
-            throw ValidationException::withMessages([
-                'package_id' => ["باقة الكروت [{$package->package_name}] معطلة حالياً."],
+                'package_id' => ['باقة الكروت المحددة غير موجودة أو معطلة أو لا تنتمي لمزود الشبكة المحدد.'],
             ]);
         }
     }

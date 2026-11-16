@@ -30,6 +30,7 @@ class VoucherPackageService
         protected VoucherPackageRepositoryInterface $voucherPackageRepository,
         protected NetworkRepositoryInterface $networkRepository,
         protected BillingEntitlementService $billingEntitlements,
+        protected VoucherPackageDiscountService $voucherPackageDiscountService,
     ) {}
 
     /**
@@ -295,6 +296,14 @@ class VoucherPackageService
             ]);
         }
 
-        return $this->voucherPackageRepository->getForNetwork($networkId, $filters);
+        $posId = isset($filters['pos_id']) ? (int) $filters['pos_id'] : null;
+        unset($filters['pos_id']);
+
+        $packages = $this->voucherPackageRepository->getForNetwork($networkId, $filters);
+        if ($posId !== null) {
+            $this->voucherPackageDiscountService->attachProcurementPricing($networkId, $posId, $packages);
+        }
+
+        return $packages;
     }
 }

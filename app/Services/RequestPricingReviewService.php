@@ -577,22 +577,47 @@ class RequestPricingReviewService
             ]);
         }
 
-        // التحقق الحاسم من ثبات أسعار الكتالوج والخصومات الفعلية الحالية مع ما تم اعتماده في الرمز
+        // التحقق الحاسم من أن الرمز يطابق كل باقة وكل كمية في السلة دون نقص أو تكرار.
         $tokenItems = $payload['it'] ?? [];
-        $tokenItemsMap = [];
-        foreach ($tokenItems as $ti) {
-            $tokenItemsMap[(int) $ti['pid']] = $ti;
+        if (! is_array($tokenItems) || count($tokenItems) !== count($items)) {
+            throw ValidationException::withMessages([
+                'pricing' => ['تغيرت بنود أو كميات الطلب عن عرض الأسعار المعتمد. يرجى طلب معاينة جديدة.'],
+            ]);
         }
 
+        $tokenItemsMap = [];
+        foreach ($tokenItems as $tokenItem) {
+            if (! is_array($tokenItem) || ! isset($tokenItem['pid'], $tokenItem['qty'], $tokenItem['pr'], $tokenItem['dc'])) {
+                throw ValidationException::withMessages([
+                    'pricing' => ['بنية بنود رمز التسعير غير صالحة. يرجى طلب معاينة جديدة.'],
+                ]);
+            }
+            $tokenPackageId = (int) $tokenItem['pid'];
+            if (isset($tokenItemsMap[$tokenPackageId])) {
+                throw ValidationException::withMessages([
+                    'pricing' => ['يحتوي رمز التسعير على باقات مكررة. يرجى طلب معاينة جديدة.'],
+                ]);
+            }
+            $tokenItemsMap[$tokenPackageId] = $tokenItem;
+        }
+
+        $submittedPackageIds = [];
         foreach ($items as $item) {
             $packageId = (int) $item['package_id'];
-            if (! isset($tokenItemsMap[$packageId])) {
+            $voucherCount = (int) $item['voucher_count'];
+            if (isset($submittedPackageIds[$packageId]) || ! isset($tokenItemsMap[$packageId])) {
                 throw ValidationException::withMessages([
                     'pricing' => ['تغيرت بنود الطلب عن عرض الأسعار المعتمد. يرجى طلب معاينة جديدة.'],
                 ]);
             }
+            $submittedPackageIds[$packageId] = true;
 
             $ti = $tokenItemsMap[$packageId];
+            if ((int) $ti['qty'] !== $voucherCount) {
+                throw ValidationException::withMessages([
+                    'pricing' => ['تغيرت كمية إحدى الباقات عن عرض الأسعار المعتمد. يرجى طلب معاينة جديدة.'],
+                ]);
+            }
             $package = $this->voucherPackageRepository->findById($packageId);
             $currentPrice = (float) $package->package_voucher_price;
             $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $packageId);

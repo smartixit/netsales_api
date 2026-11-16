@@ -641,6 +641,17 @@ class VoucherPackageController extends BaseController
             }
 
             $filters = $request->only(['status', 'search', 'per_page', 'all']);
+            if ($request->filled('pos_id')) {
+                $validated = $request->validate([
+                    'pos_id' => ['required', 'integer', 'min:1'],
+                ]);
+                $posId = (int) $validated['pos_id'];
+                if (! $user) {
+                    throw new AuthorizationException('يلزم تسجيل الدخول لعرض التعرفة التعاقدية.');
+                }
+                $this->tenantAuth->authorizeNetworkPosPricing($user, $id, $posId);
+                $filters['pos_id'] = $posId;
+            }
 
             if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
                 $hasNetworkSideAccess = $this->tenantAuth->canManageNetworkPackages($user, $id, 'voucher_packages.view');

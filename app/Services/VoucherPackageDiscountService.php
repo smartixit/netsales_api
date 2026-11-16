@@ -10,6 +10,8 @@ use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Models\VoucherPackageDiscount;
+use App\Services\Billing\Money;
+use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -403,7 +405,6 @@ class VoucherPackageDiscountService
                 'discount_cash' => $cashRate,
                 'discount_credit' => $creditRate,
                 'is_custom' => true,
-                // Server-authoritative derived monetary values (Frontend Display-Only, AGENTS.md §34)
                 'original_package_price' => round($originalPrice, 2),
                 'effective_cash_price' => round($originalPrice - (($originalPrice * $cashRate) / 100), 2),
                 'effective_credit_price' => round($originalPrice - (($originalPrice * $creditRate) / 100), 2),
@@ -419,12 +420,58 @@ class VoucherPackageDiscountService
             'discount_cash' => $cashRate,
             'discount_credit' => $creditRate,
             'is_custom' => false,
-            // Server-authoritative derived monetary values (Frontend Display-Only, AGENTS.md §34)
             'original_package_price' => round($originalPrice, 2),
             'effective_cash_price' => round($originalPrice - (($originalPrice * $cashRate) / 100), 2),
             'effective_credit_price' => round($originalPrice - (($originalPrice * $creditRate) / 100), 2),
             'cash_savings' => round(($originalPrice * $cashRate) / 100, 2),
             'credit_savings' => round(($originalPrice * $creditRate) / 100, 2),
         ];
+    }
+
+    /**
+     * إرفاق لقطة تعرفة دفعيّة بباقات صفحة الكتالوج، خاصة بنقطة البيع المحددة.
+     * القيم الصحيحة بوحدة العملة الصغرى ومعدلات الخصم بوحدات basis points.
+     *
+     * @param Collection<int, \App\Models\VoucherPackage>|CursorPaginator $packages
+     */
+    public function attachProcurementPricing(int $networkId, int $posId, Collection|CursorPaginator $packages): void
+    {
+        $packageCollection = $packages instanceof Collection
+            ? $packages
+            : collect($packages->items());
+
+        if ($packageCollection->isEmpty()) {
+            return;
+        }
+
+        $packageIds = $packageCollection->pluck('package_id')
+            ->map(static fn ($id): int => (int) $id)
+            ->all();
+        $discountsByPackage = $this->discountRepository
+            ->findEffectiveDiscountsForPackages($networkId, $posId, $packageIds)
+            ->keyBy('package_id');
+
+        foreach ($packageCollection as $package) {
+            $customDiscount = $discountsByPackage->get($package->package_id);
+            $basePriceMinor = DecimalAmount::toMinorUnits($package->getAttribute('package_voucher_price'));
+            $cashRateBasisPoints = DecimalAmount::toMinorUnits(
+                $customDiscount?->discount_cash ?? $package->package_default_cash_discount
+            );
+            $creditRateBasisPoints = DecimalAmount::toMinorUnits(
+                $customDiscount?->discount_credit ?? $package->package_default_credit_discount
+            );
+            $baseMoney = new Money($basePriceMinor, 'YER');
+            $cashDiscountMinor = $baseMoney->applyBasisPoints($cashRateBasisPoints)->amountMinor;
+            $creditDiscountMinor = $baseMoney->applyBasisPoints($creditRateBasisPoints)->amountMinor;
+
+            $package->setRelation('procurementPricing', [
+                'base_unit_price_minor' => $basePriceMinor,
+                'cash_discount_basis_points' => $cashRateBasisPoints,
+                'credit_discount_basis_points' => $creditRateBasisPoints,
+                'cash_effective_unit_price_minor' => $basePriceMinor - $cashDiscountMinor,
+                'credit_effective_unit_price_minor' => $basePriceMinor - $creditDiscountMinor,
+                'is_custom' => $customDiscount !== null,
+            ]);
+        }
     }
 }
