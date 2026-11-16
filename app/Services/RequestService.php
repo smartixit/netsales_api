@@ -39,10 +39,12 @@ class RequestService
         protected NotificationService $notificationService,
         protected VoucherPackageDiscountService $voucherPackageDiscountService,
         protected ?UserRepositoryInterface $userRepository = null,
-        protected ?RequestPricingReviewService $pricingReviewService = null
+        protected ?RequestPricingReviewService $pricingReviewService = null,
+        protected ?ProcurementPricingSnapshotService $procurementPricingSnapshotService = null
     ) {
         $this->userRepository = $userRepository ?? app(UserRepositoryInterface::class);
         $this->pricingReviewService = $pricingReviewService ?? app(RequestPricingReviewService::class);
+        $this->procurementPricingSnapshotService = $procurementPricingSnapshotService ?? app(ProcurementPricingSnapshotService::class);
     }
 
     /**
@@ -155,6 +157,18 @@ class RequestService
                 $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $packageId);
                 $cashDiscount = (float) ($discountData['discount_cash'] ?? 0.0);
                 $creditDiscount = (float) ($discountData['discount_credit'] ?? 0.0);
+                $snapshotToken = $item['pricing_snapshot_token'] ?? null;
+                if (is_string($snapshotToken) && $snapshotToken !== '') {
+                    $this->procurementPricingSnapshotService->assertCurrent(
+                        $snapshotToken,
+                        $networkId,
+                        $posId,
+                        $packageId,
+                        \App\Support\DecimalAmount::toMinorUnits($package->package_voucher_price),
+                        \App\Support\DecimalAmount::toMinorUnits($cashDiscount),
+                        \App\Support\DecimalAmount::toMinorUnits($creditDiscount),
+                    );
+                }
                 $discountPercent = $saleType->isCash() ? $cashDiscount : $creditDiscount;
 
                 $itemModel = new RequestItem([

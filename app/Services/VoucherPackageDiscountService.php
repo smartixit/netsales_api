@@ -36,8 +36,10 @@ class VoucherPackageDiscountService
         protected PosRepositoryInterface $posRepository,
         protected VoucherPackageRepositoryInterface $packageRepository,
         protected ?NetworkPosRepositoryInterface $networkPosRepository = null,
+        protected ?ProcurementPricingSnapshotService $pricingSnapshotService = null,
     ) {
         $this->networkPosRepository = $networkPosRepository ?? app(NetworkPosRepositoryInterface::class);
+        $this->pricingSnapshotService = $pricingSnapshotService ?? app(ProcurementPricingSnapshotService::class);
     }
 
     /**
@@ -471,6 +473,14 @@ class VoucherPackageDiscountService
                 'cash_effective_unit_price_minor' => $basePriceMinor - $cashDiscountMinor,
                 'credit_effective_unit_price_minor' => $basePriceMinor - $creditDiscountMinor,
                 'is_custom' => $customDiscount !== null,
+                'pricing_snapshot_token' => $this->pricingSnapshotService->issue(
+                    $networkId,
+                    $posId,
+                    (int) $package->package_id,
+                    $basePriceMinor,
+                    $cashRateBasisPoints,
+                    $creditRateBasisPoints,
+                ),
             ]);
         }
     }
