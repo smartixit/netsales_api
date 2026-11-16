@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Enums\RoleKey;
 use App\Enums\UserStatus;
-use App\Services\Support\FileUploadService;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -57,18 +56,6 @@ class User extends Authenticatable
     public function getAuthPassword(): string
     {
         return $this->user_password;
-    }
-
-    /**
-     * رابط الصورة الشخصية للمستخدم عبر خدمة التخزين السحابي.
-     */
-    public function getUserProfileLogoUrlAttribute(): ?string
-    {
-        if (empty($this->user_profile_logo)) {
-            return null;
-        }
-
-        return app(FileUploadService::class)->url($this->user_profile_logo);
     }
 
     protected function casts(): array

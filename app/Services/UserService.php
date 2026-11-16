@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Http\Requests\API\V1\User\StoreUserRequest;
 use App\Http\Requests\API\V1\User\UpdateUserRequest;
@@ -91,7 +92,7 @@ class UserService
                 $data['user_password'] = Hash::make($data['user_password']);
             }
 
-            $user = $this->userRepository->create($data);
+            $user = $this->userRepository->createForScope($data, RoleScope::PLATFORM);
 
             return $user->load(['role', 'permissions']);
         });

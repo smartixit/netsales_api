@@ -5,6 +5,7 @@ namespace App\Http\Resources\API\V1\Notification;
 use App\Enums\NotificationType;
 use App\Http\Resources\API\V1\User\UserResource;
 use App\Models\Notification;
+use App\Services\Support\FileUploadService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -30,7 +31,7 @@ class NotificationResource extends JsonResource
                 : (NotificationType::tryFrom((string) $this->notification_type)?->label()),
             'notification_title' => $this->notification_title,
             'notification_message' => $this->notification_message,
-            'notification_image' => $this->notification_image,
+            'notification_image' => app(FileUploadService::class)->url($this->notification_image),
             'is_read' => (bool) $this->is_read,
             'read_at' => $this->read_at ? Carbon::parse($this->read_at)->toDateTimeString() : null,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,

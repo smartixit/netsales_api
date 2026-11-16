@@ -7,6 +7,7 @@ use App\Http\Resources\API\V1\Geography\DirectorateResource;
 use App\Http\Resources\API\V1\Geography\GovernorateResource;
 use App\Http\Resources\API\V1\User\UserResource;
 use App\Models\Pos;
+use App\Services\Support\FileUploadService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -28,7 +29,7 @@ class PosResource extends JsonResource
             'owner_id' => $this->owner_id,
             'pos_uuid' => $this->pos_uuid,
             'pos_name' => $this->pos_name,
-            'pos_profile_logo' => $this->pos_profile_logo,
+            'pos_profile_logo' => app(FileUploadService::class)->url($this->pos_profile_logo),
             'pos_holder_name' => $this->owner?->user_full_name,
             'pos_phone_number' => $this->pos_phone_number,
             'pos_email' => $this->pos_email,

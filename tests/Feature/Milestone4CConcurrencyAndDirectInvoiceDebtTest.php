@@ -54,7 +54,7 @@ class Milestone4CConcurrencyAndDirectInvoiceDebtTest extends TestCase
 
         $suffix = uniqid();
 
-        $this->networkOwner = User::create([
+        $this->networkOwner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'مالك الشبكة المتزامنة '.$suffix,
@@ -79,7 +79,7 @@ class Milestone4CConcurrencyAndDirectInvoiceDebtTest extends TestCase
             'status' => true,
         ]);
 
-        $this->posOwner = User::create([
+        $this->posOwner = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'وكيل نقطة البيع المتزامنة '.$suffix,

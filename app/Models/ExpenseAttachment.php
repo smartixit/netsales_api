@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Traits\ExactDateSerialization;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -40,13 +39,5 @@ class ExpenseAttachment extends Model
     public function expense(): BelongsTo
     {
         return $this->belongsTo(Expense::class, 'expense_id', 'expense_id');
-    }
-
-    // Accessors
-    protected function fileUrl(): Attribute
-    {
-        return Attribute::make(
-            get: fn (): ?string => $this->attachment_path ? asset("storage/{$this->attachment_path}") : null
-        );
     }
 }

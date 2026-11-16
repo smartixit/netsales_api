@@ -60,7 +60,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $this->posMemberRole = Role::where('role_key', 'POS_USER')->firstOrFail();
 
         // مستخدمي المستأجرين role_id = null لأن أدوارهم مقيدة بـ network_users و pos_users
-        $this->networkOwner = User::create([
+        $this->networkOwner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net Owner '.$suffix,
             'user_phone_number' => '77'.rand(1000000, 9999999),
@@ -68,7 +68,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $this->posOwner = User::create([
+        $this->posOwner = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Owner '.$suffix,
             'user_phone_number' => '71'.rand(1000000, 9999999),
@@ -222,7 +222,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
     public function test_cross_network_request_approval_idor_is_strictly_blocked(): void
     {
         // إنشاء مستخدم شبكة B
-        $netBUser = User::create([
+        $netBUser = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net B Reviewer',
             'user_phone_number' => '77'.rand(1000000, 9999999),
@@ -268,7 +268,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $ownerAuth = $this->createAuthenticatedSession($this->networkOwner);
         $newMemberPhone = '77'.rand(1000000, 9999999);
 
-        $newMemberUser = User::create([
+        $newMemberUser = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Network Staff Member',
             'user_phone_number' => $newMemberPhone,
@@ -320,7 +320,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $ownerAuth = $this->createAuthenticatedSession($this->posOwner);
         $newMemberPhone = '71'.rand(1000000, 9999999);
 
-        $newMemberUser = User::create([
+        $newMemberUser = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Staff Member',
             'user_phone_number' => $newMemberPhone,
@@ -385,7 +385,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $this->assertSame('NETWORK_USER', $roles->json('data.0.role_key'));
 
         foreach ([$networkAccountantRole, $networkOwnerRole, $platformRole] as $role) {
-            $candidate = User::create([
+            $candidate = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
                 'role_id' => null,
                 'user_full_name' => 'Rejected Network Staff '.uniqid(),
                 'user_phone_number' => '70'.rand(1000000, 9999999),
@@ -407,7 +407,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'role_id' => $networkAccountantRole->role_id,
         ]);
 
-        $changeCandidate = User::create([
+        $changeCandidate = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Network Role Change Candidate '.uniqid(),
             'user_phone_number' => '70'.rand(1000000, 9999999),
@@ -442,7 +442,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             ->assertJsonPath('data.0.role_key', 'POS_USER');
 
         foreach ([$posAccountantRole, $posAgentRole, $platformRole] as $role) {
-            $candidate = User::create([
+            $candidate = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
                 'role_id' => null,
                 'user_full_name' => 'Rejected POS Staff '.uniqid(),
                 'user_phone_number' => '70'.rand(1000000, 9999999),
@@ -464,7 +464,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'role_id' => $posAccountantRole->role_id,
         ]);
 
-        $changeCandidate = User::create([
+        $changeCandidate = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Role Change Candidate '.uniqid(),
             'user_phone_number' => '70'.rand(1000000, 9999999),

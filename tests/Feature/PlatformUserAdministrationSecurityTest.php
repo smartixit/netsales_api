@@ -319,7 +319,7 @@ class PlatformUserAdministrationSecurityTest extends TestCase
             ]
         );
 
-        $user = User::query()->create([
+        $user = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => $name,
             'user_phone_number' => '77'.random_int(1000000, 9999999),
@@ -353,7 +353,7 @@ class PlatformUserAdministrationSecurityTest extends TestCase
     ): User {
         $role = Role::byKey($roleKey)->firstOrFail();
 
-        return User::query()->create([
+        return $this->createUserWithScope($role->scope, [
             'role_id' => $role->role_id,
             'user_full_name' => $name,
             'user_phone_number' => '77'.random_int(1000000, 9999999),

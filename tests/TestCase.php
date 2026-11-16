@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Enums\RoleScope;
 use App\Models\User;
 use App\Models\UserDevice;
 use App\Models\UserSession;
@@ -30,6 +31,20 @@ abstract class TestCase extends BaseTestCase
             ThrottleRequests::class,
             ThrottleRequestsWithRedis::class,
         ]);
+    }
+
+    /**
+     * Persist a test user with an explicit server-controlled account scope.
+     *
+     * @param array<string, mixed> $attributes
+     */
+    protected function createUserWithScope(RoleScope $scope, array $attributes): User
+    {
+        $user = new User($attributes);
+        $user->role_scope = $scope->value;
+        $user->save();
+
+        return $user;
     }
 
     /**
