@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\NetworkStatus;
 use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Enums\UserStatus;

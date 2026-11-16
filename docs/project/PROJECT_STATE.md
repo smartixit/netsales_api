@@ -1,7 +1,7 @@
 # NetSales — Current Project State & Authorization Snapshot
 
-**Last Updated Date:** 2026-11-16  
-**Active Working Tree Status:** Phase 0 role-scope integrity is merged and exact-HEAD CI passed. Phase 1 backend/Flutter architecture inventory is documented on dedicated branches from each repository's current main; remediation has not started.  
+**Last Updated Date:** 2026-11-15  
+**Active Working Tree Status:** Billing self-service/search pagination, subscription and Billing Reports integration, Operational Reports scope isolation, and official-document source hardening — implementation work continues; final validation remains pending  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
 
@@ -297,3 +297,13 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Source changes only. No database migrations were executed.
 - No PHPUnit, PHP lint/Pint/PHPStan, Dart/Flutter tests, formatter/analyzer, PDF text extraction/order checks, visual QA, or GitHub Actions were run in this work.
 - Do not create or merge PRs, and do not mark the feature production-ready, until all implementation-plan requirements are closed and the exact branch heads pass the final verification gate.
+
+
+## Architecture and Clean Code recovery — 2026-11-15
+
+- **User authorization:** Begin the approved, phased architecture remediation plan across `netsales` and `netsales_api`. Every implementation phase must start from the then-current `main` in a new branch and be delivered through its own PR. Never base a phase on a prior PR branch.
+- **Phase 0 scope:** Repair the existing user role-scope / tenant-membership contract regression that prevented a reliable Laravel CI baseline.
+- **API PR #29:** `fix/phase-0-role-scope-db-contract`, based directly on `main` SHA `8a8dbe08fb2dd4473650ba51a82b97243fbddf8e`; head at this state update: `fa7569f56f09e3d344c48043c2932e9249408e73`. It changes only the migration, registration service, and authorization feature test. The branch is 3 commits ahead and 0 behind the recorded base.
+- **Verification:** GitHub Actions run #390 passed on the recorded head: migration + seeding, Composer validation/audit, Pint, blocking targeted PHPStan, and Laravel tests (335 tests / 2,700 assertions). No local PHP/PHPUnit execution is claimed.
+- **PHPStan limitation:** Full-project PHPStan reports 1,000+ existing diagnostics. The workflow intentionally marks full-project analysis as report-only; the enforcement gate requires the configured targeted PHPStan run. Do not describe the full project as PHPStan-clean. Include a baseline-aware static-analysis guard in the future preventive CI stage.
+- **PR status:** PR #29 is open and not merged; CI was successful on the recorded head. Wait for user review/approval before accepting Phase 0 or starting the next implementation phase. PR #28 was closed without merge after its initial fixture-only approach was superseded by the corrected role-scope contract.
