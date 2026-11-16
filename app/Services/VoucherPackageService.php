@@ -38,7 +38,19 @@ class VoucherPackageService
      */
     public function getFiltered(array $filters = [], array $relations = ['network']): Collection|CursorPaginator
     {
-        return $this->voucherPackageRepository->getFiltered($filters, $relations);
+        $posId = isset($filters['pos_id']) ? (int) $filters['pos_id'] : null;
+        unset($filters['pos_id']);
+
+        $packages = $this->voucherPackageRepository->getFiltered($filters, $relations);
+        if ($posId !== null && isset($filters['network_id'])) {
+            $this->voucherPackageDiscountService->attachProcurementPricing(
+                (int) $filters['network_id'],
+                $posId,
+                $packages
+            );
+        }
+
+        return $packages;
     }
 
     /**

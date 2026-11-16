@@ -158,8 +158,12 @@ class RequestService
                 $cashDiscount = (float) ($discountData['discount_cash'] ?? 0.0);
                 $creditDiscount = (float) ($discountData['discount_credit'] ?? 0.0);
                 $snapshotToken = $item['pricing_snapshot_token'] ?? null;
-                if (is_string($snapshotToken) && $snapshotToken !== '') {
-                    $this->procurementPricingSnapshotService->assertCurrent(
+                if (! is_string($snapshotToken) || $snapshotToken === '') {
+                    throw ValidationException::withMessages([
+                        'items' => ['تعرفة الباقة غير مرفقة. حدّث كتالوج الباقات قبل إنشاء الطلب.'],
+                    ]);
+                }
+                $this->procurementPricingSnapshotService->assertCurrent(
                         $snapshotToken,
                         $networkId,
                         $posId,
@@ -167,8 +171,7 @@ class RequestService
                         \App\Support\DecimalAmount::toMinorUnits($package->package_voucher_price),
                         \App\Support\DecimalAmount::toMinorUnits($cashDiscount),
                         \App\Support\DecimalAmount::toMinorUnits($creditDiscount),
-                    );
-                }
+                );
                 $discountPercent = $saleType->isCash() ? $cashDiscount : $creditDiscount;
 
                 $itemModel = new RequestItem([

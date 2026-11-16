@@ -56,6 +56,16 @@ class VoucherPackageController extends BaseController
             $user = $this->currentUser();
             $filters = $request->only(['network_id', 'status', 'search', 'per_page', 'all']);
 
+            if ($request->filled('pos_id')) {
+                $validated = $request->validate(['pos_id' => ['required', 'integer', 'min:1']]);
+                $posId = (int) $validated['pos_id'];
+                if (! $user || ! $request->filled('network_id')) {
+                    return $this->errorResponse('يلزم تحديد نقطة البيع والشبكة لعرض التعرفة التعاقدية.', [], 422);
+                }
+                $this->tenantAuth->authorizeNetworkPosPricing($user, (int) $request->input('network_id'), $posId);
+                $filters['pos_id'] = $posId;
+            }
+
             if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
                 $scope = $this->tenantAuth->getPackageVisibilityScope($user);
                 $managedIds = $scope['managed_network_ids'] ?? [];
