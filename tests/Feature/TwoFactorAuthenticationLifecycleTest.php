@@ -29,7 +29,7 @@ class TwoFactorAuthenticationLifecycleTest extends TestCase
 
         $this->deviceUuid = 'TEST-2FA-DEVICE-UUID-' . bin2hex(random_bytes(6));
 
-        $this->user = User::create([
+        $this->user = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => '2FA Test User',
             'user_phone_number' => '77' . random_int(1000000, 9999999),

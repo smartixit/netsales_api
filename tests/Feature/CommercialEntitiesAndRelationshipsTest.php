@@ -74,7 +74,7 @@ class CommercialEntitiesAndRelationshipsTest extends TestCase
         })->firstOrFail();
 
         // 2. Network Owners
-        $this->networkOwnerA = User::create([
+        $this->networkOwnerA = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net Owner A',
             'user_phone_number' => '77110000'.rand(10, 99),
@@ -82,7 +82,7 @@ class CommercialEntitiesAndRelationshipsTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $this->networkOwnerB = User::create([
+        $this->networkOwnerB = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net Owner B',
             'user_phone_number' => '77220000'.rand(10, 99),
@@ -91,7 +91,7 @@ class CommercialEntitiesAndRelationshipsTest extends TestCase
         ]);
 
         // 3. POS Owners
-        $this->posOwnerA = User::create([
+        $this->posOwnerA = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Owner A',
             'user_phone_number' => '77330000'.rand(10, 99),
@@ -99,7 +99,7 @@ class CommercialEntitiesAndRelationshipsTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $this->posOwnerB = User::create([
+        $this->posOwnerB = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Owner B',
             'user_phone_number' => '77440000'.rand(10, 99),
@@ -107,7 +107,7 @@ class CommercialEntitiesAndRelationshipsTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $posOwnerC = User::create([
+        $posOwnerC = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Owner C',
             'user_phone_number' => '77550000'.rand(10, 99),

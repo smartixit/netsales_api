@@ -66,7 +66,7 @@ class Milestone4CDebtTrackingAndRepaymentTest extends TestCase
         $this->superUser = User::firstOrFail();
 
         // 2. إنشاء مزود الشبكة وصاحبها
-        $this->networkOwner = User::create([
+        $this->networkOwner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'مالك الشبكة '.$suffix,
@@ -101,7 +101,7 @@ class Milestone4CDebtTrackingAndRepaymentTest extends TestCase
         ]);
 
         // 4. إنشاء وكيل نقطة البيع وصاحبها
-        $this->posOwner = User::create([
+        $this->posOwner = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'وكيل نقطة البيع '.$suffix,
@@ -148,7 +148,7 @@ class Milestone4CDebtTrackingAndRepaymentTest extends TestCase
         ]);
 
         // 7. شبكة منافسة لاختبار عزل المستأجرين
-        $this->otherNetworkOwner = User::create([
+        $this->otherNetworkOwner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'مالك شبكة أخرى '.$suffix,

@@ -1,9 +1,39 @@
 # NetSales — Current Project State & Authorization Snapshot
 
-**Last Updated Date:** 2026-11-14  
-**Active Working Tree Status:** Billing self-service/search pagination, subscription and Billing Reports integration, Operational Reports scope isolation, and official-document source hardening — implementation work continues; final validation remains pending  
+**Last Updated Date:** 2026-11-16  
+**Active Working Tree Status:** Phase 0 role-scope integrity is merged and exact-HEAD CI passed. Phase 1 backend/Flutter architecture inventory is documented on dedicated branches from each repository's current main; remediation has not started.  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
+
+---
+
+## Current execution snapshot — 2026-11-16
+
+### Phase 0 — explicit account role scope
+- **Status:** MERGED.
+- API PR #30: https://github.com/smartixit/netsales_api/pull/30
+- Tested head: `65c3289993ee32041d279b6eb070396e253777be`.
+- Merge commit / API `main`: `6ed2c9f1943382e6f554fcae8d901b8376dddf21`.
+- GitHub Actions run `43761802223` completed successfully on the exact tested head. The workflow completed schema recreation/seeding, Composer audit, Pint, PHP style, targeted/full PHPStan, and Laravel tests.
+- The implementation persists account scope explicitly, separates operational membership roles from `users.role_id`, and removes the implicit global database default. No `role_scope` default migration is retained.
+
+### Phase 1 — architecture inventory
+- **API audit baseline:** `main` `6ed2c9f1943382e6f554fcae8d901b8376dddf21`.
+- **API audit branch:** `audit/phase-1-backend-architecture-inventory`.
+- **Flutter audit baseline:** `main` `a7ba5dfa30a4d5a10c6d002a23e49881b4403b71`.
+- **Flutter audit branch:** `audit/phase-1-flutter-architecture-inventory-main`. The earlier Flutter audit branch created before the latest main advance is not the delivery branch; this current branch was recreated directly from the then-current `main`.
+- Canonical backend evidence: `docs/project/ARCHITECTURE_AUDIT_PHASE_1.md`.
+- Flutter source evidence: `netsales/docs/project/phase-1-architecture-audit.md`.
+- No feature/source implementation changes were made in Phase 1.
+
+### Phase 1 confirmed priorities
+- API: thin-controller breaches in operational reports, Billing trial eligibility/policies, Network-POS scoping, and voucher-discount bulk authorization; widespread generic Request input extraction; missing architecture-boundary tests; CI final gate does not enforce full PHPStan and Pint mutates the working tree before its test step.
+- API financial precision: `DebtRepaymentService` still casts decimal sums to floating point for receivable/aging/settlement validation and must use integer minor units.
+- Flutter: commercial detail sheets, Billing dialogs, procurement dialogs, and report preset dialog own view-local form state/payload assembly; QR challenge sheet executes an asynchronous command from the view; POS detail sheet passes POS ID where a POS-wallet ID is required.
+- Large Services/Controllers remain candidates for cohesion mapping, not automatic line-count refactors.
+
+### Next authorized stage
+Proceed to Phase 2 preventive architecture gates in both repositories. Extend existing verification rather than creating duplicate CI workflows. After the new gates pass, continue phase-by-phase through the Commercial, Finance/Wallet/Debt, remaining Flutter features, backend boundaries, full regression/visual validation, and closeout plan. Each phase starts from the current `main`, has its own branch and PR, and requires exact-head CI before merge.
 
 ---
 

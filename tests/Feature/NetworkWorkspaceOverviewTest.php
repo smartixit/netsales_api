@@ -51,7 +51,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
             ->where('role_key', RoleKey::NETWORK_OWNER->value)
             ->firstOrFail();
 
-        $owner = User::create([
+        $owner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Network Overview Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
@@ -76,7 +76,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'last_event_seq' => 1,
         ]);
 
-        $otherOwner = User::create([
+        $otherOwner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Another Network Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
@@ -109,7 +109,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
             'directorate_id' => $directorateId,
             'status' => PosStatus::ACTIVE,
         ]);
-        $inactivePosOwner = User::create([
+        $inactivePosOwner = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'Inactive POS Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
@@ -269,7 +269,7 @@ class NetworkWorkspaceOverviewTest extends TestCase
             ->where('role_key', RoleKey::NETWORK_OWNER->value)
             ->firstOrFail();
 
-        $owner = User::create([
+        $owner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Network Period Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
@@ -312,14 +312,14 @@ class NetworkWorkspaceOverviewTest extends TestCase
             ->where('role_key', RoleKey::NETWORK_USER->value)
             ->firstOrFail();
 
-        $owner = User::create([
+        $owner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Workspace Member Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
             'user_password' => 'password',
             'status' => UserStatus::ACTIVE,
         ]);
-        $member = User::create([
+        $member = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Workspace Network Member',
             'user_phone_number' => '7'.random_int(100000000, 999999999),

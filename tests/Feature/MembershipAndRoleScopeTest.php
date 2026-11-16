@@ -48,7 +48,7 @@ class MembershipAndRoleScopeTest extends TestCase
         $gov = Governorate::firstOrFail();
         $dir = Directorate::firstOrFail();
 
-        $owner = User::create([
+        $owner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Owner '.uniqid(),
             'user_phone_number' => '71'.rand(1000000, 9999999),
@@ -80,7 +80,7 @@ class MembershipAndRoleScopeTest extends TestCase
      */
     public function test_user_can_have_null_role_id(): void
     {
-        $user = User::create([
+        $user = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Tenant User '.uniqid(),
             'user_phone_number' => '70'.rand(1000000, 9999999),
@@ -100,7 +100,7 @@ class MembershipAndRoleScopeTest extends TestCase
     {
         $this->expectException(QueryException::class);
 
-        User::create([
+        $this->createUserWithScope(\App\Enums\RoleScope::PLATFORM, [
             'role_id' => $this->networkOwnerRole->role_id, // Scope is NETWORK, not PLATFORM
             'user_full_name' => 'Invalid Net User',
             'user_phone_number' => '70'.rand(1000000, 9999999),
@@ -114,7 +114,7 @@ class MembershipAndRoleScopeTest extends TestCase
      */
     public function test_database_allows_platform_role_in_users_table(): void
     {
-        $user = User::create([
+        $user = $this->createUserWithScope(\App\Enums\RoleScope::PLATFORM, [
             'role_id' => $this->superAdminRole->role_id, // Scope is PLATFORM
             'user_full_name' => 'Admin User '.uniqid(),
             'user_phone_number' => '70'.rand(1000000, 9999999),
@@ -130,7 +130,7 @@ class MembershipAndRoleScopeTest extends TestCase
      */
     public function test_network_users_enforces_network_scope(): void
     {
-        $user = User::create([
+        $user = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Network Staff '.uniqid(),
             'user_phone_number' => '70'.rand(1000000, 9999999),
@@ -168,7 +168,7 @@ class MembershipAndRoleScopeTest extends TestCase
      */
     public function test_pos_users_enforces_pos_scope(): void
     {
-        $user = User::create([
+        $user = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Staff '.uniqid(),
             'user_phone_number' => '70'.rand(1000000, 9999999),
@@ -208,7 +208,7 @@ class MembershipAndRoleScopeTest extends TestCase
     {
         $admin = User::firstOrFail();
 
-        $user = User::create([
+        $user = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Audited User '.uniqid(),
             'user_phone_number' => '70'.rand(1000000, 9999999),

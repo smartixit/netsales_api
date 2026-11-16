@@ -495,7 +495,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $suffix2 = uniqid();
 
         // شبكة أخرى ومستخدم آخر
-        $otherUser = User::create([
+        $otherUser = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'مستخدم آخر '.$suffix2,
@@ -810,7 +810,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
     public function test_approval_notifications_sent_to_correct_pos_and_network_recipients(): void
     {
         // إنشاء مستخدم مستقل كنقطة بيع ومستخدم كمالك للشبكة
-        $posOwner = User::create([
+        $posOwner = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'وكيل نقطة بيع مستقل '.uniqid(),
             'user_phone_number' => '71'.rand(1000000, 9999999),
@@ -819,7 +819,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
             'status' => 'ACTIVE',
         ]);
 
-        $netOwner = User::create([
+        $netOwner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'مالك الشبكة المستقل '.uniqid(),
             'user_phone_number' => '77'.rand(1000000, 9999999),

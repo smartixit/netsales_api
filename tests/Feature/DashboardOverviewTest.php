@@ -102,7 +102,7 @@ class DashboardOverviewTest extends TestCase
             ->where('role_key', RoleKey::SUPPORT_AGENT->value)
             ->firstOrFail();
 
-        $user = User::create([
+        $user = $this->createUserWithScope(\App\Enums\RoleScope::PLATFORM, [
             'role_id' => $role->role_id,
             'user_full_name' => 'Overview Support Agent',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
@@ -132,7 +132,7 @@ class DashboardOverviewTest extends TestCase
             ->where('role_key', RoleKey::NETWORK_OWNER->value)
             ->firstOrFail();
 
-        $user = User::create([
+        $user = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Overview Network Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),

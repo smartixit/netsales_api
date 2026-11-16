@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Enums\RoleScope;
 use App\Http\Controllers\API\V1\BaseController;
 use App\Models\Directorate;
 use App\Models\Governorate;
@@ -72,11 +73,11 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
         $suffix = uniqid();
 
         // 1. Create Users
-        [$this->networkOwnerA, $this->headersNetA] = $this->createUserWithSession('net_owner_a_'.$suffix);
-        [$this->networkOwnerB, $this->headersNetB] = $this->createUserWithSession('net_owner_b_'.$suffix);
-        [$this->posOwnerA, $this->headersPosA] = $this->createUserWithSession('pos_owner_a_'.$suffix);
-        [$posOwnerB, $headersPosB] = $this->createUserWithSession('pos_owner_b_'.$suffix);
-        [$this->networkAccountantA, $this->headersAccountantA] = $this->createUserWithSession('net_acc_a_'.$suffix);
+        [$this->networkOwnerA, $this->headersNetA] = $this->createUserWithSession('net_owner_a_'.$suffix, \App\Enums\RoleScope::NETWORK);
+        [$this->networkOwnerB, $this->headersNetB] = $this->createUserWithSession('net_owner_b_'.$suffix, \App\Enums\RoleScope::NETWORK);
+        [$this->posOwnerA, $this->headersPosA] = $this->createUserWithSession('pos_owner_a_'.$suffix, \App\Enums\RoleScope::POS);
+        [$posOwnerB, $headersPosB] = $this->createUserWithSession('pos_owner_b_'.$suffix, \App\Enums\RoleScope::POS);
+        [$this->networkAccountantA, $this->headersAccountantA] = $this->createUserWithSession('net_acc_a_'.$suffix, \App\Enums\RoleScope::NETWORK);
 
         // 2. Create Networks
         $this->networkA = Network::create([
@@ -216,9 +217,9 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
         ]);
     }
 
-    protected function createUserWithSession(string $username): array
+    protected function createUserWithSession(string $username, \App\Enums\RoleScope $scope): array
     {
-        $user = User::create([
+        $user = $this->createUserWithScope($scope, [
             'user_full_name' => $username,
             'user_email' => $username.'@netsales.local',
             'user_phone_number' => '7'.rand(10000000, 99999999),
@@ -599,7 +600,7 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
     public function mixed_user_retains_network_visibility_and_pos_relationship_restrictions()
     {
         $suffix = uniqid();
-        [$mixedUser, $mixedHeaders] = $this->createUserWithSession('mixed_user_'.$suffix);
+        [$mixedUser, $mixedHeaders] = $this->createUserWithSession('mixed_user_'.$suffix, RoleScope::NETWORK);
 
         // Network B membership (Network-side access)
         $netUserRoleId = Role::where('role_key', 'NETWORK_USER')->value('role_id');

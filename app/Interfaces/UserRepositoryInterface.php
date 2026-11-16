@@ -2,6 +2,7 @@
 
 namespace App\Interfaces;
 
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Models\User;
 use App\Models\UserDevice;
@@ -17,6 +18,13 @@ use Illuminate\Database\Eloquent\Collection;
  */
 interface UserRepositoryInterface extends BaseRepositoryInterface
 {
+    /**
+     * Create a user with its authoritative account scope assigned before persistence.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function createForScope(array $data, RoleScope $scope): User;
+
     /**
      * جلب المستخدمين مع الفلترة والترقيم عبر المؤشر (Cursor Pagination).
      *
