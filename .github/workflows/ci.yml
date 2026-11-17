@@ -70,6 +70,25 @@ jobs:
         id: dependencies
         run: composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
 
+      - name: Check procurement summary PHP formatting
+        run: >-
+          vendor/bin/pint --test
+          app/Http/Controllers/API/V1/RequestController.php
+          app/Repositories/RequestRepository.php
+          app/Interfaces/RequestRepositoryInterface.php
+          app/Services/RequestService.php
+          tests/Feature/ProcurementRequestLifecycleTest.php
+
+      - name: Analyze procurement summary PHP changes
+        run: >-
+          vendor/bin/phpstan analyse
+          app/Http/Controllers/API/V1/RequestController.php
+          app/Repositories/RequestRepository.php
+          app/Interfaces/RequestRepositoryInterface.php
+          app/Services/RequestService.php
+          tests/Feature/ProcurementRequestLifecycleTest.php
+          --no-progress --memory-limit=1G --error-format=table
+
       - name: Update vulnerable Composer packages
         run: >-
           composer update league/commonmark symfony/http-foundation symfony/http-kernel
