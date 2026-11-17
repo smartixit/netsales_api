@@ -372,3 +372,14 @@ Billing Account financial resources expose:
 - a nested `currency` resource with `code` and `decimal_places`.
 
 UI presentation must use the decimal string and nested currency metadata with the shared amount widget. Minor-unit fields remain for exact comparisons and command inputs; they must not be rendered as if they were already major-unit decimal currency. Financial totals, balances, currency conversion, eligibility and trial decisions remain exclusively server-authoritative.
+
+
+## POS Procurement Orders — Status Summary
+
+- Method/path: `GET /api/v1/requests/summary`.
+- Authorization: the same active session and `requests.view` permission as the request list.
+- Optional query: `pos_id`, `network_id`. The server overrides or constrains client values using the authenticated user's operational membership; caller-supplied IDs do not grant scope.
+- The response aggregates all non-trashed requests in the authorized scope independently of cursor pagination.
+- `data` contains integer counts: `total`, `pending`, `approved`, `rejected`, `cancelled`.
+- List-only `status`, `search`, `cursor`, and `per_page` parameters are ignored by this summary endpoint.
+- The lifecycle has no `COMPLETED` status; `APPROVED` is displayed as `معتمدة`.
