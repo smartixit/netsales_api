@@ -109,7 +109,11 @@ class RequestController extends BaseController
     private function applyRequestUserScope(array $filters): array|JsonResponse
     {
         $currentUser = $this->currentUser();
-        if ($currentUser && ! $currentUser->isSuperAdmin()) {
+        if (! $currentUser) {
+            return $this->errorResponse('يجب تسجيل الدخول لاستعراض طلبات التوريد.', [], 401);
+        }
+
+        if (! $currentUser->isSuperAdmin()) {
             if ($currentUser->pos) {
                 $filters['pos_id'] = $currentUser->pos->pos_id;
             } elseif (method_exists($currentUser, 'posUsers') && $currentUser->posUsers()->exists()) {
