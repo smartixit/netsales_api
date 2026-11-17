@@ -45,6 +45,7 @@ class VoucherPackageController extends BaseController
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
             new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'package_ids[]', in: 'query', required: false, schema: new OA\Schema(type: 'array', items: new OA\Items(type: 'integer'))),
         ],
         responses: [
             new OA\Response(response: 200, description: 'تم استرجاع قائمة الباقات بنجاح'),
@@ -55,6 +56,14 @@ class VoucherPackageController extends BaseController
         try {
             $user = $this->currentUser();
             $filters = $request->only(['network_id', 'status', 'search', 'per_page', 'all']);
+
+            if ($request->exists('package_ids')) {
+                $validatedPackageIds = $request->validate([
+                    'package_ids' => ['required', 'array', 'min:1', 'max:50'],
+                    'package_ids.*' => ['required', 'integer', 'min:1', 'distinct'],
+                ]);
+                $filters['package_ids'] = array_map('intval', $validatedPackageIds['package_ids']);
+            }
 
             if ($request->filled('pos_id')) {
                 $validated = $request->validate(['pos_id' => ['required', 'integer', 'min:1']]);
