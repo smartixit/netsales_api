@@ -708,6 +708,6 @@ class ProcurementRequestLifecycleTest extends TestCase
             ]);
 
         $storeResponse->assertStatus(422)
-            ->assertJsonValidationErrors(['pricing']);
+            ->assertJsonValidationErrors(['items']);
     }
 }
