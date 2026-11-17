@@ -671,10 +671,10 @@ class ProcurementRequestLifecycleTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.total', $before + 4)
-            ->assertJsonPath('data.pending', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::PENDING)->count())
-            ->assertJsonPath('data.approved', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::APPROVED)->count())
-            ->assertJsonPath('data.rejected', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::REJECTED)->count())
-            ->assertJsonPath('data.cancelled', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::CANCELLED)->count());
+            ->assertJsonPath('data.pending', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::PENDING->value)->count())
+            ->assertJsonPath('data.approved', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::APPROVED->value)->count())
+            ->assertJsonPath('data.rejected', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::REJECTED->value)->count())
+            ->assertJsonPath('data.cancelled', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::CANCELLED->value)->count());
     }
 
 }
