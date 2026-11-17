@@ -60,6 +60,7 @@ class RequestRepository extends BaseRepository implements RequestRepositoryInter
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('request_uuid', 'like', "%{$search}%")
+                    ->when(ctype_digit((string) $search), fn ($query) => $query->orWhere('request_id', (int) $search))
                     ->orWhere('request_note', 'like', "%{$search}%")
                     ->orWhereHas('network', function ($nq) use ($search) {
                         $nq->where('network_name', 'like', "%{$search}%");
