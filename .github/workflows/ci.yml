@@ -70,14 +70,17 @@ jobs:
         id: dependencies
         run: composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
 
-      - name: Check procurement summary PHP formatting
-        run: >-
-          vendor/bin/pint --test
-          app/Http/Controllers/API/V1/RequestController.php
-          app/Repositories/RequestRepository.php
-          app/Interfaces/RequestRepositoryInterface.php
-          app/Services/RequestService.php
-          tests/Feature/ProcurementRequestLifecycleTest.php
+      - name: Format procurement summary PHP sources
+        run: |
+          files=(
+            app/Http/Controllers/API/V1/RequestController.php
+            app/Repositories/RequestRepository.php
+            app/Interfaces/RequestRepositoryInterface.php
+            app/Services/RequestService.php
+            tests/Feature/ProcurementRequestLifecycleTest.php
+          )
+          vendor/bin/pint "${files[@]}"
+          git --no-pager diff -- "${files[@]}"
 
       - name: Analyze procurement summary PHP changes
         run: >-
