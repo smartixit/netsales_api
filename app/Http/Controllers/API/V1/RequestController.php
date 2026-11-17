@@ -113,16 +113,25 @@ class RequestController extends BaseController
             if ($currentUser->pos) {
                 $filters['pos_id'] = $currentUser->pos->pos_id;
             } elseif (method_exists($currentUser, 'posUsers') && $currentUser->posUsers()->exists()) {
-                $filters['pos_id'] = $currentUser->posUsers()->value('pos_id');
+                $posId = $currentUser->posUsers()->value('pos_id');
+                if (! $posId) {
+                    return $this->errorResponse('لا توجد نقطة بيع مصرح بها لهذا الحساب.', [], 403);
+                }
+                $filters['pos_id'] = (int) $posId;
             } elseif ($currentUser->networks()->exists() || (method_exists($currentUser, 'networkUsers') && $currentUser->networkUsers()->exists())) {
                 $networkIds = $currentUser->networks()->pluck('networks.network_id')->toArray();
                 if (method_exists($currentUser, 'networkUsers')) {
                     $networkIds = array_unique(array_merge($networkIds, $currentUser->networkUsers()->pluck('network_id')->toArray()));
                 }
+                if ($networkIds === []) {
+                    return $this->errorResponse('لا توجد شبكة مصرح بها لهذا الحساب.', [], 403);
+                }
                 if (! empty($filters['network_id']) && ! in_array((int) $filters['network_id'], $networkIds, true)) {
                     return $this->errorResponse('غير مصرح لك باستعراض طلبات هذه الشبكة.', [], 403);
                 }
                 if (empty($filters['network_id'])) $filters['network_ids'] = $networkIds;
+            } else {
+                return $this->errorResponse('لا يوجد نطاق تشغيلي مصرح به لهذا الحساب.', [], 403);
             }
         }
         return $filters;
