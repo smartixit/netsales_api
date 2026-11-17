@@ -63,9 +63,12 @@ class RequestController extends BaseController
         try {
             $filters = $request->only(['network_id', 'pos_id', 'status', 'created_by', 'reviewed_by', 'from_date', 'to_date', 'search', 'per_page', 'all']);
             $filters = $this->applyRequestUserScope($filters);
-            if ($filters instanceof JsonResponse) return $filters;
+            if ($filters instanceof JsonResponse) {
+                return $filters;
+            }
 
             $requests = $this->requestService->getFiltered($filters);
+
             return $this->successResponse('تم استرجاع قائمة الطلبات بنجاح.', RequestResource::collection($requests));
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
@@ -103,7 +106,7 @@ class RequestController extends BaseController
     /**
      * فرض نطاق المستخدم نفسه على القائمة والملخص؛ لا يثق بمعرفات النطاق القادمة من العميل.
      *
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      * @return array<string, mixed>|JsonResponse
      */
     private function applyRequestUserScope(array $filters): array|JsonResponse
@@ -132,11 +135,14 @@ class RequestController extends BaseController
                 if (! empty($filters['network_id']) && ! in_array((int) $filters['network_id'], $networkIds, true)) {
                     return $this->errorResponse('غير مصرح لك باستعراض طلبات هذه الشبكة.', [], 403);
                 }
-                if (empty($filters['network_id'])) $filters['network_ids'] = $networkIds;
+                if (empty($filters['network_id'])) {
+                    $filters['network_ids'] = $networkIds;
+                }
             } else {
                 return $this->errorResponse('لا يوجد نطاق تشغيلي مصرح به لهذا الحساب.', [], 403);
             }
         }
+
         return $filters;
     }
 
