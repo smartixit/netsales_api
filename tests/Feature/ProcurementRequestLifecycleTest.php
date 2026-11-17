@@ -676,5 +676,4 @@ class ProcurementRequestLifecycleTest extends TestCase
             ->assertJsonPath('data.rejected', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::REJECTED->value)->count())
             ->assertJsonPath('data.cancelled', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::CANCELLED->value)->count());
     }
-
 }
