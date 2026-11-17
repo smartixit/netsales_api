@@ -62,35 +62,70 @@ class RequestController extends BaseController
     {
         try {
             $filters = $request->only(['network_id', 'pos_id', 'status', 'created_by', 'reviewed_by', 'from_date', 'to_date', 'search', 'per_page', 'all']);
-
-            $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                if ($currentUser->pos) {
-                    $filters['pos_id'] = $currentUser->pos->pos_id;
-                } elseif (method_exists($currentUser, 'posUsers') && $currentUser->posUsers()->exists()) {
-                    $filters['pos_id'] = $currentUser->posUsers()->value('pos_id');
-                } elseif ($currentUser->networks()->exists() || (method_exists($currentUser, 'networkUsers') && $currentUser->networkUsers()->exists())) {
-                    $userNetworkIds = $currentUser->networks()->pluck('networks.network_id')->toArray();
-                    if (method_exists($currentUser, 'networkUsers')) {
-                        $userNetworkIds = array_unique(array_merge($userNetworkIds, $currentUser->networkUsers()->pluck('network_id')->toArray()));
-                    }
-                    if (! empty($filters['network_id']) && ! in_array((int) $filters['network_id'], $userNetworkIds, true)) {
-                        return $this->errorResponse('غير مصرح لك باستعراض طلبات هذه الشبكة.', [], 403);
-                    }
-                    if (empty($filters['network_id'])) {
-                        $filters['network_ids'] = $userNetworkIds;
-                    }
-                }
-            }
+            $filters = $this->applyRequestUserScope($filters);
+            if ($filters instanceof JsonResponse) return $filters;
 
             $requests = $this->requestService->getFiltered($filters);
-
             return $this->successResponse('تم استرجاع قائمة الطلبات بنجاح.', RequestResource::collection($requests));
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('تعذر جلب قائمة الطلبات: '.$e->getMessage(), [], 422);
         }
+    }
+
+    #[OA\Get(
+        path: '/api/v1/requests/summary',
+        summary: 'ملخص طلبات التوريد حسب الحالة',
+        tags: ['Voucher Requests'],
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'pos_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [new OA\Response(response: 200, description: 'ملخص الطلبات')]
+    )]
+    public function summary(Request $request): JsonResponse
+    {
+        try {
+            $filters = $this->applyRequestUserScope($request->only(['network_id', 'pos_id']));
+            if ($filters instanceof JsonResponse) return $filters;
+            return $this->successResponse(
+                'تم استرجاع ملخص الطلبات بنجاح.',
+                $this->requestService->getStatusSummary($filters)
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر جلب ملخص طلبات التوريد: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * فرض نطاق المستخدم نفسه على القائمة والملخص؛ لا يثق بمعرفات النطاق القادمة من العميل.
+     *
+     * @param array<string, mixed> $filters
+     * @return array<string, mixed>|JsonResponse
+     */
+    private function applyRequestUserScope(array $filters): array|JsonResponse
+    {
+        $currentUser = $this->currentUser();
+        if ($currentUser && ! $currentUser->isSuperAdmin()) {
+            if ($currentUser->pos) {
+                $filters['pos_id'] = $currentUser->pos->pos_id;
+            } elseif (method_exists($currentUser, 'posUsers') && $currentUser->posUsers()->exists()) {
+                $filters['pos_id'] = $currentUser->posUsers()->value('pos_id');
+            } elseif ($currentUser->networks()->exists() || (method_exists($currentUser, 'networkUsers') && $currentUser->networkUsers()->exists())) {
+                $networkIds = $currentUser->networks()->pluck('networks.network_id')->toArray();
+                if (method_exists($currentUser, 'networkUsers')) {
+                    $networkIds = array_unique(array_merge($networkIds, $currentUser->networkUsers()->pluck('network_id')->toArray()));
+                }
+                if (! empty($filters['network_id']) && ! in_array((int) $filters['network_id'], $networkIds, true)) {
+                    return $this->errorResponse('غير مصرح لك باستعراض طلبات هذه الشبكة.', [], 403);
+                }
+                if (empty($filters['network_id'])) $filters['network_ids'] = $networkIds;
+            }
+        }
+        return $filters;
     }
 
     /**
