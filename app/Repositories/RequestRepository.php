@@ -82,7 +82,7 @@ class RequestRepository extends BaseRepository implements RequestRepositoryInter
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      * @return array{total:int,pending:int,approved:int,rejected:int,cancelled:int}
      */
     public function getStatusSummary(array $filters = []): array
@@ -98,6 +98,7 @@ class RequestRepository extends BaseRepository implements RequestRepositoryInter
             ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS cancelled', [RequestStatus::CANCELLED->value])
             ->first();
         $values = $row?->getAttributes() ?? [];
+
         return [
             'total' => (int) ($values['total'] ?? 0),
             'pending' => (int) ($values['pending'] ?? 0),
