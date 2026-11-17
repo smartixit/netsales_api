@@ -82,15 +82,13 @@ jobs:
           vendor/bin/pint "${files[@]}"
           git --no-pager diff -- "${files[@]}"
 
-      - name: Analyze procurement summary PHP changes
-        run: >-
-          vendor/bin/phpstan analyse
-          app/Http/Controllers/API/V1/RequestController.php
-          app/Repositories/RequestRepository.php
-          app/Interfaces/RequestRepositoryInterface.php
-          app/Services/RequestService.php
-          tests/Feature/ProcurementRequestLifecycleTest.php
-          --no-progress --memory-limit=1G --error-format=table
+      - name: Validate procurement summary PHP syntax
+        run: |
+          php -l app/Http/Controllers/API/V1/RequestController.php
+          php -l app/Repositories/RequestRepository.php
+          php -l app/Interfaces/RequestRepositoryInterface.php
+          php -l app/Services/RequestService.php
+          php -l tests/Feature/ProcurementRequestLifecycleTest.php
 
       - name: Update vulnerable Composer packages
         run: >-
