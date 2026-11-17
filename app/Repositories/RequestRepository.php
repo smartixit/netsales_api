@@ -80,6 +80,29 @@ class RequestRepository extends BaseRepository implements RequestRepositoryInter
         return parent::getFiltered($filters, $relations);
     }
 
+    /** @return array{total:int,pending:int,approved:int,rejected:int,cancelled:int} */
+    public function getStatusSummary(array $filters = []): array
+    {
+        unset($filters['status'], $filters['per_page'], $filters['cursor'], $filters['all']);
+        $query = $this->model->newQuery();
+        $this->applyFilters($query, $filters);
+        $row = $query
+            ->selectRaw('COUNT(*) AS total')
+            ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS pending', [RequestStatus::PENDING->value])
+            ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS approved', [RequestStatus::APPROVED->value])
+            ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS rejected', [RequestStatus::REJECTED->value])
+            ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS cancelled', [RequestStatus::CANCELLED->value])
+            ->first();
+        $values = $row?->getAttributes() ?? [];
+        return [
+            'total' => (int) ($values['total'] ?? 0),
+            'pending' => (int) ($values['pending'] ?? 0),
+            'approved' => (int) ($values['approved'] ?? 0),
+            'rejected' => (int) ($values['rejected'] ?? 0),
+            'cancelled' => (int) ($values['cancelled'] ?? 0),
+        ];
+    }
+
     /**
      * جلب الطلبات المحذوفة مؤقتاً مع الفلترة والترقيم بالمؤشر.
      */
