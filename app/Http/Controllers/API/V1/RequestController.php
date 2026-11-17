@@ -114,19 +114,18 @@ class RequestController extends BaseController
         }
 
         if (! $currentUser->isSuperAdmin()) {
-            if ($currentUser->pos) {
-                $filters['pos_id'] = $currentUser->pos->pos_id;
-            } elseif (method_exists($currentUser, 'posUsers') && $currentUser->posUsers()->exists()) {
+            $ownedPosId = $currentUser->pos()->value('pos_id');
+            if ($ownedPosId) {
+                $filters['pos_id'] = (int) $ownedPosId;
+            } elseif ($currentUser->posUsers()->exists()) {
                 $posId = $currentUser->posUsers()->value('pos_id');
                 if (! $posId) {
                     return $this->errorResponse('لا توجد نقطة بيع مصرح بها لهذا الحساب.', [], 403);
                 }
                 $filters['pos_id'] = (int) $posId;
-            } elseif ($currentUser->networks()->exists() || (method_exists($currentUser, 'networkUsers') && $currentUser->networkUsers()->exists())) {
+            } elseif ($currentUser->networks()->exists() || $currentUser->networkUsers()->exists()) {
                 $networkIds = $currentUser->networks()->pluck('networks.network_id')->toArray();
-                if (method_exists($currentUser, 'networkUsers')) {
-                    $networkIds = array_unique(array_merge($networkIds, $currentUser->networkUsers()->pluck('network_id')->toArray()));
-                }
+                $networkIds = array_unique(array_merge($networkIds, $currentUser->networkUsers()->pluck('network_id')->toArray()));
                 if ($networkIds === []) {
                     return $this->errorResponse('لا توجد شبكة مصرح بها لهذا الحساب.', [], 403);
                 }
