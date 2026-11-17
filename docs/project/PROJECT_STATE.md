@@ -316,3 +316,11 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Flutter passes the selected `pos_id` to package catalogue loading, calculates line/cart estimates with integer minor-unit and basis-point arithmetic, and submits directly without a pre-submit quote request.
 - The API `UserSeeder` was also corrected to stop inserting into the generated `users.role_scope` column; this was necessary to unblock the existing migration/seeding CI gate.
 - Validation remains pending on the newest exact branch heads. Previous API CI runs failed before tests on the generated-column seeder issue; the fix has been pushed and a fresh run is required. Flutter CI is running on the latest code-fix head.
+
+
+## POS procurement cart tariff refresh — 2026-11-17
+
+- The expired-pricing refresh defect is addressed in the active API/Flutter feature branches: the client now refreshes the package IDs currently in the cart using the signed POS/network catalogue context, then replaces cart-line package snapshots only after validating that every selected active package returned a current snapshot.
+- Voucher quantities remain unchanged; sheet equivalents are recalculated from the refreshed package capacity. Partial results, failures, changed cart contents, or changed workspace context cannot silently clear the pricing-expired state.
+- API PR #32 remains open/draft at `a746afce29d720f0a7871397c4e7ee33f322fc56`. Flutter PR #45 remains open/draft at `cc3333ae35911735c5ae64974b04ff3f7407519f`. Neither PR was merged.
+- **Validation is blocked, not passed:** API run #415 failed with 189 test failures / 145 passes / 3 skips, including the existing generated-column fixture issue in `tests/TestCase.php`; Flutter run #867 passed formatting but failed project analysis on 17 unrelated info-level curly-brace diagnostics, so Flutter tests/compile were skipped. See the latest WORK_LOG entry for exact files and details.
