@@ -75,6 +75,10 @@ class VoucherPackageRepository extends BaseRepository implements VoucherPackageR
             }
         }
 
+        if (! empty($filters['package_ids'])) {
+            $query->whereIn('package_id', $filters['package_ids']);
+        }
+
         if (! empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
