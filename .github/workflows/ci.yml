@@ -90,6 +90,12 @@ jobs:
           php -l app/Services/RequestService.php
           php -l tests/Feature/ProcurementRequestLifecycleTest.php
 
+      - name: Analyze procurement request controller scope
+        run: >-
+          vendor/bin/phpstan analyse
+          app/Http/Controllers/API/V1/RequestController.php
+          --no-progress --memory-limit=1G --error-format=table
+
       - name: Update vulnerable Composer packages
         run: >-
           composer update league/commonmark symfony/http-foundation symfony/http-kernel
