@@ -307,3 +307,12 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - **Verification:** GitHub Actions run #390 passed on the recorded head: migration + seeding, Composer validation/audit, Pint, blocking targeted PHPStan, and Laravel tests (335 tests / 2,700 assertions). No local PHP/PHPUnit execution is claimed.
 - **PHPStan limitation:** Full-project PHPStan reports 1,000+ existing diagnostics. The workflow intentionally marks full-project analysis as report-only; the enforcement gate requires the configured targeted PHPStan run. Do not describe the full project as PHPStan-clean. Include a baseline-aware static-analysis guard in the future preventive CI stage.
 - **PR status:** PR #29 is open and not merged; CI was successful on the recorded head. Wait for user review/approval before accepting Phase 0 or starting the next implementation phase. PR #28 was closed without merge after its initial fixture-only approach was superseded by the corrected role-scope contract.
+
+## POS procurement inline estimate — 2026-11-17
+
+- Authorized branches: API `feat/procurement-pos-pricing-snapshot`; Flutter `feat/procurement-v5-inline-workspace` (Flutter PR #45).
+- Approved narrow exception DEC-PROC-01: display-only POS procurement estimate from signed package pricing snapshots. The client does not send totals; Laravel validates tokens and computes authoritative amounts.
+- API snapshot payload now includes a signed token and 30-minute expiry. Request creation requires one token per item.
+- Flutter passes the selected `pos_id` to package catalogue loading, calculates line/cart estimates with integer minor-unit and basis-point arithmetic, and submits directly without a pre-submit quote request.
+- The API `UserSeeder` was also corrected to stop inserting into the generated `users.role_scope` column; this was necessary to unblock the existing migration/seeding CI gate.
+- Validation remains pending on the newest exact branch heads. Previous API CI runs failed before tests on the generated-column seeder issue; the fix has been pushed and a fresh run is required. Flutter CI is running on the latest code-fix head.

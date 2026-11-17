@@ -1069,3 +1069,14 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Verification on exact head `fa7569f56f09e3d344c48043c2932e9249408e73`:** GitHub Actions run #390 completed successfully. MySQL migration/seeding PASS; Composer validation/audit PASS; Pint PASS; configured blocking/targeted PHPStan PASS; Laravel suite 335 passed (2,700 assertions). Full-project PHPStan emits 1,000+ diagnostics but is explicitly report-only in the current workflow. No PHP or PHPUnit was run locally.
 - **PR:** [smartixit/netsales_api PR #29](https://github.com/smartixit/netsales_api/pull/29), targeting `main`. PR #28 was superseded and closed without merge.
 - **Status:** Awaiting user review. No merge performed. No Phase 1 branch created.
+
+## 2026-11-17 — POS procurement signed snapshot estimates and direct submission
+
+- **Authorization:** User explicitly authorized implementation of the POS procurement inline-estimate change and its narrowly scoped display-only financial exception (DEC-PROC-01).
+- **API branch:** `feat/procurement-pos-pricing-snapshot`; source commit `cd84b54f90b698cffee5173d7c18781924e0707e`, documentation commit `f16cbc070ecd7a0383eed47d9a019c03562f15b1`, latest seeder fix `465c37eccf68fc8f92d50bfcb15197505d9eb0b1`.
+- **Flutter branch:** `feat/procurement-v5-inline-workspace`; source commit `551155537f39d15c4658b915b6e47d10f780d6f7`, documentation commit `e6207013b21782286646ac9f06bf0563a63d2363`, latest fixture/analyzer fix `f84af1f87ece41765f4f317e3b04ba0549dde59d`.
+- API adds an explicit snapshot expiry field to the POS package catalogue and tests stale snapshot rejection. Request creation consumes a per-item signed token and continues to calculate final totals in Laravel.
+- Flutter reads snapshot expiry, sends active `pos_id` when loading package catalogues, calculates non-binding estimates with integer minor units and basis-point half-up rounding, gates submission on valid snapshots, and removes the pre-submit quote request. Tests cover direct submission and per-line rounding.
+- CI follow-up: API CI previously failed before tests because `UserSeeder` inserted the generated `users.role_scope` column. Removed that field from both system-daemon and platform-admin upserts; the generated value is still derived by the database. Fresh exact-head CI is required.
+- Flutter CI exposed a non-const DateTime fixture and an unused import; both were corrected at `f84af1f87ece41765f4f317e3b04ba0549dde59d`. The exact-head Flutter workflow is running.
+- No test/analyzer pass is claimed until exact-head CI completes. No PR was merged.
