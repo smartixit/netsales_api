@@ -54,7 +54,7 @@ class RequestService
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      * @return array{total:int,pending:int,approved:int,rejected:int,cancelled:int}
      */
     public function getStatusSummary(array $filters = []): array
