@@ -318,6 +318,35 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
     }
 
     #[Test]
+    public function pos_package_catalog_refresh_returns_only_requested_packages_with_fresh_pricing(): void
+    {
+        $response = $this->withHeaders($this->headersPosA)
+            ->getJson('/api/v1/networks/'.$this->networkA->network_id.'/voucher-packages?pos_id='.$this->posA->pos_id
+                .'&status=1&package_ids%5B0%5D='.$this->packageA->package_id
+                .'&package_ids%5B1%5D='.$this->packageAInactive->package_id);
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.package_id', $this->packageA->package_id)
+            ->assertJsonStructure([
+                'data' => [
+                    [
+                        'package_id',
+                        'procurement_pricing' => [
+                            'base_unit_price_minor',
+                            'cash_discount_basis_points',
+                            'credit_discount_basis_points',
+                            'pricing_snapshot_token',
+                            'pricing_snapshot_expires_at',
+                        ],
+                    ],
+                ],
+            ]);
+
+        $this->assertNotEmpty($response->json('data.0.procurement_pricing.pricing_snapshot_token'));
+    }
+
+    #[Test]
     public function network_accountant_is_read_only_and_cannot_mutate_packages()
     {
         // 1. Accountant can view package in own network
