@@ -53,7 +53,10 @@ class RequestService
         return $this->requestRepository->getFiltered($filters, ['network', 'pos', 'createdBy', 'reviewedBy', 'items.voucherPackage']);
     }
 
-    /** @return array{total:int,pending:int,approved:int,rejected:int,cancelled:int} */
+    /**
+     * @param array<string, mixed> $filters
+     * @return array{total:int,pending:int,approved:int,rejected:int,cancelled:int}
+     */
     public function getStatusSummary(array $filters = []): array
     {
         return $this->requestRepository->getStatusSummary($filters);
