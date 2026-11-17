@@ -376,6 +376,9 @@ UI presentation must use the decimal string and nested currency metadata with th
 ## POS procurement signed pricing snapshot contract
 
 The POS package catalogue accepts `pos_id`. When supplied with the network package catalogue request, Laravel attaches a `procurement_pricing` object to each package:
+
+For refreshing only the packages currently held in a POS procurement cart, the same catalogue request also accepts `package_ids[]` (1–50 distinct positive package IDs). The filter is applied after tenant/network visibility scoping and before pagination; it does not widen authorization. The request must still include the active `network_id` and authorized `pos_id`, and the server returns only active packages visible in that context with freshly issued `procurement_pricing` snapshots. Clients may batch larger carts into multiple requests of at most 50 IDs. A missing or inactive package is omitted; the client must treat an incomplete response as a failed refresh and must not replace the cart snapshot or clear its pricing-expired state.
+
 - `base_unit_price_minor`: original unit tariff in integer minor units.
 - `cash_discount_basis_points` and `credit_discount_basis_points`: effective discount rates for the active `(network_id, pos_id, package_id)` tuple.
 - `cash_effective_unit_price_minor` and `credit_effective_unit_price_minor`: server-derived display values.
