@@ -465,6 +465,16 @@ class VoucherPackageDiscountService
             $baseMoney = new Money($basePriceMinor, 'YER');
             $cashDiscountMinor = $baseMoney->applyBasisPoints($cashRateBasisPoints)->amountMinor;
             $creditDiscountMinor = $baseMoney->applyBasisPoints($creditRateBasisPoints)->amountMinor;
+            $issuedAt = now('Asia/Aden')->startOfSecond();
+            $pricingSnapshotToken = $this->pricingSnapshotService->issue(
+                $networkId,
+                $posId,
+                (int) $package->package_id,
+                $basePriceMinor,
+                $cashRateBasisPoints,
+                $creditRateBasisPoints,
+                $issuedAt->timestamp,
+            );
 
             $package->setRelation('procurementPricing', [
                 'base_unit_price_minor' => $basePriceMinor,
@@ -473,14 +483,10 @@ class VoucherPackageDiscountService
                 'cash_effective_unit_price_minor' => $basePriceMinor - $cashDiscountMinor,
                 'credit_effective_unit_price_minor' => $basePriceMinor - $creditDiscountMinor,
                 'is_custom' => $customDiscount !== null,
-                'pricing_snapshot_token' => $this->pricingSnapshotService->issue(
-                    $networkId,
-                    $posId,
-                    (int) $package->package_id,
-                    $basePriceMinor,
-                    $cashRateBasisPoints,
-                    $creditRateBasisPoints,
-                ),
+                'pricing_snapshot_token' => $pricingSnapshotToken,
+                'pricing_snapshot_expires_at' => $issuedAt->copy()
+                    ->addSeconds(ProcurementPricingSnapshotService::MAX_AGE_SECONDS)
+                    ->toDateTimeString(),
             ]);
         }
     }

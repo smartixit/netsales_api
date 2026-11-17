@@ -16,7 +16,7 @@ class ProcurementPricingSnapshotService
 {
     private const VERSION = 1;
 
-    private const MAX_AGE_SECONDS = 1800;
+    public const MAX_AGE_SECONDS = 1800;
 
     public function issue(
         int $networkId,
@@ -25,6 +25,7 @@ class ProcurementPricingSnapshotService
         int $baseUnitPriceMinor,
         int $cashDiscountBasisPoints,
         int $creditDiscountBasisPoints,
+        ?int $issuedAtTimestamp = null,
     ): string {
         $payload = [
             'v' => self::VERSION,
@@ -34,7 +35,7 @@ class ProcurementPricingSnapshotService
             'bp' => $baseUnitPriceMinor,
             'cash' => $cashDiscountBasisPoints,
             'credit' => $creditDiscountBasisPoints,
-            'ts' => now('Asia/Aden')->timestamp,
+            'ts' => $issuedAtTimestamp ?? now('Asia/Aden')->timestamp,
         ];
 
         $json = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
