@@ -1069,3 +1069,13 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Verification on exact head `fa7569f56f09e3d344c48043c2932e9249408e73`:** GitHub Actions run #390 completed successfully. MySQL migration/seeding PASS; Composer validation/audit PASS; Pint PASS; configured blocking/targeted PHPStan PASS; Laravel suite 335 passed (2,700 assertions). Full-project PHPStan emits 1,000+ diagnostics but is explicitly report-only in the current workflow. No PHP or PHPUnit was run locally.
 - **PR:** [smartixit/netsales_api PR #29](https://github.com/smartixit/netsales_api/pull/29), targeting `main`. PR #28 was superseded and closed without merge.
 - **Status:** Awaiting user review. No merge performed. No Phase 1 branch created.
+
+
+## 2026-11-18 — POS Procurement Orders Status Summary
+
+- Added `GET /api/v1/requests/summary` to aggregate complete request lifecycle counts independently of cursor pagination.
+- Reused the authenticated request scope for the list and summary actions; the endpoint does not trust caller-provided POS/network IDs as authorization.
+- Added total, pending, approved, rejected, and cancelled counts computed by Laravel from persisted records.
+- Added a feature test verifying complete-scope counts while list-only status and page-size parameters are supplied.
+- Flutter UI integration is on `smartixit/netsales` branch `feat/procurement-orders-list-v5`.
+- CI validation is pending.
