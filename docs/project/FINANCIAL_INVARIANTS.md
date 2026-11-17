@@ -70,3 +70,16 @@ Trial eligibility, redemption, and adjustments are server-side transactional con
 5. Each treasury asset account must equal verified payments allocated to that treasury minus completed refunds allocated from that same treasury. Every new refund must persist its treasury account.
 6. The posted trial balance must balance independently per currency. Missing treasury links are reported as reconciliation warnings, never silently allocated to another account.
 7. All reconciliation values are compared in the original transaction currency and minor units. No cross-currency total is calculated unless a separate functional-currency translation policy is established.
+
+## POS procurement display-only estimate exception — DEC-PROC-01
+
+The Flutter POS procurement workspace may calculate a **non-binding display estimate only** from signed pricing snapshot fields returned by Laravel for every selected package. This exception is restricted to package line estimates and the cart summary in the POS new-procurement flow.
+
+- Inputs must come directly from the current API catalogue snapshot: base unit price in minor units, discount rate in basis points, snapshot token, and expiry.
+- Compute gross per line as `base_unit_price_minor * voucher_count`.
+- Compute the line discount from line gross using integer arithmetic and half-up rounding in basis points; sum rounded line results for the display summary.
+- Recompute locally when quantity or sale type changes. Do not call an API for each interaction.
+- Never submit, persist, or use a client-computed amount for authorization, wallet/debt checks, invoice creation, or accounting.
+- New request submission sends package IDs, quantities, and each package's signed snapshot token only. Laravel revalidates the snapshot and recalculates authoritative amounts transactionally.
+- Missing or expired snapshots disable submission and expose the supported catalogue refresh action.
+- This exception does not apply to invoices, wallet balances, debts, repayments, request modification previews, or any other financial workflow.

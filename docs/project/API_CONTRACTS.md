@@ -372,3 +372,17 @@ Billing Account financial resources expose:
 - a nested `currency` resource with `code` and `decimal_places`.
 
 UI presentation must use the decimal string and nested currency metadata with the shared amount widget. Minor-unit fields remain for exact comparisons and command inputs; they must not be rendered as if they were already major-unit decimal currency. Financial totals, balances, currency conversion, eligibility and trial decisions remain exclusively server-authoritative.
+
+## POS procurement signed pricing snapshot contract
+
+The POS package catalogue accepts `pos_id`. When supplied with the network package catalogue request, Laravel attaches a `procurement_pricing` object to each package:
+- `base_unit_price_minor`: original unit tariff in integer minor units.
+- `cash_discount_basis_points` and `credit_discount_basis_points`: effective discount rates for the active `(network_id, pos_id, package_id)` tuple.
+- `cash_effective_unit_price_minor` and `credit_effective_unit_price_minor`: server-derived display values.
+- `is_custom`: whether the effective POS discount is custom.
+- `pricing_snapshot_token`: signed, POS/network/package-bound token.
+- `pricing_snapshot_expires_at`: expiry timestamp (30 minutes after issue).
+
+New request creation (`POST /requests`) requires `items[*].pricing_snapshot_token`. Laravel validates each token against the current package tariff and effective discounts during creation, then calculates and persists authoritative request totals. The client must not send line totals, discounts, or a request total.
+
+The existing `POST /requests/quote` remains available for explicit quote and modification/review flows. New POS procurement submission must not issue a quote request solely to retrieve totals immediately before creation.
