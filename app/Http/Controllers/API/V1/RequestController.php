@@ -91,7 +91,9 @@ class RequestController extends BaseController
     {
         try {
             $filters = $this->applyRequestUserScope($request->only(['network_id', 'pos_id']));
-            if ($filters instanceof JsonResponse) return $filters;
+            if ($filters instanceof JsonResponse) {
+                return $filters;
+            }
             return $this->successResponse(
                 'تم استرجاع ملخص الطلبات بنجاح.',
                 $this->requestService->getStatusSummary($filters)
