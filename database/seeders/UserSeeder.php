@@ -30,7 +30,6 @@ class UserSeeder extends Seeder
             ['user_id' => 0],
             [
                 'role_id' => $superAdminRole->role_id,
-                'role_scope' => $superAdminRole->scope,
                 'user_full_name' => 'النظام الآلي - System Daemon',
                 'user_phone_number' => '000000000',
                 'user_password' => Hash::make('locked_system_daemon_'.config('app.key')),
