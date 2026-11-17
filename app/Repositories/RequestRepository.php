@@ -80,7 +80,10 @@ class RequestRepository extends BaseRepository implements RequestRepositoryInter
         return parent::getFiltered($filters, $relations);
     }
 
-    /** @return array{total:int,pending:int,approved:int,rejected:int,cancelled:int} */
+    /**
+     * @param array<string, mixed> $filters
+     * @return array{total:int,pending:int,approved:int,rejected:int,cancelled:int}
+     */
     public function getStatusSummary(array $filters = []): array
     {
         unset($filters['status'], $filters['per_page'], $filters['cursor'], $filters['all']);
