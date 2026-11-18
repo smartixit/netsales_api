@@ -6,6 +6,7 @@ use App\Enums\InvoicePaymentStatus;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
+use App\Enums\RoleScope;
 use App\Enums\SaleType;
 use App\Enums\UserStatus;
 use App\Models\Network;
@@ -22,9 +23,9 @@ use App\Models\UserDevice;
 use App\Models\UserSession;
 use App\Models\VoucherPackage;
 use App\Services\ProcurementPricingSnapshotService;
+use App\Services\RequestService;
 use App\Services\VoucherPackageDiscountService;
 use App\Support\DecimalAmount;
-use App\Services\RequestService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Validation\ValidationException;
@@ -141,6 +142,7 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
         $this->networkWallet = NetworkWallet::create([
             'network_id' => $this->network->network_id,
             'wallet_balance' => 0.00,
+            'currency_code' => 'YER',
             'status' => true,
         ]);
 
@@ -149,6 +151,7 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
             'pos_id' => $this->pos->pos_id,
             'wallet_balance' => 500000.00, // رصيد نقدي كافٍ
             'overdraft_limit' => 200000.00,
+            'currency_code' => 'YER',
             'status' => true,
         ]);
     }
@@ -543,7 +546,7 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
         $requestId = $createRes->json('data.request_id');
 
         // محاولة استدعاء المعاينة بمستخدم آخر غير مرتبط بالشبكة
-        $otherUser = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $otherUser = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'مستخدم آخر',

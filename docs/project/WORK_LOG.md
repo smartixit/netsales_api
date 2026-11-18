@@ -1079,3 +1079,48 @@ This log documents all executed tasks, code changes, and verification command ou
 - Added a feature test verifying complete-scope counts while list-only status and page-size parameters are supplied.
 - Flutter UI integration is on `smartixit/netsales` branch `feat/procurement-orders-list-v5`.
 - CI validation is pending.
+
+
+## 2026-11-18 — Procurement Orders UI Decomposition, Status Strip Elevation, and Exhaustive Lifecycle Verification
+
+- **Authorized Scope:** Rebuild remaining interfaces and components of the Procurement Requests module (`features/requests`) with elevated visual depth, dynamic status coloring, single-selection accordion, and design tokens established in `ProcurementRequestDetailsScreen`. Literally and exhaustively verify all request actions (Addition/Creation, Editing/Modification, Approval with automatic invoicing, Rejection with mandatory reason, Cancellation, and Aggregate Summary) across both Flutter and Laravel repositories.
+- **Flutter Architectural Elevation (`smartixit/netsales`):**
+  - Deleted obsolete duplicate widget `pos_procurement_order_card.dart`.
+  - Decomposed monolithic `procurement_order_card.dart` into 4 focused single-responsibility feature widgets:
+    - `ProcurementOrderCardHeader`: Dynamic status-colored gradient icon header (Amber for Pending, Emerald for Approved, Rose for Rejected, Slate for Cancelled), full UUID with copy button, `CustomAvatarBadge` with party logo or initial letter, actor names (`createdByName`, `reviewedByName`), and standard `DateFormatter.dateTime`.
+    - `ProcurementOrderCardAccordion`: Fluid accordion with `Curves.fastOutSlowIn` (300ms duration), package color indicators, item quantities, and "ورقة" description via `VoucherSheetCalculator.describe`.
+    - `ProcurementOrderCardMetricsBar`: 3-column metrics rail (Packages, Vouchers, Total Amount) protected by `FittedBox`.
+    - `ProcurementOrderCardActions`: Contextual action buttons for POS vs Network workspaces.
+  - Rebuilt `ProcurementOrdersSummaryStrip` with all 5 status cards (`إجمالي الطلبات`, `قيد المراجعة`, `معتمدة`, `مرفوضة`, `ملغية`), horizontal scroll, interactive tap-to-filter callbacks, and active selection glow.
+  - Added full domain & data layer pipeline for `/api/v1/requests/summary`:
+    - `RequestStatusSummaryEntity` & `RequestStatusSummaryModel`.
+    - `GetRequestStatusSummaryUseCase` registered in `pos_procurement_orders_binding.dart` and `procurement_request_binding.dart`.
+    - Reactive binding in `PosProcurementOrdersController` and `NetworkProcurementReviewController` with auto-refresh on initial load and pull-to-refresh.
+- **Backend & Database Synchronization (`smartixit/netsales_api`):**
+  - Ran pending migrations on `netsales_test_db` including `2026_11_13_000001_add_operational_wallet_ledger_snapshots` adding `currency_code` to wallets.
+  - Aligned `ProcurementRequestLifecycleTest.php` and `NetworkRequestReviewAndApprovalTest.php` fixtures with authoritative `'currency_code' => 'YER'`.
+  - Fixed `TestCase::createUserWithScope` to respect MySQL generated stored column `role_scope` on `users` table.
+- **Verification Outcomes:**
+  - `flutter analyze lib/features/requests test/requests`: **0 errors, 0 warnings (100% clean)**.
+  - `flutter test test/requests/`: **80 passed (100%)** covering card decomposition, summary strip, accordion, quotes, pricing snapshots, controllers, and details screen.
+  - `php artisan test --compact tests/Feature/ProcurementRequestLifecycleTest.php tests/Feature/NetworkRequestReviewAndApprovalTest.php`: **27 passed (211 assertions)**.
+  - `php artisan test --compact tests/Feature/RequestInvoiceRelationshipTest.php tests/Feature/VoucherRequestAndInvoicingTest.php`: **13 passed (90 assertions)**.
+  - Total backend assertions verified: **40 tests, 301 assertions passed (100%)**.
+  - `vendor/bin/pint --dirty --format agent`: Formatted all touched PHP files cleanly.
+
+
+### 2026-11-18 - Procurement Order Edit Mode Invariants & Modification Preview Sheet World-Class Redesign
+- **Domain & Architectural Invariants Enforced:**
+  - Affirmed and documented that procurement order parties (POS and supplying Network) are strictly read-only and immutable in edit mode (`UpdateRequestRequest` and `RequestService::update`).
+  - Guarded `onNetworkSelected` and `onPosSelected` against state changes during edit mode.
+  - Added locked visual badges and informative guidance banners in `PosNewProcurementOrderScreen` and `ProcurementContextSelector`.
+- **Full Redesign of Network Modification & Preview Sheet (`NetworkRequestModificationSheet`):**
+  - Replaced flat primitive layout with a world-class, high visual depth bottom sheet matching `ProcurementRequestDetailsScreen`:
+    - **`_SheetHeroOverviewCard`**: Deep emerald/teal gradient with ambient circles, request UUID copy action, live commercial parties mini-cards, and SaleType badge.
+    - **`_ProposedItemsSection` & `_ModificationItemCard`**: Package color accent strip, sheet size capacity badges, dynamic humanized paper descriptions, direct numeric quantity input, quick steppers, and half-sheet / full-sheet chips.
+    - **`_AvailablePackagesCatalogSection`**: Interactive catalog addition cards showing validity, uptime, and pricing.
+    - **`_FinancialPreviewSection`**: Tri-card comparison matrix (Original vs Proposed vs Discount), financial difference banner, and itemized diff cards with semantic tone badges.
+    - **`_ModificationFooter`**: Dual sticky action bar with proposed net total display and contextual preview/approval state.
+- **Verification:**
+  - `flutter analyze lib/features/requests test/requests`: **0 issues found (100% clean)**.
+  - `flutter test test/requests/`: **82 tests passed (100%)**, including dedicated `network_request_modification_sheet_test.dart` and `procurement_package_option_card_test.dart`.

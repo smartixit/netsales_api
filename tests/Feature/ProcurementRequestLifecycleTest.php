@@ -136,12 +136,14 @@ class ProcurementRequestLifecycleTest extends TestCase
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'wallet_balance' => 50000.00,
+            'currency_code' => 'YER',
             'status' => true,
         ]);
 
         $this->networkWallet = NetworkWallet::create([
             'network_id' => $this->network->network_id,
             'wallet_balance' => 0.00,
+            'currency_code' => 'YER',
             'status' => true,
         ]);
     }
@@ -180,7 +182,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 50,
-                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -386,7 +388,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $unlinkedPackage->package_id,
                         'voucher_count' => 10,
-                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($unlinkedPackage),
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($unlinkedPackage),
                     ],
                 ],
             ]);
@@ -406,7 +408,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 20,
-                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -456,7 +458,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 30,
-                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -640,7 +642,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 50,
-                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -658,7 +660,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 50,
-                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -681,7 +683,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 50,
-                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -702,7 +704,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 50,
-                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);

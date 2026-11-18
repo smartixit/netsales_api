@@ -36,12 +36,12 @@ abstract class TestCase extends BaseTestCase
     /**
      * Persist a test user with an explicit server-controlled account scope.
      *
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed>  $attributes
      */
     protected function createUserWithScope(RoleScope $scope, array $attributes): User
     {
+        unset($attributes['role_scope']);
         $user = new User($attributes);
-        $user->role_scope = $scope->value;
         $user->save();
 
         return $user;
