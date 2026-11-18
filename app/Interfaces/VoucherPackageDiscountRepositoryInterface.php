@@ -31,6 +31,14 @@ interface VoucherPackageDiscountRepositoryInterface extends BaseRepositoryInterf
     public function findEffectiveDiscount(int $networkId, int $posId, int $packageId): ?VoucherPackageDiscount;
 
     /**
+     * جلب الخصومات الفعالة لمجموعة باقات ضمن سياق شبكة ونقطة بيع واحد.
+     *
+     * @param array<int, int> $packageIds
+     * @return Collection<int, VoucherPackageDiscount>
+     */
+    public function findEffectiveDiscountsForPackages(int $networkId, int $posId, array $packageIds): Collection;
+
+    /**
      * جلب كافة خصومات نقطة بيع محددة.
      *
      * @param  array<string, mixed>  $filters

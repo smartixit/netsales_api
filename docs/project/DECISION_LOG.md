@@ -133,3 +133,12 @@ Valid statuses are strictly:
 - Credit notes, refunds, and their accounting journal entries are immutable after posting; corrections require a new financial document/reversal.
 
 - Refund requests revalidate idempotency after acquiring the invoice lock; invoice-level serialization is the concurrency boundary for refunds on that invoice.
+
+## DEC-PROC-01: POS procurement display-only estimate from signed pricing snapshots
+- **Status:** **`APPROVED`**
+- **Date:** 2026-11-17
+- **User Decision Date:** 2026-11-17
+- **Scope:** POS new-procurement package cards and cart summary only.
+- **Decision:** Permit Flutter to calculate a non-binding estimate from Laravel-issued, POS/network/package-bound pricing snapshot inputs (integer minor-unit base price and basis-point discount). Recalculate locally on quantity/payment-type changes without network requests. Do not send or persist client totals. New request creation sends each item's signed snapshot token; Laravel validates current tariff/discount state and computes authoritative totals transactionally.
+- **Expiry:** Snapshot lifetime is 30 minutes. Missing, expired, or stale snapshots block submission and require refreshing the package catalogue.
+- **Explicit exclusions:** No client-side accounting or financial calculations outside this narrowly scoped POS procurement display estimate. Existing server quote/preview flows for request modification remain unchanged.

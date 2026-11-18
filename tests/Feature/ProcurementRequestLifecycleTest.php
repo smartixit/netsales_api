@@ -20,6 +20,9 @@ use App\Models\UserDevice;
 use App\Models\UserSession;
 use App\Models\VoucherPackage;
 use App\Models\VoucherPackageDiscount;
+use App\Services\ProcurementPricingSnapshotService;
+use App\Services\VoucherPackageDiscountService;
+use App\Support\DecimalAmount;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -143,6 +146,26 @@ class ProcurementRequestLifecycleTest extends TestCase
         ]);
     }
 
+    private function pricingSnapshotForPackage(VoucherPackage $package): string
+    {
+        $networkId = (int) $package->network_id;
+        $posId = (int) $this->pos->pos_id;
+        $discount = app(VoucherPackageDiscountService::class)->getEffectiveDiscount(
+            $networkId,
+            $posId,
+            (int) $package->package_id,
+        );
+
+        return app(ProcurementPricingSnapshotService::class)->issue(
+            $networkId,
+            $posId,
+            (int) $package->package_id,
+            DecimalAmount::toMinorUnits($package->package_voucher_price),
+            DecimalAmount::toMinorUnits($discount['discount_cash']),
+            DecimalAmount::toMinorUnits($discount['discount_credit']),
+        );
+    }
+
     /**
      * إثبات اعتماد طلب التوريد وتوليد الفاتورة المرتبطة وتسوية الرصيد بنجاح بعد فتح البوابة الرسمية
      */
@@ -157,6 +180,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 50,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -207,6 +231,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                 [
                     'package_id' => $this->package->package_id,
                     'voucher_count' => 50,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     'voucher_price' => 1.00,
                     'item_discount' => 99.00,
                 ],
@@ -259,6 +284,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                 [
                     'package_id' => $this->package->package_id,
                     'voucher_count' => 15,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                 ],
             ],
         ];
@@ -304,6 +330,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                 [
                     'package_id' => $this->package->package_id,
                     'voucher_count' => 10,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                 ],
             ],
         ];
@@ -316,6 +343,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                 [
                     'package_id' => $this->package->package_id,
                     'voucher_count' => 50,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                 ],
             ],
         ];
@@ -358,6 +386,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $unlinkedPackage->package_id,
                         'voucher_count' => 10,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($unlinkedPackage),
                     ],
                 ],
             ]);
@@ -377,6 +406,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 20,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -426,6 +456,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 30,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -517,6 +548,31 @@ class ProcurementRequestLifecycleTest extends TestCase
             ->assertJsonValidationErrors(['status']);
     }
 
+    public function test_request_store_rejects_a_package_snapshot_after_catalog_price_changes(): void
+    {
+        $snapshotToken = $this->pricingSnapshotForPackage($this->package);
+        $this->package->update([
+            'package_voucher_price' => $this->package->package_voucher_price + 25,
+        ]);
+
+        $response = $this->withHeaders($this->headers)
+            ->postJson('/api/v1/requests', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'sale_type' => 'CASH',
+                'items' => [
+                    [
+                        'package_id' => $this->package->package_id,
+                        'voucher_count' => 25,
+                        'pricing_snapshot_token' => $snapshotToken,
+                    ],
+                ],
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['items']);
+    }
+
     /**
      * اختبار معاينة واحتساب عرض الأسعار الرسمي والرموز الموقعة (Phase 3.1 Quote Endpoint).
      */
@@ -530,6 +586,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                 [
                     'package_id' => $this->package->package_id,
                     'voucher_count' => 100,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                 ],
             ],
         ];
@@ -583,6 +640,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 50,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -600,6 +658,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 50,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -622,6 +681,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 50,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -642,6 +702,7 @@ class ProcurementRequestLifecycleTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 50,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
