@@ -16,6 +16,9 @@ use App\Models\User;
 use App\Models\UserDevice;
 use App\Models\UserSession;
 use App\Models\VoucherPackage;
+use App\Services\ProcurementPricingSnapshotService;
+use App\Services\VoucherPackageDiscountService;
+use App\Support\DecimalAmount;
 use App\Models\VoucherPackageDiscount;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -146,6 +149,24 @@ class VoucherRequestAndInvoicingTest extends TestCase
         ]);
     }
 
+    private function pricingSnapshotForPackage(VoucherPackage $package): string
+    {
+        $discount = app(VoucherPackageDiscountService::class)->getEffectiveDiscount(
+            (int) $package->network_id,
+            (int) $this->pos->pos_id,
+            (int) $package->package_id,
+        );
+
+        return app(ProcurementPricingSnapshotService::class)->issue(
+            (int) $package->network_id,
+            (int) $this->pos->pos_id,
+            (int) $package->package_id,
+            DecimalAmount::toMinorUnits($package->package_voucher_price),
+            DecimalAmount::toMinorUnits($discount['discount_cash']),
+            DecimalAmount::toMinorUnits($discount['discount_credit']),
+        );
+    }
+
     public function test_can_submit_and_approve_request_with_auto_invoicing_and_settlement(): void
     {
         // 1. Submit Request for 100 vouchers
@@ -158,6 +179,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 100,
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -222,6 +244,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 20,
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -257,6 +280,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 100,
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -315,6 +339,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 100,
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -354,6 +379,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 100,
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -411,6 +437,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 10,
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -450,6 +477,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 10,
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);
@@ -490,6 +518,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
                     [
                         'package_id' => $this->package->package_id,
                         'voucher_count' => 10,
+                        'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                     ],
                 ],
             ]);

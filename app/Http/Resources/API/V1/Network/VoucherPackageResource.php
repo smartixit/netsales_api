@@ -37,6 +37,10 @@ class VoucherPackageResource extends JsonResource
             'credit_discount_amount' => round(((float) $this->package_voucher_price * (float) $this->package_default_credit_discount) / 100, 2),
             'effective_cash_price' => round((float) $this->package_voucher_price - (((float) $this->package_voucher_price * (float) $this->package_default_cash_discount) / 100), 2),
             'effective_credit_price' => round((float) $this->package_voucher_price - (((float) $this->package_voucher_price * (float) $this->package_default_credit_discount) / 100), 2),
+            'procurement_pricing' => $this->when(
+                $this->resource->relationLoaded('procurementPricing'),
+                fn () => $this->resource->getRelation('procurementPricing')
+            ),
             'status' => (bool) $this->status,
             'created_by' => $this->created_by,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,

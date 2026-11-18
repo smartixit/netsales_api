@@ -79,6 +79,12 @@ class StoreRequestRequest extends FormRequest
                 'integer',
                 'min:1',
             ],
+            'items.*.pricing_snapshot_token' => [
+                'required_with:items',
+                'string',
+                'min:20',
+                'max:4096',
+            ],
             'pricing_token' => [
                 'nullable',
                 'string',

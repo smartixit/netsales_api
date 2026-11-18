@@ -1069,3 +1069,42 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Verification on exact head `fa7569f56f09e3d344c48043c2932e9249408e73`:** GitHub Actions run #390 completed successfully. MySQL migration/seeding PASS; Composer validation/audit PASS; Pint PASS; configured blocking/targeted PHPStan PASS; Laravel suite 335 passed (2,700 assertions). Full-project PHPStan emits 1,000+ diagnostics but is explicitly report-only in the current workflow. No PHP or PHPUnit was run locally.
 - **PR:** [smartixit/netsales_api PR #29](https://github.com/smartixit/netsales_api/pull/29), targeting `main`. PR #28 was superseded and closed without merge.
 - **Status:** Awaiting user review. No merge performed. No Phase 1 branch created.
+
+## 2026-11-17 — POS procurement signed snapshot estimates and direct submission
+
+- **Authorization:** User explicitly authorized implementation of the POS procurement inline-estimate change and its narrowly scoped display-only financial exception (DEC-PROC-01).
+- **API branch:** `feat/procurement-pos-pricing-snapshot`; source commit `cd84b54f90b698cffee5173d7c18781924e0707e`, documentation commit `f16cbc070ecd7a0383eed47d9a019c03562f15b1`, latest seeder fix `465c37eccf68fc8f92d50bfcb15197505d9eb0b1`.
+- **Flutter branch:** `feat/procurement-v5-inline-workspace`; source commit `551155537f39d15c4658b915b6e47d10f780d6f7`, documentation commit `e6207013b21782286646ac9f06bf0563a63d2363`, latest fixture/analyzer fix `f84af1f87ece41765f4f317e3b04ba0549dde59d`.
+- API adds an explicit snapshot expiry field to the POS package catalogue and tests stale snapshot rejection. Request creation consumes a per-item signed token and continues to calculate final totals in Laravel.
+- Flutter reads snapshot expiry, sends active `pos_id` when loading package catalogues, calculates non-binding estimates with integer minor units and basis-point half-up rounding, gates submission on valid snapshots, and removes the pre-submit quote request. Tests cover direct submission and per-line rounding.
+- CI follow-up: API CI previously failed before tests because `UserSeeder` inserted the generated `users.role_scope` column. Removed that field from both system-daemon and platform-admin upserts; the generated value is still derived by the database. Fresh exact-head CI is required.
+- Flutter CI exposed a non-const DateTime fixture and an unused import; both were corrected at `f84af1f87ece41765f4f317e3b04ba0549dde59d`. The exact-head Flutter workflow is running.
+- No test/analyzer pass is claimed until exact-head CI completes. No PR was merged.
+
+
+## 2026-11-17 — POS procurement cart tariff refresh
+
+- **Authorization:** User authorized fixing the POS procurement `pricingExpired` state that remained visible after a successful tariff refresh.
+- **Root cause:** Catalogue refresh replaced `availablePackages` only; cart lines retained their old immutable `PackageEntity` references and therefore their expired signed pricing snapshots.
+- **API branch:** `feat/procurement-pos-pricing-snapshot`; latest recorded HEAD `a746afce29d720f0a7871397c4e7ee33f322fc56`; PR #32 remains open/draft and unmerged.
+- **API files changed:** `VoucherPackageController.php` validates bounded `package_ids[]` (1–50 distinct positive IDs); `VoucherPackageRepository.php` applies the ID filter after tenant/network scoping; `VoucherPackageTenantAuthorizationTest.php` adds coverage for POS-scoped selected-package refresh; `API_CONTRACTS.md` documents the refresh contract and fail-closed behavior.
+- **Flutter branch:** `feat/procurement-v5-inline-workspace`; latest recorded HEAD `cc3333ae35911735c5ae64974b04ff3f7407519f`; PR #45 remains open/draft and unmerged.
+- **Flutter files changed:** catalog repository/use case support bounded package-ID queries; `PosProcurementController` refreshes only cart package IDs in batches of 50, verifies complete/current snapshots before replacing cart entities, preserves voucher quantities and recalculates sheet equivalents, discards stale responses after cart/context changes, invalidates old quote state, and retains refresh errors; `ProcurementCheckoutBar` presents one pricing-expired state and reflects refresh progress/failure; `procurement_quote_pricing_test.dart` covers successful snapshot replacement and disappearance of the expired state; catalog/controller mock tests were updated for the new optional query argument; `shared-contract-reference.md` records the contract.
+- **API CI:** Workflow run #415 on exact API HEAD `a746afce29d720f0a7871397c4e7ee33f322fc56` failed. Composer validation/audit, Pint, and targeted PHPStan steps completed successfully; the full Laravel suite reported 189 failures / 145 passes / 3 skips. The failing fixtures include the existing generated `users.role_scope` column insertion in `tests/TestCase.php`; the new test lives in the same affected authorization test class and is not independently verified by this run.
+- **Flutter CI:** Workflow run #867 on exact Flutter HEAD `cc3333ae35911735c5ae64974b04ff3f7407519f` failed during project analysis with 17 existing info-level curly-brace diagnostics in unrelated Billing, Finance, and Reports files. Dart formatting passed; test and compile steps were skipped by the workflow after analysis failed. No Flutter test/analyzer pass is claimed.
+- **Verification boundary:** Source and diff inspection plus GitHub Actions logs only. No local Flutter, PHP, Pint, PHPStan, or PHPUnit commands were run. No PR was merged.
+
+
+### Verification follow-up — 2026-11-17
+
+- Flutter branch advanced to `c68b5de135c7e71759976af4d8e317dace7b6b84` after separating package-search debounce/clear from the explicit cart-tariff refresh action. This prevents typing in catalogue search from accidentally refreshing only cart package IDs and leaving search results stale. The incomplete-response regression test was also added.
+- Flutter workflow run #870 on that exact SHA: dependency resolution and Dart formatting passed; project analysis failed on the same 17 info-level curly-brace diagnostics in unrelated Billing, Finance, and Reports files. The test and compile steps were skipped. None of the reported analyzer diagnostics referenced the files changed for this fix.
+- API branch HEAD at verification time: `ad7be8887e7c73c39f25348ae082115f14c3a09d`; API workflow run #417 failed with the same 189 failures / 145 passes / 3 skips as run #415. The newly added POS package refresh test is listed among the failed methods because its test class setup uses the shared `createUserWithScope` helper, which attempts to write to generated `users.role_scope`; this fixture failure prevents endpoint assertions from running. The test harness issue is pre-existing and was not broadened into this tariff-refresh change.
+- The API source gates that completed (Composer audit, Pint, targeted PHPStan) passed. The full Laravel suite and Flutter tests remain unverified due the above blockers.
+
+
+### Final implementation state — 2026-11-17
+
+- Flutter branch current code HEAD: `f7b47d9feca1af5f39b32004db5cf321536f3a10`. In addition to the earlier follow-up, the refresh now updates the selected-package reference as well as cart/catalogue references, keeps search debounce and clear-search on the normal catalogue path (so typing never triggers tariff refresh), and reloads non-authoritative discount metadata without blocking the refreshed cart from becoming submittable.
+- Flutter workflow #872 completed with failure on that exact SHA: dependency resolution and Dart formatting passed; project analysis failed on the same 17 info-level `curly_braces_in_flow_control_structures` diagnostics, all in unrelated Billing, Finance, and Reports files. The test and compile steps were skipped. The analyzer log contains no diagnostics for the files changed by this procurement fix. Earlier run #870 failed on the same 17 unrelated info-level diagnostics, and run #871 was cancelled when a newer commit arrived.
+- API implementation code HEAD remains `ad7be8887e7c73c39f25348ae082115f14c3a09d`; subsequent API branch commits are documentation-only work-log updates, with the latest work-log update forming the current PR head. API run #417 on the implementation/docs-state SHA failed for the pre-existing generated-column test-fixture issue described above. No API product-code changes were made after that tested code SHA.

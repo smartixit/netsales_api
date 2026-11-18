@@ -20,6 +20,8 @@ use App\Models\UserSession;
 use App\Models\VoucherPackage;
 use App\Models\VoucherPackageDiscount;
 use App\Services\RequestPricingReviewService;
+use App\Services\ProcurementPricingSnapshotService;
+use App\Support\DecimalAmount;
 use App\Services\VoucherPackageDiscountService;
 use Carbon\Carbon;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -133,6 +135,26 @@ class VoucherPackageDiscountValidityTest extends TestCase
         ]);
 
         $this->discountService = app(VoucherPackageDiscountService::class);
+    }
+
+    private function pricingSnapshotForPackage(VoucherPackage $package): string
+    {
+        $networkId = (int) $package->network_id;
+        $posId = (int) $this->pos->pos_id;
+        $discount = $this->discountService->getEffectiveDiscount(
+            $networkId,
+            $posId,
+            (int) $package->package_id,
+        );
+
+        return app(ProcurementPricingSnapshotService::class)->issue(
+            $networkId,
+            $posId,
+            (int) $package->package_id,
+            DecimalAmount::toMinorUnits($package->package_voucher_price),
+            DecimalAmount::toMinorUnits($discount['discount_cash']),
+            DecimalAmount::toMinorUnits($discount['discount_credit']),
+        );
     }
 
     protected function tearDown(): void
@@ -648,6 +670,7 @@ class VoucherPackageDiscountValidityTest extends TestCase
                 [
                     'package_id' => $this->package->package_id,
                     'voucher_count' => 10,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
                 ],
             ],
         ]);
@@ -1086,7 +1109,11 @@ class VoucherPackageDiscountValidityTest extends TestCase
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,
             'items' => [
-                ['package_id' => $this->package->package_id, 'voucher_count' => 5],
+                [
+                    'package_id' => $this->package->package_id,
+                    'voucher_count' => 5,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
+                ],
             ],
         ]);
         $requestId = $createRes->json('data.request_id');
@@ -1136,7 +1163,11 @@ class VoucherPackageDiscountValidityTest extends TestCase
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,
             'items' => [
-                ['package_id' => $this->package->package_id, 'voucher_count' => 10],
+                [
+                    'package_id' => $this->package->package_id,
+                    'voucher_count' => 10,
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->package),
+                ],
             ],
         ]);
         $requestId = $createRes->json('data.request_id');
