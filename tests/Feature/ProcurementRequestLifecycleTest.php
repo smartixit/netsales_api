@@ -710,4 +710,31 @@ class ProcurementRequestLifecycleTest extends TestCase
         $storeResponse->assertStatus(422)
             ->assertJsonValidationErrors(['pricing']);
     }
+
+    public function test_request_status_summary_returns_complete_pos_scope_counts_independent_of_cursor_list(): void
+    {
+        $before = RequestModel::where('pos_id', $this->pos->pos_id)->count();
+        foreach ([RequestStatus::PENDING, RequestStatus::APPROVED, RequestStatus::REJECTED, RequestStatus::CANCELLED] as $status) {
+            RequestModel::create([
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'sale_type' => SaleType::CASH,
+                'request_total_amount' => 1000,
+                'request_date' => Carbon::now('Asia/Aden'),
+                'status' => $status,
+                'created_by' => $this->user->user_id,
+            ]);
+        }
+
+        $response = $this->withHeaders($this->headers)
+            ->getJson('/api/v1/requests/summary?pos_id='.$this->pos->pos_id.'&status=PENDING&per_page=1');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.total', $before + 4)
+            ->assertJsonPath('data.pending', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::PENDING->value)->count())
+            ->assertJsonPath('data.approved', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::APPROVED->value)->count())
+            ->assertJsonPath('data.rejected', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::REJECTED->value)->count())
+            ->assertJsonPath('data.cancelled', RequestModel::where('pos_id', $this->pos->pos_id)->where('status', RequestStatus::CANCELLED->value)->count());
+    }
 }

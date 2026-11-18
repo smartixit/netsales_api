@@ -22,6 +22,12 @@ interface RequestRepositoryInterface extends BaseRepositoryInterface
     public function getFiltered(array $filters = [], array $relations = ['network', 'pos', 'createdBy', 'reviewedBy', 'items.voucherPackage']): Collection|CursorPaginator;
 
     /**
+     * @param  array<string, mixed>  $filters
+     * @return array{total:int,pending:int,approved:int,rejected:int,cancelled:int}
+     */
+    public function getStatusSummary(array $filters = []): array;
+
+    /**
      * جلب الطلبات المحذوفة مؤقتاً مع الفلترة والترقيم بالمؤشر.
      *
      * @param  array<string, mixed>  $filters

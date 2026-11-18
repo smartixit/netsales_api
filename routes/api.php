@@ -420,6 +420,7 @@ Route::prefix('v1')->group(function () {
         // ==========================================
         Route::middleware(['throttle:api-read', 'permission:requests.view'])->group(function () {
             Route::get('requests', [RequestController::class, 'index'])->name('api.v1.requests.index');
+            Route::get('requests/summary', [RequestController::class, 'summary'])->name('api.v1.requests.summary');
             Route::get('requests/trashed', [RequestController::class, 'trashed'])->name('api.v1.requests.trashed');
             Route::get('requests/{id}', [RequestController::class, 'show'])->whereNumber('id')->name('api.v1.requests.show');
         });

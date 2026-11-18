@@ -56,6 +56,15 @@ class RequestService
     }
 
     /**
+     * @param  array<string, mixed>  $filters
+     * @return array{total:int,pending:int,approved:int,rejected:int,cancelled:int}
+     */
+    public function getStatusSummary(array $filters = []): array
+    {
+        return $this->requestRepository->getStatusSummary($filters);
+    }
+
+    /**
      * جلب الطلبات المحذوفة مؤقتاً.
      */
     public function getTrashed(array $filters = []): Collection|CursorPaginator
