@@ -25,7 +25,9 @@ class BillingDunningPolicyVersion extends Model
     use ExactDateSerialization;
 
     protected $table = 'billing_dunning_policy_versions';
+
     protected $primaryKey = 'dunning_policy_version_id';
+
     protected $fillable = ['dunning_policy_id', 'version_number', 'status', 'grace_period_days', 'auto_suspend_after_grace', 'reminder_schedule_days', 'pre_renewal_alert_days', 'published_at', 'created_by'];
 
     protected function casts(): array

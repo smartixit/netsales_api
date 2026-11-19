@@ -12,6 +12,7 @@ class CurrencyExchangeRate extends Model
     use ExactDateSerialization;
 
     protected $table = 'currency_exchange_rates';
+
     protected $primaryKey = 'exchange_rate_id';
 
     protected $fillable = [

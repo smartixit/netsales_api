@@ -4,7 +4,6 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Enums\RoleScope;
 use App\Enums\UserStatus;
-
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\User\StoreUserRequest;
 use App\Http\Requests\API\V1\User\SyncPermissionsRequest;

@@ -5,22 +5,25 @@ namespace App\Models;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $subscription_alert_id
  * @property int $billing_subscription_id
  * @property string $alert_type
  * @property string $status
- * @property \Illuminate\Support\Carbon $scheduled_at
- * @property \Illuminate\Support\Carbon|null $sent_at
+ * @property Carbon $scheduled_at
+ * @property Carbon|null $sent_at
  */
 class BillingSubscriptionAlert extends Model
 {
     use ExactDateSerialization;
 
     protected $table = 'billing_subscription_alerts';
+
     protected $primaryKey = 'subscription_alert_id';
-    protected $fillable = ['billing_subscription_id','dunning_policy_version_id','period_end','alert_days','scheduled_at','status','queued_at','message_uuid','result_message'];
+
+    protected $fillable = ['billing_subscription_id', 'dunning_policy_version_id', 'period_end', 'alert_days', 'scheduled_at', 'status', 'queued_at', 'message_uuid', 'result_message'];
 
     protected function casts(): array
     {

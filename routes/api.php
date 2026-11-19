@@ -467,6 +467,7 @@ Route::prefix('v1')->group(function () {
         // 12. المصروفات التشغيلية والبنود والمرفقات (Expenses & Operational Disbursals)
         // ==========================================
         Route::middleware(['throttle:api-read', 'permission:expenses.view'])->group(function () {
+            Route::get('expenses/summary', [ExpenseController::class, 'summary'])->name('api.v1.expenses.summary');
             Route::get('expenses', [ExpenseController::class, 'index'])->name('api.v1.expenses.index');
             Route::get('expenses/trashed', [ExpenseController::class, 'trashed'])->name('api.v1.expenses.trashed');
             Route::get('expenses/{id}', [ExpenseController::class, 'show'])->whereNumber('id')->name('api.v1.expenses.show');

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class BillingTrialEligibilityCheck extends Model
 {
     protected $table = 'billing_trial_eligibility_checks';
+
     protected $primaryKey = 'trial_eligibility_check_id';
 
     protected $fillable = [

@@ -27,6 +27,10 @@ class ExpenseRepository extends BaseRepository implements ExpenseRepositoryInter
     {
         parent::applyFilters($query, $filters);
 
+        if (! empty($filters['network_ids'])) {
+            $query->whereIn('network_id', (array) $filters['network_ids']);
+        }
+
         if (! empty($filters['created_by'])) {
             $query->where('created_by', (int) $filters['created_by']);
         }

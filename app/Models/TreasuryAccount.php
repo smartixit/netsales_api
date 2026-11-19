@@ -24,6 +24,7 @@ class TreasuryAccount extends Model
     use SoftDeletes;
 
     protected $table = 'treasury_accounts';
+
     protected $primaryKey = 'treasury_account_id';
 
     protected $fillable = [

@@ -3,9 +3,35 @@
 namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
-use App\Http\Requests\API\V1\Billing\{RejectPaymentRequest, StoreCurrencyConversionRequest, StoreExchangeRateRequest, StoreRefundRequest, StoreCreditNoteRequest, StoreTreasuryAccountRequest, VerifyPaymentRequest};
-use App\Http\Resources\API\V1\Billing\{BillingAccountResource, BillingInvoiceResource, BillingPaymentResource, BillingSubscriptionResource, CurrencyExchangeRateResource, CurrencyConversionResource, CurrencyResource, LedgerJournalEntryResource, PaymentMethodResource, TreasuryAccountResource};
-use App\Services\Billing\{BillingAccountService, BillingDashboardService, BillingCreditNoteService, BillingInvoiceService, BillingPaymentService, BillingPlatformReadService, BillingRefundService, BillingTreasuryService, BillingReconciliationService, BillingSubscriptionService, CurrencyExchangeService};
+use App\Http\Requests\API\V1\Billing\RejectPaymentRequest;
+use App\Http\Requests\API\V1\Billing\StoreCreditNoteRequest;
+use App\Http\Requests\API\V1\Billing\StoreCurrencyConversionRequest;
+use App\Http\Requests\API\V1\Billing\StoreExchangeRateRequest;
+use App\Http\Requests\API\V1\Billing\StoreRefundRequest;
+use App\Http\Requests\API\V1\Billing\StoreTreasuryAccountRequest;
+use App\Http\Requests\API\V1\Billing\VerifyPaymentRequest;
+use App\Http\Resources\API\V1\Billing\BillingAccountResource;
+use App\Http\Resources\API\V1\Billing\BillingInvoiceResource;
+use App\Http\Resources\API\V1\Billing\BillingPaymentResource;
+use App\Http\Resources\API\V1\Billing\BillingSubscriptionResource;
+use App\Http\Resources\API\V1\Billing\CurrencyConversionResource;
+use App\Http\Resources\API\V1\Billing\CurrencyExchangeRateResource;
+use App\Http\Resources\API\V1\Billing\CurrencyResource;
+use App\Http\Resources\API\V1\Billing\LedgerJournalEntryResource;
+use App\Http\Resources\API\V1\Billing\PaymentMethodResource;
+use App\Http\Resources\API\V1\Billing\TreasuryAccountResource;
+use App\Models\BillingSubscription;
+use App\Services\Billing\BillingAccountService;
+use App\Services\Billing\BillingCreditNoteService;
+use App\Services\Billing\BillingDashboardService;
+use App\Services\Billing\BillingInvoiceService;
+use App\Services\Billing\BillingPaymentService;
+use App\Services\Billing\BillingPlatformReadService;
+use App\Services\Billing\BillingReconciliationService;
+use App\Services\Billing\BillingRefundService;
+use App\Services\Billing\BillingSubscriptionService;
+use App\Services\Billing\BillingTreasuryService;
+use App\Services\Billing\CurrencyExchangeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -109,7 +135,7 @@ class BillingFinanceController extends BaseController
 
     public function subscriptionDetails(int $subscriptionId): JsonResponse
     {
-        $subscription = \App\Models\BillingSubscription::query()
+        $subscription = BillingSubscription::query()
             ->with(['billingAccount.network', 'currency', 'plan', 'planVersion', 'price', 'trialRedemption', 'events'])
             ->findOrFail($subscriptionId);
 

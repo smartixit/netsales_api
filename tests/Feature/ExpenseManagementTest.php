@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
+use App\Enums\RoleScope;
 use App\Enums\WalletOperationType;
 use App\Jobs\SendSmsNotificationJob;
 use App\Models\Network;
@@ -294,5 +295,148 @@ class ExpenseManagementTest extends TestCase
         Queue::assertPushed(SendSmsNotificationJob::class, function ($job) use ($expectedUpdateMsg) {
             return $job->phoneNumbers === $this->network->network_phone_number && $job->message === $expectedUpdateMsg;
         });
+    }
+
+    /**
+     * اختبار استرداد الرصيد المالي لمحفظة الشبكة عند حذف المصروف وإعادة الخصم عند الاستعادة.
+     */
+    public function test_expense_deletion_reverses_wallet_deduction_and_restoration_redebits_wallet(): void
+    {
+        $this->networkWallet->update(['wallet_balance' => 50000.00]);
+
+        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/expenses', [
+            'network_id' => $this->network->network_id,
+            'items' => [
+                ['item_statement' => 'شراء وقود مولد', 'item_amount' => 10000.00],
+            ],
+        ]);
+        $createRes->assertStatus(201);
+        $expenseId = (int) $createRes->json('data.expense_id');
+
+        // الرصيد يجب أن يصبح 40,000
+        $this->networkWallet->refresh();
+        $this->assertEquals(40000.00, (float) $this->networkWallet->wallet_balance);
+
+        // حذف ناعم -> يجب استرداد 10,000 ليصبح الرصيد 50,000
+        $delRes = $this->withHeaders($this->headers)->deleteJson("/api/v1/expenses/{$expenseId}");
+        $delRes->assertStatus(200);
+
+        $this->networkWallet->refresh();
+        $this->assertEquals(50000.00, (float) $this->networkWallet->wallet_balance);
+
+        // استعادة -> يجب إعادة خصم 10,000 ليصبح الرصيد 40,000
+        $restoreRes = $this->withHeaders($this->headers)->postJson("/api/v1/expenses/{$expenseId}/restore");
+        $restoreRes->assertStatus(200);
+
+        $this->networkWallet->refresh();
+        $this->assertEquals(40000.00, (float) $this->networkWallet->wallet_balance);
+    }
+
+    /**
+     * اختبار فشل استعادة المصروف المحذوف إذا كان رصيد المحفظة غير كافٍ لإعادة الخصم.
+     */
+    public function test_expense_restoration_fails_if_wallet_balance_is_insufficient(): void
+    {
+        $this->networkWallet->update(['wallet_balance' => 20000.00]);
+
+        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/expenses', [
+            'network_id' => $this->network->network_id,
+            'items' => [
+                ['item_statement' => 'صيانة مفاجئة', 'item_amount' => 15000.00],
+            ],
+        ]);
+        $createRes->assertStatus(201);
+        $expenseId = (int) $createRes->json('data.expense_id');
+
+        // حذف ناعم لاسترداد الرصيد
+        $this->withHeaders($this->headers)->deleteJson("/api/v1/expenses/{$expenseId}")->assertStatus(200);
+        $this->networkWallet->refresh();
+        $this->assertEquals(20000.00, (float) $this->networkWallet->wallet_balance);
+
+        // سحب رصيد المحفظة إلى مبلغ لا يكفي (مثلاً 5,000)
+        $this->networkWallet->update(['wallet_balance' => 5000.00]);
+
+        // محاولة استعادة المصروف بمبلغ 15,000 ورصيد المحفظة 5,000 فقط -> رفض validation error 422
+        $restoreRes = $this->withHeaders($this->headers)->postJson("/api/v1/expenses/{$expenseId}/restore");
+        $restoreRes->assertStatus(422)
+            ->assertJsonValidationErrors(['wallet_balance']);
+    }
+
+    /**
+     * اختبار نقطة نهاية ملخص المصروفات التشغيلية.
+     */
+    public function test_can_get_expenses_summary_endpoint(): void
+    {
+        $this->networkWallet->update(['wallet_balance' => 100000.00]);
+
+        // تسجيل مصروفين
+        $this->withHeaders($this->headers)->postJson('/api/v1/expenses', [
+            'network_id' => $this->network->network_id,
+            'items' => [
+                ['item_statement' => 'بند 1', 'item_amount' => 5000.00],
+            ],
+        ])->assertStatus(201);
+
+        $this->withHeaders($this->headers)->postJson('/api/v1/expenses', [
+            'network_id' => $this->network->network_id,
+            'items' => [
+                ['item_statement' => 'بند 2', 'item_amount' => 7000.00],
+            ],
+        ])->assertStatus(201);
+
+        $summaryRes = $this->withHeaders($this->headers)->getJson("/api/v1/expenses/summary?network_id={$this->network->network_id}");
+        $summaryRes->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonStructure([
+                'data' => [
+                    'total_count',
+                    'total_amount',
+                    'this_month_amount',
+                    'today_amount',
+                ],
+            ]);
+
+        $this->assertGreaterThanOrEqual(2, $summaryRes->json('data.total_count'));
+        $this->assertGreaterThanOrEqual(12000, $summaryRes->json('data.total_amount'));
+    }
+
+    /**
+     * اختبار منع الوصول لمصروفات شبكة أخرى (عزل المستأجرين Tenant Isolation).
+     */
+    public function test_tenant_isolation_blocks_unauthorized_network_expenses(): void
+    {
+        // إنشاء شبكة ثانية لا يملكها ولا ينتسب إليها المستخدم الحالي
+        $otherUser = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => $this->user->role_id,
+            'user_full_name' => 'Foreign User',
+            'user_password' => bcrypt('password123'),
+            'user_phone_number' => '77'.rand(1000000, 9999999),
+        ]);
+        $otherNetwork = Network::create([
+            'owner_id' => $otherUser->user_id,
+            'network_name' => 'Foreign Net '.uniqid(),
+            'network_phone_number' => '77'.rand(1000000, 9999999),
+            'governorate_id' => 1,
+            'directorate_id' => 1,
+            'status' => NetworkStatus::ACTIVE,
+        ]);
+        $otherWallet = NetworkWallet::create([
+            'network_id' => $otherNetwork->network_id,
+            'wallet_balance' => 50000.00,
+            'status' => true,
+        ]);
+
+        // محاولة المستخدم الحالي إنشاء مصروف على الشبكة الأجنبية -> 403
+        $forbiddenCreate = $this->withHeaders($this->headers)->postJson('/api/v1/expenses', [
+            'network_id' => $otherNetwork->network_id,
+            'items' => [
+                ['item_statement' => 'محاولة اختراق', 'item_amount' => 1000.00],
+            ],
+        ]);
+        $forbiddenCreate->assertStatus(403);
+
+        // محاولة عرض ملخص الشبكة الأجنبية -> 403
+        $forbiddenSummary = $this->withHeaders($this->headers)->getJson("/api/v1/expenses/summary?network_id={$otherNetwork->network_id}");
+        $forbiddenSummary->assertStatus(403);
     }
 }

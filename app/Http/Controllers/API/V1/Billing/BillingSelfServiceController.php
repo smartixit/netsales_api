@@ -2,11 +2,34 @@
 
 namespace App\Http\Controllers\API\V1\Billing;
 
-use App\Enums\{BillingInvoiceStatus, BillingPaymentStatus, BillingSubscriptionStatus};
+use App\Enums\BillingInvoiceStatus;
+use App\Enums\BillingPaymentStatus;
+use App\Enums\BillingSubscriptionStatus;
 use App\Http\Controllers\API\V1\BaseController;
-use App\Http\Requests\API\V1\Billing\{CreateBillingAccountRequest, PurchaseSubscriptionRequest, StorePaymentRequest, StoreBillingAccountContactRequest, UpdateBillingAccountContactRequest, UpdateBillingAccountRequest};
-use App\Http\Resources\API\V1\Billing\{BillingAccountContactResource, BillingAccountResource, BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingPlanResource, BillingRefundResource, BillingSubscriptionEventResource, BillingSubscriptionResource, BillingUsageAggregateResource, CurrencyResource, PaymentMethodResource};
-use App\Services\Billing\{BillingEntitlementService, BillingPaymentService, BillingPlatformReadService, BillingSelfService, BillingSubscriptionService, CurrencyService};
+use App\Http\Requests\API\V1\Billing\CreateBillingAccountRequest;
+use App\Http\Requests\API\V1\Billing\PurchaseSubscriptionRequest;
+use App\Http\Requests\API\V1\Billing\StoreBillingAccountContactRequest;
+use App\Http\Requests\API\V1\Billing\StorePaymentRequest;
+use App\Http\Requests\API\V1\Billing\UpdateBillingAccountContactRequest;
+use App\Http\Requests\API\V1\Billing\UpdateBillingAccountRequest;
+use App\Http\Resources\API\V1\Billing\BillingAccountContactResource;
+use App\Http\Resources\API\V1\Billing\BillingAccountResource;
+use App\Http\Resources\API\V1\Billing\BillingCreditNoteResource;
+use App\Http\Resources\API\V1\Billing\BillingInvoiceResource;
+use App\Http\Resources\API\V1\Billing\BillingPaymentResource;
+use App\Http\Resources\API\V1\Billing\BillingPlanResource;
+use App\Http\Resources\API\V1\Billing\BillingRefundResource;
+use App\Http\Resources\API\V1\Billing\BillingSubscriptionEventResource;
+use App\Http\Resources\API\V1\Billing\BillingSubscriptionResource;
+use App\Http\Resources\API\V1\Billing\BillingUsageAggregateResource;
+use App\Http\Resources\API\V1\Billing\CurrencyResource;
+use App\Http\Resources\API\V1\Billing\PaymentMethodResource;
+use App\Services\Billing\BillingEntitlementService;
+use App\Services\Billing\BillingPaymentService;
+use App\Services\Billing\BillingPlatformReadService;
+use App\Services\Billing\BillingSelfService;
+use App\Services\Billing\BillingSubscriptionService;
+use App\Services\Billing\CurrencyService;
 use App\Services\Support\FileUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,7 +53,7 @@ class BillingSelfServiceController extends BaseController
      * Validate bounded cursor collection parameters before passing them to the
      * self-service domain service.
      *
-     * @param array<string, array<int, mixed>> $extra
+     * @param  array<string, array<int, mixed>>  $extra
      * @return array<string, mixed>
      */
     private function collectionFilters(Request $request, array $extra = []): array
@@ -82,6 +105,7 @@ class BillingSelfServiceController extends BaseController
     {
         try {
             $account = $this->self->updateAccount($billingAccountId, $request->validated(), $this->requireCurrentUser());
+
             return $this->successResponse('تم تحديث بيانات حساب الفوترة.', new BillingAccountResource($account));
         } catch (ValidationException $exception) {
             return $this->validationErrorResponse($exception);
@@ -92,6 +116,7 @@ class BillingSelfServiceController extends BaseController
     {
         try {
             $contact = $this->self->createContact($billingAccountId, $request->validated(), $this->requireCurrentUser());
+
             return $this->successResponse('تمت إضافة جهة اتصال لحساب الفوترة.', new BillingAccountContactResource($contact), 201);
         } catch (ValidationException $exception) {
             return $this->validationErrorResponse($exception);
@@ -102,6 +127,7 @@ class BillingSelfServiceController extends BaseController
     {
         try {
             $contact = $this->self->updateContact($billingAccountId, $contactId, $request->validated(), $this->requireCurrentUser());
+
             return $this->successResponse('تم تحديث جهة اتصال حساب الفوترة.', new BillingAccountContactResource($contact));
         } catch (ValidationException $exception) {
             return $this->validationErrorResponse($exception);
@@ -112,6 +138,7 @@ class BillingSelfServiceController extends BaseController
     {
         try {
             $this->self->deleteContact($billingAccountId, $contactId, $this->requireCurrentUser());
+
             return $this->successResponse('تم حذف جهة اتصال حساب الفوترة.', null);
         } catch (ValidationException $exception) {
             return $this->validationErrorResponse($exception);
@@ -318,7 +345,7 @@ class BillingSelfServiceController extends BaseController
             'events' => BillingSubscriptionEventResource::collection(
                 $this->self->subscriptionEvents($subscriptionId, ['per_page' => 30], $actor)
             ),
-                        'invoices' => BillingInvoiceResource::collection(
+            'invoices' => BillingInvoiceResource::collection(
                 $subscription->invoices()
                     ->with(['currency', 'lines.currency'])
                     ->orderByDesc('invoice_id')
@@ -335,6 +362,7 @@ class BillingSelfServiceController extends BaseController
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
             'cursor' => ['nullable', 'string', 'max:2048'],
         ]);
+
         return $this->successResponse(
             'تم استرجاع تجميعات استخدام الاشتراك حسب العداد والفترة.',
             BillingUsageAggregateResource::collection($this->self->usage($subscriptionId, $filters, $this->requireCurrentUser()))

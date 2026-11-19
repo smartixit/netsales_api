@@ -8,6 +8,7 @@ use App\Http\Requests\API\V1\Expense\StoreExpenseRequest;
 use App\Http\Requests\API\V1\Expense\UpdateExpenseRequest;
 use App\Http\Resources\API\V1\Expense\ExpenseItemResource;
 use App\Http\Resources\API\V1\Expense\ExpenseResource;
+use App\Models\Expense;
 use App\Services\ExpenseService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -29,6 +30,100 @@ class ExpenseController extends BaseController
     public function __construct(
         protected ExpenseService $expenseService
     ) {}
+
+    /**
+     * استرجاع قائمة معرفات الشبكات المصرح للمستخدم بالوصول إليها.
+     *
+     * @return int[]|null
+     */
+    private function resolveScopedNetworkIds(Request $request): ?array
+    {
+        $currentUser = $this->currentUser();
+        if (! $currentUser) {
+            return null;
+        }
+
+        $ownerNetworkIds = $currentUser->networks()->pluck('networks.network_id')->map(fn ($id) => (int) $id)->toArray();
+        $memberNetworkIds = $currentUser->networkUsers()->pluck('network_users.network_id')->map(fn ($id) => (int) $id)->toArray();
+        $userNetworkIds = array_values(array_unique(array_merge($ownerNetworkIds, $memberNetworkIds)));
+
+        $requestedNetworkId = $request->input('network_id');
+        if ($requestedNetworkId !== null && $requestedNetworkId !== '') {
+            $reqId = (int) $requestedNetworkId;
+            if (! in_array($reqId, $userNetworkIds, true)) {
+                return [];
+            }
+
+            return [$reqId];
+        }
+
+        return $userNetworkIds;
+    }
+
+    /**
+     * التحقق من تبعية المصروف للشبكات المصرح بها للمستخدم الحالي.
+     */
+    private function authorizeExpenseTenant(int|Expense $expense): ?JsonResponse
+    {
+        $currentUser = $this->currentUser();
+        if (! $currentUser) {
+            return null;
+        }
+
+        $expenseModel = is_int($expense) ? Expense::withTrashed()->find($expense) : $expense;
+        if (! $expenseModel) {
+            return null;
+        }
+
+        $ownerNetworkIds = $currentUser->networks()->pluck('networks.network_id')->map(fn ($id) => (int) $id)->toArray();
+        $memberNetworkIds = $currentUser->networkUsers()->pluck('network_users.network_id')->map(fn ($id) => (int) $id)->toArray();
+        $userNetworkIds = array_values(array_unique(array_merge($ownerNetworkIds, $memberNetworkIds)));
+
+        if (! in_array((int) $expenseModel->network_id, $userNetworkIds, true)) {
+            return $this->errorResponse('غير مصرح لك بإدارة أو عرض مصروفات هذه الشبكة.', [], 403);
+        }
+
+        return null;
+    }
+
+    /**
+     * إحصائيات وملخص المصروفات التشغيلية.
+     */
+    #[OA\Get(
+        path: '/api/v1/expenses/summary',
+        summary: 'إحصائيات وملخص المصروفات التشغيلية',
+        tags: ['Expenses'],
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'تم استرجاع ملخص المصروفات بنجاح'),
+            new OA\Response(response: 401, description: 'غير مصرح'),
+        ]
+    )]
+    public function summary(Request $request): JsonResponse
+    {
+        try {
+            $filters = $request->only(['network_id', 'from_date', 'to_date']);
+            $scopedNetworks = $this->resolveScopedNetworkIds($request);
+            if ($scopedNetworks !== null) {
+                if (empty($scopedNetworks)) {
+                    return $this->errorResponse('غير مصرح لك بعرض ملخص مصروفات هذه الشبكة.', [], 403);
+                }
+                $filters['network_ids'] = $scopedNetworks;
+            }
+
+            $summary = $this->expenseService->summary($filters);
+
+            return $this->successResponse('تم استرجاع ملخص المصروفات التشغيلية بنجاح.', $summary);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر جلب ملخص المصروفات: '.$e->getMessage(), [], 422);
+        }
+    }
 
     /**
      * عرض قائمة المصروفات مع الفلترة والترقيم بالمؤشر.
@@ -54,6 +149,14 @@ class ExpenseController extends BaseController
     {
         try {
             $filters = $request->only(['network_id', 'created_by', 'from_date', 'to_date', 'search', 'per_page', 'all']);
+            $scopedNetworks = $this->resolveScopedNetworkIds($request);
+            if ($scopedNetworks !== null) {
+                if (empty($scopedNetworks)) {
+                    return $this->errorResponse('غير مصرح لك بعرض مصروفات هذه الشبكة.', [], 403);
+                }
+                $filters['network_ids'] = $scopedNetworks;
+            }
+
             $expenses = $this->expenseService->getFiltered($filters);
 
             return $this->successResponse('تم استرجاع قائمة المصروفات التشغيلية بنجاح.', ExpenseResource::collection($expenses));
@@ -84,6 +187,9 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = $this->expenseService->getById($id);
+            if ($denial = $this->authorizeExpenseTenant($expense)) {
+                return $denial;
+            }
 
             return $this->successResponse('تم استرجاع تفاصيل المصروف بنجاح.', new ExpenseResource($expense));
         } catch (ValidationException $e) {
@@ -170,6 +276,11 @@ class ExpenseController extends BaseController
     public function update(UpdateExpenseRequest $request, int $id): JsonResponse
     {
         try {
+            $expense = $this->expenseService->getById($id);
+            if ($denial = $this->authorizeExpenseTenant($expense)) {
+                return $denial;
+            }
+
             $userId = $this->currentUserId();
             $expense = $this->expenseService->update($id, $request, $userId);
 
@@ -199,9 +310,15 @@ class ExpenseController extends BaseController
     public function destroy(int $id): JsonResponse
     {
         try {
-            $this->expenseService->delete($id);
+            $expense = $this->expenseService->getById($id);
+            if ($denial = $this->authorizeExpenseTenant($expense)) {
+                return $denial;
+            }
 
-            return $this->successResponse('تم حذف المصروف مؤقتاً بنجاح.');
+            $userId = $this->currentUserId();
+            $this->expenseService->delete($id, $userId);
+
+            return $this->successResponse('تم حذف المصروف واسترجاع المبلغ لمحفظة الشبكة بنجاح.');
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -232,6 +349,14 @@ class ExpenseController extends BaseController
     {
         try {
             $filters = $request->only(['network_id', 'created_by', 'search', 'per_page', 'all']);
+            $scopedNetworks = $this->resolveScopedNetworkIds($request);
+            if ($scopedNetworks !== null) {
+                if (empty($scopedNetworks)) {
+                    return $this->successResponse('تم استرجاع قائمة المصروفات المحذوفة بنجاح.', ExpenseResource::collection(collect()));
+                }
+                $filters['network_ids'] = $scopedNetworks;
+            }
+
             $expenses = $this->expenseService->getTrashedFiltered($filters);
 
             return $this->successResponse('تم استرجاع قائمة المصروفات المحذوفة بنجاح.', ExpenseResource::collection($expenses));
@@ -260,9 +385,15 @@ class ExpenseController extends BaseController
     public function restore(int $id): JsonResponse
     {
         try {
-            $this->expenseService->restore($id);
+            $expense = Expense::onlyTrashed()->findOrFail($id);
+            if ($denial = $this->authorizeExpenseTenant($expense)) {
+                return $denial;
+            }
 
-            return $this->successResponse('تم استعادة المصروف بنجاح.');
+            $userId = $this->currentUserId();
+            $this->expenseService->restore($id, $userId);
+
+            return $this->successResponse('تم استعادة المصروف وإعادة خصم مبلغه من محفظة الشبكة بنجاح.');
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -288,7 +419,13 @@ class ExpenseController extends BaseController
     public function forceDelete(int $id): JsonResponse
     {
         try {
-            $this->expenseService->forceDelete($id);
+            $expense = Expense::withTrashed()->findOrFail($id);
+            if ($denial = $this->authorizeExpenseTenant($expense)) {
+                return $denial;
+            }
+
+            $userId = $this->currentUserId();
+            $this->expenseService->forceDelete($id, $userId);
 
             return $this->successResponse('تم حذف المصروف نهائياً وتنظيف كافة مرفقاته بنجاح.');
         } catch (ValidationException $e) {
@@ -326,9 +463,20 @@ class ExpenseController extends BaseController
     public function batchDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
-            $count = $this->expenseService->batchDelete($request->getIds());
+            $scopedNetworks = $this->resolveScopedNetworkIds($request);
+            if ($scopedNetworks !== null) {
+                $expenses = Expense::whereIn('expense_id', $request->getIds())->get();
+                foreach ($expenses as $expense) {
+                    if (! in_array((int) $expense->network_id, $scopedNetworks, true)) {
+                        return $this->errorResponse('ليس لديك صلاحية لحذف بعض المصروفات المحددة.');
+                    }
+                }
+            }
 
-            return $this->successResponse("تم حذف ({$count}) مصروف بنجاح.");
+            $userId = $this->currentUserId();
+            $count = $this->expenseService->batchDelete($request->getIds(), $userId);
+
+            return $this->successResponse("تم حذف ({$count}) مصروف واسترجاع مبالغهم لمحفظة الشبكة بنجاح.");
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -364,9 +512,20 @@ class ExpenseController extends BaseController
     public function batchRestore(BatchIdsRequest $request): JsonResponse
     {
         try {
-            $count = $this->expenseService->batchRestore($request->getIds());
+            $scopedNetworks = $this->resolveScopedNetworkIds($request);
+            if ($scopedNetworks !== null) {
+                $expenses = Expense::onlyTrashed()->whereIn('expense_id', $request->getIds())->get();
+                foreach ($expenses as $expense) {
+                    if (! in_array((int) $expense->network_id, $scopedNetworks, true)) {
+                        return $this->errorResponse('ليس لديك صلاحية لاستعادة بعض المصروفات المحددة.');
+                    }
+                }
+            }
 
-            return $this->successResponse("تم استعادة ({$count}) مصروف بنجاح.");
+            $userId = $this->currentUserId();
+            $count = $this->expenseService->batchRestore($request->getIds(), $userId);
+
+            return $this->successResponse("تم استعادة ({$count}) مصروف وإعادة خصم مبالغهم بنجاح.");
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -402,7 +561,18 @@ class ExpenseController extends BaseController
     public function batchForceDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
-            $count = $this->expenseService->batchForceDelete($request->getIds());
+            $scopedNetworks = $this->resolveScopedNetworkIds($request);
+            if ($scopedNetworks !== null) {
+                $expenses = Expense::withTrashed()->whereIn('expense_id', $request->getIds())->get();
+                foreach ($expenses as $expense) {
+                    if (! in_array((int) $expense->network_id, $scopedNetworks, true)) {
+                        return $this->errorResponse('ليس لديك صلاحية للحذف النهائي لبعض المصروفات المحددة.');
+                    }
+                }
+            }
+
+            $userId = $this->currentUserId();
+            $count = $this->expenseService->batchForceDelete($request->getIds(), $userId);
 
             return $this->successResponse("تم الحذف النهائي لـ ({$count}) مصروف وتنظيف مرفقاتهم بنجاح.");
         } catch (ValidationException $e) {
@@ -444,6 +614,11 @@ class ExpenseController extends BaseController
     public function addItem(StoreExpenseItemRequest $request, int $id): JsonResponse
     {
         try {
+            $expense = $this->expenseService->getById($id);
+            if ($denial = $this->authorizeExpenseTenant($expense)) {
+                return $denial;
+            }
+
             $userId = $this->currentUserId();
             $item = $this->expenseService->addItem($id, $request, $userId);
 
@@ -474,6 +649,11 @@ class ExpenseController extends BaseController
     public function deleteItem(int $id, int $itemId, Request $request): JsonResponse
     {
         try {
+            $expense = $this->expenseService->getById($id);
+            if ($denial = $this->authorizeExpenseTenant($expense)) {
+                return $denial;
+            }
+
             $userId = $this->currentUserId();
             $this->expenseService->deleteItem($id, $itemId, $userId);
 
@@ -504,6 +684,11 @@ class ExpenseController extends BaseController
     public function deleteAttachment(int $id, int $attachmentId): JsonResponse
     {
         try {
+            $expense = $this->expenseService->getById($id);
+            if ($denial = $this->authorizeExpenseTenant($expense)) {
+                return $denial;
+            }
+
             $this->expenseService->deleteAttachment($id, $attachmentId);
 
             return $this->successResponse('تم حذف المرفق من المصروف بنجاح.');

@@ -2,19 +2,21 @@
 
 namespace App\Http\Controllers\API\V1\Billing;
 
-use App\Http\Controllers\API\V1\BaseController;
-use App\Services\Billing\BillingPolicyManagementService;
-use App\Models\{BillingDunningPolicy, BillingTrialPolicy, BillingTrialRedemption};
 use App\Enums\BillingTrialRedemptionStatus;
+use App\Http\Controllers\API\V1\BaseController;
+use App\Http\Resources\API\V1\Billing\BillingDunningPolicyVersionResource;
+use App\Http\Resources\API\V1\Billing\BillingTrialPolicyVersionResource;
+use App\Models\BillingDunningPolicy;
+use App\Models\BillingTrialPolicy;
+use App\Models\BillingTrialRedemption;
+use App\Services\Billing\BillingPolicyManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class BillingPolicyController extends BaseController
 {
     public function __construct(private BillingPolicyManagementService $policies) {}
-
 
     public function trialPolicies(Request $request): JsonResponse
     {
@@ -23,6 +25,7 @@ class BillingPolicyController extends BaseController
             $term = trim((string) $request->query('search'));
             $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('policy_key', 'like', "%{$term}%"));
         }
+
         return $this->successResponse('تم استرجاع سياسات التجربة.', $query->cursorPaginate(min(max($request->integer('per_page', 20), 1), 100)));
     }
 
@@ -33,6 +36,7 @@ class BillingPolicyController extends BaseController
             $term = trim((string) $request->query('search'));
             $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('policy_key', 'like', "%{$term}%"));
         }
+
         return $this->successResponse('تم استرجاع سياسات التحصيل.', $query->cursorPaginate(min(max($request->integer('per_page', 20), 1), 100)));
     }
 
@@ -47,7 +51,7 @@ class BillingPolicyController extends BaseController
 
         return $this->successResponse(
             'تم استرجاع إصدارات سياسة التجربة.',
-            \App\Http\Resources\API\V1\Billing\BillingTrialPolicyVersionResource::collection($versions)
+            BillingTrialPolicyVersionResource::collection($versions)
         );
     }
 
@@ -62,7 +66,7 @@ class BillingPolicyController extends BaseController
 
         return $this->successResponse(
             'تم استرجاع إصدارات سياسة التحصيل.',
-            \App\Http\Resources\API\V1\Billing\BillingDunningPolicyVersionResource::collection($versions)
+            BillingDunningPolicyVersionResource::collection($versions)
         );
     }
 
@@ -72,12 +76,14 @@ class BillingPolicyController extends BaseController
             ->with(['policy', 'policyVersion', 'subscription.billingAccount.network'])
             ->where('status', BillingTrialRedemptionStatus::PENDING_APPROVAL->value)
             ->orderBy('trial_redemption_id');
+
         return $this->successResponse('تم استرجاع طلبات التجربة المعلقة.', $query->cursorPaginate(min(max($request->integer('per_page', 20), 1), 100)));
     }
 
     public function approveRedemption(int $redemptionId): JsonResponse
     {
         $subscription = $this->policies->approveTrialRedemption($redemptionId, $this->requireCurrentUser());
+
         return $this->successResponse('تم اعتماد طلب التجربة.', $subscription);
     }
 
@@ -85,6 +91,7 @@ class BillingPolicyController extends BaseController
     {
         $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:500']]);
         $subscription = $this->policies->rejectTrialRedemption($redemptionId, $data['reason'], $this->requireCurrentUser());
+
         return $this->successResponse('تم رفض طلب التجربة وإغلاق الاشتراك المعلق.', $subscription);
     }
 
@@ -102,6 +109,7 @@ class BillingPolicyController extends BaseController
             $data['reason'],
             $this->requireCurrentUser()
         );
+
         return $this->successResponse('تم تعديل فترة التجربة وتسجيل سبب التعديل.', $subscription);
     }
 
@@ -123,6 +131,7 @@ class BillingPolicyController extends BaseController
             'entitlement_config' => ['nullable', 'array'],
         ]);
         $version = $this->policies->createTrialPolicy($data, $this->requireCurrentUser());
+
         return $this->successResponse('تم إنشاء سياسة التجربة كمسودة.', $version, 201);
     }
 
@@ -140,6 +149,7 @@ class BillingPolicyController extends BaseController
             'pre_renewal_alert_days.*' => ['integer', 'between:0,90'],
         ]);
         $version = $this->policies->createDunningPolicy($data, $this->requireCurrentUser());
+
         return $this->successResponse('تم إنشاء سياسة التحصيل كمسودة.', $version, 201);
     }
 
@@ -157,6 +167,7 @@ class BillingPolicyController extends BaseController
             'entitlement_mode' => ['required', Rule::in(['FULL_PLAN', 'RESTRICTED', 'NONE'])],
             'entitlement_config' => ['nullable', 'array'],
         ]);
+
         return $this->successResponse('تم إنشاء إصدار مسودة لسياسة التجربة.', $this->policies->createTrialVersion($policyId, $data, $this->requireCurrentUser()), 201);
     }
 
@@ -170,6 +181,7 @@ class BillingPolicyController extends BaseController
             'pre_renewal_alert_days' => ['required', 'array', 'max:10'],
             'pre_renewal_alert_days.*' => ['integer', 'between:0,90'],
         ]);
+
         return $this->successResponse('تم إنشاء إصدار مسودة لسياسة التحصيل.', $this->policies->createDunningVersion($policyId, $data, $this->requireCurrentUser()), 201);
     }
 
@@ -189,6 +201,7 @@ class BillingPolicyController extends BaseController
             'trial_policy_version_id' => ['nullable', 'integer', 'exists:billing_trial_policy_versions,trial_policy_version_id'],
             'dunning_policy_version_id' => ['nullable', 'integer', 'exists:billing_dunning_policy_versions,dunning_policy_version_id'],
         ]);
+
         return $this->successResponse('تم ربط سياسات الاشتراك بنسخة الخطة.', $this->policies->assignToPlanVersion($versionId, $data, $this->requireCurrentUser()));
     }
 
@@ -198,6 +211,7 @@ class BillingPolicyController extends BaseController
             'trial_policy_version_id' => ['nullable', 'integer', 'exists:billing_trial_policy_versions,trial_policy_version_id'],
             'dunning_policy_version_id' => ['nullable', 'integer', 'exists:billing_dunning_policy_versions,dunning_policy_version_id'],
         ]);
+
         return $this->successResponse('تم ربط سياسات الاشتراك بالسعر.', $this->policies->assignToPrice($priceId, $data, $this->requireCurrentUser()));
     }
 }

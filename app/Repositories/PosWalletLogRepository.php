@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Enums\WalletOperationType;
 use App\Interfaces\PosWalletLogRepositoryInterface;
+use App\Models\PosWallet;
 use App\Models\PosWalletLog;
 use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -89,7 +90,7 @@ class PosWalletLogRepository extends BaseRepository implements PosWalletLogRepos
      */
     public function createLog(int $walletId, WalletOperationType|string $operation, string|int|float $amount, string $statement, ?int $createdBy = null, ?string $date = null, ?int $transferId = null, string|int|float|null $balanceBefore = null, string|int|float|null $balanceAfter = null): PosWalletLog
     {
-        $wallet = \App\Models\PosWallet::query()->lockForUpdate()->findOrFail($walletId);
+        $wallet = PosWallet::query()->lockForUpdate()->findOrFail($walletId);
         $operationValue = $operation instanceof WalletOperationType ? $operation->value : $operation;
         $amountMinor = DecimalAmount::toMinorUnits($amount);
         if ($amountMinor < 0) {

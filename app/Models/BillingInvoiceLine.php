@@ -29,6 +29,7 @@ class BillingInvoiceLine extends Model
     use ExactDateSerialization;
 
     protected $table = 'billing_invoice_lines';
+
     protected $primaryKey = 'invoice_line_id';
 
     protected $fillable = [

@@ -20,7 +20,9 @@ class BillingTrialPolicy extends Model
     use ExactDateSerialization;
 
     protected $table = 'billing_trial_policies';
+
     protected $primaryKey = 'trial_policy_id';
+
     protected $fillable = ['policy_key', 'name', 'description', 'current_version_id', 'is_active', 'created_by'];
 
     protected function casts(): array

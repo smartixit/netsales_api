@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $revenue_recognition_entry_id
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $journal_entry_id
  * @property-read LedgerJournalEntry $journalEntry
  * @property string $idempotency_key
- * @property \Illuminate\Support\Carbon $recognized_through
+ * @property Carbon $recognized_through
  * @property int $amount_minor
  */
 class BillingRevenueRecognitionEntry extends Model
@@ -20,6 +21,7 @@ class BillingRevenueRecognitionEntry extends Model
     use ExactDateSerialization;
 
     protected $table = 'billing_revenue_recognition_entries';
+
     protected $primaryKey = 'revenue_recognition_entry_id';
 
     protected $fillable = [

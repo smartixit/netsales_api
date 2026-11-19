@@ -20,7 +20,9 @@ class BillingDunningPolicy extends Model
     use ExactDateSerialization;
 
     protected $table = 'billing_dunning_policies';
+
     protected $primaryKey = 'dunning_policy_id';
+
     protected $fillable = ['policy_key', 'name', 'description', 'current_version_id', 'is_active', 'created_by'];
 
     protected function casts(): array

@@ -4,7 +4,6 @@ namespace App\Http\Requests\API\V1\Billing;
 
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreExchangeRateRequest extends FormRequest
 {

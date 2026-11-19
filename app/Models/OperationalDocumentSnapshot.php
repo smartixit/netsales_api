@@ -9,6 +9,7 @@ use LogicException;
 final class OperationalDocumentSnapshot extends Model
 {
     protected $table = 'operational_document_snapshots';
+
     protected $primaryKey = 'snapshot_id';
 
     protected $fillable = [
@@ -34,7 +35,7 @@ final class OperationalDocumentSnapshot extends Model
 
     protected static function booted(): void
     {
-        static::updating(function (self $snapshot): void {
+        self::updating(function (self $snapshot): void {
             $allowed = ['artifact_path', 'artifact_sha256', 'artifact_size', 'updated_at'];
             $changed = array_diff(array_keys($snapshot->getDirty()), $allowed);
             if ($changed !== []) {
@@ -51,7 +52,7 @@ final class OperationalDocumentSnapshot extends Model
             }
         });
 
-        static::deleting(function (): never {
+        self::deleting(function (): never {
             throw new LogicException('Official document snapshots cannot be deleted.');
         });
     }

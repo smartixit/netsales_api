@@ -58,11 +58,13 @@ class EnsurePlatformUserScope
 
         if ($request->is('api/v1/security/ban-device') || $request->is('api/v1/ban-device')) {
             $device = UserDevice::withTrashed()->with(['user' => fn ($query) => $query->withTrashed()->with('role')])->findOrFail((int) $request->input('device_id'));
+
             return $device->user;
         }
 
         if ($request->is('api/v1/security/sessions/*/terminate') || $request->is('api/v1/sessions/*/terminate')) {
             $session = UserSession::with(['user' => fn ($query) => $query->withTrashed()->with('role')])->findOrFail((int) $routeId);
+
             return $session->user;
         }
 
@@ -71,6 +73,7 @@ class EnsurePlatformUserScope
                 'user' => fn ($query) => $query->withTrashed()->with('role'),
                 'device' => fn ($query) => $query->withTrashed()->with(['user' => fn ($userQuery) => $userQuery->withTrashed()->with('role')]),
             ])->findOrFail((int) $routeId);
+
             return $ban->user ?? $ban->device?->user;
         }
 

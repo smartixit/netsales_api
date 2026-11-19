@@ -94,6 +94,7 @@ class RequestController extends BaseController
             if ($filters instanceof JsonResponse) {
                 return $filters;
             }
+
             return $this->successResponse(
                 'تم استرجاع ملخص الطلبات بنجاح.',
                 $this->requestService->getStatusSummary($filters)

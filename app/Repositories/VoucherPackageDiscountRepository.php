@@ -139,13 +139,13 @@ class VoucherPackageDiscountRepository extends BaseRepository implements Voucher
     /**
      * جلب أحدث خصم فعال لكل باقة في طلب قاعدة بيانات واحد.
      *
-     * @param array<int, int> $packageIds
+     * @param  array<int, int>  $packageIds
      * @return Collection<int, VoucherPackageDiscount>
      */
     public function findEffectiveDiscountsForPackages(int $networkId, int $posId, array $packageIds): Collection
     {
         if ($packageIds === []) {
-            return new Collection();
+            return new Collection;
         }
 
         return $this->model->newQuery()

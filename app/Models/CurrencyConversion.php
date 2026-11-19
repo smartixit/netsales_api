@@ -12,6 +12,7 @@ class CurrencyConversion extends Model
     use ExactDateSerialization;
 
     protected $table = 'currency_conversions';
+
     protected $primaryKey = 'conversion_id';
 
     protected $fillable = [

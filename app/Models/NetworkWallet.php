@@ -127,6 +127,7 @@ class NetworkWallet extends Model
             $afterMinor = DecimalAmount::add($beforeMinor, $amountMinor);
             $wallet->wallet_balance = DecimalAmount::fromMinorUnits($afterMinor);
             $wallet->save();
+
             return $wallet->logs()->create([
                 'log_operation' => WalletOperationType::DEPOSIT,
                 'log_amount' => DecimalAmount::fromMinorUnits($amountMinor),
@@ -158,6 +159,7 @@ class NetworkWallet extends Model
             $afterMinor = DecimalAmount::add($beforeMinor, -$amountMinor);
             $wallet->wallet_balance = DecimalAmount::fromMinorUnits($afterMinor);
             $wallet->save();
+
             return $wallet->logs()->create([
                 'log_operation' => WalletOperationType::WITHDRAW,
                 'log_amount' => DecimalAmount::fromMinorUnits($amountMinor),

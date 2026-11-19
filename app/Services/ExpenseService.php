@@ -15,6 +15,7 @@ use App\Interfaces\NetworkWalletRepositoryInterface;
 use App\Models\Expense;
 use App\Models\ExpenseItem;
 use App\Services\Support\FileUploadService;
+use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
@@ -96,19 +97,22 @@ class ExpenseService
             $networkWallet->ensureActive();
 
             // 3. احتساب إجمالي مبلغ المصروف من البنود التفصيلية
-            $totalAmount = 0.0;
+            $totalMinor = 0;
             $itemsData = [];
 
             foreach ($items as $item) {
                 $statement = trim((string) $item['item_statement']);
-                $amount = round((float) $item['item_amount'], 2);
-                $totalAmount += $amount;
+                $itemAmount = (float) $item['item_amount'];
+                $itemAmountMinor = DecimalAmount::toMinorUnits($itemAmount);
+                $totalMinor = DecimalAmount::add($totalMinor, $itemAmountMinor);
 
                 $itemsData[] = [
                     'item_statement' => $statement,
-                    'item_amount' => $amount,
+                    'item_amount' => (float) DecimalAmount::fromMinorUnits($itemAmountMinor),
                 ];
             }
+
+            $totalAmount = (float) DecimalAmount::fromMinorUnits($totalMinor);
 
             // 4. إنشاء السجل الرئيسي للمصروف
             /** @var Expense $expense */
@@ -137,7 +141,8 @@ class ExpenseService
 
             // 7. الخصم الإلزامي المباشر من محفظة الشبكة وتسجيل القيد في دفتر الأستاذ
             $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, $totalAmount);
-            $balanceAfter = round((float) $networkWallet->wallet_balance - $totalAmount, 2);
+            $networkWallet->refresh();
+            $balanceAfter = (float) $networkWallet->wallet_balance;
 
             $this->networkWalletLogRepository->createLog(
                 $networkWallet->wallet_id,
@@ -186,20 +191,23 @@ class ExpenseService
             // تحديث البنود إذا تم إرسالها
             $items = $request->getItems();
             if ($items !== null && ! empty($items)) {
-                $oldTotal = (float) $expense->expense_total_amount;
-                $newTotal = 0.0;
+                $oldTotalMinor = DecimalAmount::toMinorUnits((float) $expense->expense_total_amount);
+                $newTotalMinor = 0;
                 $itemsData = [];
 
                 foreach ($items as $item) {
                     $statement = trim((string) $item['item_statement']);
-                    $amount = round((float) $item['item_amount'], 2);
-                    $newTotal += $amount;
+                    $itemAmount = (float) $item['item_amount'];
+                    $itemAmountMinor = DecimalAmount::toMinorUnits($itemAmount);
+                    $newTotalMinor = DecimalAmount::add($newTotalMinor, $itemAmountMinor);
 
                     $itemsData[] = [
                         'item_statement' => $statement,
-                        'item_amount' => $amount,
+                        'item_amount' => (float) DecimalAmount::fromMinorUnits($itemAmountMinor),
                     ];
                 }
+
+                $newTotal = (float) DecimalAmount::fromMinorUnits($newTotalMinor);
 
                 // استبدال البنود
                 $this->expenseItemRepository->deleteByExpenseId($expenseId);
@@ -207,8 +215,8 @@ class ExpenseService
                 $this->expenseRepository->updateTotalAmount($expenseId, $newTotal);
 
                 // تسوية الفرق المالي على محفظة الشبكة
-                $diff = round($newTotal - $oldTotal, 2);
-                if ($diff != 0) {
+                $diffMinor = DecimalAmount::add($newTotalMinor, -$oldTotalMinor);
+                if ($diffMinor !== 0) {
                     $networkWallet = $this->networkWalletRepository->findByNetworkId($expense->network_id, true);
                     if (! $networkWallet) {
                         throw ValidationException::withMessages([
@@ -217,10 +225,12 @@ class ExpenseService
                     }
                     $networkWallet->ensureActive();
 
-                    if ($diff > 0) {
+                    if ($diffMinor > 0) {
                         // زيادة في المصروف -> خصم إضافي من المحفظة
+                        $diff = (float) DecimalAmount::fromMinorUnits($diffMinor);
                         $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, $diff);
-                        $balanceAfter = round((float) $networkWallet->wallet_balance - $diff, 2);
+                        $networkWallet->refresh();
+                        $balanceAfter = (float) $networkWallet->wallet_balance;
                         $this->networkWalletLogRepository->createLog(
                             $networkWallet->wallet_id,
                             WalletOperationType::WITHDRAW,
@@ -238,9 +248,10 @@ class ExpenseService
                         );
                     } else {
                         // انخفاض في المصروف -> استرداد وإيداع الفائض في المحفظة
-                        $refund = abs($diff);
+                        $refund = (float) DecimalAmount::fromMinorUnits(abs($diffMinor));
                         $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $refund);
-                        $balanceAfter = round((float) $networkWallet->wallet_balance + $refund, 2);
+                        $networkWallet->refresh();
+                        $balanceAfter = (float) $networkWallet->wallet_balance;
                         $this->networkWalletLogRepository->createLog(
                             $networkWallet->wallet_id,
                             WalletOperationType::DEPOSIT,
@@ -279,33 +290,136 @@ class ExpenseService
     }
 
     /**
-     * حذف ناعم للمصروف.
+     * حذف ناعم للمصروف مع عكس مالي واسترجاع المبلغ لمحفظة الشبكة.
      */
-    public function delete(int $expenseId): bool
+    public function delete(int $expenseId, ?int $userId = null): bool
     {
-        return DB::transaction(function () use ($expenseId): bool {
-            $this->expenseRepository->findById($expenseId);
+        return DB::transaction(function () use ($expenseId, $userId): bool {
+            /** @var Expense $expense */
+            $expense = $this->expenseRepository->findById($expenseId);
+
+            // تسوية مالية: استرجاع كامل مبلغ المصروف لمحفظة الشبكة عند الإلغاء أو الحذف
+            $amount = (float) $expense->expense_total_amount;
+            if ($amount > 0) {
+                $networkWallet = $this->networkWalletRepository->findByNetworkId($expense->network_id, true);
+                if ($networkWallet) {
+                    $networkWallet->ensureActive();
+                    $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $amount);
+                    $networkWallet->refresh();
+                    $balanceAfter = (float) $networkWallet->wallet_balance;
+
+                    $this->networkWalletLogRepository->createLog(
+                        $networkWallet->wallet_id,
+                        WalletOperationType::DEPOSIT,
+                        $amount,
+                        "استرداد إلغاء/حذف مصروف تشغيلي (#{$expense->expense_uuid}) - الرصيد بعد الاسترداد: ({$balanceAfter})",
+                        $userId
+                    );
+
+                    $this->networkWalletService->sendWalletSms(
+                        $networkWallet,
+                        'receipt',
+                        $amount,
+                        $balanceAfter,
+                        'استرداد حذف مصروف'
+                    );
+                }
+            }
 
             return (bool) $this->expenseRepository->delete($expenseId);
         });
     }
 
     /**
-     * استعادة المصروف المحذوف ناعماً.
+     * استعادة المصروف المحذوف ناعماً مع إعادة الخصم من المحفظة.
      */
-    public function restore(int $expenseId): bool
+    public function restore(int $expenseId, ?int $userId = null): bool
     {
-        return DB::transaction(function () use ($expenseId): bool {
+        return DB::transaction(function () use ($expenseId, $userId): bool {
+            /** @var Expense $expense */
+            $expense = Expense::onlyTrashed()->findOrFail($expenseId);
+
+            // تسوية مالية: إعادة خصم مبلغ المصروف من المحفظة عند الاستعادة مع التحقق من كفاية الرصيد
+            $amount = (float) $expense->expense_total_amount;
+            if ($amount > 0) {
+                $networkWallet = $this->networkWalletRepository->findByNetworkId($expense->network_id, true);
+                if (! $networkWallet) {
+                    throw ValidationException::withMessages([
+                        'network_wallet' => ['لم يتم العثور على محفظة مسجلة للشبكة لإعادة قيد المصروف المستعاد.'],
+                    ]);
+                }
+                $networkWallet->ensureActive();
+
+                if ($networkWallet->wallet_balance < $amount) {
+                    throw ValidationException::withMessages([
+                        'wallet_balance' => ['لا يمكن استعادة المصروف: رصيد محفظة الشبكة غير كافٍ لإعادة الخصم.'],
+                    ]);
+                }
+
+                $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, $amount);
+                $networkWallet->refresh();
+                $balanceAfter = (float) $networkWallet->wallet_balance;
+
+                $this->networkWalletLogRepository->createLog(
+                    $networkWallet->wallet_id,
+                    WalletOperationType::WITHDRAW,
+                    $amount,
+                    "إعادة قيد مصروف تشغيلي مستعاد (#{$expense->expense_uuid}) - الرصيد بعد الخصم: ({$balanceAfter})",
+                    $userId
+                );
+
+                $this->networkWalletService->sendWalletSms(
+                    $networkWallet,
+                    'payment',
+                    $amount,
+                    $balanceAfter,
+                    'إعادة قيد مصروف مستعاد'
+                );
+            }
+
             return (bool) $this->expenseRepository->restore($expenseId);
         });
     }
 
     /**
-     * حذف نهائي للمصروف مع تنظيف المرفقات من التخزين.
+     * حذف نهائي للمصروف مع تنظيف المرفقات من التخزين وعكس مالي إذا لم يُحذف ناعماً مسبقاً.
      */
-    public function forceDelete(int $expenseId): bool
+    public function forceDelete(int $expenseId, ?int $userId = null): bool
     {
-        return DB::transaction(function () use ($expenseId): bool {
+        return DB::transaction(function () use ($expenseId, $userId): bool {
+            /** @var Expense $expense */
+            $expense = Expense::withTrashed()->findOrFail($expenseId);
+
+            // إذا كان المصروف غير محذوف ناعماً (أي لم يتم عكسه مالياً بعد)، نعكسه مالياً قبل الحذف النهائي
+            if ($expense->deleted_at === null) {
+                $amount = (float) $expense->expense_total_amount;
+                if ($amount > 0) {
+                    $networkWallet = $this->networkWalletRepository->findByNetworkId($expense->network_id, true);
+                    if ($networkWallet) {
+                        $networkWallet->ensureActive();
+                        $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $amount);
+                        $networkWallet->refresh();
+                        $balanceAfter = (float) $networkWallet->wallet_balance;
+
+                        $this->networkWalletLogRepository->createLog(
+                            $networkWallet->wallet_id,
+                            WalletOperationType::DEPOSIT,
+                            $amount,
+                            "استرداد حذف نهائي لمصروف تشغيلي (#{$expense->expense_uuid})",
+                            $userId
+                        );
+
+                        $this->networkWalletService->sendWalletSms(
+                            $networkWallet,
+                            'receipt',
+                            $amount,
+                            $balanceAfter,
+                            'استرداد حذف نهائي لمصروف'
+                        );
+                    }
+                }
+            }
+
             $attachments = $this->expenseAttachmentRepository->getByExpenseId($expenseId);
             foreach ($attachments as $att) {
                 $this->fileUploadService->deleteFile($att->attachment_path);
@@ -319,41 +433,59 @@ class ExpenseService
     }
 
     /**
-     * حذف مجمع ناعم للمصروفات.
+     * حذف مجمع ناعم للمصروفات مع العكس المالي.
      *
      * @param  array<int, int>  $ids
      */
-    public function batchDelete(array $ids): int
+    public function batchDelete(array $ids, ?int $userId = null): int
     {
-        return DB::transaction(fn (): int => $this->expenseRepository->bulkDelete($ids));
-    }
-
-    /**
-     * استعادة مجمعة للمصروفات.
-     *
-     * @param  array<int, int>  $ids
-     */
-    public function batchRestore(array $ids): int
-    {
-        return DB::transaction(fn (): int => $this->expenseRepository->bulkRestore($ids));
-    }
-
-    /**
-     * حذف نهائي مجمع للمصروفات.
-     *
-     * @param  array<int, int>  $ids
-     */
-    public function batchForceDelete(array $ids): int
-    {
-        return DB::transaction(function () use ($ids): int {
+        return DB::transaction(function () use ($ids, $userId): int {
+            $count = 0;
             foreach ($ids as $id) {
-                $attachments = $this->expenseAttachmentRepository->getByExpenseId((int) $id);
-                foreach ($attachments as $att) {
-                    $this->fileUploadService->deleteFile($att->attachment_path);
+                if ($this->delete((int) $id, $userId)) {
+                    $count++;
                 }
             }
 
-            return $this->expenseRepository->bulkForceDelete($ids);
+            return $count;
+        });
+    }
+
+    /**
+     * استعادة مجمعة للمصروفات مع إعادة الخصم المالي.
+     *
+     * @param  array<int, int>  $ids
+     */
+    public function batchRestore(array $ids, ?int $userId = null): int
+    {
+        return DB::transaction(function () use ($ids, $userId): int {
+            $count = 0;
+            foreach ($ids as $id) {
+                if ($this->restore((int) $id, $userId)) {
+                    $count++;
+                }
+            }
+
+            return $count;
+        });
+    }
+
+    /**
+     * حذف نهائي مجمع للمصروفات مع تنظيف المرفقات والعكس المالي.
+     *
+     * @param  array<int, int>  $ids
+     */
+    public function batchForceDelete(array $ids, ?int $userId = null): int
+    {
+        return DB::transaction(function () use ($ids, $userId): int {
+            $count = 0;
+            foreach ($ids as $id) {
+                if ($this->forceDelete((int) $id, $userId)) {
+                    $count++;
+                }
+            }
+
+            return $count;
         });
     }
 
@@ -369,7 +501,7 @@ class ExpenseService
             $network = $this->networkRepository->findById($expense->network_id);
             $network->ensureActive();
 
-            $amount = $request->getItemAmount();
+            $amount = (float) $request->getItemAmount();
             $statement = $request->getItemStatement();
 
             /** @var ExpenseItem $item */
@@ -379,7 +511,9 @@ class ExpenseService
                 'item_amount' => $amount,
             ]);
 
-            $newTotal = round((float) $expense->expense_total_amount + $amount, 2);
+            $oldTotalMinor = DecimalAmount::toMinorUnits((float) $expense->expense_total_amount);
+            $itemAmountMinor = DecimalAmount::toMinorUnits($amount);
+            $newTotal = (float) DecimalAmount::fromMinorUnits(DecimalAmount::add($oldTotalMinor, $itemAmountMinor));
             $this->expenseRepository->updateTotalAmount($expenseId, $newTotal);
 
             // خصم المبلغ الإضافي من المحفظة
@@ -392,7 +526,8 @@ class ExpenseService
             $networkWallet->ensureActive();
 
             $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, $amount);
-            $balanceAfter = round((float) $networkWallet->wallet_balance - $amount, 2);
+            $networkWallet->refresh();
+            $balanceAfter = (float) $networkWallet->wallet_balance;
             $this->networkWalletLogRepository->createLog(
                 $networkWallet->wallet_id,
                 WalletOperationType::WITHDRAW,
@@ -433,7 +568,10 @@ class ExpenseService
 
             $this->expenseItemRepository->delete($itemId);
 
-            $newTotal = max(0.0, round((float) $expense->expense_total_amount - $amount, 2));
+            $oldTotalMinor = DecimalAmount::toMinorUnits((float) $expense->expense_total_amount);
+            $itemAmountMinor = DecimalAmount::toMinorUnits($amount);
+            $newTotalMinor = max(0, DecimalAmount::add($oldTotalMinor, -$itemAmountMinor));
+            $newTotal = (float) DecimalAmount::fromMinorUnits($newTotalMinor);
             $this->expenseRepository->updateTotalAmount($expenseId, $newTotal);
 
             // استرداد المبلغ إلى المحفظة
@@ -446,7 +584,8 @@ class ExpenseService
             $networkWallet->ensureActive();
 
             $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $amount);
-            $balanceAfter = round((float) $networkWallet->wallet_balance + $amount, 2);
+            $networkWallet->refresh();
+            $balanceAfter = (float) $networkWallet->wallet_balance;
             $this->networkWalletLogRepository->createLog(
                 $networkWallet->wallet_id,
                 WalletOperationType::DEPOSIT,
@@ -478,5 +617,50 @@ class ExpenseService
 
             return (bool) $this->expenseAttachmentRepository->delete($attachmentId);
         });
+    }
+
+    /**
+     * إحصائيات وملخص المصروفات التشغيلية.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    public function summary(array $filters = []): array
+    {
+        $query = Expense::query();
+
+        if (! empty($filters['network_id'])) {
+            $query->where('network_id', (int) $filters['network_id']);
+        } elseif (! empty($filters['network_ids'])) {
+            $query->whereIn('network_id', (array) $filters['network_ids']);
+        }
+
+        if (! empty($filters['from_date'])) {
+            $query->whereDate('expense_date', '>=', $filters['from_date']);
+        }
+
+        if (! empty($filters['to_date'])) {
+            $query->whereDate('expense_date', '<=', $filters['to_date']);
+        }
+
+        $totalCount = (clone $query)->count();
+        $totalAmount = (float) (clone $query)->sum('expense_total_amount');
+
+        $now = now('Asia/Aden');
+        $thisMonthAmount = (float) (clone $query)
+            ->whereYear('expense_date', $now->year)
+            ->whereMonth('expense_date', $now->month)
+            ->sum('expense_total_amount');
+
+        $todayAmount = (float) (clone $query)
+            ->whereDate('expense_date', $now->toDateString())
+            ->sum('expense_total_amount');
+
+        return [
+            'total_count' => $totalCount,
+            'total_amount' => $totalAmount,
+            'this_month_amount' => $thisMonthAmount,
+            'today_amount' => $todayAmount,
+        ];
     }
 }

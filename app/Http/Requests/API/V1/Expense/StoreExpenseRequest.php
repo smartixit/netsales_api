@@ -13,7 +13,22 @@ class StoreExpenseRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return true;
+        $networkId = (int) $this->input('network_id');
+        if (! $networkId) {
+            return true;
+        }
+
+        $user = $this->user();
+        if (! $user) {
+            return false;
+        }
+
+        $isOwner = $user->networks()->where('networks.network_id', $networkId)->exists();
+        if ($isOwner) {
+            return true;
+        }
+
+        return $user->networkUsers()->where('network_users.network_id', $networkId)->exists();
     }
 
     public function rules(): array

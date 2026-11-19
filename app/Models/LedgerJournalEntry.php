@@ -5,24 +5,27 @@ namespace App\Models;
 use App\Enums\LedgerEntryStatus;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
  * @property int $journal_entry_id
  * @property int $currency_id
- * @property \App\Enums\LedgerEntryStatus $status
- * @property \Illuminate\Support\Carbon $entry_date
+ * @property LedgerEntryStatus $status
+ * @property Carbon $entry_date
  * @property-read Currency $currency
- * @property-read \Illuminate\Database\Eloquent\Collection<int, LedgerJournalLine> $lines
+ * @property-read Collection<int, LedgerJournalLine> $lines
  */
 class LedgerJournalEntry extends Model
 {
     use ExactDateSerialization;
 
     protected $table = 'ledger_journal_entries';
+
     protected $primaryKey = 'journal_entry_id';
 
     protected $fillable = [

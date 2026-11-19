@@ -4,7 +4,9 @@ namespace App\Models;
 
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $trial_redemption_id
@@ -18,9 +20,9 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
  * @property string $redemption_subject_key
  * @property string $status
  * @property array<string, mixed>|null $metadata
- * @property \Illuminate\Support\Carbon|null $reserved_at
- * @property \Illuminate\Support\Carbon|null $started_at
- * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property Carbon|null $reserved_at
+ * @property Carbon|null $started_at
+ * @property Carbon|null $completed_at
  * @property-read BillingTrialPolicy $policy
  * @property-read BillingTrialPolicyVersion $policyVersion
  * @property-read BillingSubscription $subscription
@@ -30,7 +32,9 @@ class BillingTrialRedemption extends Model
     use ExactDateSerialization;
 
     protected $table = 'billing_trial_redemptions';
+
     protected $primaryKey = 'trial_redemption_id';
+
     protected $fillable = ['trial_policy_id', 'trial_policy_version_id', 'billing_subscription_id', 'network_id', 'billing_account_id', 'product_id', 'redemption_scope', 'redemption_subject_key', 'status', 'reserved_at', 'started_at', 'completed_at', 'metadata'];
 
     protected function casts(): array

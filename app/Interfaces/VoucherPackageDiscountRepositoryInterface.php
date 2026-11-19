@@ -33,7 +33,7 @@ interface VoucherPackageDiscountRepositoryInterface extends BaseRepositoryInterf
     /**
      * جلب الخصومات الفعالة لمجموعة باقات ضمن سياق شبكة ونقطة بيع واحد.
      *
-     * @param array<int, int> $packageIds
+     * @param  array<int, int>  $packageIds
      * @return Collection<int, VoucherPackageDiscount>
      */
     public function findEffectiveDiscountsForPackages(int $networkId, int $posId, array $packageIds): Collection;

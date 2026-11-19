@@ -31,7 +31,7 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
     /**
      * Create a user while assigning the server-selected account scope before persistence.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function createForScope(array $data, RoleScope $scope): User
     {
@@ -77,7 +77,6 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
 
         return $query->orderBy('user_id', 'desc')->cursorPaginate($perPage);
     }
-
 
     /**
      * Retrieve only soft-deleted platform-scope users with cursor pagination.

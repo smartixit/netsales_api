@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $revenue_schedule_id
@@ -14,11 +15,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $revenue_account_code
  * @property int $total_minor
  * @property int $recognized_minor
- * @property \Illuminate\Support\Carbon|null $last_recognized_on
+ * @property Carbon|null $last_recognized_on
  * @property string $status
- * @property \Illuminate\Support\Carbon $service_start_on
- * @property \Illuminate\Support\Carbon $service_end_on
- * @property \Illuminate\Support\Carbon|null $last_recognized_on
+ * @property Carbon $service_start_on
+ * @property Carbon $service_end_on
+ * @property Carbon|null $last_recognized_on
  * @property string $status
  * @property-read BillingInvoice $invoice
  * @property-read BillingInvoiceLine|null $invoiceLine
@@ -29,6 +30,7 @@ class BillingRevenueRecognitionSchedule extends Model
     use ExactDateSerialization;
 
     protected $table = 'billing_revenue_recognition_schedules';
+
     protected $primaryKey = 'revenue_schedule_id';
 
     protected $fillable = [

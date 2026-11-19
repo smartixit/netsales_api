@@ -9,7 +9,6 @@ use App\Services\OperationalReportAuthorizationService;
 use App\Services\Reports\OperationalReportProviderRegistry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -23,6 +22,7 @@ final class GenerateOperationalReportExport implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public int $timeout = 180;
 
     public function __construct(public int $reportExportId) {}
@@ -59,6 +59,7 @@ final class GenerateOperationalReportExport implements ShouldQueue
 
         if ($claim === 'release') {
             $this->release(110);
+
             return;
         }
         if ($claim !== 'claimed') {

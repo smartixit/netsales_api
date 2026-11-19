@@ -32,6 +32,7 @@ class PurgeExpiredReportArtifacts extends Command
                             'report_run_id' => $run->report_run_id,
                             'artifact_path' => $path,
                         ]);
+
                         continue;
                     }
 

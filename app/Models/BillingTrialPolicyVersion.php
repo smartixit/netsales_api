@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
@@ -24,7 +25,7 @@ use LogicException;
  * @property array<string, mixed>|null $entitlement_config
  * @property int $duration_value
  * @property array<string, mixed>|null $entitlement_config
- * @property \Illuminate\Support\Carbon|null $published_at
+ * @property Carbon|null $published_at
  * @property-read BillingTrialPolicy $policy
  */
 class BillingTrialPolicyVersion extends Model
@@ -32,7 +33,9 @@ class BillingTrialPolicyVersion extends Model
     use ExactDateSerialization;
 
     protected $table = 'billing_trial_policy_versions';
+
     protected $primaryKey = 'trial_policy_version_id';
+
     protected $fillable = ['trial_policy_id', 'version_number', 'status', 'is_enabled', 'duration_value', 'duration_unit', 'start_trigger', 'redemption_scope', 'eligibility_mode', 'requires_manual_approval', 'end_behavior', 'entitlement_mode', 'entitlement_config', 'published_at', 'created_by'];
 
     protected function casts(): array

@@ -46,8 +46,11 @@ class BillingSubscriptionResource extends JsonResource
             'trial_policy_snapshot' => $this->trial_policy_snapshot,
             'dunning_policy_snapshot' => $this->dunning_policy_snapshot,
             'trial_redemption' => $this->whenLoaded('trialRedemption', function () {
-                if (! $this->trialRedemption) return null;
+                if (! $this->trialRedemption) {
+                    return null;
+                }
                 $r = $this->trialRedemption;
+
                 return [
                     'trial_redemption_id' => $r->trial_redemption_id,
                     'status' => $r->status,

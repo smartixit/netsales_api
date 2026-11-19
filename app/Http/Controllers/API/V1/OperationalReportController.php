@@ -7,21 +7,22 @@ use App\Http\Requests\API\V1\Reports\OperationalReportCatalogRequest;
 use App\Http\Requests\API\V1\Reports\OperationalReportRequest;
 use App\Http\Requests\API\V1\Reports\StoreOperationalReportExportRequest;
 use App\Http\Requests\API\V1\Reports\StoreOperationalReportPresetRequest;
-use Illuminate\Support\MessageBag;
 use App\Jobs\GenerateOperationalReportExport;
 use App\Models\OperationalReportExport;
 use App\Models\OperationalReportPreset;
 use App\Services\OperationalReportAuthorizationService;
 use App\Services\Reports\OperationalReportFilterValidator;
-use App\Services\Reports\OperationalReportProviderRegistry;
 use App\Services\Reports\OperationalReportPresetValidator;
+use App\Services\Reports\OperationalReportProviderRegistry;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\MessageBag;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OperationalReportController extends BaseController
@@ -152,8 +153,6 @@ class OperationalReportController extends BaseController
             return $this->validationErrorResponse($e);
         }
     }
-
-
 
     public function presets(Request $request): JsonResponse
     {
@@ -331,7 +330,7 @@ class OperationalReportController extends BaseController
 
     private function validateProviderFilters(OperationalReportType $type, ?int $posId, array $filters): void
     {
-        $errors = new MessageBag();
+        $errors = new MessageBag;
         $this->filterValidator->validate($type, $posId, $filters, $errors);
 
         if ($errors->isNotEmpty()) {
@@ -405,7 +404,7 @@ class OperationalReportController extends BaseController
             return $this->errorResponse('ملف التصدير غير جاهز أو انتهت صلاحيته.', [], 410);
         }
 
-        $disk = \Illuminate\Support\Facades\Storage::disk('protected');
+        $disk = Storage::disk('protected');
         if (! $disk->exists($export->artifact_path)) {
             return $this->errorResponse('ملف التصدير غير موجود.', [], 404);
         }

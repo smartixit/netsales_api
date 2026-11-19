@@ -22,6 +22,7 @@ class BuildReportRunJob implements ShouldQueue
     use SerializesModels;
 
     public int $tries = 2;
+
     public int $timeout = 300;
 
     public function __construct(

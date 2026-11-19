@@ -3,9 +3,21 @@
 namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
-use App\Http\Requests\API\V1\Billing\{StoreCurrencyRequest, StorePlanFeatureRequest, StorePlanRequest, StorePriceRequest, StoreProductRequest, UpdateCurrencyRequest};
-use App\Http\Resources\API\V1\Billing\{BillingPlanResource, BillingPlanFeatureResource, BillingPriceResource, BillingProductResource, CurrencyResource};
-use App\Services\Billing\{BillingCatalogService, CurrencyService};
+use App\Http\Requests\API\V1\Billing\CreateDraftVersionRequest;
+use App\Http\Requests\API\V1\Billing\StoreCurrencyRequest;
+use App\Http\Requests\API\V1\Billing\StorePlanFeatureRequest;
+use App\Http\Requests\API\V1\Billing\StorePlanRequest;
+use App\Http\Requests\API\V1\Billing\StorePriceRequest;
+use App\Http\Requests\API\V1\Billing\StoreProductRequest;
+use App\Http\Requests\API\V1\Billing\UpdateCurrencyRequest;
+use App\Http\Resources\API\V1\Billing\BillingPlanFeatureResource;
+use App\Http\Resources\API\V1\Billing\BillingPlanResource;
+use App\Http\Resources\API\V1\Billing\BillingPlanVersionResource;
+use App\Http\Resources\API\V1\Billing\BillingPriceResource;
+use App\Http\Resources\API\V1\Billing\BillingProductResource;
+use App\Http\Resources\API\V1\Billing\CurrencyResource;
+use App\Services\Billing\BillingCatalogService;
+use App\Services\Billing\CurrencyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -78,7 +90,7 @@ class BillingCatalogController extends BaseController
     {
         return $this->successResponse(
             'تم استرجاع إصدارات الخطة.',
-            \App\Http\Resources\API\V1\Billing\BillingPlanVersionResource::collection(
+            BillingPlanVersionResource::collection(
                 $this->catalog->versionsForPlan($planId, $request->only(['status', 'per_page']))
             )
         );
@@ -119,7 +131,7 @@ class BillingCatalogController extends BaseController
         }
     }
 
-    public function createDraftVersion(\App\Http\Requests\API\V1\Billing\CreateDraftVersionRequest $request, int $planId): JsonResponse
+    public function createDraftVersion(CreateDraftVersionRequest $request, int $planId): JsonResponse
     {
         try {
             $version = $this->catalog->createDraftVersion(

@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
-use App\Services\OutboxService;
 use App\Services\Billing\BillingOutboxNotificationDispatcher;
-use Throwable;
+use App\Services\OutboxService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ProcessOutboxMessages extends Command
 {

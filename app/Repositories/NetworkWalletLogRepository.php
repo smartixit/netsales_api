@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Enums\WalletOperationType;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
+use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
 use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -89,7 +90,7 @@ class NetworkWalletLogRepository extends BaseRepository implements NetworkWallet
      */
     public function createLog(int $walletId, WalletOperationType|string $operation, float $amount, string $statement, ?int $createdBy = null, ?string $date = null, ?int $transferId = null): NetworkWalletLog
     {
-        $wallet = \App\Models\NetworkWallet::query()->lockForUpdate()->findOrFail($walletId);
+        $wallet = NetworkWallet::query()->lockForUpdate()->findOrFail($walletId);
         $operationValue = $operation instanceof WalletOperationType ? $operation->value : $operation;
         $amountMinor = DecimalAmount::toMinorUnits($amount);
         if ($amountMinor < 0) {

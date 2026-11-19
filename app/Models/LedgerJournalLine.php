@@ -23,6 +23,7 @@ class LedgerJournalLine extends Model
     use ExactDateSerialization;
 
     protected $table = 'ledger_journal_lines';
+
     protected $primaryKey = 'journal_line_id';
 
     protected $fillable = [

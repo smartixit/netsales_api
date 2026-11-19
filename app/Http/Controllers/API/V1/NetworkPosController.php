@@ -4,9 +4,9 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\Common\BatchStatusRequest;
-use App\Http\Requests\API\V1\Network\FilterNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\ConfirmNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\CreateNetworkPosLinkingChallengeRequest;
+use App\Http\Requests\API\V1\Network\FilterNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\PreviewNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
@@ -20,7 +20,6 @@ use App\Services\NetworkPosLinkingChallengeService;
 use App\Services\NetworkPosService;
 use Exception;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;

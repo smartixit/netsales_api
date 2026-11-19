@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Traits\ExactDateSerialization;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
 /**
@@ -22,14 +24,14 @@ use LogicException;
  * @property int $refunded_minor
  * @property-read BillingInvoice $invoice
  * @property-read Currency $currency
- * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingCreditNoteLine> $lines
+ * @property-read Collection<int, BillingCreditNoteLine> $lines
  */
-
 class BillingCreditNote extends Model
 {
     use ExactDateSerialization;
 
     protected $table = 'billing_credit_notes';
+
     protected $primaryKey = 'credit_note_id';
 
     protected $fillable = [

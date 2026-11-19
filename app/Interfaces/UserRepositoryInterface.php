@@ -21,7 +21,7 @@ interface UserRepositoryInterface extends BaseRepositoryInterface
     /**
      * Create a user with its authoritative account scope assigned before persistence.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function createForScope(array $data, RoleScope $scope): User;
 

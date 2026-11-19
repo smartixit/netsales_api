@@ -3,11 +3,11 @@
 namespace App\Http\Requests\API\V1\Setting;
 
 use App\Enums\SettingCategory;
-use Illuminate\Validation\ValidationException;
 use App\Enums\ValueType;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UpdateSystemSettingRequest extends FormRequest
 {

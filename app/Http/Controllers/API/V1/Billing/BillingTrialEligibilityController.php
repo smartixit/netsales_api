@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
-use App\Models\{BillingAccount, BillingPrice, BillingSubscription, BillingTrialEligibilityCheck};
-use App\Services\Billing\{BillingAuthorizationService, BillingPolicyResolver};
+use App\Models\BillingAccount;
+use App\Models\BillingPrice;
+use App\Models\BillingSubscription;
+use App\Models\BillingTrialEligibilityCheck;
+use App\Services\Billing\BillingAuthorizationService;
+use App\Services\Billing\BillingPolicyResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;

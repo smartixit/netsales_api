@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
@@ -16,13 +17,14 @@ use LogicException;
  * @property int|null $file_size
  * @property string|null $sha256
  * @property int $uploaded_by
- * @property \Illuminate\Support\Carbon $uploaded_at
+ * @property Carbon $uploaded_at
  */
 class BillingPaymentProof extends Model
 {
     use ExactDateSerialization;
 
     protected $table = 'billing_payment_proofs';
+
     protected $primaryKey = 'payment_proof_id';
 
     protected $fillable = [

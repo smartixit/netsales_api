@@ -26,6 +26,7 @@ class BillingAccount extends Model
     use SoftDeletes;
 
     protected $table = 'billing_accounts';
+
     protected $primaryKey = 'billing_account_id';
 
     protected $fillable = [

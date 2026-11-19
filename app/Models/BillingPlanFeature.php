@@ -14,7 +14,7 @@ use LogicException;
  * @property int $plan_version_id
  * @property string $feature_key
  * @property string $name
- * @property \App\Enums\BillingFeatureType $feature_type
+ * @property BillingFeatureType $feature_type
  * @property string $value
  * @property string|null $unit
  * @property string|null $aggregation
@@ -28,6 +28,7 @@ class BillingPlanFeature extends Model
     use ExactDateSerialization;
 
     protected $table = 'billing_plan_features';
+
     protected $primaryKey = 'plan_feature_id';
 
     protected $fillable = [

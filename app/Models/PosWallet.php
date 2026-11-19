@@ -249,6 +249,7 @@ class PosWallet extends Model
             $afterMinor = DecimalAmount::add($beforeMinor, $amountMinor);
             $wallet->wallet_balance = DecimalAmount::fromMinorUnits($afterMinor);
             $wallet->save();
+
             return $wallet->logs()->create([
                 'log_operation_type' => WalletOperationType::DEPOSIT,
                 'log_amount' => DecimalAmount::fromMinorUnits($amountMinor),
@@ -281,6 +282,7 @@ class PosWallet extends Model
             }
             $wallet->wallet_balance = DecimalAmount::fromMinorUnits($afterMinor);
             $wallet->save();
+
             return $wallet->logs()->create([
                 'log_operation_type' => WalletOperationType::WITHDRAW,
                 'log_amount' => DecimalAmount::fromMinorUnits($amountMinor),

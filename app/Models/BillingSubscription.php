@@ -5,9 +5,13 @@ namespace App\Models;
 use App\Enums\BillingSubscriptionStatus;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
@@ -20,15 +24,15 @@ use LogicException;
  * @property array<string, mixed>|null $trial_policy_snapshot
  * @property array<string, mixed>|null $dunning_policy_snapshot
  * @property int $currency_id
- * @property \App\Enums\BillingSubscriptionStatus $status
- * @property \Illuminate\Support\Carbon|null $current_period_start
- * @property \Illuminate\Support\Carbon|null $current_period_end
- * @property \Illuminate\Support\Carbon|null $trial_start
- * @property \Illuminate\Support\Carbon|null $trial_end
- * @property \Illuminate\Support\Carbon|null $ended_at
- * @property \Illuminate\Support\Carbon|null $paused_at
- * @property \Illuminate\Support\Carbon|null $grace_period_ends_at
- * @property \Illuminate\Support\Carbon|null $next_billing_at
+ * @property BillingSubscriptionStatus $status
+ * @property Carbon|null $current_period_start
+ * @property Carbon|null $current_period_end
+ * @property Carbon|null $trial_start
+ * @property Carbon|null $trial_end
+ * @property Carbon|null $ended_at
+ * @property Carbon|null $paused_at
+ * @property Carbon|null $grace_period_ends_at
+ * @property Carbon|null $next_billing_at
  * @property array<string, mixed>|null $metadata
  * @property-read BillingAccount $billingAccount
  * @property-read BillingPlan $plan
@@ -36,13 +40,14 @@ use LogicException;
  * @property-read BillingPrice $price
  * @property-read Currency $currency
  * @property-read BillingTrialRedemption|null $trialRedemption
- * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingSubscriptionEvent> $events
+ * @property-read Collection<int, BillingSubscriptionEvent> $events
  */
 class BillingSubscription extends Model
 {
     use ExactDateSerialization, SoftDeletes;
 
     protected $table = 'billing_subscriptions';
+
     protected $primaryKey = 'billing_subscription_id';
 
     protected $fillable = [

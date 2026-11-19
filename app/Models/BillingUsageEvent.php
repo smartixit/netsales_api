@@ -12,6 +12,7 @@ class BillingUsageEvent extends Model
     use ExactDateSerialization;
 
     protected $table = 'billing_usage_events';
+
     protected $primaryKey = 'usage_event_id';
 
     protected $fillable = [

@@ -24,6 +24,7 @@ class BillingCreditNoteLine extends Model
     use ExactDateSerialization;
 
     protected $table = 'billing_credit_note_lines';
+
     protected $primaryKey = 'credit_note_line_id';
 
     protected $fillable = ['credit_note_id', 'invoice_line_id', 'description', 'quantity_micros', 'amount_minor'];

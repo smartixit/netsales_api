@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $report_run_id
@@ -24,12 +25,12 @@ use Illuminate\Database\Eloquent\Model;
  * @property array<string, mixed>|null $result_metadata
  * @property string|null $error_code
  * @property string|null $error_message
- * @property \Illuminate\Support\Carbon $queued_at
- * @property \Illuminate\Support\Carbon|null $started_at
- * @property \Illuminate\Support\Carbon|null $completed_at
- * @property \Illuminate\Support\Carbon|null $expires_at
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $queued_at
+ * @property Carbon|null $started_at
+ * @property Carbon|null $completed_at
+ * @property Carbon|null $expires_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class ReportRun extends Model
 {

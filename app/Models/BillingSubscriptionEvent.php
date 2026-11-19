@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
@@ -15,14 +16,16 @@ use LogicException;
  * @property string|null $to_status
  * @property array<string, mixed>|null $payload
  * @property int|null $actor_id
- * @property \Illuminate\Support\Carbon $occurred_at
+ * @property Carbon $occurred_at
  */
 class BillingSubscriptionEvent extends Model
 {
     use ExactDateSerialization;
 
     protected $table = 'billing_subscription_events';
+
     protected $primaryKey = 'event_id';
+
     public $timestamps = false;
 
     protected $fillable = [

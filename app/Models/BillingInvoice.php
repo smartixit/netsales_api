@@ -5,9 +5,11 @@ namespace App\Models;
 use App\Enums\BillingInvoiceStatus;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
@@ -17,11 +19,11 @@ use LogicException;
  * @property int $billing_account_id
  * @property int|null $billing_subscription_id
  * @property int $currency_id
- * @property \App\Enums\BillingInvoiceStatus $status
- * @property \Illuminate\Support\Carbon|null $period_start
- * @property \Illuminate\Support\Carbon|null $period_end
- * @property \Illuminate\Support\Carbon $issued_on
- * @property \Illuminate\Support\Carbon $due_on
+ * @property BillingInvoiceStatus $status
+ * @property Carbon|null $period_start
+ * @property Carbon|null $period_end
+ * @property Carbon $issued_on
+ * @property Carbon $due_on
  * @property int $subtotal_minor
  * @property int $discount_minor
  * @property int $tax_minor
@@ -32,21 +34,22 @@ use LogicException;
  * @property array<string, mixed>|null $customer_snapshot
  * @property array<string, mixed>|null $pricing_snapshot
  * @property string|null $memo
- * @property \Illuminate\Support\Carbon|null $finalized_at
- * @property \Illuminate\Support\Carbon|null $voided_at
+ * @property Carbon|null $finalized_at
+ * @property Carbon|null $voided_at
  * @property int|null $created_by
- * @property \Illuminate\Support\Carbon|null $paid_at
+ * @property Carbon|null $paid_at
  * @property-read BillingAccount $billingAccount
  * @property-read Currency $currency
  * @property-read BillingSubscription|null $subscription
- * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingInvoiceLine> $lines
- * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPayment> $payments
+ * @property-read Collection<int, BillingInvoiceLine> $lines
+ * @property-read Collection<int, BillingPayment> $payments
  */
 class BillingInvoice extends Model
 {
     use ExactDateSerialization;
 
     protected $table = 'billing_invoices';
+
     protected $primaryKey = 'invoice_id';
 
     protected $fillable = [
