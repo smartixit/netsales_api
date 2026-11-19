@@ -1124,3 +1124,34 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Verification:**
   - `flutter analyze lib/features/requests test/requests`: **0 issues found (100% clean)**.
   - `flutter test test/requests/`: **82 tests passed (100%)**, including dedicated `network_request_modification_sheet_test.dart` and `procurement_package_option_card_test.dart`.
+
+---
+
+## [2026-11-19] Task: Invoices Module Complete Rebuild, Clean Architecture Alignment & Backend Financial Reversal Hardening
+- **Authorized Scope:** USER REQUESTED — Full reconstruction (not patching) of the Invoices module (`netsales/lib/features/invoices`) following global enterprise standards to match the pattern and quality of the `requests` feature:
+  1. Complete redesign and decomposition of all invoice screens, cards, and bottom sheets into pure `StatelessWidget` and GetX reactive state, strictly 1 class per file, 0 `StatefulWidget`, 0 helper methods returning widgets (`_build...`), 100% design system tokens only, and named `screens` (no `views/`).
+  2. Removal of all Repayments code from `invoices` (as debt repayments are handled in dedicated finance domain).
+  3. Elimination of multi-name fallback guesses in JSON parsing (`InvoiceModel`, `InvoiceItemModel`), binding directly to authoritative `SaleInvoiceResource` and `SaleInvoiceItemResource` schema.
+  4. Backend audit and resolution of 3 critical financial and accounting risks:
+     - **Issue 1 (Sale type mutation risk in `PUT /api/v1/sale-invoices/{id}`):** Converted `updateSaleType` in `SaleInvoiceService` to execute dual-wallet financial reversal and re-settlement under global row lock order (`NetworkWallet` -> `PosWallet`), credit limit check on CREDIT transition, and ledger logging in `pos_wallet_logs` and `network_wallet_logs`.
+     - **Issue 2 (Invoice deletion risk in `DELETE /api/v1/sale-invoices/{id}`):** Implemented full financial reversal (`Financial Reversal`) in `deleteInvoice()` and `forceDeleteInvoice()`, reversing POS debits, debiting network cash collections, and blocking restoration of financially reversed invoices (`restoreInvoice()` / `bulkRestore()`).
+     - **Decision on Insufficient Cash Reversal:** Confirmed and retained the strict blocking system (`نظام المنع الصارم`), rejecting deletion if the network wallet balance is insufficient to refund cash.
+     - **Issue 3 (Minor units decimal precision):** Eliminated float rounding leakage by converting calculations in `SaleInvoiceItem` and `SaleInvoiceService` to integer minor units via `DecimalAmount`.
+- **Files Modified / Implemented:**
+  - **Laravel API (`smartixit/netsales_api`):**
+    - `app/Models/SaleInvoiceItem.php`: Added integer minor units methods (`grossAmountMinor()`, `calculateDiscountAmountMinor()`, `calculateLineTotalMinor()`) via `DecimalAmount`.
+    - `app/Services/SaleInvoiceService.php`: Hardened `generateFromRequest()`, `createDirectInvoice()`, `updateSaleType()`, `deleteInvoice()`, `forceDeleteInvoice()`, `restoreInvoice()`, `bulkDelete()`, `bulkForceDelete()`, and `bulkRestore()` with integer minor units, atomic dual-wallet transactions, and financial reversals.
+    - `tests/Feature/SaleInvoiceLifecycleAndFinancialReversalTest.php`: Created dedicated feature test suite covering cash deletion reversal, credit deletion refund, cash-to-credit transition, credit-to-cash transition, and prohibition of restoring reversed invoices (5 tests, 22 assertions).
+  - **Flutter Client (`smartixit/netsales`):**
+    - `lib/features/invoices/data/models/invoice_item_model.dart` & `invoice_model.dart`: Direct binding to canonical API resources, removed fallback guessing.
+    - `lib/features/invoices/presentation/screens/`: `network_direct_invoice_screen.dart`, `network_wholesale_invoices_screen.dart`, `pos_purchase_invoices_screen.dart`, `invoice_details_screen.dart`.
+    - `lib/features/invoices/presentation/widgets/`: Decomposed into `invoice_card/`, `invoice_details/`, `direct_invoice/`, `invoices_summary_strip.dart`, `invoices_search_filter_header.dart`.
+    - `test/invoices/`: Updated unit and widget tests to match new structure (23 tests passed).
+- **Verification Commands & Outcomes:**
+  - `php artisan test --compact tests/Feature/SaleInvoiceLifecycleAndFinancialReversalTest.php`: **5 passed (22 assertions)**.
+  - `php artisan test --compact tests/Feature/RequestInvoiceRelationshipTest.php tests/Feature/VoucherRequestAndInvoicingTest.php tests/Feature/Milestone4CConcurrencyAndDirectInvoiceDebtTest.php`: **17 passed (136 assertions)**.
+  - `vendor/bin/pint --dirty --format agent`: **PASS (Cleanly formatted modified PHP files)**.
+  - `flutter analyze lib/features/invoices test/invoices`: **No issues found! (0 errors, 0 warnings, ran in 30s)**.
+  - `flutter test test/invoices/`: **23 passed (100%)**.
+- **Task Status:** Complete — Invoices module fully rebuilt, aligned with global standards, and backend financial lifecycle secured with strict blocking invariant.
+

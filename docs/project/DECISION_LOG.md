@@ -20,6 +20,8 @@ Valid statuses are strictly:
 | **DEC-03** | 2026-11-02 | Strict PaymentType Enum Validation and Model Cast in Repayments | **`PROPOSED`** | Pending Review |
 | **DEC-04** | 2026-11-02 | Server-Side Informational FIFO Repayment Preview Endpoint | **`PROPOSED`** | Pending Review |
 | **BILL-TRIAL-01** | 2026-11-10 | Versioned Trial and Dunning Policy Engine | **`APPROVED`** | 2026-11-10 |
+| **DEC-PROC-01** | 2026-11-17 | POS procurement display-only estimate from signed pricing snapshots | **`APPROVED`** | 2026-11-17 |
+| **DEC-INV-01** | 2026-11-19 | Strict Deletion Blocking on Insufficient Network Balance for Cash Invoices | **`APPROVED`** | 2026-11-19 |
 
 ---
 
@@ -142,3 +144,16 @@ Valid statuses are strictly:
 - **Decision:** Permit Flutter to calculate a non-binding estimate from Laravel-issued, POS/network/package-bound pricing snapshot inputs (integer minor-unit base price and basis-point discount). Recalculate locally on quantity/payment-type changes without network requests. Do not send or persist client totals. New request creation sends each item's signed snapshot token; Laravel validates current tariff/discount state and computes authoritative totals transactionally.
 - **Expiry:** Snapshot lifetime is 30 minutes. Missing, expired, or stale snapshots block submission and require refreshing the package catalogue.
 - **Explicit exclusions:** No client-side accounting or financial calculations outside this narrowly scoped POS procurement display estimate. Existing server quote/preview flows for request modification remain unchanged.
+
+---
+
+## DEC-INV-01: Strict Deletion Blocking on Insufficient Network Balance for Cash Invoices
+- **Status:** **`APPROVED`**
+- **Date:** 2026-11-19
+- **User Decision Date:** 2026-11-19
+- **Subject:** Policy when deleting a cash invoice (`CASH`) where the supplying network wallet lacks sufficient balance to refund the cash.
+- **Context:** Deleting a cash invoice requires reversing the financial cash collection from the network's wallet to maintain accounting integrity. If the network wallet does not have enough funds:
+  - *Option A (Negative Overdraft):* Allow the network wallet balance to go negative (`-$amount`). This violates the core accounting invariant that networks are creditors and suppliers, not borrowers, and creates uncollectible platform risk.
+  - *Option B (Strict Blocking - نظام المنع الصارم):* Block invoice deletion (`DomainException`) until the network wallet is credited or replenished with sufficient balance to refund the cash.
+- **Decision:** **Option B (`نظام المنع الصارم`)**. Networks are strictly forbidden from having negative wallet balances or overdrafts. If the network wallet balance is lower than the cash invoice total, deletion is rejected with an authoritative Arabic error message.
+- **Consequence:** Preserves the fundamental financial invariant that network wallets can never become debtors, avoiding unbacked balance deductions.

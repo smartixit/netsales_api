@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DecimalAmount;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -52,21 +53,39 @@ class SaleInvoiceItem extends Model
         return $this->belongsTo(VoucherPackage::class, 'package_id', 'package_id');
     }
 
-    // Calculations
+    // Calculations in Minor Units (Integers) for Absolute Financial Accuracy
+    public function grossAmountMinor(): int
+    {
+        $priceMinor = DecimalAmount::toMinorUnits($this->voucher_price);
+
+        return $priceMinor * (int) $this->voucher_count;
+    }
+
+    public function calculateDiscountAmountMinor(): int
+    {
+        $grossMinor = $this->grossAmountMinor();
+        $discountBasisPoints = (int) round(((float) ($this->item_discount ?? 0.0)) * 100);
+
+        return intdiv($grossMinor * $discountBasisPoints + 5000, 10000);
+    }
+
+    public function calculateLineTotalMinor(): int
+    {
+        return max(0, $this->grossAmountMinor() - $this->calculateDiscountAmountMinor());
+    }
+
     public function grossAmount(): float
     {
-        return round((float) $this->voucher_price * (int) $this->voucher_count, 2);
+        return (float) DecimalAmount::fromMinorUnits($this->grossAmountMinor());
     }
 
     public function calculateDiscountAmount(): float
     {
-        $discountPercent = (float) ($this->item_discount ?? 0.0);
-
-        return round($this->grossAmount() * ($discountPercent / 100), 2);
+        return (float) DecimalAmount::fromMinorUnits($this->calculateDiscountAmountMinor());
     }
 
     public function calculateLineTotal(): float
     {
-        return max(0.0, round($this->grossAmount() - $this->calculateDiscountAmount(), 2));
+        return (float) DecimalAmount::fromMinorUnits($this->calculateLineTotalMinor());
     }
 }
