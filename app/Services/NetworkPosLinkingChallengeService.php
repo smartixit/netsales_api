@@ -365,6 +365,43 @@ class NetworkPosLinkingChallengeService
     }
 
     /**
+     * Retrieve the safe status projection for a challenge owned by the actor's network.
+     */
+    public function getChallengeStatus(User $actor, string $challengeUuid): ?NetworkPosLinkingChallenge
+    {
+        $challenge = $this->challengeRepository->findByUuid($challengeUuid, ['network', 'pos']);
+
+        if (! $challenge || ! $challenge->network) {
+            return null;
+        }
+
+        if (! $actor->isSuperAdmin()) {
+            $network = $challenge->network;
+            $isOwner = (int) $network->owner_id === (int) $actor->user_id;
+            $isActiveMember = $actor->networkUsers()
+                ->where('network_id', $challenge->network_id)
+                ->where('status', 'ACTIVE')
+                ->exists();
+
+            if (! $isOwner && ! $isActiveMember) {
+                throw ValidationException::withMessages([
+                    'challenge_uuid' => ['غير مصرح لك بالاطلاع على حالة دعوة الربط هذه.'],
+                ]);
+            }
+        }
+
+        if (
+            $challenge->status === LinkingChallengeStatus::PENDING
+            && $challenge->expires_at->isPast()
+        ) {
+            $this->challengeRepository->markAsExpired($challenge->challenge_id);
+            $challenge->status = LinkingChallengeStatus::EXPIRED;
+        }
+
+        return $challenge;
+    }
+
+    /**
      * فك تشفير وفحص سلامة بنية حمولة التحدي.
      */
     protected function decryptAndValidatePayload(string $payloadToken): array
