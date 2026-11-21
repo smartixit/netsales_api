@@ -92,7 +92,7 @@ class NetworkPosLinkingChallengeService
             ]);
         }
 
-        return $pos->load(['governorate', 'directorate']);
+        return $pos;
     }
 
     /**
