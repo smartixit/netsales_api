@@ -22,8 +22,8 @@ class NetworkLinkablePosResource extends JsonResource
             'pos_id' => $this->pos_id,
             'pos_uuid' => $this->pos_uuid,
             'pos_name' => $this->pos_name,
-            'governorate_name' => $this->governorate?->governorate_name,
-            'directorate_name' => $this->directorate?->directorate_name,
+            'governorate_name' => data_get($this->resource, 'governorate.governorate_name'),
+            'directorate_name' => data_get($this->resource, 'directorate.directorate_name'),
         ];
     }
 }
