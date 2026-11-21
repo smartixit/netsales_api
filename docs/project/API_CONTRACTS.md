@@ -100,7 +100,7 @@ Response (`NetworkLinkablePosResource`) exposes only:
 - `pos_id` (`integer`): internal identifier required for response consistency checks.
 - `pos_uuid` (`string`): the same commercial business code, needed by the subsequent create-challenge request.
 - `pos_name` (`string`).
-- `governorate_name` and `directorate_name` (nullable strings).
+
 
 It must not expose POS phone, owner identity, credentials, or a directory of other POS records.
 
