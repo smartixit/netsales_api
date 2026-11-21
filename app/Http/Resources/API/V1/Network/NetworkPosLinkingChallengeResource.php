@@ -33,7 +33,7 @@ class NetworkPosLinkingChallengeResource extends JsonResource
             'status_label' => $this->status instanceof LinkingChallengeStatus
                 ? $this->status->label()
                 : (LinkingChallengeStatus::tryFrom((string) $this->status)?->label()),
-            'expires_at' => $this->expires_at ? Carbon::parse($this->expires_at)->toDateTimeString() : null,
+            'expires_at' => $this->expires_at ? Carbon::parse($this->expires_at)->toIso8601String() : null,
             'consumed_at' => $this->consumed_at ? Carbon::parse($this->consumed_at)->toDateTimeString() : null,
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
