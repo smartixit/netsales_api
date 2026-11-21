@@ -401,7 +401,7 @@ class User extends Authenticatable
             ->where('status', 'ACTIVE')
             ->with('role.permissions')
             ->get()
-            ->map(static fn (NetworkUser $membership): ?array => $membership->role === null
+            ->map(static fn (NetworkUser $membership): ?array => ($membership->role === null || ! $membership->role->isActive())
                 ? null
                 : [
                     'scope' => 'NETWORK',
@@ -421,7 +421,7 @@ class User extends Authenticatable
             ->where('status', 'ACTIVE')
             ->with('role.permissions')
             ->get()
-            ->map(static fn (PosUser $membership): ?array => $membership->role === null
+            ->map(static fn (PosUser $membership): ?array => ($membership->role === null || ! $membership->role->isActive())
                 ? null
                 : [
                     'scope' => 'POS',
