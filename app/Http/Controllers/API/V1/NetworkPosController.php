@@ -506,9 +506,9 @@ class NetworkPosController extends BaseController
         tags: ['Network POS'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'بيانات إنشاء التحدي المشفر',
+            description: 'بيانات إنشاء التحدي المشفر. يجب إرسال pos_id أو pos_uuid، ولا يجوز إرسال الاثنين معاً.',
             content: new OA\JsonContent(
-                required: ['network_id', 'pos_uuid'],
+                required: ['network_id'],
                 properties: [
                     new OA\Property(property: 'network_id', type: 'integer', example: 1),
                     new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5, description: 'بديل عن pos_uuid؛ يجب إرسال أحدهما فقط.'),
