@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $network_id
  * @property int $pos_id
  * @property LinkingChallengeStatus $status
- * @property \\Illuminate\\Support\\Carbon $expires_at
+ * @property \Illuminate\Support\Carbon $expires_at
  */
 class NetworkPosLinkingChallenge extends Model
 {
