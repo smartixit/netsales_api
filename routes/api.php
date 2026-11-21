@@ -208,7 +208,7 @@ Route::prefix('v1')->group(function () {
             Route::get('networks/{id}', [NetworkController::class, 'show'])->whereNumber('id')->name('api.v1.networks.show');
         });
 
-        Route::middleware(['throttle:api-read', 'permission:networks.edit'])->get(
+        Route::middleware(['throttle:api-read', 'permission:networks.view'])->get(
             'network-pos/challenges/{uuid}',
             [NetworkPosController::class, 'challengeStatus']
         )->whereUuid('uuid')->name('api.v1.network_pos.challenges.status');
