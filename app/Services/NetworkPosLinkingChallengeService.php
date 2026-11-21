@@ -63,7 +63,10 @@ class NetworkPosLinkingChallengeService
         // 2. التحقق من صلاحية المستخدم على الشبكة
         if (! $actor->isSuperAdmin()) {
             $isOwner = (int) $network->owner_id === (int) $actor->user_id;
-            $isMember = $actor->networkUsers()->where('network_id', $networkId)->exists();
+            $isMember = $actor->networkUsers()
+                ->where('network_id', $networkId)
+                ->where('status', 'ACTIVE')
+                ->exists();
             if (! $isOwner && ! $isMember) {
                 throw ValidationException::withMessages([
                     'network_id' => ['غير مصرح لك بإنشاء دعوة ربط لهذه الشبكة.'],
