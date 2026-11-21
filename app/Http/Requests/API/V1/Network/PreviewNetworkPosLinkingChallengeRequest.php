@@ -30,7 +30,7 @@ class PreviewNetworkPosLinkingChallengeRequest extends FormRequest
                 'required',
                 'string',
                 'max:64',
-                'regex:/^POS-\\d{4}-\\d{5}-[A-F0-9]{4}$/',
+                'regex:/^POS-\d{4}-\d{5}-[A-F0-9]{4}$/',
                 Rule::exists('pos', 'pos_uuid')->whereNull('deleted_at'),
             ],
         ];
