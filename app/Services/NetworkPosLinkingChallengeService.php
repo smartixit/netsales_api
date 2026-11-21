@@ -432,7 +432,10 @@ class NetworkPosLinkingChallengeService
         if (! $actor->isSuperAdmin()) {
             $network = $challenge->network;
             $isOwner = (int) $network->owner_id === (int) $actor->user_id;
-            $isMember = $actor->networkUsers()->where('network_id', $challenge->network_id)->exists();
+            $isMember = $actor->networkUsers()
+                ->where('network_id', $challenge->network_id)
+                ->where('status', 'ACTIVE')
+                ->exists();
             if (! $isOwner && ! $isMember) {
                 throw ValidationException::withMessages([
                     'challenge_uuid' => ['غير مصرح لك بإلغاء دعوة الربط هذه.'],
