@@ -427,18 +427,21 @@ class RequestService
 
             // التحقق من تبعية مراجع الطلب لنفس الشبكة المزودة صاحبة الطلب لمنع هجمات IDOR
             $reviewer = $this->userRepository->findById($reviewedBy);
-            if ($reviewer && ! $reviewer->isSuperAdmin()) {
-                $isAuthorized = app(TenantPermissionService::class)->allowsNetwork(
+            if (! $reviewer || ! $reviewer->isActive()) {
+                throw ValidationException::withMessages([
+                    'authorization' => ['الحساب المنفذ غير نشط أو غير موجود.'],
+                ]);
+            }
+
+            if (! $reviewer->isSuperAdmin()
+                && ! app(TenantPermissionService::class)->allowsNetwork(
                     $reviewer,
                     (int) $request->network_id,
                     'requests.approve'
-                );
-
-                if (! $isAuthorized) {
-                    throw ValidationException::withMessages([
-                        'network_id' => ['غير مصرح لك باعتماد طلبات كروت لا تنتمي لمزود الشبكة الخاص بك.'],
-                    ]);
-                }
+                )) {
+                throw ValidationException::withMessages([
+                    'network_id' => ['غير مصرح لك باعتماد طلبات كروت لا تنتمي لمزود الشبكة الخاص بك.'],
+                ]);
             }
 
             $note = null;
@@ -678,12 +681,15 @@ class RequestService
         return DB::transaction(function () use ($requestId, $userId): bool {
             /** @var RequestModel $request */
             $request = $this->requestRepository->findTrashedById($requestId);
-
-            if ($request) {
-                $this->authorizeRequestTenant($userId, $request, 'requests.delete');
+            if (! $request) {
+                throw ValidationException::withMessages([
+                    'request' => ['لا يمكن الحذف النهائي إلا لطلب موجود في سلة المحذوفات.'],
+                ]);
             }
 
-            if ($request && ! $request->isPending() && ! $request->isCancelled()) {
+            $this->authorizeRequestTenant($userId, $request, 'requests.delete');
+
+            if (! $request->isPending() && ! $request->isCancelled()) {
                 throw ValidationException::withMessages([
                     'status' => ['لا يمكن الحذف النهائي لطلب كروت تم اعتماده أو رفضه مسبقاً.'],
                 ]);
@@ -742,10 +748,13 @@ class RequestService
             foreach ($ids as $id) {
                 /** @var RequestModel $request */
                 $request = $this->requestRepository->findTrashedById((int) $id);
-                if ($request) {
-                    $this->authorizeRequestTenant($userId, $request, 'requests.delete');
+                if (! $request) {
+                    throw ValidationException::withMessages([
+                        'ids' => ["الطلب رقم #{$id} غير موجود في سلة المحذوفات."],
+                    ]);
                 }
-                if ($request && ! $request->isPending() && ! $request->isCancelled()) {
+                $this->authorizeRequestTenant($userId, $request, 'requests.delete');
+                if (! $request->isPending() && ! $request->isCancelled()) {
                     throw ValidationException::withMessages([
                         'ids' => ["الطلب رقم #{$request->request_uuid} تم اعتماده أو رفضه ولا يمكن حذفه نهائياً."],
                     ]);
