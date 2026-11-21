@@ -20,6 +20,7 @@ use App\Models\VoucherPackage;
 use App\Models\VoucherPackageDiscount;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
+use Tests\Concerns\CreatesProcurementRequestSnapshots;
 
 /**
  * حزمة اختبارات النزاهة المحاسبية والعمليات المالية الدقيقة (Comprehensive Accounting & Financial Integrity Test).
@@ -37,6 +38,7 @@ use Tests\TestCase;
 class ComprehensiveAccountingIntegrityTest extends TestCase
 {
     use DatabaseTransactions;
+    use CreatesProcurementRequestSnapshots;
 
     protected User $user;
 
@@ -301,8 +303,7 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
 
         // شراء 10 كروت بسعر 1000 للكارت = 10,000 إجمالي
         // الخصم النقدي المخصص 15% = 1,500 خصم -> الصافي = 8,500
-        $requestResponse = $this->withHeaders($this->headers)
-            ->postJson('/api/v1/requests', [
+        $requestResponse = $this->postProcurementRequest([
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
                 'request_note' => 'طلب مع خصم مخصص',
