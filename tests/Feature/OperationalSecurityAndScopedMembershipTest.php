@@ -207,7 +207,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         ];
 
         // الطلب الأول
-        $first = $this->withHeaders($headers)->postJson('/api/v1/requests', $payload);
+        $first = $this->postProcurementRequest($payload, $headers);
         $first->assertStatus(201);
         $firstRequestId = $first->json('data.request_id');
 
