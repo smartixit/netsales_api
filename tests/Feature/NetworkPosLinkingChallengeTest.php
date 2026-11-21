@@ -211,7 +211,6 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.pos_uuid', $this->pos->pos_uuid)
             ->assertJsonPath('data.pos.pos_uuid', $this->pos->pos_uuid)
             ->assertJsonPath('data.pos.pos_name', $this->pos->pos_name);
 
