@@ -8,10 +8,12 @@ use App\Http\Requests\API\V1\Network\ConfirmNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\CreateNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\FilterNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\PreviewNetworkPosLinkingChallengeRequest;
+use App\Http\Requests\API\V1\Network\SearchNetworkLinkablePosRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeResource;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeStatusResource;
+use App\Http\Resources\API\V1\Network\NetworkLinkablePosResource;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingPreviewResource;
 use App\Http\Resources\API\V1\Network\NetworkPosResource;
 use App\Models\Network;
@@ -520,6 +522,33 @@ class NetworkPosController extends BaseController
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
         ]
     )]
+    /**
+     * Resolve one exact POS business code without exposing a POS directory.
+     */
+    public function resolveLinkTarget(SearchNetworkLinkablePosRequest $request): JsonResponse
+    {
+        try {
+            $pos = $this->challengeService->resolveLinkTarget(
+                $this->currentUser(),
+                $request->getNetworkId(),
+                $request->getPosBusinessCode()
+            );
+
+            return $this->successResponse(
+                'تم التحقق من نقطة البيع وهي مؤهلة لإرسال دعوة الربط.',
+                new NetworkLinkablePosResource($pos)
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception) {
+            return $this->errorResponse(
+                'تعذر التحقق من نقطة البيع. راجع الرمز وحاول مرة أخرى.',
+                [],
+                422
+            );
+        }
+    }
+
     public function createChallenge(CreateNetworkPosLinkingChallengeRequest $request): JsonResponse
     {
         try {
