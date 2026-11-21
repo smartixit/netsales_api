@@ -19,6 +19,7 @@ use App\Models\VoucherPackage;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
+use Tests\Concerns\CreatesProcurementRequestSnapshots;
 
 /**
  * حزمة الاختبارات الأمنية والسيناريوهات الحدية والمعادية (Adversarial Security & Edge Cases Suite).
@@ -36,6 +37,7 @@ use Tests\TestCase;
 class AdversarialSecurityAndEdgeCasesTest extends TestCase
 {
     use DatabaseTransactions;
+    use CreatesProcurementRequestSnapshots;
 
     protected User $user;
 
@@ -231,8 +233,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
     public function test_double_approval_of_request_is_strictly_blocked(): void
     {
         // 1. إنشاء طلب كروت شرعي
-        $requestResponse = $this->withHeaders($this->headers)
-            ->postJson('/api/v1/requests', [
+        $requestResponse = $this->postProcurementRequest([
                 'network_id' => $this->networkA->network_id,
                 'pos_id' => $this->posA->pos_id,
                 'request_note' => 'طلب لفحص الاعتماد المزدوج',
@@ -272,8 +273,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
      */
     public function test_cannot_reject_already_approved_or_rejected_request(): void
     {
-        $requestResponse = $this->withHeaders($this->headers)
-            ->postJson('/api/v1/requests', [
+        $requestResponse = $this->postProcurementRequest([
                 'network_id' => $this->networkA->network_id,
                 'pos_id' => $this->posA->pos_id,
                 'request_note' => 'طلب لفحص عدم إمكانية الرفض بعد الاعتماد',
@@ -301,8 +301,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
         $rejectApproved->assertStatus(422);
 
         // إنشاء طلب آخر ورفضه
-        $anotherRequest = $this->withHeaders($this->headers)
-            ->postJson('/api/v1/requests', [
+        $anotherRequest = $this->postProcurementRequest([
                 'network_id' => $this->networkA->network_id,
                 'pos_id' => $this->posA->pos_id,
                 'request_note' => 'طلب للرفض المزدوج',
@@ -334,8 +333,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
      */
     public function test_cannot_cancel_already_processed_request(): void
     {
-        $requestResponse = $this->withHeaders($this->headers)
-            ->postJson('/api/v1/requests', [
+        $requestResponse = $this->postProcurementRequest([
                 'network_id' => $this->networkA->network_id,
                 'pos_id' => $this->posA->pos_id,
                 'request_note' => 'طلب لفحص الإلغاء',
