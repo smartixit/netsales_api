@@ -97,6 +97,10 @@ class EnsurePermissionMiddleware
             $authorized = ($networkId > 0 && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission))
                 || ($posId > 0 && $this->tenantPermissions->allowsPos($user, $posId, $permission));
 
+            if ($networkId <= 0 && $posId <= 0 && $invoice === null && $permission === 'sales.view') {
+                $authorized = $this->tenantPermissions->allowsAnyOperational($user, $permission);
+            }
+
             if (! $authorized) {
                 throw new AuthorizationException('عذراً، لا تملك هذه الصلاحية داخل الشبكة أو نقطة البيع المحددة.');
             }
