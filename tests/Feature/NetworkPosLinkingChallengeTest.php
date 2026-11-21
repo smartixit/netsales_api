@@ -202,6 +202,27 @@ class NetworkPosLinkingChallengeTest extends TestCase
         ]);
     }
 
+    public function test_network_owner_can_create_challenge_using_resolved_pos_business_code(): void
+    {
+        $response = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.pos_uuid', $this->pos->pos_uuid)
+            ->assertJsonPath('data.pos.pos_uuid', $this->pos->pos_uuid)
+            ->assertJsonPath('data.pos.pos_name', $this->pos->pos_name);
+
+        $this->assertDatabaseHas('network_pos_linking_challenges', [
+            'challenge_uuid' => $response->json('data.challenge_uuid'),
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => LinkingChallengeStatus::PENDING->value,
+        ]);
+    }
+
     public function test_network_owner_cannot_create_an_untargeted_invitation(): void
     {
         $response = $this->withHeaders($this->netSession['headers'])
