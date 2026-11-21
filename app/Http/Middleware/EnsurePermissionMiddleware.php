@@ -25,6 +25,10 @@ class EnsurePermissionMiddleware
             throw new AuthorizationException('عذراً، يجب تسجيل الدخول أولاً للوصول لهذا المسار.');
         }
 
+        if (! $user->isActive()) {
+            throw new AuthorizationException('الحساب غير نشط ولا يمكنه تنفيذ عمليات محمية.');
+        }
+
         if ($user->isSuperAdmin()) {
             return $next($request);
         }
@@ -92,6 +96,13 @@ class EnsurePermissionMiddleware
                 $authorized = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
             } elseif ($posId > 0) {
                 $authorized = $this->tenantPermissions->allowsPos($user, $posId, $permission);
+            } elseif ($request->has('ids')) {
+                $ids = array_values(array_unique(array_map('intval', (array) $request->input('ids', []))));
+                $records = RequestModel::withTrashed()->whereIn('request_id', $ids)->get();
+                $authorized = $ids !== [] && $records->count() === count($ids)
+                    && $records->every(fn (RequestModel $record): bool =>
+                        $this->tenantPermissions->allowsNetwork($user, (int) $record->network_id, $permission)
+                        || $this->tenantPermissions->allowsPos($user, (int) $record->pos_id, $permission));
             } elseif ($record === null && in_array($permission, ['requests.view', 'requests.create'], true)) {
                 $authorized = $this->tenantPermissions->allowsAnyOperational($user, $permission);
             }
