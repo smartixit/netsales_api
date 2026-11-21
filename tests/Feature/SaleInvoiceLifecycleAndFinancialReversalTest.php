@@ -7,6 +7,7 @@ use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Enums\SaleType;
 use App\Enums\WalletOperationType;
+use App\Http\Requests\API\V1\SaleInvoice\StoreSaleInvoiceRequest;
 use App\Http\Requests\API\V1\SaleInvoice\UpdateSaleInvoiceRequest;
 use App\Models\Network;
 use App\Models\NetworkPos;
@@ -234,6 +235,43 @@ class SaleInvoiceLifecycleAndFinancialReversalTest extends TestCase
         // 5. Network gets remaining 4,000 in cash -> 11,000 + 4,000 = 15,000
         $this->networkWallet->refresh();
         $this->assertEquals(15000.00, (float) $this->networkWallet->wallet_balance);
+    }
+
+    public function test_create_credit_sale_invoice_with_cash_down_payment_updates_wallets_and_invoice_amounts(): void
+    {
+        // POS has balance 0, credit limit 10,000
+        $this->posWallet->update(['wallet_balance' => 0.00, 'credit_limit' => 10000.00]);
+        $this->networkWallet->update(['wallet_balance' => 5000.00]);
+
+        $request = new StoreSaleInvoiceRequest;
+        $request->merge([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'sale_type' => 'CREDIT',
+            'paid_amount' => 1500.00, // Cash down payment
+            'items' => [
+                [
+                    'package_id' => $this->package->package_id,
+                    'voucher_count' => 100, // 100 * 50 = 5000 (after 5 credit discount = 4500)
+                ],
+            ],
+        ]);
+
+        $invoice = $this->service->createDirectInvoice($request, $this->user->user_id);
+
+        $this->assertEquals(SaleType::CREDIT, $invoice->sale_type);
+        $this->assertEquals(4750.00, (float) $invoice->invoice_total_amount);
+        $this->assertEquals(1500.00, (float) $invoice->paid_amount);
+        $this->assertEquals(3250.00, (float) $invoice->remaining_amount);
+        $this->assertEquals(InvoicePaymentStatus::PARTIALLY_PAID, $invoice->payment_status);
+
+        // POS wallet balance: was 0, now owes 3250 -> -3250
+        $this->posWallet->refresh();
+        $this->assertEquals(-3250.00, (float) $this->posWallet->wallet_balance);
+
+        // Network wallet balance: was 5000, received 1500 cash -> 6500
+        $this->networkWallet->refresh();
+        $this->assertEquals(6500.00, (float) $this->networkWallet->wallet_balance);
     }
 
     public function test_restoring_financially_reversed_invoice_is_prohibited(): void

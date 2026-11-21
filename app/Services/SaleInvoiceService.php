@@ -533,9 +533,24 @@ class SaleInvoiceService
                 $paymentStatus = InvoicePaymentStatus::PAID;
                 $isCashSale = true;
             } else {
-                // البيع الآجل: يُستهلك الرصيد الإيجابي المتاح أولاً، وما زاد عنه يصبح ذمة مدينة ضمن السقف الائتماني
+                // البيع الآجل: احتساب الدفعة النقدية المقبوضة كاش مقدماً (إن وُجدت)
+                $rawClientPaid = $request->getPaidAmount();
+                $clientCashPaidMinor = 0;
+                if ($rawClientPaid !== null) {
+                    $clientCashPaidMinor = DecimalAmount::toMinorUnits(max(0.0, (float) $rawClientPaid));
+                    if ($clientCashPaidMinor > $totalInvoiceAmountMinor) {
+                        throw ValidationException::withMessages([
+                            'paid_amount' => ['لا يمكن أن يتجاوز المبلغ المقبوض نقداً إجمالي قيمة الفاتورة.'],
+                        ]);
+                    }
+                }
+
+                // المبلغ المتبقي على الفاتورة بعد خصم الدفعة النقدية الكاش
+                $unpaidAfterCashMinor = $totalInvoiceAmountMinor - $clientCashPaidMinor;
+
+                // التحقق من كفاية السقف الائتماني للمبلغ المتبقي غير المسدد نقداً
                 $posBalanceMinor = DecimalAmount::toMinorUnits($posWallet->wallet_balance);
-                $projectedBalanceMinor = DecimalAmount::add($posBalanceMinor, -$totalInvoiceAmountMinor);
+                $projectedBalanceMinor = DecimalAmount::add($posBalanceMinor, -$unpaidAfterCashMinor);
 
                 if ($projectedBalanceMinor < 0) {
                     if ($posWallet->credit_limit === null) {
@@ -554,8 +569,8 @@ class SaleInvoiceService
                 }
 
                 $existingCreditMinor = max(0, $posBalanceMinor);
-                $coveredAmountMinor = min($existingCreditMinor, $totalInvoiceAmountMinor);
-                $paidAmountMinor = $coveredAmountMinor;
+                $coveredFromWalletMinor = min($existingCreditMinor, $unpaidAfterCashMinor);
+                $paidAmountMinor = $clientCashPaidMinor + $coveredFromWalletMinor;
                 $remainingAmountMinor = $totalInvoiceAmountMinor - $paidAmountMinor;
 
                 $paidAmount = (float) DecimalAmount::fromMinorUnits($paidAmountMinor);
@@ -638,14 +653,27 @@ class SaleInvoiceService
                     $userId
                 );
 
-                // زيادة سيولة الشبكة فقط بالمبلغ المغطى برصيد إيجابي فعلي (إن وجد)
+                // إذا وُجدت دفعة نقدية كاش مقبوضة، تُسجل في كشف حساب المحفظة لتعويض ما سُدد نقداً
+                if ($clientCashPaidMinor > 0) {
+                    $clientCashPaid = (float) DecimalAmount::fromMinorUnits($clientCashPaidMinor);
+                    $this->posWalletRepository->incrementBalance($posWallet->wallet_id, $clientCashPaid);
+                    $this->posWalletLogRepository->createLog(
+                        $posWallet->wallet_id,
+                        WalletOperationType::DEPOSIT,
+                        $clientCashPaid,
+                        "سداد دفعة نقدية كاش مقدماً للفاتورة الآجلة (#{$invoice->invoice_uuid})",
+                        $userId
+                    );
+                }
+
+                // زيادة سيولة الشبكة بالمبلغ المحصل فعلياً (النقدي والمغطى من رصيد المحفظة)
                 if ($paidAmount > 0.001) {
                     $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $paidAmount);
                     $this->networkWalletLogRepository->createLog(
                         $networkWallet->wallet_id,
                         WalletOperationType::DEPOSIT,
                         $paidAmount,
-                        "تحصيل مبيعات كروت مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: (".formatWithCurrency($paidAmount).')، آجل متبقي: ('.formatWithCurrency($remainingAmount).')',
+                        "تحصيل مبيعات كروت مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد: (".formatWithCurrency($paidAmount).')، آجل متبقي: ('.formatWithCurrency($remainingAmount).')',
                         $userId
                     );
                 }
