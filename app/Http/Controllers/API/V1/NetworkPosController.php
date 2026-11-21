@@ -11,6 +11,7 @@ use App\Http\Requests\API\V1\Network\PreviewNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeResource;
+use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeStatusResource;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingPreviewResource;
 use App\Http\Resources\API\V1\Network\NetworkPosResource;
 use App\Models\Network;
@@ -633,6 +634,32 @@ class NetworkPosController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('فشل تأكيد الربط: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * Read challenge lifecycle state without returning its encrypted payload or identifiers.
+     */
+    public function challengeStatus(string $uuid): JsonResponse
+    {
+        try {
+            $challenge = $this->challengeService->getChallengeStatus(
+                $this->currentUser(),
+                $uuid
+            );
+
+            if (! $challenge) {
+                return $this->errorResponse('دعوة الربط غير موجودة.', [], 404);
+            }
+
+            return $this->successResponse(
+                'تم استرجاع حالة دعوة الربط بنجاح.',
+                new NetworkPosLinkingChallengeStatusResource($challenge)
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر استرجاع حالة دعوة الربط.', [], 422);
         }
     }
 
