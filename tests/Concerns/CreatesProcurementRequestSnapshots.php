@@ -13,6 +13,9 @@ use Illuminate\Testing\TestResponse;
  */
 trait CreatesProcurementRequestSnapshots
 {
+    /** @var array<string, string> */
+    private array $procurementSnapshotCache = [];
+
     /**
      * Build valid server-signed tariff snapshots exactly as the package catalog
      * supplies them to clients, without weakening the production validation.
@@ -38,14 +41,23 @@ trait CreatesProcurementRequestSnapshots
                 (int) $package->package_id
             );
 
-            $items[$index]['pricing_snapshot_token'] = app(ProcurementPricingSnapshotService::class)->issue(
+            $cacheKey = implode(':', [
                 $networkId,
                 $posId,
                 (int) $package->package_id,
                 DecimalAmount::toMinorUnits($package->package_voucher_price),
                 DecimalAmount::toMinorUnits($discount['discount_cash'] ?? 0),
                 DecimalAmount::toMinorUnits($discount['discount_credit'] ?? 0),
-            );
+            ]);
+            $items[$index]['pricing_snapshot_token'] = $this->procurementSnapshotCache[$cacheKey]
+                ??= app(ProcurementPricingSnapshotService::class)->issue(
+                    $networkId,
+                    $posId,
+                    (int) $package->package_id,
+                    DecimalAmount::toMinorUnits($package->package_voucher_price),
+                    DecimalAmount::toMinorUnits($discount['discount_cash'] ?? 0),
+                    DecimalAmount::toMinorUnits($discount['discount_credit'] ?? 0),
+                );
         }
 
         $payload['items'] = array_values($items);
