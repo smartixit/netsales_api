@@ -11,6 +11,7 @@ use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
 use App\Models\NetworkPos;
 use App\Models\NetworkPosLinkingChallenge;
+use App\Models\Pos;
 use App\Models\User;
 use Carbon\Carbon;
 use App\Services\Support\AsymmetricCryptoService;
@@ -259,7 +260,7 @@ class NetworkPosLinkingChallengeService
             'network' => new NetworkResource($network),
             'pos' => new PosResource($pos),
             'expires_at' => $challenge->expires_at->toDateTimeString(),
-            'is_targeted' => $challenge->pos_id !== null,
+            'is_targeted' => true,
         ];
     }
 
