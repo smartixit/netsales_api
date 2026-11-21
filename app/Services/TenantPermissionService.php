@@ -19,15 +19,6 @@ final class TenantPermissionService
             return false;
         }
 
-        $networkOwned = Network::query()
-            ->where('network_id', $networkId)
-            ->where('owner_id', $user->user_id)
-            ->exists();
-
-        if ($networkOwned && $this->roleAllows(RoleKey::NETWORK_OWNER, RoleScope::NETWORK, $permission)) {
-            return true;
-        }
-
         $hasMembership = NetworkUser::query()
             ->where('network_id', $networkId)
             ->where('user_id', $user->user_id)
@@ -53,22 +44,17 @@ final class TenantPermissionService
             return false;
         }
 
-        return false;
+        return Network::query()
+            ->where('network_id', $networkId)
+            ->where('owner_id', $user->user_id)
+            ->exists()
+            && $this->roleAllows(RoleKey::NETWORK_OWNER, RoleScope::NETWORK, $permission);
     }
 
     public function allowsPos(User $user, int $posId, string $permission): bool
     {
         if ($posId <= 0 || ! $user->isActive()) {
             return false;
-        }
-
-        $posOwned = Pos::query()
-            ->where('pos_id', $posId)
-            ->where('owner_id', $user->user_id)
-            ->exists();
-
-        if ($posOwned && $this->roleAllows(RoleKey::POS_AGENT, RoleScope::POS, $permission)) {
-            return true;
         }
 
         $hasMembership = PosUser::query()
@@ -96,7 +82,11 @@ final class TenantPermissionService
             return false;
         }
 
-        return false;
+        return Pos::query()
+            ->where('pos_id', $posId)
+            ->where('owner_id', $user->user_id)
+            ->exists()
+            && $this->roleAllows(RoleKey::POS_AGENT, RoleScope::POS, $permission);
     }
 
     public function allowsNetworkOrPos(
@@ -153,6 +143,8 @@ final class TenantPermissionService
 
         $ownerNetworkIds = Network::query()
             ->where('owner_id', $user->user_id)
+            ->whereDoesntHave('memberships', fn ($query) => $query
+                ->where('user_id', $user->user_id))
             ->pluck('network_id')
             ->map(static fn ($id): int => (int) $id)
             ->all();
@@ -194,6 +186,8 @@ final class TenantPermissionService
 
         $ownerPosIds = Pos::query()
             ->where('owner_id', $user->user_id)
+            ->whereDoesntHave('memberships', fn ($query) => $query
+                ->where('user_id', $user->user_id))
             ->pluck('pos_id')
             ->map(static fn ($id): int => (int) $id)
             ->all();
