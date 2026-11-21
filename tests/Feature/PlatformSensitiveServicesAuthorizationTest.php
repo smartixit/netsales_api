@@ -78,7 +78,6 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $user->role_scope = $role->scope->value;
         $user->save();
 
         if ($role->scope === RoleScope::NETWORK) {
