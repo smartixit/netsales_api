@@ -1166,6 +1166,20 @@ class SaleInvoiceService
 
         $query = SaleInvoice::query()->toBase();
 
+        if (array_key_exists('authorized_network_ids', $filters) || array_key_exists('authorized_pos_ids', $filters)) {
+            $networkIds = array_map('intval', (array) ($filters['authorized_network_ids'] ?? []));
+            $posIds = array_map('intval', (array) ($filters['authorized_pos_ids'] ?? []));
+            $query->where(function ($scope) use ($networkIds, $posIds): void {
+                if ($networkIds !== []) {
+                    $scope->whereIn('network_id', $networkIds);
+                }
+                if ($posIds !== []) {
+                    $method = $networkIds === [] ? 'whereIn' : 'orWhereIn';
+                    $scope->{$method}('pos_id', $posIds);
+                }
+            });
+        }
+
         if (! empty($filters['network_id'])) {
             $query->where('network_id', (int) $filters['network_id']);
         }
