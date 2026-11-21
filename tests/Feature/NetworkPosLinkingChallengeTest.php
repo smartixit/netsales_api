@@ -40,10 +40,13 @@ class NetworkPosLinkingChallengeTest extends TestCase
 
     protected Pos $otherPos;
 
+    /** @var array<string, mixed> */
     protected array $netSession;
 
+    /** @var array<string, mixed> */
     protected array $posSession;
 
+    /** @var array<string, mixed> */
     protected array $unauthSession;
 
     protected function setUp(): void
@@ -132,7 +135,6 @@ class NetworkPosLinkingChallengeTest extends TestCase
 
         NetworkUser::create([
             'network_id' => $this->network->network_id,
-                'pos_id' => $this->pos->pos_id,
             'user_id' => $this->networkOwner->user_id,
             'role_id' => $netRole?->role_id,
             'status' => 'ACTIVE',
