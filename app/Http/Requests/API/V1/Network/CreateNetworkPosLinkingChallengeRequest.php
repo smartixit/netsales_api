@@ -51,7 +51,7 @@ class CreateNetworkPosLinkingChallengeRequest extends FormRequest
         return (int) $this->network_id;
     }
 
-    public function getPosUuid(): ?string
+    public function getPosUuid(): string
     {
         return strtoupper(trim((string) $this->pos_uuid));
     }
