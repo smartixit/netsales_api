@@ -75,8 +75,14 @@ class NetworkPosLinkingChallengeService
             }
         }
 
-        // 3. التحقق من نقطة البيع المستهدفة إن وجدت عبر المستودع
-        if (! $posId && $posUuid) {
+        // 3. لا توجد دعوة عامة: يجب تحديد نقطة بيع واحدة وصريحة.
+        if (($posId === null && $posUuid === null) || ($posId !== null && $posUuid !== null)) {
+            throw ValidationException::withMessages([
+                'pos_id' => ['يجب تحديد نقطة بيع واحدة فقط قبل إنشاء دعوة الربط.'],
+            ]);
+        }
+
+        if ($posUuid !== null) {
             try {
                 $pos = $this->posRepository->findByUuid($posUuid);
                 $posId = $pos->pos_id;
@@ -85,9 +91,9 @@ class NetworkPosLinkingChallengeService
                     'pos_uuid' => ['نقطة البيع المستهدفة غير موجودة.'],
                 ]);
             }
-        } elseif ($posId) {
+        } else {
             try {
-                $pos = $this->posRepository->findById($posId);
+                $pos = $this->posRepository->findById((int) $posId);
             } catch (ModelNotFoundException) {
                 throw ValidationException::withMessages([
                     'pos_id' => ['نقطة البيع المستهدفة غير موجودة.'],
@@ -95,16 +101,20 @@ class NetworkPosLinkingChallengeService
             }
         }
 
-        if (isset($pos)) {
-            $pos->ensureActive();
+        if (! $pos instanceof Pos) {
+            throw ValidationException::withMessages([
+                'pos_id' => ['تعذر تحديد نقطة البيع المستهدفة.'],
+            ]);
+        }
+
+        $pos->ensureActive();
 
             // التحقق من عدم وجود ارتباط قائم بالفعل عبر المستودع
-            $existingLink = $this->networkPosRepository->findByNetworkAndPos($networkId, $pos->pos_id);
-            if ($existingLink) {
-                throw ValidationException::withMessages([
-                    'pos_id' => ['نقطة البيع هذه مرتبطة بالفعل بهذه الشبكة مسبقاً.'],
-                ]);
-            }
+        $existingLink = $this->networkPosRepository->findByNetworkAndPos($networkId, $pos->pos_id);
+        if ($existingLink) {
+            throw ValidationException::withMessages([
+                'pos_id' => ['نقطة البيع هذه مرتبطة بالفعل بهذه الشبكة مسبقاً.'],
+            ]);
         }
 
         $duration = max(5, min(60, $durationMinutes));
@@ -181,7 +191,7 @@ class NetworkPosLinkingChallengeService
         if (
             (int) $challenge->network_id !== $payloadData['nid']
             || $challenge->challenge_nonce !== $payloadData['nonce']
-            || ($challenge->pos_id === null ? null : (int) $challenge->pos_id) !== $payloadData['pid']
+            || (int) $challenge->pos_id !== $payloadData['pid']
             || $challenge->expires_at->timestamp !== $payloadData['exp']
         ) {
             throw ValidationException::withMessages([
@@ -214,7 +224,7 @@ class NetworkPosLinkingChallengeService
         }
 
         // إذا كانت الدعوة مخصصة لنقطة بيع محددة مسبقاً
-        if ($challenge->pos_id !== null && (int) $challenge->pos_id !== $posId) {
+        if ((int) $challenge->pos_id !== (int) $posId) {
             throw ValidationException::withMessages([
                 'pos_id' => ['دعوة الربط هذه مخصصة لنقطة بيع أخرى ولا يمكن ربطها بنقطة البيع الحالية.'],
             ]);
@@ -424,7 +434,7 @@ class NetworkPosLinkingChallengeService
      *     op: string,
      *     cid: string,
      *     nid: int,
-     *     pid: int|null,
+     *     pid: int,
      *     nonce: string,
      *     exp: int
      * }
@@ -456,7 +466,8 @@ class NetworkPosLinkingChallengeService
             || ! is_int($data['nid'] ?? null)
             || $data['nid'] < 1
             || ! array_key_exists('pid', $data)
-            || ! (is_null($data['pid']) || (is_int($data['pid']) && $data['pid'] > 0))
+            || ! is_int($data['pid'] ?? null)
+            || $data['pid'] < 1
             || ! is_string($data['nonce'] ?? null)
             || ! preg_match('/^[a-f0-9]{64}$/D', $data['nonce'])
             || ! is_int($data['exp'] ?? null)
