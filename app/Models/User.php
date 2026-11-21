@@ -399,7 +399,7 @@ class User extends Authenticatable
     {
         $networkRoles = $this->networkUsers()
             ->where('status', 'ACTIVE')
-            ->with('role')
+            ->with('role.permissions')
             ->get()
             ->map(static fn (NetworkUser $membership): ?array => $membership->role === null
                 ? null
@@ -408,13 +408,18 @@ class User extends Authenticatable
                     'tenant_id' => (int) $membership->network_id,
                     'role_key' => (string) $membership->role->role_key,
                     'role_name' => (string) $membership->role->role_name,
+                    'permissions' => $membership->role->permissions
+                        ->where('status', true)
+                        ->pluck('permission_key')
+                        ->values()
+                        ->all(),
                 ])
             ->filter()
             ->values();
 
         $posRoles = $this->posUsers()
             ->where('status', 'ACTIVE')
-            ->with('role')
+            ->with('role.permissions')
             ->get()
             ->map(static fn (PosUser $membership): ?array => $membership->role === null
                 ? null
@@ -423,6 +428,11 @@ class User extends Authenticatable
                     'tenant_id' => (int) $membership->pos_id,
                     'role_key' => (string) $membership->role->role_key,
                     'role_name' => (string) $membership->role->role_name,
+                    'permissions' => $membership->role->permissions
+                        ->where('status', true)
+                        ->pluck('permission_key')
+                        ->values()
+                        ->all(),
                 ])
             ->filter()
             ->values();
