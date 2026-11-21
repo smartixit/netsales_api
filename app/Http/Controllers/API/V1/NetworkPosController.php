@@ -8,7 +8,7 @@ use App\Http\Requests\API\V1\Network\ConfirmNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\CreateNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\FilterNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\PreviewNetworkPosLinkingChallengeRequest;
-use App\Http\Requests\API\V1\Network\SearchNetworkLinkablePosRequest;
+use App\Http\Requests\API\V1\Network\ResolveNetworkLinkablePosRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeResource;
@@ -525,7 +525,7 @@ class NetworkPosController extends BaseController
     /**
      * Resolve one exact POS business code without exposing a POS directory.
      */
-    public function resolveLinkTarget(SearchNetworkLinkablePosRequest $request): JsonResponse
+    public function resolveLinkTarget(ResolveNetworkLinkablePosRequest $request): JsonResponse
     {
         try {
             $pos = $this->challengeService->resolveLinkTarget(
