@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources\API\V1\Network;
 
-use App\Enums\LinkingChallengeStatus;
 use App\Http\Resources\API\V1\Pos\PosResource;
 use App\Models\NetworkPosLinkingChallenge;
 use Carbon\Carbon;
