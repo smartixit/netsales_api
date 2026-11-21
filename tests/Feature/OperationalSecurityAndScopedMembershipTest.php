@@ -484,4 +484,62 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
 
         $this->assertDatabaseHas('roles', ['role_id' => $posUserRole->role_id]);
     }
+    public function test_permissions_are_isolated_per_active_network_membership(): void
+    {
+        $multiTenantUser = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Multi Tenant Permission User '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+
+        $ownerRole = Role::where('role_key', RoleKey::NETWORK_OWNER->value)->firstOrFail();
+
+        NetworkUser::create([
+            'network_id' => $this->networkA->network_id,
+            'user_id' => $multiTenantUser->user_id,
+            'role_id' => $ownerRole->role_id,
+            'status' => 'ACTIVE',
+        ]);
+
+        NetworkUser::create([
+            'network_id' => $this->networkB->network_id,
+            'user_id' => $multiTenantUser->user_id,
+            'role_id' => $this->networkMemberRole->role_id,
+            'status' => 'ACTIVE',
+        ]);
+
+        $authorization = app(\App\Services\TenantPermissionService::class);
+
+        $this->assertTrue(
+            $authorization->allowsNetwork(
+                $multiTenantUser,
+                (int) $this->networkA->network_id,
+                'requests.approve'
+            )
+        );
+
+        $this->assertFalse(
+            $authorization->allowsNetwork(
+                $multiTenantUser,
+                (int) $this->networkB->network_id,
+                'requests.approve'
+            )
+        );
+
+        NetworkUser::query()
+            ->where('network_id', $this->networkA->network_id)
+            ->where('user_id', $multiTenantUser->user_id)
+            ->update(['status' => 'SUSPENDED']);
+
+        $this->assertFalse(
+            $authorization->allowsNetwork(
+                $multiTenantUser->fresh(),
+                (int) $this->networkA->network_id,
+                'requests.approve'
+            )
+        );
+    }
+
 }
