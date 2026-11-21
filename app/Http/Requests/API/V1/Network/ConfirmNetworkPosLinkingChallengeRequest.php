@@ -43,7 +43,7 @@ class ConfirmNetworkPosLinkingChallengeRequest extends FormRequest
         return (string) $this->challenge_uuid;
     }
 
-    public function getPosUuid(): ?string
+    public function getPosUuid(): string
     {
         return strtoupper(trim((string) $this->pos_uuid));
     }
