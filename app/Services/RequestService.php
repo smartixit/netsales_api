@@ -448,9 +448,11 @@ class RequestService
             // التحقق من تبعية مراجع الطلب لنفس الشبكة المزودة صاحبة الطلب لمنع هجمات IDOR
             $reviewer = $this->userRepository->findById($reviewedBy);
             if ($reviewer && ! $reviewer->isSuperAdmin()) {
-                $isAuthorized = ($reviewer->network && (int) $reviewer->network->network_id === (int) $request->network_id)
-                    || ($reviewer->networks()->where('networks.network_id', $request->network_id)->exists())
-                    || (method_exists($reviewer, 'networkUsers') && $reviewer->networkUsers()->where('network_id', $request->network_id)->where('status', 'ACTIVE')->exists());
+                $isAuthorized = app(TenantPermissionService::class)->allowsNetwork(
+                    $reviewer,
+                    (int) $request->network_id,
+                    'requests.approve'
+                );
 
                 if (! $isAuthorized) {
                     throw ValidationException::withMessages([
