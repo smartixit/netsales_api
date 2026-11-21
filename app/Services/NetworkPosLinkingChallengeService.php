@@ -43,6 +43,59 @@ class NetworkPosLinkingChallengeService
     ) {}
 
     /**
+     * Resolve one exact POS business code for an authorized network.
+     * This intentionally does not expose a public POS directory.
+     */
+    public function resolveLinkTarget(User $actor, int $networkId, string $posBusinessCode): Pos
+    {
+        try {
+            $network = $this->networkRepository->findById($networkId);
+        } catch (ModelNotFoundException) {
+            throw ValidationException::withMessages([
+                'target' => ['تعذر العثور على نقطة بيع مؤهلة لهذا الرمز.'],
+            ]);
+        }
+
+        $network->ensureActive();
+
+        if (! $actor->isSuperAdmin()) {
+            $isOwner = (int) $network->owner_id === (int) $actor->user_id;
+            $isActiveMember = $actor->networkUsers()
+                ->where('network_id', $networkId)
+                ->where('status', 'ACTIVE')
+                ->exists();
+
+            if (! $isOwner && ! $isActiveMember) {
+                throw ValidationException::withMessages([
+                    'network_id' => ['غير مصرح لك بإدارة دعوات هذه الشبكة.'],
+                ]);
+            }
+        }
+
+        try {
+            $pos = $this->posRepository->findByUuid(strtoupper(trim($posBusinessCode)));
+        } catch (ModelNotFoundException) {
+            throw ValidationException::withMessages([
+                'target' => ['تعذر العثور على نقطة بيع مؤهلة لهذا الرمز.'],
+            ]);
+        }
+
+        if (! $pos instanceof Pos || $pos->trashed() || ! $pos->isActive()) {
+            throw ValidationException::withMessages([
+                'target' => ['تعذر العثور على نقطة بيع مؤهلة لهذا الرمز.'],
+            ]);
+        }
+
+        if ($this->networkPosRepository->findByNetworkAndPos($networkId, $pos->pos_id)) {
+            throw ValidationException::withMessages([
+                'target' => ['نقطة البيع مرتبطة بهذه الشبكة بالفعل.'],
+            ]);
+        }
+
+        return $pos->load(['governorate', 'directorate']);
+    }
+
+    /**
      * إنشاء دعوة/تحدي ربط مشفر عبر رمز QR من جانب الشبكة.
      */
     public function createChallenge(
