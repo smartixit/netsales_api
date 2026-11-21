@@ -210,6 +210,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.pos_id', $this->pos->pos_id)
             ->assertJsonPath('data.pos_name', $this->pos->pos_name)
+            ->assertJsonPath('data.pos_uuid', $this->pos->pos_uuid)
             ->assertJsonMissingPath('data.pos_phone_number')
             ->assertJsonMissingPath('data.owner');
     }
