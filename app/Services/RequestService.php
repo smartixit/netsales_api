@@ -242,9 +242,11 @@ class RequestService
      */
     public function update(int $requestId, UpdateRequestRequest $request, int $userId): RequestModel
     {
-        return DB::transaction(function () use ($requestId, $request): RequestModel {
+        return DB::transaction(function () use ($requestId, $request, $userId): RequestModel {
             /** @var RequestModel $requestModel */
             $requestModel = $this->requestRepository->findByIdForUpdate($requestId);
+
+            $this->authorizeRequestTenant($userId, $requestModel, 'requests.edit', allowNetwork: false);
 
             if (! $requestModel->isPending()) {
                 throw ValidationException::withMessages([
@@ -346,17 +348,11 @@ class RequestService
         $pos = $this->posRepository->findById($posId);
         $pos->ensureActive();
 
-        // التحقق من صلاحية المستخدم على نقطة البيع
         $user = $this->userRepository->findById($userId);
-        if ($user && ! $user->isSuperAdmin()) {
-            $isAuthorized = ($user->pos && (int) $user->pos->pos_id === (int) $posId)
-                || (method_exists($user, 'posUsers') && $user->posUsers()->where('pos_id', $posId)->exists());
-
-            if (! $isAuthorized) {
-                throw ValidationException::withMessages([
-                    'pos_id' => ['غير مصرح لك بطلب عرض أسعار باسم نقطة البيع المحددة.'],
-                ]);
-            }
+        if (! $user || ! app(TenantPermissionService::class)->allowsPos($user, (int) $posId, 'requests.create')) {
+            throw ValidationException::withMessages([
+                'pos_id' => ['غير مصرح لك بطلب عرض أسعار باسم نقطة البيع المحددة.'],
+            ]);
         }
 
         // التحقق من ارتباط نقطة البيع بالشبكة وتفعيله
@@ -393,19 +389,7 @@ class RequestService
             ]);
         }
 
-        // التحقق من صلاحية مراجع الطلب وتبعيته لمزود الشبكة
-        $reviewer = $this->userRepository->findById($userId);
-        if ($reviewer && ! $reviewer->isSuperAdmin()) {
-            $isAuthorized = ($reviewer->network && (int) $reviewer->network->network_id === (int) $request->network_id)
-                || ($reviewer->networks()->where('networks.network_id', $request->network_id)->exists())
-                || (method_exists($reviewer, 'networkUsers') && $reviewer->networkUsers()->where('network_id', $request->network_id)->where('status', 'ACTIVE')->exists());
-
-            if (! $isAuthorized) {
-                throw ValidationException::withMessages([
-                    'network_id' => ['غير مصرح لك بمراجعة وتعديل طلبات كروت لا تنتمي لمزود الشبكة الخاص بك.'],
-                ]);
-            }
-        }
+        $this->authorizeRequestTenant($userId, $request, 'requests.approve', allowPos: false);
 
         if ($saleType !== null && $saleType !== $request->sale_type) {
             throw ValidationException::withMessages([
@@ -571,19 +555,7 @@ class RequestService
                 ]);
             }
 
-            // التحقق من تبعية مراجع الطلب لنفس الشبكة المزودة صاحبة الطلب لمنع هجمات IDOR
-            $reviewer = $this->userRepository->findById($reviewedBy);
-            if ($reviewer) {
-                $isAuthorized = ($reviewer->network && (int) $reviewer->network->network_id === (int) $request->network_id)
-                    || ($reviewer->networks()->where('networks.network_id', $request->network_id)->exists())
-                    || (method_exists($reviewer, 'networkUsers') && $reviewer->networkUsers()->where('network_id', $request->network_id)->where('status', 'ACTIVE')->exists());
-
-                if (! $isAuthorized) {
-                    throw ValidationException::withMessages([
-                        'network_id' => ['غير مصرح لك برفض طلبات كروت لا تنتمي لمزود الشبكة الخاص بك.'],
-                    ]);
-                }
-            }
+            $this->authorizeRequestTenant($reviewedBy, $request, 'requests.reject', allowPos: false);
 
             $currentNote = (string) $request->request_note;
             $updatedNote = trim($currentNote." | سبب الرفض: {$reason}", ' |');
@@ -630,16 +602,7 @@ class RequestService
                 ]);
             }
 
-            $canceller = $this->userRepository->findById($userId);
-            $isCreator = (int) $request->created_by === $userId;
-            $isPosAuthorized = $canceller && (($canceller->pos && (int) $canceller->pos->pos_id === (int) $request->pos_id)
-                || (method_exists($canceller, 'posUsers') && $canceller->posUsers()->where('pos_id', $request->pos_id)->where('status', 'ACTIVE')->exists()));
-
-            if (! $isCreator && ! $isPosAuthorized) {
-                throw ValidationException::withMessages([
-                    'user' => ['غير مصرح لك بإلغاء هذا الطلب.'],
-                ]);
-            }
+            $this->authorizeRequestTenant($userId, $request, 'requests.edit', allowNetwork: false);
 
             $this->requestRepository->updateStatus(
                 $requestId,
@@ -672,11 +635,13 @@ class RequestService
      * حذف طلب مؤقتاً (Soft Delete).
      * يمنع منعاً باتاً حذف الطلبات المعتمدة أو المرفوضة للحفاظ على نزاهة التدقيق المالي.
      */
-    public function deleteRequest(int $requestId): bool
+    public function deleteRequest(int $requestId, int $userId): bool
     {
-        return DB::transaction(function () use ($requestId): bool {
+        return DB::transaction(function () use ($requestId, $userId): bool {
             /** @var RequestModel $request */
             $request = $this->requestRepository->findByIdForUpdate($requestId);
+
+            $this->authorizeRequestTenant($userId, $request, 'requests.delete');
 
             if (! $request->isPending() && ! $request->isCancelled()) {
                 throw ValidationException::withMessages([
@@ -691,9 +656,15 @@ class RequestService
     /**
      * استعادة طلب محذوف.
      */
-    public function restoreRequest(int $requestId): bool
+    public function restoreRequest(int $requestId, int $userId): bool
     {
-        return DB::transaction(function () use ($requestId): bool {
+        return DB::transaction(function () use ($requestId, $userId): bool {
+            $request = $this->requestRepository->findTrashedById($requestId);
+            if (! $request) {
+                return false;
+            }
+            $this->authorizeRequestTenant($userId, $request, 'requests.edit');
+
             return (bool) $this->requestRepository->restore($requestId);
         });
     }
@@ -702,11 +673,15 @@ class RequestService
      * الحذف النهائي لطلب.
      * يمنع منعاً باتاً الحذف النهائي للطلبات المعتمدة أو المرفوضة.
      */
-    public function forceDeleteRequest(int $requestId): bool
+    public function forceDeleteRequest(int $requestId, int $userId): bool
     {
-        return DB::transaction(function () use ($requestId): bool {
+        return DB::transaction(function () use ($requestId, $userId): bool {
             /** @var RequestModel $request */
             $request = $this->requestRepository->findTrashedById($requestId);
+
+            if ($request) {
+                $this->authorizeRequestTenant($userId, $request, 'requests.delete');
+            }
 
             if ($request && ! $request->isPending() && ! $request->isCancelled()) {
                 throw ValidationException::withMessages([
@@ -723,12 +698,13 @@ class RequestService
     /**
      * الحذف المجمع للطلبات مع فحص الحالات المحظورة.
      */
-    public function bulkDelete(array $ids): int
+    public function bulkDelete(array $ids, int $userId): int
     {
-        return DB::transaction(function () use ($ids): int {
+        return DB::transaction(function () use ($ids, $userId): int {
             foreach ($ids as $id) {
                 /** @var RequestModel $request */
                 $request = $this->requestRepository->findByIdForUpdate((int) $id);
+                $this->authorizeRequestTenant($userId, $request, 'requests.delete');
                 if (! $request->isPending() && ! $request->isCancelled()) {
                     throw ValidationException::withMessages([
                         'ids' => ["الطلب رقم #{$request->request_uuid} تم اعتماده أو رفضه ولا يمكن حذفه."],
@@ -743,9 +719,16 @@ class RequestService
     /**
      * الاستعادة المجمعة للطلبات.
      */
-    public function bulkRestore(array $ids): int
+    public function bulkRestore(array $ids, int $userId): int
     {
-        return DB::transaction(function () use ($ids): int {
+        return DB::transaction(function () use ($ids, $userId): int {
+            foreach ($ids as $id) {
+                $request = $this->requestRepository->findTrashedById((int) $id);
+                if ($request) {
+                    $this->authorizeRequestTenant($userId, $request, 'requests.edit');
+                }
+            }
+
             return $this->requestRepository->bulkRestore($ids);
         });
     }
@@ -753,12 +736,15 @@ class RequestService
     /**
      * الحذف النهائي المجمع للطلبات مع فحص الحالات المحظورة.
      */
-    public function bulkForceDelete(array $ids): int
+    public function bulkForceDelete(array $ids, int $userId): int
     {
-        return DB::transaction(function () use ($ids): int {
+        return DB::transaction(function () use ($ids, $userId): int {
             foreach ($ids as $id) {
                 /** @var RequestModel $request */
                 $request = $this->requestRepository->findTrashedById((int) $id);
+                if ($request) {
+                    $this->authorizeRequestTenant($userId, $request, 'requests.delete');
+                }
                 if ($request && ! $request->isPending() && ! $request->isCancelled()) {
                     throw ValidationException::withMessages([
                         'ids' => ["الطلب رقم #{$request->request_uuid} تم اعتماده أو رفضه ولا يمكن حذفه نهائياً."],
@@ -770,4 +756,38 @@ class RequestService
             return $this->requestRepository->bulkForceDelete($ids);
         });
     }
+    /**
+     * Enforce the requested permission against the exact operational tenant
+     * that owns the procurement request.
+     */
+    private function authorizeRequestTenant(
+        int $userId,
+        RequestModel $request,
+        string $permission,
+        bool $allowNetwork = true,
+        bool $allowPos = true
+    ): void {
+        $user = $this->userRepository->findById($userId);
+        $authorized = $user !== null && $user->isActive() && (
+            ($allowNetwork && app(TenantPermissionService::class)->allowsNetwork(
+                $user,
+                (int) $request->network_id,
+                $permission
+            ))
+            || ($allowPos && app(TenantPermissionService::class)->allowsPos(
+                $user,
+                (int) $request->pos_id,
+                $permission
+            ))
+        );
+
+        if ($authorized) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'authorization' => ['لا تملك الصلاحية المطلوبة داخل مساحة العمل المالكة لهذا الطلب.'],
+        ]);
+    }
+
 }
