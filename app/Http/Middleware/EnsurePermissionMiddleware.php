@@ -41,8 +41,31 @@ class EnsurePermissionMiddleware
                 ?? 0
             );
 
-            if ($networkId <= 0 || ! $this->tenantPermissions->allowsNetwork($user, $networkId, $permission)) {
+            if ($networkId > 0) {
+                $authorized = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
+            } elseif ($request->has('ids')) {
+                $ids = array_values(array_unique(array_map('intval', (array) $request->input('ids', []))));
+                $records = Expense::withTrashed()->whereIn('expense_id', $ids)->get();
+                $authorized = $ids !== [] && $records->count() === count($ids)
+                    && $records->every(fn (Expense $record): bool =>
+                        $this->tenantPermissions->allowsNetwork($user, (int) $record->network_id, $permission));
+            } elseif ($permission === 'expenses.view') {
+                $authorized = $this->tenantPermissions->allowsAnyNetwork($user, $permission);
+            } else {
+                $authorized = false;
+            }
+
+            if (! $authorized) {
                 throw new AuthorizationException('عذراً، لا تملك هذه الصلاحية داخل الشبكة المحددة.');
+            }
+
+            return $next($request);
+        }
+
+        if ($permission === 'requests.create') {
+            $posId = (int) ($request->input('pos_id') ?? $request->header('X-Pos-Id') ?? 0);
+            if ($posId <= 0 || ! $this->tenantPermissions->allowsPos($user, $posId, $permission)) {
+                throw new AuthorizationException('عذراً، لا تملك صلاحية إنشاء الطلب داخل نقطة البيع المحددة.');
             }
 
             return $next($request);
