@@ -117,6 +117,13 @@ class EnsurePermissionMiddleware
         if (str_starts_with($permission, 'sales.')) {
             $invoiceId = (int) ($request->route('id') ?? 0);
             $invoice = $invoiceId > 0 ? SaleInvoice::withTrashed()->find($invoiceId) : null;
+
+            // Detail reads are authorized by SaleInvoicePolicy in the controller,
+            // preserving its resource-specific 403 response contract.
+            if ($invoice !== null && $permission === 'sales.view') {
+                return $next($request);
+            }
+
             $networkId = (int) ($request->input('network_id') ?? $request->query('network_id') ?? $invoice?->network_id ?? 0);
             $posId = (int) ($request->input('pos_id') ?? $request->query('pos_id') ?? $invoice?->pos_id ?? 0);
 
