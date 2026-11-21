@@ -110,17 +110,13 @@ class RequestService
             $pos = $this->posRepository->findById($posId);
             $pos->ensureActive();
 
-            // التحقق من صلاحية المستخدم على نقطة البيع
+            // الصلاحية يجب أن تنتمي إلى عضوية نقطة البيع المحددة وأن تكون العضوية نشطة.
             $user = $this->userRepository->findById($userId);
-            if ($user && ! $user->isSuperAdmin()) {
-                $isAuthorized = ($user->pos && (int) $user->pos->pos_id === (int) $posId)
-                    || (method_exists($user, 'posUsers') && $user->posUsers()->where('pos_id', $posId)->exists());
-
-                if (! $isAuthorized) {
-                    throw ValidationException::withMessages([
-                        'pos_id' => ['غير مصرح لك بإنشاء طلب باسم نقطة البيع المحددة.'],
-                    ]);
-                }
+            if ($user && ! $user->isSuperAdmin()
+                && ! app(TenantPermissionService::class)->allowsPos($user, (int) $posId, 'requests.create')) {
+                throw ValidationException::withMessages([
+                    'pos_id' => ['غير مصرح لك بإنشاء طلب باسم نقطة البيع المحددة.'],
+                ]);
             }
 
             // التحقق من ارتباط نقطة البيع بالشبكة وتفعيله
