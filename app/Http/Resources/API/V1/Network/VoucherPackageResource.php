@@ -25,7 +25,7 @@ class VoucherPackageResource extends JsonResource
             'network_id' => $this->network_id,
             'package_name' => $this->package_name,
             'package_color' => $this->package_color,
-            'package_balance' => $this->package_balance !== null ? (float) $this->package_balance : null,
+            'package_balance' => $this->package_balance !== null ? (int) $this->package_balance : null,
             'package_uptime' => $this->package_uptime !== null ? (int) $this->package_uptime : null,
             'package_validity' => $this->package_validity !== null ? (int) $this->package_validity : null,
             'package_voucher_count' => (int) $this->package_voucher_count,

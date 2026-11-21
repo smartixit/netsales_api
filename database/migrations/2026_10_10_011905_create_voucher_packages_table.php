@@ -21,7 +21,7 @@ return new class extends Migration
 
             $table->string('package_name', 50);
             $table->string('package_color', 20)->default('0xFF0D7A5F');
-            $table->decimal('package_balance', 8, 2)->default(0.00);
+            $table->integer('package_balance')->default(0);
             $table->integer('package_uptime')->nullable();
             $table->integer('package_validity')->nullable();
             $table->integer('package_voucher_count')->default(51);

@@ -43,7 +43,7 @@ class VoucherPackage extends Model
     protected function casts(): array
     {
         return [
-            'package_balance' => 'decimal:2',
+            'package_balance' => 'integer',
             'package_uptime' => 'integer',
             'package_validity' => 'integer',
             'package_voucher_count' => 'integer',

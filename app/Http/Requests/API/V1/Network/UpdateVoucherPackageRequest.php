@@ -60,9 +60,8 @@ class UpdateVoucherPackageRequest extends FormRequest
             'package_balance' => [
                 'sometimes',
                 'nullable',
-                'numeric',
+                'integer',
                 'min:0',
-                'max:999999.99',
             ],
             'package_uptime' => [
                 'sometimes',

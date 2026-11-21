@@ -46,9 +46,8 @@ class StoreVoucherPackageRequest extends FormRequest
             ],
             'package_balance' => [
                 'nullable',
-                'numeric',
+                'integer',
                 'min:0',
-                'max:999999.99',
             ],
             'package_uptime' => [
                 'nullable',
@@ -102,9 +101,9 @@ class StoreVoucherPackageRequest extends FormRequest
         return (string) ($this->package_color ?? '0xFF0D7A5F');
     }
 
-    public function getPackageBalance(): ?float
+    public function getPackageBalance(): ?int
     {
-        return $this->filled('package_balance') ? (float) $this->package_balance : null;
+        return $this->filled('package_balance') ? (int) $this->package_balance : null;
     }
 
     public function getPackageUptime(): ?int

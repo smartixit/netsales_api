@@ -3788,8 +3788,8 @@ namespace App\Models{
  * @property string $package_name
  * @property string $package_color
  * @property numeric|null $package_balance
- * @property string|null $package_uptime
- * @property string|null $package_validity
+ * @property int|null $package_uptime
+ * @property int|null $package_validity
  * @property int $package_voucher_count
  * @property numeric $package_voucher_price
  * @property numeric $package_default_cash_discount

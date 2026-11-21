@@ -167,7 +167,7 @@ class VoucherPackageController extends BaseController
                         new OA\Property(property: 'network_id', type: 'integer', example: 1),
                         new OA\Property(property: 'package_name', type: 'string'),
                         new OA\Property(property: 'package_color', type: 'string'),
-                        new OA\Property(property: 'package_balance', type: 'number', format: 'float', example: 500.00),
+                        new OA\Property(property: 'package_balance', type: 'integer', example: 5368709120),
                         new OA\Property(property: 'package_uptime', type: 'integer', example: 12),
                         new OA\Property(property: 'package_validity', type: 'integer', example: 30),
                         new OA\Property(property: 'package_voucher_count', type: 'integer', example: 1),
@@ -225,7 +225,7 @@ class VoucherPackageController extends BaseController
                     properties: [
                         new OA\Property(property: 'package_name', type: 'string'),
                         new OA\Property(property: 'package_color', type: 'string'),
-                        new OA\Property(property: 'package_balance', type: 'number', format: 'float', example: 500.00),
+                        new OA\Property(property: 'package_balance', type: 'integer', example: 5368709120),
                         new OA\Property(property: 'package_uptime', type: 'integer', example: 12),
                         new OA\Property(property: 'package_validity', type: 'integer', example: 30),
                         new OA\Property(property: 'package_voucher_count', type: 'integer', example: 1),

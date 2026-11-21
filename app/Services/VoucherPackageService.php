@@ -137,7 +137,7 @@ class VoucherPackageService
             $data = array_filter([
                 'package_name' => $request->package_name,
                 'package_color' => $request->package_color,
-                'package_balance' => $request->package_balance !== null ? (float) $request->package_balance : null,
+                'package_balance' => $request->package_balance !== null ? (int) $request->package_balance : null,
                 'package_uptime' => $request->package_uptime !== null ? (int) $request->package_uptime : null,
                 'package_validity' => $request->package_validity !== null ? (int) $request->package_validity : null,
                 'package_voucher_count' => $request->package_voucher_count !== null ? (int) $request->package_voucher_count : null,
