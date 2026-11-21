@@ -27,8 +27,6 @@ class NetworkPosLinkingChallengeStatusResource extends JsonResource
             'status' => $status?->value,
             'status_label' => $status?->label(),
             'expires_at' => $this->expires_at?->toIso8601String(),
-            'network_name' => $this->network?->network_name,
-            'pos_name' => $this->pos?->pos_name,
         ];
     }
 }
