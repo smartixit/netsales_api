@@ -4,6 +4,7 @@ namespace App\Http\Requests\API\V1\Network;
 
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Enums\PosStatus;
 use Illuminate\Validation\Rule;
 
 class CreateNetworkPosLinkingChallengeRequest extends FormRequest
@@ -24,14 +25,21 @@ class CreateNetworkPosLinkingChallengeRequest extends FormRequest
                 Rule::exists('networks', 'network_id')->whereNull('deleted_at'),
             ],
             'pos_id' => [
-                'nullable',
+                'required_without:pos_uuid',
+                'prohibited_with:pos_uuid',
                 'integer',
-                Rule::exists('pos', 'pos_id')->whereNull('deleted_at'),
+                'min:1',
+                Rule::exists('pos', 'pos_id')
+                    ->whereNull('deleted_at')
+                    ->where('status', PosStatus::ACTIVE->value),
             ],
             'pos_uuid' => [
-                'nullable',
-                'string',
-                Rule::exists('pos', 'pos_uuid')->whereNull('deleted_at'),
+                'required_without:pos_id',
+                'prohibited_with:pos_id',
+                'uuid',
+                Rule::exists('pos', 'pos_uuid')
+                    ->whereNull('deleted_at')
+                    ->where('status', PosStatus::ACTIVE->value),
             ],
             'duration_minutes' => [
                 'nullable',
