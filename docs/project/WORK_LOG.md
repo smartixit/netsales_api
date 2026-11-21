@@ -1155,6 +1155,39 @@ This log documents all executed tasks, code changes, and verification command ou
   - `flutter test test/invoices/`: **23 passed (100%)**.
 - **Task Status:** Complete — Invoices module fully rebuilt, aligned with global standards, and backend financial lifecycle secured with strict blocking invariant.
 
+---
+
+## [2026-11-21] Task: Notifications Module Complete VIP Re-Engineering & Executive Visual Depth Overhaul
+- **Authorized Scope:** USER DIRECTED — Complete architectural re-engineering and executive VIP UI/UX overhaul of the Notifications module (`netsales/lib/features/notifications`) without relying on legacy code structures or patterns:
+  1. Complete architectural decomposition following Clean Architecture and NetSales engineering standards: 1 public class per file, 0 private `_buildXxx()` method helpers, and pure `StatelessWidget` composition.
+  2. Integrated centralized enum presentation via `EnumPresentationRegistry.resolveNotificationType` mapping all 22 domain notification types with semantic tones, authoritative labels, and icons.
+  3. Executive VIP visual depth matching obsidian glassmorphism design: double shadows, pulsing neon beads for unread alerts, dynamic tone gradients, and theme-adaptive surfaces.
+  4. Interactive multi-line message handling with inline expansion ("قراءة المزيد... / إخفاء التفاصيل").
+  5. Built `NotificationCardMedia` using `CustomCachedImage` and unified `MediaGalleryViewer` (`MediaGalleryViewer.showSingle`) with dual modes: compact thumbnail (`56x56`) in collapsed state and full-width high-resolution media banner (`150h`) in expanded state.
+  6. Decomposed presentation widgets:
+     - `NotificationKpiCard`: Executive metric card with reactive tint and selection glow.
+     - `NotificationKpiStrip`: Horizontal scrollable executive metrics rail (الإجمالي، غير مقروء، مالية، أمان).
+     - `NotificationSearchFilterBar`: Integrated search with real-time read-status and domain-category chips.
+     - `NotificationItemCard`: VIP executive notification card with unread neon bead, expansion, and quick action bar.
+     - `NotificationCenterScreen`: Pure page-level composition (< 160 lines) with canonical feedback states (`CustomStateView.loading`, `CustomEmptyState`, `CustomErrorState`).
+  7. Automated testing: Expanded controller tests and added dedicated widget test suite verifying rendering, interactions, expansion, and media thumbnailing.
+- **Files Created / Modified:**
+  - `lib/core/enums/notification_type.dart` (Added `category` getter: FINANCIAL, OPERATIONAL, SECURITY, SUPPORT, SYSTEM).
+  - `lib/core/presentation/enums/enum_presentation_registry.dart` (Registered `resolveNotificationType` with full 22-type mapping).
+  - `lib/features/notifications/presentation/controllers/notification_controller.dart` (Added `selectedCategory`, `filteredNotifications`, `setCategory`, reset logic, and KPI count getters).
+  - `lib/features/notifications/presentation/widgets/notification_card_media.dart` (Created: Dual-mode thumbnail & banner with `MediaGalleryViewer.showSingle`).
+  - `lib/features/notifications/presentation/widgets/notification_kpi_card.dart` (Created: Executive VIP metric card).
+  - `lib/features/notifications/presentation/widgets/notification_kpi_strip.dart` (Created: Reactive KPI strip).
+  - `lib/features/notifications/presentation/widgets/notification_search_filter_bar.dart` (Created: Search and category filters bar).
+  - `lib/features/notifications/presentation/widgets/notification_item_card.dart` (Re-engineered: Obsidian glassmorphism, expansion, neon bead).
+  - `lib/features/notifications/presentation/screens/notification_center_screen.dart` (Re-engineered: Clean page-level composition, 0 `_buildXxx`, standard feedback states).
+  - `test/notifications/notification_center_test.dart` (Expanded to 15 unit/feature scenarios).
+  - `test/notifications/notification_item_card_test.dart` (Created: 3 widget tests verifying VIP card, expansion, and media).
+- **Verification Commands & Outcomes:**
+  - `flutter analyze lib/features/notifications test/notifications`: **No issues found! (0 errors, 0 warnings, clean in 15.3s)**.
+  - `flutter test test/notifications/`: **All 16 tests passed! (100% pass rate)**.
+  - `dart format lib/features/notifications test/notifications`: Formatted 21 files cleanly.
+- **Task Status:** Complete — Notifications module completely re-engineered, decoupled from legacy patterns, and verified.
 
 ## [2026-11-22] Task: Targeted Network–POS QR Invitation Contract Hardening
 
