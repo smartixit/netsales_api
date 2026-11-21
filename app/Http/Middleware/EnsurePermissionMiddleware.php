@@ -71,7 +71,7 @@ class EnsurePermissionMiddleware
             return $next($request);
         }
 
-        if ($permission === 'requests.approve') {
+        if (str_starts_with($permission, 'requests.')) {
             $requestId = (int) ($request->route('id') ?? 0);
             $record = $requestId > 0 ? RequestModel::withTrashed()->find($requestId) : null;
             $networkId = (int) (
@@ -80,9 +80,24 @@ class EnsurePermissionMiddleware
                 ?? $record?->network_id
                 ?? 0
             );
+            $posId = (int) (
+                $request->input('pos_id')
+                ?? $request->query('pos_id')
+                ?? $record?->pos_id
+                ?? 0
+            );
 
-            if ($networkId <= 0 || ! $this->tenantPermissions->allowsNetwork($user, $networkId, $permission)) {
-                throw new AuthorizationException('عذراً، لا تملك صلاحية اعتماد الطلبات داخل الشبكة المحددة.');
+            $authorized = false;
+            if ($networkId > 0) {
+                $authorized = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
+            } elseif ($posId > 0) {
+                $authorized = $this->tenantPermissions->allowsPos($user, $posId, $permission);
+            } elseif ($record === null && in_array($permission, ['requests.view', 'requests.create'], true)) {
+                $authorized = $this->tenantPermissions->allowsAnyOperational($user, $permission);
+            }
+
+            if (! $authorized) {
+                throw new AuthorizationException('عذراً، لا تملك الصلاحية المطلوبة داخل مساحة العمل المحددة.');
             }
 
             return $next($request);
