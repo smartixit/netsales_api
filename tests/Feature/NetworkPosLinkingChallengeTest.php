@@ -198,6 +198,19 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonValidationErrors(['pos_id', 'pos_uuid']);
     }
 
+    public function test_network_owner_cannot_create_challenge_with_two_pos_targets(): void
+    {
+        $response = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['pos_id', 'pos_uuid']);
+    }
+
     public function test_network_owner_can_resolve_exact_eligible_pos_business_code(): void
     {
         $response = $this->withHeaders($this->netSession['headers'])
