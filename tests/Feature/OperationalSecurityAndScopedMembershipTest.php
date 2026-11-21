@@ -22,10 +22,12 @@ use App\Models\VoucherPackage;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\Concerns\CreatesActiveBillingSubscription;
 use Tests\TestCase;
+use Tests\Concerns\CreatesProcurementRequestSnapshots;
 
 class OperationalSecurityAndScopedMembershipTest extends TestCase
 {
     use CreatesActiveBillingSubscription;
+    use CreatesProcurementRequestSnapshots;
     use DatabaseTransactions;
 
     protected User $superAdmin;
@@ -166,8 +168,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         ]);
 
         // طلب كروت دون إرسال X-Idempotency-Key في الوضع الصارم
-        $response = $this->withHeaders($headers)
-            ->postJson('/api/v1/requests', [
+        $response = $this->postProcurementRequest([
                 'network_id' => $this->networkA->network_id,
                 'pos_id' => $this->posA->pos_id,
                 'items' => [
