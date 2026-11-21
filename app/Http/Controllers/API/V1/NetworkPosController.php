@@ -511,7 +511,7 @@ class NetworkPosController extends BaseController
                 required: ['network_id', 'pos_uuid'],
                 properties: [
                     new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: 'POS-2611-00001-8F3A', description: 'المعرف التجاري لنقطة البيع المستهدفة؛ بديل عن pos_id.'),
+                    new OA\Property(property: 'pos_uuid', type: 'string', example: 'POS-2611-00001-8F3A', description: 'الرمز التجاري لنقطة البيع المستهدفة.'),
                     new OA\Property(property: 'duration_minutes', type: 'integer', default: 15, example: 15),
                 ]
             )
@@ -585,7 +585,7 @@ class NetworkPosController extends BaseController
                 required: ['payload', 'pos_uuid'],
                 properties: [
                     new OA\Property(property: 'payload', type: 'string', example: 'NTS_LINK_V1_...'),
-                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: 'POS-2611-00001-8F3A'),
+                    new OA\Property(property: 'pos_uuid', type: 'string', example: 'POS-2611-00001-8F3A'),
                 ]
             )
         ),
