@@ -424,26 +424,42 @@ class NetworkPosLinkingChallengeService
      */
     public function revokeChallenge(User $actor, string $challengeUuid): bool
     {
-        $challenge = $this->challengeRepository->findByUuid($challengeUuid, ['network']);
-        if (! $challenge) {
-            return false;
-        }
+        return DB::transaction(function () use ($actor, $challengeUuid): bool {
+            $challenge = $this->challengeRepository->findByUuidForUpdate(
+                $challengeUuid,
+                ['network']
+            );
 
-        if (! $actor->isSuperAdmin()) {
-            $network = $challenge->network;
-            $isOwner = (int) $network->owner_id === (int) $actor->user_id;
-            $isMember = $actor->networkUsers()
-                ->where('network_id', $challenge->network_id)
-                ->where('status', 'ACTIVE')
-                ->exists();
-            if (! $isOwner && ! $isMember) {
-                throw ValidationException::withMessages([
-                    'challenge_uuid' => ['غير مصرح لك بإلغاء دعوة الربط هذه.'],
-                ]);
+            if (! $challenge || ! $challenge->network) {
+                return false;
             }
-        }
 
-        return $this->challengeRepository->markAsRevoked($challenge->challenge_id);
+            if (! $actor->isSuperAdmin()) {
+                $network = $challenge->network;
+                $isOwner = (int) $network->owner_id === (int) $actor->user_id;
+                $isActiveMember = $actor->networkUsers()
+                    ->where('network_id', $challenge->network_id)
+                    ->where('status', 'ACTIVE')
+                    ->exists();
+
+                if (! $isOwner && ! $isActiveMember) {
+                    throw ValidationException::withMessages([
+                        'challenge_uuid' => ['غير مصرح لك بإلغاء دعوة الربط هذه.'],
+                    ]);
+                }
+            }
+
+            if ($challenge->status !== LinkingChallengeStatus::PENDING) {
+                return false;
+            }
+
+            if ($challenge->expires_at->isPast()) {
+                $this->challengeRepository->markAsExpired($challenge->challenge_id);
+                return false;
+            }
+
+            return $this->challengeRepository->markAsRevoked($challenge->challenge_id);
+        });
     }
 
     /**
