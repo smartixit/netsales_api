@@ -705,6 +705,59 @@ class NetworkPosLinkingChallengeTest extends TestCase
                 ->count()
         );
     }
+    public function test_consumed_challenge_cannot_be_revoked(): void
+    {
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $createResponse->assertCreated();
+        $uuid = $createResponse->json('data.challenge_uuid');
+
+        $confirmResponse = $this->withHeaders($this->posSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges/confirm', [
+                'challenge_uuid' => $uuid,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+        $confirmResponse->assertCreated();
+
+        $revokeResponse = $this->withHeaders($this->netSession['headers'])
+            ->deleteJson("/api/v1/network-pos/challenges/{$uuid}");
+
+        $revokeResponse->assertNotFound();
+        $this->assertDatabaseHas('network_pos_linking_challenges', [
+            'challenge_uuid' => $uuid,
+            'status' => LinkingChallengeStatus::CONSUMED->value,
+        ]);
+    }
+
+    public function test_expired_challenge_is_marked_expired_instead_of_revoked(): void
+    {
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $createResponse->assertCreated();
+        $uuid = $createResponse->json('data.challenge_uuid');
+
+        DB::table('network_pos_linking_challenges')
+            ->where('challenge_uuid', $uuid)
+            ->update(['expires_at' => now('Asia/Aden')->subMinute()]);
+
+        $revokeResponse = $this->withHeaders($this->netSession['headers'])
+            ->deleteJson("/api/v1/network-pos/challenges/{$uuid}");
+
+        $revokeResponse->assertNotFound();
+        $this->assertDatabaseHas('network_pos_linking_challenges', [
+            'challenge_uuid' => $uuid,
+            'status' => LinkingChallengeStatus::EXPIRED->value,
+        ]);
+    }
+
     public function test_network_owner_can_read_safe_challenge_status_without_secret_fields(): void
     {
         $createResponse = $this->withHeaders($this->netSession['headers'])
