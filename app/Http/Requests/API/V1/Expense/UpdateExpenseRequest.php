@@ -6,6 +6,8 @@ use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
+use App\Models\Expense;
+use App\Services\TenantPermissionService;
 
 class UpdateExpenseRequest extends FormRequest
 {
@@ -13,7 +15,17 @@ class UpdateExpenseRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+        $expenseId = (int) ($this->route('id') ?? 0);
+        $expense = $expenseId > 0 ? Expense::query()->find($expenseId) : null;
+
+        return $user !== null
+            && $expense !== null
+            && app(TenantPermissionService::class)->allowsNetwork(
+                $user,
+                (int) $expense->network_id,
+                'expenses.edit'
+            );
     }
 
     public function rules(): array
