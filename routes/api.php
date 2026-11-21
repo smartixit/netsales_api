@@ -208,6 +208,11 @@ Route::prefix('v1')->group(function () {
             Route::get('networks/{id}', [NetworkController::class, 'show'])->whereNumber('id')->name('api.v1.networks.show');
         });
 
+        Route::middleware(['throttle:api-write', 'permission:networks.edit'])->post(
+            'network-pos/challenges/resolve-target',
+            [NetworkPosController::class, 'resolveLinkTarget']
+        )->name('api.v1.network_pos.challenges.resolve_target');
+
         Route::middleware(['throttle:api-read', 'permission:networks.view'])->get(
             'network-pos/challenges/{uuid}',
             [NetworkPosController::class, 'challengeStatus']
