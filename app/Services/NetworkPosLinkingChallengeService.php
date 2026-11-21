@@ -12,6 +12,7 @@ use App\Interfaces\PosRepositoryInterface;
 use App\Models\NetworkPos;
 use App\Models\NetworkPosLinkingChallenge;
 use App\Models\User;
+use Carbon\Carbon;
 use App\Services\Support\AsymmetricCryptoService;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -454,7 +455,8 @@ class NetworkPosLinkingChallengeService
             || ! Str::isUuid($data['cid'])
             || ! is_int($data['nid'] ?? null)
             || $data['nid'] < 1
-            || ! (is_null($data['pid'] ?? null) || (is_int($data['pid']) && $data['pid'] > 0))
+            || ! array_key_exists('pid', $data)
+            || ! (is_null($data['pid']) || (is_int($data['pid']) && $data['pid'] > 0))
             || ! is_string($data['nonce'] ?? null)
             || ! preg_match('/^[a-f0-9]{64}$/D', $data['nonce'])
             || ! is_int($data['exp'] ?? null)
