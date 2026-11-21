@@ -138,7 +138,7 @@ class NetworkPosLinkingChallengeService
 
         if ($posUuid !== null) {
             try {
-                $pos = $this->posRepository->findByUuid($posUuid);
+                $pos = $this->posRepository->findByUuid(strtoupper(trim($posUuid)));
                 $posId = $pos->pos_id;
             } catch (ModelNotFoundException) {
                 throw ValidationException::withMessages([
@@ -163,7 +163,7 @@ class NetworkPosLinkingChallengeService
 
         $pos->ensureActive();
 
-            // التحقق من عدم وجود ارتباط قائم بالفعل عبر المستودع
+        // التحقق من عدم وجود ارتباط قائم بالفعل عبر المستودع
         $existingLink = $this->networkPosRepository->findByNetworkAndPos($networkId, $pos->pos_id);
         if ($existingLink) {
             throw ValidationException::withMessages([
