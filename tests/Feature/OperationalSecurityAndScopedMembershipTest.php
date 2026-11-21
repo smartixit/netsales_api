@@ -7,6 +7,7 @@ use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
 use App\Enums\RoleKey;
 use App\Enums\RoleScope;
+use App\Enums\SaleType;
 use App\Enums\UserStatus;
 use App\Models\Directorate;
 use App\Models\Governorate;
@@ -19,6 +20,8 @@ use App\Models\Request as VoucherRequest;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VoucherPackage;
+use App\Services\RequestService;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\Concerns\CreatesActiveBillingSubscription;
 use Tests\TestCase;
@@ -542,5 +545,45 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             )
         );
     }
+
+    public function test_force_delete_never_deletes_a_live_request(): void
+    {
+        $request = VoucherRequest::query()->create([
+            'network_id' => $this->networkA->network_id,
+            'pos_id' => $this->posA->pos_id,
+            'sale_type' => SaleType::CASH,
+            'request_total_amount' => 100,
+            'request_date' => now('Asia/Aden'),
+            'status' => RequestStatus::PENDING,
+            'created_by' => $this->posOwner->user_id,
+        ]);
+
+        try {
+            app(RequestService::class)->forceDeleteRequest(
+                (int) $request->request_id,
+                (int) $this->posOwner->user_id
+            );
+            $this->fail('A live request must never be force-deleted.');
+        } catch (ValidationException) {
+            $this->assertDatabaseHas('requests', [
+                'request_id' => $request->request_id,
+                'deleted_at' => null,
+            ]);
+        }
+
+        try {
+            app(RequestService::class)->bulkForceDelete(
+                [(int) $request->request_id],
+                (int) $this->posOwner->user_id
+            );
+            $this->fail('A live request must never be included in bulk force-delete.');
+        } catch (ValidationException) {
+            $this->assertDatabaseHas('requests', [
+                'request_id' => $request->request_id,
+                'deleted_at' => null,
+            ]);
+        }
+    }
+
 
 }
