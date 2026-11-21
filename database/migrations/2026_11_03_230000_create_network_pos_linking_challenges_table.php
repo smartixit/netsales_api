@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id('challenge_id');
             $table->uuid('challenge_uuid')->unique();
             $table->foreignId('network_id')->constrained('networks', 'network_id')->cascadeOnDelete();
-            $table->foreignId('pos_id')->nullable()->constrained('pos', 'pos_id')->nullOnDelete();
+            $table->foreignId('pos_id')->constrained('pos', 'pos_id');
             $table->foreignId('created_by_user_id')->constrained('users', 'user_id')->cascadeOnDelete();
             $table->string('challenge_nonce', 64)->unique();
             $table->text('payload_token');
