@@ -59,7 +59,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $suffix = uniqid();
 
         // 1. استخدام الأدوار المعتمدة بالنظام للشبكة ونقطة البيع
-        $this->networkMemberRole = Role::where('role_key', 'NETWORK_USER')->firstOrFail();
+        $this->networkMemberRole = Role::where('role_key', RoleKey::NETWORK_ACCOUNTANT->value)->firstOrFail();
         $this->posMemberRole = Role::where('role_key', 'POS_USER')->firstOrFail();
 
         // مستخدمي المستأجرين role_id = null لأن أدوارهم مقيدة بـ network_users و pos_users
