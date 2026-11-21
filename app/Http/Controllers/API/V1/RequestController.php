@@ -459,7 +459,7 @@ class RequestController extends BaseController
     public function destroy(int $id): JsonResponse
     {
         try {
-            $this->requestService->deleteRequest($id);
+            $this->requestService->deleteRequest($id, $this->currentUserId());
 
             return $this->successResponse('تم حذف طلب الكروت مؤقتاً بنجاح.');
         } catch (ValidationException $e) {
@@ -518,7 +518,7 @@ class RequestController extends BaseController
     public function restore(int $id): JsonResponse
     {
         try {
-            $this->requestService->restoreRequest($id);
+            $this->requestService->restoreRequest($id, $this->currentUserId());
 
             return $this->successResponse('تم استعادة طلب الكروت بنجاح.');
         } catch (ValidationException $e) {
@@ -545,7 +545,7 @@ class RequestController extends BaseController
     public function forceDelete(int $id): JsonResponse
     {
         try {
-            $this->requestService->forceDeleteRequest($id);
+            $this->requestService->forceDeleteRequest($id, $this->currentUserId());
 
             return $this->successResponse('تم حذف طلب الكروت نهائياً بنجاح.');
         } catch (ValidationException $e) {
@@ -582,7 +582,7 @@ class RequestController extends BaseController
     public function batchDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
-            $count = $this->requestService->bulkDelete($request->getIds());
+            $count = $this->requestService->bulkDelete($request->getIds(), $this->currentUserId());
 
             return $this->successResponse("تم حذف ({$count}) طلب بنجاح.");
         } catch (ValidationException $e) {
@@ -619,7 +619,7 @@ class RequestController extends BaseController
     public function batchRestore(BatchIdsRequest $request): JsonResponse
     {
         try {
-            $count = $this->requestService->bulkRestore($request->getIds());
+            $count = $this->requestService->bulkRestore($request->getIds(), $this->currentUserId());
 
             return $this->successResponse("تم استعادة ({$count}) طلب بنجاح.");
         } catch (ValidationException $e) {
@@ -656,7 +656,7 @@ class RequestController extends BaseController
     public function batchForceDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
-            $count = $this->requestService->bulkForceDelete($request->getIds());
+            $count = $this->requestService->bulkForceDelete($request->getIds(), $this->currentUserId());
 
             return $this->successResponse("تم الحذف النهائي لـ ({$count}) طلب بنجاح.");
         } catch (ValidationException $e) {
