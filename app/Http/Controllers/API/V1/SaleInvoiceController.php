@@ -7,6 +7,7 @@ use App\Http\Requests\API\V1\SaleInvoice\StoreSaleInvoiceRequest;
 use App\Http\Requests\API\V1\SaleInvoice\UpdateSaleInvoiceRequest;
 use App\Http\Resources\API\V1\SaleInvoice\SaleInvoiceResource;
 use App\Services\SaleInvoiceService;
+use App\Services\TenantPermissionService;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -57,20 +58,11 @@ class SaleInvoiceController extends BaseController
         try {
             $filters = $request->only(['network_id', 'pos_id', 'sale_type', 'created_by', 'from_date', 'to_date', 'search', 'per_page', 'all']);
 
-            $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                if ($currentUser->pos) {
-                    $filters['pos_id'] = $currentUser->pos->pos_id;
-                } elseif ($currentUser->networks()->exists()) {
-                    $userNetworkIds = $currentUser->networks()->pluck('networks.network_id')->toArray();
-                    if (! empty($filters['network_id']) && ! in_array((int) $filters['network_id'], $userNetworkIds, true)) {
-                        return $this->errorResponse('غير مصرح لك باستعراض فواتير هذه الشبكة.', [], 403);
-                    }
-                    if (empty($filters['network_id'])) {
-                        $filters['network_ids'] = $userNetworkIds;
-                    }
-                }
+            $scopedFilters = $this->applyInvoiceTenantScope($filters);
+            if ($scopedFilters instanceof JsonResponse) {
+                return $scopedFilters;
             }
+            $filters = $scopedFilters;
 
             $invoices = $this->saleInvoiceService->getFiltered($filters);
 
@@ -247,7 +239,11 @@ class SaleInvoiceController extends BaseController
     {
         try {
             $filters = $request->only(['network_id', 'pos_id', 'search', 'per_page', 'all']);
-            $records = $this->saleInvoiceService->getTrashed($filters);
+            $scopedFilters = $this->applyInvoiceTenantScope($filters);
+            if ($scopedFilters instanceof JsonResponse) {
+                return $scopedFilters;
+            }
+            $records = $this->saleInvoiceService->getTrashed($scopedFilters);
 
             return $this->successResponse('تم استرجاع قائمة فواتير المبيعات المحذوفة بنجاح.', SaleInvoiceResource::collection($records));
         } catch (ValidationException $e) {
@@ -444,11 +440,58 @@ class SaleInvoiceController extends BaseController
     {
         try {
             $filters = $request->only(['period', 'network_id', 'pos_id', 'from_date', 'to_date']);
-            $data = $this->saleInvoiceService->getSalesTrend($filters);
+            $scopedFilters = $this->applyInvoiceTenantScope($filters);
+            if ($scopedFilters instanceof JsonResponse) {
+                return $scopedFilters;
+            }
+            $data = $this->saleInvoiceService->getSalesTrend($scopedFilters);
 
             return $this->successResponse('OK', $data);
         } catch (Exception $e) {
             return $this->errorResponse('trend error: '.$e->getMessage(), [], 422);
         }
     }
+    /**
+     * Scope invoice collections to every tenant where the user has an active
+     * membership carrying the requested permission.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>|JsonResponse
+     */
+    private function applyInvoiceTenantScope(array $filters): array|JsonResponse
+    {
+        $user = $this->currentUser();
+        if (! $user) {
+            return $this->errorResponse('يجب تسجيل الدخول أولاً.', [], 401);
+        }
+
+        if ($user->isSuperAdmin()) {
+            return $filters;
+        }
+
+        $permissions = app(TenantPermissionService::class);
+        $networkIds = $permissions->authorizedNetworkIds($user, 'sales.view');
+        $posIds = $permissions->authorizedPosIds($user, 'sales.view');
+
+        if ($networkIds === [] && $posIds === []) {
+            return $this->errorResponse('لا توجد عضوية نشطة تملك صلاحية عرض الفواتير.', [], 403);
+        }
+
+        if (! empty($filters['network_id']) && ! in_array((int) $filters['network_id'], $networkIds, true)) {
+            return $this->errorResponse('غير مصرح لك باستعراض فواتير هذه الشبكة.', [], 403);
+        }
+        if (! empty($filters['pos_id']) && ! in_array((int) $filters['pos_id'], $posIds, true)) {
+            return $this->errorResponse('غير مصرح لك باستعراض فواتير نقطة البيع هذه.', [], 403);
+        }
+
+        $filters['authorized_network_ids'] = ! empty($filters['network_id'])
+            ? [(int) $filters['network_id']]
+            : $networkIds;
+        $filters['authorized_pos_ids'] = ! empty($filters['pos_id'])
+            ? [(int) $filters['pos_id']]
+            : $posIds;
+
+        return $filters;
+    }
+
 }
