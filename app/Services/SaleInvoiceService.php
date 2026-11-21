@@ -101,9 +101,10 @@ class SaleInvoiceService
         RequestModel $request,
         int $userId,
         ?SaleType $overrideSaleType = null,
-        ?array $overrideItems = null
+        ?array $overrideItems = null,
+        ?float $paidAmount = null
     ): SaleInvoice {
-        return DB::transaction(function () use ($request, $userId, $overrideSaleType, $overrideItems): SaleInvoice {
+        return DB::transaction(function () use ($request, $userId, $overrideSaleType, $overrideItems, $paidAmount): SaleInvoice {
             if ($overrideSaleType !== null && $overrideSaleType->value !== $request->getRawOriginal('sale_type')) {
                 throw ValidationException::withMessages([
                     'sale_type' => ['لا يُسمح بتعديل نوع البيع (كاش/آجل) المتفق عليه في الطلب الأصلي من قِبل الشبكة.'],
@@ -225,9 +226,23 @@ class SaleInvoiceService
             } else {
                 $saleType = SaleType::CREDIT;
 
+                // احتساب الدفعة النقدية المقبوضة كاش مقدماً (إن وُجدت)
+                $clientCashPaidMinor = 0;
+                if ($paidAmount !== null) {
+                    $clientCashPaidMinor = DecimalAmount::toMinorUnits(max(0.0, (float) $paidAmount));
+                    if ($clientCashPaidMinor > $totalInvoiceAmountMinor) {
+                        throw ValidationException::withMessages([
+                            'paid_amount' => ['لا يمكن أن يتجاوز المبلغ المقبوض نقداً إجمالي قيمة الفاتورة.'],
+                        ]);
+                    }
+                }
+
+                // المبلغ المتبقي على الفاتورة بعد خصم الدفعة النقدية الكاش
+                $unpaidAfterCashMinor = $totalInvoiceAmountMinor - $clientCashPaidMinor;
+
                 // التحقق من السقف الائتماني المعتمد (Credit Limit / Overdraft)
                 $posBalanceMinor = DecimalAmount::toMinorUnits($posWallet->wallet_balance);
-                $projectedBalanceMinor = DecimalAmount::add($posBalanceMinor, -$totalInvoiceAmountMinor);
+                $projectedBalanceMinor = DecimalAmount::add($posBalanceMinor, -$unpaidAfterCashMinor);
 
                 if ($projectedBalanceMinor < 0) {
                     if ($posWallet->credit_limit === null) {
@@ -246,8 +261,8 @@ class SaleInvoiceService
                 }
 
                 $existingCreditMinor = max(0, $posBalanceMinor);
-                $coveredAmountMinor = min($existingCreditMinor, $totalInvoiceAmountMinor);
-                $paidAmountMinor = $coveredAmountMinor;
+                $coveredFromWalletMinor = min($existingCreditMinor, $unpaidAfterCashMinor);
+                $paidAmountMinor = $clientCashPaidMinor + $coveredFromWalletMinor;
                 $remainingAmountMinor = $totalInvoiceAmountMinor - $paidAmountMinor;
 
                 $paidAmount = (float) DecimalAmount::fromMinorUnits($paidAmountMinor);
@@ -266,8 +281,8 @@ class SaleInvoiceService
                 'request_id' => $request->request_id,
                 'sale_type' => $saleType,
                 'invoice_total_amount' => $totalInvoiceAmount,
-                'paid_amount' => $paidAmount,
-                'remaining_amount' => $remainingAmount,
+                'paid_amount' => $isCashSale ? $totalInvoiceAmount : $paidAmount,
+                'remaining_amount' => $isCashSale ? 0.00 : $remainingAmount,
                 'payment_status' => $paymentStatus,
                 'invoice_date' => now('Asia/Aden'),
                 'created_by' => $userId,
@@ -313,7 +328,7 @@ class SaleInvoiceService
                 $posBalanceAfter = round((float) $posWallet->wallet_balance - $totalInvoiceAmount, 2);
 
                 $posStatement = ($paidAmount > 0.001)
-                    ? "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) مدفوعة جزئياً من الرصيد: ({$paidAmount})، متبقي آجل: ({$remainingAmount}) - رصيد المحفظة الحالي: ({$posBalanceAfter}) ناتجة عن الطلب (#{$request->request_uuid})"
+                    ? "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) مدفوعة جزئياً من الرصيد والنقد: ({$paidAmount})، متبقي آجل: ({$remainingAmount}) - رصيد المحفظة الحالي: ({$posBalanceAfter}) ناتجة عن الطلب (#{$request->request_uuid})"
                     : "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) لعدم كفاية الرصيد النقدي - رصيد مدين على الوكيل: ({$posBalanceAfter}) ناتجة عن الطلب (#{$request->request_uuid})";
 
                 $this->posWalletLogRepository->createLog(
@@ -323,19 +338,32 @@ class SaleInvoiceService
                     $posStatement,
                     $userId
                 );
+
+                // إذا وُجدت دفعة نقدية كاش مقبوضة، تُسجل في كشف حساب المحفظة لتعويض ما سُدد نقداً
+                if ($clientCashPaidMinor > 0) {
+                    $clientCashPaid = (float) DecimalAmount::fromMinorUnits($clientCashPaidMinor);
+                    $this->posWalletRepository->incrementBalance($posWallet->wallet_id, $clientCashPaid);
+                    $this->posWalletLogRepository->createLog(
+                        $posWallet->wallet_id,
+                        WalletOperationType::DEPOSIT,
+                        $clientCashPaid,
+                        "سداد دفعة نقدية كاش مقدماً للفاتورة (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})",
+                        $userId
+                    );
+                }
             }
 
             // إيداع المبلغ المحصل فعلياً فقط في محفظة الشبكة كسيولة نقدية متاحة وقابلة للسحب
             // في البيع النقدي: كامل إجمالي الفاتورة مسدد نقداً.
-            // في البيع الآجل: المبلغ المغطى فقط من رصيد المحفظة الدائن ($paidAmount)، والمتبقي الآجل لا يدخل في رصيد الشبكة القابل للسحب حتى يتم تحصيله وسداده لاحقاً.
+            // في البيع الآجل: المبلغ المغطى فقط من رصيد المحفظة الدائن والنقد ($paidAmount)
             $networkCashCollected = $isCashSale ? $totalInvoiceAmount : $paidAmount;
 
             if ($networkCashCollected > 0.001) {
                 $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $networkCashCollected);
 
                 $networkStatement = $isCashSale
-                    ? "تحصيل مبيعات كروت نقدية (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"
-                    : "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: ({$paidAmount})، آجل متبقي: ({$remainingAmount})";
+                    ? "تحصيل مبيعات كروت نقدية (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"
+                    : "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name}) - مسدد من الرصيد: ({$paidAmount})، آجل متبقي: ({$remainingAmount})";
 
                 $this->networkWalletLogRepository->createLog(
                     $networkWallet->wallet_id,
@@ -426,10 +454,10 @@ class SaleInvoiceService
                                 ? 'تحصيل مبيعات كروت بالبيع الآجل'
                                 : 'تحصيل مبيعات كروت بالبيع الآجل'),
                         message: $isCashSale
-                            ? "تحصيل مبيعات كروت نقدية (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"
+                            ? "تحصيل مبيعات كروت نقدية (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"
                             : ($paidAmount > 0.001
-                                ? "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد من الرصيد: ({$formattedPaidAmount})، آجل متبقي: ({$formattedRemainingAmount})"
-                                : "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"),
+                                ? "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name}) - مسدد من الرصيد: ({$formattedPaidAmount})، آجل متبقي: ({$formattedRemainingAmount})"
+                                : "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"),
                     );
                 }
             });
@@ -632,7 +660,7 @@ class SaleInvoiceService
                     $networkWallet->wallet_id,
                     WalletOperationType::DEPOSIT,
                     $totalInvoiceAmount,
-                    "تحصيل مبيعات كروت مباشرة نقدية (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name})",
+                    "تحصيل مبيعات كروت مباشرة نقدية (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name})",
                     $userId
                 );
             } else {
@@ -673,7 +701,7 @@ class SaleInvoiceService
                         $networkWallet->wallet_id,
                         WalletOperationType::DEPOSIT,
                         $paidAmount,
-                        "تحصيل مبيعات كروت مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة البيع (#{$pos->pos_name}) - مسدد: (".formatWithCurrency($paidAmount).')، آجل متبقي: ('.formatWithCurrency($remainingAmount).')',
+                        "تحصيل مبيعات كروت مباشرة بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name}) - مسدد: (".formatWithCurrency($paidAmount).')، آجل متبقي: ('.formatWithCurrency($remainingAmount).')',
                         $userId
                     );
                 }
@@ -746,7 +774,7 @@ class SaleInvoiceService
                         type: NotificationType::WALLET_DEPOSIT,
                         push: true,
                         title: 'تحصيل فاتورة مبيعات مباشرة',
-                        message: "تحصيل فاتورة مبيعات مباشرة من نقطة البيع (#{$pos->pos_name}) - إجمالي: ({$formattedTotalInvoiceAmount})، نقد محصل: ({$formattedPaidAmount})، آجل متبقي: ({$formattedRemainingAmount})",
+                        message: "تحصيل فاتورة مبيعات مباشرة من نقطة بيع (#{$pos->pos_name}) - إجمالي: ({$formattedTotalInvoiceAmount})، نقد محصل: ({$formattedPaidAmount})، آجل متبقي: ({$formattedRemainingAmount})",
                     );
                 }
             });

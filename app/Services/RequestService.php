@@ -18,6 +18,7 @@ use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Models\Request as RequestModel;
 use App\Models\RequestItem;
 use App\Models\SaleInvoice;
+use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -173,13 +174,13 @@ class RequestService
                     ]);
                 }
                 $this->procurementPricingSnapshotService->assertCurrent(
-                        $snapshotToken,
-                        $networkId,
-                        $posId,
-                        $packageId,
-                        \App\Support\DecimalAmount::toMinorUnits($package->package_voucher_price),
-                        \App\Support\DecimalAmount::toMinorUnits($cashDiscount),
-                        \App\Support\DecimalAmount::toMinorUnits($creditDiscount),
+                    $snapshotToken,
+                    $networkId,
+                    $posId,
+                    $packageId,
+                    DecimalAmount::toMinorUnits($package->package_voucher_price),
+                    DecimalAmount::toMinorUnits($cashDiscount),
+                    DecimalAmount::toMinorUnits($creditDiscount),
                 );
                 $discountPercent = $saleType->isCash() ? $cashDiscount : $creditDiscount;
 
@@ -231,7 +232,7 @@ class RequestService
                     type: NotificationType::VOUCHER_REQUEST_CREATED,
                     push: true,
                     title: '📥 طلب كروت جديد',
-                    message: "قمت نقطة بيع ({$posName}) بإنشاء طلب كروت رقم #{$createdRequest->request_uuid} بإجمالي {$formattedAmount} ر.ي."
+                    message: "قامت نقطة بيع ({$posName}) بإنشاء طلب كروت رقم #{$createdRequest->request_uuid} بإجمالي {$formattedAmount} ر.ي."
                 );
             }
 
@@ -460,6 +461,7 @@ class RequestService
 
             $note = null;
             $overrideItems = null;
+            $paidAmount = null;
 
             if ($requestData instanceof ApproveRequestRequest) {
                 if ($requestData->has('sale_type')) {
@@ -469,6 +471,7 @@ class RequestService
                 }
                 $note = $requestData->getRequestNote();
                 $overrideItems = $requestData->hasItems() ? $requestData->getItems() : null;
+                $paidAmount = $requestData->getPaidAmount();
             } elseif (is_string($requestData)) {
                 $note = $requestData;
             }
@@ -487,7 +490,8 @@ class RequestService
                 $request,
                 $reviewedBy,
                 null,
-                $overrideItems
+                $overrideItems,
+                $paidAmount
             );
 
             // تحديث حالة الطلب الأصلي إلى معتمد (APPROVED) وتوثيق تاريخ وملاحظة المراجعة مع بقاء بنوده كما طُلبت دون تغيير

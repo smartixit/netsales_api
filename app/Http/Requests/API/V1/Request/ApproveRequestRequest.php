@@ -24,6 +24,11 @@ class ApproveRequestRequest extends FormRequest
                 'string',
                 'max:150',
             ],
+            'paid_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
             'sale_type' => [
                 'prohibited',
             ],
@@ -61,6 +66,13 @@ class ApproveRequestRequest extends FormRequest
     public function getRequestNote(): ?string
     {
         return $this->input('request_note');
+    }
+
+    public function getPaidAmount(): ?float
+    {
+        return $this->has('paid_amount') && $this->input('paid_amount') !== null
+            ? (float) $this->input('paid_amount')
+            : null;
     }
 
     public function getSaleType(): ?SaleType

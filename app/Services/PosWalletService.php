@@ -511,7 +511,7 @@ class PosWalletService
             // الإيداع في محفظة الشبكة
             $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $amount);
 
-            $netStatement = "استلام رصيد مسترجع من نقطة البيع (#{$pos->pos_name})".($userStatement ? " - {$userStatement}" : '');
+            $netStatement = "استلام رصيد مسترجع من نقطة بيع (#{$pos->pos_name})".($userStatement ? " - {$userStatement}" : '');
             $networkLog = $this->networkWalletLogRepository->createLog(
                 $networkWallet->wallet_id,
                 WalletOperationType::DEPOSIT->value,
