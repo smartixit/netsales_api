@@ -122,7 +122,7 @@ class NetworkPosLinkingChallengeService
                 ->where('network_id', $networkId)
                 ->where('status', 'ACTIVE')
                 ->exists();
-            if (! $isOwner && ! $isMember) {
+            if (! $isOwner && ! $isActiveMember) {
                 throw ValidationException::withMessages([
                     'network_id' => ['غير مصرح لك بإنشاء دعوة ربط لهذه الشبكة.'],
                 ]);
@@ -288,8 +288,11 @@ class NetworkPosLinkingChallengeService
 
         if (! $actor->isSuperAdmin()) {
             $isOwner = (int) $pos->owner_id === (int) $actor->user_id;
-            $isMember = $actor->posUsers()->where('pos_id', $posId)->exists();
-            if (! $isOwner && ! $isMember) {
+            $isActiveMember = $actor->posUsers()
+                ->where('pos_id', $posId)
+                ->where('status', 'ACTIVE')
+                ->exists();
+            if (! $isOwner && ! $isActiveMember) {
                 throw ValidationException::withMessages([
                     'pos_id' => ['غير مصرح لك بإدارة نقطة البيع هذه.'],
                 ]);
@@ -383,8 +386,11 @@ class NetworkPosLinkingChallengeService
 
             if (! $actor->isSuperAdmin()) {
                 $isOwner = (int) $pos->owner_id === (int) $actor->user_id;
-                $isMember = $actor->posUsers()->where('pos_id', $posId)->exists();
-                if (! $isOwner && ! $isMember) {
+                $isActiveMember = $actor->posUsers()
+                ->where('pos_id', $posId)
+                ->where('status', 'ACTIVE')
+                ->exists();
+                if (! $isOwner && ! $isActiveMember) {
                     throw ValidationException::withMessages([
                         'pos_id' => ['غير مصرح لك بإدارة نقطة البيع هذه.'],
                     ]);
