@@ -173,8 +173,21 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.network_id', $this->network->network_id)
             ->assertJsonPath('data.pos_id', $this->pos->pos_id)
+            ->assertJsonPath('data.network.network_id', $this->network->network_id)
+            ->assertJsonPath('data.network.network_name', $this->network->network_name)
+            ->assertJsonPath('data.pos.pos_id', $this->pos->pos_id)
+            ->assertJsonPath('data.pos.pos_uuid', $this->pos->pos_uuid)
+            ->assertJsonPath('data.pos.pos_name', $this->pos->pos_name)
             ->assertJsonPath('data.status', LinkingChallengeStatus::PENDING->value)
             ->assertJsonPath('data.status_label', 'قيد الانتظار');
+
+        $networkData = $response->json('data.network');
+        $posData = $response->json('data.pos');
+        $this->assertArrayNotHasKey('owner_id', $networkData);
+        $this->assertArrayNotHasKey('network_phone_number', $networkData);
+        $this->assertArrayNotHasKey('owner_id', $posData);
+        $this->assertArrayNotHasKey('pos_phone_number', $posData);
+        $this->assertArrayNotHasKey('pos_email', $posData);
 
         $payload = $response->json('data.payload');
         $this->assertNotEmpty($payload);
@@ -184,7 +197,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
         $this->assertDatabaseHas('network_pos_linking_challenges', [
             'challenge_uuid' => $uuid,
             'network_id' => $this->network->network_id,
-                'pos_id' => $this->pos->pos_id,
+            'pos_id' => $this->pos->pos_id,
             'status' => LinkingChallengeStatus::PENDING->value,
         ]);
     }
