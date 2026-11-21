@@ -9,6 +9,7 @@ use App\Http\Requests\API\V1\Expense\UpdateExpenseRequest;
 use App\Http\Resources\API\V1\Expense\ExpenseItemResource;
 use App\Http\Resources\API\V1\Expense\ExpenseResource;
 use App\Models\Expense;
+use App\Services\TenantPermissionService;
 use App\Services\ExpenseService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -40,47 +41,44 @@ class ExpenseController extends BaseController
     {
         $currentUser = $this->currentUser();
         if (! $currentUser) {
-            return null;
+            return [];
         }
 
-        $ownerNetworkIds = $currentUser->networks()->pluck('networks.network_id')->map(fn ($id) => (int) $id)->toArray();
-        $memberNetworkIds = $currentUser->networkUsers()->pluck('network_users.network_id')->map(fn ($id) => (int) $id)->toArray();
-        $userNetworkIds = array_values(array_unique(array_merge($ownerNetworkIds, $memberNetworkIds)));
+        $permission = (string) $request->attributes->get('tenant_permission', 'expenses.view');
+        $tenantAuthorization = app(TenantPermissionService::class);
+        $authorizedNetworkIds = $tenantAuthorization->authorizedNetworkIds($currentUser, $permission);
 
-        $requestedNetworkId = $request->input('network_id');
+        $requestedNetworkId = $request->input('network_id') ?? $request->query('network_id');
         if ($requestedNetworkId !== null && $requestedNetworkId !== '') {
-            $reqId = (int) $requestedNetworkId;
-            if (! in_array($reqId, $userNetworkIds, true)) {
-                return [];
-            }
+            $requestedId = (int) $requestedNetworkId;
 
-            return [$reqId];
+            return in_array($requestedId, $authorizedNetworkIds, true) ? [$requestedId] : [];
         }
 
-        return $userNetworkIds;
+        return $authorizedNetworkIds;
     }
 
     /**
      * التحقق من تبعية المصروف للشبكات المصرح بها للمستخدم الحالي.
      */
-    private function authorizeExpenseTenant(int|Expense $expense): ?JsonResponse
+    private function authorizeExpenseTenant(int|Expense $expense, string $permission = 'expenses.view'): ?JsonResponse
     {
         $currentUser = $this->currentUser();
         if (! $currentUser) {
-            return null;
+            return $this->errorResponse('غير مصادق عليه.', [], 401);
         }
 
         $expenseModel = is_int($expense) ? Expense::withTrashed()->find($expense) : $expense;
         if (! $expenseModel) {
-            return null;
+            return $this->errorResponse('المصروف غير موجود.', [], 404);
         }
 
-        $ownerNetworkIds = $currentUser->networks()->pluck('networks.network_id')->map(fn ($id) => (int) $id)->toArray();
-        $memberNetworkIds = $currentUser->networkUsers()->pluck('network_users.network_id')->map(fn ($id) => (int) $id)->toArray();
-        $userNetworkIds = array_values(array_unique(array_merge($ownerNetworkIds, $memberNetworkIds)));
-
-        if (! in_array((int) $expenseModel->network_id, $userNetworkIds, true)) {
-            return $this->errorResponse('غير مصرح لك بإدارة أو عرض مصروفات هذه الشبكة.', [], 403);
+        if (! app(TenantPermissionService::class)->allowsNetwork(
+            $currentUser,
+            (int) $expenseModel->network_id,
+            $permission
+        )) {
+            return $this->errorResponse('غير مصرح لك بتنفيذ هذه العملية داخل الشبكة المحددة.', [], 403);
         }
 
         return null;
@@ -187,7 +185,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = $this->expenseService->getById($id);
-            if ($denial = $this->authorizeExpenseTenant($expense)) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.view')) {
                 return $denial;
             }
 
@@ -277,7 +275,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = $this->expenseService->getById($id);
-            if ($denial = $this->authorizeExpenseTenant($expense)) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.edit')) {
                 return $denial;
             }
 
@@ -311,7 +309,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = $this->expenseService->getById($id);
-            if ($denial = $this->authorizeExpenseTenant($expense)) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.delete')) {
                 return $denial;
             }
 
@@ -386,7 +384,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = Expense::onlyTrashed()->findOrFail($id);
-            if ($denial = $this->authorizeExpenseTenant($expense)) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.restore')) {
                 return $denial;
             }
 
@@ -420,7 +418,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = Expense::withTrashed()->findOrFail($id);
-            if ($denial = $this->authorizeExpenseTenant($expense)) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.force_delete')) {
                 return $denial;
             }
 
