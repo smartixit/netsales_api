@@ -17,6 +17,9 @@ class ResolveNetworkLinkablePosRequest extends FormRequest
      *
      * @return array<string, mixed>
      */
+    /**
+     * @return array<string, array<int, mixed>>
+     */
     public function rules(): array
     {
         return [
