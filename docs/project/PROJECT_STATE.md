@@ -324,3 +324,14 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Voucher quantities remain unchanged; sheet equivalents are recalculated from the refreshed package capacity. Partial results, failures, changed cart contents, or changed workspace context cannot silently clear the pricing-expired state.
 - API PR #32 remains open/draft at `a746afce29d720f0a7871397c4e7ee33f322fc56`. Flutter PR #45 remains open/draft at `cc3333ae35911735c5ae64974b04ff3f7407519f`. Neither PR was merged.
 - **Validation is blocked, not passed:** API run #415 failed with 189 test failures / 145 passes / 3 skips, including the existing generated-column fixture issue in `tests/TestCase.php`; Flutter run #867 passed formatting but failed project analysis on 17 unrelated info-level curly-brace diagnostics, so Flutter tests/compile were skipped. See the latest WORK_LOG entry for exact files and details.
+
+
+## Active implementation — Targeted Network–POS QR invitations (2026-11-22)
+
+- API delivery branch: feat/secure-qr-challenge-status, PR #35.
+- Paired Flutter branch: feat/branded-secure-qr-invitations, PR #61.
+- Approved invariant: every Network-issued QR invitation targets exactly one Network and one POS. No untargeted challenge or public POS directory is permitted.
+- The API resolves the exact POS commercial business code, returns the same code for the subsequent challenge command, and exposes a minimal lifecycle-status projection without encrypted payload or target identifiers.
+- Challenge creation requires exactly one target input. Challenge persistence enforces non-null pos_id; deleting the target POS cascades to its challenges.
+- Revocation is row-locked and allowed only for pending, unexpired challenges by an authorized Network owner or active member.
+- **Verification status:** IN PROGRESS. An earlier exact-head CI run exposed the original SET NULL / NOT NULL FK conflict, now corrected. Exact-head Flutter and Laravel CI must pass before either PR is accepted or merged. Unrelated SaleInvoiceService PHPStan findings observed in the earlier API run remain outside this QR scope and must be assessed separately if they persist.
