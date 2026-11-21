@@ -259,12 +259,12 @@ class NetworkPosLinkingChallengeTest extends TestCase
         ]);
     }
 
-    public function test_network_owner_cannot_create_challenge_with_two_pos_targets(): void
+    public function test_network_owner_cannot_create_challenge_with_internal_pos_id(): void
     {
         $response = $this->withHeaders($this->netSession['headers'])
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
-                'pos_uuid' => $this->pos->pos_uuid,
+                'pos_id' => $this->pos->pos_id,
                 'pos_uuid' => $this->pos->pos_uuid,
             ]);
 
@@ -349,7 +349,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonPath('data.is_targeted', true);
     }
 
-    public function test_preview_rejects_both_pos_identity_selectors(): void
+    public function test_preview_rejects_internal_pos_id(): void
     {
         $createResponse = $this->withHeaders($this->netSession['headers'])
             ->postJson('/api/v1/network-pos/challenges', [
@@ -362,7 +362,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
         $response = $this->withHeaders($this->posSession['headers'])
             ->postJson('/api/v1/network-pos/challenges/preview', [
                 'payload' => $createResponse->json('data.payload'),
-                'pos_uuid' => $this->pos->pos_uuid,
+                'pos_id' => $this->pos->pos_id,
                 'pos_uuid' => $this->pos->pos_uuid,
             ]);
 
@@ -469,7 +469,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
         ]);
     }
 
-    public function test_confirmation_rejects_both_pos_identity_selectors(): void
+    public function test_confirmation_rejects_internal_pos_id(): void
     {
         $createResponse = $this->withHeaders($this->netSession['headers'])
             ->postJson('/api/v1/network-pos/challenges', [
@@ -483,7 +483,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
         $response = $this->withHeaders($this->posSession['headers'])
             ->postJson('/api/v1/network-pos/challenges/confirm', [
                 'challenge_uuid' => $challengeUuid,
-                'pos_uuid' => $this->pos->pos_uuid,
+                'pos_id' => $this->pos->pos_id,
                 'pos_uuid' => $this->pos->pos_uuid,
             ]);
 
