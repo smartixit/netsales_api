@@ -467,7 +467,7 @@ class NetworkPosLinkingChallengeService
      */
     public function getChallengeStatus(User $actor, string $challengeUuid): ?NetworkPosLinkingChallenge
     {
-        $challenge = $this->challengeRepository->findByUuid($challengeUuid, ['network', 'pos']);
+        $challenge = $this->challengeRepository->findByUuid($challengeUuid, ['network']);
 
         if (! $challenge || ! $challenge->network) {
             return null;
