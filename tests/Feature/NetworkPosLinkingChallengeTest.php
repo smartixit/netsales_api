@@ -262,6 +262,9 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonPath('data.pos_uuid', $this->pos->pos_uuid)
             ->assertJsonMissingPath('data.pos_phone_number')
             ->assertJsonMissingPath('data.owner');
+        $response->assertJsonMissingPath('data.owner_id')
+            ->assertJsonMissingPath('data.governorate_name')
+            ->assertJsonMissingPath('data.directorate_name');
     }
 
     public function test_network_owner_cannot_resolve_already_linked_pos_target(): void
