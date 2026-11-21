@@ -5,6 +5,7 @@ namespace App\Http\Requests\API\V1\Expense;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\Rule;
 
 class UpdateExpenseRequest extends FormRequest
 {
@@ -45,6 +46,14 @@ class UpdateExpenseRequest extends FormRequest
                 'mimes:jpeg,png,jpg,webp,pdf,doc,docx',
                 'max:10240',
             ],
+            'deleted_attachment_ids' => [
+                'nullable',
+                'array',
+            ],
+            'deleted_attachment_ids.*' => [
+                'integer',
+                Rule::exists('expense_attachments', 'attachment_id'),
+            ],
         ];
     }
 
@@ -72,5 +81,18 @@ class UpdateExpenseRequest extends FormRequest
     public function getAttachments(): array
     {
         return (array) $this->file('attachments', []);
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    public function getDeletedAttachmentIds(): array
+    {
+        return array_values(array_filter(array_map('intval', (array) $this->input('deleted_attachment_ids', []))));
+    }
+
+    public function hasDeletedAttachmentIds(): bool
+    {
+        return $this->has('deleted_attachment_ids') && ! empty($this->getDeletedAttachmentIds());
     }
 }

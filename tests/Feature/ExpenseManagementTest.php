@@ -178,6 +178,56 @@ class ExpenseManagementTest extends TestCase
     }
 
     /**
+     * اختبار تحديث المصروف بحذف مرفقات سابقة وإضافة مرفقات جديدة في طلب واحد ذري (Pattern 1).
+     */
+    public function test_can_update_expense_with_atomic_attachments_deletion_and_addition(): void
+    {
+        $file1 = UploadedFile::fake()->create('receipt_1.pdf', 100, 'application/pdf');
+        $file2 = UploadedFile::fake()->create('receipt_2.jpg', 150, 'image/jpeg');
+
+        // إنشاء المصروف مع مرفقين
+        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/expenses', [
+            'network_id' => $this->network->network_id,
+            'items' => [
+                ['item_statement' => 'بند مرفقات 1', 'item_amount' => 5000.00],
+            ],
+            'attachments' => [$file1, $file2],
+        ]);
+
+        $createRes->assertStatus(201);
+        $expenseId = (int) $createRes->json('data.expense_id');
+        $attachments = $createRes->json('data.attachments');
+        $this->assertCount(2, $attachments);
+
+        $attachmentToDeleteId = (int) $attachments[0]['attachment_id'];
+        $attachmentToKeepId = (int) $attachments[1]['attachment_id'];
+
+        // تحديث المصروف: حذف المرفق الأول وإضافة مرفق ثالث جديد
+        $file3 = UploadedFile::fake()->create('receipt_3.png', 200, 'image/png');
+
+        $updateRes = $this->withHeaders($this->headers)->postJson("/api/v1/expenses/{$expenseId}", [
+            '_method' => 'PUT',
+            'deleted_attachment_ids' => [$attachmentToDeleteId],
+            'attachments' => [$file3],
+        ]);
+
+        $updateRes->assertStatus(200)
+            ->assertJsonPath('success', true);
+
+        // التحقق من حذف المرفق الأول من قاعدة البيانات وبقاء الثاني وإضافة الثالث
+        $this->assertDatabaseMissing('expense_attachments', [
+            'attachment_id' => $attachmentToDeleteId,
+        ]);
+
+        $this->assertDatabaseHas('expense_attachments', [
+            'attachment_id' => $attachmentToKeepId,
+        ]);
+
+        $updatedAttachments = $updateRes->json('data.attachments');
+        $this->assertCount(2, $updatedAttachments);
+    }
+
+    /**
      * اختبار إضافة وحذف بند منفرد لمصروف قائم مع تسوية المحفظة.
      */
     public function test_can_add_and_delete_single_item_with_wallet_settlement(): void

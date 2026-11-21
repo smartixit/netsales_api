@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\InvoicePaymentStatus;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Enums\RoleScope;
 use App\Enums\SaleType;
 use App\Enums\UserStatus;
 use App\Models\Network;
@@ -65,7 +66,7 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
 
         $suffix = uniqid();
 
-        $posUser = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $posUser = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Agent '.$suffix,
             'user_phone_number' => '73'.rand(1000000, 9999999),
@@ -480,7 +481,7 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
         $deleteResponse->assertStatus(200);
 
         $this->networkWallet->refresh();
-        $this->assertEquals($initialBalance - 4000.00, (float) $this->networkWallet->wallet_balance, 'حذف المصروف ناعماً يحافظ على السجل المالي كما هو');
+        $this->assertEquals($initialBalance, (float) $this->networkWallet->wallet_balance, 'حذف المصروف ناعماً يسترد كامل المبلغ لمحفظة الشبكة');
         $this->assertSoftDeleted('expenses', ['expense_id' => $expenseId]);
     }
 }

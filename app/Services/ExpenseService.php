@@ -271,6 +271,17 @@ class ExpenseService
                 }
             }
 
+            // حذف المرفقات المحددة إن وُجدت
+            if ($request->hasDeletedAttachmentIds()) {
+                foreach ($request->getDeletedAttachmentIds() as $attachmentId) {
+                    $attachment = $this->expenseAttachmentRepository->findById($attachmentId);
+                    if ($attachment && (int) $attachment->expense_id === (int) $expenseId) {
+                        $this->fileUploadService->deleteFile($attachment->attachment_path);
+                        $this->expenseAttachmentRepository->delete($attachmentId);
+                    }
+                }
+            }
+
             // إضافة المرفقات الجديدة إن وُجدت
             $attachments = $request->getAttachments();
             foreach ($attachments as $file) {
