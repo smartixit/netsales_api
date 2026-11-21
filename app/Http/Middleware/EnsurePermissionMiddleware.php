@@ -92,7 +92,22 @@ class EnsurePermissionMiddleware
             );
 
             $authorized = false;
-            if ($networkId > 0) {
+            if ($record !== null) {
+                $networkAuthorized = $networkId > 0
+                    && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
+                $posAuthorized = $posId > 0
+                    && $this->tenantPermissions->allowsPos($user, $posId, $permission);
+
+                $authorized = in_array($permission, ['requests.approve', 'requests.reject'], true)
+                    ? $networkAuthorized
+                    : ($networkAuthorized || $posAuthorized);
+            } elseif ($networkId > 0 && $posId > 0) {
+                $networkAuthorized = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
+                $posAuthorized = $this->tenantPermissions->allowsPos($user, $posId, $permission);
+                $authorized = in_array($permission, ['requests.approve', 'requests.reject'], true)
+                    ? $networkAuthorized
+                    : ($networkAuthorized || $posAuthorized);
+            } elseif ($networkId > 0) {
                 $authorized = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
             } elseif ($posId > 0) {
                 $authorized = $this->tenantPermissions->allowsPos($user, $posId, $permission);
