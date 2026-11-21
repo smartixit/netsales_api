@@ -366,6 +366,33 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonValidationErrors(['pos_id']);
     }
 
+    public function test_inactive_pos_membership_cannot_preview_a_challenge(): void
+    {
+        $posRole = Role::where('role_key', RoleKey::POS_AGENT->value)->first();
+        PosUser::create([
+            'pos_id' => $this->pos->pos_id,
+            'user_id' => $this->unauthorizedUser->user_id,
+            'role_id' => $posRole?->role_id,
+            'status' => 'INACTIVE',
+        ]);
+
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+        $createResponse->assertCreated();
+
+        $response = $this->withHeaders($this->unauthSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges/preview', [
+                'payload' => $createResponse->json('data.payload'),
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['pos_id']);
+    }
+
     public function test_pos_owner_can_confirm_challenge_and_establish_relationship(): void
     {
         // 1. Create challenge
@@ -437,6 +464,42 @@ class NetworkPosLinkingChallengeTest extends TestCase
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['pos_id', 'pos_uuid']);
 
+        $this->assertDatabaseHas('network_pos_linking_challenges', [
+            'challenge_uuid' => $challengeUuid,
+            'status' => LinkingChallengeStatus::PENDING->value,
+        ]);
+        $this->assertDatabaseMissing('network_pos', [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+        ]);
+    }
+
+    public function test_inactive_pos_membership_cannot_confirm_a_challenge(): void
+    {
+        $posRole = Role::where('role_key', RoleKey::POS_AGENT->value)->first();
+        PosUser::create([
+            'pos_id' => $this->pos->pos_id,
+            'user_id' => $this->unauthorizedUser->user_id,
+            'role_id' => $posRole?->role_id,
+            'status' => 'INACTIVE',
+        ]);
+
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+        $createResponse->assertCreated();
+        $challengeUuid = $createResponse->json('data.challenge_uuid');
+
+        $response = $this->withHeaders($this->unauthSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges/confirm', [
+                'challenge_uuid' => $challengeUuid,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['pos_id']);
         $this->assertDatabaseHas('network_pos_linking_challenges', [
             'challenge_uuid' => $challengeUuid,
             'status' => LinkingChallengeStatus::PENDING->value,
