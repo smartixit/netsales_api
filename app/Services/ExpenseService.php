@@ -573,6 +573,11 @@ class ExpenseService
 
             /** @var ExpenseItem $item */
             $item = $this->expenseItemRepository->findById($itemId);
+            if ((int) $item->expense_id !== $expenseId) {
+                throw ValidationException::withMessages([
+                    'item_id' => ['البند المحدد لا يتبع المصروف المطلوب.'],
+                ]);
+            }
 
             $amount = (float) $item->item_amount;
             $statement = $item->item_statement;
@@ -622,8 +627,13 @@ class ExpenseService
      */
     public function deleteAttachment(int $expenseId, int $attachmentId): bool
     {
-        return DB::transaction(function () use ($attachmentId): bool {
+        return DB::transaction(function () use ($expenseId, $attachmentId): bool {
             $attachment = $this->expenseAttachmentRepository->findById($attachmentId);
+            if ((int) $attachment->expense_id !== $expenseId) {
+                throw ValidationException::withMessages([
+                    'attachment_id' => ['المرفق المحدد لا يتبع المصروف المطلوب.'],
+                ]);
+            }
             $this->fileUploadService->deleteFile($attachment->attachment_path);
 
             return (bool) $this->expenseAttachmentRepository->delete($attachmentId);
