@@ -588,7 +588,7 @@ class NetworkPosController extends BaseController
                 properties: [
                     new OA\Property(property: 'payload', type: 'string', example: 'NTS_LINK_V1_...'),
                     new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5),
-                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: '3fa85f64-5717-4562-b3fc-2c963f66afa6'),
+                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: 'POS-2611-00001-8F3A'),
                 ]
             )
         ),
@@ -634,7 +634,7 @@ class NetworkPosController extends BaseController
                 properties: [
                     new OA\Property(property: 'challenge_uuid', type: 'string', format: 'uuid'),
                     new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5),
-                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: '3fa85f64-5717-4562-b3fc-2c963f66afa6'),
+                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: 'POS-2611-00001-8F3A'),
                 ]
             )
         ),
