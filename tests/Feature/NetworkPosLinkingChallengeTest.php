@@ -804,6 +804,33 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonMissingPath('data.pos_id');
     }
 
+    public function test_status_read_marks_expired_pending_challenge_as_expired(): void
+    {
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $createResponse->assertCreated();
+        $uuid = $createResponse->json('data.challenge_uuid');
+
+        DB::table('network_pos_linking_challenges')
+            ->where('challenge_uuid', $uuid)
+            ->update(['expires_at' => now('Asia/Aden')->subMinute()]);
+
+        $statusResponse = $this->withHeaders($this->netSession['headers'])
+            ->getJson("/api/v1/network-pos/challenges/{$uuid}");
+
+        $statusResponse->assertOk()
+            ->assertJsonPath('data.status', LinkingChallengeStatus::EXPIRED->value);
+
+        $this->assertDatabaseHas('network_pos_linking_challenges', [
+            'challenge_uuid' => $uuid,
+            'status' => LinkingChallengeStatus::EXPIRED->value,
+        ]);
+    }
+
     public function test_user_outside_network_cannot_read_challenge_status(): void
     {
         $createResponse = $this->withHeaders($this->netSession['headers'])
