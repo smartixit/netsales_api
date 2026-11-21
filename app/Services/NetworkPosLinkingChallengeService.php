@@ -118,7 +118,7 @@ class NetworkPosLinkingChallengeService
         // 2. التحقق من صلاحية المستخدم على الشبكة
         if (! $actor->isSuperAdmin()) {
             $isOwner = (int) $network->owner_id === (int) $actor->user_id;
-            $isMember = $actor->networkUsers()
+            $isActiveMember = $actor->networkUsers()
                 ->where('network_id', $networkId)
                 ->where('status', 'ACTIVE')
                 ->exists();
