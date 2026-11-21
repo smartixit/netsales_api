@@ -1155,3 +1155,18 @@ This log documents all executed tasks, code changes, and verification command ou
   - `flutter test test/invoices/`: **23 passed (100%)**.
 - **Task Status:** Complete — Invoices module fully rebuilt, aligned with global standards, and backend financial lifecycle secured with strict blocking invariant.
 
+
+## [2026-11-22] Task: Targeted Network–POS QR Invitation Contract Hardening
+
+- **Authorized Scope:** Continue the existing targeted encrypted QR invitation implementation across Laravel API and Flutter PR #61; do not merge either PR.
+- **Backend changes:**
+  - Enforced exactly one POS target (pos_id XOR pos_uuid) when creating a challenge; untargeted invitations are rejected.
+  - Added exact POS business-code resolution without exposing a POS directory. The response now includes the same business code as pos_uuid, required by Flutter's subsequent challenge request.
+  - Renamed the request to ResolveNetworkLinkablePosRequest to reflect exact resolution rather than search.
+  - Added a safe lifecycle endpoint returning only status, label, and expiry; target IDs, challenge UUID, and encrypted payload are excluded.
+  - Corrected challenge expiry serialization to ISO-8601.
+  - Reworked the mandatory POS migration to drop the old ON DELETE SET NULL foreign key before enforcing NOT NULL, then recreate it with cascade deletion. The previous CI run exposed the incompatible FK; this migration correction is committed.
+  - Made revocation transactional, row-locked, active-membership scoped, and pending/unexpired-only. Added tests ensuring consumed challenges remain consumed and expired challenges become EXPIRED rather than REVOKED.
+  - Updated the canonical API contract and recorded DEC-QR-01.
+- **Flutter changes (paired PR #61):** The exact-target form and QR sheet are StatelessWidget views; GetX controller owns resolution, polling, countdown, revocation, and export/share orchestration. UI-only render-boundary capture remains in the presentation widget and is passed to the controller as a byte-capture callback. The invitation share card is feature-scoped under Commercial; shared QR primitives remain generic.
+- **Verification:** No success is claimed yet. The earlier API CI run failed on the old FK behavior and exposed unrelated PHPStan findings in SaleInvoiceService; the migration was corrected, and the latest exact-head CI run is pending. Flutter CI is running on the latest paired branch head. Do not merge until exact-head CI and review complete.
