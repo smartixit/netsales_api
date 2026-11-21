@@ -73,11 +73,11 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
         $suffix = uniqid();
 
         // 1. Create Users
-        [$this->networkOwnerA, $this->headersNetA] = $this->createUserWithSession('net_owner_a_'.$suffix, \App\Enums\RoleScope::NETWORK);
-        [$this->networkOwnerB, $this->headersNetB] = $this->createUserWithSession('net_owner_b_'.$suffix, \App\Enums\RoleScope::NETWORK);
-        [$this->posOwnerA, $this->headersPosA] = $this->createUserWithSession('pos_owner_a_'.$suffix, \App\Enums\RoleScope::POS);
-        [$posOwnerB, $headersPosB] = $this->createUserWithSession('pos_owner_b_'.$suffix, \App\Enums\RoleScope::POS);
-        [$this->networkAccountantA, $this->headersAccountantA] = $this->createUserWithSession('net_acc_a_'.$suffix, \App\Enums\RoleScope::NETWORK);
+        [$this->networkOwnerA, $this->headersNetA] = $this->createUserWithSession('net_owner_a_'.$suffix, RoleScope::NETWORK);
+        [$this->networkOwnerB, $this->headersNetB] = $this->createUserWithSession('net_owner_b_'.$suffix, RoleScope::NETWORK);
+        [$this->posOwnerA, $this->headersPosA] = $this->createUserWithSession('pos_owner_a_'.$suffix, RoleScope::POS);
+        [$posOwnerB, $headersPosB] = $this->createUserWithSession('pos_owner_b_'.$suffix, RoleScope::POS);
+        [$this->networkAccountantA, $this->headersAccountantA] = $this->createUserWithSession('net_acc_a_'.$suffix, RoleScope::NETWORK);
 
         // 2. Create Networks
         $this->networkA = Network::create([
@@ -217,7 +217,7 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
         ]);
     }
 
-    protected function createUserWithSession(string $username, \App\Enums\RoleScope $scope): array
+    protected function createUserWithSession(string $username, RoleScope $scope): array
     {
         $user = $this->createUserWithScope($scope, [
             'user_full_name' => $username,

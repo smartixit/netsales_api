@@ -60,7 +60,7 @@ class ReportRunService
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      */
     public function queueNetworkReport(
         User $actor,
@@ -99,7 +99,7 @@ class ReportRunService
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      */
     public function queuePlatformReport(
         User $actor,
@@ -227,8 +227,8 @@ class ReportRunService
     }
 
     /**
-     * @param array<string, mixed> $definition
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $definition
+     * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
      */
     private function validateFilters(array $definition, array $filters): array
@@ -286,7 +286,7 @@ class ReportRunService
     }
 
     /**
-     * @param array<string, mixed> $definition
+     * @param  array<string, mixed>  $definition
      * @return array<string, mixed>
      */
     private function catalogItem(array $definition): array

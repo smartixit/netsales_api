@@ -20,7 +20,7 @@ final class OperationalReportPresetValidator
     ): array {
         $provider = $this->providers->get($reportType);
         $definition = $provider->definition();
-        $errors = new MessageBag();
+        $errors = new MessageBag;
 
         if ($schemaVersion !== (int) ($definition['schema_version'] ?? 1)) {
             $errors->add('report_schema_version', 'تغير تعريف التقرير؛ أعد تحميل التعريف ثم احفظ الإعدادات وفق المخطط الحالي.');
@@ -51,6 +51,7 @@ final class OperationalReportPresetValidator
                 || ! array_key_exists('type', $typedValue)
                 || ! array_key_exists('value', $typedValue)) {
                 $errors->add('criteria.filters.'.$filterId, 'قيمة المرشح يجب أن تتضمن النوع والقيمة فقط.');
+
                 continue;
             }
 
@@ -60,6 +61,7 @@ final class OperationalReportPresetValidator
                 : ($expectedTypes[$filterDefinition['kind'] ?? ''] ?? null);
             if ($expectedType === null || $typedValue['type'] !== $expectedType) {
                 $errors->add('criteria.filters.'.$filterId.'.type', 'نوع القيمة المحفوظة لا يطابق تعريف المرشح الحالي.');
+
                 continue;
             }
 
@@ -81,6 +83,7 @@ final class OperationalReportPresetValidator
             };
             if (! $validTypedValue) {
                 $errors->add('criteria.filters.'.$filterId.'.value', 'القيمة لا تطابق النوع المعلن للمرشح.');
+
                 continue;
             }
 
@@ -95,7 +98,7 @@ final class OperationalReportPresetValidator
             };
         }
 
-        $filterErrors = new MessageBag();
+        $filterErrors = new MessageBag;
         $this->filters->validate($provider->type(), $posId, $rawFilters, $filterErrors);
         foreach ($filterErrors->messages() as $field => $messages) {
             foreach ($messages as $message) {

@@ -9,6 +9,7 @@ use App\Models\Expense;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\NetworkUser;
+use App\Models\NetworkWallet;
 use App\Models\OperationalDocumentSnapshot;
 use App\Models\Pos;
 use App\Models\PosRepayment;
@@ -26,6 +27,7 @@ use Illuminate\Validation\ValidationException;
 final class OperationalDocumentSnapshotService
 {
     public function __construct(private readonly TenantPermissionService $tenantPermissions) {}
+
     public function create(
         User $user,
         string $documentType,
@@ -276,8 +278,8 @@ final class OperationalDocumentSnapshotService
      * User contact, security, session and role data must not be copied into a
      * permanent document snapshot.
      *
-     * @param array<string, mixed> $payload
-     * @param list<string> $identityKeys
+     * @param  array<string, mixed>  $payload
+     * @param  list<string>  $identityKeys
      * @return array<string, mixed>
      */
     private function sanitizeUserIdentities(array $payload, array $identityKeys): array
@@ -286,6 +288,7 @@ final class OperationalDocumentSnapshotService
             $identity = $payload[$key] ?? null;
             if (! is_array($identity)) {
                 $payload[$key] = null;
+
                 continue;
             }
 
@@ -303,7 +306,7 @@ final class OperationalDocumentSnapshotService
     /**
      * Keep attachment metadata needed by the voucher, never storage paths or URLs.
      *
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     private function sanitizeExpenseSnapshot(array $payload): array
@@ -386,7 +389,7 @@ final class OperationalDocumentSnapshotService
 
     private function resolveCurrency(int $networkId, ?int $posId): string
     {
-        $networkCurrency = \App\Models\NetworkWallet::withTrashed()
+        $networkCurrency = NetworkWallet::withTrashed()
             ->where('network_id', $networkId)
             ->value('currency_code');
         $networkCurrency = $this->requireCurrencyCode($networkCurrency, 'network_wallet');

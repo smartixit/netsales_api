@@ -13,6 +13,7 @@ use App\Models\Role;
 use App\Models\SecurityBan;
 use App\Models\User;
 use App\Models\UserDevice;
+use App\Services\PlatformAdminContinuityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -233,8 +234,6 @@ class PlatformUserAdministrationSecurityTest extends TestCase
         ]);
     }
 
-
-
     public function test_last_active_super_admin_cannot_be_disabled_deleted_or_banned(): void
     {
         $admin = $this->makePlatformUser(RoleKey::SUPER_ADMIN, 'Only Platform Admin');
@@ -248,7 +247,7 @@ class PlatformUserAdministrationSecurityTest extends TestCase
         $this->assertSame(UserStatus::ACTIVE, $freshAdmin->status);
         $this->assertNull($freshAdmin->deleted_at);
         try {
-            app(\App\Services\PlatformAdminContinuityService::class)->assertMutationIsSafe(
+            app(PlatformAdminContinuityService::class)->assertMutationIsSafe(
                 $adminRole,
                 $freshAdmin,
                 nextStatus: UserStatus::INACTIVE,
@@ -319,7 +318,7 @@ class PlatformUserAdministrationSecurityTest extends TestCase
             ]
         );
 
-        $user = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $user = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => $name,
             'user_phone_number' => '77'.random_int(1000000, 9999999),

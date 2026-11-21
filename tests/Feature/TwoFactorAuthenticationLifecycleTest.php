@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\DeviceType;
 use App\Enums\OtpType;
+use App\Enums\RoleScope;
 use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
 use App\Models\Otp;
@@ -18,22 +19,26 @@ class TwoFactorAuthenticationLifecycleTest extends TestCase
     use DatabaseTransactions;
 
     protected User $user;
+
     protected UserDevice $device;
+
     protected string $sessionId;
+
     protected string $deviceUuid;
+
     protected string $password = 'SecureP@ss123';
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->deviceUuid = 'TEST-2FA-DEVICE-UUID-' . bin2hex(random_bytes(6));
+        $this->deviceUuid = 'TEST-2FA-DEVICE-UUID-'.bin2hex(random_bytes(6));
 
-        $this->user = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $this->user = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => '2FA Test User',
-            'user_phone_number' => '77' . random_int(1000000, 9999999),
-            'user_email' => 'user2fa_' . uniqid() . '@example.com',
+            'user_phone_number' => '77'.random_int(1000000, 9999999),
+            'user_email' => 'user2fa_'.uniqid().'@example.com',
             'user_password' => Hash::make($this->password),
             'status' => UserStatus::ACTIVE,
             'user_2fa_enabled' => false,
@@ -213,7 +218,7 @@ class TwoFactorAuthenticationLifecycleTest extends TestCase
         // User has 2FA enabled
         $this->user->update(['user_2fa_enabled' => true]);
 
-        $secondaryDeviceUuid = 'SECONDARY-DEV-' . bin2hex(random_bytes(6));
+        $secondaryDeviceUuid = 'SECONDARY-DEV-'.bin2hex(random_bytes(6));
         UserDevice::create([
             'user_id' => $this->user->user_id,
             'device_uuid' => $secondaryDeviceUuid,

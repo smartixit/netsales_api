@@ -14,8 +14,8 @@ use Tests\TestCase;
 
 class BillingSelfServiceCursorPaginationTest extends TestCase
 {
-    use DatabaseTransactions;
     use CreatesActiveBillingSubscription;
+    use DatabaseTransactions;
 
     public function test_subscription_collection_uses_cursor_pages_without_repeating_rows(): void
     {

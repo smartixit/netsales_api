@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
+use App\Enums\RoleScope;
 use App\Enums\SaleType;
 use App\Enums\UserStatus;
 use App\Models\Network;
@@ -16,10 +17,10 @@ use App\Models\User;
 use App\Models\UserDevice;
 use App\Models\UserSession;
 use App\Models\VoucherPackage;
+use App\Models\VoucherPackageDiscount;
 use App\Services\ProcurementPricingSnapshotService;
 use App\Services\VoucherPackageDiscountService;
 use App\Support\DecimalAmount;
-use App\Models\VoucherPackageDiscount;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -78,7 +79,7 @@ class VoucherRequestAndInvoicingTest extends TestCase
             'X-Bypass-Encryption' => 'true',
         ];
 
-        $posUser = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $posUser = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Agent '.$suffix,
             'user_phone_number' => '73'.rand(1000000, 9999999),

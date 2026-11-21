@@ -44,6 +44,8 @@ class VoucherPackage extends Model
     {
         return [
             'package_balance' => 'decimal:2',
+            'package_uptime' => 'integer',
+            'package_validity' => 'integer',
             'package_voucher_count' => 'integer',
             'package_voucher_price' => 'decimal:2',
             'package_default_cash_discount' => 'decimal:2',

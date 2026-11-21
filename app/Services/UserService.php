@@ -213,7 +213,7 @@ class UserService
             return false;
         }
 
-        return DB::transaction(function () use ($id, $user) {
+        return DB::transaction(function () use ($id) {
             $adminRole = $this->platformAdminContinuityService->lockSuperAdminRole();
             $lockedUser = User::query()->lockForUpdate()->findOrFail($id);
             $this->platformAdminContinuityService->assertMutationIsSafe($adminRole, $lockedUser, willBeDeleted: true);
@@ -278,6 +278,7 @@ class UserService
             foreach ($ids as $id) {
                 $this->sessionValidatorService->invalidateAllUserSessions((int) $id);
             }
+
             return $this->userRepository->bulkDelete($ids);
         });
     }
@@ -307,6 +308,7 @@ class UserService
             foreach ($ids as $id) {
                 $this->sessionValidatorService->invalidateAllUserSessions((int) $id);
             }
+
             return $this->userRepository->bulkForceDelete($ids);
         });
     }

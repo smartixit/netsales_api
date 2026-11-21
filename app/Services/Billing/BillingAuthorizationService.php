@@ -3,7 +3,9 @@
 namespace App\Services\Billing;
 
 use App\Enums\RoleScope;
-use App\Models\{BillingAccount, Network, User};
+use App\Models\BillingAccount;
+use App\Models\Network;
+use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -32,7 +34,7 @@ class BillingAuthorizationService
         $network = Network::query()->find($networkId);
 
         if (! $network) {
-            throw (new ModelNotFoundException())->setModel(Network::class, [$networkId]);
+            throw (new ModelNotFoundException)->setModel(Network::class, [$networkId]);
         }
 
         if ((int) $network->owner_id === (int) $user->user_id) {
@@ -57,7 +59,7 @@ class BillingAuthorizationService
         $network = Network::query()->find($networkId);
 
         if (! $network) {
-            throw (new ModelNotFoundException())->setModel(Network::class, [$networkId]);
+            throw (new ModelNotFoundException)->setModel(Network::class, [$networkId]);
         }
 
         if ((int) $network->owner_id !== (int) $user->user_id) {

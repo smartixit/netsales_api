@@ -11,14 +11,45 @@ use Illuminate\Database\Eloquent\Builder;
 
 final class ExpensesReportProvider extends AbstractOperationalReportProvider
 {
-    public function type(): OperationalReportType { return OperationalReportType::EXPENSES; }
-    protected function label(): string { return 'تقرير المصروفات التشغيلية'; }
-    protected function description(): string { return 'المصروفات التشغيلية للشبكة وبنودها المسجلة فعلياً.'; }
-    protected function viewPermission(): string { return 'expenses.report'; }
-    protected function exportPermission(): string { return 'expenses.export'; }
-    protected function scopes(): array { return ['network']; }
-    protected function posSelection(): string { return 'forbidden'; }
-    protected function statusChoices(): array { return []; }
+    public function type(): OperationalReportType
+    {
+        return OperationalReportType::EXPENSES;
+    }
+
+    protected function label(): string
+    {
+        return 'تقرير المصروفات التشغيلية';
+    }
+
+    protected function description(): string
+    {
+        return 'المصروفات التشغيلية للشبكة وبنودها المسجلة فعلياً.';
+    }
+
+    protected function viewPermission(): string
+    {
+        return 'expenses.report';
+    }
+
+    protected function exportPermission(): string
+    {
+        return 'expenses.export';
+    }
+
+    protected function scopes(): array
+    {
+        return ['network'];
+    }
+
+    protected function posSelection(): string
+    {
+        return 'forbidden';
+    }
+
+    protected function statusChoices(): array
+    {
+        return [];
+    }
 
     protected function columns(): array
     {
@@ -54,7 +85,7 @@ final class ExpensesReportProvider extends AbstractOperationalReportProvider
             ->where('network_id', $networkId)
             ->when($pattern !== null, fn (Builder $q): Builder => $q->where(
                 fn (Builder $nested): Builder => $nested
-                   ->where('expense_uuid', 'like', $pattern)
+                    ->where('expense_uuid', 'like', $pattern)
                     ->orWhereHas('items', fn (Builder $item): Builder => $item->where('item_statement', 'like', $pattern))
             ));
 

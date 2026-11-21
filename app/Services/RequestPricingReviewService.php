@@ -525,7 +525,7 @@ class RequestPricingReviewService
      * التحقق الصارم من صحة وتطابق رمز عرض الأسعار الشامل عند تقديم الطلب.
      * يرفض الطلب فوراً إذا انتهت صلاحيته أو تم التلاعب به أو تغيرت أسعار الكتالوج أو الخصومات.
      *
-     * @param array<int, array{package_id: int, voucher_count: int}> $items
+     * @param  array<int, array{package_id: int, voucher_count: int}>  $items
      */
     public function verifyOrderPricingToken(
         int $networkId,

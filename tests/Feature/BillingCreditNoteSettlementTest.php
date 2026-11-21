@@ -2,29 +2,26 @@
 
 namespace Tests\Feature;
 
-use App\Enums\{BillingInvoiceStatus, NetworkStatus};
-use App\Models\{
-    BillingAccount,
-    BillingCreditNote,
-    BillingInvoice,
-    BillingInvoiceLine,
-    BillingPaymentMethod,
-    BillingRevenueRecognitionSchedule,
-    Currency,
-    LedgerJournalEntry,
-    LedgerJournalLine,
-    Network,
-    TreasuryAccount,
-    User
-};
-use App\Services\Billing\{
-    BillingCreditNoteService,
-    BillingLedgerChartService,
-    BillingLedgerService,
-    BillingPaymentService,
-    BillingRefundService,
-    BillingReconciliationService
-};
+use App\Enums\BillingInvoiceStatus;
+use App\Enums\NetworkStatus;
+use App\Models\BillingAccount;
+use App\Models\BillingInvoice;
+use App\Models\BillingInvoiceLine;
+use App\Models\BillingPaymentMethod;
+use App\Models\BillingRevenueRecognitionSchedule;
+use App\Models\Currency;
+use App\Models\LedgerAccount;
+use App\Models\LedgerJournalEntry;
+use App\Models\LedgerJournalLine;
+use App\Models\Network;
+use App\Models\TreasuryAccount;
+use App\Models\User;
+use App\Services\Billing\BillingCreditNoteService;
+use App\Services\Billing\BillingLedgerChartService;
+use App\Services\Billing\BillingLedgerService;
+use App\Services\Billing\BillingPaymentService;
+use App\Services\Billing\BillingReconciliationService;
+use App\Services\Billing\BillingRefundService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -43,7 +40,7 @@ class BillingCreditNoteSettlementTest extends TestCase
 
     private BillingInvoiceLine $line;
 
-    /** @var array<int, \App\Models\LedgerAccount> */
+    /** @var array<int, LedgerAccount> */
     private array $accounts;
 
     protected function setUp(): void

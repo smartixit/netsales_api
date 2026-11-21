@@ -2,8 +2,17 @@
 
 namespace App\Services\Billing;
 
-use App\Enums\{BillingInvoiceStatus, BillingPaymentStatus, BillingSubscriptionStatus};
-use App\Models\{BillingInvoice, BillingPayment, BillingPaymentProof, BillingPaymentIntent, BillingPaymentMethod, BillingSubscription, BillingSubscriptionEvent, Currency, TreasuryAccount, User};
+use App\Enums\BillingInvoiceStatus;
+use App\Enums\BillingPaymentStatus;
+use App\Enums\BillingSubscriptionStatus;
+use App\Models\BillingInvoice;
+use App\Models\BillingPayment;
+use App\Models\BillingPaymentIntent;
+use App\Models\BillingPaymentMethod;
+use App\Models\BillingSubscription;
+use App\Models\BillingSubscriptionEvent;
+use App\Models\TreasuryAccount;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -19,7 +28,7 @@ class BillingPaymentService
     ) {}
 
     /**
-     * @param array{file_path: string, original_name?: string|null, mime_type?: string|null, file_size?: int|null, sha256?: string|null}|null $proof
+     * @param  array{file_path: string, original_name?: string|null, mime_type?: string|null, file_size?: int|null, sha256?: string|null}|null  $proof
      */
     public function recordManualPayment(
         int $invoiceId,

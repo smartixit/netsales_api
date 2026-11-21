@@ -6,6 +6,7 @@ use App\Enums\InvoicePaymentStatus;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\SaleType;
 use App\Enums\UserStatus;
 use App\Models\Directorate;
@@ -58,7 +59,7 @@ class TenantIsolationSecurityTest extends TestCase
         $dir = Directorate::first() ?? Directorate::create(['governorate_id' => $gov->governorate_id, 'directorate_name' => 'Main']);
 
         // 1. Create Network Owners
-        $this->networkOwnerA = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $this->networkOwnerA = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net Owner A',
             'user_phone_number' => '77111111'.rand(10, 99),
@@ -66,7 +67,7 @@ class TenantIsolationSecurityTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $this->networkOwnerB = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $this->networkOwnerB = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net Owner B',
             'user_phone_number' => '77222222'.rand(10, 99),
@@ -75,7 +76,7 @@ class TenantIsolationSecurityTest extends TestCase
         ]);
 
         // 2. Create POS Owners
-        $this->posOwnerA = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $this->posOwnerA = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Owner A',
             'user_phone_number' => '77333333'.rand(10, 99),
@@ -83,7 +84,7 @@ class TenantIsolationSecurityTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $this->posOwnerB = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $this->posOwnerB = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Owner B',
             'user_phone_number' => '77444444'.rand(10, 99),

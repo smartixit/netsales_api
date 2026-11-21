@@ -53,6 +53,7 @@ final class OperationalReportFilterValidator
 
             if (($filter['required'] ?? false) && ! $hasValue) {
                 $errors->add("filters.{$filterId}", 'هذا المرشح مطلوب لهذا التقرير.');
+
                 continue;
             }
 

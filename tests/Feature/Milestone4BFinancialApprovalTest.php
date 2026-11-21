@@ -7,6 +7,7 @@ use App\Enums\NetworkStatus;
 use App\Enums\NotificationType;
 use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
+use App\Enums\RoleScope;
 use App\Enums\SaleType;
 use App\Enums\UserStatus;
 use App\Enums\WalletOperationType;
@@ -495,7 +496,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $suffix2 = uniqid();
 
         // شبكة أخرى ومستخدم آخر
-        $otherUser = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $otherUser = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'مستخدم آخر '.$suffix2,
@@ -810,7 +811,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
     public function test_approval_notifications_sent_to_correct_pos_and_network_recipients(): void
     {
         // إنشاء مستخدم مستقل كنقطة بيع ومستخدم كمالك للشبكة
-        $posOwner = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $posOwner = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'وكيل نقطة بيع مستقل '.uniqid(),
             'user_phone_number' => '71'.rand(1000000, 9999999),
@@ -819,7 +820,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
             'status' => 'ACTIVE',
         ]);
 
-        $netOwner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $netOwner = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'مالك الشبكة المستقل '.uniqid(),
             'user_phone_number' => '77'.rand(1000000, 9999999),

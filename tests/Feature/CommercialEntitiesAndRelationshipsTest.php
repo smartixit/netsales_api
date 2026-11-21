@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Models\Directorate;
 use App\Models\Governorate;
@@ -17,13 +18,13 @@ use App\Models\PosUser;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Tests\TestCase;
 use Tests\Concerns\CreatesActiveBillingSubscription;
+use Tests\TestCase;
 
 class CommercialEntitiesAndRelationshipsTest extends TestCase
 {
-    use DatabaseTransactions;
     use CreatesActiveBillingSubscription;
+    use DatabaseTransactions;
 
     protected User $superAdmin;
 
@@ -74,7 +75,7 @@ class CommercialEntitiesAndRelationshipsTest extends TestCase
         })->firstOrFail();
 
         // 2. Network Owners
-        $this->networkOwnerA = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $this->networkOwnerA = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net Owner A',
             'user_phone_number' => '77110000'.rand(10, 99),
@@ -82,7 +83,7 @@ class CommercialEntitiesAndRelationshipsTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $this->networkOwnerB = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $this->networkOwnerB = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net Owner B',
             'user_phone_number' => '77220000'.rand(10, 99),
@@ -91,7 +92,7 @@ class CommercialEntitiesAndRelationshipsTest extends TestCase
         ]);
 
         // 3. POS Owners
-        $this->posOwnerA = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $this->posOwnerA = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Owner A',
             'user_phone_number' => '77330000'.rand(10, 99),
@@ -99,7 +100,7 @@ class CommercialEntitiesAndRelationshipsTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $this->posOwnerB = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $this->posOwnerB = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Owner B',
             'user_phone_number' => '77440000'.rand(10, 99),
@@ -107,7 +108,7 @@ class CommercialEntitiesAndRelationshipsTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $posOwnerC = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $posOwnerC = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Owner C',
             'user_phone_number' => '77550000'.rand(10, 99),

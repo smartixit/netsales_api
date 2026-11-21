@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\BanType;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Models\Network;
 use App\Models\NetworkPos;
@@ -88,7 +89,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
             'status' => NetworkStatus::ACTIVE,
         ]);
 
-        $posUserA = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $posUserA = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Agent A '.$suffix,
             'user_phone_number' => '73'.rand(1000000, 9999999),
@@ -96,7 +97,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $posUserB = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $posUserB = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Agent B '.$suffix,
             'user_phone_number' => '73'.rand(1000000, 9999999),

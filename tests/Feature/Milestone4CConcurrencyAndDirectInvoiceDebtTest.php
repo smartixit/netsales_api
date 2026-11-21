@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\InvoicePaymentStatus;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Enums\RoleScope;
 use App\Enums\SaleType;
 use App\Enums\UserStatus;
 use App\Enums\WalletOperationType;
@@ -54,7 +55,7 @@ class Milestone4CConcurrencyAndDirectInvoiceDebtTest extends TestCase
 
         $suffix = uniqid();
 
-        $this->networkOwner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $this->networkOwner = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'مالك الشبكة المتزامنة '.$suffix,
@@ -79,7 +80,7 @@ class Milestone4CConcurrencyAndDirectInvoiceDebtTest extends TestCase
             'status' => true,
         ]);
 
-        $this->posOwner = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $this->posOwner = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'وكيل نقطة البيع المتزامنة '.$suffix,

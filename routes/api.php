@@ -1,14 +1,14 @@
 <?php
 
 use App\Http\Controllers\API\V1\AdminNotificationController;
-use App\Http\Controllers\API\V1\Billing\BillingCatalogController;
-use App\Http\Controllers\API\V1\Billing\BillingPolicyController;
-use App\Http\Controllers\API\V1\Billing\BillingFinanceController;
-use App\Http\Controllers\API\V1\Billing\BillingSelfServiceController;
-use App\Http\Controllers\API\V1\Billing\BillingTrialEligibilityController;
-use App\Http\Controllers\API\V1\Billing\BillingReportController;
 use App\Http\Controllers\API\V1\AuthController;
 use App\Http\Controllers\API\V1\BackupController;
+use App\Http\Controllers\API\V1\Billing\BillingCatalogController;
+use App\Http\Controllers\API\V1\Billing\BillingFinanceController;
+use App\Http\Controllers\API\V1\Billing\BillingPolicyController;
+use App\Http\Controllers\API\V1\Billing\BillingReportController;
+use App\Http\Controllers\API\V1\Billing\BillingSelfServiceController;
+use App\Http\Controllers\API\V1\Billing\BillingTrialEligibilityController;
 use App\Http\Controllers\API\V1\DashboardController;
 use App\Http\Controllers\API\V1\DebtRepaymentController;
 use App\Http\Controllers\API\V1\DirectorateController;
@@ -21,14 +21,15 @@ use App\Http\Controllers\API\V1\NetworkPosController;
 use App\Http\Controllers\API\V1\NetworkSmsSettingController;
 use App\Http\Controllers\API\V1\NetworkWalletController;
 use App\Http\Controllers\API\V1\NetworkWorkspaceOverviewController;
-use App\Http\Controllers\API\V1\OperationalReportController;
 use App\Http\Controllers\API\V1\NotificationController;
+use App\Http\Controllers\API\V1\OperationalDocumentSnapshotController;
+use App\Http\Controllers\API\V1\OperationalReportController;
 use App\Http\Controllers\API\V1\OtpController;
 use App\Http\Controllers\API\V1\PosController;
 use App\Http\Controllers\API\V1\PosMembershipController;
 use App\Http\Controllers\API\V1\PosWalletController;
-use App\Http\Controllers\API\V1\RequestController;
 use App\Http\Controllers\API\V1\Reporting\ReportController;
+use App\Http\Controllers\API\V1\RequestController;
 use App\Http\Controllers\API\V1\RoleController;
 use App\Http\Controllers\API\V1\SaleInvoiceController;
 use App\Http\Controllers\API\V1\ScheduledTaskRunController;
@@ -524,13 +525,13 @@ Route::prefix('v1')->group(function () {
 
         // Immutable operational document snapshots and issued PDF artifacts.
         Route::prefix('documents/snapshots')->middleware('throttle:api-read')->group(function () {
-            Route::post('/', [\App\Http\Controllers\API\V1\OperationalDocumentSnapshotController::class, 'store'])
+            Route::post('/', [OperationalDocumentSnapshotController::class, 'store'])
                 ->middleware('throttle:api-write')
                 ->name('api.v1.documents.snapshots.store');
-            Route::post('{snapshotUuid}/artifact', [\App\Http\Controllers\API\V1\OperationalDocumentSnapshotController::class, 'storeArtifact'])
+            Route::post('{snapshotUuid}/artifact', [OperationalDocumentSnapshotController::class, 'storeArtifact'])
                 ->middleware('throttle:api-write')
                 ->name('api.v1.documents.snapshots.artifact');
-            Route::get('{snapshotUuid}/download', [\App\Http\Controllers\API\V1\OperationalDocumentSnapshotController::class, 'download'])
+            Route::get('{snapshotUuid}/download', [OperationalDocumentSnapshotController::class, 'download'])
                 ->name('api.v1.documents.snapshots.download');
         });
 
@@ -568,13 +569,13 @@ Route::prefix('v1')->group(function () {
                     Route::get('trial-redemptions/pending', 'pendingRedemptions')->name('api.v1.platform.billing.policies.trials.pending');
                 });
                 Route::middleware(['throttle:api-write', 'permission:billing.create'])->group(function () {
-                Route::post('accounts', [BillingFinanceController::class, 'createAccount'])->name('api.v1.platform.billing.accounts.store');
-                Route::post('subscriptions', [BillingFinanceController::class, 'createSubscription'])->name('api.v1.platform.billing.subscriptions.store');
-            });
+                    Route::post('accounts', [BillingFinanceController::class, 'createAccount'])->name('api.v1.platform.billing.accounts.store');
+                    Route::post('subscriptions', [BillingFinanceController::class, 'createSubscription'])->name('api.v1.platform.billing.subscriptions.store');
+                });
 
-            Route::middleware(['throttle:api-write', 'permission:billing.manage'])->group(function () {
-                Route::post('subscriptions/{subscriptionId}/cancel', [BillingFinanceController::class, 'cancelSubscription'])
-                    ->whereNumber('subscriptionId')->name('api.v1.platform.billing.subscriptions.cancel');
+                Route::middleware(['throttle:api-write', 'permission:billing.manage'])->group(function () {
+                    Route::post('subscriptions/{subscriptionId}/cancel', [BillingFinanceController::class, 'cancelSubscription'])
+                        ->whereNumber('subscriptionId')->name('api.v1.platform.billing.subscriptions.cancel');
                     Route::post('trial-redemptions/{redemptionId}/approve', 'approveRedemption')->name('api.v1.platform.billing.policies.trials.approve');
                     Route::post('trial-redemptions/{redemptionId}/reject', 'rejectRedemption')->name('api.v1.platform.billing.policies.trials.reject');
                     Route::post('subscriptions/{subscriptionId}/trial-adjustments', 'adjustTrial')->name('api.v1.platform.billing.policies.trials.adjust');

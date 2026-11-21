@@ -3,7 +3,12 @@
 namespace App\Services\Billing;
 
 use App\Enums\BillingPaymentStatus;
-use App\Models\{BillingCreditNote, BillingInvoice, BillingPayment, BillingRefund, TreasuryAccount, User};
+use App\Models\BillingCreditNote;
+use App\Models\BillingInvoice;
+use App\Models\BillingPayment;
+use App\Models\BillingRefund;
+use App\Models\TreasuryAccount;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -46,6 +51,7 @@ class BillingRefundService
                     || $existing->reason !== $reason) {
                     throw ValidationException::withMessages(['idempotency_key' => ['مفتاح منع التكرار مستخدم لعملية استرداد مختلفة.']]);
                 }
+
                 return $existing->load(['payment', 'currency', 'creditNote', 'treasuryAccount']);
             }
 
@@ -73,6 +79,7 @@ class BillingRefundService
                     || $existing->reason !== $reason) {
                     throw ValidationException::withMessages(['idempotency_key' => ['مفتاح منع التكرار مستخدم لعملية استرداد مختلفة.']]);
                 }
+
                 return $existing->load(['payment', 'currency', 'creditNote', 'treasuryAccount']);
             }
 

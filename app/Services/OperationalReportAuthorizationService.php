@@ -40,7 +40,7 @@ final class OperationalReportAuthorizationService
 
         $network = Network::query()->find($networkId);
         if (! $network) {
-            throw (new ModelNotFoundException())->setModel(Network::class, [$networkId]);
+            throw (new ModelNotFoundException)->setModel(Network::class, [$networkId]);
         }
 
         $networkMembership = NetworkUser::query()

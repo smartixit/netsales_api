@@ -102,8 +102,7 @@ final class BillingTrialsProvider extends ConfiguredBillingReportProvider
             ->groupBy('r.trial_policy_version_id', 'r.redemption_scope')
             ->get();
 
-        $countStatus = static fn (string $status): int =>
-            (int) ($statuses->firstWhere('status', $status)?->total ?? 0);
+        $countStatus = static fn (string $status): int => (int) ($statuses->firstWhere('status', $status)?->total ?? 0);
 
         $revokedQuery = (clone $query)->where('r.status', 'REVOKED');
         $revokedQuery->whereNotExists(function ($events): void {
@@ -149,8 +148,7 @@ final class BillingTrialsProvider extends ConfiguredBillingReportProvider
                 ->all(),
             'by_policy_version_and_scope' => $policies
                 ->map(static fn ($item): array => [
-                    'trial_policy_version_id' =>
-                        (int) $item->trial_policy_version_id,
+                    'trial_policy_version_id' => (int) $item->trial_policy_version_id,
                     'redemption_scope' => $item->redemption_scope,
                     'count' => (int) $item->total,
                 ])

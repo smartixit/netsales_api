@@ -4,7 +4,9 @@ namespace App\Services\Billing;
 
 use App\Enums\LedgerEntryStatus;
 use App\Interfaces\BillingLedgerRepositoryInterface;
-use App\Models\{Currency, LedgerJournalEntry, User};
+use App\Models\Currency;
+use App\Models\LedgerJournalEntry;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -18,7 +20,7 @@ class BillingLedgerService
     ) {}
 
     /**
-     * @param array<int, array{ledger_account_id:int,debit_minor:int,credit_minor:int,description?:?string}> $lines
+     * @param  array<int, array{ledger_account_id:int,debit_minor:int,credit_minor:int,description?:?string}>  $lines
      */
     public function post(
         int $currencyId,
@@ -140,7 +142,7 @@ class BillingLedgerService
             throw ValidationException::withMessages(['lines' => ['يتطلب القيد المحاسبي سطرين على الأقل.']]);
         }
 
-        return array_map(static function (array $line) use ($currency): array {
+        return array_map(static function (array $line): array {
             $accountId = filter_var($line['ledger_account_id'] ?? null, FILTER_VALIDATE_INT);
             $debit = filter_var($line['debit_minor'] ?? 0, FILTER_VALIDATE_INT);
             $credit = filter_var($line['credit_minor'] ?? 0, FILTER_VALIDATE_INT);

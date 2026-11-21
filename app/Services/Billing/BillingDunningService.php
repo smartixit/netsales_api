@@ -2,10 +2,14 @@
 
 namespace App\Services\Billing;
 
+use App\Enums\BillingInvoiceStatus;
+use App\Enums\BillingSubscriptionStatus;
+use App\Models\BillingDunningAttempt;
+use App\Models\BillingInvoice;
+use App\Models\BillingSubscription;
+use App\Models\BillingSubscriptionAlert;
+use App\Models\BillingSubscriptionEvent;
 use Carbon\CarbonImmutable;
-
-use App\Enums\{BillingInvoiceStatus, BillingSubscriptionStatus};
-use App\Models\{BillingDunningAttempt, BillingInvoice, BillingSubscription, BillingSubscriptionAlert, BillingSubscriptionEvent};
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -34,7 +38,9 @@ class BillingDunningService
 
     public function scheduleSubscriptionAlerts(BillingSubscription $subscription): void
     {
-        if (! $subscription->current_period_end || ! $subscription->dunning_policy_version_id) return;
+        if (! $subscription->current_period_end || ! $subscription->dunning_policy_version_id) {
+            return;
+        }
         foreach ((array) ($subscription->dunning_policy_snapshot['pre_renewal_alert_days'] ?? []) as $days) {
             BillingSubscriptionAlert::query()->firstOrCreate([
                 'billing_subscription_id' => $subscription->billing_subscription_id,
@@ -56,7 +62,9 @@ class BillingDunningService
         foreach ($ids as $id) {
             $done = DB::transaction(function () use ($id): bool {
                 $alert = BillingSubscriptionAlert::query()->lockForUpdate()->find($id);
-                if (! $alert || $alert->status !== 'PENDING') return false;
+                if (! $alert || $alert->status !== 'PENDING') {
+                    return false;
+                }
                 $subscription = BillingSubscription::query()->with('billingAccount.network')->lockForUpdate()->find($alert->billing_subscription_id);
                 if (! $subscription
                     || ! in_array($subscription->status, [BillingSubscriptionStatus::ACTIVE, BillingSubscriptionStatus::TRIALING], true)
@@ -64,7 +72,10 @@ class BillingDunningService
                     || ! $subscription->current_period_end
                     || $subscription->current_period_end->lte(now('Asia/Aden'))
                     || ! $subscription->current_period_end->equalTo($alert->period_end)) {
-                    $alert->status = 'CANCELLED'; $alert->save(); return false;
+                    $alert->status = 'CANCELLED';
+                    $alert->save();
+
+                    return false;
                 }
                 $uuid = (string) Str::uuid();
                 DB::table('outbox_messages')->insert([
@@ -81,11 +92,18 @@ class BillingDunningService
                     'status' => 'PENDING', 'retry_count' => 0, 'max_retries' => 5,
                     'created_at' => now('Asia/Aden'), 'updated_at' => now('Asia/Aden'),
                 ]);
-                $alert->status = 'QUEUED'; $alert->queued_at = now('Asia/Aden'); $alert->message_uuid = $uuid; $alert->save();
+                $alert->status = 'QUEUED';
+                $alert->queued_at = now('Asia/Aden');
+                $alert->message_uuid = $uuid;
+                $alert->save();
+
                 return true;
             }, 3);
-            if ($done) $processed++;
+            if ($done) {
+                $processed++;
+            }
         }
+
         return $processed;
     }
 

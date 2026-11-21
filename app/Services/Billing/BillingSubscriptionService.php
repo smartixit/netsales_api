@@ -2,8 +2,18 @@
 
 namespace App\Services\Billing;
 
-use App\Enums\{BillingInvoiceStatus, BillingPlanVersionStatus, BillingSubscriptionStatus, BillingInterval};
-use App\Models\{BillingAccount, BillingPrice, BillingSubscription, BillingSubscriptionEvent, BillingTrialPolicyVersion, Network, User};
+use App\Enums\BillingInterval;
+use App\Enums\BillingInvoiceStatus;
+use App\Enums\BillingPlanVersionStatus;
+use App\Enums\BillingSubscriptionStatus;
+use App\Models\BillingAccount;
+use App\Models\BillingInvoice;
+use App\Models\BillingPrice;
+use App\Models\BillingSubscription;
+use App\Models\BillingSubscriptionEvent;
+use App\Models\BillingTrialPolicyVersion;
+use App\Models\Network;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -20,7 +30,7 @@ class BillingSubscriptionService
     /**
      * Creates an incomplete subscription and its first invoice; entitlements are not activated before verified payment.
      *
-     * @return array{subscription: BillingSubscription, invoice: ?\App\Models\BillingInvoice}
+     * @return array{subscription: BillingSubscription, invoice: ?BillingInvoice}
      */
     public function purchase(int $billingAccountId, int $priceId, User $actor, bool $platformOperation = false): array
     {

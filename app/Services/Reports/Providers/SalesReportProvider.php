@@ -8,19 +8,53 @@ use App\Models\User;
 use App\Services\Reports\AbstractOperationalReportProvider;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
 
 final class SalesReportProvider extends AbstractOperationalReportProvider
 {
-    public function type(): OperationalReportType { return OperationalReportType::SALES; }
-    protected function label(): string { return 'تقرير المبيعات والفواتير'; }
-    protected function description(): string { return 'فواتير البيع ومبالغها وحالة السداد ضمن نطاق الشبكة ونقطة البيع.'; }
-    protected function viewPermission(): string { return 'sales.report'; }
-    protected function exportPermission(): string { return 'sales.export'; }
-    protected function scopes(): array { return ['network', 'pos']; }
-    protected function posSelection(): string { return 'optional'; }
-    protected function statusChoices(): array { return ['PAID', 'PARTIALLY_PAID', 'UNPAID']; }
-    protected function saleTypeChoices(): array { return ['CASH', 'CREDIT']; }
+    public function type(): OperationalReportType
+    {
+        return OperationalReportType::SALES;
+    }
+
+    protected function label(): string
+    {
+        return 'تقرير المبيعات والفواتير';
+    }
+
+    protected function description(): string
+    {
+        return 'فواتير البيع ومبالغها وحالة السداد ضمن نطاق الشبكة ونقطة البيع.';
+    }
+
+    protected function viewPermission(): string
+    {
+        return 'sales.report';
+    }
+
+    protected function exportPermission(): string
+    {
+        return 'sales.export';
+    }
+
+    protected function scopes(): array
+    {
+        return ['network', 'pos'];
+    }
+
+    protected function posSelection(): string
+    {
+        return 'optional';
+    }
+
+    protected function statusChoices(): array
+    {
+        return ['PAID', 'PARTIALLY_PAID', 'UNPAID'];
+    }
+
+    protected function saleTypeChoices(): array
+    {
+        return ['CASH', 'CREDIT'];
+    }
 
     protected function columns(): array
     {
@@ -66,7 +100,7 @@ final class SalesReportProvider extends AbstractOperationalReportProvider
             ->when($filters['status'] ?? null, fn (Builder $q, string $v): Builder => $q->where('payment_status', $v))
             ->when($pattern !== null, fn (Builder $q): Builder => $q->where(
                 fn (Builder $nested): Builder => $nested
-                   ->where('invoice_uuid', 'like', $pattern)
+                    ->where('invoice_uuid', 'like', $pattern)
                     ->orWhereHas('pos', fn (Builder $pos): Builder => $pos->where('pos_name', 'like', $pattern))
             ));
 

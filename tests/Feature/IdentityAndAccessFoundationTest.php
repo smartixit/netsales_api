@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\RoleScope;
 use App\Interfaces\UserSessionRepositoryInterface;
 use App\Models\Network;
 use App\Models\NetworkPos;
@@ -30,7 +31,7 @@ class IdentityAndAccessFoundationTest extends TestCase
     {
         $suffix = $label.'-'.bin2hex(random_bytes(4));
 
-        $owner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $owner = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Wallet Tenant '.$suffix,
             'user_phone_number' => '77'.random_int(1000000, 9999999),
@@ -144,7 +145,7 @@ class IdentityAndAccessFoundationTest extends TestCase
         // مستخدم 2 مع جهاز مستقل
         $user2 = User::where('user_id', '!=', $user1->user_id)->first();
         if (! $user2) {
-            $user2 = $this->createUserWithScope(\App\Enums\RoleScope::PLATFORM, [
+            $user2 = $this->createUserWithScope(RoleScope::PLATFORM, [
                 'user_full_name' => 'User Two Test',
                 'user_phone_number' => '779998877',
                 'user_password' => bcrypt('Password@123'),

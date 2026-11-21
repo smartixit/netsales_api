@@ -6,6 +6,7 @@ use App\Enums\LinkingChallengeStatus;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Models\Directorate;
 use App\Models\Governorate;
@@ -19,13 +20,13 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
-use Tests\TestCase;
 use Tests\Concerns\CreatesActiveBillingSubscription;
+use Tests\TestCase;
 
 class NetworkPosLinkingChallengeTest extends TestCase
 {
-    use DatabaseTransactions;
     use CreatesActiveBillingSubscription;
+    use DatabaseTransactions;
 
     protected User $networkOwner;
 
@@ -70,7 +71,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             $posRole->permissions()->syncWithoutDetaching($permIdsPos);
         }
 
-        $this->networkOwner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $this->networkOwner = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net Owner Challenge Test',
             'user_phone_number' => '77330000'.rand(10, 99),
@@ -81,7 +82,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             $this->networkOwner->permissions()->syncWithoutDetaching($permIdsNet);
         }
 
-        $this->posOwner = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $this->posOwner = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'Pos Owner Challenge Test',
             'user_phone_number' => '77440000'.rand(10, 99),
@@ -92,7 +93,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             $this->posOwner->permissions()->syncWithoutDetaching($permIdsPos);
         }
 
-        $this->unauthorizedUser = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $this->unauthorizedUser = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'Unauthorized User Test',
             'user_phone_number' => '77550000'.rand(10, 99),
@@ -549,7 +550,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
         // 2. Network Owner B from a different network (who has networks.edit) gets 422 IDOR rejection
         $netRole = Role::where('role_key', RoleKey::NETWORK_OWNER->value)->first();
         $netEditPerm = Permission::where('permission_key', 'networks.edit')->first();
-        $ownerB = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $ownerB = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Cross Tenant Net Owner B',
             'user_phone_number' => '77990000'.rand(10, 99),

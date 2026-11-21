@@ -9,6 +9,7 @@ use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
+use App\Models\VoucherPackage;
 use App\Models\VoucherPackageDiscount;
 use App\Services\Billing\Money;
 use App\Support\DecimalAmount;
@@ -434,7 +435,7 @@ class VoucherPackageDiscountService
      * إرفاق لقطة تعرفة دفعيّة بباقات صفحة الكتالوج، خاصة بنقطة البيع المحددة.
      * القيم الصحيحة بوحدة العملة الصغرى ومعدلات الخصم بوحدات basis points.
      *
-     * @param Collection<int, \App\Models\VoucherPackage>|CursorPaginator $packages
+     * @param  Collection<int, VoucherPackage>|CursorPaginator  $packages
      */
     public function attachProcurementPricing(int $networkId, int $posId, Collection|CursorPaginator $packages): void
     {

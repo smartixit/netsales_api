@@ -14,7 +14,7 @@ class ReportAuthorizationService
     ) {}
 
     /**
-     * @param array<string, mixed> $definition
+     * @param  array<string, mixed>  $definition
      */
     public function authorizeNetworkDefinition(
         User $actor,
@@ -35,7 +35,7 @@ class ReportAuthorizationService
     }
 
     /**
-     * @param array<string, mixed> $definition
+     * @param  array<string, mixed>  $definition
      */
     public function authorizePlatformDefinition(User $actor, array $definition): void
     {

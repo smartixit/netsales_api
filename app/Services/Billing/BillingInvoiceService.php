@@ -3,8 +3,15 @@
 namespace App\Services\Billing;
 
 use App\Enums\BillingInvoiceStatus;
+use App\Enums\BillingPaymentStatus;
 use App\Enums\LedgerEntryStatus;
-use App\Models\{BillingInvoice, BillingSubscription, Currency, LedgerJournalEntry, User};
+use App\Models\BillingInvoice;
+use App\Models\BillingPayment;
+use App\Models\BillingRevenueRecognitionSchedule;
+use App\Models\BillingSubscription;
+use App\Models\BillingUsageAggregate;
+use App\Models\LedgerJournalEntry;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -221,6 +228,7 @@ class BillingInvoiceService
                             (int) ($immediateRevenueByAccount['4100'] ?? 0),
                             $revenueBaseMinor
                         );
+
                         continue;
                     }
 
@@ -245,6 +253,7 @@ class BillingInvoiceService
                             'status' => $holdRevenueRecognition ? 'HOLD' : 'PENDING',
                         ];
                     }
+
                     continue;
                 }
 
@@ -269,6 +278,7 @@ class BillingInvoiceService
                             'status' => 'HOLD',
                         ];
                     }
+
                     continue;
                 }
 
@@ -331,7 +341,7 @@ class BillingInvoiceService
             );
 
             foreach ($recognitionSchedules as $schedule) {
-                \App\Models\BillingRevenueRecognitionSchedule::query()->create($schedule);
+                BillingRevenueRecognitionSchedule::query()->create($schedule);
             }
 
             return $invoice->load(['lines', 'currency', 'billingAccount']);
@@ -351,9 +361,9 @@ class BillingInvoiceService
                 throw ValidationException::withMessages(['invoice_id' => ['لا يمكن إلغاء فاتورة مدفوعة أو مسددة جزئياً أو سبق إغلاقها.']]);
             }
 
-            $hasPendingPayments = \App\Models\BillingPayment::query()
+            $hasPendingPayments = BillingPayment::query()
                 ->where('invoice_id', $invoice->invoice_id)
-                ->where('status', \App\Enums\BillingPaymentStatus::PENDING_REVIEW)
+                ->where('status', BillingPaymentStatus::PENDING_REVIEW)
                 ->exists();
 
             if ($hasPendingPayments) {
@@ -414,7 +424,7 @@ class BillingInvoiceService
             return;
         }
 
-        $aggregates = \App\Models\BillingUsageAggregate::query()
+        $aggregates = BillingUsageAggregate::query()
             ->with('meter')
             ->where('billing_subscription_id', $subscription->billing_subscription_id)
             ->where('period_start', $periodStart)

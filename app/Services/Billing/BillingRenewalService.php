@@ -2,8 +2,11 @@
 
 namespace App\Services\Billing;
 
-use App\Enums\{BillingInvoiceStatus, BillingSubscriptionStatus, BillingInterval};
-use App\Models\{BillingSubscription, BillingSubscriptionEvent};
+use App\Enums\BillingInterval;
+use App\Enums\BillingInvoiceStatus;
+use App\Enums\BillingSubscriptionStatus;
+use App\Models\BillingSubscription;
+use App\Models\BillingSubscriptionAlert;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -83,7 +86,7 @@ class BillingRenewalService
                         'status' => 'COMPLETED',
                         'completed_at' => now('Asia/Aden'),
                     ]);
-                    \App\Models\BillingSubscriptionAlert::query()
+                    BillingSubscriptionAlert::query()
                         ->where('billing_subscription_id', $subscription->billing_subscription_id)
                         ->where('status', 'PENDING')
                         ->update(['status' => 'CANCELLED']);
@@ -94,6 +97,7 @@ class BillingRenewalService
                         'payload' => ['trial_end' => $subscription->trial_end?->toDateTimeString()],
                         'occurred_at' => now('Asia/Aden'),
                     ]);
+
                     return 'TRIAL_EXPIRED';
                 }
 

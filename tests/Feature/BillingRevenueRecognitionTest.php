@@ -2,19 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Enums\{BillingInvoiceStatus, NetworkStatus};
-use App\Models\{
-    BillingAccount,
-    BillingInvoice,
-    BillingInvoiceLine,
-    BillingRevenueRecognitionEntry,
-    BillingRevenueRecognitionSchedule,
-    Currency,
-    LedgerJournalEntry,
-    LedgerJournalLine,
-    Network,
-    User
-};
+use App\Enums\BillingInvoiceStatus;
+use App\Enums\NetworkStatus;
+use App\Models\BillingAccount;
+use App\Models\BillingInvoice;
+use App\Models\BillingInvoiceLine;
+use App\Models\BillingRevenueRecognitionEntry;
+use App\Models\BillingRevenueRecognitionSchedule;
+use App\Models\Currency;
+use App\Models\LedgerJournalEntry;
+use App\Models\Network;
+use App\Models\User;
 use App\Services\Billing\BillingRevenueRecognitionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\DatabaseTransactions;

@@ -46,18 +46,19 @@ class StoreVoucherPackageRequest extends FormRequest
             ],
             'package_balance' => [
                 'nullable',
-                'string',
-                'max:20',
+                'numeric',
+                'min:0',
+                'max:999999.99',
             ],
             'package_uptime' => [
                 'nullable',
-                'string',
-                'max:20',
+                'integer',
+                'min:0',
             ],
             'package_validity' => [
                 'nullable',
-                'string',
-                'max:20',
+                'integer',
+                'min:0',
             ],
             'package_voucher_count' => [
                 'nullable',
@@ -101,19 +102,19 @@ class StoreVoucherPackageRequest extends FormRequest
         return (string) ($this->package_color ?? '0xFF0D7A5F');
     }
 
-    public function getPackageBalance(): ?string
+    public function getPackageBalance(): ?float
     {
-        return $this->package_balance ? (string) $this->package_balance : null;
+        return $this->filled('package_balance') ? (float) $this->package_balance : null;
     }
 
-    public function getPackageUptime(): ?string
+    public function getPackageUptime(): ?int
     {
-        return $this->package_uptime ? (string) $this->package_uptime : null;
+        return $this->filled('package_uptime') ? (int) $this->package_uptime : null;
     }
 
-    public function getPackageValidity(): ?string
+    public function getPackageValidity(): ?int
     {
-        return $this->package_validity ? (string) $this->package_validity : null;
+        return $this->filled('package_validity') ? (int) $this->package_validity : null;
     }
 
     public function getPackageVoucherCount(): int

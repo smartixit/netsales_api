@@ -10,7 +10,10 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
 {
     public function __construct(protected readonly array $config) {}
 
-    public function key(): string { return $this->config['key']; }
+    public function key(): string
+    {
+        return $this->config['key'];
+    }
 
     public function definition(): array
     {
@@ -30,7 +33,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
                     'choices' => array_map(static fn ($value): array => ['value' => $value, 'label_key' => 'billing.status.'.$value], $this->config['status_choices'] ?? []),
                 ],
                 ['id' => 'search', 'kind' => 'text', 'label' => 'بحث'],
-            ], fn (array $filter): bool => in_array($filter['id'], $this->config['filter_ids'] ?? ['from_date','to_date','status','search'], true))),
+            ], fn (array $filter): bool => in_array($filter['id'], $this->config['filter_ids'] ?? ['from_date', 'to_date', 'status', 'search'], true))),
             'columns' => $this->config['columns'],
             'metrics' => $this->config['metrics'] ?? [],
             'chart_slots' => $this->config['chart_slots'] ?? [],
@@ -56,7 +59,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
      * Apply the same configured free-text search to specialized summary queries.
      * The caller supplies aliases matching its own query shape.
      *
-     * @param array<int, string> $columns
+     * @param  array<int, string>  $columns
      */
     protected function applySearchColumns(
         Builder $query,
@@ -111,8 +114,12 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             }
         }
         $dateColumn = $this->config['date'];
-        if (! empty($filters['from_date'])) $query->whereDate($dateColumn, '>=', $filters['from_date']);
-        if (! empty($filters['to_date'])) $query->whereDate($dateColumn, '<=', $filters['to_date']);
+        if (! empty($filters['from_date'])) {
+            $query->whereDate($dateColumn, '>=', $filters['from_date']);
+        }
+        if (! empty($filters['to_date'])) {
+            $query->whereDate($dateColumn, '<=', $filters['to_date']);
+        }
         if (! empty($filters['status']) && ! empty($this->config['status'])) {
             $query->where($this->config['status'], strtoupper((string) $filters['status']));
         }
@@ -134,6 +141,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
     {
         $query = $this->query($networkId, $filters);
         $query->select($this->config['select']);
+
         return $query
             ->orderByDesc($this->config['date'])
             ->orderByDesc($this->config['key_column'])
@@ -184,18 +192,18 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
                 [$pie('invoice_status_distribution', 'توزيع حالات الفواتير', $summary['status_distribution'] ?? [], 'status', 'count')],
                 collect($summary['amounts_by_currency'] ?? [])->map(
                     fn ($item): array => $bar('invoice_amounts_'.$item['currency_code'], 'الفواتير والرصيد المستحق', (string) $item['currency_code'], [[
-                        'label'=>'الفواتير','invoiced'=>(int)$item['invoiced_minor'],
-                        'credited'=>(int)$item['credited_minor'],'outstanding'=>(int)$item['outstanding_minor'],
-                    ]], [['key'=>'invoiced','label'=>'إجمالي الفواتير'],['key'=>'credited','label'=>'الإشعارات الدائنة'],['key'=>'outstanding','label'=>'المستحق']])
+                        'label' => 'الفواتير', 'invoiced' => (int) $item['invoiced_minor'],
+                        'credited' => (int) $item['credited_minor'], 'outstanding' => (int) $item['outstanding_minor'],
+                    ]], [['key' => 'invoiced', 'label' => 'إجمالي الفواتير'], ['key' => 'credited', 'label' => 'الإشعارات الدائنة'], ['key' => 'outstanding', 'label' => 'المستحق']])
                 )->all()
             ),
             'collections' => array_merge(
                 [$pie('collection_status_distribution', 'حالات التحصيل', $summary['collection_statuses'] ?? [], 'status', 'count')],
                 collect($summary['collections_by_currency'] ?? [])->map(
                     fn ($item): array => $bar('collections_'.$item['currency_code'], 'إجمالي وصافي التحصيل', (string) $item['currency_code'], [[
-                        'label'=>'التحصيل','gross'=>(int)$item['gross_collected_minor'],
-                        'refunded'=>(int)$item['refunded_minor'],'net'=>(int)$item['net_collected_minor'],
-                    ]], [['key'=>'gross','label'=>'إجمالي التحصيل'],['key'=>'refunded','label'=>'المسترد'],['key'=>'net','label'=>'الصافي']])
+                        'label' => 'التحصيل', 'gross' => (int) $item['gross_collected_minor'],
+                        'refunded' => (int) $item['refunded_minor'], 'net' => (int) $item['net_collected_minor'],
+                    ]], [['key' => 'gross', 'label' => 'إجمالي التحصيل'], ['key' => 'refunded', 'label' => 'المسترد'], ['key' => 'net', 'label' => 'الصافي']])
                 )->all()
             ),
             'receivables' => collect($summary['aging_by_currency'] ?? [])->map(
@@ -206,23 +214,23 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
                     'days_31_60' => (int) $item['days_31_60_minor'],
                     'days_61_90' => (int) $item['days_61_90_minor'],
                     'over_90' => (int) $item['over_90_minor'],
-                ]], [['key'=>'current','label'=>'غير متأخر'],['key'=>'days_1_30','label'=>'1–30'],['key'=>'days_31_60','label'=>'31–60'],['key'=>'days_61_90','label'=>'61–90'],['key'=>'over_90','label'=>'+90']])
+                ]], [['key' => 'current', 'label' => 'غير متأخر'], ['key' => 'days_1_30', 'label' => '1–30'], ['key' => 'days_31_60', 'label' => '31–60'], ['key' => 'days_61_90', 'label' => '61–90'], ['key' => 'over_90', 'label' => '+90']])
             )->values()->all(),
             'usage' => collect($summary['amounts_by_currency'] ?? [])->map(
                 fn ($item): array => $bar('usage_amount_'.$item['currency_code'], 'قيمة الاستخدام', (string) $item['currency_code'], [[
-                    'label'=>'الاستخدام','amount'=>(int)$item['amount_minor'],
-                ]], [['key'=>'amount','label'=>'قيمة الاستخدام']])
+                    'label' => 'الاستخدام', 'amount' => (int) $item['amount_minor'],
+                ]], [['key' => 'amount', 'label' => 'قيمة الاستخدام']])
             )->values()->all(),
             'dunning' => [$pie('dunning_outcomes', 'نتائج محاولات التحصيل', $summary['status_distribution'] ?? [], 'status', 'count')],
             'refunds' => collect($summary['amounts_by_currency'] ?? [])->map(
                 fn ($item): array => $bar('refunds_'.$item['currency_code'], 'مبالغ الاسترداد', (string) $item['currency_code'], [[
-                    'label'=>'الاستردادات','amount'=>(int)$item['amount_minor'],
-                ]], [['key'=>'amount','label'=>'المبلغ المسترد']])
+                    'label' => 'الاستردادات', 'amount' => (int) $item['amount_minor'],
+                ]], [['key' => 'amount', 'label' => 'المبلغ المسترد']])
             )->values()->all(),
             'revenue_recognition' => collect($summary['revenue_by_currency'] ?? [])->map(
                 fn ($item): array => $bar('revenue_'.$item['currency_code'], 'الإيراد المعترف به والمؤجل', (string) $item['currency_code'], [[
-                    'label'=>'الإيراد','recognized'=>(int)$item['recognized_in_period_minor'],'deferred'=>(int)$item['deferred_revenue_minor'],
-                ]], [['key'=>'recognized','label'=>'معترف به'],['key'=>'deferred','label'=>'مؤجل']])
+                    'label' => 'الإيراد', 'recognized' => (int) $item['recognized_in_period_minor'], 'deferred' => (int) $item['deferred_revenue_minor'],
+                ]], [['key' => 'recognized', 'label' => 'معترف به'], ['key' => 'deferred', 'label' => 'مؤجل']])
             )->values()->all(),
             default => [],
         };
@@ -232,6 +240,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
     {
         $query = $this->query($networkId, $filters);
         $query->select($this->config['select']);
+
         return $query->orderByDesc($this->config['date'])
             ->orderByDesc($this->config['key_column'])
             ->cursor();
@@ -264,6 +273,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
                     'amount_minor' => (int) $row->amount_minor,
                 ])->all();
         }
+
         return $result;
     }
 }

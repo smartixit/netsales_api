@@ -44,6 +44,7 @@ class BillingLaunchCatalogSeeder extends Seeder
                     $this->command?->warn(
                         'Skipped [starter]: the Starter trial policy has no editable draft. Create a new policy version through Platform Billing.'
                     );
+
                     continue;
                 }
 
@@ -302,7 +303,7 @@ class BillingLaunchCatalogSeeder extends Seeder
      * When multiple immutable versions exist, seeding stops rather than
      * manufacturing new versions on every run.
      *
-     * @param array<string, mixed> $values
+     * @param  array<string, mixed>  $values
      */
     private function ensurePolicyDraftVersion(
         string $table,

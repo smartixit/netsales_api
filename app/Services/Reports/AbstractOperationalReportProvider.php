@@ -3,7 +3,6 @@
 namespace App\Services\Reports;
 
 use App\Contracts\Reports\OperationalReportProvider;
-use App\Enums\OperationalReportType;
 use App\Models\NetworkWallet;
 use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -13,12 +12,19 @@ use Illuminate\Support\Carbon;
 abstract class AbstractOperationalReportProvider implements OperationalReportProvider
 {
     abstract protected function label(): string;
+
     abstract protected function description(): string;
+
     abstract protected function viewPermission(): string;
+
     abstract protected function exportPermission(): string;
+
     abstract protected function scopes(): array;
+
     abstract protected function posSelection(): string;
+
     abstract protected function columns(): array;
+
     abstract protected function metricSlots(): array;
 
     protected function pageProfileIds(): array
@@ -30,7 +36,9 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
     {
         return ['ar'];
     }
+
     abstract protected function summaryCharts(): array;
+
     abstract protected function statusChoices(): array;
 
     protected function statusFilterLabel(): string

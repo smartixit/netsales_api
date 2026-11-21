@@ -2,9 +2,11 @@
 
 namespace App\Services\Billing;
 
-use App\Enums\BillingSubscriptionStatus;
 use App\Enums\BillingFeatureType;
+use App\Enums\BillingSubscriptionStatus;
 use App\Models\BillingSubscription;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class BillingEntitlementService
@@ -101,7 +103,6 @@ class BillingEntitlementService
             ->first();
     }
 
-
     private function startEligibleFirstActivation(int $billingAccountId): void
     {
         $subscriptionId = BillingSubscription::query()
@@ -116,7 +117,7 @@ class BillingEntitlementService
             return;
         }
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($subscriptionId): void {
+        DB::transaction(function () use ($subscriptionId): void {
             $subscription = BillingSubscription::query()
                 ->with('trialRedemption')
                 ->lockForUpdate()
@@ -136,7 +137,7 @@ class BillingEntitlementService
                 return;
             }
 
-            $now = \Carbon\CarbonImmutable::now('Asia/Aden');
+            $now = CarbonImmutable::now('Asia/Aden');
             $end = match ($snapshot['duration_unit'] ?? null) {
                 'HOUR' => $now->addHours((int) $snapshot['duration_value']),
                 'DAY' => $now->addDays((int) $snapshot['duration_value']),

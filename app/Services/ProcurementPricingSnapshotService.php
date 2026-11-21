@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Support\DecimalAmount;
 use Illuminate\Validation\ValidationException;
 
 /**

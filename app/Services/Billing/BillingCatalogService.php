@@ -2,9 +2,20 @@
 
 namespace App\Services\Billing;
 
-use App\Enums\{BillingFeatureType, BillingInterval, BillingPlanVersionStatus};
-use App\Interfaces\{BillingCatalogRepositoryInterface, CurrencyRepositoryInterface};
-use App\Models\{BillingDunningPolicyVersion, BillingPlan, BillingPlanFeature, BillingPlanVersion, BillingPrice, BillingProduct, BillingTrialPolicyVersion, User};
+use App\Enums\BillingFeatureType;
+use App\Enums\BillingInterval;
+use App\Enums\BillingPlanVersionStatus;
+use App\Interfaces\BillingCatalogRepositoryInterface;
+use App\Interfaces\CurrencyRepositoryInterface;
+use App\Models\BillingDunningPolicyVersion;
+use App\Models\BillingPlan;
+use App\Models\BillingPlanFeature;
+use App\Models\BillingPlanVersion;
+use App\Models\BillingPrice;
+use App\Models\BillingProduct;
+use App\Models\BillingTrialPolicyVersion;
+use App\Models\BillingUsageMeter;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -54,7 +65,7 @@ class BillingCatalogService
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      * @return Collection<int, BillingPlan>|CursorPaginator<int, BillingPlan>
      */
     public function plans(array $filters = []): Collection|CursorPaginator
@@ -63,7 +74,7 @@ class BillingCatalogService
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      * @return CursorPaginator<int, BillingPlanVersion>
      */
     public function versionsForPlan(int $planId, array $filters = []): CursorPaginator
@@ -97,7 +108,7 @@ class BillingCatalogService
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      * @return Collection<int, BillingProduct>|CursorPaginator<int, BillingProduct>
      */
     public function products(array $filters = []): Collection|CursorPaginator
@@ -125,7 +136,7 @@ class BillingCatalogService
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      * @return CursorPaginator<int, BillingPlan>
      */
     public function publicPlansForCurrency(int $currencyId, array $filters = []): CursorPaginator
@@ -181,13 +192,17 @@ class BillingCatalogService
 
             $version = $this->catalog->createDraftVersion($planId, (int) $actor->user_id);
             if (! empty($policyVersions['trial_policy_version_id'])) {
-                $policy = \App\Models\BillingTrialPolicyVersion::query()->findOrFail($policyVersions['trial_policy_version_id']);
-                if ($policy->status !== 'PUBLISHED') throw ValidationException::withMessages(['trial_policy_version_id' => ['يجب اختيار سياسة تجربة منشورة.']]);
+                $policy = BillingTrialPolicyVersion::query()->findOrFail($policyVersions['trial_policy_version_id']);
+                if ($policy->status !== 'PUBLISHED') {
+                    throw ValidationException::withMessages(['trial_policy_version_id' => ['يجب اختيار سياسة تجربة منشورة.']]);
+                }
                 $version->trial_policy_version_id = $policy->trial_policy_version_id;
             }
             if (! empty($policyVersions['dunning_policy_version_id'])) {
-                $policy = \App\Models\BillingDunningPolicyVersion::query()->findOrFail($policyVersions['dunning_policy_version_id']);
-                if ($policy->status !== 'PUBLISHED') throw ValidationException::withMessages(['dunning_policy_version_id' => ['يجب اختيار سياسة تحصيل منشورة.']]);
+                $policy = BillingDunningPolicyVersion::query()->findOrFail($policyVersions['dunning_policy_version_id']);
+                if ($policy->status !== 'PUBLISHED') {
+                    throw ValidationException::withMessages(['dunning_policy_version_id' => ['يجب اختيار سياسة تحصيل منشورة.']]);
+                }
                 $version->dunning_policy_version_id = $policy->dunning_policy_version_id;
             }
             $version->save();
@@ -335,7 +350,7 @@ class BillingCatalogService
             ]);
 
             if ($type === BillingFeatureType::METERED) {
-                $meter = \App\Models\BillingUsageMeter::query()->firstOrCreate(
+                $meter = BillingUsageMeter::query()->firstOrCreate(
                     ['meter_key' => $feature->feature_key],
                     [
                         'name' => $feature->name,

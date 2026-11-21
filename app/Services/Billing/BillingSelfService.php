@@ -2,12 +2,20 @@
 
 namespace App\Services\Billing;
 
-use App\Models\{BillingAccount, BillingAccountContact, BillingCreditNote, BillingInvoice, BillingPayment, BillingRefund, BillingSubscription, BillingUsageAggregate, Currency, User};
-use App\Services\Billing\Money;
+use App\Models\BillingAccount;
+use App\Models\BillingAccountContact;
+use App\Models\BillingCreditNote;
+use App\Models\BillingInvoice;
+use App\Models\BillingPayment;
+use App\Models\BillingRefund;
+use App\Models\BillingSubscription;
+use App\Models\BillingUsageAggregate;
+use App\Models\Currency;
+use App\Models\User;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class BillingSelfService
@@ -224,6 +232,7 @@ class BillingSelfService
             'items.currency',
         ])->findOrFail($subscriptionId);
         $this->authorization->assertBillingAccountAccess($actor, $subscription->billingAccount);
+
         return $subscription;
     }
 
@@ -233,8 +242,13 @@ class BillingSelfService
         $this->authorization->assertBillingAccountAccess($actor, $subscription->billingAccount);
         $query = BillingUsageAggregate::query()->with(['meter', 'currency'])
             ->where('billing_subscription_id', $subscriptionId);
-        if (! empty($filters['from_date'])) $query->where('period_end', '>=', $filters['from_date']);
-        if (! empty($filters['to_date'])) $query->where('period_start', '<=', $filters['to_date']);
+        if (! empty($filters['from_date'])) {
+            $query->where('period_end', '>=', $filters['from_date']);
+        }
+        if (! empty($filters['to_date'])) {
+            $query->where('period_start', '<=', $filters['to_date']);
+        }
+
         return $query->orderByDesc('period_start')->orderByDesc('usage_aggregate_id')
             ->cursorPaginate(
                 min(max((int) ($filters['per_page'] ?? 25), 1), 50),

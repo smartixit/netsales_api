@@ -5,22 +5,23 @@ namespace Tests\Feature;
 use App\Enums\BillingSubscriptionStatus;
 use App\Enums\NetworkStatus;
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Models\BillingSubscription;
 use App\Models\Network;
 use App\Models\NetworkUser;
 use App\Models\Role;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
-use Tests\TestCase;
 use Tests\Concerns\CreatesActiveBillingSubscription;
-use Carbon\CarbonImmutable;
+use Tests\TestCase;
 
 class DashboardOverviewTest extends TestCase
 {
-    use DatabaseTransactions;
     use CreatesActiveBillingSubscription;
+    use DatabaseTransactions;
 
     public function test_super_admin_receives_real_network_and_billing_overview_data(): void
     {
@@ -102,7 +103,7 @@ class DashboardOverviewTest extends TestCase
             ->where('role_key', RoleKey::SUPPORT_AGENT->value)
             ->firstOrFail();
 
-        $user = $this->createUserWithScope(\App\Enums\RoleScope::PLATFORM, [
+        $user = $this->createUserWithScope(RoleScope::PLATFORM, [
             'role_id' => $role->role_id,
             'user_full_name' => 'Overview Support Agent',
             'user_phone_number' => '7'.random_int(100000000, 999999999),
@@ -132,7 +133,7 @@ class DashboardOverviewTest extends TestCase
             ->where('role_key', RoleKey::NETWORK_OWNER->value)
             ->firstOrFail();
 
-        $user = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $user = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Overview Network Owner',
             'user_phone_number' => '7'.random_int(100000000, 999999999),

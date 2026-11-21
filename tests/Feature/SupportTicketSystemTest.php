@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Models\Network;
 use App\Models\Pos;
@@ -40,7 +41,7 @@ class SupportTicketSystemTest extends TestCase
 
         $suffix = uniqid();
 
-        $posUser = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $posUser = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Agent '.$suffix,
             'user_phone_number' => '73'.rand(1000000, 9999999),

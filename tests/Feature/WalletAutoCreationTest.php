@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Enums\RoleScope;
 use App\Enums\SmsMessageType;
 use App\Enums\UserStatus;
 use App\Interfaces\NetworkPosRepositoryInterface;
@@ -22,13 +23,13 @@ use App\Services\NetworkService;
 use App\Services\PosService;
 use App\Services\Support\SMSGateService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Tests\TestCase;
 use Tests\Concerns\CreatesActiveBillingSubscription;
+use Tests\TestCase;
 
 class WalletAutoCreationTest extends TestCase
 {
-    use DatabaseTransactions;
     use CreatesActiveBillingSubscription;
+    use DatabaseTransactions;
 
     protected NetworkService $networkService;
 
@@ -98,7 +99,7 @@ class WalletAutoCreationTest extends TestCase
         $dir = Directorate::firstOrCreate(['governorate_id' => $gov->governorate_id, 'directorate_name' => 'Crater']);
 
         $admin = User::firstOrFail();
-        $posUser = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $posUser = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'Retailer 1',
             'user_phone_number' => '733999888',
@@ -147,7 +148,7 @@ class WalletAutoCreationTest extends TestCase
         $dir = Directorate::firstOrCreate(['governorate_id' => $gov->governorate_id, 'directorate_name' => 'Al-Qahirah']);
         $admin = User::firstOrFail();
 
-        $posUser2 = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $posUser2 = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'Pending Retailer',
             'user_phone_number' => '711999888',

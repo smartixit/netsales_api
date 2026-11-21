@@ -266,7 +266,7 @@ namespace App\Models{
  * @property int $refunded_minor
  * @property-read BillingInvoice $invoice
  * @property-read Currency $currency
- * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingCreditNoteLine> $lines
+ * @property-read Collection<int, BillingCreditNoteLine> $lines
  * @property string $credit_note_number
  * @property string $idempotency_key
  * @property string $accounting_treatment
@@ -442,11 +442,11 @@ namespace App\Models{
  * @property int $billing_account_id
  * @property int|null $billing_subscription_id
  * @property int $currency_id
- * @property \App\Enums\BillingInvoiceStatus $status
- * @property \Illuminate\Support\Carbon|null $period_start
- * @property \Illuminate\Support\Carbon|null $period_end
- * @property \Illuminate\Support\Carbon $issued_on
- * @property \Illuminate\Support\Carbon $due_on
+ * @property BillingInvoiceStatus $status
+ * @property Carbon|null $period_start
+ * @property Carbon|null $period_end
+ * @property Carbon $issued_on
+ * @property Carbon $due_on
  * @property int $subtotal_minor
  * @property int $discount_minor
  * @property int $tax_minor
@@ -457,15 +457,15 @@ namespace App\Models{
  * @property array<string, mixed>|null $customer_snapshot
  * @property array<string, mixed>|null $pricing_snapshot
  * @property string|null $memo
- * @property \Illuminate\Support\Carbon|null $finalized_at
- * @property \Illuminate\Support\Carbon|null $voided_at
+ * @property Carbon|null $finalized_at
+ * @property Carbon|null $voided_at
  * @property int|null $created_by
- * @property \Illuminate\Support\Carbon|null $paid_at
+ * @property Carbon|null $paid_at
  * @property-read BillingAccount $billingAccount
  * @property-read Currency $currency
  * @property-read BillingSubscription|null $subscription
- * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingInvoiceLine> $lines
- * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPayment> $payments
+ * @property-read Collection<int, BillingInvoiceLine> $lines
+ * @property-read Collection<int, BillingPayment> $payments
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BillingCreditNote> $creditNotes
@@ -570,16 +570,16 @@ namespace App\Models{
  * @property int $payment_method_id
  * @property int|null $treasury_account_id
  * @property int $amount_minor
- * @property \App\Enums\BillingPaymentStatus $status
- * @property \Illuminate\Support\Carbon|null $received_at
- * @property \Illuminate\Support\Carbon|null $verified_at
+ * @property BillingPaymentStatus $status
+ * @property Carbon|null $received_at
+ * @property Carbon|null $verified_at
  * @property-read BillingInvoice $invoice
  * @property-read BillingAccount $billingAccount
  * @property-read Currency $currency
  * @property-read BillingPaymentMethod $paymentMethod
  * @property-read BillingPaymentIntent|null $paymentIntent
  * @property-read TreasuryAccount|null $treasuryAccount
- * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPaymentProof> $proofs
+ * @property-read Collection<int, BillingPaymentProof> $proofs
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\BillingPaymentIntent|null $intent
@@ -652,8 +652,8 @@ namespace App\Models{
  * @property int $currency_id
  * @property int $amount_minor
  * @property string $status
- * @property \Illuminate\Support\Carbon|null $expires_at
- * @property \Illuminate\Support\Carbon|null $succeeded_at
+ * @property Carbon|null $expires_at
+ * @property Carbon|null $succeeded_at
  * @property string $intent_uuid
  * @property int $payment_method_id
  * @property string $idempotency_key
@@ -695,7 +695,7 @@ namespace App\Models{
  * @property string $name
  * @property bool $is_active
  * @property bool $requires_proof
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Currency> $currencies
+ * @property-read Collection<int, Currency> $currencies
  * @property string $method_key
  * @property string $method_type
  * @property array<array-key, mixed>|null $instructions
@@ -732,7 +732,7 @@ namespace App\Models{
  * @property int|null $file_size
  * @property string|null $sha256
  * @property int $uploaded_by
- * @property \Illuminate\Support\Carbon $uploaded_at
+ * @property Carbon $uploaded_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\BillingPayment $payment
@@ -801,7 +801,7 @@ namespace App\Models{
  * @property int $plan_version_id
  * @property string $feature_key
  * @property string $name
- * @property \App\Enums\BillingFeatureType $feature_type
+ * @property BillingFeatureType $feature_type
  * @property string $value
  * @property string|null $unit
  * @property string|null $aggregation
@@ -836,15 +836,15 @@ namespace App\Models{
  * @property int $plan_version_id
  * @property int $plan_id
  * @property int $version_number
- * @property \Illuminate\Support\Carbon|null $published_at
- * @property \App\Enums\BillingPlanVersionStatus $status
+ * @property Carbon|null $published_at
+ * @property BillingPlanVersionStatus $status
  * @property int|null $trial_policy_version_id
  * @property int|null $dunning_policy_version_id
  * @property-read BillingPlan $plan
  * @property-read BillingTrialPolicyVersion|null $trialPolicyVersion
  * @property-read BillingDunningPolicyVersion|null $dunningPolicyVersion
- * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPrice> $prices
- * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingPlanFeature> $features
+ * @property-read Collection<int, BillingPrice> $prices
+ * @property-read Collection<int, BillingPlanFeature> $features
  * @property array<array-key, mixed>|null $terms_snapshot
  * @property int|null $created_by
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -874,7 +874,7 @@ namespace App\Models{
  * @property int $price_id
  * @property int $plan_version_id
  * @property int $currency_id
- * @property \App\Enums\BillingInterval $billing_interval
+ * @property BillingInterval $billing_interval
  * @property int $interval_count
  * @property int $unit_amount_minor
  * @property int $setup_fee_minor
@@ -947,7 +947,7 @@ namespace App\Models{
  * @property string $idempotency_key
  * @property string $reason
  * @property int $processed_by
- * @property \Illuminate\Support\Carbon|null $processed_at
+ * @property Carbon|null $processed_at
  * @property int $payment_id
  * @property int $credit_note_id
  * @property int $treasury_account_id
@@ -988,7 +988,7 @@ namespace App\Models{
  * @property int $journal_entry_id
  * @property-read LedgerJournalEntry $journalEntry
  * @property string $idempotency_key
- * @property \Illuminate\Support\Carbon $recognized_through
+ * @property Carbon $recognized_through
  * @property int $amount_minor
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -1017,11 +1017,11 @@ namespace App\Models{
  * @property string $revenue_account_code
  * @property int $total_minor
  * @property int $recognized_minor
- * @property \Illuminate\Support\Carbon|null $last_recognized_on
+ * @property Carbon|null $last_recognized_on
  * @property string $status
- * @property \Illuminate\Support\Carbon $service_start_on
- * @property \Illuminate\Support\Carbon $service_end_on
- * @property \Illuminate\Support\Carbon|null $last_recognized_on
+ * @property Carbon $service_start_on
+ * @property Carbon $service_end_on
+ * @property Carbon|null $last_recognized_on
  * @property string $status
  * @property-read BillingInvoice $invoice
  * @property-read BillingInvoiceLine|null $invoiceLine
@@ -1059,15 +1059,15 @@ namespace App\Models{
  * @property array<string, mixed>|null $trial_policy_snapshot
  * @property array<string, mixed>|null $dunning_policy_snapshot
  * @property int $currency_id
- * @property \App\Enums\BillingSubscriptionStatus $status
- * @property \Illuminate\Support\Carbon|null $current_period_start
- * @property \Illuminate\Support\Carbon|null $current_period_end
- * @property \Illuminate\Support\Carbon|null $trial_start
- * @property \Illuminate\Support\Carbon|null $trial_end
- * @property \Illuminate\Support\Carbon|null $ended_at
- * @property \Illuminate\Support\Carbon|null $paused_at
- * @property \Illuminate\Support\Carbon|null $grace_period_ends_at
- * @property \Illuminate\Support\Carbon|null $next_billing_at
+ * @property BillingSubscriptionStatus $status
+ * @property Carbon|null $current_period_start
+ * @property Carbon|null $current_period_end
+ * @property Carbon|null $trial_start
+ * @property Carbon|null $trial_end
+ * @property Carbon|null $ended_at
+ * @property Carbon|null $paused_at
+ * @property Carbon|null $grace_period_ends_at
+ * @property Carbon|null $next_billing_at
  * @property array<string, mixed>|null $metadata
  * @property-read BillingAccount $billingAccount
  * @property-read BillingPlan $plan
@@ -1075,7 +1075,7 @@ namespace App\Models{
  * @property-read BillingPrice $price
  * @property-read Currency $currency
  * @property-read BillingTrialRedemption|null $trialRedemption
- * @property-read \Illuminate\Database\Eloquent\Collection<int, BillingSubscriptionEvent> $events
+ * @property-read Collection<int, BillingSubscriptionEvent> $events
  * @property int|null $trial_policy_version_id
  * @property int|null $dunning_policy_version_id
  * @property string $collection_method
@@ -1140,8 +1140,8 @@ namespace App\Models{
  * @property int $billing_subscription_id
  * @property string $alert_type
  * @property string $status
- * @property \Illuminate\Support\Carbon $scheduled_at
- * @property \Illuminate\Support\Carbon|null $sent_at
+ * @property Carbon $scheduled_at
+ * @property Carbon|null $sent_at
  * @property int $dunning_policy_version_id
  * @property \Illuminate\Support\Carbon $period_end
  * @property int $alert_days
@@ -1180,7 +1180,7 @@ namespace App\Models{
  * @property string|null $to_status
  * @property array<string, mixed>|null $payload
  * @property int|null $actor_id
- * @property \Illuminate\Support\Carbon $occurred_at
+ * @property Carbon $occurred_at
  * @property int $event_id
  * @property-read \App\Models\BillingSubscription|null $subscription
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BillingSubscriptionEvent newModelQuery()
@@ -1240,11 +1240,11 @@ namespace App\Models{
  * @property int $trial_redemption_id
  * @property int $billing_subscription_id
  * @property string $adjustment_type
- * @property \Illuminate\Support\Carbon|null $previous_trial_end
- * @property \Illuminate\Support\Carbon $new_trial_end
+ * @property Carbon|null $previous_trial_end
+ * @property Carbon $new_trial_end
  * @property string $reason
  * @property int $actor_id
- * @property \Illuminate\Support\Carbon $occurred_at
+ * @property Carbon $occurred_at
  * @property array<array-key, mixed>|null $metadata
  * @property-read \App\Models\BillingTrialRedemption $redemption
  * @property-read \App\Models\BillingSubscription|null $subscription
@@ -1353,7 +1353,7 @@ namespace App\Models{
  * @property array<string, mixed>|null $entitlement_config
  * @property int $duration_value
  * @property array<string, mixed>|null $entitlement_config
- * @property \Illuminate\Support\Carbon|null $published_at
+ * @property Carbon|null $published_at
  * @property-read BillingTrialPolicy $policy
  * @property int|null $created_by
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -1396,9 +1396,9 @@ namespace App\Models{
  * @property string $redemption_subject_key
  * @property string $status
  * @property array<string, mixed>|null $metadata
- * @property \Illuminate\Support\Carbon|null $reserved_at
- * @property \Illuminate\Support\Carbon|null $started_at
- * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property Carbon|null $reserved_at
+ * @property Carbon|null $started_at
+ * @property Carbon|null $completed_at
  * @property-read BillingTrialPolicy $policy
  * @property-read BillingTrialPolicyVersion $policyVersion
  * @property-read BillingSubscription $subscription
@@ -1434,8 +1434,8 @@ namespace App\Models{
  * @property int $usage_aggregate_id
  * @property int $billing_subscription_id
  * @property int $meter_id
- * @property \Illuminate\Support\Carbon $period_start
- * @property \Illuminate\Support\Carbon $period_end
+ * @property Carbon $period_start
+ * @property Carbon $period_end
  * @property string $quantity
  * @property int $amount_minor
  * @property-read BillingUsageMeter $meter
@@ -1754,7 +1754,6 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\Expense|null $expense
- * @property-read string|null $file_url
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseAttachment newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseAttachment newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseAttachment query()
@@ -1876,7 +1875,7 @@ namespace App\Models{
  * @property string $name
  * @property string $normal_balance
  * @property int|null $currency_id
- * @property \App\Enums\LedgerAccountClass $account_class
+ * @property LedgerAccountClass $account_class
  * @property bool $is_control_account
  * @property bool $is_active
  * @property-read Currency|null $currency
@@ -1906,10 +1905,10 @@ namespace App\Models{
 /**
  * @property int $journal_entry_id
  * @property int $currency_id
- * @property \App\Enums\LedgerEntryStatus $status
- * @property \Illuminate\Support\Carbon $entry_date
+ * @property LedgerEntryStatus $status
+ * @property Carbon $entry_date
  * @property-read Currency $currency
- * @property-read \Illuminate\Database\Eloquent\Collection<int, LedgerJournalLine> $lines
+ * @property-read Collection<int, LedgerJournalLine> $lines
  * @property string $entry_number
  * @property string|null $source_type
  * @property int|null $source_id
@@ -3022,12 +3021,12 @@ namespace App\Models{
  * @property array<string, mixed>|null $result_metadata
  * @property string|null $error_code
  * @property string|null $error_message
- * @property \Illuminate\Support\Carbon $queued_at
- * @property \Illuminate\Support\Carbon|null $started_at
- * @property \Illuminate\Support\Carbon|null $completed_at
- * @property \Illuminate\Support\Carbon|null $expires_at
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $queued_at
+ * @property Carbon|null $started_at
+ * @property Carbon|null $completed_at
+ * @property Carbon|null $expires_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportRun query()

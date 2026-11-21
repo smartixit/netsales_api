@@ -2,7 +2,9 @@
 
 namespace App\Services\Billing;
 
-use App\Models\{BillingRevenueRecognitionEntry, BillingRevenueRecognitionSchedule, Currency};
+use App\Models\BillingRevenueRecognitionEntry;
+use App\Models\BillingRevenueRecognitionSchedule;
+use App\Models\Currency;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use OverflowException;

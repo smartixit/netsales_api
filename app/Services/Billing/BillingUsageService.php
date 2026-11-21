@@ -2,8 +2,12 @@
 
 namespace App\Services\Billing;
 
-use App\Enums\{BillingFeatureType, BillingSubscriptionStatus};
-use App\Models\{BillingSubscription, BillingUsageAggregate, BillingUsageEvent, BillingUsageMeter};
+use App\Enums\BillingFeatureType;
+use App\Enums\BillingSubscriptionStatus;
+use App\Models\BillingSubscription;
+use App\Models\BillingUsageAggregate;
+use App\Models\BillingUsageEvent;
+use App\Models\BillingUsageMeter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use OverflowException;
@@ -28,7 +32,7 @@ class BillingUsageService
             throw ValidationException::withMessages(['idempotency_key' => ['مفتاح منع التكرار مطلوب ولا يتجاوز 128 حرفاً.']]);
         }
 
-        return DB::transaction(function () use ($subscriptionId, $meterKey, $quantity, $quantityMicros, $idempotencyKey, $sourceType, $sourceId, $dimensions): BillingUsageEvent {
+        return DB::transaction(function () use ($subscriptionId, $meterKey, $quantityMicros, $idempotencyKey, $sourceType, $sourceId, $dimensions): BillingUsageEvent {
             $subscription = BillingSubscription::query()
                 ->with('planVersion.features')
                 ->lockForUpdate()

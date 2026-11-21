@@ -2,7 +2,8 @@
 
 namespace App\Services\Billing;
 
-use App\Models\{Currency, TreasuryAccount, User};
+use App\Models\TreasuryAccount;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -51,7 +52,7 @@ class BillingTreasuryService
         $this->authorization->assertPlatform($actor);
         $currency = $this->currencies->getActive((int) $data['currency_id']);
 
-        return DB::transaction(function () use ($data, $actor, $currency): TreasuryAccount {
+        return DB::transaction(function () use ($data, $currency): TreasuryAccount {
             $treasury = TreasuryAccount::query()->create([
                 'account_code' => 'TR-'.$currency->code.'-'.Str::upper(Str::random(10)),
                 'name' => trim((string) $data['name']),

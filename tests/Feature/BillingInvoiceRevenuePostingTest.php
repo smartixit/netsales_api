@@ -2,26 +2,22 @@
 
 namespace Tests\Feature;
 
-use App\Enums\{BillingInvoiceStatus, NetworkStatus};
-use App\Models\{
-    BillingAccount,
-    BillingInvoice,
-    BillingInvoiceLine,
-    BillingRevenueRecognitionSchedule,
-    Currency,
-    LedgerJournalEntry,
-    Network,
-    User
-};
-use App\Services\Billing\{
-    BillingInvoiceService,
-    BillingLedgerChartService,
-    BillingRevenueRecognitionService
-};
+use App\Enums\BillingInvoiceStatus;
+use App\Enums\NetworkStatus;
+use App\Models\BillingAccount;
+use App\Models\BillingInvoice;
+use App\Models\BillingRevenueRecognitionSchedule;
+use App\Models\Currency;
+use App\Models\LedgerJournalEntry;
+use App\Models\Network;
+use App\Models\User;
+use App\Services\Billing\BillingInvoiceService;
+use App\Services\Billing\BillingLedgerChartService;
+use App\Services\Billing\BillingRevenueRecognitionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class BillingInvoiceRevenuePostingTest extends TestCase
@@ -142,7 +138,7 @@ class BillingInvoiceRevenuePostingTest extends TestCase
     }
 
     /**
-     * @param array<int, array{type:string,subtotal:int,tax:int,interval?:string}> $lines
+     * @param  array<int, array{type:string,subtotal:int,tax:int,interval?:string}>  $lines
      */
     private function createDraftInvoice(array $lines): BillingInvoice
     {

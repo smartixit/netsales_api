@@ -2,6 +2,4 @@
 
 namespace App\Services\Billing\Reports;
 
-final class BillingRefundsProvider extends ConfiguredBillingReportProvider
-{
-}
+final class BillingRefundsProvider extends ConfiguredBillingReportProvider {}

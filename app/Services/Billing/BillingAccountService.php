@@ -2,8 +2,12 @@
 
 namespace App\Services\Billing;
 
-use App\Enums\BillingSubscriptionStatus;
-use App\Models\{BillingAccount, BillingAccountContact, BillingInvoice, BillingSubscription, Network, User};
+use App\Models\BillingAccount;
+use App\Models\BillingAccountContact;
+use App\Models\BillingInvoice;
+use App\Models\BillingSubscription;
+use App\Models\Network;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -87,6 +91,7 @@ class BillingAccountService
                 'legal_name', 'billing_email', 'tax_number', 'billing_address', 'payment_terms_days',
             ])));
             $account->save();
+
             return $account->fresh()->load(['network', 'defaultCurrency', 'contacts']);
         }, 3);
     }
@@ -101,6 +106,7 @@ class BillingAccountService
             if ($isPrimary) {
                 $account->contacts()->update(['is_primary' => false]);
             }
+
             return $account->contacts()->create([
                 'name' => trim((string) $data['name']),
                 'email' => $data['email'] ?? null,
@@ -126,6 +132,7 @@ class BillingAccountService
             }
             $contact->fill(array_intersect_key($data, array_flip(['name', 'email', 'phone', 'is_primary', 'receives_invoices'])));
             $contact->save();
+
             return $contact->fresh();
         }, 3);
     }
@@ -140,7 +147,9 @@ class BillingAccountService
             $contact->delete();
             if ($wasPrimary) {
                 $next = $account->contacts()->orderBy('contact_id')->first();
-                if ($next) $next->update(['is_primary' => true]);
+                if ($next) {
+                    $next->update(['is_primary' => true]);
+                }
             }
         }, 3);
     }

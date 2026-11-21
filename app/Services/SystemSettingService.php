@@ -167,6 +167,7 @@ class SystemSettingService
     public function create(StoreSystemSettingRequest $request): SystemSetting
     {
         $this->assertNotRetiredSubscriptionKey($request->getSettingKey());
+
         return DB::transaction(function () use ($request) {
             $data = [
                 'setting_category' => $request->getSettingCategory()->value,

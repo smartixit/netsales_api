@@ -3,7 +3,9 @@
 namespace App\Services\Billing;
 
 use App\Enums\NotificationType;
-use App\Models\{BillingInvoice, BillingSubscription, OutboxMessage};
+use App\Models\BillingInvoice;
+use App\Models\BillingSubscription;
+use App\Models\OutboxMessage;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -96,6 +98,7 @@ class BillingOutboxNotificationDispatcher
         }
 
         $days = (int) ($payload['days_remaining'] ?? 0);
+
         return [
             (int) $ownerId,
             NotificationType::BILLING_SUBSCRIPTION_RENEWAL_REMINDER,

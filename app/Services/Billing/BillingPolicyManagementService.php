@@ -15,6 +15,8 @@ use App\Models\BillingTrialPolicy;
 use App\Models\BillingTrialPolicyVersion;
 use App\Models\BillingTrialRedemption;
 use App\Models\User;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -29,6 +31,7 @@ class BillingPolicyManagementService
                 'policy_key' => $data['policy_key'], 'name' => $data['name'],
                 'description' => $data['description'] ?? null, 'created_by' => $actor->user_id, 'is_active' => true,
             ]);
+
             return $policy->versions()->create([
                 ...$this->trialValues($data), 'version_number' => 1, 'status' => 'DRAFT', 'created_by' => $actor->user_id,
             ]);
@@ -44,6 +47,7 @@ class BillingPolicyManagementService
                 'policy_key' => $data['policy_key'], 'name' => $data['name'],
                 'description' => $data['description'] ?? null, 'created_by' => $actor->user_id, 'is_active' => true,
             ]);
+
             return $policy->versions()->create([
                 ...$this->dunningValues($data), 'version_number' => 1, 'status' => 'DRAFT', 'created_by' => $actor->user_id,
             ]);
@@ -56,6 +60,7 @@ class BillingPolicyManagementService
         return DB::transaction(function () use ($policyId, $data, $actor): BillingTrialPolicyVersion {
             $this->assertPlatform($actor);
             $policy = BillingTrialPolicy::query()->lockForUpdate()->findOrFail($policyId);
+
             return $policy->versions()->create([
                 ...$this->trialValues($data), 'version_number' => (int) $policy->versions()->max('version_number') + 1,
                 'status' => 'DRAFT', 'created_by' => $actor->user_id,
@@ -69,6 +74,7 @@ class BillingPolicyManagementService
         return DB::transaction(function () use ($policyId, $data, $actor): BillingDunningPolicyVersion {
             $this->assertPlatform($actor);
             $policy = BillingDunningPolicy::query()->lockForUpdate()->findOrFail($policyId);
+
             return $policy->versions()->create([
                 ...$this->dunningValues($data), 'version_number' => (int) $policy->versions()->max('version_number') + 1,
                 'status' => 'DRAFT', 'created_by' => $actor->user_id,
@@ -81,9 +87,15 @@ class BillingPolicyManagementService
         return DB::transaction(function () use ($versionId, $actor): BillingTrialPolicyVersion {
             $this->assertPlatform($actor);
             $version = BillingTrialPolicyVersion::query()->with('policy')->lockForUpdate()->findOrFail($versionId);
-            if ($version->status !== 'DRAFT') throw ValidationException::withMessages(['version_id' => ['لا يمكن نشر نسخة ليست مسودة.']]);
-            $version->status = 'PUBLISHED'; $version->published_at = now('Asia/Aden'); $version->save();
-            $version->policy->current_version_id = $version->trial_policy_version_id; $version->policy->save();
+            if ($version->status !== 'DRAFT') {
+                throw ValidationException::withMessages(['version_id' => ['لا يمكن نشر نسخة ليست مسودة.']]);
+            }
+            $version->status = 'PUBLISHED';
+            $version->published_at = now('Asia/Aden');
+            $version->save();
+            $version->policy->current_version_id = $version->trial_policy_version_id;
+            $version->policy->save();
+
             return $version->refresh();
         }, 3);
     }
@@ -93,9 +105,15 @@ class BillingPolicyManagementService
         return DB::transaction(function () use ($versionId, $actor): BillingDunningPolicyVersion {
             $this->assertPlatform($actor);
             $version = BillingDunningPolicyVersion::query()->with('policy')->lockForUpdate()->findOrFail($versionId);
-            if ($version->status !== 'DRAFT') throw ValidationException::withMessages(['version_id' => ['لا يمكن نشر نسخة ليست مسودة.']]);
-            $version->status = 'PUBLISHED'; $version->published_at = now('Asia/Aden'); $version->save();
-            $version->policy->current_version_id = $version->dunning_policy_version_id; $version->policy->save();
+            if ($version->status !== 'DRAFT') {
+                throw ValidationException::withMessages(['version_id' => ['لا يمكن نشر نسخة ليست مسودة.']]);
+            }
+            $version->status = 'PUBLISHED';
+            $version->published_at = now('Asia/Aden');
+            $version->save();
+            $version->policy->current_version_id = $version->dunning_policy_version_id;
+            $version->policy->save();
+
             return $version->refresh();
         }, 3);
     }
@@ -106,11 +124,14 @@ class BillingPolicyManagementService
         return DB::transaction(function () use ($versionId, $data, $actor): BillingPlanVersion {
             $this->assertPlatform($actor);
             $version = BillingPlanVersion::query()->lockForUpdate()->findOrFail($versionId);
-            if ($version->status !== BillingPlanVersionStatus::DRAFT) throw ValidationException::withMessages(['plan_version_id' => ['لا يمكن تغيير سياسات نسخة خطة منشورة. أنشئ نسخة خطة جديدة.']]);
+            if ($version->status !== BillingPlanVersionStatus::DRAFT) {
+                throw ValidationException::withMessages(['plan_version_id' => ['لا يمكن تغيير سياسات نسخة خطة منشورة. أنشئ نسخة خطة جديدة.']]);
+            }
             $this->assertPublishedReferences($data);
             $version->trial_policy_version_id = $data['trial_policy_version_id'] ?? null;
             $version->dunning_policy_version_id = $data['dunning_policy_version_id'] ?? null;
             $version->save();
+
             return $version->refresh();
         }, 3);
     }
@@ -121,11 +142,14 @@ class BillingPolicyManagementService
         return DB::transaction(function () use ($priceId, $data, $actor): BillingPrice {
             $this->assertPlatform($actor);
             $price = BillingPrice::query()->with('planVersion')->lockForUpdate()->findOrFail($priceId);
-            if ($price->planVersion->status !== BillingPlanVersionStatus::DRAFT) throw ValidationException::withMessages(['price_id' => ['لا يمكن تغيير سياسات سعر تابع لنسخة خطة منشورة.']]);
+            if ($price->planVersion->status !== BillingPlanVersionStatus::DRAFT) {
+                throw ValidationException::withMessages(['price_id' => ['لا يمكن تغيير سياسات سعر تابع لنسخة خطة منشورة.']]);
+            }
             $this->assertPublishedReferences($data);
             $price->trial_policy_version_id = $data['trial_policy_version_id'] ?? null;
             $price->dunning_policy_version_id = $data['dunning_policy_version_id'] ?? null;
             $price->save();
+
             return $price->refresh();
         }, 3);
     }
@@ -153,9 +177,10 @@ class BillingPolicyManagementService
                     'actor_id' => $actor->user_id,
                     'occurred_at' => $now,
                 ]);
+
                 return $subscription->refresh();
             }
-            $end = \Illuminate\Support\Carbon::instance($this->calculateTrialEnd(\Carbon\CarbonImmutable::instance($now), $snapshot));
+            $end = Carbon::instance($this->calculateTrialEnd(CarbonImmutable::instance($now), $snapshot));
             $subscription->status = BillingSubscriptionStatus::TRIALING;
             $subscription->trial_start = $now;
             $subscription->trial_end = $end;
@@ -174,6 +199,7 @@ class BillingPolicyManagementService
                 'actor_id' => $actor->user_id,
                 'occurred_at' => $now,
             ]);
+
             return $subscription->refresh();
         }, 3);
     }
@@ -211,6 +237,7 @@ class BillingPolicyManagementService
                 'actor_id' => $actor->user_id,
                 'occurred_at' => $now,
             ]);
+
             return $subscription->refresh();
         }, 3);
     }
@@ -220,8 +247,12 @@ class BillingPolicyManagementService
         return DB::transaction(function () use ($subscriptionId, $type, $days, $reason, $actor): BillingSubscription {
             $this->assertPlatform($actor);
             $subscription = BillingSubscription::query()->with('trialRedemption')->lockForUpdate()->findOrFail($subscriptionId);
-            if ($subscription->status !== BillingSubscriptionStatus::TRIALING || ! $subscription->trialRedemption) throw ValidationException::withMessages(['subscription_id' => ['لا يمكن تعديل فترة تجربة غير نشطة.']]);
-            if (! in_array($type, ['EXTEND', 'SHORTEN', 'END_EARLY'], true) || ($type !== 'END_EARLY' && ($days === null || $days < 1 || $days > 365))) throw ValidationException::withMessages(['adjustment_type' => ['نوع التعديل أو عدد الأيام غير صالح.']]);
+            if ($subscription->status !== BillingSubscriptionStatus::TRIALING || ! $subscription->trialRedemption) {
+                throw ValidationException::withMessages(['subscription_id' => ['لا يمكن تعديل فترة تجربة غير نشطة.']]);
+            }
+            if (! in_array($type, ['EXTEND', 'SHORTEN', 'END_EARLY'], true) || ($type !== 'END_EARLY' && ($days === null || $days < 1 || $days > 365))) {
+                throw ValidationException::withMessages(['adjustment_type' => ['نوع التعديل أو عدد الأيام غير صالح.']]);
+            }
             $previous = $subscription->trial_end;
             $newEnd = match ($type) {
                 'EXTEND' => $previous->copy()->addDays($days),
@@ -236,8 +267,12 @@ class BillingPolicyManagementService
             } else {
                 BillingSubscriptionAlert::query()->where('billing_subscription_id', $subscriptionId)->where('status', 'PENDING')->update(['status' => 'CANCELLED']);
             }
-            $subscription->trial_end = $newEnd; $subscription->current_period_end = $newEnd; $subscription->save();
-            if ($subscription->status === BillingSubscriptionStatus::TRIALING) app(BillingDunningService::class)->scheduleSubscriptionAlerts($subscription);
+            $subscription->trial_end = $newEnd;
+            $subscription->current_period_end = $newEnd;
+            $subscription->save();
+            if ($subscription->status === BillingSubscriptionStatus::TRIALING) {
+                app(BillingDunningService::class)->scheduleSubscriptionAlerts($subscription);
+            }
             BillingTrialAdjustment::query()->create([
                 'trial_redemption_id' => $subscription->trialRedemption->trial_redemption_id,
                 'billing_subscription_id' => $subscriptionId, 'adjustment_type' => $type,
@@ -249,12 +284,13 @@ class BillingPolicyManagementService
                 'payload' => ['previous_trial_end' => $previous?->toDateTimeString(), 'new_trial_end' => $newEnd->toDateTimeString(), 'reason' => $reason],
                 'actor_id' => $actor->user_id, 'occurred_at' => now('Asia/Aden'),
             ]);
+
             return $subscription->refresh();
         }, 3);
     }
 
     /** @param array<string, mixed> $snapshot */
-    private function calculateTrialEnd(\Carbon\CarbonImmutable $start, array $snapshot): \Carbon\CarbonImmutable
+    private function calculateTrialEnd(CarbonImmutable $start, array $snapshot): CarbonImmutable
     {
         return match ($snapshot['duration_unit']) {
             'HOUR' => $start->addHours((int) $snapshot['duration_value']),
@@ -266,7 +302,7 @@ class BillingPolicyManagementService
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     private function trialValues(array $data): array
@@ -286,7 +322,7 @@ class BillingPolicyManagementService
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     private function dunningValues(array $data): array
@@ -301,7 +337,7 @@ class BillingPolicyManagementService
 
     /** @param array<string, mixed> $data */
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     private function assertPublishedReferences(array $data): void
     {

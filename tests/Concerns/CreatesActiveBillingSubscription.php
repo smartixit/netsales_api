@@ -27,7 +27,7 @@ trait CreatesActiveBillingSubscription
      * This fixture bypasses payment workflow only because the calling tests focus
      * on downstream entitlement guards, not subscription purchase or settlement.
      *
-     * @param array<string, int> $resourceLimits
+     * @param  array<string, int>  $resourceLimits
      */
     protected function createActiveBillingSubscriptionForNetwork(
         Network $network,

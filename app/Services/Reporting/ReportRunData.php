@@ -19,10 +19,10 @@ namespace App\Services\Reporting;
 final readonly class ReportRunData
 {
     /**
-     * @param array<string, mixed> $filters
-     * @param array<string, mixed>|null $artifact
-     * @param array<string, mixed>|null $resultMetadata
-     * @param array{code: string|null, message: string|null}|null $error
+     * @param  array<string, mixed>  $filters
+     * @param  array<string, mixed>|null  $artifact
+     * @param  array<string, mixed>|null  $resultMetadata
+     * @param  array{code: string|null, message: string|null}|null  $error
      */
     public function __construct(
         public int $reportRunId,

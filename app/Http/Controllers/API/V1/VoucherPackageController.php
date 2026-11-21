@@ -10,6 +10,7 @@ use App\Models\VoucherPackage;
 use App\Services\TenantAuthorizationService;
 use App\Services\VoucherPackageService;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -166,9 +167,9 @@ class VoucherPackageController extends BaseController
                         new OA\Property(property: 'network_id', type: 'integer', example: 1),
                         new OA\Property(property: 'package_name', type: 'string'),
                         new OA\Property(property: 'package_color', type: 'string'),
-                        new OA\Property(property: 'package_balance', type: 'string'),
-                        new OA\Property(property: 'package_uptime', type: 'string'),
-                        new OA\Property(property: 'package_validity', type: 'string'),
+                        new OA\Property(property: 'package_balance', type: 'number', format: 'float', example: 500.00),
+                        new OA\Property(property: 'package_uptime', type: 'integer', example: 12),
+                        new OA\Property(property: 'package_validity', type: 'integer', example: 30),
                         new OA\Property(property: 'package_voucher_count', type: 'integer', example: 1),
                         new OA\Property(property: 'package_voucher_price', type: 'number', example: 100.5),
                         new OA\Property(property: 'package_default_cash_discount', type: 'number', example: 100.5),
@@ -224,9 +225,9 @@ class VoucherPackageController extends BaseController
                     properties: [
                         new OA\Property(property: 'package_name', type: 'string'),
                         new OA\Property(property: 'package_color', type: 'string'),
-                        new OA\Property(property: 'package_balance', type: 'string'),
-                        new OA\Property(property: 'package_uptime', type: 'string'),
-                        new OA\Property(property: 'package_validity', type: 'string'),
+                        new OA\Property(property: 'package_balance', type: 'number', format: 'float', example: 500.00),
+                        new OA\Property(property: 'package_uptime', type: 'integer', example: 12),
+                        new OA\Property(property: 'package_validity', type: 'integer', example: 30),
                         new OA\Property(property: 'package_voucher_count', type: 'integer', example: 1),
                         new OA\Property(property: 'package_voucher_price', type: 'number', example: 100.5),
                         new OA\Property(property: 'package_default_cash_discount', type: 'number', example: 100.5),

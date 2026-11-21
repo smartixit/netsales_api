@@ -6,11 +6,12 @@ use App\Enums\InvoicePaymentStatus;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\SaleType;
 use App\Enums\UserStatus;
 use App\Models\Network;
-use App\Models\NetworkUser;
 use App\Models\NetworkPos;
+use App\Models\NetworkUser;
 use App\Models\NetworkWallet;
 use App\Models\OutboxMessage;
 use App\Models\Pos;
@@ -66,7 +67,7 @@ class Milestone4CDebtTrackingAndRepaymentTest extends TestCase
         $this->superUser = User::firstOrFail();
 
         // 2. إنشاء مزود الشبكة وصاحبها
-        $this->networkOwner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $this->networkOwner = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'مالك الشبكة '.$suffix,
@@ -101,7 +102,7 @@ class Milestone4CDebtTrackingAndRepaymentTest extends TestCase
         ]);
 
         // 4. إنشاء وكيل نقطة البيع وصاحبها
-        $this->posOwner = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $this->posOwner = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'وكيل نقطة البيع '.$suffix,
@@ -148,7 +149,7 @@ class Milestone4CDebtTrackingAndRepaymentTest extends TestCase
         ]);
 
         // 7. شبكة منافسة لاختبار عزل المستأجرين
-        $this->otherNetworkOwner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $this->otherNetworkOwner = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'role_scope' => null,
             'user_full_name' => 'مالك شبكة أخرى '.$suffix,

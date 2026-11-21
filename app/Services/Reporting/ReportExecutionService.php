@@ -2,11 +2,27 @@
 
 namespace App\Services\Reporting;
 
+use App\Http\Resources\API\V1\Billing\BillingCreditNoteResource;
+use App\Http\Resources\API\V1\Billing\BillingInvoiceResource;
+use App\Http\Resources\API\V1\Billing\BillingPaymentResource;
+use App\Http\Resources\API\V1\Billing\BillingRefundResource;
+use App\Http\Resources\API\V1\Billing\BillingSubscriptionResource;
+use App\Http\Resources\API\V1\Billing\LedgerJournalEntryResource;
 use App\Http\Resources\API\V1\Expense\ExpenseResource;
 use App\Http\Resources\API\V1\SaleInvoice\SaleInvoiceResource;
-use App\Http\Resources\API\V1\Billing\{BillingCreditNoteResource, BillingInvoiceResource, BillingPaymentResource, BillingRefundResource, BillingSubscriptionResource, LedgerJournalEntryResource};
-use App\Models\{BillingAccount, BillingCreditNote, BillingInvoice, BillingPayment, BillingRefund, BillingSubscription, Expense, LedgerJournalEntry, ReportRun, SaleInvoice, User};
-use App\Services\Billing\{BillingDashboardService, BillingSelfService};
+use App\Models\BillingAccount;
+use App\Models\BillingCreditNote;
+use App\Models\BillingInvoice;
+use App\Models\BillingPayment;
+use App\Models\BillingRefund;
+use App\Models\BillingSubscription;
+use App\Models\Expense;
+use App\Models\LedgerJournalEntry;
+use App\Models\ReportRun;
+use App\Models\SaleInvoice;
+use App\Models\User;
+use App\Services\Billing\BillingDashboardService;
+use App\Services\Billing\BillingSelfService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -43,8 +59,8 @@ class ReportExecutionService
     }
 
     /**
-     * @param array<string, mixed> $definition
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $definition
+     * @param  array<string, mixed>  $filters
      * @return array{payload: array<string, mixed>, records_count: int, is_truncated: bool}
      */
     private function executeNetwork(
@@ -101,8 +117,8 @@ class ReportExecutionService
     }
 
     /**
-     * @param array<string, mixed> $definition
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $definition
+     * @param  array<string, mixed>  $filters
      * @return array{payload: array<string, mixed>, records_count: int, is_truncated: bool}
      */
     private function networkBillingStatement(
@@ -126,8 +142,8 @@ class ReportExecutionService
     }
 
     /**
-     * @param array<string, mixed> $definition
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $definition
+     * @param  array<string, mixed>  $filters
      * @return array{payload: array<string, mixed>, records_count: int, is_truncated: bool}
      */
     private function executePlatform(
@@ -250,8 +266,8 @@ class ReportExecutionService
     }
 
     /**
-     * @param array<string, mixed> $definition
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $definition
+     * @param  array<string, mixed>  $filters
      * @return array{payload: array<string, mixed>, records_count: int, is_truncated: bool}
      */
     private function platformOverviewSnapshot(
@@ -282,10 +298,11 @@ class ReportExecutionService
 
     /**
      * @template TModel of Model
-     * @param array<string, mixed> $definition
-     * @param Builder<TModel> $query
-     * @param callable(TModel): array<string, mixed> $serialize
-     * @param array<string, mixed> $extraMetadata
+     *
+     * @param  array<string, mixed>  $definition
+     * @param  Builder<TModel>  $query
+     * @param  callable(TModel): array<string, mixed>  $serialize
+     * @param  array<string, mixed>  $extraMetadata
      * @return array{payload: array<string, mixed>, records_count: int, is_truncated: bool}
      */
     private function collectionSnapshot(
@@ -311,8 +328,8 @@ class ReportExecutionService
     }
 
     /**
-     * @param array<string, mixed> $definition
-     * @param array<string, mixed> $extraMetadata
+     * @param  array<string, mixed>  $definition
+     * @param  array<string, mixed>  $extraMetadata
      * @return array{payload: array<string, mixed>, records_count: int, is_truncated: bool}
      */
     private function snapshot(

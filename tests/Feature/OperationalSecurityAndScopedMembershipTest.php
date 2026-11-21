@@ -6,6 +6,7 @@ use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Models\Directorate;
 use App\Models\Governorate;
@@ -19,13 +20,13 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\VoucherPackage;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Tests\TestCase;
 use Tests\Concerns\CreatesActiveBillingSubscription;
+use Tests\TestCase;
 
 class OperationalSecurityAndScopedMembershipTest extends TestCase
 {
-    use DatabaseTransactions;
     use CreatesActiveBillingSubscription;
+    use DatabaseTransactions;
 
     protected User $superAdmin;
 
@@ -60,7 +61,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $this->posMemberRole = Role::where('role_key', 'POS_USER')->firstOrFail();
 
         // مستخدمي المستأجرين role_id = null لأن أدوارهم مقيدة بـ network_users و pos_users
-        $this->networkOwner = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $this->networkOwner = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net Owner '.$suffix,
             'user_phone_number' => '77'.rand(1000000, 9999999),
@@ -68,7 +69,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $this->posOwner = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $this->posOwner = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Owner '.$suffix,
             'user_phone_number' => '71'.rand(1000000, 9999999),
@@ -222,7 +223,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
     public function test_cross_network_request_approval_idor_is_strictly_blocked(): void
     {
         // إنشاء مستخدم شبكة B
-        $netBUser = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $netBUser = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net B Reviewer',
             'user_phone_number' => '77'.rand(1000000, 9999999),
@@ -268,7 +269,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $ownerAuth = $this->createAuthenticatedSession($this->networkOwner);
         $newMemberPhone = '77'.rand(1000000, 9999999);
 
-        $newMemberUser = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $newMemberUser = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Network Staff Member',
             'user_phone_number' => $newMemberPhone,
@@ -320,7 +321,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $ownerAuth = $this->createAuthenticatedSession($this->posOwner);
         $newMemberPhone = '71'.rand(1000000, 9999999);
 
-        $newMemberUser = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $newMemberUser = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Staff Member',
             'user_phone_number' => $newMemberPhone,
@@ -371,10 +372,10 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
     public function test_network_membership_only_exposes_and_accepts_network_user_role(): void
     {
         $ownerAuth = $this->createAuthenticatedSession($this->networkOwner);
-        $networkUserRole = \App\Models\Role::where('role_key', 'NETWORK_USER')->firstOrFail();
-        $networkAccountantRole = \App\Models\Role::where('role_key', 'NETWORK_ACCOUNTANT')->firstOrFail();
-        $networkOwnerRole = \App\Models\Role::where('role_key', 'NETWORK_OWNER')->firstOrFail();
-        $platformRole = \App\Models\Role::where('role_key', 'SUPER_ADMIN')->firstOrFail();
+        $networkUserRole = Role::where('role_key', 'NETWORK_USER')->firstOrFail();
+        $networkAccountantRole = Role::where('role_key', 'NETWORK_ACCOUNTANT')->firstOrFail();
+        $networkOwnerRole = Role::where('role_key', 'NETWORK_OWNER')->firstOrFail();
+        $platformRole = Role::where('role_key', 'SUPER_ADMIN')->firstOrFail();
 
         $roles = $this->withHeaders($ownerAuth['headers'])
             ->getJson("/api/v1/networks/{$this->networkA->network_id}/members/assignable-roles")
@@ -385,7 +386,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $this->assertSame('NETWORK_USER', $roles->json('data.0.role_key'));
 
         foreach ([$networkAccountantRole, $networkOwnerRole, $platformRole] as $role) {
-            $candidate = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+            $candidate = $this->createUserWithScope(RoleScope::NETWORK, [
                 'role_id' => null,
                 'user_full_name' => 'Rejected Network Staff '.uniqid(),
                 'user_phone_number' => '70'.rand(1000000, 9999999),
@@ -407,7 +408,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'role_id' => $networkAccountantRole->role_id,
         ]);
 
-        $changeCandidate = $this->createUserWithScope(\App\Enums\RoleScope::NETWORK, [
+        $changeCandidate = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Network Role Change Candidate '.uniqid(),
             'user_phone_number' => '70'.rand(1000000, 9999999),
@@ -430,10 +431,10 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
     public function test_pos_membership_only_exposes_and_accepts_pos_user_role(): void
     {
         $ownerAuth = $this->createAuthenticatedSession($this->posOwner);
-        $posUserRole = \App\Models\Role::where('role_key', 'POS_USER')->firstOrFail();
-        $posAccountantRole = \App\Models\Role::where('role_key', 'POS_ACCOUNTANT')->firstOrFail();
-        $posAgentRole = \App\Models\Role::where('role_key', 'POS_AGENT')->firstOrFail();
-        $platformRole = \App\Models\Role::where('role_key', 'SUPER_ADMIN')->firstOrFail();
+        $posUserRole = Role::where('role_key', 'POS_USER')->firstOrFail();
+        $posAccountantRole = Role::where('role_key', 'POS_ACCOUNTANT')->firstOrFail();
+        $posAgentRole = Role::where('role_key', 'POS_AGENT')->firstOrFail();
+        $platformRole = Role::where('role_key', 'SUPER_ADMIN')->firstOrFail();
 
         $this->withHeaders($ownerAuth['headers'])
             ->getJson("/api/v1/pos/{$this->posA->pos_id}/members/assignable-roles")
@@ -442,7 +443,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             ->assertJsonPath('data.0.role_key', 'POS_USER');
 
         foreach ([$posAccountantRole, $posAgentRole, $platformRole] as $role) {
-            $candidate = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+            $candidate = $this->createUserWithScope(RoleScope::POS, [
                 'role_id' => null,
                 'user_full_name' => 'Rejected POS Staff '.uniqid(),
                 'user_phone_number' => '70'.rand(1000000, 9999999),
@@ -464,7 +465,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'role_id' => $posAccountantRole->role_id,
         ]);
 
-        $changeCandidate = $this->createUserWithScope(\App\Enums\RoleScope::POS, [
+        $changeCandidate = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Role Change Candidate '.uniqid(),
             'user_phone_number' => '70'.rand(1000000, 9999999),
@@ -483,5 +484,4 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
 
         $this->assertDatabaseHas('roles', ['role_id' => $posUserRole->role_id]);
     }
-
 }

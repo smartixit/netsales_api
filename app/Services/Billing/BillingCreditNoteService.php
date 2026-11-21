@@ -4,7 +4,11 @@ namespace App\Services\Billing;
 
 use App\Enums\BillingInvoiceStatus;
 use App\Enums\BillingPaymentStatus;
-use App\Models\{BillingCreditNote, BillingInvoice, BillingInvoiceLine, BillingRevenueRecognitionSchedule, Currency, User};
+use App\Models\BillingCreditNote;
+use App\Models\BillingInvoice;
+use App\Models\BillingInvoiceLine;
+use App\Models\BillingRevenueRecognitionSchedule;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -22,7 +26,7 @@ class BillingCreditNoteService
      * Issues a credit note, offsets outstanding receivables first, and reserves only
      * the remaining amount as a refundable customer credit.
      *
-     * @param array<int, array{invoice_line_id:int, amount_minor:int}> $lines
+     * @param  array<int, array{invoice_line_id:int, amount_minor:int}>  $lines
      */
     public function issue(
         int $invoiceId,
@@ -36,7 +40,6 @@ class BillingCreditNoteService
         if (trim($idempotencyKey) === '' || strlen($idempotencyKey) > 128) {
             throw ValidationException::withMessages(['idempotency_key' => ['مفتاح منع التكرار مطلوب.']]);
         }
-
 
         if ($lines === []) {
             throw ValidationException::withMessages(['lines' => ['يجب أن يحتوي الإشعار الدائن على بند واحد على الأقل.']]);
@@ -66,6 +69,7 @@ class BillingCreditNoteService
 
             if ($existing) {
                 $this->assertSameRequest($existing, $invoiceId, $lines, $reason);
+
                 return $existing;
             }
 
@@ -396,7 +400,7 @@ class BillingCreditNoteService
     }
 
     /**
-     * @param array<int, array{invoice_line_id: int, amount_minor: int}> $lines
+     * @param  array<int, array{invoice_line_id: int, amount_minor: int}>  $lines
      */
     private function assertSameRequest(
         BillingCreditNote $existing,

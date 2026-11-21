@@ -2,30 +2,28 @@
 
 namespace Tests\Feature;
 
-use App\Enums\{BillingInterval, BillingInvoiceStatus, BillingSubscriptionStatus, NetworkStatus};
-use App\Models\{
-    BillingAccount,
-    BillingDunningPolicyVersion,
-    BillingInvoice,
-    BillingPaymentMethod,
-    BillingPlan,
-    BillingPlanVersion,
-    BillingPrice,
-    BillingProduct,
-    BillingRevenueRecognitionSchedule,
-    Currency,
-    Network,
-    TreasuryAccount,
-    User
-};
-use App\Services\Billing\{
-    BillingCatalogService,
-    BillingEntitlementService,
-    BillingPaymentService,
-    BillingPolicyManagementService,
-    BillingReconciliationService,
-    BillingSubscriptionService
-};
+use App\Enums\BillingInterval;
+use App\Enums\BillingInvoiceStatus;
+use App\Enums\BillingSubscriptionStatus;
+use App\Enums\NetworkStatus;
+use App\Models\BillingAccount;
+use App\Models\BillingDunningPolicyVersion;
+use App\Models\BillingPaymentMethod;
+use App\Models\BillingPlan;
+use App\Models\BillingPlanVersion;
+use App\Models\BillingPrice;
+use App\Models\BillingProduct;
+use App\Models\BillingRevenueRecognitionSchedule;
+use App\Models\Currency;
+use App\Models\Network;
+use App\Models\TreasuryAccount;
+use App\Models\User;
+use App\Services\Billing\BillingCatalogService;
+use App\Services\Billing\BillingEntitlementService;
+use App\Services\Billing\BillingPaymentService;
+use App\Services\Billing\BillingPolicyManagementService;
+use App\Services\Billing\BillingReconciliationService;
+use App\Services\Billing\BillingSubscriptionService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
 use Tests\TestCase;

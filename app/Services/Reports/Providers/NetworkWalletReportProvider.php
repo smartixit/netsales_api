@@ -12,17 +12,55 @@ use Illuminate\Database\Eloquent\Builder;
 
 final class NetworkWalletReportProvider extends AbstractOperationalReportProvider
 {
-    public function type(): OperationalReportType { return OperationalReportType::NETWORK_WALLET; }
-    protected function label(): string { return 'كشف حساب محفظة الشبكة'; }
-    protected function description(): string { return 'كشف حركات محفظة الشبكة مع الرصيد السابق واللاحق والعملة.'; }
-    protected function viewPermission(): string { return 'network_wallets.report'; }
-    protected function exportPermission(): string { return 'network_wallets.export'; }
-    protected function scopes(): array { return ['network']; }
-    protected function posSelection(): string { return 'forbidden'; }
-    protected function pageProfileIds(): array { return ['a4-landscape']; }
+    public function type(): OperationalReportType
+    {
+        return OperationalReportType::NETWORK_WALLET;
+    }
 
-    protected function statusChoices(): array { return ['DEPOSIT', 'WITHDRAW']; }
-    protected function statusFilterLabel(): string { return 'نوع الحركة'; }
+    protected function label(): string
+    {
+        return 'كشف حساب محفظة الشبكة';
+    }
+
+    protected function description(): string
+    {
+        return 'كشف حركات محفظة الشبكة مع الرصيد السابق واللاحق والعملة.';
+    }
+
+    protected function viewPermission(): string
+    {
+        return 'network_wallets.report';
+    }
+
+    protected function exportPermission(): string
+    {
+        return 'network_wallets.export';
+    }
+
+    protected function scopes(): array
+    {
+        return ['network'];
+    }
+
+    protected function posSelection(): string
+    {
+        return 'forbidden';
+    }
+
+    protected function pageProfileIds(): array
+    {
+        return ['a4-landscape'];
+    }
+
+    protected function statusChoices(): array
+    {
+        return ['DEPOSIT', 'WITHDRAW'];
+    }
+
+    protected function statusFilterLabel(): string
+    {
+        return 'نوع الحركة';
+    }
 
     protected function columns(): array
     {
