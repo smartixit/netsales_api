@@ -41,7 +41,7 @@ class PreviewNetworkPosLinkingChallengeRequest extends FormRequest
         return (string) $this->payload;
     }
 
-    public function getPosUuid(): ?string
+    public function getPosUuid(): string
     {
         return strtoupper(trim((string) $this->pos_uuid));
     }
