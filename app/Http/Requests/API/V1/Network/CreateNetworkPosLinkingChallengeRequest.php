@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\API\V1\Network;
 
+use App\Enums\PosStatus;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
-use App\Enums\PosStatus;
 use Illuminate\Validation\Rule;
 
 class CreateNetworkPosLinkingChallengeRequest extends FormRequest
