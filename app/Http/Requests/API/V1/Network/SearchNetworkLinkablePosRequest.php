@@ -13,6 +13,8 @@ class SearchNetworkLinkablePosRequest extends FormRequest
     }
 
     /**
+     * Resolve one exact POS business identifier only; this endpoint is not a directory.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -24,9 +26,13 @@ class SearchNetworkLinkablePosRequest extends FormRequest
                 'min:1',
                 Rule::exists('networks', 'network_id')->whereNull('deleted_at'),
             ],
-            'search' => ['required', 'string', 'min:2', 'max:120'],
-            'per_page' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:20'],
-            'cursor' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'pos_uuid' => [
+                'required',
+                'string',
+                'max:64',
+                'regex:/^POS-\d{4}-\d{5}-[A-F0-9]{4}$/',
+                Rule::exists('pos', 'pos_uuid')->whereNull('deleted_at'),
+            ],
         ];
     }
 
@@ -35,18 +41,8 @@ class SearchNetworkLinkablePosRequest extends FormRequest
         return (int) $this->input('network_id');
     }
 
-    public function getSearch(): string
+    public function getPosBusinessCode(): string
     {
-        return trim((string) $this->input('search'));
-    }
-
-    public function getPerPage(): int
-    {
-        return (int) $this->input('per_page', 10);
-    }
-
-    public function getCursor(): ?string
-    {
-        return $this->filled('cursor') ? (string) $this->input('cursor') : null;
+        return strtoupper(trim((string) $this->input('pos_uuid')));
     }
 }
