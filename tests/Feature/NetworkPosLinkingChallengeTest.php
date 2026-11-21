@@ -638,4 +638,52 @@ class NetworkPosLinkingChallengeTest extends TestCase
                 ->count()
         );
     }
+    public function test_network_owner_can_read_safe_challenge_status_without_secret_fields(): void
+    {
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $createResponse->assertCreated();
+
+        $uuid = $createResponse->json('data.challenge_uuid');
+
+        $statusResponse = $this->withHeaders($this->netSession['headers'])
+            ->getJson("/api/v1/network-pos/challenges/{$uuid}");
+
+        $statusResponse->assertOk()
+            ->assertJsonPath('data.status', LinkingChallengeStatus::PENDING->value)
+            ->assertJsonStructure([
+                'data' => [
+                    'status',
+                    'status_label',
+                    'expires_at',
+                ],
+            ])
+            ->assertJsonMissingPath('data.payload')
+            ->assertJsonMissingPath('data.challenge_uuid')
+            ->assertJsonMissingPath('data.network_id')
+            ->assertJsonMissingPath('data.pos_id');
+    }
+
+    public function test_user_outside_network_cannot_read_challenge_status(): void
+    {
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+            ]);
+
+        $createResponse->assertCreated();
+
+        $uuid = $createResponse->json('data.challenge_uuid');
+
+        $statusResponse = $this->withHeaders($this->unauthSession['headers'])
+            ->getJson("/api/v1/network-pos/challenges/{$uuid}");
+
+        $statusResponse->assertUnprocessable()
+            ->assertJsonValidationErrors(['challenge_uuid']);
+    }
+
 }
