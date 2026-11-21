@@ -36,7 +36,9 @@ class CreateNetworkPosLinkingChallengeRequest extends FormRequest
             'pos_uuid' => [
                 'required_without:pos_id',
                 'prohibited_with:pos_id',
-                'uuid',
+                'string',
+                'max:64',
+                'regex:/^POS-\\d{4}-\\d{5}-[A-F0-9]{4}$/',
                 Rule::exists('pos', 'pos_uuid')
                     ->whereNull('deleted_at')
                     ->where('status', PosStatus::ACTIVE->value),
