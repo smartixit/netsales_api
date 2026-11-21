@@ -130,9 +130,9 @@ Response (201, `NetworkPosLinkingChallengeResource`):
 
 ### 4.4 POS preview and confirmation
 
-- Preview accepts `payload` and the authenticated POS identity (`pos_id` or `pos_uuid`). The server decrypts and verifies all bound values, expiry, nonce, Network, target POS, POS activity, membership, and absence of an existing relationship.
+- Preview accepts `payload` and exactly one authenticated POS identity selector: `pos_id` or `pos_uuid` (the POS commercial business code). Supplying both selectors is rejected. The server decrypts and verifies all bound values, expiry, nonce, Network, target POS, POS activity, active POS ownership/membership, and absence of an existing relationship.
 - `is_targeted` is always `true`; an invitation for another POS must be rejected.
-- Confirmation rechecks the same target binding inside the transaction and consumes the challenge under row lock. Replays and cross-POS confirmations are rejected.
+- Confirmation requires exactly one of `pos_id` or `pos_uuid`, rechecks the same target binding and active POS ownership/membership inside the transaction, and consumes the challenge under row lock. Replays, ambiguous selectors, inactive memberships, and cross-POS confirmations are rejected.
 - The POS preview resource may contain the verified Network and POS details needed for the user confirmation screen; the Network-side status resource must never return the encrypted payload or target identifiers.
 
 ### 4.5 Safe challenge status and revocation
