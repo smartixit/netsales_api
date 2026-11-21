@@ -508,11 +508,11 @@ class NetworkPosController extends BaseController
             required: true,
             description: 'بيانات إنشاء التحدي المشفر',
             content: new OA\JsonContent(
-                required: ['network_id'],
+                required: ['network_id', 'pos_uuid'],
                 properties: [
                     new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5),
-                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: '3fa85f64-5717-4562-b3fc-2c963f66afa6'),
+                    new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5, description: 'بديل عن pos_uuid؛ يجب إرسال أحدهما فقط.'),
+                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: 'POS-2611-00001-8F3A', description: 'المعرف التجاري لنقطة البيع المستهدفة؛ بديل عن pos_id.'),
                     new OA\Property(property: 'duration_minutes', type: 'integer', default: 15, example: 15),
                 ]
             )
