@@ -20,9 +20,7 @@ class NetworkPosLinkingChallengeStatusResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $status = $this->status instanceof LinkingChallengeStatus
-            ? $this->status
-            : LinkingChallengeStatus::tryFrom((string) $this->status);
+        $status = $this->status;
 
         return [
             'status' => $status?->value,
