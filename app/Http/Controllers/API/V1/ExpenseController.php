@@ -613,7 +613,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = $this->expenseService->getById($id);
-            if ($denial = $this->authorizeExpenseTenant($expense)) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.edit')) {
                 return $denial;
             }
 
@@ -648,7 +648,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = $this->expenseService->getById($id);
-            if ($denial = $this->authorizeExpenseTenant($expense)) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.delete')) {
                 return $denial;
             }
 
@@ -683,7 +683,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = $this->expenseService->getById($id);
-            if ($denial = $this->authorizeExpenseTenant($expense)) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.delete')) {
                 return $denial;
             }
 
