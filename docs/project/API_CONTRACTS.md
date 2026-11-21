@@ -124,6 +124,9 @@ Response (201, `NetworkPosLinkingChallengeResource`):
 - `network_id` and `pos_id`: server-side binding values.
 - `status`: `PENDING`; `status_label`: localized label.
 - `expires_at`: ISO-8601 timestamp with timezone offset.
+- Nested `network` projection contains only `network_id` and `network_name`.
+- Nested `pos` projection contains only `pos_id`, `pos_uuid`, and `pos_name`.
+- Do not embed the general NetworkResource or PosResource here; those expose owner identity, phone, email, address, logos, and administrative metadata unrelated to challenge creation.
 
 ### 4.4 POS preview and confirmation
 
