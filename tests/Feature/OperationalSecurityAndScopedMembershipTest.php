@@ -180,7 +180,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
                         'voucher_count' => 5,
                     ],
                 ],
-            ]);
+            ], $headers);
 
         $response->assertStatus(422);
         $this->assertStringContainsString('X-Idempotency-Key', $response->json('message'));
@@ -215,7 +215,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $firstRequestId = $first->json('data.request_id');
 
         // الطلب الثاني المتطابق تماماً بنفس المفتاح
-        $second = $this->withHeaders($headers)->postJson('/api/v1/requests', $payload);
+        $second = $this->postProcurementRequest($payload, $headers);
         $second->assertStatus(201);
         $this->assertEquals($firstRequestId, $second->json('data.request_id'));
         $this->assertEquals('true', $second->headers->get('X-Idempotency-Hit'));
@@ -262,7 +262,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
 
         // يجب الرفض بـ 422 أو 403 لمنع IDOR
         $this->assertContains($response->status(), [403, 422]);
-        $this->assertStringContainsString('غير مصرح', $response->json('message'));
+        $this->assertStringContainsString('لا تملك الصلاحية', $response->json('message'));
     }
 
     /**
@@ -271,6 +271,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
     public function test_network_scoped_membership_crud_and_owner_protection(): void
     {
         $ownerAuth = $this->createAuthenticatedSession($this->networkOwner);
+        $networkUserRole = Role::where('role_key', RoleKey::NETWORK_USER->value)->firstOrFail();
         $newMemberPhone = '77'.rand(1000000, 9999999);
 
         $newMemberUser = $this->createUserWithScope(RoleScope::NETWORK, [
@@ -290,7 +291,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $addResponse = $this->withHeaders($ownerAuth['headers'])
             ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
                 'user_phone_number' => $newMemberPhone,
-                'role_id' => $this->networkMemberRole->role_id,
+                'role_id' => $networkUserRole->role_id,
                 'status' => 'ACTIVE',
             ]);
         $addResponse->assertStatus(201);
@@ -389,6 +390,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
 
         $this->assertSame('NETWORK_USER', $roles->json('data.0.role_key'));
 
+        $rejectedCandidateIds = [];
         foreach ([$networkAccountantRole, $networkOwnerRole, $platformRole] as $role) {
             $candidate = $this->createUserWithScope(RoleScope::NETWORK, [
                 'role_id' => null,
@@ -397,6 +399,8 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
                 'user_password' => bcrypt('password'),
                 'status' => UserStatus::ACTIVE,
             ]);
+
+            $rejectedCandidateIds[] = $candidate->user_id;
 
             $response = $this->withHeaders($ownerAuth['headers'])
                 ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
@@ -407,10 +411,12 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             $response->assertUnprocessable();
         }
 
-        $this->assertDatabaseMissing('network_users', [
-            'network_id' => $this->networkA->network_id,
-            'role_id' => $networkAccountantRole->role_id,
-        ]);
+        foreach ($rejectedCandidateIds as $rejectedUserId) {
+            $this->assertDatabaseMissing('network_users', [
+                'network_id' => $this->networkA->network_id,
+                'user_id' => $rejectedUserId,
+            ]);
+        }
 
         $changeCandidate = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
