@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources\API\V1\Network;
 
-use App\Http\Resources\API\V1\Pos\PosResource;
 use App\Models\NetworkPosLinkingChallenge;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -36,8 +35,15 @@ class NetworkPosLinkingChallengeResource extends JsonResource
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
 
             // Eager Loaded Relationships
-            'network' => $this->whenLoaded('network', fn () => new NetworkResource($this->network)),
-            'pos' => $this->whenLoaded('pos', fn () => new PosResource($this->pos)),
+            'network' => $this->whenLoaded('network', fn () => [
+                'network_id' => $this->network->network_id,
+                'network_name' => $this->network->network_name,
+            ]),
+            'pos' => $this->whenLoaded('pos', fn () => [
+                'pos_id' => $this->pos->pos_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+                'pos_name' => $this->pos->pos_name,
+            ]),
         ];
     }
 }
