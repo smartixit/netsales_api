@@ -119,31 +119,40 @@ class RequestController extends BaseController
             return $this->errorResponse('يجب تسجيل الدخول لاستعراض طلبات التوريد.', [], 401);
         }
 
-        if (! $currentUser->isSuperAdmin()) {
-            $ownedPosId = $currentUser->pos()->value('pos_id');
-            if ($ownedPosId) {
-                $filters['pos_id'] = (int) $ownedPosId;
-            } elseif ($currentUser->posUsers()->exists()) {
-                $posId = $currentUser->posUsers()->value('pos_id');
-                if (! $posId) {
-                    return $this->errorResponse('لا توجد نقطة بيع مصرح بها لهذا الحساب.', [], 403);
-                }
-                $filters['pos_id'] = (int) $posId;
-            } elseif ($currentUser->networks()->exists() || $currentUser->networkUsers()->exists()) {
-                $networkIds = $currentUser->networks()->pluck('networks.network_id')->toArray();
-                $networkIds = array_unique(array_merge($networkIds, $currentUser->networkUsers()->pluck('network_id')->toArray()));
-                if ($networkIds === []) {
-                    return $this->errorResponse('لا توجد شبكة مصرح بها لهذا الحساب.', [], 403);
-                }
-                if (! empty($filters['network_id']) && ! in_array((int) $filters['network_id'], $networkIds, true)) {
-                    return $this->errorResponse('غير مصرح لك باستعراض طلبات هذه الشبكة.', [], 403);
-                }
-                if (empty($filters['network_id'])) {
-                    $filters['network_ids'] = $networkIds;
-                }
-            } else {
-                return $this->errorResponse('لا يوجد نطاق تشغيلي مصرح به لهذا الحساب.', [], 403);
+        if ($currentUser->isSuperAdmin()) {
+            return $filters;
+        }
+
+        $authorization = app(\App\Services\TenantPermissionService::class);
+        $networkIds = $authorization->authorizedNetworkIds($currentUser, 'requests.view');
+        $posIds = $authorization->authorizedPosIds($currentUser, 'requests.view');
+
+        if ($networkIds === [] && $posIds === []) {
+            return $this->errorResponse('لا توجد عضوية نشطة تملك صلاحية عرض الطلبات.', [], 403);
+        }
+
+        if (! empty($filters['network_id'])) {
+            $requestedId = (int) $filters['network_id'];
+            if (! in_array($requestedId, $networkIds, true)) {
+                return $this->errorResponse('غير مصرح لك باستعراض طلبات هذه الشبكة.', [], 403);
             }
+            $filters['network_id'] = $requestedId;
+        } elseif ($networkIds !== []) {
+            $filters['network_ids'] = $networkIds;
+        }
+
+        if (! empty($filters['pos_id'])) {
+            $requestedId = (int) $filters['pos_id'];
+            if (! in_array($requestedId, $posIds, true)) {
+                return $this->errorResponse('غير مصرح لك باستعراض طلبات نقطة البيع هذه.', [], 403);
+            }
+            $filters['pos_id'] = $requestedId;
+        } elseif ($posIds !== []) {
+            $filters['pos_ids'] = $posIds;
+        }
+
+        if ($networkIds !== [] && $posIds !== [] && empty($filters['network_id']) && empty($filters['pos_id'])) {
+            return $this->errorResponse('حدد مساحة عمل واحدة لاستعراض طلباتها.', [], 422);
         }
 
         return $filters;
