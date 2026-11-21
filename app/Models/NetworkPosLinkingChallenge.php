@@ -8,6 +8,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $challenge_id
+ * @property int $network_id
+ * @property int $pos_id
+ * @property LinkingChallengeStatus $status
+ * @property \\Illuminate\\Support\\Carbon $expires_at
+ */
 class NetworkPosLinkingChallenge extends Model
 {
     use ExactDateSerialization;
@@ -44,36 +51,49 @@ class NetworkPosLinkingChallenge extends Model
         ];
     }
 
+    /** @return BelongsTo<Network, $this> */
     public function network(): BelongsTo
     {
         return $this->belongsTo(Network::class, 'network_id', 'network_id');
     }
 
+    /** @return BelongsTo<Pos, $this> */
     public function pos(): BelongsTo
     {
         return $this->belongsTo(Pos::class, 'pos_id', 'pos_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id', 'user_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function consumer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'consumed_by_user_id', 'user_id');
     }
 
+    /** @return BelongsTo<Pos, $this> */
     public function consumedPos(): BelongsTo
     {
         return $this->belongsTo(Pos::class, 'consumed_by_pos_id', 'pos_id');
     }
 
+    /**
+     * @param Builder<NetworkPosLinkingChallenge> $query
+     * @return Builder<NetworkPosLinkingChallenge>
+     */
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', LinkingChallengeStatus::PENDING);
     }
 
+    /**
+     * @param Builder<NetworkPosLinkingChallenge> $query
+     * @return Builder<NetworkPosLinkingChallenge>
+     */
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', LinkingChallengeStatus::PENDING)
