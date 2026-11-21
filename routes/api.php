@@ -208,6 +208,10 @@ Route::prefix('v1')->group(function () {
             Route::get('networks/{id}', [NetworkController::class, 'show'])->whereNumber('id')->name('api.v1.networks.show');
         });
 
+        Route::middleware(['throttle:api-read', 'permission:networks.edit'])->get(
+            'network-pos/challenges/{uuid}',
+            [NetworkPosController::class, 'challengeStatus']
+        )->whereUuid('uuid')->name('api.v1.network_pos.challenges.status');
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('networks', [NetworkController::class, 'store'])->name('api.v1.networks.store')->middleware('permission:networks.create');
             Route::put('networks/{id}', [NetworkController::class, 'update'])->whereNumber('id')->name('api.v1.networks.update')->middleware('permission:networks.edit');
