@@ -40,10 +40,13 @@ class NetworkPosLinkingChallengeTest extends TestCase
 
     protected Pos $otherPos;
 
+    /** @var array<string, mixed> */
     protected array $netSession;
 
+    /** @var array<string, mixed> */
     protected array $posSession;
 
+    /** @var array<string, mixed> */
     protected array $unauthSession;
 
     protected function setUp(): void
@@ -162,6 +165,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
+
                 'duration_minutes' => 20,
             ]);
 
@@ -169,8 +173,21 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.network_id', $this->network->network_id)
             ->assertJsonPath('data.pos_id', $this->pos->pos_id)
+            ->assertJsonPath('data.network.network_id', $this->network->network_id)
+            ->assertJsonPath('data.network.network_name', $this->network->network_name)
+            ->assertJsonPath('data.pos.pos_id', $this->pos->pos_id)
+            ->assertJsonPath('data.pos.pos_uuid', $this->pos->pos_uuid)
+            ->assertJsonPath('data.pos.pos_name', $this->pos->pos_name)
             ->assertJsonPath('data.status', LinkingChallengeStatus::PENDING->value)
             ->assertJsonPath('data.status_label', 'قيد الانتظار');
+
+        $networkData = $response->json('data.network');
+        $posData = $response->json('data.pos');
+        $this->assertArrayNotHasKey('owner_id', $networkData);
+        $this->assertArrayNotHasKey('network_phone_number', $networkData);
+        $this->assertArrayNotHasKey('owner_id', $posData);
+        $this->assertArrayNotHasKey('pos_phone_number', $posData);
+        $this->assertArrayNotHasKey('pos_email', $posData);
 
         $payload = $response->json('data.payload');
         $this->assertNotEmpty($payload);
@@ -180,8 +197,117 @@ class NetworkPosLinkingChallengeTest extends TestCase
         $this->assertDatabaseHas('network_pos_linking_challenges', [
             'challenge_uuid' => $uuid,
             'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
             'status' => LinkingChallengeStatus::PENDING->value,
         ]);
+    }
+
+    public function test_network_owner_can_create_challenge_using_resolved_pos_business_code(): void
+    {
+        $response = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.pos.pos_uuid', $this->pos->pos_uuid)
+            ->assertJsonPath('data.pos.pos_name', $this->pos->pos_name);
+
+        $this->assertDatabaseHas('network_pos_linking_challenges', [
+            'challenge_uuid' => $response->json('data.challenge_uuid'),
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => LinkingChallengeStatus::PENDING->value,
+        ]);
+    }
+
+    public function test_network_owner_cannot_create_an_untargeted_invitation(): void
+    {
+        $response = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['pos_id', 'pos_uuid']);
+    }
+
+    public function test_network_owner_can_create_challenge_using_resolved_pos_business_code(): void
+    {
+        $response = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.network_id', $this->network->network_id)
+            ->assertJsonPath('data.pos_id', $this->pos->pos_id)
+            ->assertJsonPath('data.pos.pos_id', $this->pos->pos_id)
+            ->assertJsonPath('data.pos.pos_uuid', $this->pos->pos_uuid)
+            ->assertJsonPath('data.pos.pos_name', $this->pos->pos_name)
+            ->assertJsonMissingPath('data.pos.pos_phone_number')
+            ->assertJsonMissingPath('data.pos.owner_id')
+            ->assertJsonMissingPath('data.pos.owner');
+
+        $this->assertDatabaseHas('network_pos_linking_challenges', [
+            'challenge_uuid' => $response->json('data.challenge_uuid'),
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => LinkingChallengeStatus::PENDING->value,
+        ]);
+    }
+
+    public function test_network_owner_cannot_create_challenge_with_two_pos_targets(): void
+    {
+        $response = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['pos_id', 'pos_uuid']);
+    }
+
+    public function test_network_owner_can_resolve_exact_eligible_pos_business_code(): void
+    {
+        $response = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges/resolve-target', [
+                'network_id' => $this->network->network_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.pos_id', $this->pos->pos_id)
+            ->assertJsonPath('data.pos_name', $this->pos->pos_name)
+            ->assertJsonPath('data.pos_uuid', $this->pos->pos_uuid)
+            ->assertJsonMissingPath('data.pos_phone_number')
+            ->assertJsonMissingPath('data.owner');
+        $response->assertJsonMissingPath('data.owner_id')
+            ->assertJsonMissingPath('data.governorate_name')
+            ->assertJsonMissingPath('data.directorate_name');
+    }
+
+    public function test_network_owner_cannot_resolve_already_linked_pos_target(): void
+    {
+        NetworkPos::create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => true,
+        ]);
+
+        $response = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges/resolve-target', [
+                'network_id' => $this->network->network_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['target']);
     }
 
     public function test_unauthorized_user_cannot_create_challenge_for_network(): void
@@ -189,6 +315,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
         $response = $this->withHeaders($this->unauthSession['headers'])
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
             ]);
 
         $this->assertTrue(in_array($response->status(), [403, 422]));
@@ -201,6 +328,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
+
             ]);
 
         $payload = $createRes->json('data.payload');
@@ -221,12 +349,34 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonPath('data.is_targeted', true);
     }
 
+    public function test_preview_rejects_both_pos_identity_selectors(): void
+    {
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $createResponse->assertCreated();
+
+        $response = $this->withHeaders($this->posSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges/preview', [
+                'payload' => $createResponse->json('data.payload'),
+                'pos_id' => $this->pos->pos_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['pos_id', 'pos_uuid']);
+    }
+
     public function test_targeted_challenge_cannot_be_previewed_by_different_pos(): void
     {
         $createRes = $this->withHeaders($this->netSession['headers'])
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
+
             ]);
 
         $payload = $createRes->json('data.payload');
@@ -242,6 +392,33 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonValidationErrors(['pos_id']);
     }
 
+    public function test_inactive_pos_membership_cannot_preview_a_challenge(): void
+    {
+        $posRole = Role::where('role_key', RoleKey::POS_AGENT->value)->first();
+        PosUser::create([
+            'pos_id' => $this->pos->pos_id,
+            'user_id' => $this->unauthorizedUser->user_id,
+            'role_id' => $posRole?->role_id,
+            'status' => 'INACTIVE',
+        ]);
+
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+        $createResponse->assertCreated();
+
+        $response = $this->withHeaders($this->unauthSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges/preview', [
+                'payload' => $createResponse->json('data.payload'),
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['pos_id']);
+    }
+
     public function test_pos_owner_can_confirm_challenge_and_establish_relationship(): void
     {
         // 1. Create challenge
@@ -249,6 +426,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
+
             ]);
 
         $uuid = $createRes->json('data.challenge_uuid');
@@ -277,15 +455,84 @@ class NetworkPosLinkingChallengeTest extends TestCase
         // 4. Verify NetworkPos relationship created
         $this->assertDatabaseHas('network_pos', [
             'network_id' => $this->network->network_id,
-            'pos_id' => $this->pos->pos_id,
+                'pos_id' => $this->pos->pos_id,
+
             'status' => true,
         ]);
 
         // 5. Verify auto-provisioned POS wallet
         $this->assertDatabaseHas('pos_wallets', [
             'network_id' => $this->network->network_id,
-            'pos_id' => $this->pos->pos_id,
+                'pos_id' => $this->pos->pos_id,
+
             'wallet_balance' => 0.00,
+        ]);
+    }
+
+    public function test_confirmation_rejects_both_pos_identity_selectors(): void
+    {
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $createResponse->assertCreated();
+        $challengeUuid = $createResponse->json('data.challenge_uuid');
+
+        $response = $this->withHeaders($this->posSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges/confirm', [
+                'challenge_uuid' => $challengeUuid,
+                'pos_id' => $this->pos->pos_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['pos_id', 'pos_uuid']);
+
+        $this->assertDatabaseHas('network_pos_linking_challenges', [
+            'challenge_uuid' => $challengeUuid,
+            'status' => LinkingChallengeStatus::PENDING->value,
+        ]);
+        $this->assertDatabaseMissing('network_pos', [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+        ]);
+    }
+
+    public function test_inactive_pos_membership_cannot_confirm_a_challenge(): void
+    {
+        $posRole = Role::where('role_key', RoleKey::POS_AGENT->value)->first();
+        PosUser::create([
+            'pos_id' => $this->pos->pos_id,
+            'user_id' => $this->unauthorizedUser->user_id,
+            'role_id' => $posRole?->role_id,
+            'status' => 'INACTIVE',
+        ]);
+
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+        $createResponse->assertCreated();
+        $challengeUuid = $createResponse->json('data.challenge_uuid');
+
+        $response = $this->withHeaders($this->unauthSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges/confirm', [
+                'challenge_uuid' => $challengeUuid,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['pos_id']);
+        $this->assertDatabaseHas('network_pos_linking_challenges', [
+            'challenge_uuid' => $challengeUuid,
+            'status' => LinkingChallengeStatus::PENDING->value,
+        ]);
+        $this->assertDatabaseMissing('network_pos', [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
         ]);
     }
 
@@ -295,6 +542,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
+
             ]);
 
         $uuid = $createRes->json('data.challenge_uuid');
@@ -322,6 +570,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
         $createRes = $this->withHeaders($this->netSession['headers'])
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
             ]);
 
         $uuid = $createRes->json('data.challenge_uuid');
@@ -344,6 +593,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
+
             ]);
 
         $payload = $createRes->json('data.payload');
@@ -371,6 +621,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
+
             ]);
 
         $payload = $createRes->json('data.payload');
@@ -399,6 +650,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
+
             ]);
 
         $uuid = $createRes->json('data.challenge_uuid');
@@ -426,6 +678,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
+
             ]);
 
         $payload = $createRes->json('data.payload');
@@ -460,6 +713,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
         $createRes = $this->withHeaders($this->netSession['headers'])
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
             ]);
 
         $uuid = $createRes->json('data.challenge_uuid');
@@ -483,6 +737,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
+
             ]);
 
         $uuid = $createRes->json('data.challenge_uuid');
@@ -517,7 +772,8 @@ class NetworkPosLinkingChallengeTest extends TestCase
         // Pre-create link
         NetworkPos::create([
             'network_id' => $this->network->network_id,
-            'pos_id' => $this->pos->pos_id,
+                'pos_id' => $this->pos->pos_id,
+
             'status' => true,
         ]);
 
@@ -526,6 +782,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
+
             ]);
 
         $createRes->assertStatus(422)
@@ -538,6 +795,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
         $createRes = $this->withHeaders($this->netSession['headers'])
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
             ]);
 
         $uuid = $createRes->json('data.challenge_uuid');
@@ -577,6 +835,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->postJson('/api/v1/network-pos/challenges', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
+
             ]);
         $uuid = $createRes->json('data.challenge_uuid');
 
@@ -638,4 +897,139 @@ class NetworkPosLinkingChallengeTest extends TestCase
                 ->count()
         );
     }
+    public function test_consumed_challenge_cannot_be_revoked(): void
+    {
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $createResponse->assertCreated();
+        $uuid = $createResponse->json('data.challenge_uuid');
+
+        $confirmResponse = $this->withHeaders($this->posSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges/confirm', [
+                'challenge_uuid' => $uuid,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+        $confirmResponse->assertCreated();
+
+        $revokeResponse = $this->withHeaders($this->netSession['headers'])
+            ->deleteJson("/api/v1/network-pos/challenges/{$uuid}");
+
+        $revokeResponse->assertNotFound();
+        $this->assertDatabaseHas('network_pos_linking_challenges', [
+            'challenge_uuid' => $uuid,
+            'status' => LinkingChallengeStatus::CONSUMED->value,
+        ]);
+    }
+
+    public function test_expired_challenge_is_marked_expired_instead_of_revoked(): void
+    {
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $createResponse->assertCreated();
+        $uuid = $createResponse->json('data.challenge_uuid');
+
+        DB::table('network_pos_linking_challenges')
+            ->where('challenge_uuid', $uuid)
+            ->update(['expires_at' => now('Asia/Aden')->subMinute()]);
+
+        $revokeResponse = $this->withHeaders($this->netSession['headers'])
+            ->deleteJson("/api/v1/network-pos/challenges/{$uuid}");
+
+        $revokeResponse->assertNotFound();
+        $this->assertDatabaseHas('network_pos_linking_challenges', [
+            'challenge_uuid' => $uuid,
+            'status' => LinkingChallengeStatus::EXPIRED->value,
+        ]);
+    }
+
+    public function test_network_owner_can_read_safe_challenge_status_without_secret_fields(): void
+    {
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+
+            ]);
+
+        $createResponse->assertCreated();
+
+        $uuid = $createResponse->json('data.challenge_uuid');
+
+        $statusResponse = $this->withHeaders($this->netSession['headers'])
+            ->getJson("/api/v1/network-pos/challenges/{$uuid}");
+
+        $statusResponse->assertOk()
+            ->assertJsonPath('data.status', LinkingChallengeStatus::PENDING->value)
+            ->assertJsonStructure([
+                'data' => [
+                    'status',
+                    'status_label',
+                    'expires_at',
+                ],
+            ])
+            ->assertJsonMissingPath('data.payload')
+            ->assertJsonMissingPath('data.challenge_uuid')
+            ->assertJsonMissingPath('data.network_id')
+            ->assertJsonMissingPath('data.pos_id');
+    }
+
+    public function test_status_read_marks_expired_pending_challenge_as_expired(): void
+    {
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $createResponse->assertCreated();
+        $uuid = $createResponse->json('data.challenge_uuid');
+
+        DB::table('network_pos_linking_challenges')
+            ->where('challenge_uuid', $uuid)
+            ->update(['expires_at' => now('Asia/Aden')->subMinute()]);
+
+        $statusResponse = $this->withHeaders($this->netSession['headers'])
+            ->getJson("/api/v1/network-pos/challenges/{$uuid}");
+
+        $statusResponse->assertOk()
+            ->assertJsonPath('data.status', LinkingChallengeStatus::EXPIRED->value);
+
+        $this->assertDatabaseHas('network_pos_linking_challenges', [
+            'challenge_uuid' => $uuid,
+            'status' => LinkingChallengeStatus::EXPIRED->value,
+        ]);
+    }
+
+    public function test_user_outside_network_cannot_read_challenge_status(): void
+    {
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $createResponse->assertCreated();
+
+        $uuid = $createResponse->json('data.challenge_uuid');
+
+        $statusResponse = $this->withHeaders($this->unauthSession['headers'])
+            ->getJson("/api/v1/network-pos/challenges/{$uuid}");
+
+        $this->assertTrue(
+            in_array($statusResponse->status(), [403, 422], true),
+            'A user outside the network must not read its challenge status.'
+        );
+        if ($statusResponse->status() === 422) {
+            $statusResponse->assertJsonValidationErrors(['challenge_uuid']);
+        }
+    }
+
 }

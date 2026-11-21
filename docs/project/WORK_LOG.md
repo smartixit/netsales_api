@@ -1190,3 +1190,17 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Task Status:** Complete — Notifications module completely re-engineered, decoupled from legacy patterns, and verified.
 
 
+## [2026-11-22] Task: Targeted Network–POS QR Invitation Contract Hardening
+
+- **Authorized Scope:** Continue the existing targeted encrypted QR invitation implementation across Laravel API and Flutter PR #61; do not merge either PR.
+- **Backend changes:**
+  - Enforced exactly one POS target (pos_id XOR pos_uuid) when creating a challenge; untargeted invitations are rejected.
+  - Added exact POS business-code resolution without exposing a POS directory. The response now includes the same business code as pos_uuid, required by Flutter's subsequent challenge request.
+  - Renamed the request to ResolveNetworkLinkablePosRequest to reflect exact resolution rather than search.
+  - Added a safe lifecycle endpoint returning only status, label, and expiry; target IDs, challenge UUID, and encrypted payload are excluded.
+  - Corrected challenge expiry serialization to ISO-8601.
+  - Reworked the mandatory POS migration to drop the old ON DELETE SET NULL foreign key before enforcing NOT NULL, then recreate it with cascade deletion. The previous CI run exposed the incompatible FK; this migration correction is committed.
+  - Made revocation transactional, row-locked, active-membership scoped, and pending/unexpired-only. Added tests ensuring consumed challenges remain consumed and expired challenges become EXPIRED rather than REVOKED.
+  - Updated the canonical API contract and recorded DEC-QR-01.
+- **Flutter changes (paired PR #61):** The exact-target form and QR sheet are StatelessWidget views; GetX controller owns resolution, polling, countdown, revocation, and export/share orchestration. UI-only render-boundary capture remains in the presentation widget and is passed to the controller as a byte-capture callback. The invitation share card is feature-scoped under Commercial; shared QR primitives remain generic.
+- **Verification (latest API run #44955346829):** MySQL schema/migrations, Composer audit, Pint, and the full Laravel test suite passed (366 passed, 3 skipped; 2,888 assertions), including creation using the resolved POS business code and minimal network/POS projections. No PHPStan errors were reported for the QR challenge files. Aggregate CI remains RED: the targeted analysis reports three unchanged SaleInvoiceService type errors (lines 816, 1003, 1063), and the full-project analysis reports 1,000+ repository-wide errors. The challenge work itself passes feature tests and formatting, but do not merge while the required repository-wide static-analysis gate remains red. Paired Flutter run #44955192972 passed formatting and analyze and all QR-specific tests; its full suite failed in unrelated procurement details/package-card, custom refreshable-page, and session-membership tests.

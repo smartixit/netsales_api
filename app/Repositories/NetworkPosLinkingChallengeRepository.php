@@ -82,6 +82,8 @@ class NetworkPosLinkingChallengeRepository extends BaseRepository implements Net
     {
         return (bool) $this->model->newQuery()
             ->where('challenge_id', $challengeId)
+            ->where('status', LinkingChallengeStatus::PENDING)
+            ->where('expires_at', '>', now('Asia/Aden'))
             ->update([
                 'status' => LinkingChallengeStatus::REVOKED,
             ]);
@@ -94,6 +96,8 @@ class NetworkPosLinkingChallengeRepository extends BaseRepository implements Net
     {
         return (bool) $this->model->newQuery()
             ->where('challenge_id', $challengeId)
+            ->where('status', LinkingChallengeStatus::PENDING)
+            ->where('expires_at', '<=', now('Asia/Aden'))
             ->update([
                 'status' => LinkingChallengeStatus::EXPIRED,
             ]);

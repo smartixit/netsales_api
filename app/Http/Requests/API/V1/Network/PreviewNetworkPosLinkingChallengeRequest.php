@@ -3,6 +3,7 @@
 namespace App\Http\Requests\API\V1\Network;
 
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,6 +16,20 @@ class PreviewNetworkPosLinkingChallengeRequest extends FormRequest
         return true;
     }
 
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($this->filled('pos_id') && $this->filled('pos_uuid')) {
+                $message = 'يجب تحديد هوية نقطة البيع بمعرف واحد فقط.';
+                $validator->errors()->add('pos_id', $message);
+                $validator->errors()->add('pos_uuid', $message);
+            }
+        });
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -32,6 +47,8 @@ class PreviewNetworkPosLinkingChallengeRequest extends FormRequest
                 'required_without:pos_id',
                 'nullable',
                 'string',
+                'max:64',
+                'regex:/^POS-\\d{4}-\\d{5}-[A-F0-9]{4}$/',
                 Rule::exists('pos', 'pos_uuid')->whereNull('deleted_at'),
             ],
         ];

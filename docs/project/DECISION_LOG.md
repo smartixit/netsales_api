@@ -157,3 +157,13 @@ Valid statuses are strictly:
   - *Option B (Strict Blocking - نظام المنع الصارم):* Block invoice deletion (`DomainException`) until the network wallet is credited or replenished with sufficient balance to refund the cash.
 - **Decision:** **Option B (`نظام المنع الصارم`)**. Networks are strictly forbidden from having negative wallet balances or overdrafts. If the network wallet balance is lower than the cash invoice total, deletion is rejected with an authoritative Arabic error message.
 - **Consequence:** Preserves the fundamental financial invariant that network wallets can never become debtors, avoiding unbacked balance deductions.
+
+
+## DEC-QR-01: Network invitations must target one exact POS
+- **Status:** **APPROVED**
+- **Date:** 2026-11-22
+- **User Decision Date:** 2026-11-21
+- **Scope:** Network-to-POS commercial relationship invitation via encrypted QR.
+- **Decision:** A Network invitation must be bound to exactly one Network and one explicitly resolved POS. The issuer enters the POS commercial business code; the API resolves only that exact POS after checking the issuer's active Network authorization, target POS activity, and absence of an existing link. No public POS directory and no untargeted invitation are allowed.
+- **Security:** The encrypted challenge binds Network ID, POS ID, challenge UUID, nonce, and exact expiry. Preview/confirmation revalidate the same POS binding. The status endpoint exposes only lifecycle status, label, and expiry; it never returns the payload or target identifiers.
+- **Consequence:** Both pos_id and pos_uuid are mutually exclusive target inputs and exactly one is required. pos_uuid on this wire contract is the formatted POS commercial business code, not a generic RFC UUID.

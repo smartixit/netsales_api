@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\API\V1\Network;
 
+use App\Enums\PosStatus;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,6 +17,20 @@ class CreateNetworkPosLinkingChallengeRequest extends FormRequest
         return true;
     }
 
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($this->filled('pos_id') && $this->filled('pos_uuid')) {
+                $message = 'يجب تحديد نقطة البيع بمعرف واحد فقط.';
+                $validator->errors()->add('pos_id', $message);
+                $validator->errors()->add('pos_uuid', $message);
+            }
+        });
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -24,14 +40,21 @@ class CreateNetworkPosLinkingChallengeRequest extends FormRequest
                 Rule::exists('networks', 'network_id')->whereNull('deleted_at'),
             ],
             'pos_id' => [
-                'nullable',
+                'required_without:pos_uuid',
                 'integer',
-                Rule::exists('pos', 'pos_id')->whereNull('deleted_at'),
+                'min:1',
+                Rule::exists('pos', 'pos_id')
+                    ->whereNull('deleted_at')
+                    ->where('status', PosStatus::ACTIVE->value),
             ],
             'pos_uuid' => [
-                'nullable',
+                'required_without:pos_id',
                 'string',
-                Rule::exists('pos', 'pos_uuid')->whereNull('deleted_at'),
+                'max:64',
+                'regex:/^POS-\d{4}-\d{5}-[A-F0-9]{4}$/',
+                Rule::exists('pos', 'pos_uuid')
+                    ->whereNull('deleted_at')
+                    ->where('status', PosStatus::ACTIVE->value),
             ],
             'duration_minutes' => [
                 'nullable',

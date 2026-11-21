@@ -8,9 +8,12 @@ use App\Http\Requests\API\V1\Network\ConfirmNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\CreateNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\FilterNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\PreviewNetworkPosLinkingChallengeRequest;
+use App\Http\Requests\API\V1\Network\ResolveNetworkLinkablePosRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeResource;
+use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeStatusResource;
+use App\Http\Resources\API\V1\Network\NetworkLinkablePosResource;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingPreviewResource;
 use App\Http\Resources\API\V1\Network\NetworkPosResource;
 use App\Models\Network;
@@ -503,13 +506,13 @@ class NetworkPosController extends BaseController
         tags: ['Network POS'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'بيانات إنشاء التحدي المشفر',
+            description: 'بيانات إنشاء التحدي المشفر. يجب إرسال pos_id أو pos_uuid، ولا يجوز إرسال الاثنين معاً.',
             content: new OA\JsonContent(
                 required: ['network_id'],
                 properties: [
                     new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5),
-                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: '3fa85f64-5717-4562-b3fc-2c963f66afa6'),
+                    new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5, description: 'بديل عن pos_uuid؛ يجب إرسال أحدهما فقط.'),
+                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: 'POS-2611-00001-8F3A', description: 'المعرف التجاري لنقطة البيع المستهدفة؛ بديل عن pos_id.'),
                     new OA\Property(property: 'duration_minutes', type: 'integer', default: 15, example: 15),
                 ]
             )
@@ -519,6 +522,33 @@ class NetworkPosController extends BaseController
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
         ]
     )]
+    /**
+     * Resolve one exact POS business code without exposing a POS directory.
+     */
+    public function resolveLinkTarget(ResolveNetworkLinkablePosRequest $request): JsonResponse
+    {
+        try {
+            $pos = $this->challengeService->resolveLinkTarget(
+                $this->currentUser(),
+                $request->getNetworkId(),
+                $request->getPosBusinessCode()
+            );
+
+            return $this->successResponse(
+                'تم التحقق من نقطة البيع وهي مؤهلة لإرسال دعوة الربط.',
+                new NetworkLinkablePosResource($pos)
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception) {
+            return $this->errorResponse(
+                'تعذر التحقق من نقطة البيع. راجع الرمز وحاول مرة أخرى.',
+                [],
+                422
+            );
+        }
+    }
+
     public function createChallenge(CreateNetworkPosLinkingChallengeRequest $request): JsonResponse
     {
         try {
@@ -558,7 +588,7 @@ class NetworkPosController extends BaseController
                 properties: [
                     new OA\Property(property: 'payload', type: 'string', example: 'NTS_LINK_V1_...'),
                     new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5),
-                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: '3fa85f64-5717-4562-b3fc-2c963f66afa6'),
+                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: 'POS-2611-00001-8F3A'),
                 ]
             )
         ),
@@ -604,7 +634,7 @@ class NetworkPosController extends BaseController
                 properties: [
                     new OA\Property(property: 'challenge_uuid', type: 'string', format: 'uuid'),
                     new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5),
-                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: '3fa85f64-5717-4562-b3fc-2c963f66afa6'),
+                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: 'POS-2611-00001-8F3A'),
                 ]
             )
         ),
@@ -633,6 +663,32 @@ class NetworkPosController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('فشل تأكيد الربط: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * Read challenge lifecycle state without returning its encrypted payload or identifiers.
+     */
+    public function challengeStatus(string $uuid): JsonResponse
+    {
+        try {
+            $challenge = $this->challengeService->getChallengeStatus(
+                $this->currentUser(),
+                $uuid
+            );
+
+            if (! $challenge) {
+                return $this->errorResponse('دعوة الربط غير موجودة.', [], 404);
+            }
+
+            return $this->successResponse(
+                'تم استرجاع حالة دعوة الربط بنجاح.',
+                new NetworkPosLinkingChallengeStatusResource($challenge)
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر استرجاع حالة دعوة الربط.', [], 422);
         }
     }
 

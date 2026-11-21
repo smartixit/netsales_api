@@ -68,63 +68,89 @@ The 24 backed PHP Enums (`app/Enums/`) have the following exact canonical wire v
 
 ---
 
-## 4. M4 POS–Network Linking Challenge API Contracts (QR Workflow)
+## 4. M4 POS–Network Linking Challenge API Contracts (Targeted QR Workflow)
 
-### 4.1 Endpoints Specification
+A Network invitation is always bound to exactly one Network and one specific POS. Public POS directory enumeration and untargeted invitations are prohibited.
 
-| Method | Endpoint | Authorization / Scope | Rate Limit | Purpose |
+### 4.1 Endpoints
+
+| Method | Endpoint | Authorization | Rate Limit | Purpose |
 |---|---|---|---|---|
-| `POST` | `/api/v1/network-pos/challenges` | `can:networks.edit` | `throttle:api-write` | Generate encrypted QR challenge invitation for Network |
-| `POST` | `/api/v1/network-pos/challenges/preview` | `can:pos.view` | `throttle:api-write` | Decrypt and preview challenge metadata by POS |
-| `POST` | `/api/v1/network-pos/challenges/confirm` | `can:pos.edit` | `throttle:api-write` | Atomically confirm relationship and consume challenge |
-| `DELETE` | `/api/v1/network-pos/challenges/{uuid}` | `can:networks.edit` | `throttle:api-write` | Revoke active challenge by network owner |
+| `POST` | `/api/v1/network-pos/challenges/resolve-target` | `permission:networks.edit` | `throttle:api-write` | Resolve one exact POS business code in the selected Network; not a directory |
+| `POST` | `/api/v1/network-pos/challenges` | `permission:networks.edit` | `throttle:api-write` | Create an encrypted invitation bound to that Network and POS |
+| `GET` | `/api/v1/network-pos/challenges/{uuid}` | `permission:networks.view` | `throttle:api-read` | Read only the authorized challenge lifecycle state |
+| `POST` | `/api/v1/network-pos/challenges/preview` | `permission:pos.view` | `throttle:api-write` | Validate a scanned payload for the authenticated POS |
+| `POST` | `/api/v1/network-pos/challenges/confirm` | `permission:pos.edit` | `throttle:api-write` | Atomically establish the relationship and consume the challenge |
+| `DELETE` | `/api/v1/network-pos/challenges/{uuid}` | `permission:networks.edit` | `throttle:api-write` | Revoke a challenge within the caller's authorized Network |
 
-### 4.2 Request & Response Serialization Schemas
+All routes are additionally inside the active `session.auth` boundary.
 
-#### 1. `POST /api/v1/network-pos/challenges`
-- **Request Body (`CreateNetworkPosLinkingChallengeRequest`):**
-  - `network_id` (`integer`, required): Network issuing the challenge.
-  - `pos_id` (`integer`, optional): Specific targeted POS ID.
-  - `pos_uuid` (`string/uuid`, optional): Specific targeted POS UUID.
-  - `duration_minutes` (`integer`, optional, default: 15, min: 5, max: 60).
-- **Response (201 Created):** Wraps `NetworkPosLinkingChallengeResource`.
-  - `data.challenge_uuid` (`string/uuid`): Public reference ID.
-  - `data.payload` (`string`): Asymmetrically sealed envelope prefixed with `NTS_LINK_V1_`.
-  - `data.status` (`string`): `'PENDING'`.
-  - `data.status_label` (`string`): `'قيد الانتظار'`.
-  - `data.expires_at` (`string`): `Y-m-d H:i:s` (`Asia/Aden` server timezone).
+### 4.2 Resolve one exact POS target
 
-#### 2. `POST /api/v1/network-pos/challenges/preview`
-- **Request Body (`PreviewNetworkPosLinkingChallengeRequest`):**
-  - `payload` (`string`, required): Scanned QR payload (`NTS_LINK_V1_...`).
-  - `pos_id` (`integer`, optional): Current active POS ID.
-  - `pos_uuid` (`string/uuid`, optional): Current active POS UUID.
-- **Response (200 OK):** Wraps `NetworkPosLinkingPreviewResource`.
-  - `data.challenge_uuid` (`string/uuid`)
-  - `data.network` (`NetworkResource`): Supplier Network details.
-  - `data.pos` (`PosResource`): Verified POS details.
-  - `data.expires_at` (`string`): Formatted expiration time.
-  - `data.is_targeted` (`boolean`): Whether challenge was targeted to a specific POS.
+`POST /api/v1/network-pos/challenges/resolve-target`
 
-#### 3. `POST /api/v1/network-pos/challenges/confirm`
-- **Request Body (`ConfirmNetworkPosLinkingChallengeRequest`):**
-  - `challenge_uuid` (`string/uuid`, required): UUID from preview.
-  - `pos_id` (`integer`, optional): POS ID confirming link.
-  - `pos_uuid` (`string/uuid`, optional): POS UUID confirming link.
-- **Response (201 Created):** Wraps `NetworkPosResource`.
-  - `data.network_pos_id` (`integer`)
-  - `data.network_id` (`integer`)
-  - `data.pos_id` (`integer`)
-  - `data.status` (`boolean`): `true`.
+Request (`ResolveNetworkLinkablePosRequest`):
+- `network_id` (`integer`, required): the Network issuing the invitation.
+- `pos_uuid` (`string`, required): the POS commercial business code, format `POS-YYMM-00001-AB12`. It is not a generic RFC UUID.
+- No search term, pagination, or list endpoint is exposed.
 
-#### 4. `DELETE /api/v1/network-pos/challenges/{uuid}`
-- **Response (200 OK):** Standard success response confirming revocation.
+The service verifies the caller's active Network ownership/membership, Network activity, exact POS identity, POS activity, and absence of an existing link to that Network.
 
-### 4.3 Timestamp & Date Serialization Notes
-- **Current Canonical Pattern:** The NetSales API uniformly outputs timestamps via `Carbon::parse($field)->toDateTimeString()` (`Y-m-d H:i:s`) in the `Asia/Aden` timezone across all 25+ resources.
-- **Client Parsing Invariant:** The Flutter client parses timestamps via `DateTime.tryParse()`, which transparently ingests both `toDateTimeString()` formats and ISO 8601 UTC strings.
-- **Security Timestamp Consideration:** Timestamps inside the encrypted QR payload (`exp`) use integer epoch seconds (`$expiresAt->timestamp`) to ensure exact, timezone-agnostic expiration calculation on the server.
+Response (`NetworkLinkablePosResource`) exposes only:
+- `pos_id` (`integer`): internal identifier required for response consistency checks.
+- `pos_uuid` (`string`): the same commercial business code, needed by the subsequent create-challenge request.
+- `pos_name` (`string`).
 
+
+It must not expose POS phone, owner identity, credentials, or a directory of other POS records.
+
+### 4.3 Create a targeted challenge
+
+`POST /api/v1/network-pos/challenges`
+
+Request (`CreateNetworkPosLinkingChallengeRequest`):
+- `network_id` (`integer`, required).
+- Exactly one of:
+  - `pos_id` (`integer`), or
+  - `pos_uuid` (`string`, POS commercial business code in the format above).
+- Supplying neither or both target fields is invalid.
+- `duration_minutes` (`integer`, optional, default 15, range 5–60).
+
+The server independently revalidates Network authorization, active POS status, and that the POS is not already linked to the Network. The encrypted payload binds version, operation, challenge UUID, Network ID, POS ID, nonce, and exact expiry epoch. The challenge row must always have a non-null `pos_id`; deleting the target POS cascades to its challenges.
+
+Response (201, `NetworkPosLinkingChallengeResource`):
+- `challenge_uuid`: challenge reference.
+- `payload`: asymmetrically sealed envelope prefixed with `NTS_LINK_V1_`.
+- `network_id` and `pos_id`: server-side binding values.
+- `status`: `PENDING`; `status_label`: localized label.
+- `expires_at`: ISO-8601 timestamp with timezone offset.
+- Nested `network` projection contains only `network_id` and `network_name`.
+- Nested `pos` projection contains only `pos_id`, `pos_uuid`, and `pos_name`.
+- Do not embed the general NetworkResource or PosResource here; those expose owner identity, phone, email, address, logos, and administrative metadata unrelated to challenge creation.
+
+### 4.4 POS preview and confirmation
+
+- Preview accepts `payload` and exactly one authenticated POS identity selector: `pos_id` or `pos_uuid` (the POS commercial business code). Supplying both selectors is rejected. The server decrypts and verifies all bound values, expiry, nonce, Network, target POS, POS activity, active POS ownership/membership, and absence of an existing relationship.
+- `is_targeted` is always `true`; an invitation for another POS must be rejected.
+- Confirmation requires exactly one of `pos_id` or `pos_uuid`, rechecks the same target binding and active POS ownership/membership inside the transaction, and consumes the challenge under row lock. Replays, ambiguous selectors, inactive memberships, and cross-POS confirmations are rejected.
+- The POS preview resource may contain the verified Network and POS details needed for the user confirmation screen; the Network-side status resource must never return the encrypted payload or target identifiers.
+
+### 4.5 Safe challenge status and revocation
+
+`GET /api/v1/network-pos/challenges/{uuid}` returns only:
+- `status`: one of `PENDING`, `CONSUMED`, `EXPIRED`, `REVOKED`.
+- `status_label`.
+- `expires_at`: ISO-8601 timestamp with timezone offset, or `null`.
+
+The response must omit `payload`, `challenge_uuid`, `network_id`, `pos_id`, nonce, and all encrypted/internal fields. Only the owning Network or an active member with the Network view permission can read it. A pending challenge whose expiry has elapsed is marked `EXPIRED` before serialization.
+
+Revocation is limited to the challenge's Network owner or an active Network member authorized by the Network edit permission. The service must not accept cross-Network challenge references.
+
+### 4.6 Timestamp and security notes
+- The challenge `expires_at` fields use ISO-8601 serialization so the Flutter client can preserve the exact timezone instant when parsing with `DateTime.tryParse()`.
+- The encrypted payload `exp` is an integer Unix epoch timestamp; server verification compares it to the persisted challenge expiry.
+- A QR image contains only the encrypted payload. Internal challenge/network/POS IDs, nonce, and secret material must not be printed in the invitation card.
+- A challenge is never a general Network invitation: both Network and POS are mandatory at creation and persist as a single-target binding.
 
 ---
 
