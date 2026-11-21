@@ -15,9 +15,6 @@ class ResolveNetworkLinkablePosRequest extends FormRequest
     /**
      * Resolve one exact POS business identifier only; this endpoint is not a directory.
      *
-     * @return array<string, mixed>
-     */
-    /**
      * @return array<string, array<int, mixed>>
      */
     public function rules(): array
