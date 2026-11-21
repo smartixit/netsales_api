@@ -492,8 +492,12 @@ class NetworkPosLinkingChallengeService
             $challenge->status === LinkingChallengeStatus::PENDING
             && $challenge->expires_at->isPast()
         ) {
-            $this->challengeRepository->markAsExpired($challenge->challenge_id);
-            $challenge->status = LinkingChallengeStatus::EXPIRED;
+            if ($this->challengeRepository->markAsExpired($challenge->challenge_id)) {
+                $challenge->status = LinkingChallengeStatus::EXPIRED;
+            } else {
+                // A concurrent confirmation may have consumed the challenge first.
+                $challenge->refresh();
+            }
         }
 
         return $challenge;
