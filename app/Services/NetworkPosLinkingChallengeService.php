@@ -142,6 +142,14 @@ class NetworkPosLinkingChallengeService
 
     /**
      * معاينة وفحص دعوة الربط المشفرة من جانب نقطة البيع قبل التأكيد.
+     *
+     * @return array{
+     *     challenge_uuid: string,
+     *     network: NetworkResource,
+     *     pos: PosResource,
+     *     expires_at: string,
+     *     is_targeted: bool
+     * }
      */
     public function previewChallenge(
         User $actor,
@@ -169,8 +177,11 @@ class NetworkPosLinkingChallengeService
             ]);
         }
 
-        if ((int) $challenge->network_id !== (int) $payloadData['nid']
+        if (
+            (int) $challenge->network_id !== $payloadData['nid']
             || $challenge->challenge_nonce !== $payloadData['nonce']
+            || ($challenge->pos_id === null ? null : (int) $challenge->pos_id) !== $payloadData['pid']
+            || $challenge->expires_at->timestamp !== $payloadData['exp']
         ) {
             throw ValidationException::withMessages([
                 'payload' => ['رمز دعوة الربط غير صالح أو تم التلاعب به.'],
@@ -250,7 +261,7 @@ class NetworkPosLinkingChallengeService
         ?int $posId = null,
         ?string $posUuid = null
     ): NetworkPos {
-        return DB::transaction(function () use ($actor, $challengeUuid, $posId, $posUuid) {
+        return DB::transaction(function () use ($actor, $challengeUuid, $posId, $posUuid): NetworkPos {
             // جلب التحدي مع القفل المتشائم عبر المستودع
             $challenge = $this->challengeRepository->findByUuidForUpdate($challengeUuid);
 
@@ -406,6 +417,16 @@ class NetworkPosLinkingChallengeService
 
     /**
      * فك تشفير وفحص سلامة بنية حمولة التحدي.
+     *
+     * @return array{
+     *     v: int,
+     *     op: string,
+     *     cid: string,
+     *     nid: int,
+     *     pid: int|null,
+     *     nonce: string,
+     *     exp: int
+     * }
      */
     protected function decryptAndValidatePayload(string $payloadToken): array
     {
@@ -425,18 +446,26 @@ class NetworkPosLinkingChallengeService
             ]);
         }
 
-        if (! is_array($data)
+        if (
+            ! is_array($data)
             || ($data['v'] ?? null) !== 1
             || ($data['op'] ?? null) !== 'pos_network_link'
-            || empty($data['cid'])
-            || empty($data['nid'])
-            || empty($data['nonce'])
+            || ! is_string($data['cid'] ?? null)
+            || ! Str::isUuid($data['cid'])
+            || ! is_int($data['nid'] ?? null)
+            || $data['nid'] < 1
+            || ! (is_null($data['pid'] ?? null) || (is_int($data['pid']) && $data['pid'] > 0))
+            || ! is_string($data['nonce'] ?? null)
+            || ! preg_match('/^[a-f0-9]{64}$/D', $data['nonce'])
+            || ! is_int($data['exp'] ?? null)
+            || $data['exp'] < 1
         ) {
             throw ValidationException::withMessages([
                 'payload' => ['بنية حمولة رمز QR غير مطابقة لمواصفات ربط نقاط البيع.'],
             ]);
         }
 
+        /** @var array{v: int, op: string, cid: string, nid: int, pid: int|null, nonce: string, exp: int} $data */
         return $data;
     }
 }
