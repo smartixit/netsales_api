@@ -127,18 +127,14 @@ class RequestController extends BaseController
         $networkIds = $authorization->authorizedNetworkIds($currentUser, 'requests.view');
         $posIds = $authorization->authorizedPosIds($currentUser, 'requests.view');
 
-        if ($networkIds === [] && $posIds === []) {
-            return $this->errorResponse('لا توجد عضوية نشطة تملك صلاحية عرض الطلبات.', [], 403);
-        }
-
         if (! empty($filters['network_id'])) {
             $requestedId = (int) $filters['network_id'];
             if (! in_array($requestedId, $networkIds, true)) {
                 return $this->errorResponse('غير مصرح لك باستعراض طلبات هذه الشبكة.', [], 403);
             }
-            $filters['network_id'] = $requestedId;
-        } elseif ($networkIds !== []) {
-            $filters['network_ids'] = $networkIds;
+            $filters['authorized_network_ids'] = [$requestedId];
+        } else {
+            $filters['authorized_network_ids'] = $networkIds;
         }
 
         if (! empty($filters['pos_id'])) {
@@ -146,13 +142,13 @@ class RequestController extends BaseController
             if (! in_array($requestedId, $posIds, true)) {
                 return $this->errorResponse('غير مصرح لك باستعراض طلبات نقطة البيع هذه.', [], 403);
             }
-            $filters['pos_id'] = $requestedId;
-        } elseif ($posIds !== []) {
-            $filters['pos_ids'] = $posIds;
+            $filters['authorized_pos_ids'] = [$requestedId];
+        } else {
+            $filters['authorized_pos_ids'] = $posIds;
         }
 
-        if ($networkIds !== [] && $posIds !== [] && empty($filters['network_id']) && empty($filters['pos_id'])) {
-            return $this->errorResponse('حدد مساحة عمل واحدة لاستعراض طلباتها.', [], 422);
+        if ($filters['authorized_network_ids'] === [] && $filters['authorized_pos_ids'] === []) {
+            return $this->errorResponse('لا توجد عضوية نشطة تملك صلاحية عرض الطلبات.', [], 403);
         }
 
         return $filters;
