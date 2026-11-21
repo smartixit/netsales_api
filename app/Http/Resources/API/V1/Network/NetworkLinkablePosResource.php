@@ -20,6 +20,7 @@ class NetworkLinkablePosResource extends JsonResource
     {
         return [
             'pos_id' => $this->pos_id,
+            'pos_uuid' => $this->pos_uuid,
             'pos_name' => $this->pos_name,
             'governorate_name' => $this->governorate?->governorate_name,
             'directorate_name' => $this->directorate?->directorate_name,
