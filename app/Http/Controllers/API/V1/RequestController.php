@@ -499,7 +499,10 @@ class RequestController extends BaseController
     public function trashed(Request $request): JsonResponse
     {
         try {
-            $filters = $request->only(['network_id', 'pos_id', 'search', 'per_page', 'all']);
+            $filters = $this->applyRequestUserScope($request->only(['network_id', 'pos_id', 'search', 'per_page', 'all']));
+            if ($filters instanceof JsonResponse) {
+                return $filters;
+            }
             $records = $this->requestService->getTrashed($filters);
 
             return $this->successResponse('تم استرجاع قائمة الطلبات المحذوفة بنجاح.', RequestResource::collection($records));
