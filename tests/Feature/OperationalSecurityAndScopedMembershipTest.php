@@ -7,6 +7,7 @@ use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
 use App\Enums\RoleKey;
 use App\Enums\RoleScope;
+use App\Enums\SaleType;
 use App\Enums\UserStatus;
 use App\Models\Directorate;
 use App\Models\Governorate;
@@ -19,13 +20,17 @@ use App\Models\Request as VoucherRequest;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VoucherPackage;
+use App\Services\RequestService;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\Concerns\CreatesActiveBillingSubscription;
 use Tests\TestCase;
+use Tests\Concerns\CreatesProcurementRequestSnapshots;
 
 class OperationalSecurityAndScopedMembershipTest extends TestCase
 {
     use CreatesActiveBillingSubscription;
+    use CreatesProcurementRequestSnapshots;
     use DatabaseTransactions;
 
     protected User $superAdmin;
@@ -57,7 +62,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $suffix = uniqid();
 
         // 1. استخدام الأدوار المعتمدة بالنظام للشبكة ونقطة البيع
-        $this->networkMemberRole = Role::where('role_key', 'NETWORK_USER')->firstOrFail();
+        $this->networkMemberRole = Role::where('role_key', RoleKey::NETWORK_ACCOUNTANT->value)->firstOrFail();
         $this->posMemberRole = Role::where('role_key', 'POS_USER')->firstOrFail();
 
         // مستخدمي المستأجرين role_id = null لأن أدوارهم مقيدة بـ network_users و pos_users
@@ -166,8 +171,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         ]);
 
         // طلب كروت دون إرسال X-Idempotency-Key في الوضع الصارم
-        $response = $this->withHeaders($headers)
-            ->postJson('/api/v1/requests', [
+        $response = $this->postProcurementRequest([
                 'network_id' => $this->networkA->network_id,
                 'pos_id' => $this->posA->pos_id,
                 'items' => [
@@ -176,7 +180,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
                         'voucher_count' => 5,
                     ],
                 ],
-            ]);
+            ], $headers);
 
         $response->assertStatus(422);
         $this->assertStringContainsString('X-Idempotency-Key', $response->json('message'));
@@ -206,12 +210,12 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         ];
 
         // الطلب الأول
-        $first = $this->withHeaders($headers)->postJson('/api/v1/requests', $payload);
+        $first = $this->postProcurementRequest($payload, $headers);
         $first->assertStatus(201);
         $firstRequestId = $first->json('data.request_id');
 
         // الطلب الثاني المتطابق تماماً بنفس المفتاح
-        $second = $this->withHeaders($headers)->postJson('/api/v1/requests', $payload);
+        $second = $this->postProcurementRequest($payload, $headers);
         $second->assertStatus(201);
         $this->assertEquals($firstRequestId, $second->json('data.request_id'));
         $this->assertEquals('true', $second->headers->get('X-Idempotency-Hit'));
@@ -258,7 +262,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
 
         // يجب الرفض بـ 422 أو 403 لمنع IDOR
         $this->assertContains($response->status(), [403, 422]);
-        $this->assertStringContainsString('غير مصرح', $response->json('message'));
+        $this->assertStringContainsString('لا تملك الصلاحية', $response->json('message'));
     }
 
     /**
@@ -267,6 +271,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
     public function test_network_scoped_membership_crud_and_owner_protection(): void
     {
         $ownerAuth = $this->createAuthenticatedSession($this->networkOwner);
+        $networkUserRole = Role::where('role_key', RoleKey::NETWORK_USER->value)->firstOrFail();
         $newMemberPhone = '77'.rand(1000000, 9999999);
 
         $newMemberUser = $this->createUserWithScope(RoleScope::NETWORK, [
@@ -286,7 +291,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $addResponse = $this->withHeaders($ownerAuth['headers'])
             ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
                 'user_phone_number' => $newMemberPhone,
-                'role_id' => $this->networkMemberRole->role_id,
+                'role_id' => $networkUserRole->role_id,
                 'status' => 'ACTIVE',
             ]);
         $addResponse->assertStatus(201);
@@ -385,6 +390,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
 
         $this->assertSame('NETWORK_USER', $roles->json('data.0.role_key'));
 
+        $rejectedCandidateIds = [];
         foreach ([$networkAccountantRole, $networkOwnerRole, $platformRole] as $role) {
             $candidate = $this->createUserWithScope(RoleScope::NETWORK, [
                 'role_id' => null,
@@ -393,6 +399,8 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
                 'user_password' => bcrypt('password'),
                 'status' => UserStatus::ACTIVE,
             ]);
+
+            $rejectedCandidateIds[] = $candidate->user_id;
 
             $response = $this->withHeaders($ownerAuth['headers'])
                 ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
@@ -403,10 +411,12 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             $response->assertUnprocessable();
         }
 
-        $this->assertDatabaseMissing('network_users', [
-            'network_id' => $this->networkA->network_id,
-            'role_id' => $networkAccountantRole->role_id,
-        ]);
+        foreach ($rejectedCandidateIds as $rejectedUserId) {
+            $this->assertDatabaseMissing('network_users', [
+                'network_id' => $this->networkA->network_id,
+                'user_id' => $rejectedUserId,
+            ]);
+        }
 
         $changeCandidate = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
@@ -484,4 +494,102 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
 
         $this->assertDatabaseHas('roles', ['role_id' => $posUserRole->role_id]);
     }
+    public function test_permissions_are_isolated_per_active_network_membership(): void
+    {
+        $multiTenantUser = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Multi Tenant Permission User '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+
+        $ownerRole = Role::where('role_key', RoleKey::NETWORK_OWNER->value)->firstOrFail();
+
+        NetworkUser::create([
+            'network_id' => $this->networkA->network_id,
+            'user_id' => $multiTenantUser->user_id,
+            'role_id' => $ownerRole->role_id,
+            'status' => 'ACTIVE',
+        ]);
+
+        NetworkUser::create([
+            'network_id' => $this->networkB->network_id,
+            'user_id' => $multiTenantUser->user_id,
+            'role_id' => $this->networkMemberRole->role_id,
+            'status' => 'ACTIVE',
+        ]);
+
+        $authorization = app(\App\Services\TenantPermissionService::class);
+
+        $this->assertTrue(
+            $authorization->allowsNetwork(
+                $multiTenantUser,
+                (int) $this->networkA->network_id,
+                'requests.approve'
+            )
+        );
+
+        $this->assertFalse(
+            $authorization->allowsNetwork(
+                $multiTenantUser,
+                (int) $this->networkB->network_id,
+                'requests.approve'
+            )
+        );
+
+        NetworkUser::query()
+            ->where('network_id', $this->networkA->network_id)
+            ->where('user_id', $multiTenantUser->user_id)
+            ->update(['status' => 'SUSPENDED']);
+
+        $this->assertFalse(
+            $authorization->allowsNetwork(
+                $multiTenantUser->fresh(),
+                (int) $this->networkA->network_id,
+                'requests.approve'
+            )
+        );
+    }
+
+    public function test_force_delete_never_deletes_a_live_request(): void
+    {
+        $request = VoucherRequest::query()->create([
+            'network_id' => $this->networkA->network_id,
+            'pos_id' => $this->posA->pos_id,
+            'sale_type' => SaleType::CASH,
+            'request_total_amount' => 100,
+            'request_date' => now('Asia/Aden'),
+            'status' => RequestStatus::PENDING,
+            'created_by' => $this->posOwner->user_id,
+        ]);
+
+        try {
+            app(RequestService::class)->forceDeleteRequest(
+                (int) $request->request_id,
+                (int) $this->posOwner->user_id
+            );
+            $this->fail('A live request must never be force-deleted.');
+        } catch (ValidationException) {
+            $this->assertDatabaseHas('requests', [
+                'request_id' => $request->request_id,
+                'deleted_at' => null,
+            ]);
+        }
+
+        try {
+            app(RequestService::class)->bulkForceDelete(
+                [(int) $request->request_id],
+                (int) $this->posOwner->user_id
+            );
+            $this->fail('A live request must never be included in bulk force-delete.');
+        } catch (ValidationException) {
+            $this->assertDatabaseHas('requests', [
+                'request_id' => $request->request_id,
+                'deleted_at' => null,
+            ]);
+        }
+    }
+
+
 }

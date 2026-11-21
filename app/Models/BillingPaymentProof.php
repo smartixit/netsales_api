@@ -18,6 +18,7 @@ use LogicException;
  * @property string|null $sha256
  * @property int $uploaded_by
  * @property Carbon $uploaded_at
+ * @property-read BillingPayment|null $payment
  */
 class BillingPaymentProof extends Model
 {

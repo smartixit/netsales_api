@@ -31,10 +31,12 @@ use Exception;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
+use Tests\Concerns\CreatesProcurementRequestSnapshots;
 
 class Milestone4BFinancialApprovalTest extends TestCase
 {
     use DatabaseTransactions;
+    use CreatesProcurementRequestSnapshots;
 
     protected User $user;
 
@@ -163,7 +165,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
     public function test_cash_approval_executes_exact_debit_credit_and_generates_paid_invoice(): void
     {
         // إرسال طلب نقدي: 50 كرت × 1000 = 50,000، خصم 10% = 45,000 صافي
-        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $createRes = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,
@@ -212,7 +214,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->credit_limit = null;
         $this->posWallet->save();
 
-        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $createRes = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,
@@ -251,7 +253,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->save();
 
         // طلب آجل: 50 كرت × 1000 = 50,000، خصم آجل 5% = 47,500 صافي
-        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $createRes = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CREDIT->value,
@@ -295,7 +297,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->credit_limit = 100000.00;
         $this->posWallet->save();
 
-        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $createRes = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CREDIT->value,
@@ -334,7 +336,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->wallet_balance = 60000.00;
         $this->posWallet->save();
 
-        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $createRes = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CREDIT->value,
@@ -369,7 +371,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
      */
     public function test_repeated_approval_returns_cached_invoice_without_repeating_wallet_mutations(): void
     {
-        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $createRes = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,
@@ -409,7 +411,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
      */
     public function test_failure_during_settlement_rolls_back_entire_transaction_atomically(): void
     {
-        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $createRes = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,
@@ -454,7 +456,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->save();
 
         // الطلب الأول آجل يحتاج 47,500
-        $req1 = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $req1 = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CREDIT->value,
@@ -462,7 +464,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         ])->json('data.request_id');
 
         // الطلب الثاني آجل يحتاج أيضاً 47,500
-        $req2 = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $req2 = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CREDIT->value,
@@ -540,7 +542,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         ];
 
         // طلب يخص الشبكة الأولى
-        $reqId = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $reqId = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,
@@ -565,7 +567,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
     public function test_approval_preserves_original_request_snapshot_immutability(): void
     {
         // 1. طلب أصلي: 10 كروت من باقة A (إجمالي 10 × 1000 - 10% = 9,000)
-        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $createRes = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,
@@ -616,7 +618,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
      */
     public function test_audit_log_captures_complete_financial_and_item_transition(): void
     {
-        $reqId = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $reqId = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,
@@ -651,7 +653,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->credit_limit = 47500.00;
         $this->posWallet->save();
 
-        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $createRes = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CREDIT->value,
@@ -681,7 +683,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->credit_limit = 47499.99;
         $this->posWallet->save();
 
-        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $createRes = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CREDIT->value,
@@ -709,7 +711,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->credit_limit = null;
         $this->posWallet->save();
 
-        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $createRes = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CREDIT->value,
@@ -740,7 +742,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $netLogsBefore = DB::table('network_wallet_logs')->count();
 
         // طلب بقيمة 47,500 يتجاوز السقف بكثير
-        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $createRes = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CREDIT->value,
@@ -773,14 +775,14 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->save();
 
         // إنشاء طلبين متماثلين
-        $req1 = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $req1 = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CREDIT->value,
             'items' => [['package_id' => $this->packageA->package_id, 'voucher_count' => 50]], // 47,500
         ])->json('data.request_id');
 
-        $req2 = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $req2 = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CREDIT->value,
@@ -838,7 +840,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->wallet_balance = 100000.00;
         $this->posWallet->save();
 
-        $reqId = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $reqId = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,
@@ -875,7 +877,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->credit_limit = null;
         $this->posWallet->save();
 
-        $reqId = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $reqId = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CREDIT->value,
@@ -900,7 +902,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->wallet_balance = 100000.00;
         $this->posWallet->save();
 
-        $reqId = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $reqId = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,
@@ -964,7 +966,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $initialLogsCount = DB::table('pos_wallet_logs')->where('wallet_id', $this->posWallet->wallet_id)->count();
 
         // إنشاء طلب بيع نقدي
-        $reqRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+        $reqRes = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,

@@ -6,6 +6,7 @@ use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
+use App\Services\TenantPermissionService;
 
 class StoreExpenseRequest extends FormRequest
 {
@@ -23,12 +24,11 @@ class StoreExpenseRequest extends FormRequest
             return false;
         }
 
-        $isOwner = $user->networks()->where('networks.network_id', $networkId)->exists();
-        if ($isOwner) {
-            return true;
-        }
-
-        return $user->networkUsers()->where('network_users.network_id', $networkId)->exists();
+        return app(TenantPermissionService::class)->allowsNetwork(
+            $user,
+            $networkId,
+            'expenses.create'
+        );
     }
 
     public function rules(): array

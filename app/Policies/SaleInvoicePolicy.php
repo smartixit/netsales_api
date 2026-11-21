@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\SaleInvoice;
 use App\Models\User;
+use App\Services\TenantPermissionService;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class SaleInvoicePolicy
@@ -12,52 +13,33 @@ class SaleInvoicePolicy
 
     public function before(User $user, string $ability): ?bool
     {
-        if ($user->isSuperAdmin()) {
-            return true;
-        }
-
-        return null;
+        return $user->isSuperAdmin() ? true : null;
     }
 
     public function viewAny(User $user): bool
     {
-        return true;
+        return app(TenantPermissionService::class)->allowsAnyOperational($user, 'sales.view');
     }
 
     public function view(User $user, SaleInvoice $invoice): bool
     {
-        // 1. Creator of the invoice
-        if ((int) $invoice->created_by === (int) $user->user_id) {
-            return true;
-        }
+        $permissions = app(TenantPermissionService::class);
 
-        // 2. Network ownership / membership
-        if ($user->networks()->where('networks.network_id', $invoice->network_id)->exists()) {
-            return true;
-        }
-        if (method_exists($user, 'networkUsers') && $user->networkUsers()->where('network_id', $invoice->network_id)->exists()) {
-            return true;
-        }
-
-        // 3. POS ownership / membership
-        if ($user->pos && (int) $user->pos->pos_id === (int) $invoice->pos_id) {
-            return true;
-        }
-        if (method_exists($user, 'posUsers') && $user->posUsers()->where('pos_id', $invoice->pos_id)->exists()) {
-            return true;
-        }
-
-        return false;
+        return $permissions->allowsNetwork($user, (int) $invoice->network_id, 'sales.view')
+            || $permissions->allowsPos($user, (int) $invoice->pos_id, 'sales.view');
     }
 
     public function create(User $user): bool
     {
-        return true;
+        return false;
     }
 
     public function update(User $user, SaleInvoice $invoice): bool
     {
-        return $this->view($user, $invoice);
+        $permissions = app(TenantPermissionService::class);
+
+        return $permissions->allowsNetwork($user, (int) $invoice->network_id, 'sales.edit')
+            || $permissions->allowsPos($user, (int) $invoice->pos_id, 'sales.edit');
     }
 
     public function delete(User $user, SaleInvoice $invoice): bool

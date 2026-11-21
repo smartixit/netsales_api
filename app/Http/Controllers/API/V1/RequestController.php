@@ -119,31 +119,36 @@ class RequestController extends BaseController
             return $this->errorResponse('يجب تسجيل الدخول لاستعراض طلبات التوريد.', [], 401);
         }
 
-        if (! $currentUser->isSuperAdmin()) {
-            $ownedPosId = $currentUser->pos()->value('pos_id');
-            if ($ownedPosId) {
-                $filters['pos_id'] = (int) $ownedPosId;
-            } elseif ($currentUser->posUsers()->exists()) {
-                $posId = $currentUser->posUsers()->value('pos_id');
-                if (! $posId) {
-                    return $this->errorResponse('لا توجد نقطة بيع مصرح بها لهذا الحساب.', [], 403);
-                }
-                $filters['pos_id'] = (int) $posId;
-            } elseif ($currentUser->networks()->exists() || $currentUser->networkUsers()->exists()) {
-                $networkIds = $currentUser->networks()->pluck('networks.network_id')->toArray();
-                $networkIds = array_unique(array_merge($networkIds, $currentUser->networkUsers()->pluck('network_id')->toArray()));
-                if ($networkIds === []) {
-                    return $this->errorResponse('لا توجد شبكة مصرح بها لهذا الحساب.', [], 403);
-                }
-                if (! empty($filters['network_id']) && ! in_array((int) $filters['network_id'], $networkIds, true)) {
-                    return $this->errorResponse('غير مصرح لك باستعراض طلبات هذه الشبكة.', [], 403);
-                }
-                if (empty($filters['network_id'])) {
-                    $filters['network_ids'] = $networkIds;
-                }
-            } else {
-                return $this->errorResponse('لا يوجد نطاق تشغيلي مصرح به لهذا الحساب.', [], 403);
+        if ($currentUser->isSuperAdmin()) {
+            return $filters;
+        }
+
+        $authorization = app(\App\Services\TenantPermissionService::class);
+        $networkIds = $authorization->authorizedNetworkIds($currentUser, 'requests.view');
+        $posIds = $authorization->authorizedPosIds($currentUser, 'requests.view');
+
+        if (! empty($filters['network_id'])) {
+            $requestedId = (int) $filters['network_id'];
+            if (! in_array($requestedId, $networkIds, true)) {
+                return $this->errorResponse('غير مصرح لك باستعراض طلبات هذه الشبكة.', [], 403);
             }
+            $filters['authorized_network_ids'] = [$requestedId];
+        } else {
+            $filters['authorized_network_ids'] = $networkIds;
+        }
+
+        if (! empty($filters['pos_id'])) {
+            $requestedId = (int) $filters['pos_id'];
+            if (! in_array($requestedId, $posIds, true)) {
+                return $this->errorResponse('غير مصرح لك باستعراض طلبات نقطة البيع هذه.', [], 403);
+            }
+            $filters['authorized_pos_ids'] = [$requestedId];
+        } else {
+            $filters['authorized_pos_ids'] = $posIds;
+        }
+
+        if ($filters['authorized_network_ids'] === [] && $filters['authorized_pos_ids'] === []) {
+            return $this->errorResponse('لا توجد عضوية نشطة تملك صلاحية عرض الطلبات.', [], 403);
         }
 
         return $filters;
@@ -459,7 +464,7 @@ class RequestController extends BaseController
     public function destroy(int $id): JsonResponse
     {
         try {
-            $this->requestService->deleteRequest($id);
+            $this->requestService->deleteRequest($id, $this->currentUserId());
 
             return $this->successResponse('تم حذف طلب الكروت مؤقتاً بنجاح.');
         } catch (ValidationException $e) {
@@ -490,7 +495,10 @@ class RequestController extends BaseController
     public function trashed(Request $request): JsonResponse
     {
         try {
-            $filters = $request->only(['network_id', 'pos_id', 'search', 'per_page', 'all']);
+            $filters = $this->applyRequestUserScope($request->only(['network_id', 'pos_id', 'search', 'per_page', 'all']));
+            if ($filters instanceof JsonResponse) {
+                return $filters;
+            }
             $records = $this->requestService->getTrashed($filters);
 
             return $this->successResponse('تم استرجاع قائمة الطلبات المحذوفة بنجاح.', RequestResource::collection($records));
@@ -518,7 +526,7 @@ class RequestController extends BaseController
     public function restore(int $id): JsonResponse
     {
         try {
-            $this->requestService->restoreRequest($id);
+            $this->requestService->restoreRequest($id, $this->currentUserId());
 
             return $this->successResponse('تم استعادة طلب الكروت بنجاح.');
         } catch (ValidationException $e) {
@@ -545,7 +553,7 @@ class RequestController extends BaseController
     public function forceDelete(int $id): JsonResponse
     {
         try {
-            $this->requestService->forceDeleteRequest($id);
+            $this->requestService->forceDeleteRequest($id, $this->currentUserId());
 
             return $this->successResponse('تم حذف طلب الكروت نهائياً بنجاح.');
         } catch (ValidationException $e) {
@@ -582,7 +590,7 @@ class RequestController extends BaseController
     public function batchDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
-            $count = $this->requestService->bulkDelete($request->getIds());
+            $count = $this->requestService->bulkDelete($request->getIds(), $this->currentUserId());
 
             return $this->successResponse("تم حذف ({$count}) طلب بنجاح.");
         } catch (ValidationException $e) {
@@ -619,7 +627,7 @@ class RequestController extends BaseController
     public function batchRestore(BatchIdsRequest $request): JsonResponse
     {
         try {
-            $count = $this->requestService->bulkRestore($request->getIds());
+            $count = $this->requestService->bulkRestore($request->getIds(), $this->currentUserId());
 
             return $this->successResponse("تم استعادة ({$count}) طلب بنجاح.");
         } catch (ValidationException $e) {
@@ -656,7 +664,7 @@ class RequestController extends BaseController
     public function batchForceDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
-            $count = $this->requestService->bulkForceDelete($request->getIds());
+            $count = $this->requestService->bulkForceDelete($request->getIds(), $this->currentUserId());
 
             return $this->successResponse("تم الحذف النهائي لـ ({$count}) طلب بنجاح.");
         } catch (ValidationException $e) {

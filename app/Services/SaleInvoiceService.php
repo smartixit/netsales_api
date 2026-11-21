@@ -811,7 +811,7 @@ class SaleInvoiceService
             $pos->ensureActive();
 
             $targetSaleType = $request->getSaleType();
-            $currentSaleType = $invoice->sale_type instanceof SaleType ? $invoice->sale_type : SaleType::tryFrom((string) $invoice->sale_type);
+            $currentSaleType = $invoice->sale_type;
 
             if ($currentSaleType === $targetSaleType) {
                 return $this->getById($invoiceId);
@@ -998,7 +998,7 @@ class SaleInvoiceService
             $totalAmountMinor = DecimalAmount::toMinorUnits($invoice->invoice_total_amount);
             $paidAmountMinor = DecimalAmount::toMinorUnits($invoice->paid_amount);
             $currentUserId = auth()->id() ?? $invoice->created_by;
-            $saleType = $invoice->sale_type instanceof SaleType ? $invoice->sale_type : SaleType::tryFrom((string) $invoice->sale_type);
+            $saleType = $invoice->sale_type;
 
             if ($saleType === SaleType::CASH) {
                 // الفاتورة نقدية: استلمت الشبكة كامل المبلغ، يتم استرداده من محفظة الشبكة
@@ -1060,7 +1060,7 @@ class SaleInvoiceService
                     'network_id' => $invoice->network_id,
                     'pos_id' => $invoice->pos_id,
                     'total_amount' => (float) DecimalAmount::fromMinorUnits($totalAmountMinor),
-                    'sale_type' => $saleType?->value ?? 'CASH',
+                    'sale_type' => $saleType->value,
                 ]
             );
 
@@ -1165,6 +1165,20 @@ class SaleInvoiceService
         }
 
         $query = SaleInvoice::query()->toBase();
+
+        if (array_key_exists('authorized_network_ids', $filters) || array_key_exists('authorized_pos_ids', $filters)) {
+            $networkIds = array_map('intval', (array) ($filters['authorized_network_ids'] ?? []));
+            $posIds = array_map('intval', (array) ($filters['authorized_pos_ids'] ?? []));
+            $query->where(function ($scope) use ($networkIds, $posIds): void {
+                if ($networkIds !== []) {
+                    $scope->whereIn('network_id', $networkIds);
+                }
+                if ($posIds !== []) {
+                    $method = $networkIds === [] ? 'whereIn' : 'orWhereIn';
+                    $scope->{$method}('pos_id', $posIds);
+                }
+            });
+        }
 
         if (! empty($filters['network_id'])) {
             $query->where('network_id', (int) $filters['network_id']);
