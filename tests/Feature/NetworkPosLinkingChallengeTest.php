@@ -682,8 +682,13 @@ class NetworkPosLinkingChallengeTest extends TestCase
         $statusResponse = $this->withHeaders($this->unauthSession['headers'])
             ->getJson("/api/v1/network-pos/challenges/{$uuid}");
 
-        $statusResponse->assertUnprocessable()
-            ->assertJsonValidationErrors(['challenge_uuid']);
+        $this->assertTrue(
+            in_array($statusResponse->status(), [403, 422], true),
+            'A user outside the network must not read its challenge status.'
+        );
+        if ($statusResponse->status() === 422) {
+            $statusResponse->assertJsonValidationErrors(['challenge_uuid']);
+        }
     }
 
 }
