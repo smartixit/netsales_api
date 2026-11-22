@@ -811,7 +811,7 @@ class PosWalletService
 
         $actionText = ($action === 'receipt') ? 'لكم سند قبض' : 'عليكم سند صرف';
 
-        $message = "نقطة {$posName} - شبكة {$networkName}: {$actionText} بمبلغ {$formattedAmount} رصيدكم {$formattedBalance}";
+        $message = "{$posName} - {$networkName}: {$actionText} بمبلغ {$formattedAmount} رصيدكم {$formattedBalance}";
 
         $this->notificationService->sendDirect(
             userId: $wallet->pos->owner_id,

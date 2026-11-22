@@ -323,7 +323,7 @@ class ExpenseManagementTest extends TestCase
         $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/expenses', $payload);
         $createRes->assertStatus(201);
 
-        $expectedCreateMsg = "شبكة {$this->network->network_name}: عليكم سند صرف (مصروف تشغيلي) بمبلغ 15,000.00YER رصيدكم 85,000.00YER";
+        $expectedCreateMsg = "{$this->network->network_name}: عليكم سند صرف (مصروف تشغيلي) بمبلغ 15,000.00YER رصيدكم 85,000.00YER";
 
         Queue::assertPushed(SendSmsNotificationJob::class, function ($job) use ($expectedCreateMsg) {
             return $job->phoneNumbers === $this->network->network_phone_number && $job->message === $expectedCreateMsg;
@@ -340,7 +340,7 @@ class ExpenseManagementTest extends TestCase
         ]);
         $updateRes->assertStatus(200);
 
-        $expectedUpdateMsg = "شبكة {$this->network->network_name}: عليكم سند صرف (تسوية زيادة مصروف) بمبلغ 5,000.00YER رصيدكم 80,000.00YER";
+        $expectedUpdateMsg = "{$this->network->network_name}: عليكم سند صرف (تسوية زيادة مصروف) بمبلغ 5,000.00YER رصيدكم 80,000.00YER";
 
         Queue::assertPushed(SendSmsNotificationJob::class, function ($job) use ($expectedUpdateMsg) {
             return $job->phoneNumbers === $this->network->network_phone_number && $job->message === $expectedUpdateMsg;

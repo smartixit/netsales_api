@@ -360,7 +360,7 @@ class NetworkWalletService
         $actionText = ($action === 'receipt') ? 'لكم سند قبض' : 'عليكم سند صرف';
         $reasonText = $reason ? " ({$reason})" : '';
 
-        $message = "شبكة {$networkName}: {$actionText}{$reasonText} بمبلغ {$formattedAmount} رصيدكم {$formattedBalance}";
+        $message = "{$networkName}: {$actionText}{$reasonText} بمبلغ {$formattedAmount} رصيدكم {$formattedBalance}";
 
         $this->notificationService->sendDirect(
             userId: $wallet->network->owner_id,
