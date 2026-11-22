@@ -506,13 +506,12 @@ class NetworkPosController extends BaseController
         tags: ['Network POS'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'بيانات إنشاء التحدي المشفر. يجب إرسال pos_id أو pos_uuid، ولا يجوز إرسال الاثنين معاً.',
+            description: 'بيانات إنشاء التحدي المشفر. يجب إرسال الرمز التجاري لنقطة البيع في pos_uuid.',
             content: new OA\JsonContent(
-                required: ['network_id'],
+                required: ['network_id', 'pos_uuid'],
                 properties: [
                     new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5, description: 'بديل عن pos_uuid؛ يجب إرسال أحدهما فقط.'),
-                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: 'POS-2611-00001-8F3A', description: 'المعرف التجاري لنقطة البيع المستهدفة؛ بديل عن pos_id.'),
+                    new OA\Property(property: 'pos_uuid', type: 'string', example: 'POS-2611-00001-8F3A', description: 'الرمز التجاري لنقطة البيع المستهدفة.'),
                     new OA\Property(property: 'duration_minutes', type: 'integer', default: 15, example: 15),
                 ]
             )
@@ -556,7 +555,6 @@ class NetworkPosController extends BaseController
             $challenge = $this->challengeService->createChallenge(
                 $user,
                 $request->getNetworkId(),
-                $request->getPosId(),
                 $request->getPosUuid(),
                 $request->getDurationMinutes()
             );
@@ -582,13 +580,12 @@ class NetworkPosController extends BaseController
         tags: ['Network POS'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'حمولة رمز QR ومعرف نقطة البيع المستهدفة',
+            description: 'حمولة رمز QR والرمز التجاري لنقطة البيع المستهدفة',
             content: new OA\JsonContent(
-                required: ['payload'],
+                required: ['payload', 'pos_uuid'],
                 properties: [
                     new OA\Property(property: 'payload', type: 'string', example: 'NTS_LINK_V1_...'),
-                    new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5),
-                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: 'POS-2611-00001-8F3A'),
+                    new OA\Property(property: 'pos_uuid', type: 'string', example: 'POS-2611-00001-8F3A'),
                 ]
             )
         ),
@@ -604,7 +601,6 @@ class NetworkPosController extends BaseController
             $preview = $this->challengeService->previewChallenge(
                 $user,
                 $request->getChallengePayload(),
-                $request->getPosId(),
                 $request->getPosUuid()
             );
 
@@ -628,13 +624,12 @@ class NetworkPosController extends BaseController
         tags: ['Network POS'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'المعرف الفريد للتحدي ونقطة البيع المؤكدة',
+            description: 'المعرف الفريد للتحدي والرمز التجاري لنقطة البيع المؤكدة',
             content: new OA\JsonContent(
-                required: ['challenge_uuid'],
+                required: ['challenge_uuid', 'pos_uuid'],
                 properties: [
                     new OA\Property(property: 'challenge_uuid', type: 'string', format: 'uuid'),
-                    new OA\Property(property: 'pos_id', type: 'integer', nullable: true, example: 5),
-                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: 'POS-2611-00001-8F3A'),
+                    new OA\Property(property: 'pos_uuid', type: 'string', example: 'POS-2611-00001-8F3A'),
                 ]
             )
         ),
@@ -650,7 +645,6 @@ class NetworkPosController extends BaseController
             $networkPos = $this->challengeService->confirmChallenge(
                 $user,
                 $request->getChallengeUuid(),
-                $request->getPosId(),
                 $request->getPosUuid()
             );
 

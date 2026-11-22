@@ -101,11 +101,9 @@ class NetworkPosLinkingChallengeService
     public function createChallenge(
         User $actor,
         int $networkId,
-        ?int $posId = null,
-        ?string $posUuid = null,
+        string $posUuid,
         int $durationMinutes = 15
     ): NetworkPosLinkingChallenge {
-        // 1. التحقق من وجود ونشاط الشبكة عبر المستودع
         try {
             $network = $this->networkRepository->findById($networkId);
         } catch (ModelNotFoundException) {
@@ -113,15 +111,16 @@ class NetworkPosLinkingChallengeService
                 'network_id' => ['مزود الشبكة المحدد غير موجود.'],
             ]);
         }
+
         $network->ensureActive();
 
-        // 2. التحقق من صلاحية المستخدم على الشبكة
         if (! $actor->isSuperAdmin()) {
             $isOwner = (int) $network->owner_id === (int) $actor->user_id;
             $isActiveMember = $actor->networkUsers()
                 ->where('network_id', $networkId)
                 ->where('status', 'ACTIVE')
                 ->exists();
+
             if (! $isOwner && ! $isActiveMember) {
                 throw ValidationException::withMessages([
                     'network_id' => ['غير مصرح لك بإنشاء دعوة ربط لهذه الشبكة.'],
@@ -129,45 +128,24 @@ class NetworkPosLinkingChallengeService
             }
         }
 
-        // 3. لا توجد دعوة عامة: يجب تحديد نقطة بيع واحدة وصريحة.
-        if (($posId === null && $posUuid === null) || ($posId !== null && $posUuid !== null)) {
+        try {
+            $pos = $this->posRepository->findByUuid(strtoupper(trim($posUuid)));
+        } catch (ModelNotFoundException) {
             throw ValidationException::withMessages([
-                'pos_id' => ['يجب تحديد نقطة بيع واحدة فقط قبل إنشاء دعوة الربط.'],
+                'pos_uuid' => ['نقطة البيع المستهدفة غير موجودة.'],
             ]);
         }
 
-        if ($posUuid !== null) {
-            try {
-                $pos = $this->posRepository->findByUuid(strtoupper(trim($posUuid)));
-                $posId = $pos->pos_id;
-            } catch (ModelNotFoundException) {
-                throw ValidationException::withMessages([
-                    'pos_uuid' => ['نقطة البيع المستهدفة غير موجودة.'],
-                ]);
-            }
-        } else {
-            try {
-                $pos = $this->posRepository->findById((int) $posId);
-            } catch (ModelNotFoundException) {
-                throw ValidationException::withMessages([
-                    'pos_id' => ['نقطة البيع المستهدفة غير موجودة.'],
-                ]);
-            }
-        }
-
-        if (! $pos instanceof Pos) {
+        if (! $pos instanceof Pos || $pos->trashed() || ! $pos->isActive()) {
             throw ValidationException::withMessages([
-                'pos_id' => ['تعذر تحديد نقطة البيع المستهدفة.'],
+                'pos_uuid' => ['نقطة البيع المستهدفة غير متاحة للربط.'],
             ]);
         }
 
-        $pos->ensureActive();
-
-        // التحقق من عدم وجود ارتباط قائم بالفعل عبر المستودع
         $existingLink = $this->networkPosRepository->findByNetworkAndPos($networkId, $pos->pos_id);
         if ($existingLink) {
             throw ValidationException::withMessages([
-                'pos_id' => ['نقطة البيع هذه مرتبطة بالفعل بهذه الشبكة مسبقاً.'],
+                'pos_uuid' => ['نقطة البيع هذه مرتبطة بالفعل بهذه الشبكة مسبقاً.'],
             ]);
         }
 
@@ -176,13 +154,12 @@ class NetworkPosLinkingChallengeService
         $challengeUuid = Str::uuid()->toString();
         $nonce = bin2hex(random_bytes(32));
 
-        // 4. بناء حمولة التحدي المشفرة
         $payloadData = [
             'v' => 1,
             'op' => 'pos_network_link',
             'cid' => $challengeUuid,
             'nid' => $networkId,
-            'pid' => $posId,
+            'pid' => $pos->pos_id,
             'nonce' => $nonce,
             'exp' => $expiresAt->timestamp,
         ];
@@ -190,11 +167,10 @@ class NetworkPosLinkingChallengeService
         $ciphertext = $this->cryptoService->encryptForServer(json_encode($payloadData));
         $payloadToken = self::TOKEN_PREFIX.$ciphertext;
 
-        // 5. حفظ التحدي عبر مستودع التحديات
         $challenge = $this->challengeRepository->createChallenge([
             'challenge_uuid' => $challengeUuid,
             'network_id' => $networkId,
-            'pos_id' => $posId,
+            'pos_id' => $pos->pos_id,
             'created_by_user_id' => $actor->user_id,
             'challenge_nonce' => $nonce,
             'payload_token' => $payloadToken,
@@ -219,8 +195,7 @@ class NetworkPosLinkingChallengeService
     public function previewChallenge(
         User $actor,
         string $payloadToken,
-        ?int $posId = null,
-        ?string $posUuid = null
+        string $posUuid
     ): array {
         $payloadData = $this->decryptAndValidatePayload($payloadToken);
 
@@ -253,61 +228,46 @@ class NetworkPosLinkingChallengeService
             ]);
         }
 
-        // تحديد نقطة البيع
-        if (! $posId && $posUuid) {
-            try {
-                $pos = $this->posRepository->findByUuid($posUuid);
-                $posId = $pos->pos_id;
-            } catch (ModelNotFoundException) {
-                throw ValidationException::withMessages([
-                    'pos_uuid' => ['نقطة البيع المحددة غير موجودة.'],
-                ]);
-            }
-        } elseif ($posId) {
-            try {
-                $pos = $this->posRepository->findById($posId);
-            } catch (ModelNotFoundException) {
-                throw ValidationException::withMessages([
-                    'pos_id' => ['نقطة البيع المحددة غير موجودة.'],
-                ]);
-            }
-        } else {
+        try {
+            $pos = $this->posRepository->findByUuid(strtoupper(trim($posUuid)));
+        } catch (ModelNotFoundException) {
             throw ValidationException::withMessages([
-                'pos_id' => ['يجب تحديد نقطة البيع المطلوب ربطها.'],
+                'pos_uuid' => ['نقطة البيع المحددة غير موجودة.'],
             ]);
         }
 
-        // إذا كانت الدعوة مخصصة لنقطة بيع محددة مسبقاً
-        if ((int) $challenge->pos_id !== (int) $posId) {
+        if ((int) $challenge->pos_id !== (int) $pos->pos_id) {
             throw ValidationException::withMessages([
-                'pos_id' => ['دعوة الربط هذه مخصصة لنقطة بيع أخرى ولا يمكن ربطها بنقطة البيع الحالية.'],
+                'pos_uuid' => ['دعوة الربط هذه مخصصة لنقطة بيع أخرى ولا يمكن ربطها بنقطة البيع الحالية.'],
             ]);
         }
 
-        $pos->ensureActive();
+        if (! $pos instanceof Pos || $pos->trashed() || ! $pos->isActive()) {
+            throw ValidationException::withMessages([
+                'pos_uuid' => ['نقطة البيع غير متاحة لإتمام الربط.'],
+            ]);
+        }
 
         if (! $actor->isSuperAdmin()) {
             $isOwner = (int) $pos->owner_id === (int) $actor->user_id;
             $isActiveMember = $actor->posUsers()
-                ->where('pos_id', $posId)
+                ->where('pos_id', $pos->pos_id)
                 ->where('status', 'ACTIVE')
                 ->exists();
+
             if (! $isOwner && ! $isActiveMember) {
                 throw ValidationException::withMessages([
-                    'pos_id' => ['غير مصرح لك بإدارة نقطة البيع هذه.'],
+                    'pos_uuid' => ['غير مصرح لك بإدارة نقطة البيع هذه.'],
                 ]);
             }
         }
 
-        // التحقق من نشاط الشبكة
         $network = $challenge->network;
         $network->ensureActive();
 
-        // التحقق من عدم وجود ارتباط سابق
-        $existingLink = $this->networkPosRepository->findByNetworkAndPos($network->network_id, $pos->pos_id);
-        if ($existingLink) {
+        if ($this->networkPosRepository->findByNetworkAndPos($network->network_id, $pos->pos_id)) {
             throw ValidationException::withMessages([
-                'pos_id' => ['نقطة البيع هذه مرتبطة بالفعل بهذه الشبكة مسبقاً.'],
+                'pos_uuid' => ['نقطة البيع هذه مرتبطة بالفعل بهذه الشبكة مسبقاً.'],
             ]);
         }
 
@@ -326,11 +286,9 @@ class NetworkPosLinkingChallengeService
     public function confirmChallenge(
         User $actor,
         string $challengeUuid,
-        ?int $posId = null,
-        ?string $posUuid = null
+        string $posUuid
     ): NetworkPos {
-        return DB::transaction(function () use ($actor, $challengeUuid, $posId, $posUuid): NetworkPos {
-            // جلب التحدي مع القفل المتشائم عبر المستودع
+        return DB::transaction(function () use ($actor, $challengeUuid, $posUuid): NetworkPos {
             $challenge = $this->challengeRepository->findByUuidForUpdate($challengeUuid);
 
             if (! $challenge) {
@@ -352,52 +310,40 @@ class NetworkPosLinkingChallengeService
                 ]);
             }
 
-            // تحديد نقطة البيع
-            if (! $posId && $posUuid) {
-                try {
-                    $pos = $this->posRepository->findByUuid($posUuid);
-                    $posId = $pos->pos_id;
-                } catch (ModelNotFoundException) {
-                    throw ValidationException::withMessages([
-                        'pos_uuid' => ['نقطة البيع المحددة غير موجودة.'],
-                    ]);
-                }
-            } elseif ($posId) {
-                try {
-                    $pos = $this->posRepository->findById($posId);
-                } catch (ModelNotFoundException) {
-                    throw ValidationException::withMessages([
-                        'pos_id' => ['نقطة البيع المحددة غير موجودة.'],
-                    ]);
-                }
-            } else {
+            try {
+                $pos = $this->posRepository->findByUuid(strtoupper(trim($posUuid)));
+            } catch (ModelNotFoundException) {
                 throw ValidationException::withMessages([
-                    'pos_id' => ['يجب تحديد نقطة البيع المطلوب ربطها.'],
+                    'pos_uuid' => ['نقطة البيع المحددة غير موجودة.'],
                 ]);
             }
 
-            if ($challenge->pos_id !== null && (int) $challenge->pos_id !== $posId) {
+            if ((int) $challenge->pos_id !== (int) $pos->pos_id) {
                 throw ValidationException::withMessages([
-                    'pos_id' => ['دعوة الربط هذه مخصصة لنقطة بيع أخرى.'],
+                    'pos_uuid' => ['دعوة الربط هذه مخصصة لنقطة بيع أخرى.'],
                 ]);
             }
 
-            $pos->ensureActive();
+            if (! $pos instanceof Pos || $pos->trashed() || ! $pos->isActive()) {
+                throw ValidationException::withMessages([
+                    'pos_uuid' => ['نقطة البيع غير متاحة لإتمام الربط.'],
+                ]);
+            }
 
             if (! $actor->isSuperAdmin()) {
                 $isOwner = (int) $pos->owner_id === (int) $actor->user_id;
                 $isActiveMember = $actor->posUsers()
-                ->where('pos_id', $posId)
-                ->where('status', 'ACTIVE')
-                ->exists();
+                    ->where('pos_id', $pos->pos_id)
+                    ->where('status', 'ACTIVE')
+                    ->exists();
+
                 if (! $isOwner && ! $isActiveMember) {
                     throw ValidationException::withMessages([
-                        'pos_id' => ['غير مصرح لك بإدارة نقطة البيع هذه.'],
+                        'pos_uuid' => ['غير مصرح لك بإدارة نقطة البيع هذه.'],
                     ]);
                 }
             }
 
-            // التحقق من نشاط الشبكة عبر المستودع
             try {
                 $network = $this->networkRepository->findById($challenge->network_id);
             } catch (ModelNotFoundException) {
@@ -405,16 +351,21 @@ class NetworkPosLinkingChallengeService
                     'network_id' => ['الشبكة غير موجودة.'],
                 ]);
             }
+
             $network->ensureActive();
 
-            // إنشاء الارتباط والمحفظة عبر NetworkPosService
+            if ($this->networkPosRepository->findByNetworkAndPos($network->network_id, $pos->pos_id)) {
+                throw ValidationException::withMessages([
+                    'pos_uuid' => ['نقطة البيع مرتبطة بهذه الشبكة بالفعل.'],
+                ]);
+            }
+
             $networkPos = $this->networkPosService->create([
                 'network_id' => $network->network_id,
                 'pos_id' => $pos->pos_id,
                 'status' => true,
             ]);
 
-            // استهلاك التحدي عبر المستودع لمنع إعادة الاستخدام
             $this->challengeRepository->markAsConsumed(
                 $challenge->challenge_id,
                 $actor->user_id,

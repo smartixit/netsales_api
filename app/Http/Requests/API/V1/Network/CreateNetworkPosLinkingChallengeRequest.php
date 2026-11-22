@@ -4,7 +4,6 @@ namespace App\Http\Requests\API\V1\Network;
 
 use App\Enums\PosStatus;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,17 +14,6 @@ class CreateNetworkPosLinkingChallengeRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
-    }
-
-    public function withValidator(Validator $validator): void
-    {
-        $validator->after(function (Validator $validator): void {
-            if ($this->filled('pos_id') && $this->filled('pos_uuid')) {
-                $message = 'يجب تحديد نقطة البيع بمعرف واحد فقط.';
-                $validator->errors()->add('pos_id', $message);
-                $validator->errors()->add('pos_uuid', $message);
-            }
-        });
     }
 
     /**
@@ -39,16 +27,9 @@ class CreateNetworkPosLinkingChallengeRequest extends FormRequest
                 'integer',
                 Rule::exists('networks', 'network_id')->whereNull('deleted_at'),
             ],
-            'pos_id' => [
-                'required_without:pos_uuid',
-                'integer',
-                'min:1',
-                Rule::exists('pos', 'pos_id')
-                    ->whereNull('deleted_at')
-                    ->where('status', PosStatus::ACTIVE->value),
-            ],
+            'pos_id' => ['missing'],
             'pos_uuid' => [
-                'required_without:pos_id',
+                'required',
                 'string',
                 'max:64',
                 'regex:/^POS-\d{4}-\d{5}-[A-F0-9]{4}$/',
@@ -70,14 +51,9 @@ class CreateNetworkPosLinkingChallengeRequest extends FormRequest
         return (int) $this->network_id;
     }
 
-    public function getPosId(): ?int
+    public function getPosUuid(): string
     {
-        return $this->filled('pos_id') ? (int) $this->pos_id : null;
-    }
-
-    public function getPosUuid(): ?string
-    {
-        return $this->filled('pos_uuid') ? (string) $this->pos_uuid : null;
+        return strtoupper(trim((string) $this->pos_uuid));
     }
 
     public function getDurationMinutes(): int
