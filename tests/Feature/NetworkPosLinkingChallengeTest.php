@@ -230,7 +230,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['pos_id']);
+            ->assertJsonValidationErrors(['pos_uuid']);
     }
 
     public function test_network_owner_can_create_challenge_using_resolved_pos_business_code(): void
@@ -389,7 +389,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ]);
 
         $previewRes->assertStatus(422)
-            ->assertJsonValidationErrors(['pos_id']);
+            ->assertJsonValidationErrors(['pos_uuid']);
     }
 
     public function test_inactive_pos_membership_cannot_preview_a_challenge(): void
@@ -416,7 +416,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ]);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['pos_id']);
+            ->assertJsonValidationErrors(['pos_uuid']);
     }
 
     public function test_pos_owner_can_confirm_challenge_and_establish_relationship(): void
@@ -525,7 +525,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ]);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['pos_id']);
+            ->assertJsonValidationErrors(['pos_uuid']);
         $this->assertDatabaseHas('network_pos_linking_challenges', [
             'challenge_uuid' => $challengeUuid,
             'status' => LinkingChallengeStatus::PENDING->value,
@@ -726,8 +726,8 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ]);
 
         $confirmRes->assertStatus(422)
-            ->assertJsonValidationErrors(['pos_id']);
-        $this->assertStringContainsString('غير مصرح لك بإدارة نقطة البيع هذه', $confirmRes->json('errors.pos_id.0'));
+            ->assertJsonValidationErrors(['pos_uuid']);
+        $this->assertStringContainsString('غير مصرح لك بإدارة نقطة البيع هذه', $confirmRes->json('errors.pos_uuid.0'));
     }
 
     public function test_confirmation_from_different_pos_than_targeted_pos_is_rejected(): void
@@ -750,8 +750,8 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ]);
 
         $confirmRes->assertStatus(422)
-            ->assertJsonValidationErrors(['pos_id']);
-        $this->assertStringContainsString('مخصصة لنقطة بيع أخرى', $confirmRes->json('errors.pos_id.0'));
+            ->assertJsonValidationErrors(['pos_uuid']);
+        $this->assertStringContainsString('مخصصة لنقطة بيع أخرى', $confirmRes->json('errors.pos_uuid.0'));
     }
 
     public function test_tampered_or_malformed_challenge_payload_is_rejected(): void
@@ -786,8 +786,8 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ]);
 
         $createRes->assertStatus(422)
-            ->assertJsonValidationErrors(['pos_id']);
-        $this->assertStringContainsString('مرتبطة بالفعل', $createRes->json('errors.pos_id.0'));
+            ->assertJsonValidationErrors(['pos_uuid']);
+        $this->assertStringContainsString('مرتبطة بالفعل', $createRes->json('errors.pos_uuid.0'));
     }
 
     public function test_cross_tenant_or_cross_owner_revocation_is_blocked(): void
