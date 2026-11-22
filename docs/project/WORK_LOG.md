@@ -1249,7 +1249,7 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Authorized scope:** Replace manual POS business-code entry in the Network invitation flow with a search-and-select experience. Preserve DEC-QR-02 (`pos_uuid` remains the sole POS request identifier for challenge creation, preview, and confirmation).
 - **Backend implementation:**
   - Added authenticated `GET /api/v1/network-pos/challenges/linkable-targets`, protected by `permission:networks.edit` and read throttling; the service independently verifies active Network ownership/membership and Network activity.
-  - Search accepts a required 2–120 character term, supports POS name/business-code matching, and returns a cursor-paginated minimal projection (`pos_id`, `pos_uuid`, `pos_name`).
+  - Search accepts a trimmed 2–120 character term with at least two non-whitespace characters, treats SQL LIKE wildcards literally, supports POS name/business-code matching, and returns a cursor-paginated minimal projection (`pos_id`, `pos_uuid`, `pos_name`).
   - Candidate queries exclude inactive/deleted POS records, every existing relationship row for the selected Network (including inactive links), and unexpired `PENDING` challenges for that Network/POS pair.
   - Challenge creation now checks existing relationships and active pending invitations again while holding a lock on the target POS row inside a database transaction, preventing concurrent duplicate active invitations.
   - The exact-target resolver also rejects targets with an active pending invitation.
@@ -1259,5 +1259,5 @@ This log documents all executed tasks, code changes, and verification command ou
   - Search loading/empty/error states use the shared `CustomStateView` and `SkeletonRecipes`; load-more skeletons preserve existing results.
   - The selected result supplies its `pos_uuid` automatically to challenge creation. No `pos_id` is sent in create/preview/confirmation request bodies.
 - **Contract documentation:** Updated Laravel `API_CONTRACTS.md` and Flutter `shared-contract-reference.md` with route authorization, search/pagination parameters, candidate exclusions, minimal response shape, and client behavior.
-- **Tests added/updated:** Laravel feature coverage for eligible search, already-linked exclusion, pending-invitation exclusion, duplicate challenge rejection, and unauthorized search; Flutter controller and repository pagination coverage for candidate search/selection.
+- **Tests added/updated:** Laravel feature coverage for eligible search, already-linked exclusion, pending-invitation exclusion, duplicate challenge rejection, unauthorized search, cursor pagination, whitespace-only/short-term validation, and literal wildcard handling; Flutter controller and repository pagination coverage for candidate search/selection.
 - **Verification boundary:** Source changes have been committed to coordinated feature branches. No local PHP/Pint/PHPUnit or Dart format/analyze/Flutter tests were run in this environment. Exact-head GitHub Actions checks are required before merge; both PRs must remain unmerged until those checks pass and the diffs are reviewed.
