@@ -396,6 +396,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('pos-wallets', [PosWalletController::class, 'store'])->name('api.v1.pos_wallets.store');
             Route::put('pos-wallets/{id}', [PosWalletController::class, 'update'])->whereNumber('id')->name('api.v1.pos_wallets.update');
+            Route::put('pos-wallets/{id}/credit-limit', [PosWalletController::class, 'updateCreditLimit'])->whereNumber('id')->name('api.v1.pos_wallets.update_credit_limit');
             Route::delete('pos-wallets/{id}', [PosWalletController::class, 'destroy'])->whereNumber('id')->name('api.v1.pos_wallets.destroy');
             Route::post('pos-wallets/{id}/deposit', [PosWalletController::class, 'deposit'])->whereNumber('id')->name('api.v1.pos_wallets.deposit');
             Route::post('pos-wallets/{id}/withdraw', [PosWalletController::class, 'withdraw'])->whereNumber('id')->name('api.v1.pos_wallets.withdraw');
@@ -408,7 +409,6 @@ Route::prefix('v1')->group(function () {
             Route::post('pos-wallets/batch-force-delete', [PosWalletController::class, 'batchForceDelete'])->name('api.v1.pos_wallets.batch_force_delete');
         });
 
-        // ==========================================
         // 10. طلبات شراء كروت الإنترنت (Voucher Requests)
         // ==========================================
         Route::middleware(['throttle:api-read', 'permission:requests.view'])->group(function () {
@@ -447,6 +447,7 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('sale-invoices', [SaleInvoiceController::class, 'store'])->name('api.v1.sale_invoices.store')->middleware('permission:sales.create');
+            Route::put('sale-invoices/{id}', [SaleInvoiceController::class, 'update'])->whereNumber('id')->name('api.v1.sale_invoices.update')->middleware('permission:sales.edit');
             Route::delete('sale-invoices/{id}', [SaleInvoiceController::class, 'destroy'])->whereNumber('id')->name('api.v1.sale_invoices.destroy')->middleware('permission:sales.edit');
             Route::post('sale-invoices/{id}/restore', [SaleInvoiceController::class, 'restore'])->whereNumber('id')->name('api.v1.sale_invoices.restore')->middleware('permission:sales.edit');
             Route::delete('sale-invoices/{id}/force', [SaleInvoiceController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.sale_invoices.force_delete')->middleware('permission:sales.edit');
