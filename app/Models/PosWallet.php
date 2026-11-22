@@ -126,48 +126,20 @@ class PosWallet extends Model
     }
 
     /**
-     * هل المحفظة مكشوفة برصيد سالب (مدين على الوكيل لصالح الشبكة).
-     */
-    public function isOverdrawn(): bool
-    {
-        return DecimalAmount::toMinorUnits($this->wallet_balance) < 0;
-    }
-
-    /**
-     * تحديد المركز المحاسبي لرصيد المحفظة وفق الأصول المحاسبية (مدين / دائن / متزن).
+     * الحالة المحاسبية لرصيد المحفظة؛ لا يدعم النظام أرصدة POS المدينة.
      *
-     * @return 'DEBIT'|'CREDIT'|'ZERO'
+     * @return 'CREDIT'|'ZERO'
      */
     public function getAccountingStatus(): string
     {
-        $balance = DecimalAmount::toMinorUnits($this->wallet_balance);
-        if ($balance < 0) {
-            return 'DEBIT';
-        }
-
-        return $balance > 0 ? 'CREDIT' : 'ZERO';
+        return DecimalAmount::toMinorUnits($this->wallet_balance) > 0 ? 'CREDIT' : 'ZERO';
     }
 
-    /**
-     * البيان المحاسبي لحالة المحفظة.
-     */
     public function getAccountingStatusLabel(): string
     {
-        return match ($this->getAccountingStatus()) {
-            'DEBIT' => 'مدين (عليه مديونية للشبكة)',
-            'CREDIT' => 'دائن (له رصيد متاح)',
-            'ZERO' => 'متزن (لا يوجد رصيد أو مديونية)',
-        };
-    }
-
-    /**
-     * إجمالي مبلغ المديونية إن كانت المحفظة بالسالب (رصيد مدين).
-     */
-    public function getDebitAmount(): float
-    {
-        $balance = DecimalAmount::toMinorUnits($this->wallet_balance);
-
-        return $balance < 0 ? (float) DecimalAmount::fromMinorUnits(abs($balance)) : 0.0;
+        return $this->getAccountingStatus() === 'CREDIT'
+            ? 'دائن (له رصيد متاح)'
+            : 'متزن (لا يوجد رصيد متاح أو مديونية)';
     }
 
     /**
