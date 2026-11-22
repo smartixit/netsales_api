@@ -375,8 +375,16 @@ class NetworkPosLinkingChallengeTest extends TestCase
 
     public function test_eligible_pos_search_uses_cursor_pagination(): void
     {
+        $secondPosOwner = $this->createUserWithScope(RoleScope::POS, [
+            'role_id' => null,
+            'user_full_name' => 'Second POS Owner Cursor Test',
+            'user_phone_number' => '77660000'.rand(10, 99),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+
         $secondPos = Pos::create([
-            'owner_id' => $this->posOwner->user_id,
+            'owner_id' => $secondPosOwner->user_id,
             'pos_name' => 'نقطة الأمل الثانية للاختبار',
             'pos_phone_number' => '773300001',
             'status' => PosStatus::ACTIVE,
