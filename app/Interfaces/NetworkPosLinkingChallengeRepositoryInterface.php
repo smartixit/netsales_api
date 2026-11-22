@@ -52,4 +52,9 @@ interface NetworkPosLinkingChallengeRepositoryInterface extends BaseRepositoryIn
      * @return Collection<int, NetworkPosLinkingChallenge>
      */
     public function getActiveForNetwork(int $networkId): Collection;
+
+    /**
+     * Determine whether an unexpired pending challenge already targets this POS in the Network.
+     */
+    public function hasActiveForNetworkAndPos(int $networkId, int $posId): bool;
 }
