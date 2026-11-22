@@ -20,7 +20,7 @@
 - Do not introduce Platform Workspace navigation or `SUPER_ADMIN` functionality into the mobile application.
 
 ## 3. Financial and Accounting Authority
-- The Laravel API backend is the **sole authoritative entity** for all pricing, line discounts, package tariffs, order totals, wallet operations, and accounting ledger records. POS credit facilities, debt balances, and repayment allocations are not supported.
+- The Laravel API backend is the **sole authoritative entity** for all pricing, line discounts, package tariffs, order totals, wallet operations, invoice payment calculations, POS credit-limit enforcement, and accounting ledger records. POS CASH/CREDIT invoices, initial partial payments, receivables, and receivables aging remain supported; only POS Repayment collection, reversal, and repayment allocations are removed.
 - Flutter clients are presentation-only consumers. Flutter must never calculate, persist, or claim authoritative financial balances.
 - All database mutations to financial balances must be executed within database transactions under appropriate row-level locking (`lockForUpdate`).
 
