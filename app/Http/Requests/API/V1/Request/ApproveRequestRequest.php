@@ -26,6 +26,9 @@ class ApproveRequestRequest extends FormRequest
             'sale_type' => [
                 'prohibited',
             ],
+            'paid_amount' => [
+                'prohibited',
+            ],
             'items' => [
                 'nullable',
                 'array',
