@@ -351,6 +351,14 @@ class NetworkPosLinkingChallengeTest extends TestCase
         }
     }
 
+    public function test_search_treats_like_wildcards_as_literal_characters(): void
+    {
+        $response = $this->withHeaders($this->netSession['headers'])
+            ->getJson('/api/v1/network-pos/challenges/linkable-targets?network_id='.$this->network->network_id.'&search=%25_');
+
+        $response->assertOk()->assertJsonPath('data', []);
+    }
+
     public function test_network_owner_can_search_only_eligible_pos_targets_for_network(): void
     {
         $response = $this->withHeaders($this->netSession['headers'])
