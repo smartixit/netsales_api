@@ -217,7 +217,6 @@ class SaleInvoiceService
             $paidAmount = $totalInvoiceAmount;
             $remainingAmount = 0.00;
             $paymentStatus = InvoicePaymentStatus::PAID;
-            $isCashSale = true;
 
             // 6. إنشاء فاتورة المبيعات الرسمية
             /** @var SaleInvoice $invoice */
@@ -227,8 +226,8 @@ class SaleInvoiceService
                 'request_id' => $request->request_id,
                 'sale_type' => $saleType,
                 'invoice_total_amount' => $totalInvoiceAmount,
-                'paid_amount' => $isCashSale ? $totalInvoiceAmount : $paidAmount,
-                'remaining_amount' => $isCashSale ? 0.00 : $remainingAmount,
+                'paid_amount' => $totalInvoiceAmount,
+                'remaining_amount' => 0.00,
                 'payment_status' => $paymentStatus,
                 'invoice_date' => now('Asia/Aden'),
                 'created_by' => $userId,
@@ -238,7 +237,6 @@ class SaleInvoiceService
             $this->saleInvoiceItemRepository->createManyForInvoice($invoice->invoice_id, $itemsData);
 
             // 8. Cash sale ledger entries preserve the POS balance and record network revenue.
-            $posBalanceAfter = (float) $posWallet->wallet_balance;
             $cashSaleAmountMinor = DecimalAmount::toMinorUnits($totalInvoiceAmount);
             $posBalanceBeforeMinor = DecimalAmount::toMinorUnits($posWallet->wallet_balance);
             $posBalanceAfterDebitMinor = DecimalAmount::add($posBalanceBeforeMinor, -$cashSaleAmountMinor);
@@ -278,8 +276,8 @@ class SaleInvoiceService
                     'pos_id' => $posId,
                     'sale_type' => $saleType->value,
                     'invoice_total_amount' => $totalInvoiceAmount,
-                    'paid_amount' => $paidAmount,
-                    'remaining_amount' => $remainingAmount,
+                    'paid_amount' => $totalInvoiceAmount,
+                    'remaining_amount' => 0.00,
                     'currency_code' => $currencyCode,
                     'payment_status' => $paymentStatus->value,
                 ]
@@ -287,51 +285,27 @@ class SaleInvoiceService
 
             $invoice->load(['network', 'pos', 'createdBy', 'items.voucherPackage']);
 
-            $formattedPaidAmount = formatWithCurrency($paidAmount);
-            $formattedRemainingAmount = formatWithCurrency($remainingAmount);
-            $formattedPosBalanceAfter = formatWithCurrency($posBalanceAfter);
             $formattedTotalInvoiceAmount = formatWithCurrency($totalInvoiceAmount);
 
             // تحديد المستلمين الصحيحين للإشعارات (صاحب نقطة البيع وصاحب الشبكة)
             $posRecipientId = (int) ($pos->owner_id ?? $request->created_by);
             $networkRecipientId = (int) ($network->owner_id ?? $userId);
 
-            // تأجيل كافة التأثيرات الخارجية (إشعارات وSMS) إلى ما بعد اكتمال واعتماد المعاملة بنجاح (Commit-Safe)
+            // Dispatch cash-sale notifications only after the financial transaction commits.
             DB::afterCommit(function () use (
-                $posWallet,
-                $totalInvoiceAmount,
-                $posBalanceAfter,
                 $posRecipientId,
                 $networkRecipientId,
-                $isCashSale,
-                $paidAmount,
                 $invoice,
                 $request,
-                $pos,
-                $formattedPaidAmount,
-                $formattedRemainingAmount,
-                $formattedPosBalanceAfter
+                $pos
             ): void {
-                if (! $isCashSale) {
-                    $posWallet->refresh();
-                    $this->posWalletService->sendWalletSms($posWallet, 'payment', (float) $totalInvoiceAmount, $posBalanceAfter);
-                }
-
                 if ($posRecipientId) {
                     $this->notificationService->sendDirect(
                         userId: $posRecipientId,
                         type: NotificationType::WALLET_WITHDRAWAL,
                         push: true,
-                        title: $isCashSale
-                            ? 'سداد فاتورة مبيعات كروت نقدية'
-                            : ($paidAmount > 0.001
-                                ? 'سداد فاتورة كروت بالبيع الآجل مدفوعة جزئياً'
-                                : 'سداد فاتورة كروت بالبيع الآجل لعدم كفاية الرصيد النقدي'),
-                        message: $isCashSale
-                            ? "سداد فاتورة مبيعات كروت نقدية (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})"
-                            : ($paidAmount > 0.001
-                                ? "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) مدفوعة جزئياً من الرصيد: ({$formattedPaidAmount})، متبقي آجل: ({$formattedRemainingAmount}) - رصيد المحفظة الحالي: ({$formattedPosBalanceAfter}) ناتجة عن الطلب (#{$request->request_uuid})"
-                                : "سداد فاتورة كروت بالبيع الآجل (#{$invoice->invoice_uuid}) لعدم كفاية الرصيد النقدي - رصيد مدين على الوكيل: ({$formattedPosBalanceAfter}) ناتجة عن الطلب (#{$request->request_uuid})"),
+                        title: 'سداد فاتورة مبيعات كروت نقدية',
+                        message: "سداد فاتورة مبيعات كروت نقدية (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})",
                     );
                 }
 
@@ -340,16 +314,8 @@ class SaleInvoiceService
                         userId: $networkRecipientId,
                         type: NotificationType::WALLET_DEPOSIT,
                         push: true,
-                        title: $isCashSale
-                            ? 'تحصيل مبيعات كروت نقدية'
-                            : ($paidAmount > 0.001
-                                ? 'تحصيل مبيعات كروت بالبيع الآجل'
-                                : 'تحصيل مبيعات كروت بالبيع الآجل'),
-                        message: $isCashSale
-                            ? "تحصيل مبيعات كروت نقدية (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"
-                            : ($paidAmount > 0.001
-                                ? "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name}) - مسدد من الرصيد: ({$formattedPaidAmount})، آجل متبقي: ({$formattedRemainingAmount})"
-                                : "تحصيل مبيعات كروت بالبيع الآجل (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"),
+                        title: 'تحصيل مبيعات كروت نقدية',
+                        message: "تحصيل مبيعات كروت نقدية (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})",
                     );
                 }
             });
@@ -366,7 +332,7 @@ class SaleInvoiceService
         return DB::transaction(function () use ($request, $userId): SaleInvoice {
             $networkId = $request->getNetworkId();
             $posId = $request->getPosId();
-            $saleType = $request->getSaleType();
+            $saleType = SaleType::CASH;
             $items = $request->getItems();
 
             // 1. التحقق من وجود الشبكة ونقطة البيع ونشاطهما
@@ -400,9 +366,7 @@ class SaleInvoiceService
                 $price = (float) $package->package_voucher_price;
                 $count = (int) $item['voucher_count'];
                 $discountData = $this->voucherPackageDiscountService->getEffectiveDiscount($networkId, $posId, $package->package_id);
-                $discount = $saleType === SaleType::CASH
-                    ? $discountData['discount_cash']
-                    : $discountData['discount_credit'];
+                $discount = $discountData['discount_cash'];
 
                 $invoiceItemModel = new SaleInvoiceItem([
                     'package_id' => $package->package_id,
@@ -447,8 +411,6 @@ class SaleInvoiceService
             $paidAmount = $totalInvoiceAmount;
             $remainingAmount = 0.00;
             $paymentStatus = InvoicePaymentStatus::PAID;
-            $isCashSale = true;
-            $posBalanceAfter = (float) $posWallet->wallet_balance;
 
             // 4. إنشاء فاتورة المبيعات الرسمية
             /** @var SaleInvoice $invoice */
@@ -498,43 +460,25 @@ class SaleInvoiceService
             $invoice->load(['network', 'pos', 'createdBy', 'items.voucherPackage']);
 
             $formattedTotalInvoiceAmount = formatWithCurrency($totalInvoiceAmount);
-            $formattedPaidAmount = formatWithCurrency($paidAmount);
-            $formattedRemainingAmount = formatWithCurrency($remainingAmount);
-            $formattedPosBalanceAfter = $posBalanceAfter === null ? null : formatWithCurrency($posBalanceAfter);
 
             $posRecipientId = (int) ($pos->owner_id ?? $userId);
             $networkRecipientId = (int) ($network->owner_id ?? $userId);
 
             DB::afterCommit(function () use (
-                $posWallet,
-                $remainingAmount,
-                $posBalanceAfter,
                 $posRecipientId,
                 $networkRecipientId,
-                $paidAmount,
+                $invoice,
                 $pos,
-                $formattedTotalInvoiceAmount,
-                $formattedPaidAmount,
-                $formattedRemainingAmount,
-                $formattedPosBalanceAfter
+                $formattedTotalInvoiceAmount
             ): void {
-                if ($remainingAmount > 0.001) {
-                    $posWallet->refresh();
-                    $this->posWalletService->sendWalletSms($posWallet, 'payment', (float) $remainingAmount, $posBalanceAfter ?? 0.0);
-
-                    if ($posRecipientId) {
-                        $this->notificationService->sendDirect(
-                            userId: $posRecipientId,
-                            type: NotificationType::WALLET_WITHDRAWAL,
-                            push: true,
-                            title: $paidAmount > 0.001
-                            ? 'سداد فاتورة مبيعات مباشرة مدفوعة جزئياً'
-                            : 'سداد فاتورة مبيعات مباشرة بالبيع الآجل',
-                            message: $paidAmount > 0.001
-                            ? "سداد فاتورة مبيعات مباشرة مدفوعة جزئياً - إجمالي: ({$formattedTotalInvoiceAmount})، مسدد نقداً: ({$formattedPaidAmount})، متبقي آجل على المحفظة: ({$formattedRemainingAmount}) (رصيد مدين: {$formattedPosBalanceAfter})"
-                            : "سداد فاتورة مبيعات مباشرة بالبيع الآجل - ذمم مدينة (رصيد مدين على الوكيل: {$formattedPosBalanceAfter})",
-                        );
-                    }
+                if ($posRecipientId) {
+                    $this->notificationService->sendDirect(
+                        userId: $posRecipientId,
+                        type: NotificationType::WALLET_WITHDRAWAL,
+                        push: true,
+                        title: 'إصدار فاتورة مبيعات مباشرة نقدية',
+                        message: "تم إصدار فاتورة مبيعات مباشرة نقدية (#{$invoice->invoice_uuid}) بقيمة ({$formattedTotalInvoiceAmount})",
+                    );
                 }
 
                 if ($networkRecipientId) {
@@ -542,8 +486,8 @@ class SaleInvoiceService
                         userId: $networkRecipientId,
                         type: NotificationType::WALLET_DEPOSIT,
                         push: true,
-                        title: 'تحصيل فاتورة مبيعات مباشرة',
-                        message: "تحصيل فاتورة مبيعات مباشرة من نقطة بيع (#{$pos->pos_name}) - إجمالي: ({$formattedTotalInvoiceAmount})، نقد محصل: ({$formattedPaidAmount})، آجل متبقي: ({$formattedRemainingAmount})",
+                        title: 'تحصيل فاتورة مبيعات مباشرة نقدية',
+                        message: "تحصيل فاتورة مبيعات مباشرة نقدية من نقطة بيع (#{$pos->pos_name}) بقيمة ({$formattedTotalInvoiceAmount})",
                     );
                 }
             });
