@@ -272,6 +272,55 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonValidationErrors(['pos_id']);
     }
 
+    public function test_all_challenge_requests_reject_internal_pos_id_without_pos_uuid(): void
+    {
+        $createWithoutBusinessCode = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $createWithoutBusinessCode->assertUnprocessable()
+            ->assertJsonValidationErrors(['pos_id', 'pos_uuid']);
+
+        $validChallenge = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+            ]);
+
+        $validChallenge->assertCreated();
+        $challengeUuid = $validChallenge->json('data.challenge_uuid');
+        $payload = $validChallenge->json('data.payload');
+
+        $previewWithoutBusinessCode = $this->withHeaders($this->posSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges/preview', [
+                'payload' => $payload,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $previewWithoutBusinessCode->assertUnprocessable()
+            ->assertJsonValidationErrors(['pos_id', 'pos_uuid']);
+
+        $confirmWithoutBusinessCode = $this->withHeaders($this->posSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges/confirm', [
+                'challenge_uuid' => $challengeUuid,
+                'pos_id' => $this->pos->pos_id,
+            ]);
+
+        $confirmWithoutBusinessCode->assertUnprocessable()
+            ->assertJsonValidationErrors(['pos_id', 'pos_uuid']);
+
+        $this->assertDatabaseHas('network_pos_linking_challenges', [
+            'challenge_uuid' => $challengeUuid,
+            'status' => LinkingChallengeStatus::PENDING->value,
+        ]);
+        $this->assertDatabaseMissing('network_pos', [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+        ]);
+    }
+
     public function test_network_owner_can_resolve_exact_eligible_pos_business_code(): void
     {
         $response = $this->withHeaders($this->netSession['headers'])
