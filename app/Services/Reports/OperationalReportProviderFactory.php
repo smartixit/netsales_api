@@ -2,6 +2,7 @@
 
 namespace App\Services\Reports;
 
+use App\Services\Reports\Providers\DebtAgingReportProvider;
 use App\Services\Reports\Providers\ExpensesReportProvider;
 use App\Services\Reports\Providers\NetworkWalletReportProvider;
 use App\Services\Reports\Providers\PosWalletReportProvider;
@@ -15,6 +16,7 @@ final class OperationalReportProviderFactory
         private readonly ExpensesReportProvider $expenses,
         private readonly NetworkWalletReportProvider $networkWallet,
         private readonly PosWalletReportProvider $posWallet,
+        private readonly DebtAgingReportProvider $debtAging,
         private readonly RequestsReportProvider $requests,
     ) {}
 
@@ -25,6 +27,7 @@ final class OperationalReportProviderFactory
             $this->expenses,
             $this->networkWallet,
             $this->posWallet,
+            $this->debtAging,
             $this->requests,
         ]);
     }
