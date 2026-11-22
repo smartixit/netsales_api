@@ -110,18 +110,18 @@ It must not expose POS phone, owner identity, credentials, or a directory of oth
 
 Request (`CreateNetworkPosLinkingChallengeRequest`):
 - `network_id` (`integer`, required).
-- Exactly one of:
-  - `pos_id` (`integer`), or
-  - `pos_uuid` (`string`, POS commercial business code in the format above).
-- Supplying neither or both target fields is invalid.
+- `pos_uuid` (`string`, required): the POS commercial business code in the exact format above.
+- `pos_id` is not an accepted request field. Supplying it is invalid, whether alone or together with `pos_uuid`.
 - `duration_minutes` (`integer`, optional, default 15, range 5–60).
 
-The server independently revalidates Network authorization, active POS status, and that the POS is not already linked to the Network. The encrypted payload binds version, operation, challenge UUID, Network ID, POS ID, nonce, and exact expiry epoch. The challenge row must always have a non-null `pos_id`; deleting the target POS cascades to its challenges.
+**Canonical identifier decision (DEC-QR-02):** `pos_uuid` is the only POS identifier accepted by the create, preview, and confirmation request contracts. It is the formatted POS commercial business code, not an RFC UUID. Internal `pos_id` remains an implementation/database identifier and may appear in narrowly scoped response projections where required for consistency checks; it must never be sent as a request selector for this workflow.
+
+The server resolves `pos_uuid` to the internal POS record, then independently revalidates Network authorization, active POS status, and that the POS is not already linked to the Network. The encrypted payload binds version, operation, challenge UUID, Network ID, internal POS ID, nonce, and exact expiry epoch. The challenge row must always have a non-null `pos_id`; deleting the target POS cascades to its challenges.
 
 Response (201, `NetworkPosLinkingChallengeResource`):
 - `challenge_uuid`: challenge reference.
 - `payload`: asymmetrically sealed envelope prefixed with `NTS_LINK_V1_`.
-- `network_id` and `pos_id`: server-side binding values.
+- `network_id` and `pos_id`: server-side binding values; `pos_id` is response-only and is not a request selector.
 - `status`: `PENDING`; `status_label`: localized label.
 - `expires_at`: ISO-8601 timestamp with timezone offset.
 - Nested `network` projection contains only `network_id` and `network_name`.
@@ -130,9 +130,12 @@ Response (201, `NetworkPosLinkingChallengeResource`):
 
 ### 4.4 POS preview and confirmation
 
-- Preview accepts `payload` and exactly one authenticated POS identity selector: `pos_id` or `pos_uuid` (the POS commercial business code). Supplying both selectors is rejected. The server decrypts and verifies all bound values, expiry, nonce, Network, target POS, POS activity, active POS ownership/membership, and absence of an existing relationship.
+- Preview request accepts `payload` and required `pos_uuid` (the authenticated POS commercial business code). `pos_id` is rejected as an unknown/forbidden request selector, even if `pos_uuid` is also supplied.
+- Confirmation request accepts `challenge_uuid` and required `pos_uuid`. `pos_id` is rejected in the same way.
+- The server decrypts and verifies all bound values, expiry, nonce, Network, and target POS. It checks POS activity, active POS ownership/membership, and absence of an existing relationship.
 - `is_targeted` is always `true`; an invitation for another POS must be rejected.
-- Confirmation requires exactly one of `pos_id` or `pos_uuid`, rechecks the same target binding and active POS ownership/membership inside the transaction, and consumes the challenge under row lock. Replays, ambiguous selectors, inactive memberships, and cross-POS confirmations are rejected.
+- Confirmation rechecks the same target binding and active POS ownership/membership inside the transaction, then consumes the challenge under row lock. Replays, missing/invalid business codes, inactive memberships, and cross-POS confirmations are rejected.
+- Service-layer validation errors that identify the target POS use the `pos_uuid` field key. The `pos_id` validation error is reserved for attempts to submit the prohibited request field.
 - The POS preview resource may contain the verified Network and POS details needed for the user confirmation screen; the Network-side status resource must never return the encrypted payload or target identifiers.
 
 ### 4.5 Safe challenge status and revocation
