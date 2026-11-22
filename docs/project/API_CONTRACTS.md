@@ -75,6 +75,7 @@ A Network invitation is always bound to exactly one Network and one specific POS
 
 | Method | Endpoint | Authorization | Rate Limit | Purpose |
 |---|---|---|---|---|
+| `GET` | `/api/v1/network-pos/challenges/linkable-targets` | `permission:networks.edit` | `throttle:api-read` | Search cursor-paginated POS candidates eligible for a new invitation in the selected Network |
 | `POST` | `/api/v1/network-pos/challenges/resolve-target` | `permission:networks.edit` | `throttle:api-write` | Resolve one exact POS business code in the selected Network; not a directory |
 | `POST` | `/api/v1/network-pos/challenges` | `permission:networks.edit` | `throttle:api-write` | Create an encrypted invitation bound to that Network and POS |
 | `GET` | `/api/v1/network-pos/challenges/{uuid}` | `permission:networks.view` | `throttle:api-read` | Read only the authorized challenge lifecycle state |
@@ -84,26 +85,40 @@ A Network invitation is always bound to exactly one Network and one specific POS
 
 All routes are additionally inside the active `session.auth` boundary.
 
-### 4.2 Resolve one exact POS target
+### 4.2 Search eligible POS targets
+
+`GET /api/v1/network-pos/challenges/linkable-targets`
+
+Query parameters:
+- `network_id` (`integer`, required): the Network issuing the invitation.
+- `search` (`string`, required): trimmed POS name or commercial business code; 2–120 characters.
+- `per_page` (`integer`, optional): 1–30, default 15.
+- `cursor` (`string`, optional): opaque Laravel cursor, maximum 2,048 characters.
+
+The endpoint is protected by the active session and `permission:networks.edit`; the service independently verifies active Network ownership or active membership and Network status. It is not an unrestricted POS listing endpoint.
+
+Only active, non-deleted POS records are candidates. A POS is excluded when any relationship row already exists between it and the selected Network, regardless of whether that relationship is currently active or suspended. A POS is also excluded while that same Network has an unexpired `PENDING` QR challenge targeting it. Search is performed server-side against `pos_name` and `pos_uuid`, and results use cursor pagination.
+
+The response is a cursor-paginated collection of `NetworkLinkablePosResource`; each candidate exposes only:
+- `pos_id` (`integer`): internal response-only consistency value.
+- `pos_uuid` (`string`): commercial business code used by the create-challenge request.
+- `pos_name` (`string`).
+
+No POS phone, owner identity, email, address, credentials, or administrative metadata is exposed. Flutter must debounce search, discard stale responses when the query or selected Network changes, and load additional results without replacing already loaded results.
+
+### 4.3 Resolve one exact POS target
 
 `POST /api/v1/network-pos/challenges/resolve-target`
 
 Request (`ResolveNetworkLinkablePosRequest`):
 - `network_id` (`integer`, required): the Network issuing the invitation.
 - `pos_uuid` (`string`, required): the POS commercial business code, format `POS-YYMM-00001-AB12`. It is not a generic RFC UUID.
-- No search term, pagination, or list endpoint is exposed.
 
-The service verifies the caller's active Network ownership/membership, Network activity, exact POS identity, POS activity, and absence of an existing link to that Network.
+The service verifies the caller's active Network ownership/membership, Network activity, exact POS identity, POS activity, and absence of an existing relationship or active pending challenge for that Network.
 
-Response (`NetworkLinkablePosResource`) exposes only:
-- `pos_id` (`integer`): internal identifier required for response consistency checks.
-- `pos_uuid` (`string`): the same commercial business code, needed by the subsequent create-challenge request.
-- `pos_name` (`string`).
+Response (`NetworkLinkablePosResource`) exposes only the same minimal fields described in §4.2. It must not expose POS phone, owner identity, credentials, or a directory of other POS records.
 
-
-It must not expose POS phone, owner identity, credentials, or a directory of other POS records.
-
-### 4.3 Create a targeted challenge
+### 4.4 Create a targeted challenge
 
 `POST /api/v1/network-pos/challenges`
 
@@ -127,7 +142,7 @@ Response (201, `NetworkPosLinkingChallengeResource`):
 - Nested `pos` projection contains only `pos_id`, `pos_uuid`, and `pos_name`.
 - Do not embed the general NetworkResource or PosResource here; those expose owner identity, phone, email, address, logos, and administrative metadata unrelated to challenge creation.
 
-### 4.4 POS preview and confirmation
+### 4.5 POS preview and confirmation
 
 - Preview request accepts `payload` and required `pos_uuid` (the authenticated POS commercial business code). `pos_id` is rejected as an unknown/forbidden request selector, even if `pos_uuid` is also supplied.
 - Confirmation request accepts `challenge_uuid` and required `pos_uuid`. `pos_id` is rejected in the same way.
@@ -137,7 +152,7 @@ Response (201, `NetworkPosLinkingChallengeResource`):
 - Service-layer validation errors that identify the target POS use the `pos_uuid` field key. The `pos_id` validation error is reserved for attempts to submit the prohibited request field.
 - The POS preview resource may contain the verified Network and POS details needed for the user confirmation screen; the Network-side status resource must never return the encrypted payload or target identifiers.
 
-### 4.5 Safe challenge status and revocation
+### 4.6 Safe challenge status and revocation
 
 `GET /api/v1/network-pos/challenges/{uuid}` returns only:
 - `status`: one of `PENDING`, `CONSUMED`, `EXPIRED`, `REVOKED`.
@@ -148,7 +163,7 @@ The response must omit `payload`, `challenge_uuid`, `network_id`, `pos_id`, nonc
 
 Revocation is limited to the challenge's Network owner or an active Network member authorized by the Network edit permission. The service must not accept cross-Network challenge references.
 
-### 4.6 Timestamp and security notes
+### 4.7 Timestamp and security notes
 - The challenge `expires_at` fields use ISO-8601 serialization so the Flutter client can preserve the exact timezone instant when parsing with `DateTime.tryParse()`.
 - The encrypted payload `exp` is an integer Unix epoch timestamp; server verification compares it to the persisted challenge expiry.
 - A QR image contains only the encrypted payload. Internal challenge/network/POS IDs, nonce, and secret material must not be printed in the invitation card.
