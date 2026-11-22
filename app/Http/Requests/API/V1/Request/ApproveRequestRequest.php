@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\API\V1\Request;
 
-use App\Enums\SaleType;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -23,11 +22,6 @@ class ApproveRequestRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:150',
-            ],
-            'paid_amount' => [
-                'nullable',
-                'numeric',
-                'min:0',
             ],
             'sale_type' => [
                 'prohibited',
@@ -66,20 +60,6 @@ class ApproveRequestRequest extends FormRequest
     public function getRequestNote(): ?string
     {
         return $this->input('request_note');
-    }
-
-    public function getPaidAmount(): ?float
-    {
-        return $this->has('paid_amount') && $this->input('paid_amount') !== null
-            ? (float) $this->input('paid_amount')
-            : null;
-    }
-
-    public function getSaleType(): ?SaleType
-    {
-        $saleType = $this->input('sale_type');
-
-        return $saleType ? SaleType::tryFrom((string) $saleType) : null;
     }
 
     public function hasItems(): bool
