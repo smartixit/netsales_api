@@ -9,6 +9,7 @@ use App\Http\Requests\API\V1\Network\CreateNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\FilterNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\PreviewNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\ResolveNetworkLinkablePosRequest;
+use App\Http\Requests\API\V1\Network\SearchNetworkLinkablePosRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeResource;
@@ -521,6 +522,35 @@ class NetworkPosController extends BaseController
             new OA\Response(response: 422, description: 'بيانات غير صالحة'),
         ]
     )]
+    /**
+     * Search the eligible POS targets for one authorized Network.
+     */
+    public function searchLinkablePos(SearchNetworkLinkablePosRequest $request): JsonResponse
+    {
+        try {
+            $results = $this->challengeService->searchLinkablePos(
+                $this->currentUser(),
+                $request->getNetworkId(),
+                $request->getSearch(),
+                $request->getPerPage(),
+                $request->getCursor()
+            );
+
+            return $this->successResponse(
+                'تم استرجاع نقاط البيع المؤهلة للدعوة.',
+                NetworkLinkablePosResource::collection($results)
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception) {
+            return $this->errorResponse(
+                'تعذر البحث عن نقاط البيع المؤهلة. حاول مرة أخرى.',
+                [],
+                422
+            );
+        }
+    }
+
     /**
      * Resolve one exact POS business code without exposing a POS directory.
      */
