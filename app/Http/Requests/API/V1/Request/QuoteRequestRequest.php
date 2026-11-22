@@ -41,7 +41,7 @@ class QuoteRequestRequest extends FormRequest
             ],
             'sale_type' => [
                 'nullable',
-                Rule::enum(SaleType::class),
+                Rule::in([SaleType::CASH->value]),
             ],
             'items' => [
                 'required',
