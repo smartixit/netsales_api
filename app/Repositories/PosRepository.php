@@ -71,7 +71,7 @@ class PosRepository extends BaseRepository implements PosRepositoryInterface
         }
 
         if (! empty($filters['linkable_search'])) {
-            $search = trim((string) $filters['linkable_search']);
+            $search = addcslashes(trim((string) $filters['linkable_search']), '\\%_');
 
             $query->where(function (Builder $searchQuery) use ($search): void {
                 $searchQuery->where('pos_name', 'like', "%{$search}%")
