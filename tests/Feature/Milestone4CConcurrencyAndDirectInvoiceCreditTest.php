@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
-class Milestone4CConcurrencyAndDirectInvoiceDebtTest extends TestCase
+class Milestone4CConcurrencyAndDirectInvoiceCreditTest extends TestCase
 {
     protected User $networkOwner;
 
