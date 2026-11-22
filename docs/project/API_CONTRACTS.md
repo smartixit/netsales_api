@@ -51,8 +51,6 @@ The 24 backed PHP Enums (`app/Enums/`) have the following exact canonical wire v
 | `NetworkWalletLogResource` | `log_operation` | `string` | `WalletOperationType` | Yes (`log_operation_label`) | Direction Indicator |
 | `PosWalletLogResource` | `log_operation_type` | `string` | `WalletOperationType` | Yes (`log_operation_type_label`) | Direction Indicator |
 | `PosWalletResource` | `accounting_status` | `string` | **None** (Model Method) | Yes (`accounting_status_label`) | Accounting Computed Status |
-| `PosRepaymentResource` | `status` | `string` | **None** (Plain `'ACTIVE'`/`'REVERSED'`) | **No** | String Flag |
-| `PosRepaymentResource` | `payment_method` | `string` | **None** (Plain string, e.g. `'CASH'`) | **No** | String Flag (DEC-03 proposed) |
 | `BankAccountResource` | `status` | `boolean` | **None** (Cast as `(bool) $this->status`) | **No** | Boolean Active Flag |
 | `NetworkPosResource` | `status` | `boolean` | **None** (Cast as `(bool) $this->status`) | **No** | Boolean Link Status |
 | `BackupJobResource` | `status` | `string` | `BackupStatus` | Yes (`status_label`) | Backup Status Badge |
@@ -63,8 +61,7 @@ The 24 backed PHP Enums (`app/Enums/`) have the following exact canonical wire v
 
 ## 3. Procurement & Debt Routes Verification
 - **Request Modification Preview:** `POST /api/v1/requests/{id}/preview-modification` exists. Validates item modifications and returns calculated order preview before approval.
-- **FIFO Repayment Collection:** `POST /api/v1/pos-debts/repayments` performs atomic FIFO allocation in `DebtRepaymentService`.
-- **FIFO Repayment Preview:** **No preview route currently exists** in the active API. DEC-04 remains `PROPOSED`.
+- **POS debt and repayment routes:** Removed. POS credit/debt tracking, repayment collection/reversal, and FIFO allocation are not part of the active API contract.
 
 ---
 
@@ -299,7 +296,7 @@ All endpoints are under `/api/v1/platform/billing` and require Platform Scope pl
 - Catalog entries add `available` and, when unavailable, `unavailable_reason` for the requested workspace context. This is display guidance only; every execution/export request is independently authorized on the server.
 - Each report has one registered `OperationalReportProvider`. It owns its query, full-result summary, filter options, export columns, and `serializeExportRow()` contract. The provider registry rejects duplicate providers and missing report types.
 - The previous central query-service/adapter path is removed; providers are the only report execution owners. No compatibility adapter or flat-filter fallback remains.
-- Supported report IDs: `sales`, `expenses`, `network_wallet_statement`, `pos_wallet_statement`, `repayments`, `debt_aging`, and `requests`.
+- Supported report IDs: `sales`, `expenses`, `network_wallet_statement`, `pos_wallet_statement`, and `requests`.
 
 ### Execution and export routes
 - `GET /api/v1/reports` returns a cursor-paginated result page with Laravel cursor metadata. `per_page` and `cursor` are transport pagination parameters. Provider filters are sent only inside a nested `filters` object and validated against the selected provider's filter IDs and declared kinds/choices. The previous flat `from_date`, `to_date`, `search`, `status`, and `sale_type` request shape is prohibited.
@@ -321,8 +318,7 @@ All endpoints are under `/api/v1/platform/billing` and require Platform Scope pl
 - `POST /api/v1/documents/snapshots` accepts `document_type`, `document_id`, `network_id`, optional `pos_id`, `template_id`, and `template_version`.
 - Supported document types/template versions:
   - `sale_invoice` → `netsales.invoice.executive@1.0.0`
-  - `pos_repayment` → `netsales.repayment.receipt.executive@1.0.0`
-  - `expense` → `netsales.expense.voucher.executive@1.0.0`
+   - `expense` → `netsales.expense.voucher.executive@1.0.0`
 - The response contains the immutable source payload, snapshot UUID/version, schema/template versions, currency, source SHA-256, issue timestamp, and artifact-ready state.
 - `POST /api/v1/documents/snapshots/{snapshotUuid}/artifact` accepts a PDF artifact. The server validates the PDF signature, stores it on the protected disk, and records SHA-256 and size. First successful artifact wins; a retry cannot replace it.
 - `GET /api/v1/documents/snapshots/{snapshotUuid}/download` rechecks current tenant membership and permission before streaming the canonical PDF with private/no-store headers.
