@@ -1234,3 +1234,12 @@ This log documents all executed tasks, code changes, and verification command ou
 - Laravel CI run #578 passed on API HEAD `93ad7985fe01ffcd758d4137c5454ee98f2726e0`: Composer validation/audit, Pint, targeted and full PHPStan, and PHPUnit (341 passed, 3 skipped; 2,683 assertions).
 - Flutter CI run #1349 passed formatting, analysis, affected procurement tests, and DataGrid tests on HEAD `3ff343bfa99bd9e6ec62a28a92d76f8af8dde6d6`; the complete suite reported 550 passed and 9 failures in the existing Procurement Request Details, Procurement Package Option Card, Custom Refreshable Page, and Session Membership Context tests. No debt/repayment-related test failed.
 - PRs remain open for review; no merge was performed. Phase 2 was not started.
+
+
+## 2026-11-22 — Scope Correction: Repayment Removal Only (Supersedes the Broad Removal Entry Above)
+- The user's explicit correction narrowed the task to removing POS Repayment collection/reversal/allocation workflows only. The earlier CASH-only implementation and DEC-05 scope were incorrect and are superseded by DEC-06.
+- Restored POS CASH/CREDIT invoice issuance and procurement approval, initial partial-payment input, backend payment calculations, POS credit-limit configuration/enforcement, credit-aware wallet settlement and invoice reversal, and receivables aging reporting.
+- Restored Flutter CASH/CREDIT selectors, initial paidAmount propagation, procurement approval payment input, server-owned invoice payment field presentation, and receivables aging report presentation.
+- Kept POS Repayment models, allocations, collection/reversal endpoints, repayment-specific reports, and repayment document snapshots removed.
+- Exact-head validation for the corrected source is pending; previous CI results recorded above apply to earlier SHAs and do not validate the corrected branches.
+- PRs remain open; no merge and no Phase 2 work.
