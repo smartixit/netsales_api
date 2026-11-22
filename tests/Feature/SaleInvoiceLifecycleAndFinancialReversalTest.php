@@ -105,6 +105,19 @@ class SaleInvoiceLifecycleAndFinancialReversalTest extends TestCase
         $this->service = app(SaleInvoiceService::class);
     }
 
+    public function test_cash_invoice_preserves_authoritative_payment_fields_in_resource(): void
+    {
+        $invoice = $this->createTestInvoice(SaleType::CASH, 4500.00);
+
+        $payload = (new \\App\\Http\\Resources\\API\\V1\\SaleInvoice\\SaleInvoiceResource($invoice))->resolve();
+
+        $this->assertSame(4500.0, $payload['invoice_total_amount']);
+        $this->assertSame(4500.0, $payload['paid_amount']);
+        $this->assertSame(0.0, $payload['remaining_amount']);
+        $this->assertSame(InvoicePaymentStatus::PAID->value, $payload['payment_status']);
+        $this->assertTrue($payload['is_fully_paid']);
+    }
+
     public function test_delete_cash_invoice_reverses_network_wallet_balance_and_creates_reversal_log(): void
     {
         // 1. Create a CASH invoice of 4,500
