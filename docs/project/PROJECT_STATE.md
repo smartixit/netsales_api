@@ -1,6 +1,6 @@
 # NetSales — Current Project State & Authorization Snapshot
 
-**Last Updated Date:** 2026-11-15  
+**Last Updated Date:** 2026-11-22  
 **Active Working Tree Status:** Billing self-service/search pagination, subscription and Billing Reports integration, Operational Reports scope isolation, and official-document source hardening — implementation work continues; final validation remains pending  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
@@ -335,3 +335,12 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Challenge creation requires exactly one target input. Challenge persistence enforces non-null pos_id; deleting the target POS cascades to its challenges.
 - Revocation is row-locked and allowed only for pending, unexpired challenges by an authorized Network owner or active member.
 - **Verification status:** FEATURE TESTS PASS (366 passed, 3 skipped; 2,888 assertions), schema migration, Composer audit, and Pint pass. No QR challenge-file PHPStan errors. Aggregate CI remains RED because targeted PHPStan reports three unchanged SaleInvoiceService type errors and full-project PHPStan reports 1,000+ repository-wide errors. Do not merge until the repository quality gate is addressed or explicitly waived by the project owner.
+
+
+## Approved QR linking contract correction — 2026-11-22
+
+- **Decision:** DEC-QR-02 was explicitly approved by the user on 2026-11-22. It supersedes DEC-QR-01 only on the wire identifier rule: create, preview, and confirmation accept the POS commercial business code in `pos_uuid` only. `pos_id` is rejected in these request bodies, including when both fields are supplied.
+- **Unchanged invariant:** Every invitation remains bound to one authorized Network and one exact eligible POS. The server resolves the business code to its internal POS record and uses internal `pos_id` for persistence, challenge binding, foreign keys, and response consistency only.
+- **Backend branch:** `fix/qr-linking-single-pos-uuid`; FormRequests use the project's ordinary `rules()` style without `withValidator()`. Controllers, service error keys, OpenAPI request schemas, API contract, and feature assertions are being aligned.
+- **Flutter branch:** `fix/qr-linking-single-pos-uuid`; Create/preview/confirm domain contracts and data requests use required `posUuid` only. The POS scanner captures both internal `posId` and business `posUuid` from the active POS; only the business code is sent over the wire, while internal ID is retained for local active-context and response consistency checks.
+- **Verification:** PENDING. GitHub Actions and exact-head test/analyzer outcomes have not yet been confirmed for the latest branch heads. Do not merge either repository until both PR heads are tested and all checks are reconciled.
