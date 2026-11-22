@@ -207,6 +207,11 @@ Route::prefix('v1')->group(function () {
             Route::get('networks/{id}', [NetworkController::class, 'show'])->whereNumber('id')->name('api.v1.networks.show');
         });
 
+        Route::middleware(['throttle:api-read', 'permission:networks.edit'])->get(
+            'network-pos/challenges/linkable-targets',
+            [NetworkPosController::class, 'searchLinkablePos']
+        )->name('api.v1.network_pos.challenges.linkable_targets');
+
         Route::middleware(['throttle:api-write', 'permission:networks.edit'])->post(
             'network-pos/challenges/resolve-target',
             [NetworkPosController::class, 'resolveLinkTarget']
