@@ -42,7 +42,7 @@ class StoreRequestRequest extends FormRequest
             ],
             'sale_type' => [
                 'nullable',
-                Rule::in([SaleType::CASH->value]),
+                Rule::enum(SaleType::class),
             ],
             'request_note' => [
                 'nullable',
