@@ -96,6 +96,51 @@ class NetworkPosLinkingChallengeService
     }
 
     /**
+     * Search only eligible POS targets for an authorized Network invitation.
+     *
+     * @return \Illuminate\Contracts\Pagination\CursorPaginator
+     */
+    public function searchLinkablePos(User $actor, int $networkId, string $search, int $perPage = 15, ?string $cursor = null): \Illuminate\Contracts\Pagination\CursorPaginator
+    {
+        try {
+            $network = $this->networkRepository->findById($networkId);
+        } catch (ModelNotFoundException) {
+            throw ValidationException::withMessages([
+                'network_id' => ['الشبكة المحددة غير موجودة.'],
+            ]);
+        }
+
+        $network->ensureActive();
+
+        if (! $actor->isSuperAdmin()) {
+            $isOwner = (int) $network->owner_id === (int) $actor->user_id;
+            $isActiveMember = $actor->networkUsers()
+                ->where('network_id', $networkId)
+                ->where('status', 'ACTIVE')
+                ->exists();
+
+            if (! $isOwner && ! $isActiveMember) {
+                throw ValidationException::withMessages([
+                    'network_id' => ['غير مصرح لك بالبحث عن نقاط بيع لهذه الشبكة.'],
+                ]);
+            }
+        }
+
+        $results = $this->posRepository->getFiltered([
+            'linkable_network_id' => $networkId,
+            'linkable_search' => $search,
+            'per_page' => min(max($perPage, 1), 30),
+            'cursor' => $cursor,
+        ], []);
+
+        if (! $results instanceof \Illuminate\Contracts\Pagination\CursorPaginator) {
+            throw new \LogicException('POS invitation search must use cursor pagination.');
+        }
+
+        return $results;
+    }
+
+    /**
      * إنشاء دعوة/تحدي ربط مشفر عبر رمز QR من جانب الشبكة.
      */
     public function createChallenge(
@@ -146,6 +191,12 @@ class NetworkPosLinkingChallengeService
         if ($existingLink) {
             throw ValidationException::withMessages([
                 'pos_uuid' => ['نقطة البيع هذه مرتبطة بالفعل بهذه الشبكة مسبقاً.'],
+            ]);
+        }
+
+        if ($this->challengeRepository->hasActiveForNetworkAndPos($networkId, $pos->pos_id)) {
+            throw ValidationException::withMessages([
+                'pos_uuid' => ['توجد دعوة ربط سارية لنقطة البيع هذه بالفعل.'],
             ]);
         }
 
