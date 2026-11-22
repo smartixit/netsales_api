@@ -32,8 +32,6 @@ class PosWalletResource extends JsonResource
             'status' => (bool) $this->status,
             'accounting_status' => $this->getAccountingStatus(),
             'accounting_status_label' => $this->getAccountingStatusLabel(),
-            'is_overdrawn' => $this->isOverdrawn(),
-            'debit_amount' => $this->getDebitAmount(),
             'credit_amount' => $this->getCreditAmount(),
             'created_at' => $this->created_at ? Carbon::parse($this->created_at)->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? Carbon::parse($this->updated_at)->toDateTimeString() : null,
