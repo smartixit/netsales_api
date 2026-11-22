@@ -115,4 +115,13 @@ class NetworkPosLinkingChallengeRepository extends BaseRepository implements Net
             ->latest('created_at')
             ->get();
     }
+
+    public function hasActiveForNetworkAndPos(int $networkId, int $posId): bool
+    {
+        return $this->model->newQuery()
+            ->where('network_id', $networkId)
+            ->where('pos_id', $posId)
+            ->active()
+            ->exists();
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Interfaces\PosRepositoryInterface;
+use App\Models\NetworkPosLinkingChallenge;
 use App\Models\Pos;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -53,6 +54,30 @@ class PosRepository extends BaseRepository implements PosRepositoryInterface
         if (isset($filters['pos_ids'])) {
             $query->whereIn('pos.pos_id', $filters['pos_ids']);
         }
+
+        if (! empty($filters['linkable_network_id'])) {
+            $networkId = (int) $filters['linkable_network_id'];
+
+            $query->active()
+                ->whereDoesntHave('networkPos', fn (Builder $linkQuery): Builder => $linkQuery
+                    ->where('network_id', $networkId))
+                ->whereNotIn(
+                    'pos_id',
+                    NetworkPosLinkingChallenge::query()
+                        ->active()
+                        ->where('network_id', $networkId)
+                        ->select('pos_id')
+                );
+        }
+
+        if (! empty($filters['linkable_search'])) {
+            $search = addcslashes(trim((string) $filters['linkable_search']), '\\%_');
+
+            $query->where(function (Builder $searchQuery) use ($search): void {
+                $searchQuery->where('pos_name', 'like', "%{$search}%")
+                    ->orWhere('pos_uuid', 'like', "%{$search}%");
+            });
+        }
     }
 
     /**
@@ -85,6 +110,14 @@ class PosRepository extends BaseRepository implements PosRepositoryInterface
     public function findByUuid(string $uuid): ?Pos
     {
         return $this->model->newQuery()->where('pos_uuid', $uuid)->first();
+    }
+
+    public function findByUuidForUpdate(string $uuid): ?Pos
+    {
+        return $this->model->newQuery()
+            ->where('pos_uuid', $uuid)
+            ->lockForUpdate()
+            ->first();
     }
 
     /**

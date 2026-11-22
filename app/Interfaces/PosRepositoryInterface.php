@@ -31,6 +31,11 @@ interface PosRepositoryInterface extends BaseRepositoryInterface
     public function findByUuid(string $uuid): ?Pos;
 
     /**
+     * Find a POS by its commercial code while holding a row lock.
+     */
+    public function findByUuidForUpdate(string $uuid): ?Pos;
+
+    /**
      * التحقق من تفرد اسم نقطة البيع.
      */
     public function isNameUnique(string $name, ?int $ignoreId = null): bool;

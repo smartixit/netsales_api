@@ -341,6 +341,129 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonMissingPath('data.directorate_name');
     }
 
+    public function test_search_rejects_terms_that_become_empty_or_too_short_after_trimming(): void
+    {
+        foreach (['%20%20', '%20a%20'] as $search) {
+            $response = $this->withHeaders($this->netSession['headers'])
+                ->getJson('/api/v1/network-pos/challenges/linkable-targets?network_id='.$this->network->network_id.'&search='.$search);
+
+            $response->assertUnprocessable()->assertJsonValidationErrors(['search']);
+        }
+    }
+
+    public function test_search_treats_like_wildcards_as_literal_characters(): void
+    {
+        $response = $this->withHeaders($this->netSession['headers'])
+            ->getJson('/api/v1/network-pos/challenges/linkable-targets?network_id='.$this->network->network_id.'&search=%25_');
+
+        $response->assertOk()->assertJsonPath('data', []);
+    }
+
+    public function test_network_owner_can_search_only_eligible_pos_targets_for_network(): void
+    {
+        $response = $this->withHeaders($this->netSession['headers'])
+            ->getJson('/api/v1/network-pos/challenges/linkable-targets?network_id='.$this->network->network_id.'&search=الأمل');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.0.pos_id', $this->pos->pos_id)
+            ->assertJsonPath('data.0.pos_uuid', $this->pos->pos_uuid)
+            ->assertJsonPath('data.0.pos_name', $this->pos->pos_name)
+            ->assertJsonMissingPath('data.0.owner_id')
+            ->assertJsonMissingPath('data.0.pos_phone_number');
+    }
+
+    public function test_eligible_pos_search_uses_cursor_pagination(): void
+    {
+        $secondPosOwner = $this->createUserWithScope(RoleScope::POS, [
+            'role_id' => null,
+            'user_full_name' => 'Second POS Owner Cursor Test',
+            'user_phone_number' => '77660000'.rand(10, 99),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+
+        $secondPos = Pos::create([
+            'owner_id' => $secondPosOwner->user_id,
+            'pos_name' => 'نقطة الأمل الثانية للاختبار',
+            'pos_phone_number' => '773300001',
+            'status' => PosStatus::ACTIVE,
+            'governorate_id' => $this->network->governorate_id,
+            'directorate_id' => $this->network->directorate_id,
+        ]);
+
+        $firstPage = $this->withHeaders($this->netSession['headers'])
+            ->getJson('/api/v1/network-pos/challenges/linkable-targets?network_id='.$this->network->network_id.'&search=الأمل&per_page=1');
+
+        $firstPage->assertOk()->assertJsonCount(1, 'data');
+        $cursor = $firstPage->json('next_cursor');
+        $this->assertNotEmpty($cursor);
+        $this->assertSame($secondPos->pos_id, $firstPage->json('data.0.pos_id'));
+
+        $secondPage = $this->withHeaders($this->netSession['headers'])
+            ->getJson('/api/v1/network-pos/challenges/linkable-targets?network_id='.$this->network->network_id.'&search=الأمل&per_page=1&cursor='.urlencode($cursor));
+
+        $secondPage->assertOk()->assertJsonCount(1, 'data');
+        $this->assertSame($this->pos->pos_id, $secondPage->json('data.0.pos_id'));
+        $this->assertNull($secondPage->json('next_cursor'));
+    }
+
+    public function test_search_excludes_pos_already_linked_to_selected_network(): void
+    {
+        NetworkPos::create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => false,
+        ]);
+
+        $response = $this->withHeaders($this->netSession['headers'])
+            ->getJson('/api/v1/network-pos/challenges/linkable-targets?network_id='.$this->network->network_id.'&search=الأمل');
+
+        $response->assertOk()->assertJsonPath('data', []);
+    }
+
+    public function test_search_excludes_pos_with_active_pending_invitation(): void
+    {
+        $createResponse = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+            ]);
+
+        $createResponse->assertCreated();
+
+        $response = $this->withHeaders($this->netSession['headers'])
+            ->getJson('/api/v1/network-pos/challenges/linkable-targets?network_id='.$this->network->network_id.'&search=الأمل');
+
+        $response->assertOk()->assertJsonPath('data', []);
+    }
+
+    public function test_network_owner_cannot_create_second_active_challenge_for_same_pos(): void
+    {
+        $first = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+            ]);
+        $first->assertCreated();
+
+        $second = $this->withHeaders($this->netSession['headers'])
+            ->postJson('/api/v1/network-pos/challenges', [
+                'network_id' => $this->network->network_id,
+                'pos_uuid' => $this->pos->pos_uuid,
+            ]);
+
+        $second->assertUnprocessable()->assertJsonValidationErrors(['pos_uuid']);
+    }
+
+    public function test_user_without_network_membership_cannot_search_linkable_pos_targets(): void
+    {
+        $response = $this->withHeaders($this->unauthSession['headers'])
+            ->getJson('/api/v1/network-pos/challenges/linkable-targets?network_id='.$this->network->network_id.'&search=الأمل');
+
+        $this->assertTrue(in_array($response->status(), [403, 422]));
+    }
+
     public function test_network_owner_cannot_resolve_already_linked_pos_target(): void
     {
         NetworkPos::create([

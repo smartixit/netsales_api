@@ -9,6 +9,7 @@ use App\Http\Requests\API\V1\Network\CreateNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\FilterNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\PreviewNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\ResolveNetworkLinkablePosRequest;
+use App\Http\Requests\API\V1\Network\SearchNetworkLinkablePosRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkPosRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeResource;
@@ -500,27 +501,51 @@ class NetworkPosController extends BaseController
     /**
      * إنشاء دعوة وتحدي ربط نقطة بيع بالشبكة عبر رمز QR.
      */
-    #[OA\Post(
-        path: '/api/v1/network-pos/challenges',
-        summary: 'إنشاء دعوة وتحدي ربط نقطة بيع بشبكة عبر رمز QR',
+    #[OA\Get(
+        path: '/api/v1/network-pos/challenges/linkable-targets',
+        summary: 'البحث عن نقاط البيع المؤهلة لدعوة ربط جديدة',
         tags: ['Network POS'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            description: 'بيانات إنشاء التحدي المشفر. يجب إرسال الرمز التجاري لنقطة البيع في pos_uuid.',
-            content: new OA\JsonContent(
-                required: ['network_id', 'pos_uuid'],
-                properties: [
-                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'pos_uuid', type: 'string', example: 'POS-2611-00001-8F3A', description: 'الرمز التجاري لنقطة البيع المستهدفة.'),
-                    new OA\Property(property: 'duration_minutes', type: 'integer', default: 15, example: 15),
-                ]
-            )
-        ),
+        parameters: [
+            new OA\Parameter(name: 'network_id', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'search', in: 'query', required: true, schema: new OA\Schema(type: 'string', minLength: 2, maxLength: 120)),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 30, default: 15)),
+            new OA\Parameter(name: 'cursor', in: 'query', required: false, schema: new OA\Schema(type: 'string', maxLength: 2048)),
+        ],
         responses: [
-            new OA\Response(response: 201, description: 'تم إنشاء دعوة الربط المشفرة بنجاح'),
-            new OA\Response(response: 422, description: 'بيانات غير صالحة'),
+            new OA\Response(response: 200, description: 'قائمة نقاط البيع المؤهلة المصفحة بمؤشر'),
+            new OA\Response(response: 403, description: 'غير مصرح بالوصول إلى الشبكة'),
+            new OA\Response(response: 422, description: 'بيانات البحث غير صالحة'),
         ]
     )]
+    /**
+     * Search the eligible POS targets for one authorized Network.
+     */
+    public function searchLinkablePos(SearchNetworkLinkablePosRequest $request): JsonResponse
+    {
+        try {
+            $results = $this->challengeService->searchLinkablePos(
+                $this->currentUser(),
+                $request->getNetworkId(),
+                $request->getSearch(),
+                $request->getPerPage(),
+                $request->getCursor()
+            );
+
+            return $this->successResponse(
+                'تم استرجاع نقاط البيع المؤهلة للدعوة.',
+                NetworkLinkablePosResource::collection($results)
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception) {
+            return $this->errorResponse(
+                'تعذر البحث عن نقاط البيع المؤهلة. حاول مرة أخرى.',
+                [],
+                422
+            );
+        }
+    }
+
     /**
      * Resolve one exact POS business code without exposing a POS directory.
      */
@@ -548,6 +573,27 @@ class NetworkPosController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/network-pos/challenges',
+        summary: 'إنشاء دعوة وتحدي ربط نقطة بيع بشبكة عبر رمز QR',
+        tags: ['Network POS'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات إنشاء التحدي المشفر. يجب إرسال الرمز التجاري لنقطة البيع في pos_uuid.',
+            content: new OA\JsonContent(
+                required: ['network_id', 'pos_uuid'],
+                properties: [
+                    new OA\Property(property: 'network_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'pos_uuid', type: 'string', example: 'POS-2611-00001-8F3A', description: 'الرمز التجاري لنقطة البيع المستهدفة.'),
+                    new OA\Property(property: 'duration_minutes', type: 'integer', default: 15, example: 15),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'تم إنشاء دعوة الربط المشفرة بنجاح'),
+            new OA\Response(response: 422, description: 'بيانات غير صالحة'),
+        ]
+    )]
     public function createChallenge(CreateNetworkPosLinkingChallengeRequest $request): JsonResponse
     {
         try {
