@@ -22,7 +22,7 @@ class UpdateRequestRequest extends FormRequest
         return [
             'sale_type' => [
                 'nullable',
-                Rule::enum(SaleType::class),
+                Rule::in([SaleType::CASH->value]),
             ],
             'request_note' => [
                 'nullable',
