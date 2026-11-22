@@ -341,6 +341,16 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonMissingPath('data.directorate_name');
     }
 
+    public function test_search_rejects_terms_that_become_empty_or_too_short_after_trimming(): void
+    {
+        foreach (['%20%20', '%20a%20'] as $search) {
+            $response = $this->withHeaders($this->netSession['headers'])
+                ->getJson('/api/v1/network-pos/challenges/linkable-targets?network_id='.$this->network->network_id.'&search='.$search);
+
+            $response->assertUnprocessable()->assertJsonValidationErrors(['search']);
+        }
+    }
+
     public function test_network_owner_can_search_only_eligible_pos_targets_for_network(): void
     {
         $response = $this->withHeaders($this->netSession['headers'])
