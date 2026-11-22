@@ -311,7 +311,7 @@ All endpoints are under `/api/v1/platform/billing` and require Platform Scope pl
 - Snapshot provenance values used by the implementation: `BACKFILLED` for reconstructed legacy rows, `INITIAL` for a newly initialized wallet opening balance, and `LIVE` for new posting-time movement snapshots.
 - `balance_before`/`balance_after` mean the balance immediately before/after the posting operation; they are not an effective-date running balance for backdated transactions. Period opening/closing balances are derived from ledger movements filtered by `log_date`.
 - Wallet statements include soft-deleted ledger entries and soft-deleted wallets for audit continuity. They include effective transaction date and posting timestamp as separate fields.
-- Wallet balance mutation, posting snapshots, report period balance calculations, and debt-aging aggregation share exact decimal arithmetic through integer minor units; the historical migration uses the same integer-minor-unit approach. These paths do not use floating-point arithmetic for monetary addition/subtraction.
+- Wallet balance mutation, posting snapshots, and report period balance calculations share exact decimal arithmetic through integer minor units. These paths do not use floating-point arithmetic for monetary addition/subtraction.
 - Operational currency is independent of Platform Billing currencies. POS wallet creation copies the existing network wallet currency. Report/PDF currency must come from the persisted operational wallet code; missing or invalid codes are rejected rather than silently defaulted to `YER`. Documents spanning a network and POS wallet reject differing currency codes rather than combining unlike currencies.
 
 ### Immutable operational document snapshots
