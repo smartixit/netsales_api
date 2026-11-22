@@ -629,7 +629,7 @@ class NetworkPosController extends BaseController
                 required: ['challenge_uuid', 'pos_uuid'],
                 properties: [
                     new OA\Property(property: 'challenge_uuid', type: 'string', format: 'uuid'),
-                    new OA\Property(property: 'pos_uuid', type: 'string', nullable: true, example: 'POS-2611-00001-8F3A'),
+                    new OA\Property(property: 'pos_uuid', type: 'string', example: 'POS-2611-00001-8F3A'),
                 ]
             )
         ),
