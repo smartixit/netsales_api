@@ -822,7 +822,7 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
         $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
-            'sale_type' => SaleType::CREDIT->value,
+            'sale_type' => SaleType::CASH->value,
             'items' => [
                 [
                     'package_id' => $this->packageA->package_id,
