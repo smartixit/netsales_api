@@ -214,8 +214,6 @@ class SaleInvoiceService
             // 5. All POS sales are cash-only; debt and deferred settlement are not supported.
             $totalInvoiceAmount = (float) DecimalAmount::fromMinorUnits($totalInvoiceAmountMinor);
             $saleType = SaleType::CASH;
-            $paidAmount = $totalInvoiceAmount;
-            $remainingAmount = 0.00;
             $paymentStatus = InvoicePaymentStatus::PAID;
 
             // 6. إنشاء فاتورة المبيعات الرسمية
@@ -242,12 +240,26 @@ class SaleInvoiceService
             $posBalanceAfterDebitMinor = DecimalAmount::add($posBalanceBeforeMinor, -$cashSaleAmountMinor);
             $posBalanceBefore = DecimalAmount::fromMinorUnits($posBalanceBeforeMinor);
             $posBalanceAfterDebit = DecimalAmount::fromMinorUnits($posBalanceAfterDebitMinor);
-            $this->posWalletLogRepository->createLog($posWallet->wallet_id, WalletOperationType::WITHDRAW, $totalInvoiceAmount, "استحقاق فاتورة مبيعات كروت نقدية (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})", $userId, balanceBefore: $posBalanceBefore, balanceAfter: $posBalanceAfterDebit);
-            $this->posWalletLogRepository->createLog($posWallet->wallet_id, WalletOperationType::DEPOSIT, $totalInvoiceAmount, "سداد نقدي فوري للفاتورة (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})", $userId, balanceBefore: $posBalanceAfterDebit, balanceAfter: $posBalanceBefore);
+            $this->posWalletLogRepository->createLog(
+                $posWallet->wallet_id,
+                WalletOperationType::WITHDRAW,
+                $totalInvoiceAmount,
+                "استحقاق فاتورة مبيعات كروت نقدية (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})",
+                $userId,
+                balanceBefore: $posBalanceBefore,
+                balanceAfter: $posBalanceAfterDebit
+            );
+            $this->posWalletLogRepository->createLog(
+                $posWallet->wallet_id,
+                WalletOperationType::DEPOSIT,
+                $totalInvoiceAmount,
+                "سداد نقدي فوري للفاتورة (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})",
+                $userId,
+                balanceBefore: $posBalanceAfterDebit,
+                balanceAfter: $posBalanceBefore
+            );
 
-            // إيداع المبلغ المحصل فعلياً فقط في محفظة الشبكة كسيولة نقدية متاحة وقابلة للسحب
-            // في البيع النقدي: كامل إجمالي الفاتورة مسدد نقداً.
-            // في البيع الآجل: المبلغ المغطى فقط من رصيد المحفظة الدائن والنقد ($paidAmount)
+            // إيداع كامل قيمة الفاتورة النقدية في محفظة الشبكة.
             $networkCashCollected = $totalInvoiceAmount;
 
             if ($networkCashCollected > 0.001) {
@@ -325,7 +337,7 @@ class SaleInvoiceService
     }
 
     /**
-     * إنشاء فاتورة مبيعات مباشرة (كاش أو آجل).
+     * إنشاء فاتورة مبيعات مباشرة نقدية.
      */
     public function createDirectInvoice(StoreSaleInvoiceRequest $request, int $userId): SaleInvoice
     {
@@ -434,10 +446,32 @@ class SaleInvoiceService
             $posBalanceAfterDebitMinor = DecimalAmount::add($posBalanceBeforeMinor, -$cashSaleAmountMinor);
             $posBalanceBefore = DecimalAmount::fromMinorUnits($posBalanceBeforeMinor);
             $posBalanceAfterDebit = DecimalAmount::fromMinorUnits($posBalanceAfterDebitMinor);
-            $this->posWalletLogRepository->createLog($posWallet->wallet_id, WalletOperationType::WITHDRAW, $totalInvoiceAmount, "استحقاق فاتورة مبيعات مباشرة نقدية (#{$invoice->invoice_uuid})", $userId, balanceBefore: $posBalanceBefore, balanceAfter: $posBalanceAfterDebit);
-            $this->posWalletLogRepository->createLog($posWallet->wallet_id, WalletOperationType::DEPOSIT, $totalInvoiceAmount, "سداد نقدي كاش للفاتورة المباشرة (#{$invoice->invoice_uuid})", $userId, balanceBefore: $posBalanceAfterDebit, balanceAfter: $posBalanceBefore);
+            $this->posWalletLogRepository->createLog(
+                $posWallet->wallet_id,
+                WalletOperationType::WITHDRAW,
+                $totalInvoiceAmount,
+                "استحقاق فاتورة مبيعات مباشرة نقدية (#{$invoice->invoice_uuid})",
+                $userId,
+                balanceBefore: $posBalanceBefore,
+                balanceAfter: $posBalanceAfterDebit
+            );
+            $this->posWalletLogRepository->createLog(
+                $posWallet->wallet_id,
+                WalletOperationType::DEPOSIT,
+                $totalInvoiceAmount,
+                "سداد نقدي كاش للفاتورة المباشرة (#{$invoice->invoice_uuid})",
+                $userId,
+                balanceBefore: $posBalanceAfterDebit,
+                balanceAfter: $posBalanceBefore
+            );
             $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, $totalInvoiceAmount);
-            $this->networkWalletLogRepository->createLog($networkWallet->wallet_id, WalletOperationType::DEPOSIT, $totalInvoiceAmount, "تحصيل مبيعات كروت مباشرة نقدية (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name})", $userId);
+            $this->networkWalletLogRepository->createLog(
+                $networkWallet->wallet_id,
+                WalletOperationType::DEPOSIT,
+                $totalInvoiceAmount,
+                "تحصيل مبيعات كروت مباشرة نقدية (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name})",
+                $userId
+            );
 
             // تسجيل رسالة الأحداث المالية في صندوق الإرسال اللحظي (Transactional Outbox)
             $this->outboxService->record(
@@ -550,8 +584,15 @@ class SaleInvoiceService
                     'network_wallet' => ['لا يمكن حذف الفاتورة لعدم توفر رصيد كافٍ في محفظة الشبكة لعكس التحصيل النقدي.'],
                 ]);
             }
-            $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, (float) DecimalAmount::fromMinorUnits($totalAmountMinor));
-            $this->networkWalletLogRepository->createLog($networkWallet->wallet_id, WalletOperationType::WITHDRAW, (float) DecimalAmount::fromMinorUnits($totalAmountMinor), "عكس تحصيل نقدية فاتورة مبيعات ملغاة (#{$invoice->invoice_uuid})", $currentUserId);
+            $reversedAmount = (float) DecimalAmount::fromMinorUnits($totalAmountMinor);
+            $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, $reversedAmount);
+            $this->networkWalletLogRepository->createLog(
+                $networkWallet->wallet_id,
+                WalletOperationType::WITHDRAW,
+                $reversedAmount,
+                "عكس تحصيل نقدية فاتورة مبيعات ملغاة (#{$invoice->invoice_uuid})",
+                $currentUserId
+            );
 
             // تسجيل الحدث في الـ Outbox
             $this->outboxService->record(
