@@ -1,6 +1,6 @@
 ---
 trigger: always_on
-description: Financial authority, transactional boundaries, dual wallets, and FIFO repayment allocation rules.
+description: Financial authority, transactional boundaries, and dual-wallet cash accounting rules.
 ---
 
 # Rule: Financial and Accounting Invariants
@@ -15,10 +15,9 @@ description: Financial authority, transactional boundaries, dual wallets, and FI
 - Flutter clients are strictly read-only presentation consumers of financial figures.
 
 ## 2. Transaction Boundaries and Atomic Execution
-- Every operation modifying financial state (invoicing, wallet adjustment, debt repayment settlement) **must** run inside a database transaction (`DB::transaction(...)`).
+- Every operation modifying financial state (invoicing, wallet adjustment, cash invoice settlement) **must** run inside a database transaction (`DB::transaction(...)`).
 - Balances and affected invoice records must be queried and locked using pessimistic row locking (`lockForUpdate()`) to prevent race conditions and double-settlement anomalies.
 
-## 3. Debt Settlement and FIFO Ordering
-- Repayments are authoritatively allocated to outstanding invoices in strict First-In, First-Out (FIFO) chronological order by invoice issue date (`issued_at ASC` / `invoice_id ASC`).
-- Previews are strictly non-binding and informational. The final settlement allocation is determined atomically inside the collection transaction under row locks.
-- Never write accounting policies or ledger adjustments that bypass the core `DebtRepaymentService` and `PosWalletLogRepository`.
+## 3. Cash-Only POS Sales
+- POS sales invoices are cash-settled only. Credit sales, credit limits, debt ledgers, repayment collection, reversal, FIFO allocation, and receivable aging are not supported.
+- Reject any request attempting to create or modify a POS credit sale; do not create a negative POS wallet balance through invoice issuance.
