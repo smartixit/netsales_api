@@ -7,7 +7,6 @@ use App\Enums\NotificationType;
 use App\Enums\SaleType;
 use App\Enums\WalletOperationType;
 use App\Http\Requests\API\V1\SaleInvoice\StoreSaleInvoiceRequest;
-use App\Http\Requests\API\V1\SaleInvoice\UpdateSaleInvoiceRequest;
 use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\NetworkRepositoryInterface;
 use App\Interfaces\NetworkWalletLogRepositoryInterface;
@@ -162,7 +161,7 @@ class SaleInvoiceService
             $currencyCode = $this->assertMatchingWalletCurrencies($networkWallet, $posWallet);
 
             // 4. احتساب أسعار وخصومات الباقات وحسم التسعير السيادي وفق نوع البيع بالأعداد الصحيحة (Minor Units)
-            $effectiveSaleType = $request->sale_type ?? SaleType::CASH;
+            $effectiveSaleType = SaleType::CASH;
             $itemsData = [];
             $totalInvoiceAmountMinor = 0;
 
@@ -783,166 +782,6 @@ class SaleInvoiceService
         });
     }
 
-    /**
-     * تحديث نوع الفاتورة (كاش/آجل) مع التسوية المالية العكسية والجديدة لحظياً.
-     */
-    public function updateSaleType(int $invoiceId, UpdateSaleInvoiceRequest $request): SaleInvoice
-    {
-        return DB::transaction(function () use ($invoiceId, $request): SaleInvoice {
-            /** @var SaleInvoice $invoice */
-            $invoice = SaleInvoice::query()->lockForUpdate()->findOrFail($invoiceId);
-
-            if ($invoice->trashed()) {
-                throw ValidationException::withMessages([
-                    'invoice' => ['لا يمكن تعديل نوع فاتورة محذوفة.'],
-                ]);
-            }
-
-            if ($invoice->repaymentAllocations()->exists()) {
-                throw ValidationException::withMessages([
-                    'invoice' => ['لا يمكن تعديل نوع الفاتورة لوجود سندات سداد مقيدة عليها بالفعل في دفتر الأستاذ.'],
-                ]);
-            }
-
-            $network = $this->networkRepository->findById($invoice->network_id);
-            $network->ensureActive();
-
-            $pos = $this->posRepository->findById($invoice->pos_id);
-            $pos->ensureActive();
-
-            $targetSaleType = $request->getSaleType();
-            $currentSaleType = $invoice->sale_type;
-
-            if ($currentSaleType === $targetSaleType) {
-                return $this->getById($invoiceId);
-            }
-
-            // ترتيب الأقفال العالمي: NetworkWallet -> PosWallet
-            $networkWallet = $this->networkWalletRepository->findByNetworkId($invoice->network_id, true);
-            if (! $networkWallet) {
-                throw ValidationException::withMessages([
-                    'network_wallet' => ['لم يتم العثور على محفظة مالية مسجلة للشبكة لتسوية تعديل الفاتورة.'],
-                ]);
-            }
-            $networkWallet->ensureActive();
-
-            $posWallet = $this->posWalletRepository->findByNetworkAndPos($invoice->network_id, $invoice->pos_id, true);
-            if (! $posWallet) {
-                throw ValidationException::withMessages([
-                    'pos_wallet' => ['لم يتم العثور على محفظة مالية لنقطة البيع لتسوية تعديل الفاتورة.'],
-                ]);
-            }
-            $posWallet->ensureActive();
-            $this->assertMatchingWalletCurrencies($networkWallet, $posWallet);
-
-            $totalAmountMinor = DecimalAmount::toMinorUnits($invoice->invoice_total_amount);
-            $oldPaidMinor = DecimalAmount::toMinorUnits($invoice->paid_amount);
-            $currentUserId = auth()->id() ?? $invoice->created_by;
-
-            if ($targetSaleType === SaleType::CREDIT) {
-                // التحويل من نقدي إلى آجل (CASH -> CREDIT):
-                // 1. في الكاش: استلمت الشبكة المبلغ كاملاً نقداً ($totalAmountMinor) وكان أثر محفظة POS صفراً.
-                // 2. في الآجل: يجب خصم الفاتورة من محفظة POS كمديونية ضمن السقف الائتماني.
-                $posBalanceMinor = DecimalAmount::toMinorUnits($posWallet->wallet_balance);
-                $projectedPosBalanceMinor = DecimalAmount::add($posBalanceMinor, -$totalAmountMinor);
-
-                if ($projectedPosBalanceMinor < 0) {
-                    if ($posWallet->credit_limit === null) {
-                        throw ValidationException::withMessages([
-                            'pos_wallet' => ['لا يُسمح بتحويل الفاتورة إلى بيع آجل لنقطة البيع هذه لعدم منحها سقفاً ائتمانياً معتمداً من قِبل مزود الشبكة.'],
-                        ]);
-                    }
-
-                    $creditLimitMinor = DecimalAmount::toMinorUnits($posWallet->credit_limit);
-                    if ($projectedPosBalanceMinor < -$creditLimitMinor) {
-                        $formattedLimit = formatWithCurrency(DecimalAmount::fromMinorUnits($creditLimitMinor));
-                        throw ValidationException::withMessages([
-                            'pos_wallet' => ["تجاوز تحويل الفاتورة إلى بيع آجل الحد الأقصى لسقف الائتمان المعتمد لنقطة البيع ({$formattedLimit})."],
-                        ]);
-                    }
-                }
-
-                $coveredMinor = min(max(0, $posBalanceMinor), $totalAmountMinor);
-                $newPaidMinor = $coveredMinor;
-                $newRemainingMinor = $totalAmountMinor - $newPaidMinor;
-                $newPaymentStatus = ($newRemainingMinor <= 0)
-                    ? InvoicePaymentStatus::PAID
-                    : (($newPaidMinor > 0) ? InvoicePaymentStatus::PARTIALLY_PAID : InvoicePaymentStatus::UNPAID);
-
-                // عكس التحصيل النقدي الزائد من محفظة الشبكة:
-                $networkDiffMinor = $totalAmountMinor - $newPaidMinor;
-                if ($networkDiffMinor > 0) {
-                    $networkBalanceMinor = DecimalAmount::toMinorUnits($networkWallet->wallet_balance);
-                    if ($networkBalanceMinor < $networkDiffMinor) {
-                        throw ValidationException::withMessages([
-                            'network_wallet' => ['رصيد محفظة الشبكة غير كافٍ لإلغاء التحصيل النقدي وعكس الفارق المالي.'],
-                        ]);
-                    }
-                    $this->networkWalletRepository->decrementBalance($networkWallet->wallet_id, (float) DecimalAmount::fromMinorUnits($networkDiffMinor));
-                    $this->networkWalletLogRepository->createLog(
-                        $networkWallet->wallet_id,
-                        WalletOperationType::WITHDRAW,
-                        (float) DecimalAmount::fromMinorUnits($networkDiffMinor),
-                        "تسوية تعديل نوع الفاتورة (#{$invoice->invoice_uuid}) من نقدي إلى آجل وعكس فارق التحصيل",
-                        $currentUserId
-                    );
-                }
-
-                // تسجيل مديونية الآجل على محفظة POS:
-                $this->posWalletRepository->decrementBalance($posWallet->wallet_id, (float) DecimalAmount::fromMinorUnits($totalAmountMinor));
-                $this->posWalletLogRepository->createLog(
-                    $posWallet->wallet_id,
-                    WalletOperationType::WITHDRAW,
-                    (float) DecimalAmount::fromMinorUnits($totalAmountMinor),
-                    "استحقاق الفاتورة بالبيع الآجل بدلاً من النقدي (#{$invoice->invoice_uuid})",
-                    $currentUserId
-                );
-
-                $invoice->update([
-                    'sale_type' => SaleType::CREDIT,
-                    'paid_amount' => (float) DecimalAmount::fromMinorUnits($newPaidMinor),
-                    'remaining_amount' => (float) DecimalAmount::fromMinorUnits($newRemainingMinor),
-                    'payment_status' => $newPaymentStatus,
-                ]);
-            } else {
-                // التحويل من آجل إلى نقدي (CREDIT -> CASH):
-                // 1. في الآجل: خُصم كامل الإجمالي ($totalAmountMinor) من محفظة POS واستلمت الشبكة ($oldPaidMinor).
-                // 2. في الكاش: العميل يسدد المبلغ كاملاً نقداً يداً بيد للشبكة.
-                // يتم رد كامل الخصم لمحفظة POS وإلغاء المديونية:
-                $this->posWalletRepository->incrementBalance($posWallet->wallet_id, (float) DecimalAmount::fromMinorUnits($totalAmountMinor));
-                $this->posWalletLogRepository->createLog(
-                    $posWallet->wallet_id,
-                    WalletOperationType::DEPOSIT,
-                    (float) DecimalAmount::fromMinorUnits($totalAmountMinor),
-                    "إلغاء مديونية الفاتورة الآجلة (#{$invoice->invoice_uuid}) وتحويلها إلى سداد نقدي كاش",
-                    $currentUserId
-                );
-
-                // إيداع المتبقي غير المحصل في محفظة الشبكة لاكتمال تحصيل كامل الفاتورة نقداً:
-                $networkRemainMinor = $totalAmountMinor - $oldPaidMinor;
-                if ($networkRemainMinor > 0) {
-                    $this->networkWalletRepository->incrementBalance($networkWallet->wallet_id, (float) DecimalAmount::fromMinorUnits($networkRemainMinor));
-                    $this->networkWalletLogRepository->createLog(
-                        $networkWallet->wallet_id,
-                        WalletOperationType::DEPOSIT,
-                        (float) DecimalAmount::fromMinorUnits($networkRemainMinor),
-                        "تحصيل نقدي متبقي الفاتورة (#{$invoice->invoice_uuid}) بعد تحويلها إلى كاش",
-                        $currentUserId
-                    );
-                }
-
-                $invoice->update([
-                    'sale_type' => SaleType::CASH,
-                    'paid_amount' => (float) DecimalAmount::fromMinorUnits($totalAmountMinor),
-                    'remaining_amount' => 0.00,
-                    'payment_status' => InvoicePaymentStatus::PAID,
-                ]);
-            }
-
-            return $this->getById($invoiceId);
-        });
-    }
-
     private function assertMatchingWalletCurrencies(NetworkWallet $networkWallet, PosWallet $posWallet): string
     {
         $networkCurrency = strtoupper(trim((string) $networkWallet->currency_code));
@@ -970,12 +809,6 @@ class SaleInvoiceService
 
             if ($invoice->trashed()) {
                 return true;
-            }
-
-            if ($invoice->repaymentAllocations()->exists()) {
-                throw ValidationException::withMessages([
-                    'invoice' => ['لا يمكن حذف الفاتورة لوجود سندات سداد مقيدة عليها في دفتر الأستاذ.'],
-                ]);
             }
 
             $networkWallet = $this->networkWalletRepository->findByNetworkId($invoice->network_id, true);
