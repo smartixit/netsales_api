@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Http\Requests\API\V1\Common\BatchIdsRequest;
 use App\Http\Requests\API\V1\SaleInvoice\StoreSaleInvoiceRequest;
+use App\Http\Requests\API\V1\SaleInvoice\UpdateSaleInvoiceRequest;
 use App\Http\Resources\API\V1\SaleInvoice\SaleInvoiceResource;
 use App\Services\SaleInvoiceService;
 use App\Services\TenantPermissionService;
@@ -146,6 +147,46 @@ class SaleInvoiceController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('تعذر إنشاء فاتورة المبيعات: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * تحديث نوع الفاتورة (كاش أو آجل).
+     */
+    #[OA\Put(
+        path: '/api/v1/sale-invoices/{id}',
+        summary: 'تحديث نوع الفاتورة',
+        tags: ['Sale Invoices'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'بيانات الطلب',
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: [],
+                    properties: [
+                        new OA\Property(property: 'sale_type', type: 'string'),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'تم تحديث نوع الفاتورة بنجاح'),
+        ]
+    )]
+    public function update(UpdateSaleInvoiceRequest $request, int $id): JsonResponse
+    {
+        try {
+            $record = $this->saleInvoiceService->updateSaleType($id, $request);
+
+            return $this->successResponse('تم تحديث نوع الفاتورة بنجاح.', new SaleInvoiceResource($record));
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر تحديث الفاتورة: '.$e->getMessage(), [], 422);
         }
     }
 
