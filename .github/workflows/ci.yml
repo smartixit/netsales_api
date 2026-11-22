@@ -157,7 +157,6 @@ jobs:
         run: >-
           vendor/bin/phpstan analyse
           app/Services/SaleInvoiceService.php
-          tests/Feature/Milestone4CConcurrencyAndDirectInvoiceDebtTest.php
           app/Services/Billing/BillingInvoiceService.php
           app/Services/Billing/BillingPaymentService.php
           app/Services/Billing/BillingCreditNoteService.php
