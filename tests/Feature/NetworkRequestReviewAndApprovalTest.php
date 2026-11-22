@@ -841,7 +841,7 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
             $requestId,
             $this->user->user_id,
             [['package_id' => $this->packageA->package_id, 'voucher_count' => 5]],
-            SaleType::CASH
+            SaleType::CREDIT
         );
     }
 }
