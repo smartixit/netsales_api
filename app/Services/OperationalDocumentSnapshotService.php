@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Http\Resources\API\V1\Expense\ExpenseResource;
-use App\Http\Resources\API\V1\Pos\PosRepaymentResource;
 use App\Http\Resources\API\V1\SaleInvoice\SaleInvoiceResource;
 use App\Models\Expense;
 use App\Models\Network;
@@ -12,7 +11,6 @@ use App\Models\NetworkUser;
 use App\Models\NetworkWallet;
 use App\Models\OperationalDocumentSnapshot;
 use App\Models\Pos;
-use App\Models\PosRepayment;
 use App\Models\PosUser;
 use App\Models\PosWallet;
 use App\Models\SaleInvoice;
@@ -39,7 +37,6 @@ final class OperationalDocumentSnapshotService
     ): OperationalDocumentSnapshot {
         $allowedTemplates = [
             'sale_invoice' => ['netsales.invoice.executive' => ['1.0.0']],
-            'pos_repayment' => ['netsales.repayment.receipt.executive' => ['1.0.0']],
             'expense' => ['netsales.expense.voucher.executive' => ['1.0.0']],
         ];
         if (! in_array($templateVersion, $allowedTemplates[$documentType][$templateId] ?? [], true)) {
@@ -184,7 +181,6 @@ final class OperationalDocumentSnapshotService
     {
         return match ($type) {
             'sale_invoice' => $this->invoiceSource($id, $networkId, $posId),
-            'pos_repayment' => $this->repaymentSource($id, $networkId, $posId),
             'expense' => $this->expenseSource($id, $networkId, $posId),
             default => throw ValidationException::withMessages([
                 'document_type' => ['نوع المستند غير مدعوم.'],
@@ -214,32 +210,6 @@ final class OperationalDocumentSnapshotService
             'payload' => $this->sanitizeUserIdentities(
                 SaleInvoiceResource::make($invoice)->resolve(request()),
                 ['created_by_user']
-            ),
-        ];
-    }
-
-    private function repaymentSource(int $id, int $networkId, ?int $posId): array
-    {
-        $repayment = PosRepayment::query()
-            ->with([
-                'network',
-                'pos',
-                'createdBy',
-                'reversedBy',
-                'allocations' => fn ($query) => $query->lockForUpdate(),
-                'allocations.invoice' => fn ($query) => $query->lockForUpdate(),
-            ])
-            ->where('network_id', $networkId)
-            ->when($posId !== null, fn ($query) => $query->where('pos_id', $posId))
-            ->lockForUpdate()
-            ->findOrFail($id);
-
-        return [
-            'pos_id' => (int) $repayment->pos_id,
-            'reference' => $repayment->repayment_uuid,
-            'payload' => $this->sanitizeUserIdentities(
-                PosRepaymentResource::make($repayment)->resolve(request()),
-                ['created_by_user', 'reversed_by_user']
             ),
         ];
     }
@@ -369,7 +339,6 @@ final class OperationalDocumentSnapshotService
 
         $permission = match ($documentType) {
             'sale_invoice' => 'sales.view',
-            'pos_repayment' => 'pos_wallets.view',
             'expense' => 'expenses.view',
             default => null,
         };
