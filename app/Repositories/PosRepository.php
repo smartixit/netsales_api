@@ -112,6 +112,14 @@ class PosRepository extends BaseRepository implements PosRepositoryInterface
         return $this->model->newQuery()->where('pos_uuid', $uuid)->first();
     }
 
+    public function findByUuidForUpdate(string $uuid): ?Pos
+    {
+        return $this->model->newQuery()
+            ->where('pos_uuid', $uuid)
+            ->lockForUpdate()
+            ->first();
+    }
+
     /**
      * التحقق من تفرد اسم نقطة البيع.
      */
