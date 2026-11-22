@@ -340,7 +340,7 @@ class ProcurementRequestLifecycleTest extends TestCase
         $payloadDifferent = [
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
-            'request_note' => 'Different payload with the same idempotency key',
+            'sale_type' => 'CREDIT', // تغيير نمط البيع مع نفس المفتاح
             'items' => [
                 [
                     'package_id' => $this->package->package_id,
