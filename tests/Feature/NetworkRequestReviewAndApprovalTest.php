@@ -382,6 +382,49 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
     }
 
     /**
+     * اختبار اعتماد طلب آجل مع دفعة نقدية كاش مقدماً
+     */
+    public function test_approving_credit_request_with_cash_down_payment_creates_invoice_and_updates_wallets(): void
+    {
+        $this->posWallet->update(['wallet_balance' => 0.00, 'credit_limit' => 50000.00]);
+        $this->networkWallet->update(['wallet_balance' => 10000.00]);
+
+        $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'sale_type' => SaleType::CREDIT->value,
+            'items' => [
+                [
+                    'package_id' => $this->packageA->package_id,
+                    'voucher_count' => 10, // 10 * 1000 * 0.95 (5% credit discount) = 9,500
+                    'pricing_snapshot_token' => $this->pricingSnapshotForPackage($this->packageA),
+                ],
+            ],
+        ]);
+        $createRes->assertStatus(201);
+        $requestId = $createRes->json('data.request_id');
+
+        // اعتماد الطلب مع سداد دفعة نقدية 3,500 كاش
+        $approveRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/approve", [
+            'request_note' => 'معتمد مع استلام دفعة نقدية كاش',
+            'paid_amount' => 3500.00,
+        ]);
+
+        $approveRes->assertStatus(200);
+        $invoiceData = $approveRes->json('data.invoice');
+        $this->assertEquals(9500.00, (float) $invoiceData['invoice_total_amount']);
+        $this->assertEquals(3500.00, (float) $invoiceData['paid_amount']);
+        $this->assertEquals(6000.00, (float) $invoiceData['remaining_amount']);
+        $this->assertEquals('PARTIALLY_PAID', $invoiceData['payment_status']);
+
+        // POS wallet balance: was 0, now owes 6,000 -> -6000
+        $this->assertEquals(-6000.00, (float) $this->posWallet->fresh()->wallet_balance);
+
+        // Network wallet balance: was 10,000, received 3,500 cash -> 13,500
+        $this->assertEquals(13500.00, (float) $this->networkWallet->fresh()->wallet_balance);
+    }
+
+    /**
      * اختبار اعتماد الطلب بنجاح وتوليد فاتورة مبيعات فريدة مرتبطة بالطلب ذرّياً
      */
     public function test_approval_generates_exactly_one_invoice_with_database_level_request_id_relationship(): void
@@ -785,7 +828,7 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
 
         // 2. محاولة تمرير sale_type في المعاينة -> 422
         $previewRes = $this->withHeaders($this->headers)->postJson("/api/v1/requests/{$requestId}/preview-modification", [
-            'sale_type' => SaleType::CASH->value,
+            'sale_type' => SaleType::CREDIT->value,
             'items' => [
                 ['package_id' => $this->packageA->package_id, 'voucher_count' => 10],
             ],
@@ -822,7 +865,7 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
         $createRes = $this->withHeaders($this->headers)->postJson('/api/v1/requests', [
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
-            'sale_type' => SaleType::CASH->value,
+            'sale_type' => SaleType::CREDIT->value,
             'items' => [
                 [
                     'package_id' => $this->packageA->package_id,
@@ -841,7 +884,7 @@ class NetworkRequestReviewAndApprovalTest extends TestCase
             $requestId,
             $this->user->user_id,
             [['package_id' => $this->packageA->package_id, 'voucher_count' => 5]],
-            SaleType::CREDIT
+            SaleType::CASH
         );
     }
 }
