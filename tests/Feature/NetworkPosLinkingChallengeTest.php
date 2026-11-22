@@ -233,7 +233,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonValidationErrors(['pos_uuid']);
     }
 
-    public function test_network_owner_can_create_challenge_using_resolved_pos_business_code(): void
+    public function test_network_owner_create_challenge_response_contains_minimal_target_projection(): void
     {
         $response = $this->withHeaders($this->netSession['headers'])
             ->postJson('/api/v1/network-pos/challenges', [
