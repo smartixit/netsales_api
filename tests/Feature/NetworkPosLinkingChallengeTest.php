@@ -355,6 +355,33 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonMissingPath('data.0.pos_phone_number');
     }
 
+    public function test_eligible_pos_search_uses_cursor_pagination(): void
+    {
+        $secondPos = Pos::create([
+            'owner_id' => $this->posOwner->user_id,
+            'pos_name' => 'نقطة الأمل الثانية للاختبار',
+            'pos_phone_number' => '773300001',
+            'status' => PosStatus::ACTIVE,
+            'governorate_id' => $this->network->governorate_id,
+            'directorate_id' => $this->network->directorate_id,
+        ]);
+
+        $firstPage = $this->withHeaders($this->netSession['headers'])
+            ->getJson('/api/v1/network-pos/challenges/linkable-targets?network_id='.$this->network->network_id.'&search=الأمل&per_page=1');
+
+        $firstPage->assertOk()->assertJsonCount(1, 'data');
+        $cursor = $firstPage->json('next_cursor');
+        $this->assertNotEmpty($cursor);
+        $this->assertSame($secondPos->pos_id, $firstPage->json('data.0.pos_id'));
+
+        $secondPage = $this->withHeaders($this->netSession['headers'])
+            ->getJson('/api/v1/network-pos/challenges/linkable-targets?network_id='.$this->network->network_id.'&search=الأمل&per_page=1&cursor='.urlencode($cursor));
+
+        $secondPage->assertOk()->assertJsonCount(1, 'data');
+        $this->assertSame($this->pos->pos_id, $secondPage->json('data.0.pos_id'));
+        $this->assertNull($secondPage->json('next_cursor'));
+    }
+
     public function test_search_excludes_pos_already_linked_to_selected_network(): void
     {
         NetworkPos::create([
