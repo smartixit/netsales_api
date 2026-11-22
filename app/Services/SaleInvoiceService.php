@@ -605,7 +605,7 @@ class SaleInvoiceService
                     'network_id' => $invoice->network_id,
                     'pos_id' => $invoice->pos_id,
                     'total_amount' => (float) DecimalAmount::fromMinorUnits($totalAmountMinor),
-                    'sale_type' => $saleType->value,
+                    'sale_type' => SaleType::CASH->value,
                 ]
             );
 
