@@ -1222,3 +1222,24 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Backend rerun #571, SHA `dc9e08bf87185bd936a1ebfe2e326575ba19aca0`:** in progress at the time of this entry; final PHPUnit result is not yet known.
 - **Flutter run #1345, SHA `aededdad4be769639c5125a87935231b0e8ff58d`:** Dart formatting PASS; Flutter analyze PASS; affected commercial/workspace controller tests PASS; DataGrid tests PASS; all QR-related model/controller tests PASS. The complete suite reported 549 passed and 9 failures in unrelated Procurement Request Details, Procurement Package Option Card, Custom Refreshable Page, and Session Membership Context tests. No QR-related failure was reported. Do not describe the entire Flutter suite as green.
 - **Merge boundary:** Both PRs remain open and unmerged. The API PR must wait for run #571; the Flutter PR remains blocked by the unrelated full-suite failures unless those are separately resolved or explicitly waived under repository governance.
+
+
+## 2026-11-22 — POS Debt and Repayment Domain Removal (Implementation Complete; PR Open)
+- Created coordinated removal branches in Flutter and Laravel from the exact then-current `main` SHAs.
+- Removed POS repayment collection/reversal controller, requests, resources, models, policy, service, migration, and dedicated repayment/debt-aging report providers and tests.
+- Removed POS debt routes, credit-limit endpoint, repayment/debt-aging operational report types, repayment document snapshot adapter/template, and associated API contract entries.
+- Enforced cash-only POS procurement requests and direct invoices; removed advance-payment input from approval/direct-invoice UI and disallowed POS wallet overdrafts.
+- Removed Flutter repayment/receivable-aging enums, report rendering, API constants, navigation constants, and idempotency helpers.
+- Updated product governance and decision log (DEC-05). Phase 2 has not been started.
+- Laravel CI run #578 passed on API HEAD `93ad7985fe01ffcd758d4137c5454ee98f2726e0`: Composer validation/audit, Pint, targeted and full PHPStan, and PHPUnit (341 passed, 3 skipped; 2,683 assertions).
+- Flutter CI run #1349 passed formatting, analysis, affected procurement tests, and DataGrid tests on HEAD `3ff343bfa99bd9e6ec62a28a92d76f8af8dde6d6`; the complete suite reported 550 passed and 9 failures in the existing Procurement Request Details, Procurement Package Option Card, Custom Refreshable Page, and Session Membership Context tests. No debt/repayment-related test failed.
+- PRs remain open for review; no merge was performed. Phase 2 was not started.
+
+
+## 2026-11-22 — Scope Correction: Repayment Removal Only (Supersedes the Broad Removal Entry Above)
+- The user's explicit correction narrowed the task to removing POS Repayment collection/reversal/allocation workflows only. The earlier CASH-only implementation and DEC-05 scope were incorrect and are superseded by DEC-06.
+- Restored POS CASH/CREDIT invoice issuance and procurement approval, initial partial-payment input, backend payment calculations, POS credit-limit configuration/enforcement, credit-aware wallet settlement and invoice reversal, and receivables aging reporting.
+- Restored Flutter CASH/CREDIT selectors, initial paidAmount propagation, procurement approval payment input, server-owned invoice payment field presentation, and receivables aging report presentation.
+- Kept POS Repayment models, allocations, collection/reversal endpoints, repayment-specific reports, and repayment document snapshots removed.
+- Exact-head validation for the corrected source is pending; previous CI results recorded above apply to earlier SHAs and do not validate the corrected branches.
+- PRs remain open; no merge and no Phase 2 work.

@@ -12,7 +12,6 @@ enum OperationalReportType: string
     case EXPENSES = 'expenses';
     case NETWORK_WALLET = 'network_wallet_statement';
     case POS_WALLET = 'pos_wallet_statement';
-    case REPAYMENTS = 'repayments';
     case DEBT_AGING = 'debt_aging';
     case REQUESTS = 'requests';
 

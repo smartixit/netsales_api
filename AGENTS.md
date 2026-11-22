@@ -8,7 +8,7 @@
 
 ## 1. Product Identity and Non-Negotiable Boundaries
 - NetSales is an enterprise **B2B Network and Point-of-Sale (POS) Sales Management Platform**.
-- It manages wholesale procurement, contractual package pricing, merchant links, wallets, invoices, credit facilities, debt aging, and repayment settlements.
+- It manages wholesale procurement, contractual package pricing, merchant links, wallets, and cash-settled invoices. Credit sales, POS debt tracking, and repayment settlements are out of product scope.
 - **Explicit Anti-Definitions:**
   - **NOT** a voucher-card inventory management system (no card vaults, serial numbers, or physical warehouse stock).
   - **NOT** a consumer-facing retail POS (no retail sales to end-user citizens).
@@ -20,9 +20,9 @@
 - Do not introduce Platform Workspace navigation or `SUPER_ADMIN` functionality into the mobile application.
 
 ## 3. Financial and Accounting Authority
-- The Laravel API backend is the **sole authoritative entity** for all pricing, line discounts, package tariffs, order totals, credit limits, debt balances, wallet operations, FIFO repayment allocations, and accounting ledger records.
+- The Laravel API backend is the **sole authoritative entity** for all pricing, line discounts, package tariffs, order totals, wallet operations, invoice payment calculations, POS credit-limit enforcement, and accounting ledger records. POS CASH/CREDIT invoices, initial partial payments, receivables, and receivables aging remain supported; only POS Repayment collection, reversal, and repayment allocations are removed.
 - Flutter clients are presentation-only consumers. Flutter must never calculate, persist, or claim authoritative financial balances.
-- All database mutations to financial balances and repayments must be executed within database transactions under appropriate row-level locking (`lockForUpdate`).
+- All database mutations to financial balances must be executed within database transactions under appropriate row-level locking (`lockForUpdate`).
 
 ## 4. Authorization and Tenant Isolation Boundary
 - The Laravel API backend is the **sole security and authorization boundary**.

@@ -28,12 +28,12 @@
 
 ### Phase 1 confirmed priorities
 - API: thin-controller breaches in operational reports, Billing trial eligibility/policies, Network-POS scoping, and voucher-discount bulk authorization; widespread generic Request input extraction; missing architecture-boundary tests; CI final gate does not enforce full PHPStan and Pint mutates the working tree before its test step.
-- API financial precision: `DebtRepaymentService` still casts decimal sums to floating point for receivable/aging/settlement validation and must use integer minor units.
+- POS Repayment collection domain: removed. POS CASH/CREDIT invoices, initial partial payments, invoice receivables, POS credit-limit configuration/enforcement, and receivables aging remain active; repayment collection/allocation/reversal routes and artifacts remain absent.
 - Flutter: commercial detail sheets, Billing dialogs, procurement dialogs, and report preset dialog own view-local form state/payload assembly; QR challenge sheet executes an asynchronous command from the view; POS detail sheet passes POS ID where a POS-wallet ID is required.
 - Large Services/Controllers remain candidates for cohesion mapping, not automatic line-count refactors.
 
 ### Next authorized stage
-Proceed to Phase 2 preventive architecture gates in both repositories. Extend existing verification rather than creating duplicate CI workflows. After the new gates pass, continue phase-by-phase through the Commercial, Finance/Wallet/Debt, remaining Flutter features, backend boundaries, full regression/visual validation, and closeout plan. Each phase starts from the current `main`, has its own branch and PR, and requires exact-head CI before merge.
+Current authorized task: remove POS Repayment collection workflows only from Flutter and Laravel while preserving CREDIT invoice/procurement behavior, initial partial payments, credit limits, invoice receivables, and receivables aging. Do not start Phase 2. Each phase starts from the current `main`, has its own branch and PR, and requires exact-head CI before merge.
 
 ---
 
@@ -49,7 +49,7 @@ Proceed to Phase 2 preventive architecture gates in both repositories. Extend ex
 | **Milestone 5:** Packages & Contractual Pricing | `COMPLETED & VERIFIED` | Backend M5.1 security remediation verified. Frontend M5 catalog UI verified with end-to-end cursor pagination (`PaginatedList`), debounced server search (`search`), server-side status filtering, deterministic network selection via `GetMyNetworksUseCase`, screen decomposition into dedicated section widgets, and strict server financial authority with zero client calculations. Flutter static analysis clean (0 issues), full test suite passing. |
 | **Milestone 6:** Procurement Requests Lifecycle | `COMPLETED & VERIFIED` | Fully delivered and verified across Flutter: POS Procurement Flow (M6.1) with new procurement order wizard (`PosNewProcurementOrderScreen`), requests list with cursor pagination (`PosProcurementOrdersScreen`), and cancellation action. Network Procurement Review Flow (M6.2) with incoming review queue (`NetworkSupplyRequestsReviewScreen`), approval decision dialog with automated invoicing (`approveRequest`), and rejection decision dialog with mandatory reason (`rejectRequest`). Detailed request inspection view (`ProcurementRequestDetailsScreen`) with items breakdown and server-calculated totals. Clean Architecture 3-layer strictly enforced, zero `StatefulWidget`/`setState`, zero direct HTTP calls, zero currency symbols/labels (`AmountFormatter.format`), full test suite passing (201/201 tests, 100%), static analysis clean (0 issues). |
 | **Milestone 7:** Invoicing & Accounting | `COMPLETED, REBUILT & FULLY VERIFIED` | Rebuilt from scratch to match `requests` feature pattern and corporate standard. Clean Architecture 3-layer, pure `StatelessWidget` composition (0 `StatefulWidget`, 0 helper methods returning widgets, 1 class per file, naming `screens`), zero Repayments leakage, exact backend attribute mapping without fallbacks (`SaleInvoiceResource`, `SaleInvoiceItemResource`), and 100% design system tokens. Backend hardened with atomic dual-wallet financial reversals on sale type update and deletion, integer minor units arithmetic via `DecimalAmount`, and strict blocking invariant when reversing cash (`نظام المنع الصارم`). Flutter tests (23/23 passing), analysis clean (0 issues), backend tests (22/22 passing). |
-| **Milestone 8:** Wallets, Credit, Debts & Repayments | `COMPLETED & VERIFIED (FLUTTER PRESENTATION & ARCHITECTURE)` | Completed and fully audited across Flutter: Dual wallet dashboards for Network and POS, transaction ledgers, debt aging summaries with buckets, debt repayment workflows with FIFO breakdown previews (informational), and strict zero client-side financial calculations. 100% compliance with Clean Architecture, pure domain models, and universal architecture tests passing. |
+| **Milestone 8:** Wallets | `COMPLETED (WALLET CORE AND CREDIT-LIMIT SUPPORT RETAINED; REPAYMENT COLLECTION REMOVED)` | Completed and fully audited across Flutter: Dual wallet dashboards for Network and POS, transaction ledgers, and strict zero client-side financial calculations. POS CREDIT invoicing and credit-limit controls remain supported; only POS Repayment collection workflows are removed. 100% compliance with Clean Architecture, pure domain models, and universal architecture tests passing. |
 
 ---
 
@@ -70,8 +70,8 @@ All architectural and business decisions requiring future implementation approva
 
 - **`DEC-01` (`PROPOSED`):** Add `role_scope` to `AuthService::me()` response.
 - **`DEC-02` (`PROPOSED`):** Seed dedicated least-privilege permission matrix for `NETWORK_ACCOUNTANT` and `POS_ACCOUNTANT`.
-- **`DEC-03` (`PROPOSED`):** Enforce `PaymentType` enum validation and model casting in repayment settlement.
-- **`DEC-04` (`PROPOSED`):** Implement informational server-side FIFO repayment preview endpoint (`POST /pos-debts/repayments/preview`).
+- **`DEC-03` (`SUPERSEDED`):** Repayment PaymentType validation is no longer applicable because the repayment collection domain was removed.
+- **`DEC-04` (`REJECTED`):** FIFO repayment preview will not be implemented because the repayment domain was removed.
 
 ---
 
@@ -182,7 +182,7 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - No pull request was found for either active feature branch at the time of inspection. Do not merge directly without synchronizing and reconciling the missing base commits.
 
 ### Stage 3 — Operational report contracts
-- Implemented the provider contract, registry, factory, shared filter/schema validation, and seven dedicated providers: sales, expenses, network wallet, POS wallet, repayments, debt aging, and requests.
+- Implemented the provider contract, registry, factory, shared filter/schema validation, and five dedicated providers: sales, expenses, network wallet, POS wallet, and requests.
 - The API controller, summary execution, cursor-paginated results, authorization, and queued CSV export consume the registry and provider-owned row serialization.
 - Removed the legacy `OperationalReportQueryService` and `OperationalReportProviderAdapter`; no compatibility adapter is retained.
 - Flutter consumes the seven known report types from the server catalog as typed `document_engine` `ReportDefinition` schemas and registers exact versions in `ReportDefinitionRegistry`. Access metadata remains separate from the definition; Laravel remains authoritative for authorization and query execution.
@@ -193,7 +193,7 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Wallet opening balance, currency, posting-time before/after balance snapshots, and snapshot provenance are represented in the schema and resources.
 - Historical wallet rows are marked `BACKFILLED`; newly initialized wallets are marked `INITIAL`; new posting snapshots are marked `LIVE`.
 - Network/POS statements include opening and closing period balances and include soft-deleted ledger rows. The period closing balance is derived from movements by effective `log_date`, while before/after snapshots are explicitly posting-time values.
-- Wallet mutations validate active state and positive amounts under row locks; POS withdrawals use the configured credit limit rather than a stale positive-balance precheck.
+- Wallet mutations validate active state and positive amounts under row locks; POS withdrawals enforce the approved wallet balance and credit-limit rules; CREDIT invoice issuance validates the configured credit limit.
 - Wallet balance mutation, posting-time snapshots, report opening/closing calculations, and debt aging use shared exact decimal arithmetic in integer minor units. POS wallet creation requires the existing network wallet currency; wallet statements, SMS notifications, report PDFs, and official snapshots no longer silently substitute the platform base currency or a hard-coded YER fallback.
 - Operational currency is separate from Platform Billing currency. Official document creation rejects a network/POS currency mismatch rather than silently combining currencies.
 - Immutable document snapshots capture source resources and a SHA-256 manifest; creator/reversal identities and expense attachment metadata are minimized before persistent storage. PDF artifacts are first-write-only, protected, hashed, and downloadable as the canonical document bytes.
@@ -230,7 +230,7 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - Wallet sufficiency checks use positive minor-unit amounts. POS overdraft capacity and purchasing power are calculated in integer minor units; available overdraft is remaining credit after any negative balance, and total purchasing power is cash plus remaining credit.
 - All network↔POS transfer and reversal paths validate matching ISO-style currency codes before changing balances; no implicit cross-currency conversion is allowed.
 - Wallet ledger migration 000001 backfills opening balances and ordered before/after snapshots in minor units. Network/POS wallet statement providers derive period opening/closing balances from the same ledger movements and include currency/source metadata.
-- Official document snapshots bind immutable source JSON, template/schema versions, currency, and SHA-256; the client renders from the server snapshot, uploads once, then downloads the server-canonical artifact and verifies its SHA-256. Invoice, repayment, and expense adapters use all seven IBM Plex Sans Arabic weights and tenant/application logo image watermarks.
+- Official document snapshots bind immutable source JSON, template/schema versions, currency, and SHA-256; the client renders from the server snapshot, uploads once, then downloads the server-canonical artifact and verifies its SHA-256. Invoice and expense adapters use all seven IBM Plex Sans Arabic weights and tenant/application logo image watermarks.
 - Source implementation only. Database migrations were not applied and no tests, static analysis, PDF text extraction, visual comparison, or Actions were run. Final validation remains pending.
 
 

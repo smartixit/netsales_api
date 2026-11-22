@@ -17,8 +17,8 @@ Valid statuses are strictly:
 | **M1-BASE** | 2026-11-02 | Milestone 1 Discovery & Blueprint Working Baseline | **`APPROVED`** | 2026-11-02 |
 | **DEC-01** | 2026-11-02 | RoleScope and Active Tenant Context in Auth Contract | **`PROPOSED`** | Pending Review |
 | **DEC-02** | 2026-11-02 | Dedicated Scoped Permissions for Network & POS Accountants | **`PROPOSED`** | Pending Review |
-| **DEC-03** | 2026-11-02 | Strict PaymentType Enum Validation and Model Cast in Repayments | **`PROPOSED`** | Pending Review |
-| **DEC-04** | 2026-11-02 | Server-Side Informational FIFO Repayment Preview Endpoint | **`PROPOSED`** | Pending Review |
+| **DEC-03** | 2026-11-02 | Strict PaymentType Enum Validation and Model Cast in Repayments | **`SUPERSEDED`** | Repayment domain removed by DEC-05 |
+| **DEC-04** | 2026-11-02 | Server-Side Informational FIFO Repayment Preview Endpoint | **`REJECTED`** | Repayment domain removed by DEC-05 |
 | **BILL-TRIAL-01** | 2026-11-10 | Versioned Trial and Dunning Policy Engine | **`APPROVED`** | 2026-11-10 |
 | **DEC-PROC-01** | 2026-11-17 | POS procurement display-only estimate from signed pricing snapshots | **`APPROVED`** | 2026-11-17 |
 | **DEC-INV-01** | 2026-11-19 | Strict Deletion Blocking on Insufficient Network Balance for Cash Invoices | **`APPROVED`** | 2026-11-19 |
@@ -184,3 +184,19 @@ Valid statuses are strictly:
 - **Flutter contract:** Create, preview, and confirmation UseCases/DataSources send only `posUuid`; the POS scanner flow obtains the active POS commercial code from the authorized POS entity and retains internal `posId` only for local context consistency checks and unrelated endpoints that require it.
 - **Security:** The server remains authoritative for target resolution, activity, membership, tenant authorization, challenge binding, replay prevention, and expiry. No public POS directory or untargeted challenge is introduced.
 - **Consequence:** All canonical API and Flutter contract references, feature tests, and implementation call sites must agree on this single request identifier. No compatibility alias or fallback to `pos_id` is permitted.
+
+
+## DEC-05: Remove POS Credit, Debt, and Repayment Domain
+- **Status:** SUPERSEDED
+- **Decision:** This broad removal decision is superseded by DEC-06. It must not be used to remove CREDIT invoice support or credit-limit controls.
+- **Rationale:** The user's later explicit instruction narrowed the requested removal to the POS Repayment collection domain only.
+- **Boundary:** Retain the approved CASH/CREDIT invoice and receivables behavior defined by DEC-06.
+
+
+## DEC-06: Remove POS Repayment Collection Domain Only
+- **Status:** APPROVED
+- **Date:** 2026-11-22
+- **Decision:** Remove POS repayment collection, reversal, repayment records, invoice allocations/FIFO allocation, repayment-specific routes, screens, reports, and repayment document snapshots only. Preserve POS CASH and CREDIT sale types, initial partial payment at invoice creation/approval, invoice payment fields, POS credit-limit configuration/enforcement, and accounting/wallet settlement rules required by CREDIT invoices.
+- **Rationale:** The user's explicit correction is to delete Repayment, not to disable credit sales or receivables. Invoice-level payment state and initial payment are part of the invoice lifecycle and are not repayment collection.
+- **Financial authority:** Laravel remains the sole authority for invoice totals, paid/remaining amounts, payment status, credit-limit validation, wallet mutation, and accounting entries. Flutter may collect an initial paid amount where the API contract permits it, but must not calculate authoritative balances.
+- **Boundary:** No POS repayment collection/allocation/reversal workflow may be restored. Do not interpret this decision as permission to remove CREDIT, credit limits, partial initial payments, receivables aging, or invoice reversal semantics unrelated to repayment records.

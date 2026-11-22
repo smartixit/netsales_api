@@ -10,7 +10,6 @@ use App\Http\Controllers\API\V1\Billing\BillingReportController;
 use App\Http\Controllers\API\V1\Billing\BillingSelfServiceController;
 use App\Http\Controllers\API\V1\Billing\BillingTrialEligibilityController;
 use App\Http\Controllers\API\V1\DashboardController;
-use App\Http\Controllers\API\V1\DebtRepaymentController;
 use App\Http\Controllers\API\V1\DirectorateController;
 use App\Http\Controllers\API\V1\ExpenseController;
 use App\Http\Controllers\API\V1\FileController;
@@ -410,22 +409,6 @@ Route::prefix('v1')->group(function () {
             Route::post('pos-wallets/batch-force-delete', [PosWalletController::class, 'batchForceDelete'])->name('api.v1.pos_wallets.batch_force_delete');
         });
 
-        // ==========================================
-        // 9.1 إدارة الديون وسداد الفواتير الآجلة وتحليل الأعمار (Debt Tracking, Repayments & Aging)
-        // ==========================================
-        Route::middleware(['throttle:api-read'])->group(function () {
-            Route::get('pos-debts/summary', [DebtRepaymentController::class, 'summary'])->name('api.v1.pos_debts.summary');
-            Route::get('pos-debts/invoices', [DebtRepaymentController::class, 'outstandingInvoices'])->name('api.v1.pos_debts.invoices');
-            Route::get('pos-debts/repayments', [DebtRepaymentController::class, 'repayments'])->name('api.v1.pos_debts.repayments');
-            Route::get('pos-debts/repayments/{id}', [DebtRepaymentController::class, 'showRepayment'])->whereNumber('id')->name('api.v1.pos_debts.repayment_detail');
-        });
-
-        Route::middleware(['throttle:api-write'])->group(function () {
-            Route::post('pos-debts/repayments', [DebtRepaymentController::class, 'collect'])->name('api.v1.pos_debts.collect');
-            Route::post('pos-debts/repayments/{id}/reverse', [DebtRepaymentController::class, 'reverse'])->whereNumber('id')->name('api.v1.pos_debts.reverse');
-        });
-
-        // ==========================================
         // 10. طلبات شراء كروت الإنترنت (Voucher Requests)
         // ==========================================
         Route::middleware(['throttle:api-read', 'permission:requests.view'])->group(function () {
