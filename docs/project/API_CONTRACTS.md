@@ -91,7 +91,7 @@ All routes are additionally inside the active `session.auth` boundary.
 
 Query parameters:
 - `network_id` (`integer`, required): the Network issuing the invitation.
-- `search` (`string`, required): trimmed POS name or commercial business code; 2–120 characters.
+- `search` (`string`, required): trimmed POS name or commercial business code; 2–120 characters with at least two non-whitespace characters. SQL LIKE wildcard characters are treated literally.
 - `per_page` (`integer`, optional): 1–30, default 15.
 - `cursor` (`string`, optional): opaque Laravel cursor, maximum 2,048 characters.
 
