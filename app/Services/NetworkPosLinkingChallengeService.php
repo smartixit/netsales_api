@@ -92,6 +92,12 @@ class NetworkPosLinkingChallengeService
             ]);
         }
 
+        if ($this->challengeRepository->hasActiveForNetworkAndPos($networkId, $pos->pos_id)) {
+            throw ValidationException::withMessages([
+                'target' => ['توجد دعوة ربط سارية لنقطة البيع هذه بالفعل.'],
+            ]);
+        }
+
         return $pos;
     }
 
