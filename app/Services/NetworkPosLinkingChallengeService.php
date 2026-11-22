@@ -170,7 +170,7 @@ class NetworkPosLinkingChallengeService
         $challenge = $this->challengeRepository->createChallenge([
             'challenge_uuid' => $challengeUuid,
             'network_id' => $networkId,
-            'pos_id' => $pos->pos_id,
+            'pos_uuid' => $pos->pos_id,
             'created_by_user_id' => $actor->user_id,
             'challenge_nonce' => $nonce,
             'payload_token' => $payloadToken,
@@ -362,7 +362,7 @@ class NetworkPosLinkingChallengeService
 
             $networkPos = $this->networkPosService->create([
                 'network_id' => $network->network_id,
-                'pos_id' => $pos->pos_id,
+                'pos_uuid' => $pos->pos_id,
                 'status' => true,
             ]);
 
