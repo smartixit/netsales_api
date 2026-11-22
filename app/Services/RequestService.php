@@ -449,6 +449,7 @@ class RequestService
 
             $note = null;
             $overrideItems = null;
+            $paidAmount = null;
 
             if ($requestData instanceof ApproveRequestRequest) {
                 if ($requestData->has('sale_type')) {
@@ -458,6 +459,7 @@ class RequestService
                 }
                 $note = $requestData->getRequestNote();
                 $overrideItems = $requestData->hasItems() ? $requestData->getItems() : null;
+                $paidAmount = $requestData->getPaidAmount();
             } elseif (is_string($requestData)) {
                 $note = $requestData;
             }
@@ -476,7 +478,8 @@ class RequestService
                 $request,
                 $reviewedBy,
                 null,
-                $overrideItems
+                $overrideItems,
+                $paidAmount
             );
 
             // تحديث حالة الطلب الأصلي إلى معتمد (APPROVED) وتوثيق تاريخ وملاحظة المراجعة مع بقاء بنوده كما طُلبت دون تغيير
