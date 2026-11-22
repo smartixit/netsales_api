@@ -17,8 +17,8 @@ Valid statuses are strictly:
 | **M1-BASE** | 2026-11-02 | Milestone 1 Discovery & Blueprint Working Baseline | **`APPROVED`** | 2026-11-02 |
 | **DEC-01** | 2026-11-02 | RoleScope and Active Tenant Context in Auth Contract | **`PROPOSED`** | Pending Review |
 | **DEC-02** | 2026-11-02 | Dedicated Scoped Permissions for Network & POS Accountants | **`PROPOSED`** | Pending Review |
-| **DEC-03** | 2026-11-02 | Strict PaymentType Enum Validation and Model Cast in Repayments | **`PROPOSED`** | Pending Review |
-| **DEC-04** | 2026-11-02 | Server-Side Informational FIFO Repayment Preview Endpoint | **`PROPOSED`** | Pending Review |
+| **DEC-03** | 2026-11-02 | Strict PaymentType Enum Validation and Model Cast in Repayments | **`SUPERSEDED`** | Repayment domain removed by DEC-05 |
+| **DEC-04** | 2026-11-02 | Server-Side Informational FIFO Repayment Preview Endpoint | **`REJECTED`** | Repayment domain removed by DEC-05 |
 | **BILL-TRIAL-01** | 2026-11-10 | Versioned Trial and Dunning Policy Engine | **`APPROVED`** | 2026-11-10 |
 | **DEC-PROC-01** | 2026-11-17 | POS procurement display-only estimate from signed pricing snapshots | **`APPROVED`** | 2026-11-17 |
 | **DEC-INV-01** | 2026-11-19 | Strict Deletion Blocking on Insufficient Network Balance for Cash Invoices | **`APPROVED`** | 2026-11-19 |
@@ -184,3 +184,10 @@ Valid statuses are strictly:
 - **Flutter contract:** Create, preview, and confirmation UseCases/DataSources send only `posUuid`; the POS scanner flow obtains the active POS commercial code from the authorized POS entity and retains internal `posId` only for local context consistency checks and unrelated endpoints that require it.
 - **Security:** The server remains authoritative for target resolution, activity, membership, tenant authorization, challenge binding, replay prevention, and expiry. No public POS directory or untargeted challenge is introduced.
 - **Consequence:** All canonical API and Flutter contract references, feature tests, and implementation call sites must agree on this single request identifier. No compatibility alias or fallback to `pos_id` is permitted.
+
+
+## DEC-05: Remove POS Credit, Debt, and Repayment Domain
+- **Status:** ACCEPTED
+- **Decision:** NetSales retains wallet operations and cash-settled POS invoices. POS credit facilities, credit-limit configuration, debt/aging endpoints and reports, repayment collection/reversal/allocation, and repayment documents are removed from the application and API.
+- **Rationale:** These capabilities are outside the current product scope and must not remain as dormant or partially supported workflows.
+- **Boundary:** Network/POS wallets, wallet transfers, cash invoices, billing subscription payments, and unrelated billing credit notes remain separate supported domains.
