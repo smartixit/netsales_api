@@ -33,6 +33,7 @@ class StoreSaleInvoiceRequest extends FormRequest
                 'nullable',
                 Rule::in([SaleType::CASH->value]),
             ],
+            'paid_amount' => ['prohibited'],
             'items' => [
                 'required',
                 'array',
