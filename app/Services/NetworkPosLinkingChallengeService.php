@@ -104,7 +104,7 @@ class NetworkPosLinkingChallengeService
     /**
      * Search only eligible POS targets for an authorized Network invitation.
      *
-     * @return \Illuminate\Contracts\Pagination\CursorPaginator
+     * @return \Illuminate\Contracts\Pagination\CursorPaginator<int, Pos>
      */
     public function searchLinkablePos(User $actor, int $networkId, string $search, int $perPage = 15, ?string $cursor = null): \Illuminate\Contracts\Pagination\CursorPaginator
     {
