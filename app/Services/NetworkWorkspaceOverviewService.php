@@ -152,6 +152,29 @@ class NetworkWorkspaceOverviewService
                 ? round((($currentTotal - $previousTotal) / $previousTotal) * 100, 1)
                 : ($currentTotal > 0 ? 100.0 : 0.0);
 
+            // حساب مبيعات اليوم ومقارنتها بالأمس بشكل فوري ودقيق
+            $todayStart = $now->startOfDay();
+            $yesterdayStart = $now->subDay()->startOfDay();
+            $yesterdayEnd = $now->subDay()->endOfDay();
+
+            $todayRecord = SaleInvoice::query()
+                ->where('network_id', $networkId)
+                ->whereBetween('invoice_date', [$todayStart, $now])
+                ->selectRaw('COUNT(*) as count, COALESCE(SUM(invoice_total_amount), 0) as total')
+                ->first();
+
+            $todayTotal = (float) ($todayRecord?->total ?? 0);
+            $todayInvoiceCount = (int) ($todayRecord?->count ?? 0);
+
+            $yesterdayTotal = (float) SaleInvoice::query()
+                ->where('network_id', $networkId)
+                ->whereBetween('invoice_date', [$yesterdayStart, $yesterdayEnd])
+                ->sum('invoice_total_amount');
+
+            $todayGrowthRate = $yesterdayTotal > 0
+                ? round((($todayTotal - $yesterdayTotal) / $yesterdayTotal) * 100, 1)
+                : ($todayTotal > 0 ? 100.0 : 0.0);
+
             $trend = DB::table('sale_invoices')
                 ->where('network_id', $networkId)
                 ->whereBetween('invoice_date', [$from, $now])
@@ -174,6 +197,12 @@ class NetworkWorkspaceOverviewService
                 'outstanding_amount' => $this->formatAmount($sales?->outstanding_amount),
                 'growth_rate' => $growthRate,
                 'trend' => $trend,
+                'today_sales' => [
+                    'amount' => $this->formatAmount($todayTotal),
+                    'invoice_count' => $todayInvoiceCount,
+                    'yesterday_amount' => $this->formatAmount($yesterdayTotal),
+                    'growth_rate' => $todayGrowthRate,
+                ],
             ];
         }
 
@@ -198,12 +227,23 @@ class NetworkWorkspaceOverviewService
                 ->where('network_id', $networkId)
                 ->first(['wallet_id', 'network_id', 'wallet_balance', 'status']);
 
+            $todayStart = $now->startOfDay();
+            $todayCashCollected = 0.0;
+            if ($wallet !== null) {
+                $todayCashCollected = (float) DB::table('network_wallet_logs')
+                    ->where('wallet_id', $wallet->wallet_id)
+                    ->where('log_operation', 'DEPOSIT')
+                    ->whereBetween('log_date', [$todayStart, $now])
+                    ->sum('log_amount');
+            }
+
             $metrics['wallet'] = $wallet === null
                 ? null
                 : [
                     'wallet_id' => (int) $wallet->wallet_id,
                     'balance' => $this->formatAmount($wallet->wallet_balance),
                     'is_active' => (bool) $wallet->status,
+                    'today_cash_collected' => $this->formatAmount($todayCashCollected),
                 ];
         }
 
