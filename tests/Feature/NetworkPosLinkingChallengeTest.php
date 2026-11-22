@@ -441,14 +441,14 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->assertJsonValidationErrors(['pos_uuid']);
     }
 
-    public function test_inactive_pos_membership_cannot_preview_a_challenge(): void
+    public function test_suspended_pos_membership_cannot_preview_a_challenge(): void
     {
         $posRole = Role::where('role_key', RoleKey::POS_AGENT->value)->first();
         PosUser::create([
             'pos_id' => $this->pos->pos_id,
             'user_id' => $this->unauthorizedUser->user_id,
             'role_id' => $posRole?->role_id,
-            'status' => 'INACTIVE',
+            'status' => 'SUSPENDED',
         ]);
 
         $createResponse = $this->withHeaders($this->netSession['headers'])
@@ -549,14 +549,14 @@ class NetworkPosLinkingChallengeTest extends TestCase
         ]);
     }
 
-    public function test_inactive_pos_membership_cannot_confirm_a_challenge(): void
+    public function test_suspended_pos_membership_cannot_confirm_a_challenge(): void
     {
         $posRole = Role::where('role_key', RoleKey::POS_AGENT->value)->first();
         PosUser::create([
             'pos_id' => $this->pos->pos_id,
             'user_id' => $this->unauthorizedUser->user_id,
             'role_id' => $posRole?->role_id,
-            'status' => 'INACTIVE',
+            'status' => 'SUSPENDED',
         ]);
 
         $createResponse = $this->withHeaders($this->netSession['headers'])
