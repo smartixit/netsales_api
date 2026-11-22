@@ -61,7 +61,9 @@ The 24 backed PHP Enums (`app/Enums/`) have the following exact canonical wire v
 
 ## 3. Procurement & Debt Routes Verification
 - **Request Modification Preview:** `POST /api/v1/requests/{id}/preview-modification` exists. Validates item modifications and returns calculated order preview before approval.
-- **POS debt and repayment routes:** Removed. POS credit/debt tracking, repayment collection/reversal, and FIFO allocation are not part of the active API contract.
+- **POS Repayment routes:** Collection, reversal, repayment listing/detail, and FIFO allocation routes are removed. This does not remove POS CREDIT sales or invoice receivables.
+- **POS credit-limit route:** `PUT /api/v1/pos-wallets/{id}/credit-limit` remains supported under the existing authorization policy.
+- **Invoice payment contract:** POS invoice creation and procurement approval continue to accept `sale_type: CASH|CREDIT`. Where supported by the endpoint, `paid_amount` is an optional initial payment. Laravel returns authoritative `paid_amount`, `remaining_amount`, `payment_status`, `payment_status_label`, and `is_fully_paid`; clients must not calculate these values.
 
 ---
 
