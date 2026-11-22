@@ -805,7 +805,7 @@ class SaleInvoiceService
             $pos->ensureActive();
 
             $targetSaleType = $request->getSaleType();
-            $currentSaleType = $invoice->sale_type;
+            $currentSaleType = SaleType::from((string) $invoice->getRawOriginal('sale_type'));
 
             if ($currentSaleType === $targetSaleType) {
                 return $this->getById($invoiceId);
@@ -986,7 +986,7 @@ class SaleInvoiceService
             $totalAmountMinor = DecimalAmount::toMinorUnits($invoice->invoice_total_amount);
             $paidAmountMinor = DecimalAmount::toMinorUnits($invoice->paid_amount);
             $currentUserId = auth()->id() ?? $invoice->created_by;
-            $saleType = $invoice->sale_type;
+            $saleType = SaleType::from((string) $invoice->getRawOriginal('sale_type'));
 
             if ($saleType === SaleType::CASH) {
                 // الفاتورة نقدية: استلمت الشبكة كامل المبلغ، يتم استرداده من محفظة الشبكة
