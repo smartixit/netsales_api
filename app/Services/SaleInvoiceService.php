@@ -100,10 +100,9 @@ class SaleInvoiceService
         RequestModel $request,
         int $userId,
         ?SaleType $overrideSaleType = null,
-        ?array $overrideItems = null,
-        ?float $paidAmount = null
+        ?array $overrideItems = null
     ): SaleInvoice {
-        return DB::transaction(function () use ($request, $userId, $overrideSaleType, $overrideItems, $paidAmount): SaleInvoice {
+        return DB::transaction(function () use ($request, $userId, $overrideSaleType, $overrideItems): SaleInvoice {
             if ($overrideSaleType !== null && $overrideSaleType->value !== $request->getRawOriginal('sale_type')) {
                 throw ValidationException::withMessages([
                     'sale_type' => ['لا يُسمح بتعديل نوع البيع (كاش/آجل) المتفق عليه في الطلب الأصلي من قِبل الشبكة.'],
