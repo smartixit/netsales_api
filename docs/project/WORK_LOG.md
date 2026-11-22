@@ -1224,11 +1224,13 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Merge boundary:** Both PRs remain open and unmerged. The API PR must wait for run #571; the Flutter PR remains blocked by the unrelated full-suite failures unless those are separately resolved or explicitly waived under repository governance.
 
 
-## 2026-11-22 — POS Debt and Repayment Domain Removal (In Progress)
+## 2026-11-22 — POS Debt and Repayment Domain Removal (Implementation Complete; PR Open)
 - Created coordinated removal branches in Flutter and Laravel from the exact then-current `main` SHAs.
 - Removed POS repayment collection/reversal controller, requests, resources, models, policy, service, migration, and dedicated repayment/debt-aging report providers and tests.
 - Removed POS debt routes, credit-limit endpoint, repayment/debt-aging operational report types, repayment document snapshot adapter/template, and associated API contract entries.
 - Enforced cash-only POS procurement requests and direct invoices; removed advance-payment input from approval/direct-invoice UI and disallowed POS wallet overdrafts.
 - Removed Flutter repayment/receivable-aging enums, report rendering, API constants, navigation constants, and idempotency helpers.
 - Updated product governance and decision log (DEC-05). Phase 2 has not been started.
-- Validation is pending: full Flutter format/analyze/test, Laravel Pint/PHPStan/PHPUnit, route-list verification, and exact-HEAD CI.
+- Laravel CI run #578 passed on API HEAD `93ad7985fe01ffcd758d4137c5454ee98f2726e0`: Composer validation/audit, Pint, targeted and full PHPStan, and PHPUnit (341 passed, 3 skipped; 2,683 assertions).
+- Flutter CI run #1349 passed formatting, analysis, affected procurement tests, and DataGrid tests on HEAD `3ff343bfa99bd9e6ec62a28a92d76f8af8dde6d6`; the complete suite reported 550 passed and 9 failures in the existing Procurement Request Details, Procurement Package Option Card, Custom Refreshable Page, and Session Membership Context tests. No debt/repayment-related test failed.
+- PRs remain open for review; no merge was performed. Phase 2 was not started.
