@@ -24,7 +24,7 @@ class SearchNetworkLinkablePosRequest extends FormRequest
                 'min:1',
                 Rule::exists('networks', 'network_id')->whereNull('deleted_at'),
             ],
-            'search' => ['required', 'string', 'min:2', 'max:120'],
+            'search' => ['required', 'string', 'min:2', 'max:120', 'regex:/\\S.*\\S/u'],
             'per_page' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:30'],
             'cursor' => ['sometimes', 'nullable', 'string', 'max:2048'],
         ];
