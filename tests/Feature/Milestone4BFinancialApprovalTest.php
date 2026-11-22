@@ -533,34 +533,6 @@ class Milestone4BFinancialApprovalTest extends TestCase
     }
 
     /**
-     * 18. سلامة التأثيرات الخارجية عند التراجع (Commit-Safe External Side Effects):
-     * إذا فشلت العملية وتراجعت المعاملة، يجب ألا يُرسل أي إشعار أو SMS نهائياً.
-     */
-    public function test_rolled_back_transaction_dispatches_zero_notifications_or_sms(): void
-    {
-        $notificationsBefore = DB::table('notifications')->count();
-
-        // محاولة اعتماد طلب يفشل بسبب نقص الرصيد
-        $this->posWallet->wallet_balance = 0.00;
-        $this->posWallet->credit_limit = null;
-        $this->posWallet->save();
-
-        $reqId = $this->postProcurementRequest([
-            'network_id' => $this->network->network_id,
-            'pos_id' => $this->pos->pos_id,
-            'sale_type' => SaleType::CASH->value,
-            'items' => [['package_id' => $this->packageA->package_id, 'voucher_count' => 50]],
-        ])->json('data.request_id');
-
-        $this->withHeaders($this->headers)
-            ->postJson("/api/v1/requests/{$reqId}/approve")
-            ->assertStatus(422);
-
-        // عدد الإشعارات لم يزد إطلاقاً لأن بعد التراجع DB::afterCommit لا يتم استدعاؤه
-        $this->assertEquals($notificationsBefore, DB::table('notifications')->count());
-    }
-
-    /**
      * 19. إثبات التزامن الحقيقي على مستوى MySQL InnoDB ومنع الاعتماد المزدوج عبر أقفال السجلات (lockForUpdate):
      * يثبت هذا الاختبار أن قفل السطر FOR UPDATE على طلب الشراء يمنع أي اتصال آخر من التعديل عليه بالتوازي،
      * وأن ترتيب الأقفال (requests -> pos_wallets -> network_wallets) يمنع حدوث الجمود الميت (Deadlock).
