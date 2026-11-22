@@ -38,7 +38,6 @@ class PosWallet extends Model
         'opening_balance',
         'opening_balance_source',
         'currency_code',
-        'credit_limit',
         'status',
     ];
 
@@ -47,7 +46,6 @@ class PosWallet extends Model
         return [
             'wallet_balance' => 'decimal:2',
             'opening_balance' => 'decimal:2',
-            'credit_limit' => 'decimal:2',
             'status' => 'boolean',
         ];
     }
@@ -182,55 +180,6 @@ class PosWallet extends Model
         return $balance > 0 ? (float) DecimalAmount::fromMinorUnits($balance) : 0.0;
     }
 
-    /**
-     * هل تم منح سقف ائتماني معتمد لمحفظة نقطة البيع؟
-     */
-    public function hasCreditLimit(): bool
-    {
-        return $this->credit_limit !== null;
-    }
-
-    /**
-     * السقف الائتماني المعتمد الممنوح للمحفظة.
-     */
-    public function getCreditLimit(): ?float
-    {
-        return $this->credit_limit !== null ? (float) $this->credit_limit : null;
-    }
-
-    /**
-     * القدرة الائتمانية المتبقية للسحب على المكشوف.
-     */
-    public function getAvailableOverdraftCapacity(): float
-    {
-        if ($this->credit_limit === null) {
-            return 0.0;
-        }
-
-        $limitMinor = DecimalAmount::toMinorUnits($this->credit_limit);
-        $balanceMinor = DecimalAmount::toMinorUnits($this->wallet_balance);
-        $usedOverdraftMinor = max(0, -$balanceMinor);
-        $remainingMinor = max(0, $limitMinor - $usedOverdraftMinor);
-
-        return (float) DecimalAmount::fromMinorUnits($remainingMinor);
-    }
-
-    /**
-     * إجمالي القدرة الشرائية المتاحة المعتمدة رسمياً (الرصيد النقدي + السقف الائتماني المتاح).
-     */
-    public function getTotalPurchasingPower(): float
-    {
-        $balanceMinor = DecimalAmount::toMinorUnits($this->wallet_balance);
-        $cashMinor = max(0, $balanceMinor);
-        $limitMinor = DecimalAmount::toMinorUnits($this->credit_limit ?? 0);
-        $usedOverdraftMinor = max(0, -$balanceMinor);
-        $remainingCreditMinor = max(0, $limitMinor - $usedOverdraftMinor);
-
-        return (float) DecimalAmount::fromMinorUnits(
-            DecimalAmount::add($cashMinor, $remainingCreditMinor)
-        );
-    }
-
     // Operations
     public function deposit(float $amount, string $statement, int $userId): PosWalletLog
     {
@@ -271,10 +220,9 @@ class PosWallet extends Model
             $wallet->ensureActive();
             $amountMinor = DecimalAmount::toMinorUnits($amount);
             $beforeMinor = DecimalAmount::toMinorUnits($wallet->wallet_balance);
-            $creditLimitMinor = DecimalAmount::toMinorUnits($wallet->credit_limit ?? 0);
             $afterMinor = DecimalAmount::add($beforeMinor, -$amountMinor);
-            if ($amountMinor <= 0 || $afterMinor < -$creditLimitMinor) {
-                throw ValidationException::withMessages(['amount' => ['تجاوز السحب الرصيد المتاح والسقف الائتماني المعتمد لنقطة البيع.']]);
+            if ($amountMinor <= 0 || $afterMinor < 0) {
+                throw ValidationException::withMessages(['amount' => ['لا يمكن سحب مبلغ يتجاوز الرصيد المتاح في محفظة نقطة البيع.']]);
             }
             $currencyCode = strtoupper(trim((string) $wallet->currency_code));
             if (preg_match('/^[A-Z]{3}$/D', $currencyCode) !== 1) {
