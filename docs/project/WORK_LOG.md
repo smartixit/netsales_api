@@ -1222,3 +1222,13 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Backend rerun #571, SHA `dc9e08bf87185bd936a1ebfe2e326575ba19aca0`:** in progress at the time of this entry; final PHPUnit result is not yet known.
 - **Flutter run #1345, SHA `aededdad4be769639c5125a87935231b0e8ff58d`:** Dart formatting PASS; Flutter analyze PASS; affected commercial/workspace controller tests PASS; DataGrid tests PASS; all QR-related model/controller tests PASS. The complete suite reported 549 passed and 9 failures in unrelated Procurement Request Details, Procurement Package Option Card, Custom Refreshable Page, and Session Membership Context tests. No QR-related failure was reported. Do not describe the entire Flutter suite as green.
 - **Merge boundary:** Both PRs remain open and unmerged. The API PR must wait for run #571; the Flutter PR remains blocked by the unrelated full-suite failures unless those are separately resolved or explicitly waived under repository governance.
+
+
+## 2026-11-22 — POS Debt and Repayment Domain Removal (In Progress)
+- Created coordinated removal branches in Flutter and Laravel from the exact then-current `main` SHAs.
+- Removed POS repayment collection/reversal controller, requests, resources, models, policy, service, migration, and dedicated repayment/debt-aging report providers and tests.
+- Removed POS debt routes, credit-limit endpoint, repayment/debt-aging operational report types, repayment document snapshot adapter/template, and associated API contract entries.
+- Enforced cash-only POS procurement requests and direct invoices; removed advance-payment input from approval/direct-invoice UI and disallowed POS wallet overdrafts.
+- Removed Flutter repayment/receivable-aging enums, report rendering, API constants, navigation constants, and idempotency helpers.
+- Updated product governance and decision log (DEC-05). Phase 2 has not been started.
+- Validation is pending: full Flutter format/analyze/test, Laravel Pint/PHPStan/PHPUnit, route-list verification, and exact-HEAD CI.
