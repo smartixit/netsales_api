@@ -22,6 +22,8 @@ Valid statuses are strictly:
 | **BILL-TRIAL-01** | 2026-11-10 | Versioned Trial and Dunning Policy Engine | **`APPROVED`** | 2026-11-10 |
 | **DEC-PROC-01** | 2026-11-17 | POS procurement display-only estimate from signed pricing snapshots | **`APPROVED`** | 2026-11-17 |
 | **DEC-INV-01** | 2026-11-19 | Strict Deletion Blocking on Insufficient Network Balance for Cash Invoices | **`APPROVED`** | 2026-11-19 |
+| **DEC-QR-01** | 2026-11-22 | Network invitations must target one exact POS | **`SUPERSEDED`** | 2026-11-21 |
+| **DEC-QR-02** | 2026-11-22 | Use POS commercial business code as the sole QR request identifier | **`APPROVED`** | 2026-11-22 |
 
 ---
 
@@ -167,3 +169,17 @@ Valid statuses are strictly:
 - **Decision:** A Network invitation must be bound to exactly one Network and one explicitly resolved POS. The issuer enters the POS commercial business code; the API resolves only that exact POS after checking the issuer's active Network authorization, target POS activity, and absence of an existing link. No public POS directory and no untargeted invitation are allowed.
 - **Security:** The encrypted challenge binds Network ID, POS ID, challenge UUID, nonce, and exact expiry. Preview/confirmation revalidate the same POS binding. The status endpoint exposes only lifecycle status, label, and expiry; it never returns the payload or target identifiers.
 - **Consequence:** Both pos_id and pos_uuid are mutually exclusive target inputs and exactly one is required. pos_uuid on this wire contract is the formatted POS commercial business code, not a generic RFC UUID.
+
+
+## DEC-QR-02: Use POS commercial business code as the sole QR request identifier
+- **Status:** **`APPROVED`**
+- **Date:** 2026-11-22
+- **User Decision Date:** 2026-11-22
+- **Supersedes:** DEC-QR-01's mutually-exclusive `pos_id` / `pos_uuid` request-selector rule. The exact-target, single-Network/single-POS security invariant remains unchanged.
+- **Subject:** Canonical POS identity for Network–POS encrypted QR invitation creation, preview, and confirmation.
+- **Decision:** `pos_uuid` is the only accepted POS identifier in all three request contracts. In this workflow it means the formatted POS commercial business code (for example `POS-YYMM-00001-AB12`), not an RFC UUID. `pos_id` is prohibited in these requests and must be rejected even when `pos_uuid` is also present.
+- **Internal boundary:** Laravel resolves the business code to the internal POS model and continues using the database `pos_id` for foreign keys, challenge binding, row relationships, and transactional integrity. Response projections may retain a narrowly scoped `pos_id` where required by the existing response contract; this does not make it a request selector.
+- **Validation convention:** The three FormRequests use their ordinary `rules()` declarations and the same project validation conventions. Do not introduce `withValidator()` for this feature. Missing `pos_uuid` is rejected by its required rule; submitted `pos_id` is rejected by the `missing` rule.
+- **Flutter contract:** Create, preview, and confirmation UseCases/DataSources send only `posUuid`; the POS scanner flow obtains the active POS commercial code from the authorized POS entity and retains internal `posId` only for local context consistency checks and unrelated endpoints that require it.
+- **Security:** The server remains authoritative for target resolution, activity, membership, tenant authorization, challenge binding, replay prevention, and expiry. No public POS directory or untargeted challenge is introduced.
+- **Consequence:** All canonical API and Flutter contract references, feature tests, and implementation call sites must agree on this single request identifier. No compatibility alias or fallback to `pos_id` is permitted.
