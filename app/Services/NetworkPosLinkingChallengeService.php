@@ -173,63 +173,58 @@ class NetworkPosLinkingChallengeService
             }
         }
 
-        try {
-            $pos = $this->posRepository->findByUuid(strtoupper(trim($posUuid)));
-        } catch (ModelNotFoundException) {
-            throw ValidationException::withMessages([
-                'pos_uuid' => ['نقطة البيع المستهدفة غير موجودة.'],
+        return DB::transaction(function () use ($actor, $networkId, $posUuid, $durationMinutes): NetworkPosLinkingChallenge {
+            $pos = $this->posRepository->findByUuidForUpdate(strtoupper(trim($posUuid)));
+
+            if (! $pos instanceof Pos || $pos->trashed() || ! $pos->isActive()) {
+                throw ValidationException::withMessages([
+                    'pos_uuid' => ['نقطة البيع المستهدفة غير متاحة للربط.'],
+                ]);
+            }
+
+            if ($this->networkPosRepository->findByNetworkAndPos($networkId, $pos->pos_id)) {
+                throw ValidationException::withMessages([
+                    'pos_uuid' => ['نقطة البيع هذه مرتبطة بالفعل بهذه الشبكة مسبقاً.'],
+                ]);
+            }
+
+            if ($this->challengeRepository->hasActiveForNetworkAndPos($networkId, $pos->pos_id)) {
+                throw ValidationException::withMessages([
+                    'pos_uuid' => ['توجد دعوة ربط سارية لنقطة البيع هذه بالفعل.'],
+                ]);
+            }
+
+            $duration = max(5, min(60, $durationMinutes));
+            $expiresAt = now('Asia/Aden')->addMinutes($duration);
+            $challengeUuid = Str::uuid()->toString();
+            $nonce = bin2hex(random_bytes(32));
+
+            $payloadData = [
+                'v' => 1,
+                'op' => 'pos_network_link',
+                'cid' => $challengeUuid,
+                'nid' => $networkId,
+                'pid' => $pos->pos_id,
+                'nonce' => $nonce,
+                'exp' => $expiresAt->timestamp,
+            ];
+
+            $ciphertext = $this->cryptoService->encryptForServer(json_encode($payloadData));
+            $payloadToken = self::TOKEN_PREFIX.$ciphertext;
+
+            $challenge = $this->challengeRepository->createChallenge([
+                'challenge_uuid' => $challengeUuid,
+                'network_id' => $networkId,
+                'pos_id' => $pos->pos_id,
+                'created_by_user_id' => $actor->user_id,
+                'challenge_nonce' => $nonce,
+                'payload_token' => $payloadToken,
+                'status' => LinkingChallengeStatus::PENDING,
+                'expires_at' => $expiresAt,
             ]);
-        }
 
-        if (! $pos instanceof Pos || $pos->trashed() || ! $pos->isActive()) {
-            throw ValidationException::withMessages([
-                'pos_uuid' => ['نقطة البيع المستهدفة غير متاحة للربط.'],
-            ]);
-        }
-
-        $existingLink = $this->networkPosRepository->findByNetworkAndPos($networkId, $pos->pos_id);
-        if ($existingLink) {
-            throw ValidationException::withMessages([
-                'pos_uuid' => ['نقطة البيع هذه مرتبطة بالفعل بهذه الشبكة مسبقاً.'],
-            ]);
-        }
-
-        if ($this->challengeRepository->hasActiveForNetworkAndPos($networkId, $pos->pos_id)) {
-            throw ValidationException::withMessages([
-                'pos_uuid' => ['توجد دعوة ربط سارية لنقطة البيع هذه بالفعل.'],
-            ]);
-        }
-
-        $duration = max(5, min(60, $durationMinutes));
-        $expiresAt = now('Asia/Aden')->addMinutes($duration);
-        $challengeUuid = Str::uuid()->toString();
-        $nonce = bin2hex(random_bytes(32));
-
-        $payloadData = [
-            'v' => 1,
-            'op' => 'pos_network_link',
-            'cid' => $challengeUuid,
-            'nid' => $networkId,
-            'pid' => $pos->pos_id,
-            'nonce' => $nonce,
-            'exp' => $expiresAt->timestamp,
-        ];
-
-        $ciphertext = $this->cryptoService->encryptForServer(json_encode($payloadData));
-        $payloadToken = self::TOKEN_PREFIX.$ciphertext;
-
-        $challenge = $this->challengeRepository->createChallenge([
-            'challenge_uuid' => $challengeUuid,
-            'network_id' => $networkId,
-            'pos_id' => $pos->pos_id,
-            'created_by_user_id' => $actor->user_id,
-            'challenge_nonce' => $nonce,
-            'payload_token' => $payloadToken,
-            'status' => LinkingChallengeStatus::PENDING,
-            'expires_at' => $expiresAt,
-        ]);
-
-        return $challenge->load(['network', 'pos']);
+            return $challenge->load(['network', 'pos']);
+        });
     }
 
     /**
