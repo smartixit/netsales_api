@@ -31,9 +31,8 @@ class StoreSaleInvoiceRequest extends FormRequest
             ],
             'sale_type' => [
                 'nullable',
-                Rule::in([SaleType::CASH->value]),
+                Rule::enum(SaleType::class),
             ],
-            'paid_amount' => ['prohibited'],
             'items' => [
                 'required',
                 'array',
@@ -51,6 +50,11 @@ class StoreSaleInvoiceRequest extends FormRequest
                 'min:1',
             ],
             // NOTE: item_discount is NO LONGER accepted from client (backend uses effective discount).
+            'paid_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
         ];
     }
 
@@ -69,6 +73,13 @@ class StoreSaleInvoiceRequest extends FormRequest
         $type = $this->input('sale_type');
 
         return $type ? SaleType::tryFrom(strtoupper((string) $type)) ?? SaleType::CASH : SaleType::CASH;
+    }
+
+    public function getPaidAmount(): ?float
+    {
+        return $this->has('paid_amount') && $this->input('paid_amount') !== null
+            ? (float) $this->input('paid_amount')
+            : null;
     }
 
     /**
