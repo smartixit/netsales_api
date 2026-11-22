@@ -187,7 +187,16 @@ Valid statuses are strictly:
 
 
 ## DEC-05: Remove POS Credit, Debt, and Repayment Domain
-- **Status:** ACCEPTED
-- **Decision:** NetSales retains wallet operations and cash-settled POS invoices. POS credit facilities, credit-limit configuration, debt/aging endpoints and reports, repayment collection/reversal/allocation, and repayment documents are removed from the application and API.
-- **Rationale:** These capabilities are outside the current product scope and must not remain as dormant or partially supported workflows.
-- **Boundary:** Network/POS wallets, wallet transfers, cash invoices, billing subscription payments, and unrelated billing credit notes remain separate supported domains.
+- **Status:** SUPERSEDED
+- **Decision:** This broad removal decision is superseded by DEC-06. It must not be used to remove CREDIT invoice support or credit-limit controls.
+- **Rationale:** The user's later explicit instruction narrowed the requested removal to the POS Repayment collection domain only.
+- **Boundary:** Retain the approved CASH/CREDIT invoice and receivables behavior defined by DEC-06.
+
+
+## DEC-06: Remove POS Repayment Collection Domain Only
+- **Status:** APPROVED
+- **Date:** 2026-11-22
+- **Decision:** Remove POS repayment collection, reversal, repayment records, invoice allocations/FIFO allocation, repayment-specific routes, screens, reports, and repayment document snapshots only. Preserve POS CASH and CREDIT sale types, initial partial payment at invoice creation/approval, invoice payment fields, POS credit-limit configuration/enforcement, and accounting/wallet settlement rules required by CREDIT invoices.
+- **Rationale:** The user's explicit correction is to delete Repayment, not to disable credit sales or receivables. Invoice-level payment state and initial payment are part of the invoice lifecycle and are not repayment collection.
+- **Financial authority:** Laravel remains the sole authority for invoice totals, paid/remaining amounts, payment status, credit-limit validation, wallet mutation, and accounting entries. Flutter may collect an initial paid amount where the API contract permits it, but must not calculate authoritative balances.
+- **Boundary:** No POS repayment collection/allocation/reversal workflow may be restored. Do not interpret this decision as permission to remove CREDIT, credit limits, partial initial payments, receivables aging, or invoice reversal semantics unrelated to repayment records.
