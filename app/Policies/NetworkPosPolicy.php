@@ -22,15 +22,21 @@ class NetworkPosPolicy
 
     public function viewAny(User $user): bool
     {
-        return app(TenantPermissionService::class)->allowsAnyNetwork($user, 'networks.view')
-            || app(TenantPermissionService::class)->allowsAnyPos($user, 'pos.view');
+        $permissions = app(TenantPermissionService::class);
+
+        return $permissions->allowsPlatform($user, 'networks.view')
+            || $permissions->allowsPlatform($user, 'pos.view')
+            || $permissions->allowsAnyNetwork($user, 'networks.view')
+            || $permissions->allowsAnyPos($user, 'pos.view');
     }
 
     public function view(User $user, NetworkPos $networkPos): bool
     {
         $permissions = app(TenantPermissionService::class);
 
-        return $permissions->allowsNetwork($user, (int) $networkPos->network_id, 'networks.view')
+        return $permissions->allowsPlatform($user, 'networks.view')
+            || $permissions->allowsPlatform($user, 'pos.view')
+            || $permissions->allowsNetwork($user, (int) $networkPos->network_id, 'networks.view')
             || $permissions->allowsPos($user, (int) $networkPos->pos_id, 'pos.view');
     }
 
