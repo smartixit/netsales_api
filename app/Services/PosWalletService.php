@@ -24,6 +24,7 @@ use App\Models\NetworkWalletLog;
 use App\Models\PosWallet;
 use App\Models\PosWalletLog;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use App\Models\WalletTransfer;
 use Exception;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -46,8 +47,10 @@ class PosWalletService
         protected PosRepositoryInterface $posRepository,
         protected NotificationService $notificationService,
         protected ?NetworkPosRepositoryInterface $networkPosRepository = null,
+        protected ?TenantPermissionService $tenantPermissions = null,
     ) {
         $this->networkPosRepository = $networkPosRepository ?? app(NetworkPosRepositoryInterface::class);
+        $this->tenantPermissions = $tenantPermissions ?? app(TenantPermissionService::class);
     }
 
     /**
@@ -64,7 +67,14 @@ class PosWalletService
     public function getWalletsForUser(array $filters, User $user): Collection|CursorPaginator
     {
         if (! $user->isSuperAdmin()) {
-            $filters['authorized_user_id'] = (int) $user->user_id;
+            $filters['authorized_network_ids'] = $this->tenantPermissions->authorizedNetworkIds(
+                $user,
+                'pos_wallets.view'
+            );
+            $filters['authorized_pos_ids'] = $this->tenantPermissions->authorizedPosIds(
+                $user,
+                'pos_wallets.view'
+            );
         }
 
         return $this->getWallets($filters);
@@ -84,7 +94,7 @@ class PosWalletService
     public function getTrashedWalletsForUser(array $filters, User $user): Collection|CursorPaginator
     {
         if (! $user->isSuperAdmin()) {
-            $filters['authorized_user_id'] = (int) $user->user_id;
+            throw new AuthorizationException('عرض محافظ نقاط البيع المحذوفة متاح لمدير المنصة العام فقط.');
         }
 
         return $this->getTrashedWallets($filters);
