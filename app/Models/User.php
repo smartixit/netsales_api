@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
@@ -357,39 +358,72 @@ class User extends Authenticatable
 
         $upperKey = strtoupper($permissionKey);
 
-        if ($this->permissions()->where(function ($q) use ($upperKey, $permissionKey) {
-            $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
-        })->exists()) {
-            return true;
-        }
+        // user_permissions has no tenant discriminator. Direct grants are
+        // global, so only an active PLATFORM account may exercise them.
+        if ($this->role?->scope === RoleScope::PLATFORM && $this->role->isActive()) {
+            $directGrant = $this->permissions()
+                ->where(function ($query) use ($upperKey, $permissionKey): void {
+                    $query->where('permissions.permission_key', $upperKey)
+                        ->orWhere('permissions.permission_key', $permissionKey);
+                })
+                ->where('permissions.status', true)
+                ->exists();
 
-        if ($this->role?->permissions()->where(function ($q) use ($upperKey, $permissionKey) {
-            $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
-        })->exists()) {
-            return true;
+            if ($directGrant) {
+                return true;
+            }
+
+            $platformRoleGrant = $this->role->permissions()
+                ->where(function ($query) use ($upperKey, $permissionKey): void {
+                    $query->where('permissions.permission_key', $upperKey)
+                        ->orWhere('permissions.permission_key', $permissionKey);
+                })
+                ->where('permissions.status', true)
+                ->exists();
+
+            if ($platformRoleGrant) {
+                return true;
+            }
         }
 
         $hasNetPerm = $this->networkUsers()
             ->where('status', 'ACTIVE')
-            ->when($tenantId, fn ($q) => $q->where('network_id', $tenantId))
-            ->whereHas('role.permissions', function ($q) use ($upperKey, $permissionKey) {
-                $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
-            })->exists();
+            ->when($tenantId, fn ($query) => $query->where('network_id', $tenantId))
+            ->whereHas('role', function ($roleQuery) use ($upperKey, $permissionKey): void {
+                $roleQuery->where('scope', RoleScope::NETWORK->value)
+                    ->where('status', true)
+                    ->whereHas('permissions', function ($permissionQuery) use ($upperKey, $permissionKey): void {
+                        $permissionQuery
+                            ->where(function ($query) use ($upperKey, $permissionKey): void {
+                                $query->where('permissions.permission_key', $upperKey)
+                                    ->orWhere('permissions.permission_key', $permissionKey);
+                            })
+                            ->where('permissions.status', true);
+                    });
+            })
+            ->exists();
 
         if ($hasNetPerm) {
             return true;
         }
 
-        $hasPosPerm = $this->posUsers()
+        return $this->posUsers()
             ->where('status', 'ACTIVE')
-            ->when($tenantId, fn ($q) => $q->where('pos_id', $tenantId))
-            ->whereHas('role.permissions', function ($q) use ($upperKey, $permissionKey) {
-                $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
-            })->exists();
-
-        return $hasPosPerm;
+            ->when($tenantId, fn ($query) => $query->where('pos_id', $tenantId))
+            ->whereHas('role', function ($roleQuery) use ($upperKey, $permissionKey): void {
+                $roleQuery->where('scope', RoleScope::POS->value)
+                    ->where('status', true)
+                    ->whereHas('permissions', function ($permissionQuery) use ($upperKey, $permissionKey): void {
+                        $permissionQuery
+                            ->where(function ($query) use ($upperKey, $permissionKey): void {
+                                $query->where('permissions.permission_key', $upperKey)
+                                    ->orWhere('permissions.permission_key', $permissionKey);
+                            })
+                            ->where('permissions.status', true);
+                    });
+            })
+            ->exists();
     }
-
     /**
      * Return active operational memberships for client workspace routing.
      *
