@@ -63,6 +63,13 @@ class ModuleSeeder extends Seeder
                 'status' => true,
             ],
             [
+                'module_key' => 'network_members',
+                'module_name' => 'أعضاء الشبكة',
+                'module_icon' => 'heroicon-o-users',
+                'module_desc' => 'عرض وإدارة عضويات فريق الشبكة وأدوارهم وحالاتهم',
+                'status' => true,
+            ],
+            [
                 'module_key' => 'network_wallets',
                 'module_name' => 'محافظ الشبكات',
                 'module_icon' => 'heroicon-o-wallet',
@@ -74,6 +81,13 @@ class ModuleSeeder extends Seeder
                 'module_name' => 'نقاط البيع',
                 'module_icon' => 'heroicon-o-computer-desktop',
                 'module_desc' => 'إدارة نقاط البيع التابعة للشبكات والوكلاء ومواقعها',
+                'status' => true,
+            ],
+            [
+                'module_key' => 'pos_members',
+                'module_name' => 'أعضاء نقطة البيع',
+                'module_icon' => 'heroicon-o-users',
+                'module_desc' => 'عرض وإدارة عضويات فريق نقطة البيع وأدوارهم وحالاتهم',
                 'status' => true,
             ],
             [
