@@ -378,7 +378,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
     {
         $networkUser = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
-            'user_full_name' => 'Network Member Without Membership Admin '.uniqid(),
+            'user_full_name' => 'Net Member '.uniqid(),
             'user_phone_number' => '70'.rand(1000000, 9999999),
             'user_password' => bcrypt('password'),
             'status' => UserStatus::ACTIVE,
@@ -405,7 +405,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         // A NETWORK_OWNER membership grants member administration only for its own network.
         $scopedNetworkOwner = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
-            'user_full_name' => 'Scoped Network Owner '.uniqid(),
+            'user_full_name' => 'Net Owner '.uniqid(),
             'user_phone_number' => '70'.rand(1000000, 9999999),
             'user_password' => bcrypt('password'),
             'status' => UserStatus::ACTIVE,
@@ -428,7 +428,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
 
         $posUser = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
-            'user_full_name' => 'POS Member Without Membership Admin '.uniqid(),
+            'user_full_name' => 'POS Member '.uniqid(),
             'user_phone_number' => '70'.rand(1000000, 9999999),
             'user_password' => bcrypt('password'),
             'status' => UserStatus::ACTIVE,
