@@ -181,7 +181,7 @@ class PermissionSeeder extends Seeder
                 'export' => ['تصدير تقارير وفواتير المبيعات', 'SHARED'],
             ],
             'expenses' => [
-                'view' => ['عرض المصروفات التشغيلية للشبكة', 'NETWORK'],
+                'view' => ['عرض المصروفات التشغيلية ضمن النطاق المالي المصرح', 'SHARED'],
                 'create' => ['تسجيل مصروف تشغيلي', 'NETWORK'],
                 'update' => ['تعديل مصروف تشغيلي', 'NETWORK'],
                 'delete' => ['حذف مصروف تشغيلي مؤقتاً', 'NETWORK'],
