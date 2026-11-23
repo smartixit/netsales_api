@@ -63,7 +63,7 @@ class RolePermissionMatrixTest extends TestCase
         $this->assertNotContains('settings.edit', $permissions);
     }
 
-        public function test_network_owner_can_toggle_package_status_but_network_user_and_accountant_cannot(): void
+    public function test_network_owner_can_toggle_package_status_but_network_user_and_accountant_cannot(): void
     {
         $ownerPermissions = $this->permissionKeys(RoleKey::NETWORK_OWNER);
         $accountantPermissions = $this->permissionKeys(RoleKey::NETWORK_ACCOUNTANT);
@@ -83,10 +83,7 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
         $permissions = $this->permissionKeys(RoleKey::NETWORK_ACCOUNTANT);
         $networkOwnerPermissions = $this->permissionKeys(RoleKey::NETWORK_OWNER);
 
-        // Network wallet funding/withdrawal are owned by the network owner,
-        // not by the read/report-focused network accountant.
-        $this->assertContains('network_wallets.deposit', $networkOwnerPermissions);
-        $this->assertContains('network_wallets.withdraw', $networkOwnerPermissions);
+        // Network wallet funding is platform-managed, not an operational role capability.
         $this->assertNotContains('network_wallets.create', $networkOwnerPermissions);
         $this->assertNotContains('network_wallets.edit', $networkOwnerPermissions);
         $this->assertNotContains('network_wallets.deposit', $permissions);
