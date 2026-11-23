@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\BillingSubscriptionStatus;
+use App\Enums\RoleScope;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Models\BillingSubscription;
