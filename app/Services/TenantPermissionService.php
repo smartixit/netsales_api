@@ -16,6 +16,10 @@ final class TenantPermissionService
 {
     public function allowsPlatform(User $user, string $permission): bool
     {
+        if (! app(PlatformPermissionRegistry::class)->allows($permission)) {
+            return false;
+        }
+
         if (! $user->isActive()
             || $user->role?->scope !== RoleScope::PLATFORM
             || ! $user->role->isActive()
