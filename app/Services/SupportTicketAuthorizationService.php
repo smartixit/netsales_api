@@ -8,6 +8,7 @@ use App\Interfaces\SupportTicketRepositoryInterface;
 use App\Models\SupportTicket;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Validation\ValidationException;
 
 final class SupportTicketAuthorizationService
 {
