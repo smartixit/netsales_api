@@ -100,7 +100,6 @@ class RolePermissionSeeder extends Seeder
                     'voucher_packages.delete',
                     'voucher_packages.restore',
                     'voucher_packages.force_delete',
-                    'voucher_packages.export',
                     'voucher_package_discounts.create',
                     'voucher_package_discounts.edit',
                     'voucher_package_discounts.toggle_status',

@@ -283,6 +283,15 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
         $this->assertTrue(
             app(TenantPermissionService::class)->allowsPlatform($freshSuperAdmin, 'dashboard.view')
         );
+        $this->assertTrue(
+            app(TenantPermissionService::class)->allowsPlatform($freshSuperAdmin, 'networks.view')
+        );
+        $this->assertFalse(
+            app(TenantPermissionService::class)->allowsPlatform($freshSuperAdmin, 'networks.edit')
+        );
+        $this->assertFalse(
+            app(TenantPermissionService::class)->allowsPlatform($freshSuperAdmin, 'pos.delete')
+        );
         $this->assertFalse(
             app(TenantPermissionService::class)->allowsPlatform($freshSuperAdmin, 'sales.delete')
         );
@@ -292,6 +301,26 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
 
 
 
+
+    public function test_retired_or_unimplemented_permissions_are_not_seeded_as_active(): void
+    {
+        $retiredKeys = [
+            'users.export',
+            'networks.report',
+            'networks.export',
+            'pos.report',
+            'pos.export',
+            'voucher_packages.export',
+            'voucher_package_discounts.export',
+        ];
+
+        foreach ($retiredKeys as $permissionKey) {
+            $this->assertDatabaseMissing('permissions', [
+                'permission_key' => $permissionKey,
+                'status' => true,
+            ]);
+        }
+    }
 
     public function test_platform_user_cannot_receive_tenant_scoped_direct_permission(): void
     {
