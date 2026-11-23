@@ -783,6 +783,29 @@
                 ]
             }
         },
+        "/api/v1/auth/2fa/request-otp": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "طلب رمز تحقق (OTP) لتفعيل أو إدارة المصادقة الثنائية للمستخدم الحالي",
+                "description": "طلب رمز تحقق (OTP) لتفعيل أو إدارة المصادقة الثنائية للمستخدم الحالي.",
+                "operationId": "643c38f3d765850eef53b983853dc34f",
+                "responses": {
+                    "200": {
+                        "description": "تم إرسال رمز التحقق بنجاح"
+                    },
+                    "422": {
+                        "description": "فشل إرسال رمز التحقق"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/auth/toggle-2fa": {
             "post": {
                 "tags": [
@@ -808,6 +831,16 @@
                                     "otp": {
                                         "type": "string",
                                         "example": "123456",
+                                        "nullable": true
+                                    },
+                                    "current_password": {
+                                        "type": "string",
+                                        "example": "secret123",
+                                        "nullable": true
+                                    },
+                                    "device_uuid": {
+                                        "type": "string",
+                                        "example": "uuid-12345",
                                         "nullable": true
                                     }
                                 },
@@ -1378,72 +1411,39 @@
                 "tags": [
                     "Dashboard"
                 ],
-                "summary": "عرض النظرة العامة والمؤشرات التجميعية للوحة القيادة",
-                "description": "استعلام النظرة العامة والمؤشرات المجمعة للوحة القيادة.",
+                "summary": "بيانات Overview الحقيقية للوحة تحكم المنصة",
                 "operationId": "2e1fb8419bc1f583406d8b920f305418",
                 "parameters": [
                     {
                         "name": "period",
                         "in": "query",
-                        "description": "النطاق الزمني للمؤشرات (today, yesterday, this_week, this_month, this_year)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "default": "today",
+                            "default": "30d",
                             "enum": [
-                                "today",
-                                "yesterday",
-                                "this_week",
-                                "this_month",
-                                "this_year"
+                                "7d",
+                                "30d",
+                                "90d",
+                                "12m"
                             ]
-                        }
-                    },
-                    {
-                        "name": "network_id",
-                        "in": "query",
-                        "description": "معرف الشبكة المستهدفة (خاص بمزودي الشبكات المتعددة أو الإدارة)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "pos_id",
-                        "in": "query",
-                        "description": "معرف نقطة البيع المستهدفة",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "refresh",
-                        "in": "query",
-                        "description": "إجبار الخادم على تجاوز الكاش وإعادة الحساب فوراً",
-                        "required": false,
-                        "schema": {
-                            "type": "boolean",
-                            "default": false
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "تم استرجاع بيانات لوحة القيادة بنجاح"
+                        "description": "بيانات المؤشرات والرسوم والمهام التي يحق للدور الحالي رؤيتها"
                     },
                     "401": {
-                        "description": "غير مصادق عليه / جلسة غير صالحة"
+                        "description": "جلسة غير صالحة"
+                    },
+                    "403": {
+                        "description": "الدور غير مخول للوصول إلى لوحة المنصة"
                     },
                     "422": {
-                        "description": "خطأ في معالجة الإحصائيات"
+                        "description": "قيمة الفترة غير صالحة"
                     }
-                },
-                "security": [
-                    {
-                        "sessionAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/v1/directorates": {
@@ -1860,6 +1860,52 @@
                 "responses": {
                     "200": {
                         "description": "تم حذف المديريات نهائياً بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/expenses/summary": {
+            "get": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "إحصائيات وملخص المصروفات التشغيلية",
+                "description": "إحصائيات وملخص المصروفات التشغيلية.",
+                "operationId": "02c8237d9d2e6fe8685c3e834691ac91",
+                "parameters": [
+                    {
+                        "name": "network_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم استرجاع ملخص المصروفات بنجاح"
+                    },
+                    "401": {
+                        "description": "غير مصرح"
                     }
                 }
             }
@@ -2430,434 +2476,6 @@
                 }
             }
         },
-        "/api/v1/features": {
-            "get": {
-                "tags": [
-                    "Features"
-                ],
-                "summary": "عرض قائمة ميزات النظام",
-                "description": "عرض قائمة ميزات النظام مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "8db7ce443f5f1605c5052575cdc49c95",
-                "parameters": [
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    },
-                    {
-                        "name": "feature_value_type",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "search",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استرجاع الميزات بنجاح"
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "Features"
-                ],
-                "summary": "إضافة ميزة جديدة",
-                "description": "إضافة ميزة جديدة في كتالوج النظام.",
-                "operationId": "139a69b3e5eea834535440cd43975fcf",
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "feature_name",
-                                    "feature_value_type"
-                                ],
-                                "properties": {
-                                    "feature_name": {
-                                        "type": "string"
-                                    },
-                                    "feature_value_type": {
-                                        "type": "string"
-                                    },
-                                    "feature_value": {
-                                        "type": "string"
-                                    },
-                                    "feature_desc": {
-                                        "type": "string"
-                                    },
-                                    "status": {
-                                        "type": "boolean",
-                                        "example": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "تم إنشاء الميزة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/features/{id}": {
-            "get": {
-                "tags": [
-                    "Features"
-                ],
-                "summary": "عرض تفاصيل ميزة",
-                "description": "عرض تفاصيل ميزة محددة عبر معرفها.",
-                "operationId": "facc4fb44f03a604dff28af74e68350a",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استرجاع تفاصيل الميزة بنجاح"
-                    }
-                }
-            },
-            "put": {
-                "tags": [
-                    "Features"
-                ],
-                "summary": "تحديث بيانات ميزة",
-                "description": "تحديث بيانات ميزة في النظام.",
-                "operationId": "5e0a61bda852feb9d3a3b87c8d005981",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [],
-                                "properties": {
-                                    "feature_name": {
-                                        "type": "string"
-                                    },
-                                    "feature_value_type": {
-                                        "type": "string"
-                                    },
-                                    "feature_value": {
-                                        "type": "string"
-                                    },
-                                    "feature_desc": {
-                                        "type": "string"
-                                    },
-                                    "status": {
-                                        "type": "boolean",
-                                        "example": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تم تحديث الميزة بنجاح"
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "Features"
-                ],
-                "summary": "حذف ميزة ناعماً",
-                "description": "حذف ميزة ناعماً.",
-                "operationId": "7a4dc18aebc0d9e7931755fa539fb59b",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم حذف الميزة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/features/{id}/toggle-status": {
-            "post": {
-                "tags": [
-                    "Features"
-                ],
-                "summary": "تبديل حالة تفعيل الميزة",
-                "description": "تبديل حالة تفعيل الميزة (نشط / معطل).",
-                "operationId": "24b208af449008b84e0693eba6a1270b",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم تبديل حالة الميزة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/features/trashed": {
-            "get": {
-                "tags": [
-                    "Features"
-                ],
-                "summary": "عرض الميزات المحذوفة ناعماً",
-                "description": "عرض قائمة الميزات المحذوفة ناعماً.",
-                "operationId": "8527f0a472b2c07cd882904cd1da4394",
-                "parameters": [
-                    {
-                        "name": "search",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    },
-                    {
-                        "name": "all",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استرجاع الميزات المحذوفة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/features/{id}/restore": {
-            "post": {
-                "tags": [
-                    "Features"
-                ],
-                "summary": "استعادة ميزة محذوفة",
-                "description": "استعادة ميزة محذوفة ناعماً.",
-                "operationId": "3dd7df088385ec29761a6386561082ec",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استعادة الميزة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/features/{id}/force": {
-            "delete": {
-                "tags": [
-                    "Features"
-                ],
-                "summary": "حذف نهائي للميزة",
-                "description": "حذف نهائي للميزة.",
-                "operationId": "6a1105919f582e11a6b9927974b2cde3",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم حذف الميزة نهائياً بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/features/batch-delete": {
-            "post": {
-                "tags": [
-                    "Features"
-                ],
-                "summary": "حذف مجمع للميزات",
-                "description": "حذف مجمع ناعم للميزات.",
-                "operationId": "f608e52b633d33eaee4f9b00250b6766",
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "ids"
-                                ],
-                                "properties": {
-                                    "ids[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تم الحذف المجمع بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/features/batch-restore": {
-            "post": {
-                "tags": [
-                    "Features"
-                ],
-                "summary": "استعادة مجمعة للميزات",
-                "description": "استعادة مجمعة للميزات.",
-                "operationId": "4e6903c32c264d5663d86c4ffa38501b",
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "ids"
-                                ],
-                                "properties": {
-                                    "ids[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تمت الاستعادة المجمعة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/features/batch-force-delete": {
-            "post": {
-                "tags": [
-                    "Features"
-                ],
-                "summary": "حذف نهائي مجمع للميزات",
-                "description": "حذف نهائي مجمع للميزات.",
-                "operationId": "1c4bbbbf0920d0654ab92e431fec7830",
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "ids"
-                                ],
-                                "properties": {
-                                    "ids[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تم الحذف النهائي المجمع بنجاح"
-                    }
-                }
-            }
-        },
         "/api/v1/governorates": {
             "get": {
                 "tags": [
@@ -3374,6 +2992,9 @@
                     "200": {
                         "description": "تم استرجاع بيانات الشبكة بنجاح"
                     },
+                    "403": {
+                        "description": "غير مصرح بالوصول إلى بيانات هذه الشبكة"
+                    },
                     "404": {
                         "description": "الشبكة غير موجودة"
                     }
@@ -3463,6 +3084,9 @@
                 "responses": {
                     "200": {
                         "description": "تم حذف الشبكة بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بحذف هذه الشبكة"
                     },
                     "404": {
                         "description": "الشبكة غير موجودة"
@@ -3821,6 +3445,16 @@
                             "type": "integer",
                             "default": 15
                         }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "description": "Cursor token returned by the previous page.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 2048
+                        }
                     }
                 ],
                 "responses": {
@@ -3869,6 +3503,9 @@
                     "201": {
                         "description": "تم إنشاء الارتباط بنجاح"
                     },
+                    "403": {
+                        "description": "غير مصرح بربط نقاط بيع بهذه الشبكة"
+                    },
                     "422": {
                         "description": "بيانات غير صالحة أو الارتباط موجود مسبقاً"
                     }
@@ -3896,6 +3533,9 @@
                 "responses": {
                     "200": {
                         "description": "تم استرجاع تفاصيل الارتباط بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بالوصول إلى سجل الارتباط"
                     },
                     "404": {
                         "description": "سجل الارتباط غير موجود"
@@ -3967,6 +3607,9 @@
                     "200": {
                         "description": "تم فك الارتباط بنجاح"
                     },
+                    "403": {
+                        "description": "غير مصرح بفك هذا الارتباط"
+                    },
                     "404": {
                         "description": "سجل الارتباط غير موجود"
                     }
@@ -3994,6 +3637,9 @@
                 "responses": {
                     "200": {
                         "description": "تم تبديل حالة الارتباط بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بتعديل حالة هذا الارتباط"
                     },
                     "422": {
                         "description": "سجل الارتباط غير موجود"
@@ -4098,6 +3744,43 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 120
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 50
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "description": "Cursor token returned by the previous page.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 2048
+                        }
                     }
                 ],
                 "responses": {
@@ -4123,11 +3806,272 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 120
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 50
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "description": "Cursor token returned by the previous page.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 2048
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "تم استرجاع قائمة الشبكات المرتبطة بنقطة البيع بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-pos/challenges/linkable-targets": {
+            "get": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "البحث عن نقاط البيع المؤهلة لدعوة ربط جديدة",
+                "description": "Search the eligible POS targets for one authorized Network.",
+                "operationId": "9140361bacdb88cde4f66f86a4873b04",
+                "parameters": [
+                    {
+                        "name": "network_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 120,
+                            "minLength": 2
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 30,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 2048
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "قائمة نقاط البيع المؤهلة المصفحة بمؤشر"
+                    },
+                    "403": {
+                        "description": "غير مصرح بالوصول إلى الشبكة"
+                    },
+                    "422": {
+                        "description": "بيانات البحث غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-pos/challenges": {
+            "post": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "إنشاء دعوة وتحدي ربط نقطة بيع بشبكة عبر رمز QR",
+                "operationId": "ac2be7c1f666e5741135bf6f984c80c3",
+                "requestBody": {
+                    "description": "بيانات إنشاء التحدي المشفر. يجب إرسال الرمز التجاري لنقطة البيع في pos_uuid.",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "network_id",
+                                    "pos_uuid"
+                                ],
+                                "properties": {
+                                    "network_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "pos_uuid": {
+                                        "description": "الرمز التجاري لنقطة البيع المستهدفة.",
+                                        "type": "string",
+                                        "example": "POS-2611-00001-8F3A"
+                                    },
+                                    "duration_minutes": {
+                                        "type": "integer",
+                                        "example": 15,
+                                        "default": 15
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "تم إنشاء دعوة الربط المشفرة بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-pos/challenges/preview": {
+            "post": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "معاينة وفحص دعوة الربط المشفرة من جانب نقطة البيع قبل الاعتماد",
+                "description": "معاينة وفحص دعوة الربط المشفرة من جانب نقطة البيع قبل الاعتماد.",
+                "operationId": "b3d14e2bd4c852beaba8078210f3e4d0",
+                "requestBody": {
+                    "description": "حمولة رمز QR والرمز التجاري لنقطة البيع المستهدفة",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "payload",
+                                    "pos_uuid"
+                                ],
+                                "properties": {
+                                    "payload": {
+                                        "type": "string",
+                                        "example": "NTS_LINK_V1_..."
+                                    },
+                                    "pos_uuid": {
+                                        "type": "string",
+                                        "example": "POS-2611-00001-8F3A"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم فحص ومعاينة دعوة الربط بنجاح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة أو دعوة منتهية/تالفة"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-pos/challenges/confirm": {
+            "post": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "تأكيد اعتماد ربط نقطة البيع بالشبكة عبر التحدي المشفر",
+                "description": "تأكيد ربط نقطة البيع بالشبكة عبر التحدي المشفر (Consumer Confirmation).",
+                "operationId": "f9e5501a0fff60334b7b7b83e5e52ca1",
+                "requestBody": {
+                    "description": "المعرف الفريد للتحدي والرمز التجاري لنقطة البيع المؤكدة",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "challenge_uuid",
+                                    "pos_uuid"
+                                ],
+                                "properties": {
+                                    "challenge_uuid": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "pos_uuid": {
+                                        "type": "string",
+                                        "example": "POS-2611-00001-8F3A"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "تم تأكيد وربط نقطة البيع بالشبكة بنجاح"
+                    },
+                    "422": {
+                        "description": "فشل التأكيد أو انتهاء الصلاحية"
+                    }
+                }
+            }
+        },
+        "/api/v1/network-pos/challenges/{uuid}": {
+            "delete": {
+                "tags": [
+                    "Network POS"
+                ],
+                "summary": "إلغاء وإبطال دعوة الربط المشفرة",
+                "description": "إلغاء/إبطال دعوة الربط عبر المعرف الفريد.",
+                "operationId": "60dc33af2beae91fcb259c95cbf10059",
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم إلغاء دعوة الربط بنجاح"
+                    },
+                    "422": {
+                        "description": "تعذر إلغاء دعوة الربط"
                     }
                 }
             }
@@ -5610,6 +5554,9 @@
                     "200": {
                         "description": "تم استرجاع بيانات نقطة البيع بنجاح"
                     },
+                    "403": {
+                        "description": "غير مصرح بالوصول إلى بيانات نقطة البيع"
+                    },
                     "404": {
                         "description": "نقطة البيع غير موجودة"
                     }
@@ -5704,6 +5651,9 @@
                 "responses": {
                     "200": {
                         "description": "تم نقل نقطة البيع لسلة المحذوفات بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بحذف نقطة البيع"
                     },
                     "404": {
                         "description": "نقطة البيع غير موجودة"
@@ -6248,6 +6198,55 @@
                 }
             }
         },
+        "/api/v1/pos-wallets/{id}/credit-limit": {
+            "put": {
+                "tags": [
+                    "POS Wallets"
+                ],
+                "summary": "تحديث السقف الائتماني لمحفظة نقطة البيع",
+                "description": "تحديث أو ضبط السقف الائتماني لمحفظة نقطة البيع.",
+                "operationId": "7263dbcc4568765b2aab6b0688dd0a77",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "السقف الائتماني الجديد أو null لإلغاء التسهيل الائتماني",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "credit_limit": {
+                                        "type": "number",
+                                        "example": 50000,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث السقف الائتماني بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح"
+                    },
+                    "422": {
+                        "description": "خطأ في التحقق من البيانات أو محاولة تخفيض غير آمنة"
+                    }
+                }
+            }
+        },
         "/api/v1/pos-wallets/{id}/deposit": {
             "post": {
                 "tags": [
@@ -6699,257 +6698,6 @@
                 }
             }
         },
-        "/api/v1/provider-subscriptions": {
-            "get": {
-                "tags": [
-                    "Provider Subscriptions"
-                ],
-                "summary": "عرض قائمة اشتراكات المزودين",
-                "description": "عرض قائمة اشتراكات مزودي الشبكات مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "61105a50e9934631e4dd380d5a95c61b",
-                "parameters": [
-                    {
-                        "name": "network_id",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "plan_id",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "active_only",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استرجاع الاشتراكات بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/provider-subscriptions/{id}": {
-            "get": {
-                "tags": [
-                    "Provider Subscriptions"
-                ],
-                "summary": "عرض تفاصيل اشتراك مزود",
-                "description": "عرض تفاصيل اشتراك محدد عبر معرفه.",
-                "operationId": "a4617943a32b917e18b06b9f9c406176",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استرجاع تفاصيل الاشتراك بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/provider-subscriptions/network/{networkId}/active": {
-            "get": {
-                "tags": [
-                    "Provider Subscriptions"
-                ],
-                "summary": "عرض الاشتراك النشط للشبكة",
-                "description": "جلب الاشتراك الساري والنشط حالياً لشبكة مزود معينة.",
-                "operationId": "25319c18ec534be21ae231c904d4d23f",
-                "parameters": [
-                    {
-                        "name": "networkId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استرجاع الاشتراك النشط بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/provider-subscriptions/{id}/extend": {
-            "post": {
-                "tags": [
-                    "Provider Subscriptions"
-                ],
-                "summary": "تمديد فترة صلاحية الاشتراك",
-                "description": "تمديد فترة صلاحية اشتراك قائم لشبكة معينة.",
-                "operationId": "8ccccd9ca1a43260fe17ec20ac9de3bd",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "additional_days"
-                                ],
-                                "properties": {
-                                    "additional_days": {
-                                        "type": "integer",
-                                        "example": 1
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تم تمديد الاشتراك بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/provider-subscriptions/{id}/consumptions": {
-            "get": {
-                "tags": [
-                    "Provider Subscriptions"
-                ],
-                "summary": "عرض استهلاك ميزات الاشتراك",
-                "description": "عرض سجلات استهلاك الميزات لاشتراك محدد.",
-                "operationId": "b753ef11ff0a661ceeaac271cc7c8b59",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استرجاع سجلات الاستهلاك بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/provider-subscriptions/network/{networkId}/consume": {
-            "post": {
-                "tags": [
-                    "Provider Subscriptions"
-                ],
-                "summary": "تسجيل استهلاك ميزة للشبكة",
-                "description": "استهلاك حصة من ميزة للشبكة والتحقق من عدم تجاوز الحد الأقصى.",
-                "operationId": "64f971dcb3c89f0abda3d0c83915b793",
-                "parameters": [
-                    {
-                        "name": "networkId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "feature_name"
-                                ],
-                                "properties": {
-                                    "feature_name": {
-                                        "type": "string"
-                                    },
-                                    "amount": {
-                                        "type": "integer",
-                                        "example": 1
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تم تسجيل الاستهلاك بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/provider-subscriptions/network/{networkId}/activate-early": {
-            "post": {
-                "tags": [
-                    "Provider Subscriptions"
-                ],
-                "summary": "تفعيل الاشتراك المجدول مبكراً",
-                "description": "تفعيل الاشتراك المجدول مبكراً للشبكة بطلب مباشر.",
-                "operationId": "295f60e6f00c4e20bb8968ffc4cec8c4",
-                "parameters": [
-                    {
-                        "name": "networkId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم تفعيل الاشتراك المجدول مبكراً بنجاح"
-                    }
-                }
-            }
-        },
         "/api/v1/requests": {
             "get": {
                 "tags": [
@@ -7099,6 +6847,38 @@
                 }
             }
         },
+        "/api/v1/requests/summary": {
+            "get": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "ملخص طلبات التوريد حسب الحالة",
+                "operationId": "6eb4190c68c1bf4ed10620c1199eada4",
+                "parameters": [
+                    {
+                        "name": "network_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "pos_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ملخص الطلبات"
+                    }
+                }
+            }
+        },
         "/api/v1/requests/{id}": {
             "get": {
                 "tags": [
@@ -7169,6 +6949,92 @@
                 "responses": {
                     "200": {
                         "description": "تم حذف الطلب مؤقتاً بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/requests/quote": {
+            "post": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "معاينة واحتساب عرض أسعار سيادي معتمد لطلب توريد جديد",
+                "description": "احتساب ومعاينة عرض أسعار سيادي معتمد لطلب توريد جديد مع إصدار رمز توثيق تسعيري.",
+                "operationId": "b54ebc9d6b71cb17204a9eddfad8b708",
+                "requestBody": {
+                    "description": "بيانات طلب عرض الأسعار",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "network_id",
+                                    "pos_id",
+                                    "items"
+                                ],
+                                "properties": {
+                                    "network_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "pos_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "sale_type": {
+                                        "type": "string",
+                                        "example": "CASH"
+                                    },
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "package_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "voucher_count": {
+                                                    "type": "integer",
+                                                    "example": 100
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم احتساب عرض الأسعار بنجاح"
+                    }
+                }
+            }
+        },
+        "/api/v1/requests/{id}/preview-modification": {
+            "post": {
+                "tags": [
+                    "Voucher Requests"
+                ],
+                "summary": "معاينة واحتساب التعديلات والتسعير السيادي قبل الاعتماد",
+                "description": "احتساب ومعاينة تعديلات المراجعة والتسعير السيادي لطلب التوريد قبل الاعتماد.",
+                "operationId": "445eb9e15b2efc7aef886921fa81fa83",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم احتساب المعاينة بنجاح"
                     }
                 }
             }
@@ -8359,1057 +8225,6 @@
                     },
                     "422": {
                         "description": "الجلسة غير موجودة"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plans": {
-            "get": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "عرض قائمة باقات الاشتراك",
-                "description": "عرض قائمة باقات الاشتراك مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "888991059abc64fc4a0c9f763bba7d89",
-                "parameters": [
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    },
-                    {
-                        "name": "search",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استرجاع باقات الاشتراك بنجاح"
-                    },
-                    "401": {
-                        "description": "غير مصرح"
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "إنشاء باقة اشتراك جديدة",
-                "description": "إنشاء باقة اشتراك جديدة.",
-                "operationId": "7d1259173d96f3c795e0468995e6faae",
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "plan_name",
-                                    "plan_price",
-                                    "plan_validity"
-                                ],
-                                "properties": {
-                                    "plan_name": {
-                                        "type": "string"
-                                    },
-                                    "plan_price": {
-                                        "type": "number",
-                                        "example": 100.5
-                                    },
-                                    "plan_discount": {
-                                        "type": "number",
-                                        "example": 100.5
-                                    },
-                                    "plan_validity": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "plan_desc": {
-                                        "type": "string"
-                                    },
-                                    "status": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
-                                    "features[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "تم إنشاء باقة الاشتراك بنجاح"
-                    },
-                    "422": {
-                        "description": "بيانات غير صالحة"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plans/{id}": {
-            "get": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "عرض تفاصيل باقة اشتراك",
-                "description": "عرض تفاصيل باقة اشتراك محددة مع ميزاتها.",
-                "operationId": "2e81dd514abf026372a0b90c7afe0a96",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استرجاع تفاصيل الباقة بنجاح"
-                    },
-                    "404": {
-                        "description": "الباقة غير موجودة"
-                    }
-                }
-            },
-            "put": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "تحديث بيانات باقة اشتراك",
-                "description": "تحديث بيانات باقة اشتراك قائمة وميزاتها.",
-                "operationId": "ac4d4102436fdb91e66ca413da87a901",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [],
-                                "properties": {
-                                    "plan_name": {
-                                        "type": "string"
-                                    },
-                                    "plan_price": {
-                                        "type": "number",
-                                        "example": 100.5
-                                    },
-                                    "plan_discount": {
-                                        "type": "number",
-                                        "example": 100.5
-                                    },
-                                    "plan_validity": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "plan_desc": {
-                                        "type": "string"
-                                    },
-                                    "status": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
-                                    "features[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تم تحديث باقة الاشتراك بنجاح"
-                    },
-                    "422": {
-                        "description": "بيانات غير صالحة"
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "حذف باقة اشتراك ناعماً",
-                "description": "حذف باقة اشتراك ناعماً.",
-                "operationId": "752148f02adfe4ca786e8ad7cb50ba58",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم حذف الباقة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plans/{id}/toggle-status": {
-            "post": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "تبديل حالة تفعيل باقة الاشتراك",
-                "description": "تبديل حالة تفعيل الباقة (نشط / معطل).",
-                "operationId": "7c66f625581a624f093b512f10772346",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم تبديل حالة الباقة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plans/{id}/features": {
-            "post": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "ربط أو تحديث ميزة بالباقة",
-                "description": "ربط أو تحديث ميزة في باقة معينة.",
-                "operationId": "cab6843357db197db563756f91519d81",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "feature_id",
-                                    "plan_feature_value"
-                                ],
-                                "properties": {
-                                    "feature_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "plan_feature_value": {
-                                        "type": "string"
-                                    },
-                                    "status": {
-                                        "type": "boolean",
-                                        "example": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تم ربط الميزة بالباقة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plans/{id}/features/{featureId}": {
-            "delete": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "إزالة ميزة من الباقة",
-                "description": "إزالة ميزة من باقة معينة.",
-                "operationId": "3e38485d9047d1a2d4e7a3e1c2c2319d",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "featureId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تمت إزالة الميزة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plans/trashed": {
-            "get": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "عرض باقات الاشتراك المحذوفة ناعماً",
-                "description": "عرض قائمة باقات الاشتراك المحذوفة ناعماً.",
-                "operationId": "29c1c2101f21d5d1d73d2476075ff886",
-                "parameters": [
-                    {
-                        "name": "search",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    },
-                    {
-                        "name": "all",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استرجاع الباقات المحذوفة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plans/{id}/restore": {
-            "post": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "استعادة باقة اشتراك محذوفة",
-                "description": "استعادة باقة اشتراك محذوفة ناعماً.",
-                "operationId": "75df29099c27367bb47fb6f1bfc662f0",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استعادة الباقة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plans/{id}/force": {
-            "delete": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "حذف نهائي لباقة الاشتراك",
-                "description": "حذف نهائي لباقة الاشتراك مع تنظيف ميزاتها.",
-                "operationId": "a3569d0b94411d360eb8c2f7a920d155",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم حذف الباقة نهائياً بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plans/batch-delete": {
-            "post": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "حذف مجمع للباقات",
-                "description": "حذف مجمع ناعم للباقات.",
-                "operationId": "67ecd59a0fff83d0c94c910b69045aa0",
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "ids"
-                                ],
-                                "properties": {
-                                    "ids[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تم الحذف المجمع بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plans/batch-restore": {
-            "post": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "استعادة مجمعة للباقات",
-                "description": "استعادة مجمعة للباقات المحذوفة.",
-                "operationId": "2bc348e3fe6124d539e862c9302d6466",
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "ids"
-                                ],
-                                "properties": {
-                                    "ids[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تمت الاستعادة المجمعة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plans/batch-force-delete": {
-            "post": {
-                "tags": [
-                    "Subscription Plans"
-                ],
-                "summary": "حذف نهائي مجمع للباقات",
-                "description": "حذف نهائي مجمع للباقات.",
-                "operationId": "b5533eee67805f1b85bf0b3660f8abb9",
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "ids"
-                                ],
-                                "properties": {
-                                    "ids[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تم الحذف النهائي المجمع بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plan-requests": {
-            "get": {
-                "tags": [
-                    "Subscription Plan Requests"
-                ],
-                "summary": "عرض قائمة طلبات الاشتراك",
-                "description": "عرض قائمة طلبات الاشتراك مع الفلترة والترقيم بالمؤشر.",
-                "operationId": "1ff242d27ea071393d974d00a87ad4eb",
-                "parameters": [
-                    {
-                        "name": "network_id",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "plan_id",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "request_payment_type",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "search",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استرجاع طلبات الاشتراك بنجاح"
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "Subscription Plan Requests"
-                ],
-                "summary": "تقديم طلب اشتراك جديد",
-                "description": "تقديم طلب اشتراك جديد لباقة محددة.",
-                "operationId": "5dce322b2472087dee2eef570ea12fb7",
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "network_id",
-                                    "plan_id",
-                                    "request_payment_type"
-                                ],
-                                "properties": {
-                                    "network_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "plan_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "request_payment_type": {
-                                        "type": "string"
-                                    },
-                                    "account_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "transaction_reference": {
-                                        "type": "string"
-                                    },
-                                    "transaction_receipt": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    },
-                                    "request_note": {
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "تم تقديم طلب الاشتراك بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plan-requests/{id}": {
-            "get": {
-                "tags": [
-                    "Subscription Plan Requests"
-                ],
-                "summary": "عرض تفاصيل طلب اشتراك",
-                "description": "عرض تفاصيل طلب اشتراك محدد.",
-                "operationId": "635b42d7ddf75a64fc7d5a136f8da288",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استرجاع تفاصيل الطلب بنجاح"
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "Subscription Plan Requests"
-                ],
-                "summary": "حذف طلب اشتراك ناعماً",
-                "description": "حذف طلب اشتراك ناعماً.",
-                "operationId": "893b1c621bceb1a8379dc09206e29b4a",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم حذف الطلب بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plan-requests/{id}/approve": {
-            "post": {
-                "tags": [
-                    "Subscription Plan Requests"
-                ],
-                "summary": "اعتماد طلب الاشتراك",
-                "description": "اعتماد طلب الاشتراك وتوليد الاشتراك النشط للمزود وتهيئة الحصص.",
-                "operationId": "e5d16325187c7153139dcc64e0d92098",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [],
-                                "properties": {
-                                    "request_note": {
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تم اعتماد الطلب وتفعيل الاشتراك بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plan-requests/{id}/reject": {
-            "post": {
-                "tags": [
-                    "Subscription Plan Requests"
-                ],
-                "summary": "رفض طلب الاشتراك",
-                "description": "رفض طلب الاشتراك مع توثيق السبب.",
-                "operationId": "1e71933a091c26fdfd70c2885e1c6613",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "rejection_reason"
-                                ],
-                                "properties": {
-                                    "rejection_reason": {
-                                        "type": "string"
-                                    },
-                                    "request_note": {
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تم رفض الطلب بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plan-requests/{id}/cancel": {
-            "post": {
-                "tags": [
-                    "Subscription Plan Requests"
-                ],
-                "summary": "إلغاء طلب اشتراك معلق",
-                "description": "إلغاء طلب اشتراك معلق من قبل المستخدم.",
-                "operationId": "45f3b5679599272175c9b05c4294f7f1",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم إلغاء الطلب بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plan-requests/trashed": {
-            "get": {
-                "tags": [
-                    "Subscription Plan Requests"
-                ],
-                "summary": "عرض طلبات الاشتراك المحذوفة ناعماً",
-                "description": "عرض قائمة طلبات الاشتراك المحذوفة ناعماً.",
-                "operationId": "4e21768e47011db0445a9eb7f2da5496",
-                "parameters": [
-                    {
-                        "name": "network_id",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "plan_id",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "search",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    },
-                    {
-                        "name": "all",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استرجاع الطلبات المحذوفة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plan-requests/{id}/restore": {
-            "post": {
-                "tags": [
-                    "Subscription Plan Requests"
-                ],
-                "summary": "استعادة طلب اشتراك محذوف",
-                "description": "استعادة طلب اشتراك محذوف ناعماً.",
-                "operationId": "859d1216931665f141f8ad6da461f6b7",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استعادة الطلب بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plan-requests/{id}/force": {
-            "delete": {
-                "tags": [
-                    "Subscription Plan Requests"
-                ],
-                "summary": "حذف نهائي لطلب الاشتراك",
-                "description": "حذف نهائي لطلب الاشتراك مع تنظيف الإيصال.",
-                "operationId": "8e7bbbf89a1adabba78bdbdfd5cb300e",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم حذف الطلب نهائياً بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plan-requests/batch-delete": {
-            "post": {
-                "tags": [
-                    "Subscription Plan Requests"
-                ],
-                "summary": "حذف مجمع للطلبات",
-                "description": "حذف مجمع ناعم للطلبات.",
-                "operationId": "ad2c7b50aae4a0e52c1f69b78238e4ea",
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "ids"
-                                ],
-                                "properties": {
-                                    "ids[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تم الحذف المجمع بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plan-requests/batch-restore": {
-            "post": {
-                "tags": [
-                    "Subscription Plan Requests"
-                ],
-                "summary": "استعادة مجمعة للطلبات",
-                "description": "استعادة مجمعة للطلبات المحذوفة.",
-                "operationId": "1ac713d26aa739f6c5e3398f0271a51e",
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "ids"
-                                ],
-                                "properties": {
-                                    "ids[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تمت الاستعادة المجمعة بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/subscription-plan-requests/batch-force-delete": {
-            "post": {
-                "tags": [
-                    "Subscription Plan Requests"
-                ],
-                "summary": "حذف نهائي مجمع للطلبات",
-                "description": "حذف نهائي مجمع للطلبات.",
-                "operationId": "387c00953c50595e1fe5bc76c1325dfe",
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "ids"
-                                ],
-                                "properties": {
-                                    "ids[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تم الحذف النهائي المجمع بنجاح"
                     }
                 }
             }
@@ -11351,6 +10166,17 @@
                             "type": "integer",
                             "default": 15
                         }
+                    },
+                    {
+                        "name": "package_ids[]",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
                     }
                 ],
                 "responses": {
@@ -11391,13 +10217,16 @@
                                         "type": "string"
                                     },
                                     "package_balance": {
-                                        "type": "string"
+                                        "type": "integer",
+                                        "example": 5368709120
                                     },
                                     "package_uptime": {
-                                        "type": "string"
+                                        "type": "integer",
+                                        "example": 12
                                     },
                                     "package_validity": {
-                                        "type": "string"
+                                        "type": "integer",
+                                        "example": 30
                                     },
                                     "package_voucher_count": {
                                         "type": "integer",
@@ -11429,6 +10258,9 @@
                     "201": {
                         "description": "تم إنشاء الباقة بنجاح"
                     },
+                    "403": {
+                        "description": "غير مصرح بإنشاء باقة في هذه الشبكة"
+                    },
                     "422": {
                         "description": "بيانات غير صالحة"
                     }
@@ -11456,6 +10288,9 @@
                 "responses": {
                     "200": {
                         "description": "تم استرجاع بيانات الباقة بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بالوصول"
                     },
                     "404": {
                         "description": "الباقة غير موجودة"
@@ -11494,13 +10329,16 @@
                                         "type": "string"
                                     },
                                     "package_balance": {
-                                        "type": "string"
+                                        "type": "integer",
+                                        "example": 5368709120
                                     },
                                     "package_uptime": {
-                                        "type": "string"
+                                        "type": "integer",
+                                        "example": 12
                                     },
                                     "package_validity": {
-                                        "type": "string"
+                                        "type": "integer",
+                                        "example": 30
                                     },
                                     "package_voucher_count": {
                                         "type": "integer",
@@ -11532,6 +10370,9 @@
                     "200": {
                         "description": "تم تحديث بيانات الباقة بنجاح"
                     },
+                    "403": {
+                        "description": "غير مصرح بتعديل هذه الباقة"
+                    },
                     "404": {
                         "description": "الباقة غير موجودة"
                     },
@@ -11560,6 +10401,9 @@
                 "responses": {
                     "200": {
                         "description": "تم نقل الباقة لسلة المحذوفات بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بحذف هذه الباقة"
                     },
                     "404": {
                         "description": "الباقة غير موجودة"
@@ -11631,6 +10475,9 @@
                     "200": {
                         "description": "تمت استعادة الباقة بنجاح"
                     },
+                    "403": {
+                        "description": "غير مصرح باستعادة هذه الباقة"
+                    },
                     "404": {
                         "description": "الباقة غير موجودة في المحذوفات"
                     }
@@ -11658,6 +10505,12 @@
                 "responses": {
                     "200": {
                         "description": "تم الحذف النهائي بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بالحذف النهائي لهذه الباقة"
+                    },
+                    "404": {
+                        "description": "الباقة غير موجودة"
                     }
                 }
             }
@@ -11696,6 +10549,12 @@
                 "responses": {
                     "200": {
                         "description": "تم الحذف المجمع بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بحذف بعض الباقات المحددة"
+                    },
+                    "404": {
+                        "description": "بعض الباقات غير موجودة"
                     }
                 }
             }
@@ -11734,6 +10593,12 @@
                 "responses": {
                     "200": {
                         "description": "تمت الاستعادة المجمعة بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح باستعادة بعض الباقات"
+                    },
+                    "404": {
+                        "description": "بعض الباقات غير موجودة في سلة المحذوفات"
                     }
                 }
             }
@@ -11772,6 +10637,12 @@
                 "responses": {
                     "200": {
                         "description": "تم الحذف النهائي المجمع بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بالحذف النهائي لبعض الباقات"
+                    },
+                    "404": {
+                        "description": "بعض الباقات غير موجودة"
                     }
                 }
             }
@@ -11797,6 +10668,12 @@
                 "responses": {
                     "200": {
                         "description": "تم تبديل الحالة بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بتعديل هذه الباقة"
+                    },
+                    "404": {
+                        "description": "الباقة غير موجودة"
                     }
                 }
             }
@@ -11822,6 +10699,9 @@
                 "responses": {
                     "200": {
                         "description": "تم استرجاع باقات الشبكة بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بعرض باقات هذه الشبكة"
                     }
                 }
             }
@@ -11935,6 +10815,18 @@
                                     "status": {
                                         "type": "boolean",
                                         "example": true
+                                    },
+                                    "discount_start_date": {
+                                        "description": "تاريخ بدء سريان الخصم (اختياري - الافتراضي هو الوقت الحالي)",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "nullable": true
+                                    },
+                                    "discount_end_date": {
+                                        "description": "تاريخ انتهاء سريان الخصم (اختياري - فارغ يعني غير محدد الأجل)",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -11945,6 +10837,9 @@
                 "responses": {
                     "201": {
                         "description": "تم إنشاء الخصم بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بتخصيص خصم في هذه الشبكة"
                     },
                     "422": {
                         "description": "بيانات غير صالحة"
@@ -11973,6 +10868,9 @@
                 "responses": {
                     "200": {
                         "description": "تم استرجاع بيانات الخصم بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بعرض هذا الخصم"
                     },
                     "404": {
                         "description": "الخصم غير موجود"
@@ -12015,6 +10913,18 @@
                                     "status": {
                                         "type": "boolean",
                                         "example": true
+                                    },
+                                    "discount_start_date": {
+                                        "description": "تاريخ بدء سريان الخصم (اختياري - الافتراضي هو الوقت الحالي)",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "nullable": true
+                                    },
+                                    "discount_end_date": {
+                                        "description": "تاريخ انتهاء سريان الخصم (اختياري - فارغ يعني غير محدد الأجل)",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -12152,6 +11062,12 @@
                 "responses": {
                     "200": {
                         "description": "تم الحذف النهائي بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بالحذف النهائي لهذا الخصم"
+                    },
+                    "404": {
+                        "description": "الخصم غير موجود"
                     }
                 }
             }
@@ -12228,6 +11144,12 @@
                 "responses": {
                     "200": {
                         "description": "تمت الاستعادة المجمعة بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح باستعادة بعض الخصومات"
+                    },
+                    "404": {
+                        "description": "بعض الخصومات غير موجودة في سلة المحذوفات"
                     }
                 }
             }
@@ -12266,6 +11188,12 @@
                 "responses": {
                     "200": {
                         "description": "تم الحذف النهائي المجمع بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بالحذف النهائي لبعض الخصومات"
+                    },
+                    "404": {
+                        "description": "بعض الخصومات غير موجودة"
                     }
                 }
             }
@@ -12291,6 +11219,12 @@
                 "responses": {
                     "200": {
                         "description": "تم تبديل الحالة بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح بتعديل هذا الخصم"
+                    },
+                    "404": {
+                        "description": "الخصم غير موجود"
                     }
                 }
             }
@@ -12332,6 +11266,12 @@
                 "responses": {
                     "200": {
                         "description": "تم احتساب الخصم الفعلي بنجاح"
+                    },
+                    "403": {
+                        "description": "غير مصرح باحتساب الخصم لنطاق خارج الصلاحيات"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
                     }
                 }
             }
@@ -12400,7 +11340,7 @@
         },
         {
             "name": "Dashboard",
-            "description": "لوحة القيادة الموحدة، المؤشرات المالية والتشغيلية، رادار التنبيهات، والعمليات الأخيرة الموحدة لكافة الأدوار"
+            "description": "مؤشرات لوحة تحكم إدارة المنصة"
         },
         {
             "name": "Directorates",
@@ -12409,10 +11349,6 @@
         {
             "name": "Expenses",
             "description": "إدارة المصروفات التشغيلية للشبكات، البنود والمرفقات، والخصم الإلزامي من المحفظة المالية"
-        },
-        {
-            "name": "Features",
-            "description": "إدارة كتالوج ميزات النظام وأنواع قيمها"
         },
         {
             "name": "Governorates",
@@ -12447,10 +11383,6 @@
             "description": "إدارة محافظ نقاط البيع، التغذية والتحويل المالي بين الشبكات ونقاط البيع، كشف الحساب ودفتر الأستاذ، والعمليات المجمعة"
         },
         {
-            "name": "Provider Subscriptions",
-            "description": "إدارة اشتراكات مزودي الشبكات وتتبع استهلاك الحصص والميزات"
-        },
-        {
             "name": "Voucher Requests",
             "description": "إدارة طلبات شراء كروت الإنترنت، اعتماد ورفض الطلبات، التسوية التلقائية، والعمليات المجمعة"
         },
@@ -12465,14 +11397,6 @@
         {
             "name": "Security",
             "description": "إدارة الأمان، الحظر الأمني، الجلسات النشطة، والمفاتيح العامة للتشفير"
-        },
-        {
-            "name": "Subscription Plans",
-            "description": "إدارة باقات الاشتراك السحابية لمزودي الشبكات وميزاتها وحصصها"
-        },
-        {
-            "name": "Subscription Plan Requests",
-            "description": "تقديم طلبات الاشتراك وترقية الباقات والتدقيق والاعتماد"
         },
         {
             "name": "Support Tickets",

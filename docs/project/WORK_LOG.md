@@ -326,7 +326,7 @@ This log documents all executed tasks, code changes, and verification command ou
     - `lib/widgets/inputs/custom_text_field.dart`: Password visibility toggle button replaced with `CustomButton.icon`.
     - `lib/widgets/inputs/custom_dropdown.dart`: Search clear button and QR scanner button replaced with `CustomButton.icon`.
   - **`FloatingActionButton` Elimination:**
-    - `lib/features/commercial/presentation/screens/network_pos_directory_screen.dart`: Replaced `FloatingActionButton.extended` with `CustomButton.primary(shape: AppButtonShape.pill, shadow: AppElevation.level4(context), ...)`.
+    - `lib/features/commercial/presentation/screens/network_pos_directory_screen.dart`: Replaced `FloatingActionButton.extended` with `CustomButton.primary(shape: AppButtonShape.rounded, shadow: AppElevation.level4(context), ...)`.
   - **`Clipboard` Delegation (100% Delegated to `UrlLauncherService.copyToClipboard`):**
     - `network_pos_card.dart` and `pos_details_bottom_sheet.dart`: Eliminated raw `Clipboard.setData` in favor of `UrlLauncherService.copyToClipboard(...)`.
   - **Feedback & Overlays (100% Compliant):**
