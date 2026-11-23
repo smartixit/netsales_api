@@ -634,7 +634,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
             'items' => [['package_id' => $this->packageA->package_id, 'voucher_count' => 50]],
         ])->json('data.request_id');
 
-        $this->withHeaders($netOwnerAuth['headers'])
+        $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$reqId}/approve")
             ->assertStatus(200);
 
@@ -868,7 +868,7 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $requestResponse->assertCreated();
         $reqId = $requestResponse->json('data.request_id');
 
-        $this->withHeaders($this->headers)
+        $this->withHeaders($netOwnerAuth['headers'])
             ->postJson("/api/v1/requests/{$reqId}/approve")
             ->assertStatus(200);
 
