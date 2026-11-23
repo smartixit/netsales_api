@@ -771,7 +771,14 @@ class EnsurePermissionMiddleware
 
         return true;
     }
-  if (! is_array($ids)) {
+
+    /**
+     * @param mixed $ids
+     * @return array<int, int>
+     */
+    private function positiveIds(mixed $ids): array
+    {
+        if (! is_array($ids)) {
             $ids = [$ids];
         }
 
