@@ -250,9 +250,11 @@ class PermissionSeeder extends Seeder
 
         $modules = DB::table('modules')
             ->where('status', true)
+            ->whereNull('deleted_at')
             ->pluck('module_id', 'module_key');
         $actions = DB::table('action_types')
             ->where('status', true)
+            ->whereNull('deleted_at')
             ->pluck('action_type_id', 'action_type_key');
 
         $missingModules = array_values(array_diff(array_keys($matrix), $modules->keys()->all()));
