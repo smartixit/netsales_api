@@ -211,7 +211,7 @@ class NetworkPosController extends BaseController
             }
 
             $currentUser = $this->currentUser();
-            if ($currentUser && ! Gate::forUser($currentUser)->allows('toggle', $link)) {
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('update', $link)) {
                 return $this->errorResponse('غير مصرح لك بتعديل هذا الارتباط.', [], 403);
             }
 
@@ -250,7 +250,7 @@ class NetworkPosController extends BaseController
             }
 
             $currentUser = $this->currentUser();
-            if ($currentUser && ! Gate::forUser($currentUser)->allows('update', $link)) {
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('toggle', $link)) {
                 return $this->errorResponse('غير مصرح لك بتعديل حالة هذا الارتباط.', [], 403);
             }
 
@@ -337,7 +337,7 @@ class NetworkPosController extends BaseController
 
             $currentUser = $this->currentUser();
             if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                $permissionService = app(\\App\\Services\\TenantPermissionService::class);
+                $permissionService = app(\App\Services\TenantPermissionService::class);
                 $links = NetworkPos::whereIn('network_pos_id', $ids)->get(['network_pos_id', 'network_id']);
                 $unauthorized = $ids === [] || $links->count() !== count($ids)
                     || $links->contains(fn (NetworkPos $link): bool =>
@@ -391,7 +391,7 @@ class NetworkPosController extends BaseController
 
             $currentUser = $this->currentUser();
             if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                $permissionService = app(\\App\\Services\\TenantPermissionService::class);
+                $permissionService = app(\App\Services\TenantPermissionService::class);
                 $links = NetworkPos::whereIn('network_pos_id', $ids)->get(['network_pos_id', 'network_id']);
                 $unauthorized = $ids === [] || $links->count() !== count($ids)
                     || $links->contains(fn (NetworkPos $link): bool =>
