@@ -137,7 +137,6 @@ class PermissionSeeder extends Seeder
                 'delete' => 'حذف خصم مخصص',
                 'restore' => 'استعادة خصم مخصص',
                 'force_delete' => 'حذف خصم مخصص نهائياً',
-                'export' => 'تصدير الخصومات المخصصة',
             ],
             'requests' => [
                 'view' => 'عرض طلبات الكروت والتعبئة',
