@@ -98,7 +98,7 @@ class EnsurePermissionMiddleware
                 $posAuthorized = $posId > 0
                     && $this->tenantPermissions->allowsPos($user, $posId, $permission);
 
-                $authorized = in_array($permission, ['requests.approve', 'requests.reject'], true)
+                $authorized = in_array($permission, ['requests.approve', 'requests.reject', 'requests.preview_modification'], true)
                     ? $networkAuthorized
                     : ($networkAuthorized || $posAuthorized);
             } elseif ($networkId > 0 && $posId > 0) {
