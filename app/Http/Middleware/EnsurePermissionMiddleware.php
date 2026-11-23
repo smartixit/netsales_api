@@ -66,7 +66,7 @@ class EnsurePermissionMiddleware
 
                 $authorized = $networkId > 0
                     ? $this->tenantPermissions->allowsNetwork($user, $networkId, $permission)
-                    : ($permission === 'expenses.view'
+                    : (in_array($permission, ['expenses.view', 'expenses.report'], true)
                         && $this->tenantPermissions->allowsAnyNetwork($user, $permission));
             }
 
@@ -141,7 +141,7 @@ class EnsurePermissionMiddleware
                 } elseif ($posId > 0 && ! $networkOnly) {
                     $authorized = $this->tenantPermissions->allowsPos($user, $posId, $permission);
                 } else {
-                    $authorized = $permission === 'requests.view'
+                    $authorized = in_array($permission, ['requests.view', 'requests.report'], true)
                         && $this->tenantPermissions->allowsAnyOperational($user, $permission);
                 }
             }
@@ -185,7 +185,7 @@ class EnsurePermissionMiddleware
                     $authorized = ($networkId > 0 && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission))
                         || ($posId > 0 && $this->tenantPermissions->allowsPos($user, $posId, $permission));
                 } else {
-                    $authorized = $permission === 'sales.view'
+                    $authorized = in_array($permission, ['sales.view', 'sales.report'], true)
                         && $this->tenantPermissions->allowsAnyOperational($user, $permission);
                 }
             }
