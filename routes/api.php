@@ -888,8 +888,10 @@ Route::prefix('v1')->group(function () {
         Route::middleware(['throttle:api-read', 'platform.user.scope', 'permission:governorates.view'])->group(function () {
             Route::get('governorates/counts', [GovernorateController::class, 'counts'])->name('api.v1.governorates.counts');
             Route::get('governorates/trashed', [GovernorateController::class, 'trashed'])->name('api.v1.governorates.trashed');
-            Route::get('directorates/trashed', [DirectorateController::class, 'trashed'])->name('api.v1.directorates.trashed');
         });
+        Route::middleware(['throttle:api-read', 'platform.user.scope', 'permission:directorates.view'])
+            ->get('directorates/trashed', [DirectorateController::class, 'trashed'])
+            ->name('api.v1.directorates.trashed');
 
         Route::middleware(['throttle:api-write', 'platform.user.scope'])->group(function () {
             Route::post('governorates', [GovernorateController::class, 'store'])

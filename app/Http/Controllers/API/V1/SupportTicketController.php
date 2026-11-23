@@ -564,7 +564,7 @@ class SupportTicketController extends BaseController
     {
         try {
             $ticket = $this->ticketService->getById($id);
-            $this->ticketAuthorization->assertTicket($request->user(), $ticket, 'support.view');
+            $this->ticketAuthorization->assertTicket($request->user(), $ticket, 'support.mark_as_read');
 
             $userId = $this->currentUserId();
             $count = $this->ticketService->markAsRead($id, $userId);

@@ -252,11 +252,12 @@ class EnsurePermissionMiddleware
                 ->where('challenge_uuid', $challengeUuid)
                 ->first();
 
-            return $challenge !== null
-                && (
-                    $this->tenantPermissions->allowsNetwork($user, (int) $challenge->network_id, $permission)
-                    || $this->tenantPermissions->allowsPos($user, (int) $challenge->pos_id, $permission)
-                );
+            if (! $challenge) {
+                return $this->tenantPermissions->allowsAnyOperational($user, $permission);
+            }
+
+            return $this->tenantPermissions->allowsNetwork($user, (int) $challenge->network_id, $permission)
+                || $this->tenantPermissions->allowsPos($user, (int) $challenge->pos_id, $permission);
         }
 
         if ($request->route('networkId') !== null) {

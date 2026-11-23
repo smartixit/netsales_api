@@ -426,7 +426,10 @@ class NetworkPosLinkingChallengeService
             'networks.view'
         );
 
-        if (! $canViewNetwork && ! $canViewPos) {
+        if (! $this->tenantPermissions->allowsPlatform($actor, 'networks.view')
+            && ! $canViewNetwork
+            && ! $canViewPos
+        ) {
             throw ValidationException::withMessages([
                 'challenge_uuid' => ['غير مصرح لك بالاطلاع على حالة دعوة الربط هذه.'],
             ]);

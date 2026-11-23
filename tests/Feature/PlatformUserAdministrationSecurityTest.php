@@ -103,7 +103,7 @@ class PlatformUserAdministrationSecurityTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors('ban_id');
 
-        $this->assertSame('BANNED', $device->fresh()->status->value ?? $device->fresh()->status);
+        $this->assertSame('BANNED', $device->fresh()->status->value);
 
         $this->deleteJson('/api/v1/security/device-bans/'.$banId, [], $session['headers'])
             ->assertOk();

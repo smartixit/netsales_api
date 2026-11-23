@@ -386,7 +386,10 @@ class User extends Authenticatable
                 return false;
             }
 
-            if (! $this->isActive() || ! $this->role?->isActive()) {
+            if (! $this->isActive()
+                || ! $this->role?->isActive()
+                || $this->role->scope !== RoleScope::PLATFORM
+            ) {
                 return false;
             }
 
