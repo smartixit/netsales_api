@@ -242,6 +242,7 @@ class PermissionSeeder extends Seeder
             ],
             'notifications' => [
                 'view' => ['عرض سجل الإشعارات الإدارية', 'PLATFORM'],
+                'view_trashed' => ['عرض الإشعارات الإدارية المحذوفة', 'PLATFORM'],
                 'update' => ['تعديل إشعار إداري', 'PLATFORM'],
                 'send' => ['إرسال إشعار إداري موجه', 'PLATFORM'],
                 'delete' => ['حذف إشعار إداري مؤقتاً', 'PLATFORM'],
