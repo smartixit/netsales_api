@@ -1,175 +1,58 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use Illuminate\\Database\\Seeder;
+use Illuminate\\Support\\Facades\\DB;
 
 class ModuleSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $modules = [
-            [
-                'module_key' => 'auth',
-                'module_name' => 'المصادقة والجلسات',
-                'module_icon' => 'heroicon-o-lock-closed',
-                'module_desc' => 'إدارة تسجيل الدخول، أمان الجلسات، وعمليات التحقق الثنائي OTP',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'users',
-                'module_name' => 'المستخدمين',
-                'module_icon' => 'heroicon-o-users',
-                'module_desc' => 'إدارة حسابات المستخدمين، بياناتهم، وأجهزتهم المعتمدة',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'roles',
-                'module_name' => 'الأدوار والصلاحيات',
-                'module_icon' => 'heroicon-o-shield-check',
-                'module_desc' => 'إدارة أدوار النظام وتخصيص مصفوفة الصلاحيات',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'geography',
-                'module_name' => 'الدليل الجغرافي',
-                'module_icon' => 'heroicon-o-map',
-                'module_desc' => 'إدارة المحافظات والمديريات والمناطق الجغرافية',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'networks',
-                'module_name' => 'الشبكات والمزودين',
-                'module_icon' => 'heroicon-o-wifi',
-                'module_desc' => 'إدارة شبكات الإنترنت المسجلة والمزودين وحالات الاعتماد',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'network_wallets',
-                'module_name' => 'محافظ الشبكات',
-                'module_icon' => 'heroicon-o-wallet',
-                'module_desc' => 'إدارة الأرصدة المالية وحركات الشحن والخصم لشبكات التوزيع',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'pos',
-                'module_name' => 'نقاط البيع',
-                'module_icon' => 'heroicon-o-computer-desktop',
-                'module_desc' => 'إدارة نقاط البيع التابعة للشبكات والوكلاء ومواقعها',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'pos_wallets',
-                'module_name' => 'محافظ نقاط البيع',
-                'module_icon' => 'heroicon-o-banknotes',
-                'module_desc' => 'إدارة أرصدة نقاط البيع وسجلات المعاملات والتحويلات المالية',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'voucher_packages',
-                'module_name' => 'باقات وكروت الشبكة',
-                'module_icon' => 'heroicon-o-ticket',
-                'module_desc' => 'إدارة فئات الكروت، أسعارها، الخصومات، وباقات البيانات',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'requests',
-                'module_name' => 'طلبات التعبئة والكروت',
-                'module_icon' => 'heroicon-o-inbox-arrow-down',
-                'module_desc' => 'معالجة وتتبع طلبات الكروت والتعبئة بين النقاط والشبكات',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'sales',
-                'module_name' => 'المبيعات والفواتير',
-                'module_icon' => 'heroicon-o-shopping-cart',
-                'module_desc' => 'إصدار فواتير البيع ومتابعة الإيرادات والتحصيلات',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'expenses',
-                'module_name' => 'المصروفات والسندات',
-                'module_icon' => 'heroicon-o-arrow-trending-down',
-                'module_desc' => 'إدارة بنود المصروفات وسندات الصرف والمرفقات المالية',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'billing',
-                'module_name' => 'الفوترة والاشتراكات والمنصة المالية',
-                'module_icon' => 'heroicon-o-receipt-percent',
-                'module_desc' => 'إدارة العملات والتسعير والاشتراكات والفواتير والتحصيل والخزينة والدفتر المحاسبي',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'bank_accounts',
-                'module_name' => 'الحسابات البنكية',
-                'module_icon' => 'heroicon-o-building-library',
-                'module_desc' => 'إدارة حسابات البنوك والمحافظ الإلكترونية للتحصيلات',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'support',
-                'module_name' => 'الدعم الفني',
-                'module_icon' => 'heroicon-o-chat-bubble-left-right',
-                'module_desc' => 'إدارة تذاكر الدعم الفني، الاستفسارات، والمحادثات',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'notifications',
-                'module_name' => 'الإشعارات والتنبيهات',
-                'module_icon' => 'heroicon-o-bell',
-                'module_desc' => 'إرسال الإشعارات التلقائية والرسائل التنبيهية للمستخدمين',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'system_logs',
-                'module_name' => 'سجلات النظام والأمان',
-                'module_icon' => 'heroicon-o-document-magnifying-glass',
-                'module_desc' => 'مراقبة سجلات الأحداث، الأمان، وتتبع العمليات الحساسة',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'settings',
-                'module_name' => 'إعدادات النظام',
-                'module_icon' => 'heroicon-o-cog-6-tooth',
-                'module_desc' => 'تخصيص الإعدادات العامة، المالية، الأمان، والرسائل',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'backups',
-                'module_name' => 'النسخ الاحتياطي والاستعادة',
-                'module_icon' => 'heroicon-o-cloud-arrow-up',
-                'module_desc' => 'إدارة إعدادات النسخ الاحتياطي السحابي وسجلات النسخ وعمليات الاستعادة',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'sms_settings',
-                'module_name' => 'بوابات الرسائل النصية',
-                'module_icon' => 'heroicon-o-chat-bubble-left-right',
-                'module_desc' => 'إدارة المفتاح العام وبوابات SMS وإعداداتها على مستوى المنصة والشبكات',
-                'status' => true,
-            ],
-            [
-                'module_key' => 'scheduled_tasks',
-                'module_name' => 'المهام المجدولة والطوابير',
-                'module_icon' => 'heroicon-o-clock',
-                'module_desc' => 'مراقبة سجلات المهام المجدولة وتشغيل محرك الاستدراك والتعويض',
-                'status' => true,
-            ],
+            'auth' => ['المصادقة والأمان', 'heroicon-o-lock-closed', 'إدارة الجلسات والأجهزة والحظر الأمني'],
+            'users' => ['المستخدمون', 'heroicon-o-users', 'إدارة حسابات مستخدمي المنصة'],
+            'roles' => ['الأدوار والصلاحيات', 'heroicon-o-shield-check', 'عرض الأدوار وإسناد الصلاحيات المباشرة'],
+            'geography' => ['الدليل الجغرافي', 'heroicon-o-map', 'إدارة المحافظات والمديريات'],
+            'networks' => ['الشبكات', 'heroicon-o-wifi', 'إدارة واعتماد شبكات مزودي الخدمة'],
+            'network_pos' => ['روابط الشبكات ونقاط البيع', 'heroicon-o-link', 'إدارة الارتباطات التجارية ودعوات الربط الآمن'],
+            'network_wallets' => ['محافظ الشبكات', 'heroicon-o-wallet', 'إدارة محفظة الشبكة والإيداعات والسحوبات'],
+            'pos' => ['نقاط البيع', 'heroicon-o-computer-desktop', 'إدارة واعتماد نقاط البيع'],
+            'pos_wallets' => ['محافظ نقاط البيع', 'heroicon-o-banknotes', 'إدارة المحافظ والتحويلات والسقوف الائتمانية'],
+            'voucher_packages' => ['باقات الشبكة', 'heroicon-o-ticket', 'إدارة الباقات والتعرفة الأساسية'],
+            'package_discounts' => ['الخصومات التعاقدية', 'heroicon-o-tag', 'إدارة خصومات الباقات الخاصة بكل نقطة بيع'],
+            'requests' => ['طلبات التوريد', 'heroicon-o-inbox-arrow-down', 'إنشاء ومراجعة واعتماد طلبات التوريد'],
+            'sales' => ['فواتير المبيعات', 'heroicon-o-receipt-percent', 'إصدار ومراجعة وإدارة فواتير الشبكة'],
+            'expenses' => ['المصروفات التشغيلية', 'heroicon-o-arrow-trending-down', 'تسجيل ومراجعة مصروفات الشبكات'],
+            'billing' => ['فوترة المنصة', 'heroicon-o-credit-card', 'إدارة الحسابات والاشتراكات والفواتير والخزينة'],
+            'support_tickets' => ['تذاكر الدعم الفني', 'heroicon-o-chat-bubble-left-right', 'إدارة تذاكر الدعم ومراسلاتها'],
+            'notifications' => ['الإشعارات الإدارية', 'heroicon-o-bell', 'إدارة الإشعارات الإدارية الموجهة'],
+            'system_logs' => ['سجلات النظام', 'heroicon-o-document-magnifying-glass', 'عرض سجلات التدقيق والأحداث'],
+            'settings' => ['إعدادات النظام', 'heroicon-o-cog-6-tooth', 'إدارة إعدادات وتهيئة النظام'],
+            'backups' => ['النسخ الاحتياطي', 'heroicon-o-cloud-arrow-up', 'إدارة النسخ الاحتياطي والتخزين السحابي'],
+            'sms_settings' => ['إعدادات الرسائل', 'heroicon-o-chat-bubble-left-right', 'إدارة بوابات وإعدادات الرسائل النصية'],
+            'scheduled_tasks' => ['المهام المجدولة', 'heroicon-o-clock', 'مراقبة تشغيل المهام المجدولة والاستدراك'],
         ];
 
-        foreach ($modules as $module) {
+        foreach ($modules as $key => [$name, $icon, $description]) {
             DB::table('modules')->updateOrInsert(
-                ['module_key' => $module['module_key']],
-                array_merge($module, [
+                ['module_key' => $key],
+                [
+                    'module_name' => $name,
+                    'module_icon' => $icon,
+                    'module_desc' => $description,
+                    'status' => true,
                     'updated_at' => now('Asia/Aden'),
                     'created_at' => now('Asia/Aden'),
-                ])
+                ]
             );
         }
+
+        DB::table('modules')
+            ->whereIn('module_key', ['support', 'bank_accounts'])
+            ->update([
+                'status' => false,
+                'updated_at' => now('Asia/Aden'),
+            ]);
     }
 }
