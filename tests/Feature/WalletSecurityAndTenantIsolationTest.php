@@ -235,7 +235,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
         ]);
 
         // A member with an ACTIVE network membership can see that tenant.
-        $activeMember = $this->createAuthenticatedUser(RoleKey::NETWORK_USER, 'active-network-member');
+        $activeMember = $this->createAuthenticatedUser(RoleKey::NETWORK_ACCOUNTANT, 'active-network-member');
         NetworkUser::create([
             'network_id' => $networkA->network_id,
             'user_id' => $activeMember['user']->user_id,
@@ -249,7 +249,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             ->assertJsonMissing(['wallet_id' => $walletB->wallet_id]);
 
         // Inactive memberships must not authorize wallet list access.
-        $inactiveMember = $this->createAuthenticatedUser(RoleKey::NETWORK_USER, 'inactive-network-member');
+        $inactiveMember = $this->createAuthenticatedUser(RoleKey::NETWORK_ACCOUNTANT, 'inactive-network-member');
         NetworkUser::create([
             'network_id' => $networkA->network_id,
             'user_id' => $inactiveMember['user']->user_id,
@@ -335,7 +335,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
         ]);
 
         // An active POS member can see the assigned POS wallet without owning it.
-        $activePosMember = $this->createAuthenticatedUser(RoleKey::POS_USER, 'active-pos-member');
+        $activePosMember = $this->createAuthenticatedUser(RoleKey::POS_ACCOUNTANT, 'active-pos-member');
         PosUser::create([
             'pos_id' => $posA->pos_id,
             'user_id' => $activePosMember['user']->user_id,
@@ -349,7 +349,7 @@ class WalletSecurityAndTenantIsolationTest extends TestCase
             ->assertJsonMissing(['wallet_id' => $walletB->wallet_id]);
 
         // Inactive POS memberships must not authorize wallet list access.
-        $inactivePosMember = $this->createAuthenticatedUser(RoleKey::POS_USER, 'inactive-pos-member');
+        $inactivePosMember = $this->createAuthenticatedUser(RoleKey::POS_ACCOUNTANT, 'inactive-pos-member');
         PosUser::create([
             'pos_id' => $posA->pos_id,
             'user_id' => $inactivePosMember['user']->user_id,
