@@ -468,7 +468,7 @@ class VoucherPackageController extends BaseController
                 return $this->errorResponse('بعض الباقات المحددة غير موجودة في النظام.', [], 404);
             }
 
-            if ($user && ! $user->isSuperAdmin()) {
+            if ($user) {
                 foreach ($packages as $pkg) {
                     if (! Gate::forUser($user)->allows('delete', $pkg)) {
                         return $this->errorResponse('عذراً، غير مصرح لك بحذف بعض الباقات المحددة.', [], 403);
@@ -523,7 +523,7 @@ class VoucherPackageController extends BaseController
                 return $this->errorResponse('بعض الباقات المحددة غير موجودة في سلة المحذوفات.', [], 404);
             }
 
-            if ($user && ! $user->isSuperAdmin()) {
+            if ($user) {
                 foreach ($packages as $pkg) {
                     if (! Gate::forUser($user)->allows('restore', $pkg)) {
                         return $this->errorResponse('عذراً، غير مصرح لك باستعادة بعض الباقات المحددة.', [], 403);
@@ -578,7 +578,7 @@ class VoucherPackageController extends BaseController
                 return $this->errorResponse('بعض الباقات المحددة غير موجودة في النظام.', [], 404);
             }
 
-            if ($user && ! $user->isSuperAdmin()) {
+            if ($user) {
                 foreach ($packages as $pkg) {
                     if (! Gate::forUser($user)->allows('forceDelete', $pkg)) {
                         return $this->errorResponse('عذراً، غير مصرح لك بالحذف النهائي لبعض الباقات المحددة.', [], 403);

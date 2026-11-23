@@ -57,9 +57,7 @@ class PosController extends BaseController
         try {
             $filters = $request->only(['search', 'status', 'governorate_id', 'directorate_id', 'per_page', 'all']);
             $user = $this->currentUser();
-            if ($user && ! $user->isSuperAdmin()
-                && ! $this->tenantPermissions->allowsPlatform($user, 'pos.view')
-            ) {
+            if ($user && ! $this->tenantPermissions->allowsPlatform($user, 'pos.view')) {
                 $posIds = $this->tenantPermissions->authorizedPosIds($user, 'pos.view');
                 $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, 'pos.view');
 
@@ -289,9 +287,7 @@ class PosController extends BaseController
             $filters = $request->only(['search', 'per_page', 'all']);
             $user = $this->currentUser();
 
-            if ($user && ! $user->isSuperAdmin()
-                && ! $this->tenantPermissions->allowsPlatform($user, 'pos.view')
-            ) {
+            if ($user && ! $this->tenantPermissions->allowsPlatform($user, 'pos.view')) {
                 $posIds = $this->tenantPermissions->authorizedPosIds($user, 'pos.view');
                 $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, 'pos.view');
 
@@ -511,8 +507,8 @@ class PosController extends BaseController
     {
         try {
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                return $this->errorResponse('عملية الاعتماد محصورة بإدارة المنصة.', [], 403);
+            if ($currentUser && ! $this->tenantPermissions->allowsPlatform($currentUser, 'pos.approve')) {
+                return $this->errorResponse('لا تملك صلاحية اعتماد طلبات نقاط البيع على مستوى المنصة.', [], 403);
             }
 
             $pos = $this->posService->approve($id, (int) $this->currentUserId());
@@ -557,8 +553,8 @@ class PosController extends BaseController
     {
         try {
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                return $this->errorResponse('عملية الرفض محصورة بإدارة المنصة.', [], 403);
+            if ($currentUser && ! $this->tenantPermissions->allowsPlatform($currentUser, 'pos.reject')) {
+                return $this->errorResponse('لا تملك صلاحية رفض طلبات نقاط البيع على مستوى المنصة.', [], 403);
             }
 
             $pos = $this->posService->reject($id, (int) $this->currentUserId(), (string) $request->reason);

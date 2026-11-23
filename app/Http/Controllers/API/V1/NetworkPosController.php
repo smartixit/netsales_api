@@ -71,9 +71,7 @@ class NetworkPosController extends BaseController
         try {
             $filters = $request->validated();
             $user = $this->currentUser();
-            if ($user && ! $user->isSuperAdmin()
-                && ! $this->tenantPermissions->allowsPlatform($user, 'networks.view')
-            ) {
+            if ($user && ! $this->tenantPermissions->allowsPlatform($user, 'networks.view')) {
                 $filters['scoped_network_ids'] = $this->tenantPermissions->authorizedNetworkIds($user, 'networks.view');
                 $filters['scoped_pos_ids'] = $this->tenantPermissions->authorizedPosIds($user, 'networks.view');
             }
@@ -333,7 +331,7 @@ class NetworkPosController extends BaseController
             $ids = $request->getIds();
 
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
+            if ($currentUser) {
                 $permissionService = app(\App\Services\TenantPermissionService::class);
                 $links = NetworkPos::whereIn('network_pos_id', $ids)->get(['network_pos_id', 'network_id']);
                 $unauthorized = $ids === [] || $links->count() !== count($ids)
@@ -387,7 +385,7 @@ class NetworkPosController extends BaseController
             $status = $request->getStatus();
 
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
+            if ($currentUser) {
                 $permissionService = app(\App\Services\TenantPermissionService::class);
                 $links = NetworkPos::whereIn('network_pos_id', $ids)->get(['network_pos_id', 'network_id']);
                 $unauthorized = $ids === [] || $links->count() !== count($ids)

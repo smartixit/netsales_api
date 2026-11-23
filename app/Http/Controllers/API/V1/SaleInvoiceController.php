@@ -466,7 +466,7 @@ class SaleInvoiceController extends BaseController
             return $this->errorResponse('يجب تسجيل الدخول أولاً.', [], 401);
         }
 
-        if ($user->isSuperAdmin()) {
+        if ($this->tenantPermissions->allowsPlatform($user, $permission)) {
             return $filters;
         }
 

@@ -56,9 +56,7 @@ class NetworkController extends BaseController
         try {
             $filters = $request->only(['search', 'status', 'governorate_id', 'per_page']);
             $user = $this->currentUser();
-            if ($user && ! $user->isSuperAdmin()
-                && ! $this->tenantPermissions->allowsPlatform($user, 'networks.view')
-            ) {
+            if ($user && ! $this->tenantPermissions->allowsPlatform($user, 'networks.view')) {
                 $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, 'networks.view');
                 $posIds = $this->tenantPermissions->authorizedPosIds($user, 'networks.view');
 
@@ -286,9 +284,7 @@ class NetworkController extends BaseController
             $filters = $request->only(['search', 'per_page', 'all']);
             $user = $this->currentUser();
 
-            if ($user && ! $user->isSuperAdmin()
-                && ! $this->tenantPermissions->allowsPlatform($user, 'networks.view')
-            ) {
+            if ($user && ! $this->tenantPermissions->allowsPlatform($user, 'networks.view')) {
                 $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, 'networks.view');
                 $posIds = $this->tenantPermissions->authorizedPosIds($user, 'networks.view');
 
@@ -510,8 +506,8 @@ class NetworkController extends BaseController
     {
         try {
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                return $this->errorResponse('عملية الاعتماد محصورة بإدارة المنصة.', [], 403);
+            if ($currentUser && ! $this->tenantPermissions->allowsPlatform($currentUser, 'networks.approve')) {
+                return $this->errorResponse('لا تملك صلاحية اعتماد طلبات الشبكات على مستوى المنصة.', [], 403);
             }
 
             $network = $this->networkService->approve($id, (int) $this->currentUserId());
@@ -557,8 +553,8 @@ class NetworkController extends BaseController
     {
         try {
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                return $this->errorResponse('عملية الرفض محصورة بإدارة المنصة.', [], 403);
+            if ($currentUser && ! $this->tenantPermissions->allowsPlatform($currentUser, 'networks.reject')) {
+                return $this->errorResponse('لا تملك صلاحية رفض طلبات الشبكات على مستوى المنصة.', [], 403);
             }
 
             $network = $this->networkService->reject($id, (int) $this->currentUserId(), $request->getReason());
