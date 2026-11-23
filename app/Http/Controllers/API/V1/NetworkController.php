@@ -8,6 +8,7 @@ use App\Http\Requests\API\V1\Network\StoreNetworkRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkRequest;
 use App\Http\Resources\API\V1\Network\NetworkResource;
 use App\Services\NetworkService;
+use App\Services\TenantPermissionService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,6 +29,7 @@ class NetworkController extends BaseController
 {
     public function __construct(
         protected NetworkService $networkService,
+        protected TenantPermissionService $tenantPermissions,
     ) {}
 
     /**
@@ -53,11 +55,22 @@ class NetworkController extends BaseController
         try {
             $filters = $request->only(['search', 'status', 'governorate_id', 'per_page']);
             $user = $this->currentUser();
-            if ($user && ! $user->isSuperAdmin()) {
-                $networkIds = $user->networks()->pluck('networks.network_id')
-                    ->merge($user->networkUsers()->pluck('network_id'))
-                    ->unique()->values()->toArray();
-                $filters['network_ids'] = $networkIds;
+            if ($user && ! $user->isSuperAdmin()
+                && ! $this->tenantPermissions->allowsPlatform($user, 'networks.view')
+            ) {
+                $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, 'networks.view');
+                $posIds = $this->tenantPermissions->authorizedPosIds($user, 'networks.view');
+
+                if ($posIds !== []) {
+                    $linkedNetworkIds = \App\Models\NetworkPos::query()
+                        ->whereIn('pos_id', $posIds)
+                        ->pluck('network_id')
+                        ->map(static fn ($id): int => (int) $id)
+                        ->all();
+                    $networkIds = array_merge($networkIds, $linkedNetworkIds);
+                }
+
+                $filters['network_ids'] = array_values(array_unique($networkIds));
             }
             $networks = $this->networkService->getFiltered($filters);
 
