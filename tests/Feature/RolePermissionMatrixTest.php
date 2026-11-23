@@ -133,6 +133,42 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
         $this->assertNotContains('sales.restore', $posAgentPermissions);
     }
 
+    public function test_membership_permissions_are_granted_only_to_the_matching_owner_role(): void
+    {
+        $networkOwner = $this->permissionKeys(RoleKey::NETWORK_OWNER);
+        $networkUser = $this->permissionKeys(RoleKey::NETWORK_USER);
+        $networkAccountant = $this->permissionKeys(RoleKey::NETWORK_ACCOUNTANT);
+        $posAgent = $this->permissionKeys(RoleKey::POS_AGENT);
+        $posUser = $this->permissionKeys(RoleKey::POS_USER);
+        $posAccountant = $this->permissionKeys(RoleKey::POS_ACCOUNTANT);
+
+        foreach ([
+            'network_members.view',
+            'network_members.create',
+            'network_members.edit',
+            'network_members.toggle_status',
+            'network_members.delete',
+        ] as $permission) {
+            $this->assertContains($permission, $networkOwner);
+            $this->assertNotContains($permission, $networkUser);
+            $this->assertNotContains($permission, $networkAccountant);
+            $this->assertNotContains($permission, $posAgent);
+        }
+
+        foreach ([
+            'pos_members.view',
+            'pos_members.create',
+            'pos_members.edit',
+            'pos_members.toggle_status',
+            'pos_members.delete',
+        ] as $permission) {
+            $this->assertContains($permission, $posAgent);
+            $this->assertNotContains($permission, $posUser);
+            $this->assertNotContains($permission, $posAccountant);
+            $this->assertNotContains($permission, $networkOwner);
+        }
+    }
+
     public function test_network_user_cannot_approve_requests_or_change_financial_records(): void
     {
         $permissions = $this->permissionKeys(RoleKey::NETWORK_USER);
