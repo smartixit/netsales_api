@@ -7,6 +7,7 @@ use App\Http\Requests\API\V1\Common\RejectRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkRequest;
 use App\Http\Resources\API\V1\Network\NetworkResource;
+use App\Models\NetworkPos;
 use App\Services\NetworkService;
 use App\Services\TenantPermissionService;
 use Exception;
@@ -62,7 +63,7 @@ class NetworkController extends BaseController
                 $posIds = $this->tenantPermissions->authorizedPosIds($user, 'networks.view');
 
                 if ($posIds !== []) {
-                    $linkedNetworkIds = \App\Models\NetworkPos::query()
+                    $linkedNetworkIds = NetworkPos::query()
                         ->whereIn('pos_id', $posIds)
                         ->pluck('network_id')
                         ->map(static fn ($id): int => (int) $id)
@@ -292,7 +293,7 @@ class NetworkController extends BaseController
                 $posIds = $this->tenantPermissions->authorizedPosIds($user, 'networks.view');
 
                 if ($posIds !== []) {
-                    $linkedNetworkIds = \\App\\Models\\NetworkPos::query()
+                    $linkedNetworkIds = NetworkPos::query()
                         ->whereIn('pos_id', $posIds)
                         ->pluck('network_id')
                         ->map(static fn ($id): int => (int) $id)
