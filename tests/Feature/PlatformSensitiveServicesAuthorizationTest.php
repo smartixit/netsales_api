@@ -65,6 +65,14 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
         $this->postJson('/api/v1/admin/notifications/user', [], $headers)->assertForbidden();
     }
 
+    public function test_platform_accountant_cannot_enter_operational_report_workspace(): void
+    {
+        $accountant = $this->makeUserWithRole(RoleKey::ACCOUNTANT);
+        $headers = $this->createAuthenticatedSession($accountant)['headers'];
+
+        $this->getJson('/api/v1/reports/catalog', $headers)->assertForbidden();
+    }
+
     public function test_bank_account_management_is_restricted_to_platform_finance_roles(): void
     {
         $accountant = $this->makeUserWithRole(RoleKey::ACCOUNTANT);
