@@ -113,8 +113,7 @@ class RequestService
             // الصلاحية يجب أن تنتمي إلى عضوية نقطة البيع المحددة وأن تكون العضوية نشطة.
             $user = $this->userRepository->findById($userId);
             if (! $user || ! $user->isActive()
-                || (! $user->isSuperAdmin()
-                    && ! app(TenantPermissionService::class)->allowsPos($user, (int) $posId, 'requests.create'))) {
+                || ! app(TenantPermissionService::class)->allowsPos($user, (int) $posId, 'requests.create')) {
                 throw ValidationException::withMessages([
                     'pos_id' => ['غير مصرح لك بإنشاء طلب باسم نقطة البيع المحددة.'],
                 ]);
@@ -351,8 +350,7 @@ class RequestService
 
         $user = $this->userRepository->findById($userId);
         if (! $user || ! $user->isActive()
-            || (! $user->isSuperAdmin()
-                && ! app(TenantPermissionService::class)->allowsPos($user, (int) $posId, 'requests.create'))) {
+            || ! app(TenantPermissionService::class)->allowsPos($user, (int) $posId, 'requests.create')) {
             throw ValidationException::withMessages([
                 'pos_id' => ['غير مصرح لك بطلب عرض أسعار باسم نقطة البيع المحددة.'],
             ]);
@@ -436,12 +434,11 @@ class RequestService
                 ]);
             }
 
-            if (! $reviewer->isSuperAdmin()
-                && ! app(TenantPermissionService::class)->allowsNetwork(
-                    $reviewer,
-                    (int) $request->network_id,
-                    'requests.approve'
-                )) {
+            if (! app(TenantPermissionService::class)->allowsNetwork(
+                $reviewer,
+                (int) $request->network_id,
+                'requests.approve'
+            )) {
                 throw ValidationException::withMessages([
                     'network_id' => ['غير مصرح لك باعتماد طلبات كروت لا تنتمي لمزود الشبكة الخاص بك.'],
                 ]);
