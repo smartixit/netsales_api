@@ -8,7 +8,10 @@ use App\Http\Requests\API\V1\Ticket\StoreSupportTicketRequest;
 use App\Http\Requests\API\V1\Ticket\UpdateSupportTicketRequest;
 use App\Http\Resources\API\V1\Ticket\SupportTicketMessageResource;
 use App\Http\Resources\API\V1\Ticket\SupportTicketResource;
+use App\Models\SupportTicket;
+use App\Services\SupportTicketAuthorizationService;
 use App\Services\SupportTicketService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,7 +30,8 @@ use OpenApi\Attributes as OA;
 class SupportTicketController extends BaseController
 {
     public function __construct(
-        protected SupportTicketService $ticketService
+        protected SupportTicketService $ticketService,
+        protected SupportTicketAuthorizationService $ticketAuthorization
     ) {}
 
     /**
@@ -52,9 +56,12 @@ class SupportTicketController extends BaseController
     {
         try {
             $filters = $request->only(['network_id', 'pos_id', 'search', 'per_page', 'all']);
+            $filters = $this->ticketAuthorization->scopeListFilters($request->user(), $filters);
             $tickets = $this->ticketService->getFiltered($filters);
 
             return $this->successResponse('تم استرجاع قائمة تذاكر الدعم الفني بنجاح.', SupportTicketResource::collection($tickets));
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -84,9 +91,12 @@ class SupportTicketController extends BaseController
     {
         try {
             $filters = $request->only(['network_id', 'pos_id', 'per_page', 'all']);
+            $filters = $this->ticketAuthorization->scopeListFilters($request->user(), $filters);
             $tickets = $this->ticketService->getTrashedFiltered($filters);
 
             return $this->successResponse('تم استرجاع التذاكر المحذوفة بنجاح.', SupportTicketResource::collection($tickets));
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -125,10 +135,19 @@ class SupportTicketController extends BaseController
     public function store(StoreSupportTicketRequest $request): JsonResponse
     {
         try {
+            $this->ticketAuthorization->assertTarget(
+                $request->user(),
+                $request->getNetworkId(),
+                $request->getPosId(),
+                'support.create'
+            );
+
             $userId = $this->currentUserId();
             $ticket = $this->ticketService->create($request, $userId);
 
             return $this->successResponse('تم إنشاء تذكرة الدعم الفني بنجاح.', new SupportTicketResource($ticket), 201);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -151,12 +170,15 @@ class SupportTicketController extends BaseController
             new OA\Response(response: 200, description: 'تم استرجاع تفاصيل التذكرة بنجاح'),
         ]
     )]
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
         try {
             $ticket = $this->ticketService->getById($id);
+            $this->ticketAuthorization->assertTicket($request->user(), $ticket, 'support.view');
 
             return $this->successResponse('تم استرجاع تفاصيل تذكرة الدعم الفني بنجاح.', new SupportTicketResource($ticket));
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -197,9 +219,23 @@ class SupportTicketController extends BaseController
     public function update(UpdateSupportTicketRequest $request, int $id): JsonResponse
     {
         try {
+            $existingTicket = $this->ticketService->getById($id);
+            $this->ticketAuthorization->assertTicket($request->user(), $existingTicket, 'support.edit');
+
+            $targetNetworkId = $request->getNetworkId() ?? (int) $existingTicket->network_id;
+            $targetPosId = $request->has('pos_id') ? $request->getPosId() : $existingTicket->pos_id;
+            $this->ticketAuthorization->assertTarget(
+                $request->user(),
+                $targetNetworkId,
+                $targetPosId,
+                'support.edit'
+            );
+
             $ticket = $this->ticketService->update($request, $id);
 
             return $this->successResponse('تم تحديث بيانات تذكرة الدعم الفني بنجاح.', new SupportTicketResource($ticket));
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -225,9 +261,13 @@ class SupportTicketController extends BaseController
     public function destroy(int $id): JsonResponse
     {
         try {
+            $ticket = $this->ticketService->getById($id);
+            $this->ticketAuthorization->assertTicket(request()->user(), $ticket, 'support.delete');
             $this->ticketService->delete($id);
 
             return $this->successResponse('تم حذف تذكرة الدعم الفني بنجاح.');
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -253,9 +293,13 @@ class SupportTicketController extends BaseController
     public function restore(int $id): JsonResponse
     {
         try {
+            $ticket = SupportTicket::withTrashed()->findOrFail($id);
+            $this->ticketAuthorization->assertTicket(request()->user(), $ticket, 'support.restore');
             $ticket = $this->ticketService->restore($id);
 
             return $this->successResponse('تم استعادة تذكرة الدعم الفني بنجاح.', new SupportTicketResource($ticket));
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -281,9 +325,13 @@ class SupportTicketController extends BaseController
     public function forceDelete(int $id): JsonResponse
     {
         try {
+            $ticket = SupportTicket::withTrashed()->findOrFail($id);
+            $this->ticketAuthorization->assertTicket(request()->user(), $ticket, 'support.force_delete');
             $this->ticketService->forceDelete($id);
 
             return $this->successResponse('تم الحذف النهائي لتذكرة الدعم الفني بنجاح.');
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -322,6 +370,8 @@ class SupportTicketController extends BaseController
             $count = $this->ticketService->bulkDelete($request);
 
             return $this->successResponse("تم حذف [{$count}] تذكرة بنجاح.", ['deleted_count' => $count]);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -360,6 +410,8 @@ class SupportTicketController extends BaseController
             $count = $this->ticketService->bulkRestore($request);
 
             return $this->successResponse("تم استعادة [{$count}] تذكرة بنجاح.", ['restored_count' => $count]);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -398,6 +450,8 @@ class SupportTicketController extends BaseController
             $count = $this->ticketService->bulkForceDelete($request);
 
             return $this->successResponse("تم الحذف النهائي لـ [{$count}] تذكرة بنجاح.", ['force_deleted_count' => $count]);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -423,9 +477,13 @@ class SupportTicketController extends BaseController
     public function messages(int $id): JsonResponse
     {
         try {
+            $ticket = $this->ticketService->getById($id);
+            $this->ticketAuthorization->assertTicket(request()->user(), $ticket, 'support.view');
             $messages = $this->ticketService->getMessages($id);
 
             return $this->successResponse('تم استرجاع رسائل التذكرة بنجاح.', SupportTicketMessageResource::collection($messages));
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -469,10 +527,15 @@ class SupportTicketController extends BaseController
     public function addMessage(StoreSupportTicketMessageRequest $request, int $id): JsonResponse
     {
         try {
+            $ticket = $this->ticketService->getById($id);
+            $this->ticketAuthorization->assertTicket($request->user(), $ticket, 'support.reply');
+
             $userId = $this->currentUserId();
             $message = $this->ticketService->addMessage($request, $id, $userId);
 
             return $this->successResponse('تم إرسال الرسالة بنجاح.', new SupportTicketMessageResource($message), 201);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -498,10 +561,15 @@ class SupportTicketController extends BaseController
     public function markAsRead(Request $request, int $id): JsonResponse
     {
         try {
+            $ticket = $this->ticketService->getById($id);
+            $this->ticketAuthorization->assertTicket($request->user(), $ticket, 'support.view');
+
             $userId = $this->currentUserId();
             $count = $this->ticketService->markAsRead($id, $userId);
 
             return $this->successResponse("تم تمييز [{$count}] رسالة كمقروءة.", ['marked_read_count' => $count]);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
