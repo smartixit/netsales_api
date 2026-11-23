@@ -27,19 +27,23 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
      */
     protected function applyFilters(Builder $query, array $filters): void
     {
+        $hasAuthorizedNetworkScope = array_key_exists('authorized_network_ids', $filters);
+        $authorizedNetworkIds = array_values(array_unique(array_map(
+            'intval',
+            (array) ($filters['authorized_network_ids'] ?? [])
+        )));
+        unset($filters['authorized_network_ids'], $filters['authorized_user_id']);
+
         parent::applyFilters($query, $filters);
 
-        // This filter is injected only by the authenticated service layer.
-        // Client-supplied network_id/search filters can only narrow this scope.
-        if (isset($filters['authorized_user_id'])) {
-            $userId = (int) $filters['authorized_user_id'];
-            $query->whereHas('network', function (Builder $networkQuery) use ($userId): void {
-                $networkQuery->where('owner_id', $userId)
-                    ->orWhereHas('memberships', function (Builder $membershipQuery) use ($userId): void {
-                        $membershipQuery->where('user_id', $userId)
-                            ->where('status', 'ACTIVE');
-                    });
-            });
+        // The service supplies exact Network IDs already checked against
+        // active membership and the required network_wallets.view grant.
+        if ($hasAuthorizedNetworkScope) {
+            if ($authorizedNetworkIds === []) {
+                $query->whereRaw('0 = 1');
+            } else {
+                $query->whereIn('network_id', $authorizedNetworkIds);
+            }
         }
 
         if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
