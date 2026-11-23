@@ -44,19 +44,42 @@ final class SupportTicketAuthorizationService
 
         if (isset($filters['network_id'])) {
             $requestedNetworkId = (int) $filters['network_id'];
-            $networkIds = in_array($requestedNetworkId, $networkIds, true)
-                ? [$requestedNetworkId]
-                : [];
+
+            $networkAllowed = in_array($requestedNetworkId, $networkIds, true);
+            $linkedPosAllowed = $posIds !== []
+                && NetworkPos::query()
+                    ->where('network_id', $requestedNetworkId)
+                    ->whereIn('pos_id', $posIds)
+                    ->exists();
+
+            if (! $networkAllowed && ! $linkedPosAllowed) {
+                $networkIds = [];
+                $posIds = [];
+            } elseif ($networkAllowed) {
+                $networkIds = [$requestedNetworkId];
+            }
+            // Retain network_id so the repository applies it as an additional
+            // query constraint even when access is derived from a POS membership.
         }
 
         if (isset($filters['pos_id'])) {
             $requestedPosId = (int) $filters['pos_id'];
-            $posIds = in_array($requestedPosId, $posIds, true)
-                ? [$requestedPosId]
-                : [];
-        }
 
-        unset($filters['network_id'], $filters['pos_id']);
+            $posAllowed = in_array($requestedPosId, $posIds, true);
+            $linkedNetworkAllowed = $networkIds !== []
+                && NetworkPos::query()
+                    ->where('pos_id', $requestedPosId)
+                    ->whereIn('network_id', $networkIds)
+                    ->exists();
+
+            if (! $posAllowed && ! $linkedNetworkAllowed) {
+                $networkIds = [];
+                $posIds = [];
+            } elseif ($posAllowed) {
+                $posIds = [$requestedPosId];
+            }
+            // Retain pos_id as a second server-side query constraint.
+        }
 
         $filters['authorized_network_ids'] = array_values(array_unique($networkIds));
         $filters['authorized_pos_ids'] = array_values(array_unique($posIds));
