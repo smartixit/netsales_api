@@ -3,7 +3,9 @@
 namespace App\Policies;
 
 use App\Models\Network;
+use App\Models\NetworkPos;
 use App\Models\User;
+use App\Services\TenantPermissionService;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class NetworkPolicy
@@ -12,67 +14,61 @@ class NetworkPolicy
 
     public function before(User $user, string $ability): ?bool
     {
-        if ($user->isSuperAdmin()) {
-            return true;
-        }
-
-        return null;
+        return $user->isSuperAdmin() ? true : null;
     }
 
     public function viewAny(User $user): bool
     {
-        return true;
+        $permissions = app(TenantPermissionService::class);
+
+        if ($permissions->allowsAnyNetwork($user, 'networks.view')) {
+            return true;
+        }
+
+        $posIds = $permissions->authorizedPosIds($user, 'networks.view');
+
+        return $posIds !== []
+            && NetworkPos::query()->whereIn('pos_id', $posIds)->exists();
     }
 
     public function view(User $user, Network $network): bool
     {
-        // 1. مالك الشبكة
-        if ((int) $network->owner_id === (int) $user->user_id) {
+        $permissions = app(TenantPermissionService::class);
+
+        if ($permissions->allowsNetwork($user, (int) $network->network_id, 'networks.view')) {
             return true;
         }
 
-        // 2. موظف أو عضو في الشبكة
-        if ($user->networks()->where('networks.network_id', $network->network_id)->exists()) {
-            return true;
-        }
+        $posIds = $permissions->authorizedPosIds($user, 'networks.view');
 
-        if (method_exists($user, 'networkUsers') && $user->networkUsers()->where('network_id', $network->network_id)->exists()) {
-            return true;
-        }
-
-        // 3. مالك أو عضو في نقطة بيع مرتبطة بهذه الشبكة عبر رابط نشط
-        if ($user->pos()->whereHas('networkPos', fn ($q) => $q->where('network_id', $network->network_id))->exists()) {
-            return true;
-        }
-
-        if (method_exists($user, 'posUsers') && $user->posUsers()->whereHas('pos.networkPos', fn ($q) => $q->where('network_id', $network->network_id))->exists()) {
-            return true;
-        }
-
-        return false;
+        return $posIds !== []
+            && NetworkPos::query()
+                ->where('network_id', $network->network_id)
+                ->whereIn('pos_id', $posIds)
+                ->exists();
     }
 
     public function create(User $user): bool
     {
-        return $user->isSuperAdmin() || $user->hasRole('SUPER_ADMIN');
+        return false;
     }
 
     public function update(User $user, Network $network): bool
     {
-        // مالك الشبكة أو موظف يحمل صلاحية التعديل
-        if ((int) $network->owner_id === (int) $user->user_id) {
-            return true;
-        }
-
-        return $user->networkUsers()
-            ->where('network_id', $network->network_id)
-            ->whereHas('role.permissions', fn ($q) => $q->where('permission_key', 'networks.edit'))
-            ->exists();
+        return app(TenantPermissionService::class)->allowsNetwork(
+            $user,
+            (int) $network->network_id,
+            'networks.edit'
+        );
     }
 
     public function delete(User $user, Network $network): bool
     {
-        return (int) $network->owner_id === (int) $user->user_id;
+        return app(TenantPermissionService::class)->allowsNetwork(
+            $user,
+            (int) $network->network_id,
+            'networks.delete'
+        );
     }
 
     public function approve(User $user, Network $network): bool
