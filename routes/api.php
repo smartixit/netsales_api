@@ -416,7 +416,7 @@ Route::prefix('v1')->group(function () {
         // ==========================================
         Route::middleware(['throttle:api-read', 'permission:requests.view'])->group(function () {
             Route::get('requests', [RequestController::class, 'index'])->name('api.v1.requests.index');
-            Route::get('requests/summary', [RequestController::class, 'summary'])->name('api.v1.requests.summary');
+            Route::get('requests/summary', [RequestController::class, 'summary'])->name('api.v1.requests.summary')->middleware('permission:requests.report');
             Route::get('requests/trashed', [RequestController::class, 'trashed'])->name('api.v1.requests.trashed');
             Route::get('requests/{id}', [RequestController::class, 'show'])->whereNumber('id')->name('api.v1.requests.show');
         });
@@ -444,7 +444,7 @@ Route::prefix('v1')->group(function () {
             Route::get('sale-invoices', [SaleInvoiceController::class, 'index'])->name('api.v1.sale_invoices.index');
             Route::get('sale-invoices/trashed', [SaleInvoiceController::class, 'trashed'])->name('api.v1.sale_invoices.trashed');
             Route::get('sale-invoices/trend', [SaleInvoiceController::class,
-                'trend'])->name('api.v1.sale_invoices.trend');
+                'trend'])->name('api.v1.sale_invoices.trend')->middleware('permission:sales.report');
             Route::get('sale-invoices/{id}', [SaleInvoiceController::class, 'show'])->whereNumber('id')->name('api.v1.sale_invoices.show');
         });
 
@@ -463,7 +463,7 @@ Route::prefix('v1')->group(function () {
         // 12. المصروفات التشغيلية والبنود والمرفقات (Expenses & Operational Disbursals)
         // ==========================================
         Route::middleware(['throttle:api-read', 'permission:expenses.view'])->group(function () {
-            Route::get('expenses/summary', [ExpenseController::class, 'summary'])->name('api.v1.expenses.summary');
+            Route::get('expenses/summary', [ExpenseController::class, 'summary'])->name('api.v1.expenses.summary')->middleware('permission:expenses.report');
             Route::get('expenses', [ExpenseController::class, 'index'])->name('api.v1.expenses.index');
             Route::get('expenses/trashed', [ExpenseController::class, 'trashed'])->name('api.v1.expenses.trashed');
             Route::get('expenses/{id}', [ExpenseController::class, 'show'])->whereNumber('id')->name('api.v1.expenses.show');
@@ -548,7 +548,7 @@ Route::prefix('v1')->group(function () {
             Route::get('catalog', [BillingReportController::class, 'platformCatalog'])->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.catalog');
             Route::get('{reportType}', [BillingReportController::class, 'platformShow'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.show');
             Route::get('{reportType}/summary', [BillingReportController::class, 'platformSummary'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.summary');
-            Route::get('{reportType}/export.csv', [BillingReportController::class, 'platformExportCsv'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.export');
+            Route::get('{reportType}/export.csv', [BillingReportController::class, 'platformExportCsv'])->where('reportType', '[a-z_]+')->middleware(['throttle:api-read', 'permission:billing.export'])->name('api.v1.platform.billing.reports.export');
         });
 
         // Platform Billing — Windows Platform Scope only
