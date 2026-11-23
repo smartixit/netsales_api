@@ -5,6 +5,11 @@ namespace Tests\Feature;
 use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Models\Role;
+use App\Models\Permission;
+use App\Models\User;
+use App\Services\TenantPermissionService;
+use App\Services\UserService;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -127,6 +132,133 @@ class RolePermissionMatrixTest extends TestCase
         $this->assertNotContains('expenses.create', $posAccountantPermissions);
         $this->assertNotContains('requests.approve', $posAccountantPermissions);
         $this->assertNotContains('sales.delete', $posAccountantPermissions);
+    }
+
+    public function test_direct_permissions_cannot_be_assigned_to_operational_users(): void
+    {
+        $networkUser = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Operational Direct Grant '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => 'ACTIVE',
+        ]);
+
+        $permission = Permission::query()
+            ->where('permission_key', 'billing.refund_payment')
+            ->where('status', true)
+            ->firstOrFail();
+
+        try {
+            app(UserService::class)->syncPermissions(
+                (int) $networkUser->user_id,
+                [(int) $permission->permission_id]
+            );
+
+            $this->fail('Operational users must not receive unscoped direct permissions.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('user_id', $exception->errors());
+        }
+
+        $this->assertDatabaseMissing('user_permissions', [
+            'user_id' => $networkUser->user_id,
+            'permission_id' => $permission->permission_id,
+        ]);
+    }
+
+    public function test_legacy_direct_grant_is_not_effective_for_operational_user(): void
+    {
+        $networkUser = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Legacy Direct Grant '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => 'ACTIVE',
+        ]);
+
+        $permission = Permission::query()
+            ->where('permission_key', 'billing.refund_payment')
+            ->where('status', true)
+            ->firstOrFail();
+
+        // Simulate historical data that predates the strict scope boundary.
+        $networkUser->permissions()->attach($permission->permission_id);
+
+        $freshUser = User::query()->findOrFail($networkUser->user_id);
+
+        $this->assertFalse($freshUser->hasPermission('billing.refund_payment'));
+        $this->assertFalse(
+            app(TenantPermissionService::class)->allowsPlatform($freshUser, 'billing.refund_payment')
+        );
+    }
+
+    public function test_platform_user_can_receive_an_active_direct_permission(): void
+    {
+        $platformRole = Role::query()
+            ->where('role_key', RoleKey::SUPPORT_AGENT->value)
+            ->firstOrFail();
+
+        $platformUser = $this->createUserWithScope(RoleScope::PLATFORM, [
+            'role_id' => $platformRole->role_id,
+            'user_full_name' => 'Platform Direct Grant '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => 'ACTIVE',
+        ]);
+
+        $permission = Permission::query()
+            ->where('permission_key', 'bank_accounts.force_delete')
+            ->where('status', true)
+            ->firstOrFail();
+
+        $updatedUser = app(UserService::class)->syncPermissions(
+            (int) $platformUser->user_id,
+            [(int) $permission->permission_id]
+        );
+
+        $this->assertTrue($updatedUser->hasPermission('bank_accounts.force_delete'));
+        $this->assertTrue(
+            app(TenantPermissionService::class)->allowsPlatform($updatedUser, 'bank_accounts.force_delete')
+        );
+        $this->assertDatabaseHas('user_permissions', [
+            'user_id' => $platformUser->user_id,
+            'permission_id' => $permission->permission_id,
+        ]);
+    }
+
+    public function test_super_admin_bypass_requires_active_platform_root_role(): void
+    {
+        $role = Role::query()
+            ->where('role_key', RoleKey::SUPER_ADMIN->value)
+            ->firstOrFail();
+
+        $inactiveUser = $this->createUserWithScope(RoleScope::PLATFORM, [
+            'role_id' => $role->role_id,
+            'user_full_name' => 'Inactive Super Admin '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => 'INACTIVE',
+        ]);
+
+        $this->assertFalse($inactiveUser->isSuperAdmin());
+
+        $activeUser = $this->createUserWithScope(RoleScope::PLATFORM, [
+            'role_id' => $role->role_id,
+            'user_full_name' => 'Disabled Role Super Admin '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => 'ACTIVE',
+        ]);
+
+        $role->status = false;
+        $role->save();
+
+        $this->assertFalse($activeUser->fresh()->isSuperAdmin());
+
+        $role->status = true;
+        $role->save();
+
+        $this->assertTrue($activeUser->fresh()->isSuperAdmin());
     }
 
     /**
