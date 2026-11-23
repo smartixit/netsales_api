@@ -565,36 +565,36 @@ Route::prefix('v1')->group(function () {
                     Route::get('dunning/{policyId}/versions', 'dunningPolicyVersions')->whereNumber('policyId')->name('api.v1.platform.billing.policies.dunning.versions.index');
                     Route::get('trial-redemptions/pending', 'pendingRedemptions')->name('api.v1.platform.billing.policies.trials.pending');
                 });
-                Route::middleware(['throttle:api-write', 'permission:billing.create'])->group(function () {
-                    Route::post('accounts', [BillingFinanceController::class, 'createAccount'])->name('api.v1.platform.billing.accounts.store');
-                    Route::post('subscriptions', [BillingFinanceController::class, 'createSubscription'])->name('api.v1.platform.billing.subscriptions.store');
+                Route::middleware('throttle:api-write')->group(function () {
+                    Route::post('accounts', [BillingFinanceController::class, 'createAccount'])->middleware('permission:billing.create_account')->name('api.v1.platform.billing.accounts.store');
+                    Route::post('subscriptions', [BillingFinanceController::class, 'createSubscription'])->middleware('permission:billing.create_subscription')->name('api.v1.platform.billing.subscriptions.store');
                 });
 
-                Route::middleware(['throttle:api-write', 'permission:billing.manage'])->group(function () {
+                Route::middleware('throttle:api-write')->group(function () {
                     Route::post('subscriptions/{subscriptionId}/cancel', [BillingFinanceController::class, 'cancelSubscription'])
-                        ->whereNumber('subscriptionId')->name('api.v1.platform.billing.subscriptions.cancel');
-                    Route::post('trial-redemptions/{redemptionId}/approve', 'approveRedemption')->name('api.v1.platform.billing.policies.trials.approve');
-                    Route::post('trial-redemptions/{redemptionId}/reject', 'rejectRedemption')->name('api.v1.platform.billing.policies.trials.reject');
-                    Route::post('subscriptions/{subscriptionId}/trial-adjustments', 'adjustTrial')->name('api.v1.platform.billing.policies.trials.adjust');
-                    Route::post('trials', 'storeTrial')->name('api.v1.platform.billing.policies.trials.store');
-                    Route::post('dunning', 'storeDunning')->name('api.v1.platform.billing.policies.dunning.store');
-                    Route::post('trials/{policyId}/versions', 'storeTrialVersion')->name('api.v1.platform.billing.policies.trials.versions.store');
-                    Route::post('dunning/{policyId}/versions', 'storeDunningVersion')->name('api.v1.platform.billing.policies.dunning.versions.store');
-                    Route::post('trial-versions/{versionId}/publish', 'publishTrial')->name('api.v1.platform.billing.policies.trials.publish');
-                    Route::post('dunning-versions/{versionId}/publish', 'publishDunning')->name('api.v1.platform.billing.policies.dunning.publish');
-                    Route::put('plan-versions/{versionId}', 'assignPlanVersion')->name('api.v1.platform.billing.policies.plan_versions.assign');
-                    Route::put('prices/{priceId}', 'assignPrice')->name('api.v1.platform.billing.policies.prices.assign');
+                        ->whereNumber('subscriptionId')->middleware('permission:billing.cancel_subscription')->name('api.v1.platform.billing.subscriptions.cancel');
+                    Route::post('trial-redemptions/{redemptionId}/approve', 'approveRedemption')->middleware('permission:billing.approve_trial_redemption')->name('api.v1.platform.billing.policies.trials.approve');
+                    Route::post('trial-redemptions/{redemptionId}/reject', 'rejectRedemption')->middleware('permission:billing.reject_trial_redemption')->name('api.v1.platform.billing.policies.trials.reject');
+                    Route::post('subscriptions/{subscriptionId}/trial-adjustments', 'adjustTrial')->middleware('permission:billing.adjust_trial')->name('api.v1.platform.billing.policies.trials.adjust');
+                    Route::post('trials', 'storeTrial')->middleware('permission:billing.create_trial_policy')->name('api.v1.platform.billing.policies.trials.store');
+                    Route::post('dunning', 'storeDunning')->middleware('permission:billing.create_dunning_policy')->name('api.v1.platform.billing.policies.dunning.store');
+                    Route::post('trials/{policyId}/versions', 'storeTrialVersion')->middleware('permission:billing.create_trial_version')->name('api.v1.platform.billing.policies.trials.versions.store');
+                    Route::post('dunning/{policyId}/versions', 'storeDunningVersion')->middleware('permission:billing.create_dunning_version')->name('api.v1.platform.billing.policies.dunning.versions.store');
+                    Route::post('trial-versions/{versionId}/publish', 'publishTrial')->middleware('permission:billing.publish_trial_policy')->name('api.v1.platform.billing.policies.trials.publish');
+                    Route::post('dunning-versions/{versionId}/publish', 'publishDunning')->middleware('permission:billing.publish_dunning_policy')->name('api.v1.platform.billing.policies.dunning.publish');
+                    Route::put('plan-versions/{versionId}', 'assignPlanVersion')->middleware('permission:billing.assign_plan_version')->name('api.v1.platform.billing.policies.plan_versions.assign');
+                    Route::put('prices/{priceId}', 'assignPrice')->middleware('permission:billing.assign_price')->name('api.v1.platform.billing.policies.prices.assign');
                 });
             });
 
-            Route::middleware(['throttle:api-write', 'permission:billing.create'])->group(function () {
-                Route::post('accounts', [BillingFinanceController::class, 'createAccount'])->name('api.v1.platform.billing.accounts.store');
-                Route::post('subscriptions', [BillingFinanceController::class, 'createSubscription'])->name('api.v1.platform.billing.subscriptions.store');
+            Route::middleware('throttle:api-write')->group(function () {
+                Route::post('accounts', [BillingFinanceController::class, 'createAccount'])->middleware('permission:billing.create_account')->name('api.v1.platform.billing.accounts.store');
+                Route::post('subscriptions', [BillingFinanceController::class, 'createSubscription'])->middleware('permission:billing.create_subscription')->name('api.v1.platform.billing.subscriptions.store');
             });
 
-            Route::middleware(['throttle:api-write', 'permission:billing.manage'])->group(function () {
+            Route::middleware('throttle:api-write')->group(function () {
                 Route::post('subscriptions/{subscriptionId}/cancel', [BillingFinanceController::class, 'cancelSubscription'])
-                    ->whereNumber('subscriptionId')->name('api.v1.platform.billing.subscriptions.cancel');
+                    ->whereNumber('subscriptionId')->middleware('permission:billing.cancel_subscription')->name('api.v1.platform.billing.subscriptions.cancel');
             });
 
             Route::middleware(['throttle:api-read', 'permission:billing.view'])->group(function () {
@@ -618,47 +618,47 @@ Route::prefix('v1')->group(function () {
                 Route::get('conversions', [BillingFinanceController::class, 'conversions'])->name('api.v1.platform.billing.conversions.index');
             });
 
-            Route::middleware(['throttle:api-write', 'permission:billing.manage'])->group(function () {
-                Route::post('currencies', [BillingCatalogController::class, 'storeCurrency'])->name('api.v1.platform.billing.currencies.store');
+            Route::middleware('throttle:api-write')->group(function () {
+                Route::post('currencies', [BillingCatalogController::class, 'storeCurrency'])->middleware('permission:billing.create_currency')->name('api.v1.platform.billing.currencies.store');
                 Route::put('currencies/{currencyId}', [BillingCatalogController::class, 'updateCurrency'])
-                    ->whereNumber('currencyId')->name('api.v1.platform.billing.currencies.update');
-                Route::post('treasury-accounts', [BillingFinanceController::class, 'storeTreasuryAccount'])->name('api.v1.platform.billing.treasury_accounts.store');
+                    ->whereNumber('currencyId')->middleware('permission:billing.update_currency')->name('api.v1.platform.billing.currencies.update');
+                Route::post('treasury-accounts', [BillingFinanceController::class, 'storeTreasuryAccount'])->middleware('permission:billing.create_treasury_account')->name('api.v1.platform.billing.treasury_accounts.store');
                 Route::patch('treasury-accounts/{treasuryAccountId}/status', [BillingFinanceController::class, 'setTreasuryStatus'])
-                    ->whereNumber('treasuryAccountId')->name('api.v1.platform.billing.treasury_accounts.status');
-                Route::post('exchange-rates', [BillingFinanceController::class, 'storeExchangeRate'])->name('api.v1.platform.billing.exchange_rates.store');
-                Route::post('conversions', [BillingFinanceController::class, 'convertCurrency'])->name('api.v1.platform.billing.conversions.store');
+                    ->whereNumber('treasuryAccountId')->middleware('permission:billing.update_treasury_status')->name('api.v1.platform.billing.treasury_accounts.status');
+                Route::post('exchange-rates', [BillingFinanceController::class, 'storeExchangeRate'])->middleware('permission:billing.create_exchange_rate')->name('api.v1.platform.billing.exchange_rates.store');
+                Route::post('conversions', [BillingFinanceController::class, 'convertCurrency'])->middleware('permission:billing.convert_currency')->name('api.v1.platform.billing.conversions.store');
             });
 
-            Route::middleware(['throttle:api-write', 'permission:billing.create'])->group(function () {
-                Route::post('products', [BillingCatalogController::class, 'storeProduct'])->name('api.v1.platform.billing.products.store');
-                Route::post('plans', [BillingCatalogController::class, 'storePlan'])->name('api.v1.platform.billing.plans.store');
+            Route::middleware('throttle:api-write')->group(function () {
+                Route::post('products', [BillingCatalogController::class, 'storeProduct'])->middleware('permission:billing.create_product')->name('api.v1.platform.billing.products.store');
+                Route::post('plans', [BillingCatalogController::class, 'storePlan'])->middleware('permission:billing.create_plan')->name('api.v1.platform.billing.plans.store');
             });
 
-            Route::middleware(['throttle:api-write', 'permission:billing.edit'])->group(function () {
+            Route::middleware('throttle:api-write')->group(function () {
                 Route::post('plans/{planId}/versions', [BillingCatalogController::class, 'createDraftVersion'])
-                    ->whereNumber('planId')->name('api.v1.platform.billing.plan_versions.store');
+                    ->whereNumber('planId')->middleware('permission:billing.create_plan_version')->name('api.v1.platform.billing.plan_versions.store');
                 Route::post('plan-versions/{versionId}/prices', [BillingCatalogController::class, 'addPrice'])
-                    ->whereNumber('versionId')->name('api.v1.platform.billing.prices.store');
+                    ->whereNumber('versionId')->middleware('permission:billing.add_plan_price')->name('api.v1.platform.billing.prices.store');
                 Route::post('plan-versions/{versionId}/features', [BillingCatalogController::class, 'addFeature'])
-                    ->whereNumber('versionId')->name('api.v1.platform.billing.features.store');
+                    ->whereNumber('versionId')->middleware('permission:billing.add_plan_feature')->name('api.v1.platform.billing.features.store');
             });
 
             Route::post('plan-versions/{versionId}/publish', [BillingCatalogController::class, 'publishVersion'])
                 ->whereNumber('versionId')
-                ->middleware(['throttle:api-write', 'permission:billing.manage'])
+                ->middleware(['throttle:api-write', 'permission:billing.publish_plan_version'])
                 ->name('api.v1.platform.billing.plan_versions.publish');
 
-            Route::middleware(['throttle:api-write', 'permission:billing.approve'])->group(function () {
+            Route::middleware('throttle:api-write')->group(function () {
                 Route::post('payments/{paymentId}/verify', [BillingFinanceController::class, 'verifyPayment'])
-                    ->whereNumber('paymentId')->name('api.v1.platform.billing.payments.verify');
+                    ->whereNumber('paymentId')->middleware('permission:billing.verify_payment')->name('api.v1.platform.billing.payments.verify');
                 Route::post('payments/{paymentId}/reject', [BillingFinanceController::class, 'rejectPayment'])
-                    ->whereNumber('paymentId')->name('api.v1.platform.billing.payments.reject');
+                    ->whereNumber('paymentId')->middleware('permission:billing.reject_payment')->name('api.v1.platform.billing.payments.reject');
                 Route::post('invoices/{invoiceId}/credit-notes', [BillingFinanceController::class, 'issueCreditNote'])
-                    ->whereNumber('invoiceId')->name('api.v1.platform.billing.invoices.credit_notes.store');
+                    ->whereNumber('invoiceId')->middleware('permission:billing.issue_credit_note')->name('api.v1.platform.billing.invoices.credit_notes.store');
                 Route::post('payments/{paymentId}/refunds', [BillingFinanceController::class, 'refundPayment'])
-                    ->whereNumber('paymentId')->name('api.v1.platform.billing.payments.refunds.store');
+                    ->whereNumber('paymentId')->middleware('permission:billing.refund_payment')->name('api.v1.platform.billing.payments.refunds.store');
                 Route::post('invoices/{invoiceId}/void', [BillingFinanceController::class, 'voidInvoice'])
-                    ->whereNumber('invoiceId')->name('api.v1.platform.billing.invoices.void');
+                    ->whereNumber('invoiceId')->middleware('permission:billing.void_invoice')->name('api.v1.platform.billing.invoices.void');
             });
         });
 
