@@ -8,6 +8,7 @@ use App\Models\Pos;
 use App\Models\PosMembershipAuditLog;
 use App\Models\PosUser;
 use App\Models\Role;
+use App\Services\TenantPermissionService;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -18,12 +19,15 @@ use Illuminate\Validation\ValidationException;
  */
 class PosMembershipService
 {
+    public function __construct(
+        private TenantPermissionService $tenantPermissions
+    ) {}
     /**
      * جلب قائمة موظفي وعضويات نقطة البيع.
      */
     public function getMembers(int $posId, int $actorId): Collection
     {
-        $this->authorizeActor($posId, $actorId);
+        $this->authorizeActor($posId, $actorId, 'pos_members.view_members');
 
         $ownerId = (int) Pos::query()->whereKey($posId)->value('owner_id');
 
@@ -42,7 +46,7 @@ class PosMembershipService
      */
     public function getAssignableRoles(int $posId, int $actorId): Collection
     {
-        $this->authorizeActor($posId, $actorId);
+        $this->authorizeActor($posId, $actorId, 'pos_members.view_members');
 
         return Role::query()
             ->where('scope', RoleScope::POS->value)
@@ -62,7 +66,7 @@ class PosMembershipService
         int $actorId,
         string $status = 'ACTIVE'
     ): PosUser {
-        $this->authorizeActor($posId, $actorId);
+        $this->authorizeActor($posId, $actorId, 'pos_members.add_member');
 
         return DB::transaction(function () use ($posId, $phoneNumber, $roleId, $actorId, $status): PosUser {
             $user = User::where('user_phone_number', $phoneNumber)->first();
@@ -119,7 +123,7 @@ class PosMembershipService
      */
     public function updateRole(int $posId, int $userId, int $newRoleId, int $actorId, ?string $reason = null): PosUser
     {
-        $this->authorizeActor($posId, $actorId);
+        $this->authorizeActor($posId, $actorId, 'pos_members.change_member_role');
 
         return DB::transaction(function () use ($posId, $userId, $newRoleId, $actorId, $reason): PosUser {
             $pos = Pos::findOrFail($posId);
@@ -167,7 +171,7 @@ class PosMembershipService
      */
     public function updateStatus(int $posId, int $userId, string $newStatus, int $actorId, ?string $reason = null): PosUser
     {
-        $this->authorizeActor($posId, $actorId);
+        $this->authorizeActor($posId, $actorId, 'pos_members.change_member_status');
 
         if (! in_array($newStatus, ['ACTIVE', 'SUSPENDED', 'INVITED'], true)) {
             throw ValidationException::withMessages([
@@ -219,7 +223,7 @@ class PosMembershipService
      */
     public function removeMember(int $posId, int $userId, int $actorId, ?string $reason = null): bool
     {
-        $this->authorizeActor($posId, $actorId);
+        $this->authorizeActor($posId, $actorId, 'pos_members.remove_member');
 
         return DB::transaction(function () use ($posId, $userId, $actorId, $reason): bool {
             $pos = Pos::findOrFail($posId);
@@ -279,26 +283,13 @@ class PosMembershipService
     /**
      * التحقق من تخويل الفاعل لإدارة عضويات نقطة البيع.
      */
-    protected function authorizeActor(int $posId, int $actorId): void
+    protected function authorizeActor(int $posId, int $actorId, string $permission): void
     {
         $actor = User::findOrFail($actorId);
 
-        if ($actor->isSuperAdmin()) {
-            return;
-        }
-
-        $pos = Pos::findOrFail($posId);
-
-        $isOwner = (int) $pos->owner_id === $actorId;
-        $hasAgentMembership = PosUser::where('pos_id', $posId)
-            ->where('user_id', $actorId)
-            ->where('status', 'ACTIVE')
-            ->whereHas('role', fn ($q) => $q->where('role_key', 'POS_AGENT'))
-            ->exists();
-
-        if (! $isOwner && ! $hasAgentMembership) {
+        if (! $this->tenantPermissions->allowsPos($actor, $posId, $permission)) {
             throw ValidationException::withMessages([
-                'actor' => ['غير مصرح لك بإدارة موظفي وعضويات نقطة البيع هذه (مطلوب صلاحية وكيل نقطة البيع).'],
+                'actor' => ['لا تملك الصلاحية المحددة لإدارة هذه العضوية داخل نقطة البيع.'],
             ]);
         }
     }
