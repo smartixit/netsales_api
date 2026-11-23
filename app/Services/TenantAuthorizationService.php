@@ -21,6 +21,10 @@ use Illuminate\Validation\ValidationException;
  */
 class TenantAuthorizationService
 {
+    public function __construct(
+        private readonly TenantPermissionService $tenantPermissions
+    ) {}
+
     /**
      * هل المستخدم يمتلك صلاحيات مدير النظام العام (Super Admin)؟
      */
@@ -41,27 +45,12 @@ class TenantAuthorizationService
             return null;
         }
 
-        // 1. الشبكات المملوكة للمستخدم
-        $ownedNetworkIds = Network::where('owner_id', $user->user_id)
-            ->pluck('network_id')
-            ->toArray();
-
-        // 2. الشبكات التي يحمل فيها عضوية نشطة
-        $memberQuery = NetworkUser::where('user_id', $user->user_id)
-            ->where('status', 'ACTIVE');
-
-        if ($permission) {
-            $memberQuery->whereHas('role.permissions', function ($q) use ($permission) {
-                $q->where('permission_key', $permission)
-                    ->orWhere('permission_key', strtoupper($permission));
-            });
+        if ($permission === null || $permission === '') {
+            return [];
         }
 
-        $memberNetworkIds = $memberQuery->pluck('network_id')->toArray();
-
-        return array_values(array_unique(array_merge($ownedNetworkIds, $memberNetworkIds)));
+        return $this->tenantPermissions->authorizedNetworkIds($user, $permission);
     }
-
     /**
      * استخراج كافة معرفات نقاط البيع التي يملكها المستخدم أو يحمل فيها عضوية نشطة.
      * يعيد null لمدير النظام العام.
@@ -74,25 +63,12 @@ class TenantAuthorizationService
             return null;
         }
 
-        $ownedPosIds = Pos::where('owner_id', $user->user_id)
-            ->pluck('pos_id')
-            ->toArray();
-
-        $memberQuery = PosUser::where('user_id', $user->user_id)
-            ->where('status', 'ACTIVE');
-
-        if ($permission) {
-            $memberQuery->whereHas('role.permissions', function ($q) use ($permission) {
-                $q->where('permission_key', $permission)
-                    ->orWhere('permission_key', strtoupper($permission));
-            });
+        if ($permission === null || $permission === '') {
+            return [];
         }
 
-        $memberPosIds = $memberQuery->pluck('pos_id')->toArray();
-
-        return array_values(array_unique(array_merge($ownedPosIds, $memberPosIds)));
+        return $this->tenantPermissions->authorizedPosIds($user, $permission);
     }
-
     /**
      * استخراج معرفات الشبكات المرتبطة تجارياً بنقاط البيع الخاصة بالمستخدم عبر رابط نشط.
      *
@@ -199,21 +175,8 @@ class TenantAuthorizationService
             return true;
         }
 
-        // مالك الشبكة يملك الصلاحية الكاملة لإدارة باقات شبكته
-        if (Network::where('network_id', $networkId)->where('owner_id', $user->user_id)->exists()) {
-            return true;
-        }
-
-        // عضو الشبكة يجب أن يكون نشطاً ولديه الصلاحية المحددة في دوره
-        return NetworkUser::where('network_id', $networkId)
-            ->where('user_id', $user->user_id)
-            ->where('status', 'ACTIVE')
-            ->whereHas('role.permissions', function ($q) use ($permission) {
-                $q->where('permission_key', $permission)
-                    ->orWhere('permission_key', strtoupper($permission));
-            })->exists();
+        return $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
     }
-
     /**
      * التحقق من تخويل عرض باقة محددة.
      */
