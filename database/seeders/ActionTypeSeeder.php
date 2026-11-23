@@ -21,6 +21,8 @@ class ActionTypeSeeder extends Seeder
             'create' => 'إنشاء',
             'edit' => 'تعديل',
             'toggle_status' => 'تغيير الحالة',
+            'change_role' => 'تغيير الدور',
+            'change_status' => 'تغيير حالة العضوية',
             'delete' => 'حذف',
             'restore' => 'استعادة',
             'force_delete' => 'حذف نهائي',
