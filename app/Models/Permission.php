@@ -29,6 +29,7 @@ class Permission extends Model
         'module_id',
         'action_type_id',
         'permission_key',
+        'scope',
         'permission_name',
         'permission_desc',
         'status',
