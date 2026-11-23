@@ -87,7 +87,7 @@ class UserController extends BaseController
         try {
             $relations = ['role'];
 
-            if ($request->user()?->hasPermission('auth.view')) {
+            if ($request->user()?->hasPermission('auth.view_devices')) {
                 $relations = ['role', 'devices.securityBans', 'securityBans'];
             }
 

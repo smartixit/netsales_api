@@ -100,6 +100,17 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
         $this->assertNotContains('billing.view', $permissions);
     }
 
+    public function test_network_owner_can_manage_network_tickets_but_network_user_cannot(): void
+    {
+        $ownerPermissions = $this->permissionKeys(RoleKey::NETWORK_OWNER);
+        $userPermissions = $this->permissionKeys(RoleKey::NETWORK_USER);
+
+        foreach (['support.edit', 'support.delete', 'support.restore', 'support.force_delete'] as $permission) {
+            $this->assertContains($permission, $ownerPermissions);
+            $this->assertNotContains($permission, $userPermissions);
+        }
+    }
+
     public function test_network_user_cannot_approve_requests_or_change_financial_records(): void
     {
         $permissions = $this->permissionKeys(RoleKey::NETWORK_USER);

@@ -211,7 +211,9 @@ class EnsurePermissionMiddleware
                 $message = str_starts_with($permission, 'network_wallets.')
                     || str_starts_with($permission, 'pos_wallets.')
                     ? 'غير مصرح لك بالوصول إلى هذه المحفظة.'
-                    : 'عذراً، لا تملك هذه الصلاحية داخل مساحة العمل أو الكيان المحدد.';
+                    : (str_starts_with($permission, 'sales.')
+                        ? 'غير مصرح لك بالوصول إلى هذه الفاتورة.'
+                        : 'عذراً، لا تملك هذه الصلاحية داخل مساحة العمل أو الكيان المحدد.');
 
                 throw new AuthorizationException($message);
             }
@@ -313,6 +315,10 @@ class EnsurePermissionMiddleware
         $networkIds = [];
         $posIds = [];
         $routeName = (string) ($request->route()?->getName() ?? '');
+
+        if ($routeName === 'api.v1.network_pos.challenges.revoke') {
+            return $this->tenantPermissions->allowsAnyNetwork($user, $permission);
+        }
 
         if ($routeName === 'api.v1.network_pos.challenges.status') {
             $challengeUuid = (string) ($request->route('uuid') ?? '');
@@ -642,7 +648,7 @@ class EnsurePermissionMiddleware
         $routeName = (string) ($request->route()?->getName() ?? '');
         $viewPermission = str_starts_with($routeName, 'api.v1.voucher_package_discounts.')
             ? 'voucher_package_discounts.view'
-            : $viewPermission;
+            : 'voucher_packages.view';
 
         if ($routeName === 'api.v1.networks.voucher_packages') {
             $networkId = (int) ($request->route('id') ?? 0);

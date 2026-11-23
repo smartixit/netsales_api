@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Enums\RoleScope;
 use App\Enums\SaleType;
 use App\Models\Directorate;
 use App\Models\Governorate;
@@ -52,7 +53,13 @@ class VoucherPackageDiscountValidityTest extends TestCase
         parent::setUp();
 
         $suffix = uniqid();
-        $this->user = User::firstOrFail();
+        $this->user = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Voucher Discount Network Owner '.$suffix,
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => 'ACTIVE',
+        ]);
 
         $devUuid = 'DEV-'.$suffix;
         UserDevice::firstOrCreate([

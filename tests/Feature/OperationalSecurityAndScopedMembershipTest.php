@@ -157,7 +157,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             ->getJson("/api/v1/networks/{$this->networkA->network_id}/members");
 
         $response->assertStatus(403);
-        $this->assertStringContainsString('SUPER_ADMIN', $response->json('message'));
+        $this->assertStringContainsString('نطاق المنصة', $response->json('message'));
     }
 
     /**

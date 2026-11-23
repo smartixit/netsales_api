@@ -990,6 +990,14 @@ class NetworkPosLinkingChallengeTest extends TestCase
         if ($netEditPerm) {
             $ownerB->permissions()->syncWithoutDetaching([$netEditPerm->permission_id]);
         }
+        Network::query()->create([
+            'owner_id' => $ownerB->user_id,
+            'network_name' => 'Cross Tenant Network B '.uniqid(),
+            'network_phone_number' => '77'.random_int(10000000, 99999999),
+            'governorate_id' => $this->network->governorate_id,
+            'directorate_id' => $this->network->directorate_id,
+            'status' => NetworkStatus::ACTIVE,
+        ]);
         $sessionB = $this->createAuthenticatedSession($ownerB);
 
         $crossTenantRes = $this->withHeaders($sessionB['headers'])
