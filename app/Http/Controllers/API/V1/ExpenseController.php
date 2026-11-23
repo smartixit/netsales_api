@@ -319,7 +319,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = $this->expenseService->getById($id);
-            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.force_delete')) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.delete')) {
                 return $denial;
             }
 
