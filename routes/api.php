@@ -171,32 +171,35 @@ Route::prefix('v1')->group(function () {
 
         // 2. إدارة الأمان والجلسات والحظر (Security & Sessions)
         Route::prefix('security')->middleware('platform.user.scope')->group(function () {
-            Route::middleware(['throttle:api-read', 'permission:auth.view'])->group(function () {
+            Route::middleware(['throttle:api-read', 'permission:auth.view_sessions'])->group(function () {
                 Route::get('users/{id}/sessions', [SecurityController::class, 'getUserSessions'])
                     ->whereNumber('id')->name('api.v1.security.user_sessions');
                 Route::get('users/{id}/devices', [SecurityController::class, 'getUserDevices'])
                     ->whereNumber('id')->name('api.v1.security.user_devices');
             });
-            Route::middleware(['throttle:api-write', 'permission:auth.manage'])->group(function () {
-                Route::post('ban-user', [SecurityController::class, 'banUser'])->name('api.v1.security.ban_user');
-                Route::post('ban-device', [SecurityController::class, 'banDevice'])->name('api.v1.security.ban_device');
+            Route::middleware('throttle:api-write')->group(function () {
+                Route::post('ban-user', [SecurityController::class, 'banUser'])
+                    ->middleware('permission:auth.ban_user')->name('api.v1.security.ban_user');
+                Route::post('ban-device', [SecurityController::class, 'banDevice'])
+                    ->middleware('permission:auth.ban_device')->name('api.v1.security.ban_device');
                 Route::delete('bans/{id}', [SecurityController::class, 'unban'])
-                    ->whereNumber('id')->name('api.v1.security.unban');
+                    ->whereNumber('id')->middleware('permission:auth.lift_ban')->name('api.v1.security.unban');
                 Route::post('sessions/{id}/terminate', [SecurityController::class, 'terminateSession'])
+                    ->middleware('permission:auth.terminate_session')
                     ->whereNumber('id')->name('api.v1.security.terminate_session');
             });
         });
 
         // Backward-compatible aliases keep the same authorization and platform-scope checks.
-        Route::middleware(['throttle:api-read', 'platform.user.scope', 'permission:auth.view'])->group(function () {
+        Route::middleware(['throttle:api-read', 'platform.user.scope', 'permission:auth.view_sessions'])->group(function () {
             Route::get('users/{id}/sessions', [SecurityController::class, 'getUserSessions'])->whereNumber('id');
             Route::get('users/{id}/devices', [SecurityController::class, 'getUserDevices'])->whereNumber('id');
         });
-        Route::middleware(['throttle:api-write', 'platform.user.scope', 'permission:auth.manage'])->group(function () {
-            Route::post('ban-user', [SecurityController::class, 'banUser']);
-            Route::post('ban-device', [SecurityController::class, 'banDevice']);
-            Route::delete('bans/{id}', [SecurityController::class, 'unban'])->whereNumber('id');
-            Route::post('sessions/{id}/terminate', [SecurityController::class, 'terminateSession'])->whereNumber('id');
+        Route::middleware(['throttle:api-write', 'platform.user.scope'])->group(function () {
+            Route::post('ban-user', [SecurityController::class, 'banUser'])->middleware('permission:auth.ban_user');
+            Route::post('ban-device', [SecurityController::class, 'banDevice'])->middleware('permission:auth.ban_device');
+            Route::delete('bans/{id}', [SecurityController::class, 'unban'])->whereNumber('id')->middleware('permission:auth.lift_ban');
+            Route::post('sessions/{id}/terminate', [SecurityController::class, 'terminateSession'])->whereNumber('id')->middleware('permission:auth.terminate_session');
         });
 
         // 3. إدارة مزودي الشبكات (Networks Management)
@@ -292,13 +295,13 @@ Route::prefix('v1')->group(function () {
         // ==========================================
         // 5. ربط نقاط البيع بمزودي الشبكات (Network POS Links)
         // ==========================================
-        Route::middleware(['throttle:api-read', 'permission:networks.view'])->group(function () {
+        Route::middleware(['throttle:api-read', 'permission:network_pos.view'])->group(function () {
             Route::get('network-pos', [NetworkPosController::class, 'index'])->name('api.v1.network_pos.index');
             Route::get('network-pos/{id}', [NetworkPosController::class, 'show'])->whereNumber('id')->name('api.v1.network_pos.show');
             Route::get('networks/{id}/pos', [NetworkPosController::class, 'networkPosList'])->whereNumber('id')->name('api.v1.networks.pos_list');
         });
 
-        Route::middleware(['throttle:api-read', 'permission:pos.view'])->group(function () {
+        Route::middleware(['throttle:api-read', 'permission:network_pos.view'])->group(function () {
             Route::get('pos/{id}/networks', [NetworkPosController::class, 'posNetworksList'])->whereNumber('id')->name('api.v1.pos.networks_list');
         });
 
@@ -330,7 +333,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('voucher-packages', [VoucherPackageController::class, 'store'])->name('api.v1.voucher_packages.store')->middleware('permission:voucher_packages.create');
             Route::put('voucher-packages/{id}', [VoucherPackageController::class, 'update'])->whereNumber('id')->name('api.v1.voucher_packages.update')->middleware('permission:voucher_packages.update');
-            Route::patch('voucher-packages/{id}', [VoucherPackageController::class, 'update'])->whereNumber('id')->name('api.v1.voucher_packages.update')->middleware('permission:voucher_packages.edit');
+            Route::patch('voucher-packages/{id}', [VoucherPackageController::class, 'update'])->whereNumber('id')->name('api.v1.voucher_packages.update')->middleware('permission:voucher_packages.update');
             Route::delete('voucher-packages/{id}', [VoucherPackageController::class, 'destroy'])->whereNumber('id')->name('api.v1.voucher_packages.destroy')->middleware('permission:voucher_packages.delete');
             Route::post('voucher-packages/batch-delete', [VoucherPackageController::class, 'batchDelete'])->name('api.v1.voucher_packages.batch_delete')->middleware('permission:voucher_packages.delete');
             Route::post('voucher-packages/batch-restore', [VoucherPackageController::class, 'batchRestore'])->name('api.v1.voucher_packages.batch_restore')->middleware('permission:voucher_packages.restore');
@@ -343,7 +346,7 @@ Route::prefix('v1')->group(function () {
         // ==========================================
         // 7. خصومات وعمولات باقات الكروت المخصصة (Voucher Package Discounts)
         // ==========================================
-        Route::middleware(['throttle:api-read', 'permission:voucher_packages.view'])->group(function () {
+        Route::middleware(['throttle:api-read', 'permission:package_discounts.view'])->group(function () {
             Route::get('voucher-package-discounts', [VoucherPackageDiscountController::class, 'index'])->name('api.v1.voucher_package_discounts.index');
             Route::get('voucher-package-discounts/trashed', [VoucherPackageDiscountController::class, 'trashed'])->name('api.v1.voucher_package_discounts.trashed');
             Route::get('voucher-package-discounts/effective', [VoucherPackageDiscountController::class, 'effectiveDiscount'])->name('api.v1.voucher_package_discounts.effective');
@@ -353,7 +356,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('voucher-package-discounts', [VoucherPackageDiscountController::class, 'store'])->name('api.v1.voucher_package_discounts.store')->middleware('permission:package_discounts.create');
             Route::put('voucher-package-discounts/{id}', [VoucherPackageDiscountController::class, 'update'])->whereNumber('id')->name('api.v1.voucher_package_discounts.update')->middleware('permission:package_discounts.update');
-            Route::patch('voucher-package-discounts/{id}', [VoucherPackageDiscountController::class, 'update'])->whereNumber('id')->name('api.v1.voucher_package_discounts.update')->middleware('permission:voucher_packages.edit');
+            Route::patch('voucher-package-discounts/{id}', [VoucherPackageDiscountController::class, 'update'])->whereNumber('id')->name('api.v1.voucher_package_discounts.update')->middleware('permission:package_discounts.update');
             Route::delete('voucher-package-discounts/{id}', [VoucherPackageDiscountController::class, 'destroy'])->whereNumber('id')->name('api.v1.voucher_package_discounts.destroy')->middleware('permission:package_discounts.delete');
             Route::post('voucher-package-discounts/batch-delete', [VoucherPackageDiscountController::class, 'batchDelete'])->name('api.v1.voucher_package_discounts.batch_delete')->middleware('permission:package_discounts.delete');
             Route::post('voucher-package-discounts/batch-restore', [VoucherPackageDiscountController::class, 'batchRestore'])->name('api.v1.voucher_package_discounts.batch_restore')->middleware('permission:package_discounts.restore');
@@ -483,7 +486,6 @@ Route::prefix('v1')->group(function () {
             Route::post('expenses/{id}/items', [ExpenseController::class, 'addItem'])->whereNumber('id')->name('api.v1.expenses.add_item')->middleware('permission:expenses.add_item');
             Route::delete('expenses/{id}/items/{itemId}', [ExpenseController::class, 'deleteItem'])->whereNumber('id')->whereNumber('itemId')->name('api.v1.expenses.delete_item')->middleware('permission:expenses.delete_item');
             Route::delete('expenses/{id}/attachments/{attachmentId}', [ExpenseController::class, 'deleteAttachment'])->whereNumber('id')->whereNumber('attachmentId')->name('api.v1.expenses.delete_attachment')->middleware('permission:expenses.delete_attachment');
-            Route::apiResource('expenses', ExpenseController::class)->parameters(['expenses' => 'id'])->except(['index', 'show']);
         });
 
         // ==========================================
