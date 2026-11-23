@@ -19,6 +19,7 @@ interface PosRepositoryInterface extends BaseRepositoryInterface
      * @return Collection<int, Pos>|CursorPaginator
      */
     public function getFiltered(array $filters = [], array $relations = []): Collection|CursorPaginator;
+    public function getTrashedFiltered(array $filters = [], array $relations = []): Collection|CursorPaginator;
 
     /**
      * البحث عن نقطة بيع عبر رقم هاتفها.
