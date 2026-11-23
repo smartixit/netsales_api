@@ -374,6 +374,84 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
      * Membership role discovery and assignment must expose only least-privilege
      * operational roles; scope membership alone must never allow privilege escalation.
      */
+    public function test_membership_management_requires_exact_owner_capability_and_tenant_scope(): void
+    {
+        $networkUser = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Network Member Without Membership Admin '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+        NetworkUser::create([
+            'network_id' => $this->networkA->network_id,
+            'user_id' => $networkUser->user_id,
+            'role_id' => Role::where('role_key', RoleKey::NETWORK_USER->value)->firstOrFail()->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        $networkUserAuth = $this->createAuthenticatedSession($networkUser);
+
+        $this->withHeaders($networkUserAuth['headers'])
+            ->getJson("/api/v1/networks/{$this->networkA->network_id}/members")
+            ->assertForbidden();
+
+        $this->withHeaders($networkUserAuth['headers'])
+            ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
+                'user_phone_number' => '70'.rand(1000000, 9999999),
+                'role_id' => Role::where('role_key', RoleKey::NETWORK_USER->value)->firstOrFail()->role_id,
+            ])
+            ->assertForbidden();
+
+        // A NETWORK_OWNER membership grants member administration only for its own network.
+        $scopedNetworkOwner = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Scoped Network Owner '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+        NetworkUser::create([
+            'network_id' => $this->networkA->network_id,
+            'user_id' => $scopedNetworkOwner->user_id,
+            'role_id' => Role::where('role_key', RoleKey::NETWORK_OWNER->value)->firstOrFail()->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        $scopedOwnerAuth = $this->createAuthenticatedSession($scopedNetworkOwner);
+
+        $this->withHeaders($scopedOwnerAuth['headers'])
+            ->getJson("/api/v1/networks/{$this->networkA->network_id}/members")
+            ->assertOk();
+
+        $this->withHeaders($scopedOwnerAuth['headers'])
+            ->getJson("/api/v1/networks/{$this->networkB->network_id}/members")
+            ->assertForbidden();
+
+        $posUser = $this->createUserWithScope(RoleScope::POS, [
+            'role_id' => null,
+            'user_full_name' => 'POS Member Without Membership Admin '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+        PosUser::create([
+            'pos_id' => $this->posA->pos_id,
+            'user_id' => $posUser->user_id,
+            'role_id' => Role::where('role_key', RoleKey::POS_USER->value)->firstOrFail()->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        $posUserAuth = $this->createAuthenticatedSession($posUser);
+
+        $this->withHeaders($posUserAuth['headers'])
+            ->getJson("/api/v1/pos/{$this->posA->pos_id}/members")
+            ->assertForbidden();
+
+        $this->withHeaders($posUserAuth['headers'])
+            ->putJson("/api/v1/pos/{$this->posA->pos_id}/members/{$posUser->user_id}/status", [
+                'status' => 'SUSPENDED',
+            ])
+            ->assertForbidden();
+    }
+
     public function test_network_membership_only_exposes_and_accepts_network_user_role(): void
     {
         $ownerAuth = $this->createAuthenticatedSession($this->networkOwner);
