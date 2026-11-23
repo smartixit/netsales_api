@@ -846,15 +846,16 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->posWallet->wallet_balance = 100000.00;
         $this->posWallet->save();
 
-        $reqId = $this->postProcurementRequest([
+        $posOwnerAuth = $this->createAuthenticatedSession($posOwner);
+        $requestResponse = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,
             'items' => [['package_id' => $this->packageA->package_id, 'voucher_count' => 50]],
-        ])->json('data.request_id');
+        ], $posOwnerAuth['headers']);
 
-        // تعيين منشئ الطلب كوكيل نقطة البيع
-        RequestModel::where('request_id', $reqId)->update(['created_by' => $posOwner->user_id]);
+        $requestResponse->assertCreated();
+        $reqId = $requestResponse->json('data.request_id');
 
         $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$reqId}/approve")
