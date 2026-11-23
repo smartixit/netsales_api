@@ -22,7 +22,7 @@ class EnsureOperationalWorkspaceScope
     {
         $user = $request->user();
 
-        if ($user?->role?->scope === RoleScope::PLATFORM) {
+        if ($user?->role_scope === RoleScope::PLATFORM->value) {
             return $this->errorResponse(
                 'حسابات نطاق المنصة مخصصة لإدارة المنصة ولا يمكن استخدامها لتنفيذ العمليات التشغيلية لمساحات NETWORK و POS.',
                 [
