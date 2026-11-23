@@ -549,11 +549,15 @@ Route::prefix('v1')->group(function () {
         });
 
         // Billing reports are isolated from operational reports and remain currency-aware.
-        Route::prefix('platform/billing/reports')->middleware(['platform.user.scope', 'permission:billing.view'])->group(function () {
-            Route::get('catalog', [BillingReportController::class, 'platformCatalog'])->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.catalog');
-            Route::get('{reportType}', [BillingReportController::class, 'platformShow'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.show');
-            Route::get('{reportType}/summary', [BillingReportController::class, 'platformSummary'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.summary');
-            Route::get('{reportType}/export.csv', [BillingReportController::class, 'platformExportCsv'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.export');
+        Route::prefix('platform/billing/reports')->middleware('platform.user.scope')->group(function () {
+            Route::middleware(['throttle:api-read', 'permission:billing.report'])->group(function () {
+                Route::get('catalog', [BillingReportController::class, 'platformCatalog'])->name('api.v1.platform.billing.reports.catalog');
+                Route::get('{reportType}', [BillingReportController::class, 'platformShow'])->where('reportType', '[a-z_]+')->name('api.v1.platform.billing.reports.show');
+                Route::get('{reportType}/summary', [BillingReportController::class, 'platformSummary'])->where('reportType', '[a-z_]+')->name('api.v1.platform.billing.reports.summary');
+            });
+            Route::get('{reportType}/export.csv', [BillingReportController::class, 'platformExportCsv'])
+                ->where('reportType', '[a-z_]+')->middleware(['throttle:api-read', 'permission:billing.export'])
+                ->name('api.v1.platform.billing.reports.export');
         });
 
         // Platform Billing — Windows Platform Scope only
@@ -763,58 +767,77 @@ Route::prefix('v1')->group(function () {
 
         // ==========================================
         // 18. تذاكر الدعم الفني والمراسلات (Support Tickets & Communications Engine)
-        // ==========================================
-        Route::middleware('throttle:api-read')->group(function () {
+        Route::middleware(['throttle:api-read', 'permission:support_tickets.view'])->group(function () {
             Route::get('support-tickets', [SupportTicketController::class, 'index'])->name('api.v1.support_tickets.index');
-            Route::get('support-tickets/trashed', [SupportTicketController::class, 'trashed'])->name('api.v1.support_tickets.trashed');
             Route::get('support-tickets/{id}', [SupportTicketController::class, 'show'])->whereNumber('id')->name('api.v1.support_tickets.show');
             Route::get('support-tickets/{id}/messages', [SupportTicketController::class, 'messages'])->whereNumber('id')->name('api.v1.support_tickets.messages');
         });
 
+        Route::get('support-tickets/trashed', [SupportTicketController::class, 'trashed'])
+            ->middleware(['throttle:api-read', 'platform.user.scope', 'permission:support_tickets.view_trashed'])
+            ->name('api.v1.support_tickets.trashed');
+
         Route::middleware('throttle:api-write')->group(function () {
-            Route::post('support-tickets', [SupportTicketController::class, 'store'])->name('api.v1.support_tickets.store');
-            Route::put('support-tickets/{id}', [SupportTicketController::class, 'update'])->whereNumber('id')->name('api.v1.support_tickets.update');
-            Route::delete('support-tickets/{id}', [SupportTicketController::class, 'destroy'])->whereNumber('id')->name('api.v1.support_tickets.destroy');
-            Route::post('support-tickets/{id}/restore', [SupportTicketController::class, 'restore'])->whereNumber('id')->name('api.v1.support_tickets.restore');
-            Route::delete('support-tickets/{id}/force', [SupportTicketController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.support_tickets.force_delete');
-            Route::post('support-tickets/batch-delete', [SupportTicketController::class, 'batchDelete'])->name('api.v1.support_tickets.batch_delete');
-            Route::post('support-tickets/batch-restore', [SupportTicketController::class, 'batchRestore'])->name('api.v1.support_tickets.batch_restore');
-            Route::post('support-tickets/batch-force-delete', [SupportTicketController::class, 'batchForceDelete'])->name('api.v1.support_tickets.batch_force_delete');
-            Route::post('support-tickets/{id}/messages', [SupportTicketController::class, 'addMessage'])->whereNumber('id')->name('api.v1.support_tickets.add_message');
-            Route::post('support-tickets/{id}/read', [SupportTicketController::class, 'markAsRead'])->whereNumber('id')->name('api.v1.support_tickets.mark_as_read');
-            Route::apiResource('support-tickets', SupportTicketController::class)->parameters(['support-tickets' => 'id'])->except(['index', 'show']);
+            Route::post('support-tickets', [SupportTicketController::class, 'store'])
+                ->middleware('permission:support_tickets.create')->name('api.v1.support_tickets.store');
+            Route::put('support-tickets/{id}', [SupportTicketController::class, 'update'])
+                ->whereNumber('id')->middleware('permission:support_tickets.update')->name('api.v1.support_tickets.update');
+            Route::delete('support-tickets/{id}', [SupportTicketController::class, 'destroy'])
+                ->whereNumber('id')->middleware(['platform.user.scope', 'permission:support_tickets.delete'])->name('api.v1.support_tickets.destroy');
+            Route::post('support-tickets/{id}/restore', [SupportTicketController::class, 'restore'])
+                ->whereNumber('id')->middleware(['platform.user.scope', 'permission:support_tickets.restore'])->name('api.v1.support_tickets.restore');
+            Route::delete('support-tickets/{id}/force', [SupportTicketController::class, 'forceDelete'])
+                ->whereNumber('id')->middleware(['platform.user.scope', 'permission:support_tickets.force_delete'])->name('api.v1.support_tickets.force_delete');
+            Route::post('support-tickets/batch-delete', [SupportTicketController::class, 'batchDelete'])
+                ->middleware(['platform.user.scope', 'permission:support_tickets.delete'])->name('api.v1.support_tickets.batch_delete');
+            Route::post('support-tickets/batch-restore', [SupportTicketController::class, 'batchRestore'])
+                ->middleware(['platform.user.scope', 'permission:support_tickets.restore'])->name('api.v1.support_tickets.batch_restore');
+            Route::post('support-tickets/batch-force-delete', [SupportTicketController::class, 'batchForceDelete'])
+                ->middleware(['platform.user.scope', 'permission:support_tickets.force_delete'])->name('api.v1.support_tickets.batch_force_delete');
+            Route::post('support-tickets/{id}/messages', [SupportTicketController::class, 'addMessage'])
+                ->whereNumber('id')->middleware('permission:support_tickets.reply')->name('api.v1.support_tickets.add_message');
+            Route::post('support-tickets/{id}/read', [SupportTicketController::class, 'markAsRead'])
+                ->whereNumber('id')->middleware('permission:support_tickets.mark_read')->name('api.v1.support_tickets.mark_as_read');
         });
 
-        // ==========================================
         // 19. الإشعارات والتنبيهات الموجهة (Notifications Engine)
-        // ==========================================
         Route::middleware('throttle:api-read')->group(function () {
-            Route::get('notifications', [NotificationController::class, 'index'])->name('api.v1.notifications.index');
             Route::get('notifications/my', [NotificationController::class, 'myNotifications'])->name('api.v1.notifications.my');
             Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('api.v1.notifications.unread_count');
-            Route::get('notifications/trashed', [NotificationController::class, 'trashed'])->name('api.v1.notifications.trashed');
-            Route::get('notifications/{id}', [NotificationController::class, 'show'])->whereNumber('id')->name('api.v1.notifications.show');
         });
 
+        Route::middleware(['throttle:api-read', 'platform.user.scope', 'permission:notifications.view'])->group(function () {
+            Route::get('notifications', [NotificationController::class, 'index'])->name('api.v1.notifications.index');
+            Route::get('notifications/{id}', [NotificationController::class, 'show'])->whereNumber('id')->name('api.v1.notifications.show');
+        });
+        Route::get('notifications/trashed', [NotificationController::class, 'trashed'])
+            ->middleware(['throttle:api-read', 'platform.user.scope', 'permission:notifications.view_trashed'])
+            ->name('api.v1.notifications.trashed');
+
         Route::middleware('throttle:api-write')->group(function () {
-            Route::post('notifications', [NotificationController::class, 'store'])->name('api.v1.notifications.store');
-            Route::put('notifications/{id}', [NotificationController::class, 'update'])->whereNumber('id')->name('api.v1.notifications.update');
-            Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])->whereNumber('id')->name('api.v1.notifications.destroy');
-            Route::post('notifications/{id}/restore', [NotificationController::class, 'restore'])->whereNumber('id')->name('api.v1.notifications.restore');
-            Route::delete('notifications/{id}/force', [NotificationController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.notifications.force_delete');
-            Route::post('notifications/batch-delete', [NotificationController::class, 'batchDelete'])->name('api.v1.notifications.batch_delete');
-            Route::post('notifications/batch-restore', [NotificationController::class, 'batchRestore'])->name('api.v1.notifications.batch_restore');
-            Route::post('notifications/batch-force-delete', [NotificationController::class, 'batchForceDelete'])->name('api.v1.notifications.batch_force_delete');
+            Route::post('notifications', [NotificationController::class, 'store'])
+                ->middleware(['platform.user.scope', 'permission:notifications.send'])->name('api.v1.notifications.store');
+            Route::put('notifications/{id}', [NotificationController::class, 'update'])
+                ->whereNumber('id')->middleware(['platform.user.scope', 'permission:notifications.update'])->name('api.v1.notifications.update');
+            Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])
+                ->whereNumber('id')->middleware(['platform.user.scope', 'permission:notifications.delete'])->name('api.v1.notifications.destroy');
+            Route::post('notifications/{id}/restore', [NotificationController::class, 'restore'])
+                ->whereNumber('id')->middleware(['platform.user.scope', 'permission:notifications.restore'])->name('api.v1.notifications.restore');
+            Route::delete('notifications/{id}/force', [NotificationController::class, 'forceDelete'])
+                ->whereNumber('id')->middleware(['platform.user.scope', 'permission:notifications.force_delete'])->name('api.v1.notifications.force_delete');
+            Route::post('notifications/batch-delete', [NotificationController::class, 'batchDelete'])
+                ->middleware(['platform.user.scope', 'permission:notifications.delete'])->name('api.v1.notifications.batch_delete');
+            Route::post('notifications/batch-restore', [NotificationController::class, 'batchRestore'])
+                ->middleware(['platform.user.scope', 'permission:notifications.restore'])->name('api.v1.notifications.batch_restore');
+            Route::post('notifications/batch-force-delete', [NotificationController::class, 'batchForceDelete'])
+                ->middleware(['platform.user.scope', 'permission:notifications.force_delete'])->name('api.v1.notifications.batch_force_delete');
             Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead'])->whereNumber('id')->name('api.v1.notifications.mark_as_read');
             Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('api.v1.notifications.mark_all_read');
             Route::post('notifications/fcm-token', [NotificationController::class, 'updateFcmToken'])->name('api.v1.notifications.fcm_token');
-            Route::apiResource('notifications', NotificationController::class)->parameters(['notifications' => 'id'])->except(['index', 'show']);
         });
 
-        // ==========================================
         // 20. إعدادات النظام وتهيئة البيئة (System Settings & Engine Configuration)
-        // ==========================================
-        Route::middleware('throttle:api-read')->group(function () {
+        Route::middleware(['platform.user.scope', 'throttle:api-read', 'permission:settings.view'])->group(function () {
             Route::get('system-settings', [SystemSettingController::class, 'index'])->name('api.v1.system_settings.index');
             Route::get('system-settings/trashed', [SystemSettingController::class, 'trashed'])->name('api.v1.system_settings.trashed');
             Route::get('system-settings/category/{category}', [SystemSettingController::class, 'byCategory'])->name('api.v1.system_settings.by_category');
@@ -822,24 +845,31 @@ Route::prefix('v1')->group(function () {
             Route::get('system-settings/{id}', [SystemSettingController::class, 'show'])->whereNumber('id')->name('api.v1.system_settings.show');
         });
 
-        Route::middleware('throttle:api-write')->group(function () {
-            Route::post('system-settings', [SystemSettingController::class, 'store'])->name('api.v1.system_settings.store');
-            Route::post('system-settings/batch-update', [SystemSettingController::class, 'batchUpdate'])->name('api.v1.system_settings.batch_update');
-            Route::post('system-settings/clear-cache', [SystemSettingController::class, 'clearCache'])->name('api.v1.system_settings.clear_cache');
-            Route::put('system-settings/{id}', [SystemSettingController::class, 'update'])->whereNumber('id')->name('api.v1.system_settings.update');
-            Route::delete('system-settings/{id}', [SystemSettingController::class, 'destroy'])->whereNumber('id')->name('api.v1.system_settings.destroy');
-            Route::post('system-settings/{id}/restore', [SystemSettingController::class, 'restore'])->whereNumber('id')->name('api.v1.system_settings.restore');
-            Route::delete('system-settings/{id}/force', [SystemSettingController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.system_settings.force_delete');
-            Route::post('system-settings/batch-delete', [SystemSettingController::class, 'batchDelete'])->name('api.v1.system_settings.batch_delete');
-            Route::post('system-settings/batch-restore', [SystemSettingController::class, 'batchRestore'])->name('api.v1.system_settings.batch_restore');
-            Route::post('system-settings/batch-force-delete', [SystemSettingController::class, 'batchForceDelete'])->name('api.v1.system_settings.batch_force_delete');
-            Route::apiResource('system-settings', SystemSettingController::class)->parameters(['system-settings' => 'id'])->except(['index', 'show']);
+        Route::middleware(['platform.user.scope', 'throttle:api-write'])->group(function () {
+            Route::post('system-settings', [SystemSettingController::class, 'store'])
+                ->middleware('permission:settings.create')->name('api.v1.system_settings.store');
+            Route::post('system-settings/batch-update', [SystemSettingController::class, 'batchUpdate'])
+                ->middleware('permission:settings.update_many')->name('api.v1.system_settings.batch_update');
+            Route::post('system-settings/clear-cache', [SystemSettingController::class, 'clearCache'])
+                ->middleware('permission:settings.clear_cache')->name('api.v1.system_settings.clear_cache');
+            Route::put('system-settings/{id}', [SystemSettingController::class, 'update'])
+                ->whereNumber('id')->middleware('permission:settings.update')->name('api.v1.system_settings.update');
+            Route::delete('system-settings/{id}', [SystemSettingController::class, 'destroy'])
+                ->whereNumber('id')->middleware('permission:settings.delete')->name('api.v1.system_settings.destroy');
+            Route::post('system-settings/{id}/restore', [SystemSettingController::class, 'restore'])
+                ->whereNumber('id')->middleware('permission:settings.restore')->name('api.v1.system_settings.restore');
+            Route::delete('system-settings/{id}/force', [SystemSettingController::class, 'forceDelete'])
+                ->whereNumber('id')->middleware('permission:settings.force_delete')->name('api.v1.system_settings.force_delete');
+            Route::post('system-settings/batch-delete', [SystemSettingController::class, 'batchDelete'])
+                ->middleware('permission:settings.delete')->name('api.v1.system_settings.batch_delete');
+            Route::post('system-settings/batch-restore', [SystemSettingController::class, 'batchRestore'])
+                ->middleware('permission:settings.restore')->name('api.v1.system_settings.batch_restore');
+            Route::post('system-settings/batch-force-delete', [SystemSettingController::class, 'batchForceDelete'])
+                ->middleware('permission:settings.force_delete')->name('api.v1.system_settings.batch_force_delete');
         });
 
-        // ==========================================
         // 21. سجلات تدقيق النظام والتتبع الأمني (System Audit Logs & Activity Trails)
-        // ==========================================
-        Route::middleware('throttle:api-read')->group(function () {
+        Route::middleware(['platform.user.scope', 'throttle:api-read', 'permission:system_logs.view'])->group(function () {
             Route::get('system-logs', [SystemLogController::class, 'index'])->name('api.v1.system_logs.index');
             Route::get('system-logs/stats', [SystemLogController::class, 'stats'])->name('api.v1.system_logs.stats');
             Route::get('system-logs/modules', [SystemLogController::class, 'modules'])->name('api.v1.system_logs.modules');
@@ -849,55 +879,50 @@ Route::prefix('v1')->group(function () {
             Route::get('system-logs/{id}', [SystemLogController::class, 'show'])->whereNumber('id')->name('api.v1.system_logs.show');
         });
 
-        // ==========================================
         // 22. المحرك الجغرافي: المحافظات والمديريات (Geography Engine)
-        // ==========================================
-        Route::middleware('throttle:api-read')->group(function () {
+        Route::middleware(['platform.user.scope', 'throttle:api-read', 'permission:geography.view'])->group(function () {
             Route::get('governorates/counts', [GovernorateController::class, 'counts'])->name('api.v1.governorates.counts');
             Route::get('governorates/trashed', [GovernorateController::class, 'trashed'])->name('api.v1.governorates.trashed');
             Route::get('directorates/trashed', [DirectorateController::class, 'trashed'])->name('api.v1.directorates.trashed');
         });
 
-        Route::middleware('throttle:api-write')->group(function () {
-            Route::post('governorates', [GovernorateController::class, 'store'])->name('api.v1.governorates.store');
-            Route::put('governorates/{id}', [GovernorateController::class, 'update'])->whereNumber('id')->name('api.v1.governorates.update');
-            Route::delete('governorates/{id}', [GovernorateController::class, 'destroy'])->whereNumber('id')->name('api.v1.governorates.destroy');
-            Route::post('governorates/{id}/restore', [GovernorateController::class, 'restore'])->whereNumber('id')->name('api.v1.governorates.restore');
-            Route::delete('governorates/{id}/force', [GovernorateController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.governorates.force_delete');
-            Route::post('governorates/batch-delete', [GovernorateController::class, 'batchDelete'])->name('api.v1.governorates.batch_delete');
-            Route::post('governorates/batch-restore', [GovernorateController::class, 'batchRestore'])->name('api.v1.governorates.batch_restore');
-            Route::post('governorates/batch-force-delete', [GovernorateController::class, 'batchForceDelete'])->name('api.v1.governorates.batch_force_delete');
-            Route::apiResource('governorates', GovernorateController::class)->parameters(['governorates' => 'id'])->except(['index', 'show']);
+        Route::middleware(['platform.user.scope', 'throttle:api-write'])->group(function () {
+            Route::post('governorates', [GovernorateController::class, 'store'])->middleware('permission:geography.create')->name('api.v1.governorates.store');
+            Route::put('governorates/{id}', [GovernorateController::class, 'update'])->whereNumber('id')->middleware('permission:geography.update')->name('api.v1.governorates.update');
+            Route::delete('governorates/{id}', [GovernorateController::class, 'destroy'])->whereNumber('id')->middleware('permission:geography.delete')->name('api.v1.governorates.destroy');
+            Route::post('governorates/{id}/restore', [GovernorateController::class, 'restore'])->whereNumber('id')->middleware('permission:geography.restore')->name('api.v1.governorates.restore');
+            Route::delete('governorates/{id}/force', [GovernorateController::class, 'forceDelete'])->whereNumber('id')->middleware('permission:geography.force_delete')->name('api.v1.governorates.force_delete');
+            Route::post('governorates/batch-delete', [GovernorateController::class, 'batchDelete'])->middleware('permission:geography.delete')->name('api.v1.governorates.batch_delete');
+            Route::post('governorates/batch-restore', [GovernorateController::class, 'batchRestore'])->middleware('permission:geography.restore')->name('api.v1.governorates.batch_restore');
+            Route::post('governorates/batch-force-delete', [GovernorateController::class, 'batchForceDelete'])->middleware('permission:geography.force_delete')->name('api.v1.governorates.batch_force_delete');
 
-            Route::post('directorates', [DirectorateController::class, 'store'])->name('api.v1.directorates.store');
-            Route::put('directorates/{id}', [DirectorateController::class, 'update'])->whereNumber('id')->name('api.v1.directorates.update');
-            Route::delete('directorates/{id}', [DirectorateController::class, 'destroy'])->whereNumber('id')->name('api.v1.directorates.destroy');
-            Route::post('directorates/{id}/restore', [DirectorateController::class, 'restore'])->whereNumber('id')->name('api.v1.directorates.restore');
-            Route::delete('directorates/{id}/force', [DirectorateController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.directorates.force_delete');
-            Route::post('directorates/batch-delete', [DirectorateController::class, 'batchDelete'])->name('api.v1.directorates.batch_delete');
-            Route::post('directorates/batch-restore', [DirectorateController::class, 'batchRestore'])->name('api.v1.directorates.batch_restore');
-            Route::post('directorates/batch-force-delete', [DirectorateController::class, 'batchForceDelete'])->name('api.v1.directorates.batch_force_delete');
-            Route::apiResource('directorates', DirectorateController::class)->parameters(['directorates' => 'id'])->except(['index', 'show']);
+            Route::post('directorates', [DirectorateController::class, 'store'])->middleware('permission:geography.create')->name('api.v1.directorates.store');
+            Route::put('directorates/{id}', [DirectorateController::class, 'update'])->whereNumber('id')->middleware('permission:geography.update')->name('api.v1.directorates.update');
+            Route::delete('directorates/{id}', [DirectorateController::class, 'destroy'])->whereNumber('id')->middleware('permission:geography.delete')->name('api.v1.directorates.destroy');
+            Route::post('directorates/{id}/restore', [DirectorateController::class, 'restore'])->whereNumber('id')->middleware('permission:geography.restore')->name('api.v1.directorates.restore');
+            Route::delete('directorates/{id}/force', [DirectorateController::class, 'forceDelete'])->whereNumber('id')->middleware('permission:geography.force_delete')->name('api.v1.directorates.force_delete');
+            Route::post('directorates/batch-delete', [DirectorateController::class, 'batchDelete'])->middleware('permission:geography.delete')->name('api.v1.directorates.batch_delete');
+            Route::post('directorates/batch-restore', [DirectorateController::class, 'batchRestore'])->middleware('permission:geography.restore')->name('api.v1.directorates.batch_restore');
+            Route::post('directorates/batch-force-delete', [DirectorateController::class, 'batchForceDelete'])->middleware('permission:geography.force_delete')->name('api.v1.directorates.batch_force_delete');
         });
 
-        // ==========================================
         // 23. إعدادات وبوابات الرسائل النصية للشبكات (Network SMS Settings)
-        // ==========================================
         Route::prefix('sms-settings')->middleware('platform.user.scope')->group(function () {
             Route::middleware(['throttle:api-read', 'permission:sms_settings.view'])->group(function () {
                 Route::get('/', [NetworkSmsSettingController::class, 'index'])->name('api.v1.sms_settings.overview');
                 Route::get('networks/{id}', [NetworkSmsSettingController::class, 'show'])->whereNumber('id')->name('api.v1.sms_settings.network');
             });
-            Route::middleware(['throttle:api-write', 'permission:sms_settings.manage'])->group(function () {
-                Route::put('global', [NetworkSmsSettingController::class, 'updateGlobal'])->name('api.v1.sms_settings.update_global');
-                Route::put('networks/{id}', [NetworkSmsSettingController::class, 'update'])->whereNumber('id')->name('api.v1.sms_settings.update');
-                Route::post('networks/{id}/test', [NetworkSmsSettingController::class, 'test'])->whereNumber('id')->name('api.v1.sms_settings.test');
+            Route::middleware('throttle:api-write')->group(function () {
+                Route::put('global', [NetworkSmsSettingController::class, 'updateGlobal'])
+                    ->middleware('permission:sms_settings.update_global')->name('api.v1.sms_settings.update_global');
+                Route::put('networks/{id}', [NetworkSmsSettingController::class, 'update'])
+                    ->middleware('permission:sms_settings.update_network')->name('api.v1.sms_settings.update');
+                Route::post('networks/{id}/test', [NetworkSmsSettingController::class, 'test'])
+                    ->middleware('permission:sms_settings.test_network')->name('api.v1.sms_settings.test');
             });
         });
 
-        // ==========================================
         // 24. محرك النسخ الاحتياطي السحابي الشامل (Cloud Backup & Disaster Recovery)
-        // ==========================================
         Route::prefix('backups')->middleware('platform.user.scope')->group(function () {
             Route::middleware(['throttle:api-read', 'permission:backups.view'])->group(function () {
                 Route::get('settings', [BackupController::class, 'settings'])->name('api.v1.backups.settings');
@@ -906,31 +931,32 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', [BackupController::class, 'index'])->name('api.v1.backups.index');
                 Route::get('{id}', [BackupController::class, 'show'])->whereNumber('id')->name('api.v1.backups.show');
             });
-            Route::middleware(['throttle:api-write', 'permission:backups.manage'])->group(function () {
-                Route::post('drive/token', [BackupController::class, 'driveToken'])->name('api.v1.backups.drive_token');
-                Route::post('drive/disconnect', [BackupController::class, 'driveDisconnect'])->name('api.v1.backups.drive_disconnect');
-                Route::put('config', [BackupController::class, 'updateConfig'])->name('api.v1.backups.update_config');
-                Route::post('run', [BackupController::class, 'run'])->name('api.v1.backups.run');
+            Route::middleware('throttle:api-write')->group(function () {
+                Route::post('drive/token', [BackupController::class, 'driveToken'])
+                    ->middleware('permission:backups.configure_drive')->name('api.v1.backups.drive_token');
+                Route::post('drive/disconnect', [BackupController::class, 'driveDisconnect'])
+                    ->middleware('permission:backups.disconnect_drive')->name('api.v1.backups.drive_disconnect');
+                Route::put('config', [BackupController::class, 'updateConfig'])
+                    ->middleware('permission:backups.update_configuration')->name('api.v1.backups.update_config');
+                Route::post('run', [BackupController::class, 'run'])
+                    ->middleware('permission:backups.run_backup')->name('api.v1.backups.run');
             });
         });
 
-        // ==========================================
         // 25. سجلات ومحرك المهام المجدولة (Scheduled Tasks & Catch-up Engine)
-        // ==========================================
         Route::prefix('scheduled-tasks')->middleware('platform.user.scope')->group(function () {
             Route::middleware(['throttle:api-read', 'permission:scheduled_tasks.view'])->group(function () {
                 Route::get('/', [ScheduledTaskRunController::class, 'index'])->name('api.v1.scheduled_tasks.index');
                 Route::get('stats', [ScheduledTaskRunController::class, 'stats'])->name('api.v1.scheduled_tasks.stats');
             });
             Route::post('catchup', [ScheduledTaskRunController::class, 'catchup'])
-                ->middleware(['throttle:api-write', 'permission:scheduled_tasks.manage'])
+                ->middleware(['throttle:api-write', 'permission:scheduled_tasks.catchup'])
                 ->name('api.v1.scheduled_tasks.catchup');
         });
 
-        // ==========================================
         // 26. إشعارات ورسائل الإدارة الموجهة (Admin Multi-Channel Notifications)
         // ==========================================
-        Route::prefix('admin/notifications')->middleware(['platform.user.scope', 'permission:notifications.create', 'throttle:api-write'])->group(function () {
+        Route::prefix('admin/notifications')->middleware(['platform.user.scope', 'permission:notifications.send', 'throttle:api-write'])->group(function () {
             Route::post('send', [AdminNotificationController::class, 'send'])->name('api.v1.admin_notifications.send');
             Route::post('user', [AdminNotificationController::class, 'sendToUser'])->name('api.v1.admin_notifications.user');
         });
