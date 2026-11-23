@@ -608,7 +608,7 @@ class RequestService
                 ]);
             }
 
-            $this->authorizeRequestTenant($userId, $request, 'requests.edit', allowNetwork: false);
+            $this->authorizeRequestTenant($userId, $request, 'requests.cancel', allowNetwork: false);
 
             $this->requestRepository->updateStatus(
                 $requestId,
@@ -690,7 +690,7 @@ class RequestService
                 ]);
             }
 
-            $this->authorizeRequestTenant($userId, $request, 'requests.delete');
+            $this->authorizeRequestTenant($userId, $request, 'requests.force_delete');
 
             if (! $request->isPending() && ! $request->isCancelled()) {
                 throw ValidationException::withMessages([
@@ -756,7 +756,7 @@ class RequestService
                         'ids' => ["الطلب رقم #{$id} غير موجود في سلة المحذوفات."],
                     ]);
                 }
-                $this->authorizeRequestTenant($userId, $request, 'requests.delete');
+                $this->authorizeRequestTenant($userId, $request, 'requests.force_delete');
                 if (! $request->isPending() && ! $request->isCancelled()) {
                     throw ValidationException::withMessages([
                         'ids' => ["الطلب رقم #{$request->request_uuid} تم اعتماده أو رفضه ولا يمكن حذفه نهائياً."],
