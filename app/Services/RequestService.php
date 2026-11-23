@@ -392,7 +392,7 @@ class RequestService
             ]);
         }
 
-        $this->authorizeRequestTenant($userId, $request, 'requests.approve', allowPos: false);
+        $this->authorizeRequestTenant($userId, $request, 'requests.preview_modification', allowPos: false);
 
         if ($saleType !== null && $saleType !== $request->sale_type) {
             throw ValidationException::withMessages([
