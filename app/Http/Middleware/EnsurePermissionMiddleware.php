@@ -44,6 +44,30 @@ class EnsurePermissionMiddleware
             return $next($request);
         }
 
+        if (str_starts_with($permission, 'network_members.')) {
+            $networkId = (int) ($request->route('networkId') ?? 0);
+
+            if ($networkId <= 0
+                || ! $this->tenantPermissions->allowsNetwork($user, $networkId, $permission)
+            ) {
+                throw new AuthorizationException('لا تملك صلاحية إدارة أعضاء هذه الشبكة أو الوصول إلى نطاقها.');
+            }
+
+            return $next($request);
+        }
+
+        if (str_starts_with($permission, 'pos_members.')) {
+            $posId = (int) ($request->route('posId') ?? 0);
+
+            if ($posId <= 0
+                || ! $this->tenantPermissions->allowsPos($user, $posId, $permission)
+            ) {
+                throw new AuthorizationException('لا تملك صلاحية إدارة أعضاء نقطة البيع هذه أو الوصول إلى نطاقها.');
+            }
+
+            return $next($request);
+        }
+
         if (str_starts_with($permission, 'expenses.')) {
             $routeName = (string) ($request->route()?->getName() ?? '');
             $expenseId = (int) ($request->route('id') ?? 0);
