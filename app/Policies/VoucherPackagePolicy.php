@@ -49,7 +49,7 @@ class VoucherPackagePolicy
 
     public function update(User $user, VoucherPackage $package): bool
     {
-        return $this->tenantAuth->canManagePackage($user, $package, 'voucher_packages.edit');
+        return $this->tenantAuth->canManagePackage($user, $package, 'voucher_packages.update');
     }
 
     public function delete(User $user, VoucherPackage $package): bool
@@ -59,11 +59,11 @@ class VoucherPackagePolicy
 
     public function restore(User $user, VoucherPackage $package): bool
     {
-        return $this->tenantAuth->canManagePackage($user, $package, 'voucher_packages.delete');
+        return $this->tenantAuth->canManagePackage($user, $package, 'voucher_packages.restore');
     }
 
     public function forceDelete(User $user, VoucherPackage $package): bool
     {
-        return $this->tenantAuth->canManagePackage($user, $package, 'voucher_packages.delete');
+        return $this->tenantAuth->canManagePackage($user, $package, 'voucher_packages.force_delete');
     }
 }
