@@ -18,7 +18,7 @@ class RoleSeeder extends Seeder
             [
                 'role_key' => RoleKey::SUPER_ADMIN->value,
                 'role_name' => RoleKey::SUPER_ADMIN->label(),
-                'role_desc' => 'كامل الصلاحيات الفنية والإدارية والمالية على كافة وحدات النظام',
+                'role_desc' => 'إدارة شاملة لنطاق المنصة وصلاحياتها السيادية، مع بقاء تشغيل الشبكات ونقاط البيع ضمن نطاقاتهما المستقلة',
                 'scope' => RoleScope::PLATFORM->value,
                 'is_system' => true,
                 'status' => true,

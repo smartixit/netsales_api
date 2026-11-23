@@ -42,10 +42,17 @@ class ModuleSeeder extends Seeder
                 'status' => true,
             ],
             [
-                'module_key' => 'geography',
-                'module_name' => 'الدليل الجغرافي',
+                'module_key' => 'governorates',
+                'module_name' => 'المحافظات',
                 'module_icon' => 'heroicon-o-map',
-                'module_desc' => 'إدارة المحافظات والمديريات والمناطق الجغرافية',
+                'module_desc' => 'إدارة المحافظات بصورة مستقلة',
+                'status' => true,
+            ],
+            [
+                'module_key' => 'directorates',
+                'module_name' => 'المديريات',
+                'module_icon' => 'heroicon-o-map-pin',
+                'module_desc' => 'إدارة المديريات وربطها بمحافظاتها',
                 'status' => true,
             ],
             [
@@ -81,6 +88,13 @@ class ModuleSeeder extends Seeder
                 'module_name' => 'باقات وكروت الشبكة',
                 'module_icon' => 'heroicon-o-ticket',
                 'module_desc' => 'إدارة فئات الكروت، أسعارها، الخصومات، وباقات البيانات',
+                'status' => true,
+            ],
+            [
+                'module_key' => 'voucher_package_discounts',
+                'module_name' => 'خصومات باقات الكروت',
+                'module_icon' => 'heroicon-o-receipt-percent',
+                'module_desc' => 'إدارة الخصومات التعاقدية المخصصة لنقاط البيع',
                 'status' => true,
             ],
             [
@@ -179,5 +193,11 @@ class ModuleSeeder extends Seeder
                 ])
             );
         }
+
+        DB::table('modules')->where('module_key', 'geography')->update([
+            'status' => false,
+            'deleted_at' => now('Asia/Aden'),
+            'updated_at' => now('Asia/Aden'),
+        ]);
     }
 }

@@ -30,9 +30,11 @@ class ActionTypeSeeder extends Seeder
             'reject' => 'رفض',
 
             'view_sessions' => 'عرض الجلسات',
+            'view_devices' => 'عرض الأجهزة المرتبطة',
             'ban_user' => 'حظر مستخدم',
             'ban_device' => 'حظر جهاز',
-            'unban_user' => 'رفع الحظر',
+            'unban_user' => 'رفع حظر مستخدم',
+            'unban_device' => 'رفع حظر جهاز',
             'terminate_session' => 'إنهاء جلسة',
             'manage_permissions' => 'إسناد صلاحيات المستخدم',
 
@@ -51,6 +53,11 @@ class ActionTypeSeeder extends Seeder
             'transfer_from_network' => 'تحويل من الشبكة إلى النقطة',
             'transfer_to_network' => 'تحويل من النقطة إلى الشبكة',
             'cancel' => 'إلغاء طلب',
+            'preview_modification' => 'معاينة تعديل الطلب',
+            'add_item' => 'إضافة بند',
+            'delete_item' => 'حذف بند',
+            'delete_attachment' => 'حذف مرفق',
+            'mark_as_read' => 'تمييز كمقروء',
 
             'create_account' => 'إنشاء حساب فوترة',
             'create_subscription' => 'إنشاء اشتراك',

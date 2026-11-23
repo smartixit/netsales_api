@@ -23,7 +23,7 @@ class RolePermissionSeeder extends Seeder
         $assignments = [
             RoleKey::SUPER_ADMIN->value => [
                 'scope' => RoleScope::PLATFORM->value,
-                'permissions' => null, // All active catalog permissions.
+                'permissions' => null, // All active PLATFORM-registry permissions only.
             ],
 
             RoleKey::SUPPORT_AGENT->value => [
@@ -34,9 +34,9 @@ class RolePermissionSeeder extends Seeder
                     'networks.view',
                     'pos.view',
                     'support.view',
+                    'support.mark_as_read',
                     'support.reply',
                     'support.edit',
-                    'support.assign',
                 ],
             ],
 
@@ -91,6 +91,7 @@ class RolePermissionSeeder extends Seeder
                     'pos_wallets.report',
                     'pos_wallets.export',
                     'voucher_packages.view',
+                    'voucher_package_discounts.view',
                     'voucher_packages.create',
                     'voucher_packages.edit',
                     'voucher_packages.toggle_status',
@@ -98,10 +99,18 @@ class RolePermissionSeeder extends Seeder
                     'voucher_packages.restore',
                     'voucher_packages.force_delete',
                     'voucher_packages.export',
+                    'voucher_package_discounts.create',
+                    'voucher_package_discounts.edit',
+                    'voucher_package_discounts.toggle_status',
+                    'voucher_package_discounts.delete',
+                    'voucher_package_discounts.restore',
+                    'voucher_package_discounts.force_delete',
+                    'voucher_package_discounts.export',
                     'requests.view',
                     'requests.edit',
                     'requests.cancel',
                     'requests.approve',
+                    'requests.preview_modification',
                     'requests.reject',
                     'requests.delete',
                     'requests.restore',
@@ -119,12 +128,16 @@ class RolePermissionSeeder extends Seeder
                     'expenses.view',
                     'expenses.create',
                     'expenses.edit',
+                    'expenses.add_item',
                     'expenses.delete',
+                    'expenses.delete_item',
+                    'expenses.delete_attachment',
                     'expenses.restore',
                     'expenses.force_delete',
                     'expenses.report',
                     'expenses.export',
                     'support.view',
+                    'support.mark_as_read',
                     'support.create',
                     'support.reply',
                     'notifications.view',
@@ -137,9 +150,11 @@ class RolePermissionSeeder extends Seeder
                     'networks.view',
                     'pos.view',
                     'voucher_packages.view',
+                    'voucher_package_discounts.view',
                     'requests.view',
                     'sales.view',
                     'support.view',
+                    'support.mark_as_read',
                     'support.create',
                     'support.reply',
                     'notifications.view',
@@ -158,6 +173,7 @@ class RolePermissionSeeder extends Seeder
                     'pos_wallets.report',
                     'pos_wallets.export',
                     'voucher_packages.view',
+                    'voucher_package_discounts.view',
                     'requests.view',
                     'requests.report',
                     'sales.view',
@@ -166,9 +182,11 @@ class RolePermissionSeeder extends Seeder
                     'expenses.view',
                     'expenses.create',
                     'expenses.edit',
+                    'expenses.add_item',
                     'expenses.report',
                     'expenses.export',
                     'support.view',
+                    'support.mark_as_read',
                     'support.create',
                     'support.reply',
                     'notifications.view',
@@ -187,6 +205,7 @@ class RolePermissionSeeder extends Seeder
                     'pos_wallets.report',
                     'pos_wallets.export',
                     'voucher_packages.view',
+                    'voucher_package_discounts.view',
                     'requests.view',
                     'requests.create',
                     'requests.edit',
@@ -201,6 +220,7 @@ class RolePermissionSeeder extends Seeder
                     'sales.report',
                     'sales.export',
                     'support.view',
+                    'support.mark_as_read',
                     'support.create',
                     'support.reply',
                     'notifications.view',
@@ -214,12 +234,14 @@ class RolePermissionSeeder extends Seeder
                     'networks.view',
                     'pos_wallets.view',
                     'voucher_packages.view',
+                    'voucher_package_discounts.view',
                     'requests.view',
                     'requests.create',
                     'requests.cancel',
                     'sales.view',
                     'sales.create',
                     'support.view',
+                    'support.mark_as_read',
                     'support.create',
                     'support.reply',
                     'notifications.view',
@@ -235,12 +257,14 @@ class RolePermissionSeeder extends Seeder
                     'pos_wallets.report',
                     'pos_wallets.export',
                     'voucher_packages.view',
+                    'voucher_package_discounts.view',
                     'requests.view',
                     'requests.report',
                     'sales.view',
                     'sales.report',
                     'sales.export',
                     'support.view',
+                    'support.mark_as_read',
                     'support.create',
                     'support.reply',
                     'notifications.view',
@@ -286,9 +310,22 @@ class RolePermissionSeeder extends Seeder
         }
 
         $allActivePermissionIds = DB::table('permissions')
-            ->where('status', true)
-            ->whereNull('deleted_at')
-            ->pluck('permission_id')
+            ->join('modules', 'modules.module_id', '=', 'permissions.module_id')
+            ->where('permissions.status', true)
+            ->whereNull('permissions.deleted_at')
+            ->where('modules.status', true)
+            ->whereNull('modules.deleted_at')
+            ->where(function ($query): void {
+                $query->whereIn('modules.module_key', PlatformPermissionRegistry::MODULE_KEYS)
+                    ->orWhereIn(
+                        'permissions.permission_key',
+                        array_merge(
+                            PlatformPermissionRegistry::SHARED_READ_PERMISSION_KEYS,
+                            PlatformPermissionRegistry::PLATFORM_PERMISSION_KEYS
+                        )
+                    );
+            })
+            ->pluck('permissions.permission_id')
             ->all();
 
         // Direct permission assignments are global: the pivot contains no
@@ -313,7 +350,10 @@ class RolePermissionSeeder extends Seeder
                             $query->whereIn('modules.module_key', PlatformPermissionRegistry::MODULE_KEYS)
                                 ->orWhereIn(
                                     'permissions.permission_key',
-                                    PlatformPermissionRegistry::SHARED_READ_PERMISSION_KEYS
+                                    array_merge(
+                                        PlatformPermissionRegistry::SHARED_READ_PERMISSION_KEYS,
+                                        PlatformPermissionRegistry::PLATFORM_PERMISSION_KEYS
+                                    )
                                 );
                         });
                 });

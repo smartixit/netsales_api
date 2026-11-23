@@ -16,7 +16,8 @@ final class PlatformPermissionRegistry
         'auth',
         'users',
         'roles',
-        'geography',
+        'governorates',
+        'directorates',
         'billing',
         'support',
         'notifications',
@@ -29,6 +30,13 @@ final class PlatformPermissionRegistry
         'bank_accounts',
     ];
 
+    public const PLATFORM_PERMISSION_KEYS = [
+        'networks.approve',
+        'networks.reject',
+        'pos.approve',
+        'pos.reject',
+    ];
+
     public const SHARED_READ_PERMISSION_KEYS = [
         'networks.view',
         'pos.view',
@@ -36,7 +44,9 @@ final class PlatformPermissionRegistry
 
     public function allows(string $permissionKey): bool
     {
-        if (in_array($permissionKey, self::SHARED_READ_PERMISSION_KEYS, true)) {
+        if (in_array($permissionKey, self::SHARED_READ_PERMISSION_KEYS, true)
+            || in_array($permissionKey, self::PLATFORM_PERMISSION_KEYS, true)
+        ) {
             return true;
         }
 
