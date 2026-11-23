@@ -21,7 +21,9 @@ class PosPolicy
     {
         $permissions = app(TenantPermissionService::class);
 
-        if ($permissions->allowsAnyPos($user, 'pos.view')) {
+        if ($permissions->allowsPlatform($user, 'pos.view')
+            || $permissions->allowsAnyPos($user, 'pos.view')
+        ) {
             return true;
         }
 
@@ -35,7 +37,9 @@ class PosPolicy
     {
         $permissions = app(TenantPermissionService::class);
 
-        if ($permissions->allowsPos($user, (int) $pos->pos_id, 'pos.view')) {
+        if ($permissions->allowsPlatform($user, 'pos.view')
+            || $permissions->allowsPos($user, (int) $pos->pos_id, 'pos.view')
+        ) {
             return true;
         }
 
