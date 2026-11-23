@@ -486,12 +486,9 @@ class EnsurePermissionMiddleware
         $posId = (int) ($request->route('posId') ?? $request->input('pos_id') ?? $request->query('pos_id') ?? 0);
 
         if ($networkId > 0 && $posId > 0) {
-            if (! \App\Models\NetworkPos::query()
-                ->where('network_id', $networkId)
-                ->where('pos_id', $posId)
-                ->exists()) {
-                return false;
-            }
+            // The wallet row itself is the authoritative network/POS pair.
+            // A POS owner may read its own wallet even when the separate link
+            // record is inactive or was not created by legacy wallet imports.
             $targets[] = ['network_id' => $networkId, 'pos_id' => $posId];
         } elseif ($networkId > 0) {
             $targets[] = ['network_id' => $networkId, 'pos_id' => 0];
@@ -513,11 +510,7 @@ class EnsurePermissionMiddleware
 
             $posAllowed = $permission === 'pos_wallets.view'
                 && $posId > 0
-                && $this->tenantPermissions->allowsPos($user, $posId, $permission)
-                && ($networkId <= 0 || \App\Models\NetworkPos::query()
-                    ->where('network_id', $networkId)
-                    ->where('pos_id', $posId)
-                    ->exists());
+                && $this->tenantPermissions->allowsPos($user, $posId, $permission);
 
             if (! $networkAllowed && ! $posAllowed) {
                 return false;
