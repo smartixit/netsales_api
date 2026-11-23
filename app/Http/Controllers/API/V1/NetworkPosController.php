@@ -250,8 +250,8 @@ class NetworkPosController extends BaseController
             }
 
             $currentUser = $this->currentUser();
-            if ($currentUser && ! Gate::forUser($currentUser)->allows('update', $link)) {
-                return $this->errorResponse('غير مصرح لك بتعديل حالة هذا الارتباط.', [], 403);
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('toggleStatus', $link)) {
+                return $this->errorResponse('غير مصرح لك بتغيير حالة هذا الارتباط.', [], 403);
             }
 
             $link = $this->networkPosService->toggleStatus($id);
@@ -336,15 +336,12 @@ class NetworkPosController extends BaseController
             $ids = $request->getIds();
 
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                $unauthorized = NetworkPos::whereIn('network_pos_id', $ids)
-                    ->whereDoesntHave('network', function ($q) use ($currentUser) {
-                        $q->where('owner_id', $currentUser->user_id)
-                            ->orWhereHas('memberships', fn ($m) => $m->where('user_id', $currentUser->user_id));
-                    })->exists();
-
-                if ($unauthorized) {
-                    return $this->errorResponse('غير مصرح لك بفك ارتباطات لا تتبع لشبكاتك.', [], 403);
+            if ($currentUser) {
+                foreach ($ids as $linkId) {
+                    $link = $this->networkPosService->findById((int) $linkId);
+                    if ($link === null || ! Gate::forUser($currentUser)->allows('delete', $link)) {
+                        return $this->errorResponse('تتضمن العملية ارتباطاً لا تملك صلاحية فكه.', [], 403);
+                    }
                 }
             }
 
@@ -390,15 +387,12 @@ class NetworkPosController extends BaseController
             $status = $request->getStatus();
 
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                $unauthorized = NetworkPos::whereIn('network_pos_id', $ids)
-                    ->whereDoesntHave('network', function ($q) use ($currentUser) {
-                        $q->where('owner_id', $currentUser->user_id)
-                            ->orWhereHas('memberships', fn ($m) => $m->where('user_id', $currentUser->user_id));
-                    })->exists();
-
-                if ($unauthorized) {
-                    return $this->errorResponse('غير مصرح لك بتعديل ارتباطات لا تتبع لشبكاتك.', [], 403);
+            if ($currentUser) {
+                foreach ($ids as $linkId) {
+                    $link = $this->networkPosService->findById((int) $linkId);
+                    if ($link === null || ! Gate::forUser($currentUser)->allows('toggleStatus', $link)) {
+                        return $this->errorResponse('تتضمن العملية ارتباطاً لا تملك صلاحية تغيير حالته.', [], 403);
+                    }
                 }
             }
 
