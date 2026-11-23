@@ -363,7 +363,7 @@ class User extends Authenticatable
 
         // user_permissions has no tenant discriminator. Direct grants are
         // global, so only an active PLATFORM account may exercise them.
-        if ($this->role?->scope === RoleScope::PLATFORM && $this->role->isActive()) {
+        if ($this->role?->scope === RoleScope::PLATFORM && $this->role->isActive() && $this->isActive()) {
             $directGrant = $this->permissions()
                 ->where(function ($query) use ($upperKey, $permissionKey): void {
                     $query->where('permissions.permission_key', $upperKey)
@@ -387,6 +387,10 @@ class User extends Authenticatable
             if ($platformRoleGrant) {
                 return true;
             }
+
+            // Platform identities never inherit tenant grants from legacy
+            // membership rows; their scope is globally isolated.
+            return false;
         }
 
         $hasNetPerm = $this->networkUsers()
@@ -434,6 +438,10 @@ class User extends Authenticatable
      */
     public function getWorkspaceRoles(): array
     {
+        if (! $this->isActive() || $this->role?->scope === RoleScope::PLATFORM) {
+            return [];
+        }
+
         $networkRoles = $this->networkUsers()
             ->where('status', 'ACTIVE')
             ->with('role.permissions')
