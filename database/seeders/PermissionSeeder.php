@@ -25,6 +25,9 @@ class PermissionSeeder extends Seeder
                 'unban_user' => 'رفع حظر مستخدم أو جهاز',
                 'terminate_session' => 'إنهاء جلسة مستخدم',
             ],
+            'dashboard' => [
+                'view' => 'عرض لوحة مؤشرات المنصة',
+            ],
             'users' => [
                 'view' => 'عرض المستخدمين',
                 'create' => 'إنشاء مستخدم',
