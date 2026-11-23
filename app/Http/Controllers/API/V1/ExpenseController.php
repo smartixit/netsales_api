@@ -285,7 +285,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = $this->expenseService->getById($id);
-            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.restore')) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.edit')) {
                 return $denial;
             }
 
@@ -394,7 +394,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = Expense::onlyTrashed()->findOrFail($id);
-            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.edit')) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.restore')) {
                 return $denial;
             }
 
@@ -428,7 +428,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = Expense::withTrashed()->findOrFail($id);
-            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.delete')) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.force_delete')) {
                 return $denial;
             }
 
