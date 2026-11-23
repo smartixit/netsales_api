@@ -40,6 +40,10 @@ class StorePermissionRequest extends FormRequest
                 'integer',
                 Rule::exists('action_types', 'action_type_id')->whereNull('deleted_at'),
             ],
+            'scope' => [
+                'required',
+                Rule::in(['PLATFORM', 'NETWORK', 'POS', 'SHARED']),
+            ],
             'permission_key' => [
                 'required',
                 'string',
