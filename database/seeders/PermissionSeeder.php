@@ -64,6 +64,7 @@ class PermissionSeeder extends Seeder
             ],
             'network_wallets' => [
                 'view' => 'عرض محافظ الشبكات وحركاتها',
+                'delete' => 'حذف محفظة شبكة',
                 'restore' => 'استعادة محفظة شبكة',
                 'force_delete' => 'حذف محفظة شبكة نهائياً',
                 'create' => 'إنشاء محفظة شبكة',
