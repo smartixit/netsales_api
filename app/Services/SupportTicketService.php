@@ -86,13 +86,6 @@ class SupportTicketService
         return $ticket;
     }
 
-    /**
-     * @param array<int, int> $ids
-     */
-    public function getManyByIdsForAuthorization(array $ids, bool $withTrashed = false): Collection
-    {
-        return $this->ticketRepository->findManyByIds($ids, $withTrashed);
-    }
 
     /**
      * جلب تفاصيل تذكرة عبر المعرف الفريد للأعمال (ticket_uuid).
