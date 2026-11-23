@@ -145,8 +145,8 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
         foreach ([
             'network_members.view',
             'network_members.create',
-            'network_members.edit',
-            'network_members.toggle_status',
+            'network_members.change_role',
+            'network_members.change_status',
             'network_members.delete',
         ] as $permission) {
             $this->assertContains($permission, $networkOwner);
@@ -158,8 +158,8 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
         foreach ([
             'pos_members.view',
             'pos_members.create',
-            'pos_members.edit',
-            'pos_members.toggle_status',
+            'pos_members.change_role',
+            'pos_members.change_status',
             'pos_members.delete',
         ] as $permission) {
             $this->assertContains($permission, $posAgent);
