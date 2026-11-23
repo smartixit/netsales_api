@@ -182,6 +182,14 @@ class PosService
         return $this->posRepository->getTrashed($perPage);
     }
 
+    public function getTrashedFiltered(array $filters = []): Collection|CursorPaginator
+    {
+        return $this->posRepository->getTrashedFiltered(
+            $filters,
+            ['governorate', 'directorate', 'wallets']
+        );
+    }
+
     /**
      * استعادة نقطة بيع محذوفة مؤقتاً.
      */
