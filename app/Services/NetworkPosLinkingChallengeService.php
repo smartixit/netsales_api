@@ -460,6 +460,40 @@ class NetworkPosLinkingChallengeService
      *     exp: int
      * }
      */
+    private function assertNetworkPermission(
+        User $actor,
+        int $networkId,
+        string $permission,
+        string $message
+    ): void {
+        if ($actor->isSuperAdmin()
+            || $this->tenantPermissions->allowsNetwork($actor, $networkId, $permission)
+        ) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'network_id' => [$message],
+        ]);
+    }
+
+    private function assertPosPermission(
+        User $actor,
+        int $posId,
+        string $permission,
+        string $message
+    ): void {
+        if ($actor->isSuperAdmin()
+            || $this->tenantPermissions->allowsPos($actor, $posId, $permission)
+        ) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'pos_uuid' => [$message],
+        ]);
+    }
+
     protected function decryptAndValidatePayload(string $payloadToken): array
     {
         $trimmed = trim($payloadToken);
