@@ -282,8 +282,28 @@ class NetworkController extends BaseController
     public function trashed(Request $request): JsonResponse
     {
         try {
-            $perPage = (int) $request->input('per_page', 15);
-            $trashed = $this->networkService->getTrashed($perPage);
+            $filters = $request->only(['search', 'per_page', 'all']);
+            $user = $this->currentUser();
+
+            if ($user && ! $user->isSuperAdmin()
+                && ! $this->tenantPermissions->allowsPlatform($user, 'networks.view')
+            ) {
+                $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, 'networks.view');
+                $posIds = $this->tenantPermissions->authorizedPosIds($user, 'networks.view');
+
+                if ($posIds !== []) {
+                    $linkedNetworkIds = \\App\\Models\\NetworkPos::query()
+                        ->whereIn('pos_id', $posIds)
+                        ->pluck('network_id')
+                        ->map(static fn ($id): int => (int) $id)
+                        ->all();
+                    $networkIds = array_merge($networkIds, $linkedNetworkIds);
+                }
+
+                $filters['network_ids'] = array_values(array_unique($networkIds));
+            }
+
+            $trashed = $this->networkService->getTrashedFiltered($filters);
 
             return $this->successResponse('تم استرجاع المحذوفات بنجاح.', NetworkResource::collection($trashed));
         } catch (ValidationException $e) {
