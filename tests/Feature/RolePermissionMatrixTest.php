@@ -280,6 +280,68 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
 
 
 
+    public function test_platform_user_cannot_receive_tenant_scoped_direct_permission(): void
+    {
+        $platformRole = Role::query()
+            ->where('role_key', RoleKey::SUPPORT_AGENT->value)
+            ->firstOrFail();
+        $platformUser = $this->createUserWithScope(RoleScope::PLATFORM, [
+            'role_id' => $platformRole->role_id,
+            'user_full_name' => 'Platform Tenant Grant '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => 'ACTIVE',
+        ]);
+
+        $permission = Permission::query()
+            ->where('permission_key', 'sales.delete')
+            ->where('status', true)
+            ->firstOrFail();
+
+        try {
+            app(UserService::class)->syncPermissions(
+                (int) $platformUser->user_id,
+                [(int) $permission->permission_id]
+            );
+
+            $this->fail('A tenant-scoped permission must not be converted into a global platform grant.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('permissions', $exception->errors());
+        }
+
+        $this->assertFalse($platformUser->fresh()->hasPermission('sales.delete'));
+        $this->assertFalse(
+            app(TenantPermissionService::class)->allowsPlatform($platformUser, 'sales.delete')
+        );
+    }
+
+    public function test_legacy_tenant_scoped_direct_grant_is_ignored_for_platform_identity(): void
+    {
+        $platformRole = Role::query()
+            ->where('role_key', RoleKey::SUPPORT_AGENT->value)
+            ->firstOrFail();
+        $platformUser = $this->createUserWithScope(RoleScope::PLATFORM, [
+            'role_id' => $platformRole->role_id,
+            'user_full_name' => 'Legacy Platform Tenant Grant '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => 'ACTIVE',
+        ]);
+
+        $permission = Permission::query()
+            ->where('permission_key', 'sales.delete')
+            ->where('status', true)
+            ->firstOrFail();
+        $platformUser->permissions()->attach($permission->permission_id);
+
+        $freshPlatformUser = User::query()->findOrFail($platformUser->user_id);
+
+        $this->assertFalse($freshPlatformUser->hasPermission('sales.delete'));
+        $this->assertFalse(
+            app(TenantPermissionService::class)->allowsPlatform($freshPlatformUser, 'sales.delete')
+        );
+    }
+
     public function test_network_ownership_does_not_bypass_a_missing_role_permission(): void
     {
         $owner = $this->createUserWithScope(RoleScope::NETWORK, [
