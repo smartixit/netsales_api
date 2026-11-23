@@ -129,7 +129,7 @@ class PosMembershipService
      */
     public function updateRole(int $posId, int $userId, int $newRoleId, int $actorId, ?string $reason = null): PosUser
     {
-        $this->authorizeActor($posId, $actorId, 'pos_members.edit');
+        $this->authorizeActor($posId, $actorId, 'pos_members.change_role');
 
         return DB::transaction(function () use ($posId, $userId, $newRoleId, $actorId, $reason): PosUser {
             $pos = Pos::findOrFail($posId);
@@ -177,7 +177,7 @@ class PosMembershipService
      */
     public function updateStatus(int $posId, int $userId, string $newStatus, int $actorId, ?string $reason = null): PosUser
     {
-        $this->authorizeActor($posId, $actorId, 'pos_members.toggle_status');
+        $this->authorizeActor($posId, $actorId, 'pos_members.change_status');
 
         if (! in_array($newStatus, ['ACTIVE', 'SUSPENDED', 'INVITED'], true)) {
             throw ValidationException::withMessages([
