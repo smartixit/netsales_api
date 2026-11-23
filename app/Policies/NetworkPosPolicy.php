@@ -2,9 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\User;
+use App\Services\TenantPermissionService;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class NetworkPosPolicy
