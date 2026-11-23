@@ -13,6 +13,7 @@ use App\Services\SupportTicketService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
