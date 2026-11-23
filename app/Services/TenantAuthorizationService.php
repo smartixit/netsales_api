@@ -41,25 +41,10 @@ class TenantAuthorizationService
             return null;
         }
 
-        // 1. الشبكات المملوكة للمستخدم
-        $ownedNetworkIds = Network::where('owner_id', $user->user_id)
-            ->pluck('network_id')
-            ->toArray();
-
-        // 2. الشبكات التي يحمل فيها عضوية نشطة
-        $memberQuery = NetworkUser::where('user_id', $user->user_id)
-            ->where('status', 'ACTIVE');
-
-        if ($permission) {
-            $memberQuery->whereHas('role.permissions', function ($q) use ($permission) {
-                $q->where('permission_key', $permission)
-                    ->orWhere('permission_key', strtoupper($permission));
-            });
-        }
-
-        $memberNetworkIds = $memberQuery->pluck('network_id')->toArray();
-
-        return array_values(array_unique(array_merge($ownedNetworkIds, $memberNetworkIds)));
+        return app(TenantPermissionService::class)->authorizedNetworkIds(
+            $user,
+            $permission ?? 'voucher_packages.view'
+        );
     }
 
     /**
@@ -74,23 +59,10 @@ class TenantAuthorizationService
             return null;
         }
 
-        $ownedPosIds = Pos::where('owner_id', $user->user_id)
-            ->pluck('pos_id')
-            ->toArray();
-
-        $memberQuery = PosUser::where('user_id', $user->user_id)
-            ->where('status', 'ACTIVE');
-
-        if ($permission) {
-            $memberQuery->whereHas('role.permissions', function ($q) use ($permission) {
-                $q->where('permission_key', $permission)
-                    ->orWhere('permission_key', strtoupper($permission));
-            });
-        }
-
-        $memberPosIds = $memberQuery->pluck('pos_id')->toArray();
-
-        return array_values(array_unique(array_merge($ownedPosIds, $memberPosIds)));
+        return app(TenantPermissionService::class)->authorizedPosIds(
+            $user,
+            $permission ?? 'voucher_packages.view'
+        );
     }
 
     /**
@@ -167,7 +139,7 @@ class TenantAuthorizationService
             return null;
         }
 
-        $managedNetworks = $this->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
+        $managedNetworks = $this->getUserAuthorizedNetworkIds($user, 'package_discounts.view') ?? [];
         $authorizedPosIds = $this->getUserAuthorizedPosIds($user, 'voucher_packages.view') ?? [];
 
         return [
@@ -195,23 +167,7 @@ class TenantAuthorizationService
      */
     public function canManageNetworkPackages(User $user, int $networkId, string $permission): bool
     {
-        if ($this->isSuperAdmin($user)) {
-            return true;
-        }
-
-        // مالك الشبكة يملك الصلاحية الكاملة لإدارة باقات شبكته
-        if (Network::where('network_id', $networkId)->where('owner_id', $user->user_id)->exists()) {
-            return true;
-        }
-
-        // عضو الشبكة يجب أن يكون نشطاً ولديه الصلاحية المحددة في دوره
-        return NetworkUser::where('network_id', $networkId)
-            ->where('user_id', $user->user_id)
-            ->where('status', 'ACTIVE')
-            ->whereHas('role.permissions', function ($q) use ($permission) {
-                $q->where('permission_key', $permission)
-                    ->orWhere('permission_key', strtoupper($permission));
-            })->exists();
+        return app(TenantPermissionService::class)->allowsNetwork($user, $networkId, $permission);
     }
 
     /**
@@ -268,7 +224,7 @@ class TenantAuthorizationService
         $posId = (int) $discount->pos_id;
 
         // 1. مزود الشبكة التابع لها الخصم
-        if ($this->canManageNetworkPackages($user, $networkId, 'voucher_packages.view')) {
+        if ($this->canManageNetworkPackages($user, $networkId, 'package_discounts.view')) {
             return true;
         }
 
@@ -290,7 +246,7 @@ class TenantAuthorizationService
      */
     public function canManageDiscount(User $user, VoucherPackageDiscount $discount, string $permission): bool
     {
-        return $this->canManageNetworkPackages($user, (int) $discount->network_id, $permission);
+        return app(TenantPermissionService::class)->allowsNetwork($user, (int) $discount->network_id, $permission);
     }
 
     /**
@@ -298,7 +254,7 @@ class TenantAuthorizationService
      */
     public function canCreateDiscount(User $user, int $networkId, int $posId, int $packageId): bool
     {
-        if (! $this->canManageNetworkPackages($user, $networkId, 'voucher_packages.create')) {
+        if (! $this->canManageNetworkPackages($user, $networkId, 'package_discounts.create')) {
             return false;
         }
 
