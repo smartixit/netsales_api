@@ -21,6 +21,13 @@ class ModuleSeeder extends Seeder
                 'status' => true,
             ],
             [
+                'module_key' => 'dashboard',
+                'module_name' => 'لوحة المنصة ومؤشراتها',
+                'module_icon' => 'heroicon-o-chart-bar-square',
+                'module_desc' => 'عرض مؤشرات المنصة وتجميعاتها وفق صلاحيات دور المنصة',
+                'status' => true,
+            ],
+            [
                 'module_key' => 'users',
                 'module_name' => 'المستخدمين',
                 'module_icon' => 'heroicon-o-users',
