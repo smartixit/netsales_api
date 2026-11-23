@@ -85,8 +85,6 @@ class RolePermissionSeeder extends Seeder
                     'networks.revoke_link_challenge',
                     'pos.view',
                     'network_wallets.view',
-                    'network_wallets.deposit',
-                    'network_wallets.withdraw',
                     'network_wallets.report',
                     'network_wallets.export',
                     'pos_wallets.view',
