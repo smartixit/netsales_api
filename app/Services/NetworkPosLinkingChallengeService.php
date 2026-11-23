@@ -415,12 +415,22 @@ class NetworkPosLinkingChallengeService
             return null;
         }
 
-        $this->assertNetworkPermission(
+        $canViewNetwork = $this->tenantPermissions->allowsNetwork(
             $actor,
             (int) $challenge->network_id,
-            'networks.view',
-            'غير مصرح لك بالاطلاع على حالة دعوة الربط هذه.'
+            'networks.view'
         );
+        $canViewPos = $this->tenantPermissions->allowsPos(
+            $actor,
+            (int) $challenge->pos_id,
+            'networks.view'
+        );
+
+        if (! $actor->isSuperAdmin() && ! $canViewNetwork && ! $canViewPos) {
+            throw ValidationException::withMessages([
+                'challenge_uuid' => ['غير مصرح لك بالاطلاع على حالة دعوة الربط هذه.'],
+            ]);
+        }
 
         if (
             $challenge->status === LinkingChallengeStatus::PENDING
