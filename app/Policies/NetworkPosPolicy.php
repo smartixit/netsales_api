@@ -5,11 +5,16 @@ namespace App\Policies;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\User;
+use App\Services\TenantPermissionService;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class NetworkPosPolicy
 {
     use HandlesAuthorization;
+
+    public function __construct(
+        private readonly TenantPermissionService $tenantPermissions
+    ) {}
 
     public function before(User $user, string $ability): ?bool
     {
@@ -22,52 +27,56 @@ class NetworkPosPolicy
 
     public function viewAny(User $user): bool
     {
-        return true;
+        return $this->tenantPermissions->allowsAnyNetwork($user, 'network_pos.view')
+            || $this->tenantPermissions->allowsAnyPos($user, 'network_pos.view');
     }
 
     public function view(User $user, NetworkPos $networkPos): bool
     {
-        // 1. ينتمي للشبكة (مالك أو مستخدم شبكة)
-        if ((int) $networkPos->network?->owner_id === (int) $user->user_id
-            || $user->networkUsers()->where('network_id', $networkPos->network_id)->exists()
-        ) {
-            return true;
-        }
-
-        // 2. ينتمي لنقطة البيع (مالك أو مستخدم نقطة بيع)
-        if ((int) $networkPos->pos?->owner_id === (int) $user->user_id
-            || $user->posUsers()->where('pos_id', $networkPos->pos_id)->exists()
-        ) {
-            return true;
-        }
-
-        return false;
+        return $this->tenantPermissions->allowsNetwork(
+            $user,
+            (int) $networkPos->network_id,
+            'network_pos.view'
+        ) || $this->tenantPermissions->allowsPos(
+            $user,
+            (int) $networkPos->pos_id,
+            'network_pos.view'
+        );
     }
 
     public function create(User $user, int $networkId): bool
     {
-        // يجب أن يكون مالكاً للشبكة أو مستخدماً فيها
-        return Network::where('network_id', $networkId)
-            ->where(function ($q) use ($user) {
-                $q->where('owner_id', $user->user_id)
-                    ->orWhereHas('memberships', fn ($m) => $m->where('user_id', $user->user_id));
-            })->exists();
+        return $this->tenantPermissions->allowsNetwork(
+            $user,
+            $networkId,
+            'network_pos.create'
+        );
     }
 
     public function update(User $user, NetworkPos $networkPos): bool
     {
-        // إدارة وتعديل الارتباط من صلاحية الشبكة المعنية
-        $networkId = $networkPos->network_id;
+        return $this->tenantPermissions->allowsNetwork(
+            $user,
+            (int) $networkPos->network_id,
+            'network_pos.update'
+        );
+    }
 
-        return Network::where('network_id', $networkId)
-            ->where(function ($q) use ($user) {
-                $q->where('owner_id', $user->user_id)
-                    ->orWhereHas('memberships', fn ($m) => $m->where('user_id', $user->user_id));
-            })->exists();
+    public function toggleStatus(User $user, NetworkPos $networkPos): bool
+    {
+        return $this->tenantPermissions->allowsNetwork(
+            $user,
+            (int) $networkPos->network_id,
+            'network_pos.toggle_status'
+        );
     }
 
     public function delete(User $user, NetworkPos $networkPos): bool
     {
-        return $this->update($user, $networkPos);
+        return $this->tenantPermissions->allowsNetwork(
+            $user,
+            (int) $networkPos->network_id,
+            'network_pos.delete'
+        );
     }
 }
