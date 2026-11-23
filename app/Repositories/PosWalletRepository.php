@@ -27,27 +27,31 @@ class PosWalletRepository extends BaseRepository implements PosWalletRepositoryI
      */
     protected function applyFilters(Builder $query, array $filters): void
     {
-        // Injected by the authenticated service layer; never accepted from HTTP input.
-        // A user may view POS wallets they own, POS memberships they actively hold,
-        // or POS wallets belonging to networks they own/actively administer.
-        if (isset($filters['authorized_user_id'])) {
-            $userId = (int) $filters['authorized_user_id'];
-            $query->where(function (Builder $visibilityQuery) use ($userId): void {
-                $visibilityQuery
-                    ->whereHas('pos', function (Builder $posQuery) use ($userId): void {
-                        $posQuery->where('owner_id', $userId);
-                    })
-                    ->orWhereHas('pos.memberships', function (Builder $membershipQuery) use ($userId): void {
-                        $membershipQuery->where('user_id', $userId)
-                            ->where('status', 'ACTIVE');
-                    })
-                    ->orWhereHas('network', function (Builder $networkQuery) use ($userId): void {
-                        $networkQuery->where('owner_id', $userId)
-                            ->orWhereHas('memberships', function (Builder $membershipQuery) use ($userId): void {
-                                $membershipQuery->where('user_id', $userId)
-                                    ->where('status', 'ACTIVE');
-                            });
-                    });
+        // Injected by the service using exact role grants, never from request input.
+        // Network owners can see the POS wallets in their networks; POS roles can
+        // see only their own POS wallet records. Empty scopes fail closed.
+        if (isset($filters['authorized_network_ids']) || isset($filters['authorized_pos_ids'])) {
+            $networkIds = array_values(array_unique(array_map('intval', (array) ($filters['authorized_network_ids'] ?? []))));
+            $posIds = array_values(array_unique(array_map('intval', (array) ($filters['authorized_pos_ids'] ?? []))));
+
+            $query->where(function (Builder $visibilityQuery) use ($networkIds, $posIds): void {
+                $hasScope = false;
+
+                if ($networkIds !== []) {
+                    $visibilityQuery->whereIn('network_id', $networkIds);
+                    $hasScope = true;
+                }
+
+                if ($posIds !== []) {
+                    $hasScope
+                        ? $visibilityQuery->orWhereIn('pos_id', $posIds)
+                        : $visibilityQuery->whereIn('pos_id', $posIds);
+                    $hasScope = true;
+                }
+
+                if (! $hasScope) {
+                    $visibilityQuery->whereRaw('1 = 0');
+                }
             });
         }
 
