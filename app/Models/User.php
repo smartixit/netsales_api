@@ -363,24 +363,16 @@ class User extends Authenticatable
         $permissionKeys = array_values(array_unique([$permissionKey, strtoupper($permissionKey)]));
 
         $platformRole = $this->role;
-        if ($platformRole !== null
+        if ($tenantId === null
+            && $platformRole !== null
             && $platformRole->isActive()
-            && $platformRole->scope === RoleScope::PLATFORM) {
-            if ($platformRole->permissions()
+            && $platformRole->scope === RoleScope::PLATFORM
+            && $platformRole->permissions()
                 ->whereIn('permission_key', $permissionKeys)
                 ->where('permissions.status', true)
                 ->whereIn('permissions.scope', [RoleScope::PLATFORM->value, 'SHARED'])
                 ->exists()) {
-                return true;
-            }
-
-            if ($tenantId !== null && $platformRole->permissions()
-                ->whereIn('permission_key', $permissionKeys)
-                ->where('permissions.status', true)
-                ->where('permissions.scope', 'SHARED')
-                ->exists()) {
-                return true;
-            }
+            return true;
         }
 
         // Direct user grants are strictly platform-local. Tenant capabilities
