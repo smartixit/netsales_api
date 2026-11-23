@@ -71,6 +71,11 @@ class RolePermissionSeeder extends Seeder
                 'scope' => RoleScope::NETWORK->value,
                 'permissions' => [
                     'networks.view',
+                    'network_members.view',
+                    'network_members.create',
+                    'network_members.edit',
+                    'network_members.toggle_status',
+                    'network_members.delete',
                     'networks.edit',
                     'networks.create_pos_link',
                     'networks.update_pos_link',
@@ -198,6 +203,11 @@ class RolePermissionSeeder extends Seeder
                 'scope' => RoleScope::POS->value,
                 'permissions' => [
                     'pos.view',
+                    'pos_members.view',
+                    'pos_members.create',
+                    'pos_members.edit',
+                    'pos_members.toggle_status',
+                    'pos_members.delete',
                     'pos.edit',
                     'pos.preview_link_challenge',
                     'pos.confirm_link_challenge',
