@@ -7,6 +7,7 @@ use App\Http\Requests\API\V1\Ticket\StoreSupportTicketMessageRequest;
 use App\Http\Requests\API\V1\Ticket\StoreSupportTicketRequest;
 use App\Http\Requests\API\V1\Ticket\UpdateSupportTicketRequest;
 use App\Interfaces\NetworkRepositoryInterface;
+use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\SupportTicketMessageRepositoryInterface;
 use App\Interfaces\SupportTicketRepositoryInterface;
