@@ -22,10 +22,9 @@ final class TenantPermissionService
             return false;
         }
 
-        return $user->role->permissions()
-            ->where('permission_key', $permission)
-            ->where('status', true)
-            ->exists();
+        // Keep platform direct-user grants working, but never consult the
+        // union of network/POS memberships for a platform authorization.
+        return $user->hasPermission($permission);
     }
 
     public function allowsNetwork(User $user, int $networkId, string $permission): bool
