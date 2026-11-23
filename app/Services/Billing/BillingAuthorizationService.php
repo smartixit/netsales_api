@@ -60,8 +60,8 @@ class BillingAuthorizationService
             throw (new ModelNotFoundException)->setModel(Network::class, [$networkId]);
         }
 
-        if ((int) $network->owner_id !== (int) $user->user_id) {
-            throw new AuthorizationException('إدارة حساب فوترة الشبكة متاحة لمالك الشبكة فقط.');
+        if (! $user->isActive() || (int) $network->owner_id !== (int) $user->user_id) {
+            throw new AuthorizationException('إدارة حساب فوترة الشبكة متاحة لمالك الشبكة النشط فقط.');
         }
 
         return $network;
