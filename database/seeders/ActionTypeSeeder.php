@@ -98,6 +98,17 @@ class ActionTypeSeeder extends Seeder
             'catchup' => 'تشغيل استدراك المهام',
             'update_many' => 'تحديث مجموعة إعدادات',
             'clear_cache' => 'تفريغ الذاكرة المؤقتة',
+            'bulk_delete' => 'حذف مجموعة سجلات',
+            'bulk_restore' => 'استعادة مجموعة سجلات',
+            'bulk_force_delete' => 'حذف مجموعة سجلات نهائياً',
+            'bulk_toggle_status' => 'تغيير حالة مجموعة ارتباطات',
+            'quote' => 'احتساب عرض سعر لطلب توريد',
+            'delete_wallet' => 'حذف محفظة',
+            'restore_wallet' => 'استعادة محفظة',
+            'force_delete_wallet' => 'حذف محفظة نهائياً',
+            'bulk_delete_wallets' => 'حذف مجموعة محافظ',
+            'bulk_restore_wallets' => 'استعادة مجموعة محافظ',
+            'bulk_force_delete_wallets' => 'حذف مجموعة محافظ نهائياً',
             'view_sessions' => 'عرض الجلسات والأجهزة',
         ];
 
