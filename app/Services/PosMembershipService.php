@@ -72,7 +72,7 @@ class PosMembershipService
                 ]);
             }
 
-            if ($user->role?->scope === RoleScope::PLATFORM) {
+            if ($user->role_scope === RoleScope::PLATFORM->value) {
                 throw ValidationException::withMessages([
                     'user_phone_number' => ['لا يمكن إضافة حساب من نطاق المنصة إلى عضوية تشغيلية داخل نقطة بيع.'],
                 ]);
@@ -299,7 +299,7 @@ class PosMembershipService
             return;
         }
 
-        if ($actor->role?->scope === RoleScope::PLATFORM) {
+        if ($actor->role_scope === RoleScope::PLATFORM->value) {
             throw ValidationException::withMessages([
                 'actor' => ['حسابات نطاق المنصة لا تدير عضويات NETWORK أو POS.'],
             ]);
