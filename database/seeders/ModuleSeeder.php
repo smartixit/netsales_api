@@ -173,6 +173,7 @@ class ModuleSeeder extends Seeder
             DB::table('modules')->updateOrInsert(
                 ['module_key' => $module['module_key']],
                 array_merge($module, [
+                    'deleted_at' => null,
                     'updated_at' => now('Asia/Aden'),
                     'created_at' => now('Asia/Aden'),
                 ])
