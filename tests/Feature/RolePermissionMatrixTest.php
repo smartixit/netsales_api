@@ -37,6 +37,7 @@ class RolePermissionMatrixTest extends TestCase
     {
         $permissions = $this->permissionKeys(RoleKey::ACCOUNTANT);
 
+        $this->assertContains('dashboard.view', $permissions);
         $this->assertContains('bank_accounts.view', $permissions);
         $this->assertContains('bank_accounts.create', $permissions);
         $this->assertContains('billing.view', $permissions);
@@ -57,6 +58,7 @@ class RolePermissionMatrixTest extends TestCase
     {
         $permissions = $this->permissionKeys(RoleKey::NETWORK_ACCOUNTANT);
 
+        $this->assertNotContains('dashboard.view', $permissions);
         $this->assertContains('network_wallets.report', $permissions);
         $this->assertContains('sales.report', $permissions);
         $this->assertContains('expenses.view', $permissions);
@@ -92,6 +94,7 @@ class RolePermissionMatrixTest extends TestCase
     {
         $permissions = $this->permissionKeys(RoleKey::POS_AGENT);
 
+        $this->assertNotContains('dashboard.view', $permissions);
         $this->assertContains('pos.edit', $permissions);
         $this->assertContains('pos.preview_link_challenge', $permissions);
         $this->assertContains('pos.confirm_link_challenge', $permissions);
