@@ -153,7 +153,6 @@ class PermissionSeeder extends Seeder
                 'delete' => 'حذف حساب بنكي',
                 'restore' => 'استعادة حساب بنكي',
                 'force_delete' => 'حذف حساب بنكي نهائياً',
-                'export' => 'تصدير بيانات الحسابات البنكية',
             ],
             'billing' => [
                 'view' => 'عرض بيانات فوترة المنصة',
