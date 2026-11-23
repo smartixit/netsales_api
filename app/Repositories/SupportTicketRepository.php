@@ -38,6 +38,34 @@ class SupportTicketRepository extends BaseRepository implements SupportTicketRep
     {
         parent::applyFilters($query, $filters);
 
+        if (array_key_exists('authorized_network_ids', $filters)
+            || array_key_exists('authorized_pos_ids', $filters)
+        ) {
+            $networkIds = array_values(array_unique(array_map('intval', (array) ($filters['authorized_network_ids'] ?? []))));
+            $posIds = array_values(array_unique(array_map('intval', (array) ($filters['authorized_pos_ids'] ?? []))));
+
+            $query->where(function (Builder $scope) use ($networkIds, $posIds): void {
+                $hasScope = false;
+
+                if ($networkIds !== []) {
+                    $scope->whereIn('network_id', $networkIds);
+                    $hasScope = true;
+                }
+
+                if ($posIds !== []) {
+                    $hasScope
+                        ? $scope->orWhereIn('pos_id', $posIds)
+                        : $scope->whereIn('pos_id', $posIds);
+
+                    $hasScope = true;
+                }
+
+                if (! $hasScope) {
+                    $scope->whereRaw('1 = 0');
+                }
+            });
+        }
+
         if (! empty($filters['search'])) {
             $term = trim((string) $filters['search']);
             $query->where(function ($q) use ($term) {
