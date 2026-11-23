@@ -230,7 +230,9 @@ class PermissionSeeder extends Seeder
             'support_tickets' => [
                 'view' => ['عرض تذاكر الدعم ضمن النطاق المصرح', 'SHARED'],
                 'create' => ['إنشاء تذكرة دعم', 'SHARED'],
-                'update' => ['تعديل بيانات تذكرة دعم', 'SHARED'],
+                'update' => ['تعديل عنوان تذكرة دعم', 'SHARED'],
+                'reassign' => ['إعادة إسناد تذكرة دعم بين المستأجرين', 'SHARED'],
+                'view_trashed' => ['عرض تذاكر الدعم المحذوفة', 'PLATFORM'],
                 'delete' => ['حذف تذكرة دعم مؤقتاً', 'PLATFORM'],
                 'restore' => ['استعادة تذكرة دعم', 'PLATFORM'],
                 'force_delete' => ['حذف تذكرة دعم نهائياً', 'PLATFORM'],
@@ -240,6 +242,7 @@ class PermissionSeeder extends Seeder
             ],
             'notifications' => [
                 'view' => ['عرض سجل الإشعارات الإدارية', 'PLATFORM'],
+                'update' => ['تعديل إشعار إداري', 'PLATFORM'],
                 'send' => ['إرسال إشعار إداري موجه', 'PLATFORM'],
                 'delete' => ['حذف إشعار إداري مؤقتاً', 'PLATFORM'],
                 'restore' => ['استعادة إشعار إداري', 'PLATFORM'],
