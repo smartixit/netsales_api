@@ -21,7 +21,9 @@ class NetworkPolicy
     {
         $permissions = app(TenantPermissionService::class);
 
-        if ($permissions->allowsAnyNetwork($user, 'networks.view')) {
+        if ($permissions->allowsPlatform($user, 'networks.view')
+            || $permissions->allowsAnyNetwork($user, 'networks.view')
+        ) {
             return true;
         }
 
@@ -35,7 +37,9 @@ class NetworkPolicy
     {
         $permissions = app(TenantPermissionService::class);
 
-        if ($permissions->allowsNetwork($user, (int) $network->network_id, 'networks.view')) {
+        if ($permissions->allowsPlatform($user, 'networks.view')
+            || $permissions->allowsNetwork($user, (int) $network->network_id, 'networks.view')
+        ) {
             return true;
         }
 
