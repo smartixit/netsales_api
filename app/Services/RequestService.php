@@ -247,7 +247,7 @@ class RequestService
             /** @var RequestModel $requestModel */
             $requestModel = $this->requestRepository->findByIdForUpdate($requestId);
 
-            $this->authorizeRequestTenant($userId, $requestModel, 'requests.edit', allowNetwork: false);
+            $this->authorizeRequestTenant($userId, $requestModel, 'requests.update', allowNetwork: false);
 
             if (! $requestModel->isPending()) {
                 throw ValidationException::withMessages([
