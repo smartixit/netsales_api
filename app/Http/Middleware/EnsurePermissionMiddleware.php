@@ -43,33 +43,35 @@ class EnsurePermissionMiddleware
         }
 
         if (str_starts_with($permission, 'expenses.')) {
+            $routeName = (string) ($request->route()?->getName() ?? '');
             $expenseId = (int) ($request->route('id') ?? 0);
-            $expense = $expenseId > 0
-                ? Expense::withTrashed()->find($expenseId)
-                : null;
-            $networkId = (int) (
-                $request->input('network_id')
-                ?? $request->query('network_id')
-                ?? $expense?->network_id
-                ?? 0
-            );
+            $expense = $expenseId > 0 ? Expense::withTrashed()->find($expenseId) : null;
 
-            if ($networkId > 0) {
-                $authorized = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
-            } elseif ($request->has('ids')) {
+            if (str_contains($routeName, 'batch_') && $request->has('ids')) {
                 $ids = $this->positiveIds($request->input('ids', []));
                 $records = Expense::withTrashed()->whereIn('expense_id', $ids)->get();
+
                 $authorized = $ids !== [] && $records->count() === count($ids)
                     && $records->every(fn (Expense $record): bool =>
                         $this->tenantPermissions->allowsNetwork($user, (int) $record->network_id, $permission));
-            } elseif ($permission === 'expenses.view') {
-                $authorized = $this->tenantPermissions->allowsAnyNetwork($user, $permission);
+            } elseif ($expense !== null) {
+                // A resource ID always wins over any client-supplied tenant ID.
+                $authorized = $this->tenantPermissions->allowsNetwork(
+                    $user,
+                    (int) $expense->network_id,
+                    $permission
+                );
             } else {
-                $authorized = false;
+                $networkId = (int) ($request->input('network_id') ?? $request->query('network_id') ?? 0);
+
+                $authorized = $networkId > 0
+                    ? $this->tenantPermissions->allowsNetwork($user, $networkId, $permission)
+                    : ($permission === 'expenses.view'
+                        && $this->tenantPermissions->allowsAnyNetwork($user, $permission));
             }
 
             if (! $authorized) {
-                throw new AuthorizationException('عذراً، لا تملك هذه الصلاحية داخل الشبكة المحددة.');
+                throw new AuthorizationException('عذراً، لا تملك هذه الصلاحية داخل الشبكة الفعلية المرتبطة بالسجل.');
             }
 
             return $next($request);
@@ -85,72 +87,76 @@ class EnsurePermissionMiddleware
         }
 
         if (str_starts_with($permission, 'requests.')) {
+            $routeName = (string) ($request->route()?->getName() ?? '');
             $requestId = (int) ($request->route('id') ?? 0);
             $record = $requestId > 0 ? RequestModel::withTrashed()->find($requestId) : null;
-            $networkId = (int) (
-                $request->input('network_id')
-                ?? $request->query('network_id')
-                ?? $record?->network_id
-                ?? 0
-            );
-            $posId = (int) (
-                $request->input('pos_id')
-                ?? $request->query('pos_id')
-                ?? $record?->pos_id
-                ?? 0
-            );
+            $networkOnly = in_array($permission, ['requests.approve', 'requests.reject'], true);
 
-            $authorized = false;
-            if ($record !== null) {
-                $networkAuthorized = $networkId > 0
-                    && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
-                $posAuthorized = $posId > 0
-                    && $this->tenantPermissions->allowsPos($user, $posId, $permission);
-
-                $authorized = in_array($permission, ['requests.approve', 'requests.reject'], true)
-                    ? $networkAuthorized
-                    : ($networkAuthorized || $posAuthorized);
-            } elseif ($networkId > 0 && $posId > 0) {
-                $networkAuthorized = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
-                $posAuthorized = $this->tenantPermissions->allowsPos($user, $posId, $permission);
-                $authorized = in_array($permission, ['requests.approve', 'requests.reject'], true)
-                    ? $networkAuthorized
-                    : ($networkAuthorized || $posAuthorized);
-            } elseif ($networkId > 0) {
-                $authorized = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
-            } elseif ($posId > 0) {
-                $authorized = $this->tenantPermissions->allowsPos($user, $posId, $permission);
-            } elseif ($request->has('ids')) {
+            if (str_contains($routeName, 'batch_') && $request->has('ids')) {
                 $ids = $this->positiveIds($request->input('ids', []));
                 $records = RequestModel::withTrashed()->whereIn('request_id', $ids)->get();
+
                 $authorized = $ids !== [] && $records->count() === count($ids)
-                    && $records->every(fn (RequestModel $record): bool =>
-                        $this->tenantPermissions->allowsNetwork($user, (int) $record->network_id, $permission)
-                        || $this->tenantPermissions->allowsPos($user, (int) $record->pos_id, $permission));
-            } elseif ($record === null && in_array($permission, ['requests.view', 'requests.create'], true)) {
-                $authorized = $this->tenantPermissions->allowsAnyOperational($user, $permission);
+                    && $records->every(function (RequestModel $item) use ($user, $permission, $networkOnly): bool {
+                        $networkAllowed = $this->tenantPermissions->allowsNetwork(
+                            $user,
+                            (int) $item->network_id,
+                            $permission
+                        );
+
+                        return $networkOnly
+                            ? $networkAllowed
+                            : ($networkAllowed || $this->tenantPermissions->allowsPos(
+                                $user,
+                                (int) $item->pos_id,
+                                $permission
+                            ));
+                    });
+            } elseif ($record !== null) {
+                // Never authorize a stored request using IDs supplied in its body.
+                $networkAllowed = $this->tenantPermissions->allowsNetwork(
+                    $user,
+                    (int) $record->network_id,
+                    $permission
+                );
+                $posAllowed = ! $networkOnly && $this->tenantPermissions->allowsPos(
+                    $user,
+                    (int) $record->pos_id,
+                    $permission
+                );
+
+                $authorized = $networkAllowed || $posAllowed;
+            } else {
+                $networkId = (int) ($request->input('network_id') ?? $request->query('network_id') ?? 0);
+                $posId = (int) ($request->input('pos_id') ?? $request->query('pos_id') ?? 0);
+
+                if ($networkId > 0 && $posId > 0) {
+                    $networkAllowed = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
+                    $posAllowed = ! $networkOnly && $this->tenantPermissions->allowsPos($user, $posId, $permission);
+                    $authorized = $networkAllowed || $posAllowed;
+                } elseif ($networkId > 0) {
+                    $authorized = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
+                } elseif ($posId > 0 && ! $networkOnly) {
+                    $authorized = $this->tenantPermissions->allowsPos($user, $posId, $permission);
+                } else {
+                    $authorized = $permission === 'requests.view'
+                        && $this->tenantPermissions->allowsAnyOperational($user, $permission);
+                }
             }
 
             if (! $authorized) {
-                throw new AuthorizationException('عذراً، لا تملك الصلاحية المطلوبة داخل مساحة العمل المحددة.');
+                throw new AuthorizationException('عذراً، لا تملك الصلاحية المطلوبة في مساحة العمل الفعلية المرتبطة بالطلب.');
             }
 
             return $next($request);
         }
 
         if (str_starts_with($permission, 'sales.')) {
+            $routeName = (string) ($request->route()?->getName() ?? '');
             $invoiceId = (int) ($request->route('id') ?? 0);
             $invoice = $invoiceId > 0 ? SaleInvoice::withTrashed()->find($invoiceId) : null;
 
-            // Detail reads are authorized by SaleInvoicePolicy in the controller.
-            if ($invoice !== null && $permission === 'sales.view') {
-                return $next($request);
-            }
-
-            $networkId = (int) ($request->input('network_id') ?? $request->query('network_id') ?? $invoice?->network_id ?? 0);
-            $posId = (int) ($request->input('pos_id') ?? $request->query('pos_id') ?? $invoice?->pos_id ?? 0);
-
-            if ($invoice === null && $request->has('ids')) {
+            if (str_contains($routeName, 'batch_') && $request->has('ids')) {
                 $ids = $this->positiveIds($request->input('ids', []));
                 $invoices = SaleInvoice::withTrashed()->whereIn('invoice_id', $ids)->get();
 
@@ -158,17 +164,32 @@ class EnsurePermissionMiddleware
                     && $invoices->every(fn (SaleInvoice $record): bool =>
                         $this->tenantPermissions->allowsNetwork($user, (int) $record->network_id, $permission)
                         || $this->tenantPermissions->allowsPos($user, (int) $record->pos_id, $permission));
+            } elseif ($invoice !== null) {
+                // Resource ownership is resolved from the persisted invoice, not request parameters.
+                $authorized = $this->tenantPermissions->allowsNetwork(
+                    $user,
+                    (int) $invoice->network_id,
+                    $permission
+                ) || $this->tenantPermissions->allowsPos(
+                    $user,
+                    (int) $invoice->pos_id,
+                    $permission
+                );
             } else {
-                $authorized = ($networkId > 0 && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission))
-                    || ($posId > 0 && $this->tenantPermissions->allowsPos($user, $posId, $permission));
+                $networkId = (int) ($request->input('network_id') ?? $request->query('network_id') ?? 0);
+                $posId = (int) ($request->input('pos_id') ?? $request->query('pos_id') ?? 0);
 
-                if ($networkId <= 0 && $posId <= 0 && $invoice === null && $permission === 'sales.view') {
-                    $authorized = $this->tenantPermissions->allowsAnyOperational($user, $permission);
+                if ($networkId > 0 || $posId > 0) {
+                    $authorized = ($networkId > 0 && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission))
+                        || ($posId > 0 && $this->tenantPermissions->allowsPos($user, $posId, $permission));
+                } else {
+                    $authorized = $permission === 'sales.view'
+                        && $this->tenantPermissions->allowsAnyOperational($user, $permission);
                 }
             }
 
             if (! $authorized) {
-                throw new AuthorizationException('عذراً، لا تملك هذه الصلاحية داخل الشبكة أو نقطة البيع المحددة.');
+                throw new AuthorizationException('عذراً، لا تملك هذه الصلاحية في مساحة العمل الفعلية المرتبطة بالفاتورة.');
             }
 
             return $next($request);
@@ -435,8 +456,7 @@ class EnsurePermissionMiddleware
 
     private function authorizePosWalletPermission(Request $request, User $user, string $permission): bool
     {
-        $networkIds = [];
-        $posIds = [];
+        $targets = [];
         $routeId = (int) ($request->route('id') ?? 0);
 
         if ($routeId > 0) {
@@ -444,45 +464,58 @@ class EnsurePermissionMiddleware
             if (! $wallet) {
                 return false;
             }
-            $networkIds[] = (int) $wallet->network_id;
-            $posIds[] = (int) $wallet->pos_id;
+            $targets[] = ['network_id' => (int) $wallet->network_id, 'pos_id' => (int) $wallet->pos_id];
         }
 
-        $networkId = (int) ($request->route('networkId') ?? $request->input('network_id') ?? $request->query('network_id') ?? 0);
-        $posId = (int) ($request->route('posId') ?? $request->input('pos_id') ?? $request->query('pos_id') ?? 0);
-        if ($networkId > 0) {
-            $networkIds[] = $networkId;
-        }
-        if ($posId > 0) {
-            $posIds[] = $posId;
-        }
-
-        if ($request->has('ids') && str_contains((string) ($request->route()?->getName() ?? ''), 'batch_')) {
+        $routeName = (string) ($request->route()?->getName() ?? '');
+        if (str_contains($routeName, 'batch_') && $request->has('ids')) {
             $ids = $this->positiveIds($request->input('ids', []));
             $wallets = PosWallet::withTrashed()->whereIn('wallet_id', $ids)->get();
             if ($ids === [] || $wallets->count() !== count($ids)) {
                 return false;
             }
+
             foreach ($wallets as $wallet) {
-                $networkIds[] = (int) $wallet->network_id;
-                $posIds[] = (int) $wallet->pos_id;
+                $targets[] = ['network_id' => (int) $wallet->network_id, 'pos_id' => (int) $wallet->pos_id];
             }
         }
 
-        $networkIds = $this->positiveIds($networkIds);
-        $posIds = $this->positiveIds($posIds);
+        $networkId = (int) ($request->route('networkId') ?? $request->input('network_id') ?? $request->query('network_id') ?? 0);
+        $posId = (int) ($request->route('posId') ?? $request->input('pos_id') ?? $request->query('pos_id') ?? 0);
 
-        if ($networkIds === [] && $posIds === []) {
+        if ($networkId > 0 && $posId > 0) {
+            if (! \App\Models\NetworkPos::query()
+                ->where('network_id', $networkId)
+                ->where('pos_id', $posId)
+                ->exists()) {
+                return false;
+            }
+            $targets[] = ['network_id' => $networkId, 'pos_id' => $posId];
+        } elseif ($networkId > 0) {
+            $targets[] = ['network_id' => $networkId, 'pos_id' => 0];
+        } elseif ($posId > 0 && $targets === []) {
+            $targets[] = ['network_id' => 0, 'pos_id' => $posId];
+        }
+
+        if ($targets === []) {
             return $permission === 'pos_wallets.view'
                 && $this->tenantPermissions->allowsAnyOperational($user, $permission);
         }
 
-        foreach ($networkIds as $networkId) {
-            $networkAllowed = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
-            $posAllowed = in_array($permission, ['pos_wallets.view'], true)
-                && $posIds !== []
-                && collect($posIds)->contains(fn (int $id): bool =>
-                    $this->tenantPermissions->allowsPos($user, $id, $permission));
+        foreach ($targets as $target) {
+            $networkId = $target['network_id'];
+            $posId = $target['pos_id'];
+
+            $networkAllowed = $networkId > 0
+                && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
+
+            $posAllowed = $permission === 'pos_wallets.view'
+                && $posId > 0
+                && $this->tenantPermissions->allowsPos($user, $posId, $permission)
+                && ($networkId <= 0 || \App\Models\NetworkPos::query()
+                    ->where('network_id', $networkId)
+                    ->where('pos_id', $posId)
+                    ->exists());
 
             if (! $networkAllowed && ! $posAllowed) {
                 return false;
@@ -495,13 +528,13 @@ class EnsurePermissionMiddleware
     private function authorizeVoucherPackagePermission(Request $request, User $user, string $permission): bool
     {
         $networkIds = [];
-        $posIds = [];
+        $posTargets = [];
         $routeName = (string) ($request->route()?->getName() ?? '');
 
         if ($routeName === 'api.v1.networks.voucher_packages') {
-            $routeNetworkId = (int) ($request->route('id') ?? 0);
-            if ($routeNetworkId > 0) {
-                $networkIds[] = $routeNetworkId;
+            $networkId = (int) ($request->route('id') ?? 0);
+            if ($networkId > 0) {
+                $networkIds[] = $networkId;
             }
         } elseif (str_starts_with($routeName, 'api.v1.voucher_package_discounts.')) {
             $discountId = (int) ($request->route('id') ?? 0);
@@ -512,7 +545,10 @@ class EnsurePermissionMiddleware
                 }
                 $networkIds[] = (int) $discount->network_id;
                 if ($discount->pos_id !== null) {
-                    $posIds[] = (int) $discount->pos_id;
+                    $posTargets[] = [
+                        'network_id' => (int) $discount->network_id,
+                        'pos_id' => (int) $discount->pos_id,
+                    ];
                 }
             }
         } elseif (str_starts_with($routeName, 'api.v1.voucher_packages.')) {
@@ -532,11 +568,14 @@ class EnsurePermissionMiddleware
             $networkIds[] = $networkId;
         }
         if ($posId > 0) {
-            $posIds[] = $posId;
+            if ($networkId > 0) {
+                $posTargets[] = ['network_id' => $networkId, 'pos_id' => $posId];
+            } elseif ($posTargets === []) {
+                $posTargets[] = ['network_id' => 0, 'pos_id' => $posId];
+            }
         }
 
-        $idsField = $request->input('ids', $request->input('package_ids', []));
-        $ids = $this->positiveIds($idsField);
+        $ids = $this->positiveIds($request->input('ids', $request->input('package_ids', [])));
         if ($ids !== [] && str_contains($routeName, 'batch_')) {
             if (str_starts_with($routeName, 'api.v1.voucher_package_discounts.')) {
                 $records = VoucherPackageDiscount::withTrashed()->whereIn('discount_id', $ids)->get();
@@ -546,7 +585,10 @@ class EnsurePermissionMiddleware
                 foreach ($records as $record) {
                     $networkIds[] = (int) $record->network_id;
                     if ($record->pos_id !== null) {
-                        $posIds[] = (int) $record->pos_id;
+                        $posTargets[] = [
+                            'network_id' => (int) $record->network_id,
+                            'pos_id' => (int) $record->pos_id,
+                        ];
                     }
                 }
             } else {
@@ -561,21 +603,49 @@ class EnsurePermissionMiddleware
         }
 
         $networkIds = $this->positiveIds($networkIds);
-        $posIds = $this->positiveIds($posIds);
 
-        if ($networkIds === [] && $posIds === []) {
+        if ($networkIds === [] && $posTargets === []) {
             return $permission === 'voucher_packages.view'
                 && $this->tenantPermissions->allowsAnyOperational($user, $permission);
         }
 
         foreach ($networkIds as $networkId) {
-            $networkAllowed = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
-            $posAllowed = $permission === 'voucher_packages.view'
-                && $posIds !== []
-                && collect($posIds)->contains(fn (int $id): bool =>
-                    $this->tenantPermissions->allowsPos($user, $id, $permission));
+            if ($this->tenantPermissions->allowsNetwork($user, $networkId, $permission)) {
+                continue;
+            }
 
-            if (! $networkAllowed && ! $posAllowed) {
+            $linkedAuthorizedPos = $permission === 'voucher_packages.view'
+                && collect($posTargets)->contains(function (array $target) use ($user, $networkId, $permission): bool {
+                    return (int) $target['pos_id'] > 0
+                        && $this->tenantPermissions->allowsPos($user, (int) $target['pos_id'], $permission)
+                        && (int) $target['network_id'] === $networkId
+                        && \App\Models\NetworkPos::query()
+                            ->where('network_id', $networkId)
+                            ->where('pos_id', (int) $target['pos_id'])
+                            ->exists();
+                });
+
+            if (! $linkedAuthorizedPos) {
+                return false;
+            }
+        }
+
+        foreach ($posTargets as $target) {
+            if ((int) $target['network_id'] > 0) {
+                if (! \App\Models\NetworkPos::query()
+                    ->where('network_id', (int) $target['network_id'])
+                    ->where('pos_id', (int) $target['pos_id'])
+                    ->exists()) {
+                    return false;
+                }
+
+                if ($permission === 'voucher_packages.view'
+                    && ! $this->tenantPermissions->allowsPos($user, (int) $target['pos_id'], $permission)
+                    && ! $this->tenantPermissions->allowsNetwork($user, (int) $target['network_id'], $permission)
+                ) {
+                    return false;
+                }
+            } elseif (! $this->tenantPermissions->allowsPos($user, (int) $target['pos_id'], $permission)) {
                 return false;
             }
         }
