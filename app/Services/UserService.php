@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\RoleScope;
 use App\Enums\UserStatus;
+use App\Enums\RoleScope;
 use App\Http\Requests\API\V1\User\StoreUserRequest;
 use App\Http\Requests\API\V1\User\UpdateUserRequest;
 use App\Interfaces\UserRepositoryInterface;
@@ -338,6 +339,26 @@ class UserService
         } catch (ModelNotFoundException) {
             throw ValidationException::withMessages([
                 'user_id' => ['المستخدم غير موجود في النظام.'],
+            ]);
+        }
+
+        // user_permissions has no network_id/pos_id columns. A direct grant
+        // is therefore global and is safe only for an active PLATFORM user.
+        if ($user->role?->scope !== RoleScope::PLATFORM || ! $user->role->isActive()) {
+            throw ValidationException::withMessages([
+                'user_id' => ['لا يمكن إسناد صلاحيات مباشرة لمستخدم تشغيلي. تُمنح صلاحياته عبر دور عضويته داخل الشبكة أو نقطة البيع.'],
+            ]);
+        }
+
+        $permissionIds = array_values(array_unique(array_map('intval', $permissionIds)));
+        $activePermissionCount = \App\Models\Permission::query()
+            ->whereIn('permission_id', $permissionIds)
+            ->where('status', true)
+            ->count();
+
+        if ($activePermissionCount !== count($permissionIds)) {
+            throw ValidationException::withMessages([
+                'permissions' => ['تتضمن القائمة صلاحية غير موجودة أو معطلة.'],
             ]);
         }
 
