@@ -143,30 +143,30 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware(['throttle:api-write', 'platform.user.scope'])->group(function () {
             Route::post('users/{id}/permissions', [UserController::class, 'syncPermissions'])
-                ->whereNumber('id')->middleware('permission:roles.manage')->name('api.v1.users.sync_permissions');
+                ->whereNumber('id')->middleware('permission:roles.assign_permissions')->name('api.v1.users.sync_permissions');
             Route::post('users/batch-delete', [UserController::class, 'bulkDelete'])
                 ->middleware('permission:users.delete')->name('api.v1.users.batch_delete');
             Route::post('users/batch-restore', [UserController::class, 'bulkRestore'])
-                ->middleware('permission:users.edit')->name('api.v1.users.batch_restore');
+                ->middleware('permission:users.restore')->name('api.v1.users.batch_restore');
             Route::post('users/batch-force-delete', [UserController::class, 'bulkForceDelete'])
-                ->middleware('permission:users.delete')->name('api.v1.users.batch_force_delete');
+                ->middleware('permission:users.force_delete')->name('api.v1.users.batch_force_delete');
             Route::post('users/{id}/restore', [UserController::class, 'restore'])
-                ->whereNumber('id')->middleware('permission:users.edit')->name('api.v1.users.restore');
+                ->whereNumber('id')->middleware('permission:users.restore')->name('api.v1.users.restore');
             Route::delete('users/{id}/force', [UserController::class, 'forceDelete'])
-                ->whereNumber('id')->middleware('permission:users.delete')->name('api.v1.users.force_delete');
+                ->whereNumber('id')->middleware('permission:users.force_delete')->name('api.v1.users.force_delete');
             Route::post('users', [UserController::class, 'store'])
                 ->middleware('permission:users.create')->name('api.v1.users.store');
             Route::put('users/{id}', [UserController::class, 'update'])
-                ->whereNumber('id')->middleware('permission:users.edit')->name('api.v1.users.update');
+                ->whereNumber('id')->middleware('permission:users.update')->name('api.v1.users.update');
             Route::delete('users/{id}', [UserController::class, 'destroy'])
                 ->whereNumber('id')->middleware('permission:users.delete')->name('api.v1.users.destroy');
             Route::post('users/{id}/status', [UserController::class, 'updateStatus'])
-                ->whereNumber('id')->middleware('permission:users.edit')->name('api.v1.users.update_status');
+                ->whereNumber('id')->middleware('permission:users.change_status')->name('api.v1.users.update_status');
         });
 
         Route::post('users/{id}/profile-picture', [UserController::class, 'updateProfilePicture'])
             ->whereNumber('id')
-            ->middleware(['throttle:api-upload', 'platform.user.scope', 'permission:users.edit'])
+            ->middleware(['throttle:api-upload', 'platform.user.scope', 'permission:users.update_profile'])
             ->name('api.v1.users.profile_picture');
 
         // 2. إدارة الأمان والجلسات والحظر (Security & Sessions)
@@ -207,29 +207,29 @@ Route::prefix('v1')->group(function () {
             Route::get('networks/{id}', [NetworkController::class, 'show'])->whereNumber('id')->name('api.v1.networks.show');
         });
 
-        Route::middleware(['throttle:api-read', 'permission:networks.edit'])->get(
+        Route::middleware(['throttle:api-read', 'permission:network_pos.search_linkable_pos'])->get(
             'network-pos/challenges/linkable-targets',
             [NetworkPosController::class, 'searchLinkablePos']
         )->name('api.v1.network_pos.challenges.linkable_targets');
 
-        Route::middleware(['throttle:api-write', 'permission:networks.edit'])->post(
+        Route::middleware(['throttle:api-write', 'permission:network_pos.resolve_link_target'])->post(
             'network-pos/challenges/resolve-target',
             [NetworkPosController::class, 'resolveLinkTarget']
         )->name('api.v1.network_pos.challenges.resolve_target');
 
-        Route::middleware(['throttle:api-read', 'permission:networks.view'])->get(
+        Route::middleware(['throttle:api-read', 'permission:network_pos.view_invitation_status'])->get(
             'network-pos/challenges/{uuid}',
             [NetworkPosController::class, 'challengeStatus']
         )->whereUuid('uuid')->name('api.v1.network_pos.challenges.status');
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('networks', [NetworkController::class, 'store'])->name('api.v1.networks.store')->middleware('permission:networks.create');
-            Route::put('networks/{id}', [NetworkController::class, 'update'])->whereNumber('id')->name('api.v1.networks.update')->middleware('permission:networks.edit');
+            Route::put('networks/{id}', [NetworkController::class, 'update'])->whereNumber('id')->name('api.v1.networks.update')->middleware('permission:networks.update');
             Route::delete('networks/{id}', [NetworkController::class, 'destroy'])->whereNumber('id')->name('api.v1.networks.destroy')->middleware('permission:networks.delete');
             Route::post('networks/batch-delete', [NetworkController::class, 'batchDelete'])->name('api.v1.networks.batch_delete')->middleware('permission:networks.delete');
-            Route::post('networks/batch-restore', [NetworkController::class, 'batchRestore'])->name('api.v1.networks.batch_restore')->middleware('permission:networks.edit');
-            Route::post('networks/batch-force-delete', [NetworkController::class, 'batchForceDelete'])->name('api.v1.networks.batch_force_delete')->middleware('permission:networks.delete');
-            Route::post('networks/{id}/restore', [NetworkController::class, 'restore'])->name('api.v1.networks.restore')->middleware('permission:networks.edit');
-            Route::delete('networks/{id}/force', [NetworkController::class, 'forceDelete'])->name('api.v1.networks.force_delete')->middleware('permission:networks.delete');
+            Route::post('networks/batch-restore', [NetworkController::class, 'batchRestore'])->name('api.v1.networks.batch_restore')->middleware('permission:networks.restore');
+            Route::post('networks/batch-force-delete', [NetworkController::class, 'batchForceDelete'])->name('api.v1.networks.batch_force_delete')->middleware('permission:networks.force_delete');
+            Route::post('networks/{id}/restore', [NetworkController::class, 'restore'])->name('api.v1.networks.restore')->middleware('permission:networks.restore');
+            Route::delete('networks/{id}/force', [NetworkController::class, 'forceDelete'])->name('api.v1.networks.force_delete')->middleware('permission:networks.force_delete');
             Route::post('networks/{id}/approve', [NetworkController::class, 'approve'])->whereNumber('id')->name('api.v1.networks.approve')->middleware('permission:networks.approve');
             Route::post('networks/{id}/reject', [NetworkController::class, 'reject'])->whereNumber('id')->name('api.v1.networks.reject')->middleware('permission:networks.reject');
             Route::apiResource('networks', NetworkController::class)->parameters(['networks' => 'id'])->except(['index', 'show', 'store', 'update', 'destroy']);
@@ -265,15 +265,15 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('pos', [PosController::class, 'store'])->name('api.v1.pos.store')->middleware('permission:pos.create');
-            Route::put('pos/{id}', [PosController::class, 'update'])->whereNumber('id')->name('api.v1.pos.update')->middleware('permission:pos.edit');
+            Route::put('pos/{id}', [PosController::class, 'update'])->whereNumber('id')->name('api.v1.pos.update')->middleware('permission:pos.update');
             Route::delete('pos/{id}', [PosController::class, 'destroy'])->whereNumber('id')->name('api.v1.pos.destroy')->middleware('permission:pos.delete');
             Route::post('pos/batch-delete', [PosController::class, 'batchDelete'])->name('api.v1.pos.batch_delete')->middleware('permission:pos.delete');
-            Route::post('pos/batch-restore', [PosController::class, 'batchRestore'])->name('api.v1.pos.batch_restore')->middleware('permission:pos.edit');
-            Route::post('pos/batch-force-delete', [PosController::class, 'batchForceDelete'])->name('api.v1.pos.batch_force_delete')->middleware('permission:pos.delete');
-            Route::post('pos/{id}/restore', [PosController::class, 'restore'])->name('api.v1.pos.restore')->middleware('permission:pos.edit');
-            Route::delete('pos/{id}/force', [PosController::class, 'forceDelete'])->name('api.v1.pos.force_delete')->middleware('permission:pos.delete');
-            Route::post('pos/{id}/approve', [PosController::class, 'approve'])->whereNumber('id')->name('api.v1.pos.approve')->middleware('permission:pos.edit');
-            Route::post('pos/{id}/reject', [PosController::class, 'reject'])->whereNumber('id')->name('api.v1.pos.reject')->middleware('permission:pos.edit');
+            Route::post('pos/batch-restore', [PosController::class, 'batchRestore'])->name('api.v1.pos.batch_restore')->middleware('permission:pos.restore');
+            Route::post('pos/batch-force-delete', [PosController::class, 'batchForceDelete'])->name('api.v1.pos.batch_force_delete')->middleware('permission:pos.force_delete');
+            Route::post('pos/{id}/restore', [PosController::class, 'restore'])->name('api.v1.pos.restore')->middleware('permission:pos.restore');
+            Route::delete('pos/{id}/force', [PosController::class, 'forceDelete'])->name('api.v1.pos.force_delete')->middleware('permission:pos.force_delete');
+            Route::post('pos/{id}/approve', [PosController::class, 'approve'])->whereNumber('id')->name('api.v1.pos.approve')->middleware('permission:pos.approve');
+            Route::post('pos/{id}/reject', [PosController::class, 'reject'])->whereNumber('id')->name('api.v1.pos.reject')->middleware('permission:pos.reject');
             Route::apiResource('pos', PosController::class)->parameters(['pos' => 'id'])->except(['index', 'show', 'store', 'update', 'destroy']);
         });
 
@@ -303,18 +303,18 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('throttle:api-write')->group(function () {
-            Route::post('network-pos', [NetworkPosController::class, 'store'])->name('api.v1.network_pos.store')->middleware('permission:networks.edit');
-            Route::put('network-pos/{id}', [NetworkPosController::class, 'update'])->whereNumber('id')->name('api.v1.network_pos.update')->middleware('permission:networks.edit');
-            Route::delete('network-pos/{id}', [NetworkPosController::class, 'destroy'])->whereNumber('id')->name('api.v1.network_pos.destroy')->middleware('permission:networks.edit');
-            Route::post('network-pos/{id}/toggle-status', [NetworkPosController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.network_pos.toggle_status')->middleware('permission:networks.edit');
-            Route::post('network-pos/batch-delete', [NetworkPosController::class, 'batchDelete'])->name('api.v1.network_pos.batch_delete')->middleware('permission:networks.edit');
-            Route::post('network-pos/batch-status', [NetworkPosController::class, 'batchStatus'])->name('api.v1.network_pos.batch_status')->middleware('permission:networks.edit');
+            Route::post('network-pos', [NetworkPosController::class, 'store'])->name('api.v1.network_pos.store')->middleware('permission:network_pos.create');
+            Route::put('network-pos/{id}', [NetworkPosController::class, 'update'])->whereNumber('id')->name('api.v1.network_pos.update')->middleware('permission:network_pos.update');
+            Route::delete('network-pos/{id}', [NetworkPosController::class, 'destroy'])->whereNumber('id')->name('api.v1.network_pos.destroy')->middleware('permission:network_pos.delete');
+            Route::post('network-pos/{id}/toggle-status', [NetworkPosController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.network_pos.toggle_status')->middleware('permission:network_pos.toggle_status');
+            Route::post('network-pos/batch-delete', [NetworkPosController::class, 'batchDelete'])->name('api.v1.network_pos.batch_delete')->middleware('permission:network_pos.delete');
+            Route::post('network-pos/batch-status', [NetworkPosController::class, 'batchStatus'])->name('api.v1.network_pos.batch_status')->middleware('permission:network_pos.toggle_status');
 
             // QR-Based POS–Network Linking Challenges
-            Route::post('network-pos/challenges', [NetworkPosController::class, 'createChallenge'])->name('api.v1.network_pos.challenges.create')->middleware('permission:networks.edit');
-            Route::post('network-pos/challenges/preview', [NetworkPosController::class, 'previewChallenge'])->name('api.v1.network_pos.challenges.preview')->middleware('permission:pos.view');
-            Route::post('network-pos/challenges/confirm', [NetworkPosController::class, 'confirmChallenge'])->name('api.v1.network_pos.challenges.confirm')->middleware('permission:pos.edit');
-            Route::delete('network-pos/challenges/{uuid}', [NetworkPosController::class, 'revokeChallenge'])->whereUuid('uuid')->name('api.v1.network_pos.challenges.revoke')->middleware('permission:networks.edit');
+            Route::post('network-pos/challenges', [NetworkPosController::class, 'createChallenge'])->name('api.v1.network_pos.challenges.create')->middleware('permission:network_pos.invite_pos');
+            Route::post('network-pos/challenges/preview', [NetworkPosController::class, 'previewChallenge'])->name('api.v1.network_pos.challenges.preview')->middleware('permission:network_pos.preview_invitation');
+            Route::post('network-pos/challenges/confirm', [NetworkPosController::class, 'confirmChallenge'])->name('api.v1.network_pos.challenges.confirm')->middleware('permission:network_pos.confirm_invitation');
+            Route::delete('network-pos/challenges/{uuid}', [NetworkPosController::class, 'revokeChallenge'])->whereUuid('uuid')->name('api.v1.network_pos.challenges.revoke')->middleware('permission:network_pos.revoke_invitation');
         });
 
         // ==========================================
@@ -329,15 +329,15 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('voucher-packages', [VoucherPackageController::class, 'store'])->name('api.v1.voucher_packages.store')->middleware('permission:voucher_packages.create');
-            Route::put('voucher-packages/{id}', [VoucherPackageController::class, 'update'])->whereNumber('id')->name('api.v1.voucher_packages.update')->middleware('permission:voucher_packages.edit');
+            Route::put('voucher-packages/{id}', [VoucherPackageController::class, 'update'])->whereNumber('id')->name('api.v1.voucher_packages.update')->middleware('permission:voucher_packages.update');
             Route::patch('voucher-packages/{id}', [VoucherPackageController::class, 'update'])->whereNumber('id')->name('api.v1.voucher_packages.update')->middleware('permission:voucher_packages.edit');
             Route::delete('voucher-packages/{id}', [VoucherPackageController::class, 'destroy'])->whereNumber('id')->name('api.v1.voucher_packages.destroy')->middleware('permission:voucher_packages.delete');
             Route::post('voucher-packages/batch-delete', [VoucherPackageController::class, 'batchDelete'])->name('api.v1.voucher_packages.batch_delete')->middleware('permission:voucher_packages.delete');
-            Route::post('voucher-packages/batch-restore', [VoucherPackageController::class, 'batchRestore'])->name('api.v1.voucher_packages.batch_restore')->middleware('permission:voucher_packages.edit');
-            Route::post('voucher-packages/batch-force-delete', [VoucherPackageController::class, 'batchForceDelete'])->name('api.v1.voucher_packages.batch_force_delete')->middleware('permission:voucher_packages.delete');
-            Route::post('voucher-packages/{id}/restore', [VoucherPackageController::class, 'restore'])->whereNumber('id')->name('api.v1.voucher_packages.restore')->middleware('permission:voucher_packages.edit');
-            Route::delete('voucher-packages/{id}/force', [VoucherPackageController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.voucher_packages.force_delete')->middleware('permission:voucher_packages.delete');
-            Route::post('voucher-packages/{id}/toggle-status', [VoucherPackageController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.voucher_packages.toggle_status')->middleware('permission:voucher_packages.edit');
+            Route::post('voucher-packages/batch-restore', [VoucherPackageController::class, 'batchRestore'])->name('api.v1.voucher_packages.batch_restore')->middleware('permission:voucher_packages.restore');
+            Route::post('voucher-packages/batch-force-delete', [VoucherPackageController::class, 'batchForceDelete'])->name('api.v1.voucher_packages.batch_force_delete')->middleware('permission:voucher_packages.force_delete');
+            Route::post('voucher-packages/{id}/restore', [VoucherPackageController::class, 'restore'])->whereNumber('id')->name('api.v1.voucher_packages.restore')->middleware('permission:voucher_packages.restore');
+            Route::delete('voucher-packages/{id}/force', [VoucherPackageController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.voucher_packages.force_delete')->middleware('permission:voucher_packages.force_delete');
+            Route::post('voucher-packages/{id}/toggle-status', [VoucherPackageController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.voucher_packages.toggle_status')->middleware('permission:voucher_packages.toggle_status');
         });
 
         // ==========================================
@@ -351,16 +351,16 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('throttle:api-write')->group(function () {
-            Route::post('voucher-package-discounts', [VoucherPackageDiscountController::class, 'store'])->name('api.v1.voucher_package_discounts.store')->middleware('permission:voucher_packages.create');
-            Route::put('voucher-package-discounts/{id}', [VoucherPackageDiscountController::class, 'update'])->whereNumber('id')->name('api.v1.voucher_package_discounts.update')->middleware('permission:voucher_packages.edit');
+            Route::post('voucher-package-discounts', [VoucherPackageDiscountController::class, 'store'])->name('api.v1.voucher_package_discounts.store')->middleware('permission:package_discounts.create');
+            Route::put('voucher-package-discounts/{id}', [VoucherPackageDiscountController::class, 'update'])->whereNumber('id')->name('api.v1.voucher_package_discounts.update')->middleware('permission:package_discounts.update');
             Route::patch('voucher-package-discounts/{id}', [VoucherPackageDiscountController::class, 'update'])->whereNumber('id')->name('api.v1.voucher_package_discounts.update')->middleware('permission:voucher_packages.edit');
-            Route::delete('voucher-package-discounts/{id}', [VoucherPackageDiscountController::class, 'destroy'])->whereNumber('id')->name('api.v1.voucher_package_discounts.destroy')->middleware('permission:voucher_packages.delete');
-            Route::post('voucher-package-discounts/batch-delete', [VoucherPackageDiscountController::class, 'batchDelete'])->name('api.v1.voucher_package_discounts.batch_delete')->middleware('permission:voucher_packages.delete');
-            Route::post('voucher-package-discounts/batch-restore', [VoucherPackageDiscountController::class, 'batchRestore'])->name('api.v1.voucher_package_discounts.batch_restore')->middleware('permission:voucher_packages.edit');
-            Route::post('voucher-package-discounts/batch-force-delete', [VoucherPackageDiscountController::class, 'batchForceDelete'])->name('api.v1.voucher_package_discounts.batch_force_delete')->middleware('permission:voucher_packages.delete');
-            Route::post('voucher-package-discounts/{id}/restore', [VoucherPackageDiscountController::class, 'restore'])->whereNumber('id')->name('api.v1.voucher_package_discounts.restore')->middleware('permission:voucher_packages.edit');
-            Route::delete('voucher-package-discounts/{id}/force', [VoucherPackageDiscountController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.voucher_package_discounts.force_delete')->middleware('permission:voucher_packages.delete');
-            Route::post('voucher-package-discounts/{id}/toggle-status', [VoucherPackageDiscountController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.voucher_package_discounts.toggle_status')->middleware('permission:voucher_packages.edit');
+            Route::delete('voucher-package-discounts/{id}', [VoucherPackageDiscountController::class, 'destroy'])->whereNumber('id')->name('api.v1.voucher_package_discounts.destroy')->middleware('permission:package_discounts.delete');
+            Route::post('voucher-package-discounts/batch-delete', [VoucherPackageDiscountController::class, 'batchDelete'])->name('api.v1.voucher_package_discounts.batch_delete')->middleware('permission:package_discounts.delete');
+            Route::post('voucher-package-discounts/batch-restore', [VoucherPackageDiscountController::class, 'batchRestore'])->name('api.v1.voucher_package_discounts.batch_restore')->middleware('permission:package_discounts.restore');
+            Route::post('voucher-package-discounts/batch-force-delete', [VoucherPackageDiscountController::class, 'batchForceDelete'])->name('api.v1.voucher_package_discounts.batch_force_delete')->middleware('permission:package_discounts.force_delete');
+            Route::post('voucher-package-discounts/{id}/restore', [VoucherPackageDiscountController::class, 'restore'])->whereNumber('id')->name('api.v1.voucher_package_discounts.restore')->middleware('permission:package_discounts.restore');
+            Route::delete('voucher-package-discounts/{id}/force', [VoucherPackageDiscountController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.voucher_package_discounts.force_delete')->middleware('permission:package_discounts.force_delete');
+            Route::post('voucher-package-discounts/{id}/toggle-status', [VoucherPackageDiscountController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.voucher_package_discounts.toggle_status')->middleware('permission:package_discounts.toggle_status');
         });
 
         // ==========================================
@@ -426,17 +426,17 @@ Route::prefix('v1')->group(function () {
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('requests/quote', [RequestController::class, 'quote'])->name('api.v1.requests.quote')->middleware('permission:requests.create');
             Route::post('requests', [RequestController::class, 'store'])->name('api.v1.requests.store')->middleware('permission:requests.create');
-            Route::put('requests/{id}', [RequestController::class, 'update'])->whereNumber('id')->name('api.v1.requests.update')->middleware('permission:requests.edit');
-            Route::post('requests/{id}/preview-modification', [RequestController::class, 'previewModification'])->whereNumber('id')->name('api.v1.requests.preview_modification')->middleware('permission:requests.approve');
+            Route::put('requests/{id}', [RequestController::class, 'update'])->whereNumber('id')->name('api.v1.requests.update')->middleware('permission:requests.update');
+            Route::post('requests/{id}/preview-modification', [RequestController::class, 'previewModification'])->whereNumber('id')->name('api.v1.requests.preview_modification')->middleware('permission:requests.preview_modification');
             Route::post('requests/{id}/approve', [RequestController::class, 'approve'])->whereNumber('id')->name('api.v1.requests.approve')->middleware('permission:requests.approve');
             Route::post('requests/{id}/reject', [RequestController::class, 'reject'])->whereNumber('id')->name('api.v1.requests.reject')->middleware('permission:requests.reject');
-            Route::post('requests/{id}/cancel', [RequestController::class, 'cancel'])->whereNumber('id')->name('api.v1.requests.cancel')->middleware('permission:requests.edit');
+            Route::post('requests/{id}/cancel', [RequestController::class, 'cancel'])->whereNumber('id')->name('api.v1.requests.cancel')->middleware('permission:requests.cancel');
             Route::delete('requests/{id}', [RequestController::class, 'destroy'])->whereNumber('id')->name('api.v1.requests.destroy')->middleware('permission:requests.delete');
-            Route::post('requests/{id}/restore', [RequestController::class, 'restore'])->whereNumber('id')->name('api.v1.requests.restore')->middleware('permission:requests.edit');
-            Route::delete('requests/{id}/force', [RequestController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.requests.force_delete')->middleware('permission:requests.delete');
+            Route::post('requests/{id}/restore', [RequestController::class, 'restore'])->whereNumber('id')->name('api.v1.requests.restore')->middleware('permission:requests.restore');
+            Route::delete('requests/{id}/force', [RequestController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.requests.force_delete')->middleware('permission:requests.force_delete');
             Route::post('requests/batch-delete', [RequestController::class, 'batchDelete'])->name('api.v1.requests.batch_delete')->middleware('permission:requests.delete');
-            Route::post('requests/batch-restore', [RequestController::class, 'batchRestore'])->name('api.v1.requests.batch_restore')->middleware('permission:requests.edit');
-            Route::post('requests/batch-force-delete', [RequestController::class, 'batchForceDelete'])->name('api.v1.requests.batch_force_delete')->middleware('permission:requests.delete');
+            Route::post('requests/batch-restore', [RequestController::class, 'batchRestore'])->name('api.v1.requests.batch_restore')->middleware('permission:requests.restore');
+            Route::post('requests/batch-force-delete', [RequestController::class, 'batchForceDelete'])->name('api.v1.requests.batch_force_delete')->middleware('permission:requests.force_delete');
         });
 
         // ==========================================
@@ -452,13 +452,13 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('sale-invoices', [SaleInvoiceController::class, 'store'])->name('api.v1.sale_invoices.store')->middleware('permission:sales.create');
-            Route::put('sale-invoices/{id}', [SaleInvoiceController::class, 'update'])->whereNumber('id')->name('api.v1.sale_invoices.update')->middleware('permission:sales.edit');
-            Route::delete('sale-invoices/{id}', [SaleInvoiceController::class, 'destroy'])->whereNumber('id')->name('api.v1.sale_invoices.destroy')->middleware('permission:sales.edit');
-            Route::post('sale-invoices/{id}/restore', [SaleInvoiceController::class, 'restore'])->whereNumber('id')->name('api.v1.sale_invoices.restore')->middleware('permission:sales.edit');
-            Route::delete('sale-invoices/{id}/force', [SaleInvoiceController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.sale_invoices.force_delete')->middleware('permission:sales.edit');
-            Route::post('sale-invoices/batch-delete', [SaleInvoiceController::class, 'batchDelete'])->name('api.v1.sale_invoices.batch_delete')->middleware('permission:sales.edit');
-            Route::post('sale-invoices/batch-restore', [SaleInvoiceController::class, 'batchRestore'])->name('api.v1.sale_invoices.batch_restore')->middleware('permission:sales.edit');
-            Route::post('sale-invoices/batch-force-delete', [SaleInvoiceController::class, 'batchForceDelete'])->name('api.v1.sale_invoices.batch_force_delete')->middleware('permission:sales.edit');
+            Route::put('sale-invoices/{id}', [SaleInvoiceController::class, 'update'])->whereNumber('id')->name('api.v1.sale_invoices.update')->middleware('permission:sales.update');
+            Route::delete('sale-invoices/{id}', [SaleInvoiceController::class, 'destroy'])->whereNumber('id')->name('api.v1.sale_invoices.destroy')->middleware('permission:sales.delete');
+            Route::post('sale-invoices/{id}/restore', [SaleInvoiceController::class, 'restore'])->whereNumber('id')->name('api.v1.sale_invoices.restore')->middleware('permission:sales.restore');
+            Route::delete('sale-invoices/{id}/force', [SaleInvoiceController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.sale_invoices.force_delete')->middleware('permission:sales.force_delete');
+            Route::post('sale-invoices/batch-delete', [SaleInvoiceController::class, 'batchDelete'])->name('api.v1.sale_invoices.batch_delete')->middleware('permission:sales.delete');
+            Route::post('sale-invoices/batch-restore', [SaleInvoiceController::class, 'batchRestore'])->name('api.v1.sale_invoices.batch_restore')->middleware('permission:sales.restore');
+            Route::post('sale-invoices/batch-force-delete', [SaleInvoiceController::class, 'batchForceDelete'])->name('api.v1.sale_invoices.batch_force_delete')->middleware('permission:sales.force_delete');
         });
 
         // ==========================================
@@ -473,16 +473,16 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('throttle:api-write')->group(function () {
             Route::post('expenses', [ExpenseController::class, 'store'])->name('api.v1.expenses.store')->middleware('permission:expenses.create');
-            Route::put('expenses/{id}', [ExpenseController::class, 'update'])->whereNumber('id')->name('api.v1.expenses.update')->middleware('permission:expenses.edit');
+            Route::put('expenses/{id}', [ExpenseController::class, 'update'])->whereNumber('id')->name('api.v1.expenses.update')->middleware('permission:expenses.update');
             Route::delete('expenses/{id}', [ExpenseController::class, 'destroy'])->whereNumber('id')->name('api.v1.expenses.destroy')->middleware('permission:expenses.delete');
-            Route::post('expenses/{id}/restore', [ExpenseController::class, 'restore'])->whereNumber('id')->name('api.v1.expenses.restore')->middleware('permission:expenses.edit');
-            Route::delete('expenses/{id}/force', [ExpenseController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.expenses.force_delete')->middleware('permission:expenses.delete');
+            Route::post('expenses/{id}/restore', [ExpenseController::class, 'restore'])->whereNumber('id')->name('api.v1.expenses.restore')->middleware('permission:expenses.restore');
+            Route::delete('expenses/{id}/force', [ExpenseController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.expenses.force_delete')->middleware('permission:expenses.force_delete');
             Route::post('expenses/batch-delete', [ExpenseController::class, 'batchDelete'])->name('api.v1.expenses.batch_delete')->middleware('permission:expenses.delete');
-            Route::post('expenses/batch-restore', [ExpenseController::class, 'batchRestore'])->name('api.v1.expenses.batch_restore')->middleware('permission:expenses.edit');
-            Route::post('expenses/batch-force-delete', [ExpenseController::class, 'batchForceDelete'])->name('api.v1.expenses.batch_force_delete')->middleware('permission:expenses.delete');
-            Route::post('expenses/{id}/items', [ExpenseController::class, 'addItem'])->whereNumber('id')->name('api.v1.expenses.add_item')->middleware('permission:expenses.edit');
-            Route::delete('expenses/{id}/items/{itemId}', [ExpenseController::class, 'deleteItem'])->whereNumber('id')->whereNumber('itemId')->name('api.v1.expenses.delete_item')->middleware('permission:expenses.delete');
-            Route::delete('expenses/{id}/attachments/{attachmentId}', [ExpenseController::class, 'deleteAttachment'])->whereNumber('id')->whereNumber('attachmentId')->name('api.v1.expenses.delete_attachment')->middleware('permission:expenses.delete');
+            Route::post('expenses/batch-restore', [ExpenseController::class, 'batchRestore'])->name('api.v1.expenses.batch_restore')->middleware('permission:expenses.restore');
+            Route::post('expenses/batch-force-delete', [ExpenseController::class, 'batchForceDelete'])->name('api.v1.expenses.batch_force_delete')->middleware('permission:expenses.force_delete');
+            Route::post('expenses/{id}/items', [ExpenseController::class, 'addItem'])->whereNumber('id')->name('api.v1.expenses.add_item')->middleware('permission:expenses.add_item');
+            Route::delete('expenses/{id}/items/{itemId}', [ExpenseController::class, 'deleteItem'])->whereNumber('id')->whereNumber('itemId')->name('api.v1.expenses.delete_item')->middleware('permission:expenses.delete_item');
+            Route::delete('expenses/{id}/attachments/{attachmentId}', [ExpenseController::class, 'deleteAttachment'])->whereNumber('id')->whereNumber('attachmentId')->name('api.v1.expenses.delete_attachment')->middleware('permission:expenses.delete_attachment');
             Route::apiResource('expenses', ExpenseController::class)->parameters(['expenses' => 'id'])->except(['index', 'show']);
         });
 
