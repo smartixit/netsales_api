@@ -36,6 +36,8 @@ class SupportTicketRepository extends BaseRepository implements SupportTicketRep
      */
     protected function applyFilters(Builder $query, array $filters): void
     {
+        $hasTenantScope = array_key_exists('authorized_network_ids', $filters)
+            || array_key_exists('authorized_pos_ids', $filters);
         $authorizedNetworkIds = array_values(array_unique(array_map(
             'intval',
             (array) ($filters['authorized_network_ids'] ?? [])
@@ -49,7 +51,7 @@ class SupportTicketRepository extends BaseRepository implements SupportTicketRep
 
         parent::applyFilters($query, $filters);
 
-        if (array_key_exists('authorized_network_ids', $filters) || $authorizedNetworkIds !== [] || $authorizedPosIds !== []) {
+        if ($hasTenantScope) {
             $query->where(function (Builder $scope) use ($authorizedNetworkIds, $authorizedPosIds): void {
                 $hasCondition = false;
 
