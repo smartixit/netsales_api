@@ -269,6 +269,7 @@ class PermissionSeeder extends Seeder
                         'permission_name' => $permissionName,
                         'permission_desc' => "صلاحية {$permissionName} ضمن وحدة {$moduleKey}",
                         'status' => true,
+                        'deleted_at' => null,
                         'updated_at' => $now,
                         'created_at' => $now,
                     ]
@@ -276,16 +277,23 @@ class PermissionSeeder extends Seeder
             }
         }
 
-        // Old compound permissions must not remain assignable after the matrix
-        // is rebuilt. Removing them also clears their old role/direct grants via
-        // the pivot foreign keys' cascade-on-delete behavior.
+        // Retire stale compound permissions without hard-deleting audit history.
+        // Explicitly detach all grants first so soft-deleted definitions cannot
+        // remain attached to a role or a user's direct permission set.
         $stalePermissionIds = DB::table('permissions')
             ->whereNotIn('permission_key', $expectedKeys)
             ->pluck('permission_id')
             ->all();
 
         if ($stalePermissionIds !== []) {
-            DB::table('permissions')->whereIn('permission_id', $stalePermissionIds)->delete();
+            DB::table('role_permissions')->whereIn('permission_id', $stalePermissionIds)->delete();
+            DB::table('user_permissions')->whereIn('permission_id', $stalePermissionIds)->delete();
+
+            DB::table('permissions')->whereIn('permission_id', $stalePermissionIds)->update([
+                'status' => false,
+                'deleted_at' => $now,
+                'updated_at' => $now,
+            ]);
         }
     }
 }
