@@ -6,6 +6,7 @@ use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Models\Network;
 use App\Models\NetworkUser;
+use App\Models\NetworkPos;
 use App\Models\Pos;
 use App\Models\PosUser;
 use App\Models\Role;
@@ -111,6 +112,44 @@ final class TenantPermissionService
     ): bool {
         return $this->allowsNetwork($user, $networkId, $permission)
             || $this->allowsPos($user, $posId, $permission);
+    }
+
+    public function allowsNetworkThroughNetworkOrLinkedPos(
+        User $user,
+        int $networkId,
+        string $permission
+    ): bool {
+        if ($this->allowsNetwork($user, $networkId, $permission)) {
+            return true;
+        }
+
+        $posIds = $this->authorizedPosIds($user, $permission);
+
+        return $posIds !== []
+            && NetworkPos::query()
+                ->where('network_id', $networkId)
+                ->where('status', true)
+                ->whereIn('pos_id', $posIds)
+                ->exists();
+    }
+
+    public function allowsPosThroughPosOrLinkedNetwork(
+        User $user,
+        int $posId,
+        string $permission
+    ): bool {
+        if ($this->allowsPos($user, $posId, $permission)) {
+            return true;
+        }
+
+        $networkIds = $this->authorizedNetworkIds($user, $permission);
+
+        return $networkIds !== []
+            && NetworkPos::query()
+                ->where('pos_id', $posId)
+                ->where('status', true)
+                ->whereIn('network_id', $networkIds)
+                ->exists();
     }
 
     public function allowsAnyNetwork(User $user, string $permission): bool
