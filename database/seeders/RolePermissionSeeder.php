@@ -287,6 +287,18 @@ class RolePermissionSeeder extends Seeder
             ->pluck('permission_id')
             ->all();
 
+        // Direct permission assignments are global: the pivot contains no
+        // network_id or pos_id. Keep them only on active PLATFORM users.
+        DB::table('user_permissions')
+            ->whereNotIn('user_id', function ($query): void {
+                $query->select('users.user_id')
+                    ->from('users')
+                    ->join('roles', 'roles.role_id', '=', 'users.role_id')
+                    ->where('roles.scope', RoleScope::PLATFORM->value)
+                    ->where('roles.status', true);
+            })
+            ->delete();
+
         $now = now('Asia/Aden');
 
         foreach ($assignments as $roleKey => $assignment) {
