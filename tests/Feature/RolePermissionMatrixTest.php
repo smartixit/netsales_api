@@ -8,6 +8,8 @@ use App\Models\Role;
 use App\Models\Permission;
 use App\Models\User;
 use App\Services\TenantPermissionService;
+use App\Services\Billing\BillingAuthorizationService;
+use Illuminate\Auth\Access\AuthorizationException;
 use App\Services\UserService;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -275,6 +277,63 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
 
 
 
+
+    public function test_network_ownership_does_not_bypass_a_missing_role_permission(): void
+    {
+        $owner = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Network Owner Authorization '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => 'ACTIVE',
+        ]);
+
+        $networkOwnerRole = Role::query()
+            ->where('role_key', RoleKey::NETWORK_OWNER->value)
+            ->firstOrFail();
+        $network = Network::query()->create([
+            'owner_id' => $owner->user_id,
+            'network_name' => 'Network Permission Gate '.$owner->user_id,
+            'network_phone_number' => $owner->user_phone_number,
+            'governorate_id' => \App\Models\Governorate::query()->value('governorate_id'),
+            'directorate_id' => \App\Models\Directorate::query()->value('directorate_id'),
+            'status' => 'ACTIVE',
+        ]);
+
+        NetworkUser::query()->create([
+            'network_id' => $network->network_id,
+            'user_id' => $owner->user_id,
+            'role_id' => $networkOwnerRole->role_id,
+            'status' => 'ACTIVE',
+            'last_event_seq' => 1,
+        ]);
+
+        $permission = Permission::query()
+            ->where('permission_key', 'sales.report')
+            ->where('status', true)
+            ->firstOrFail();
+        $networkOwnerRole->permissions()->detach($permission->permission_id);
+
+        $this->assertFalse(
+            app(TenantPermissionService::class)->allowsNetwork(
+                $owner,
+                (int) $network->network_id,
+                'sales.report'
+            )
+        );
+
+        try {
+            app(BillingAuthorizationService::class)->assertNetworkPermission(
+                $owner,
+                (int) $network->network_id,
+                'sales.report'
+            );
+
+            $this->fail('Network ownership must not bypass a missing operation grant.');
+        } catch (AuthorizationException) {
+            $this->assertTrue(true);
+        }
+    }
 
     /**
      * @return array<int, string>
