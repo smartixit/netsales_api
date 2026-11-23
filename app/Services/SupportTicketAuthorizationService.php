@@ -33,7 +33,7 @@ final class SupportTicketAuthorizationService
             return $filters;
         }
 
-        if ($actor->role?->scope === RoleScope::PLATFORM) {
+        if ($actor->role_scope === RoleScope::PLATFORM->value) {
             $this->assertPlatformPermission($actor, $permission);
 
             return $filters;
@@ -128,7 +128,7 @@ final class SupportTicketAuthorizationService
             return;
         }
 
-        if ($actor->role?->scope === RoleScope::PLATFORM) {
+        if ($actor->role_scope === RoleScope::PLATFORM->value) {
             $this->assertPlatformPermission($actor, $permission);
 
             return;
