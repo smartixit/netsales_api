@@ -26,7 +26,7 @@ class VoucherPackageDiscountPolicy
 
     public function viewAny(User $user): bool
     {
-        $networkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.view');
+        $networkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'package_discounts.view');
         $posIds = $this->tenantAuth->getUserAuthorizedPosIds($user, 'voucher_packages.view');
 
         return $networkIds === null || $networkIds !== [] || ($posIds !== null && $posIds !== []);
@@ -40,7 +40,7 @@ class VoucherPackageDiscountPolicy
     public function create(User $user, ?int $networkId = null): bool
     {
         if ($networkId !== null) {
-            return $this->tenantAuth->canManageNetworkPackages($user, $networkId, 'voucher_packages.create');
+            return $this->tenantAuth->canManageNetworkPackages($user, $networkId, 'package_discounts.create');
         }
 
         $networkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.create');
@@ -50,21 +50,21 @@ class VoucherPackageDiscountPolicy
 
     public function update(User $user, VoucherPackageDiscount $discount): bool
     {
-        return $this->tenantAuth->canManageDiscount($user, $discount, 'voucher_packages.edit');
+        return $this->tenantAuth->canManageDiscount($user, $discount, 'package_discounts.update');
     }
 
     public function delete(User $user, VoucherPackageDiscount $discount): bool
     {
-        return $this->tenantAuth->canManageDiscount($user, $discount, 'voucher_packages.delete');
+        return $this->tenantAuth->canManageDiscount($user, $discount, 'package_discounts.delete');
     }
 
     public function restore(User $user, VoucherPackageDiscount $discount): bool
     {
-        return $this->tenantAuth->canManageDiscount($user, $discount, 'voucher_packages.delete');
+        return $this->tenantAuth->canManageDiscount($user, $discount, 'package_discounts.restore');
     }
 
     public function forceDelete(User $user, VoucherPackageDiscount $discount): bool
     {
-        return $this->tenantAuth->canManageDiscount($user, $discount, 'voucher_packages.delete');
+        return $this->tenantAuth->canManageDiscount($user, $discount, 'package_discounts.force_delete');
     }
 }
