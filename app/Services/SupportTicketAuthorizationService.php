@@ -101,7 +101,7 @@ final class SupportTicketAuthorizationService
 
     private function assertPlatformPermission(User $actor, string $permission): void
     {
-        if (! $actor->hasPermission($permission)) {
+        if (! $this->tenantPermissions->allowsPlatform($actor, $permission)) {
             throw new AuthorizationException('لا تملك صلاحية إدارة تذاكر الدعم على مستوى المنصة.');
         }
     }
