@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
+use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Enums\SaleType;
@@ -13,6 +14,8 @@ use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
 use App\Models\Pos;
+use App\Models\PosUser;
+use App\Models\Role;
 use App\Models\PosWallet;
 use App\Models\PosWalletLog;
 use App\Models\Request as RequestModel;
@@ -407,8 +410,30 @@ class ProcurementRequestLifecycleTest extends TestCase
 
     public function test_pos_user_can_cancel_pending_request_with_zero_financial_effects(): void
     {
-        // 1. إنشاء طلب معلق
-        $createResponse = $this->withHeaders($this->headers)
+        // Use an actual POS_USER membership, not the network/POS owner (who
+        // implicitly receives the broader POS_AGENT capability set).
+        $posUser = $this->createUserWithScope(RoleScope::POS, [
+            'role_id' => null,
+            'user_full_name' => 'POS User Cancel Test '.uniqid(),
+            'user_phone_number' => '73'.random_int(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+        $posUserRole = Role::query()
+            ->where('role_key', RoleKey::POS_USER->value)
+            ->firstOrFail();
+
+        PosUser::query()->create([
+            'pos_id' => $this->pos->pos_id,
+            'user_id' => $posUser->user_id,
+            'role_id' => $posUserRole->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        $posUserAuth = $this->createAuthenticatedSession($posUser);
+        $posUserHeaders = $posUserAuth['headers'];
+
+        // 1. Create a pending request using only the POS_USER grants.
+        $createResponse = $this->withHeaders($posUserHeaders)
             ->postJson('/api/v1/requests', [
                 'network_id' => $this->network->network_id,
                 'pos_id' => $this->pos->pos_id,
@@ -430,8 +455,8 @@ class ProcurementRequestLifecycleTest extends TestCase
         $initialPosLogsCount = PosWalletLog::count();
         $initialNetworkLogsCount = NetworkWalletLog::count();
 
-        // 2. إلغاء الطلب من قبل نقطة البيع
-        $cancelResponse = $this->withHeaders($this->headers)
+        // 2. POS_USER has requests.cancel but deliberately does not have requests.edit.
+        $cancelResponse = $this->withHeaders($posUserHeaders)
             ->postJson("/api/v1/requests/{$requestId}/cancel");
 
         $cancelResponse->assertStatus(200)
@@ -440,15 +465,15 @@ class ProcurementRequestLifecycleTest extends TestCase
 
         $this->assertEquals(RequestStatus::CANCELLED, RequestModel::findOrFail($requestId)->status);
 
-        // إثبات عدم حدوث أي تغييرات مالية عند الإلغاء
+        // Cancellation is a workflow transition, not a financial operation.
         $this->assertEquals($initialPosBalance, (float) $this->posWallet->fresh()->wallet_balance);
         $this->assertEquals($initialNetworkBalance, (float) $this->networkWallet->fresh()->wallet_balance);
         $this->assertEquals($initialInvoicesCount, SaleInvoice::count());
         $this->assertEquals($initialPosLogsCount, PosWalletLog::count());
         $this->assertEquals($initialNetworkLogsCount, NetworkWalletLog::count());
 
-        // 3. محاولة إلغاء طلب تم إلغاؤه مسبقاً يجب أن تفشل (حالة نهائية)
-        $reCancelResponse = $this->withHeaders($this->headers)
+        // 3. A terminal request cannot be cancelled again.
+        $reCancelResponse = $this->withHeaders($posUserHeaders)
             ->postJson("/api/v1/requests/{$requestId}/cancel");
 
         $reCancelResponse->assertStatus(422)
