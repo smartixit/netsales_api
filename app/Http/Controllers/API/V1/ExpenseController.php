@@ -46,6 +46,11 @@ class ExpenseController extends BaseController
 
         $permission = (string) $request->attributes->get('tenant_permission', 'expenses.view');
         $tenantAuthorization = app(TenantPermissionService::class);
+
+        if ($currentUser->isSuperAdmin() || $tenantAuthorization->allowsPlatform($currentUser, $permission)) {
+            return null;
+        }
+
         $authorizedNetworkIds = $tenantAuthorization->authorizedNetworkIds($currentUser, $permission);
 
         $requestedNetworkId = $request->input('network_id') ?? $request->query('network_id');
@@ -68,12 +73,17 @@ class ExpenseController extends BaseController
             return $this->errorResponse('غير مصادق عليه.', [], 401);
         }
 
+        $tenantAuthorization = app(TenantPermissionService::class);
+        if ($currentUser->isSuperAdmin() || $tenantAuthorization->allowsPlatform($currentUser, $permission)) {
+            return null;
+        }
+
         $expenseModel = is_int($expense) ? Expense::withTrashed()->find($expense) : $expense;
         if (! $expenseModel) {
             return $this->errorResponse('المصروف غير موجود.', [], 404);
         }
 
-        if (! app(TenantPermissionService::class)->allowsNetwork(
+        if (! $tenantAuthorization->allowsNetwork(
             $currentUser,
             (int) $expenseModel->network_id,
             $permission
@@ -275,7 +285,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = $this->expenseService->getById($id);
-            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.edit')) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.restore')) {
                 return $denial;
             }
 
@@ -309,7 +319,7 @@ class ExpenseController extends BaseController
     {
         try {
             $expense = $this->expenseService->getById($id);
-            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.delete')) {
+            if ($denial = $this->authorizeExpenseTenant($expense, 'expenses.force_delete')) {
                 return $denial;
             }
 
