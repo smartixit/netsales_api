@@ -99,7 +99,7 @@ class SupportTicketService
             $network = $this->networkRepository->findById($networkId);
             if (! $network) {
                 throw ValidationException::withMessages([
-                    'network_id' => ["شبكة المزود برقم [{$network->network_name}] غير موجودة."],
+                    'network_id' => ['شبكة المزود المحددة غير موجودة.'],
                 ]);
             }
             $network->ensureActive();
