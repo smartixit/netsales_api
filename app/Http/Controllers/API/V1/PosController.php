@@ -296,7 +296,7 @@ class PosController extends BaseController
                 $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, 'pos.view');
 
                 if ($networkIds !== []) {
-                    $linkedPosIds = \\App\\Models\\NetworkPos::query()
+                    $linkedPosIds = NetworkPos::query()
                         ->whereIn('network_id', $networkIds)
                         ->pluck('pos_id')
                         ->map(static fn ($id): int => (int) $id)
