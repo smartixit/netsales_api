@@ -5,12 +5,15 @@ namespace Tests\Feature;
 use App\Enums\BanType;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
+use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
 use App\Models\Pos;
+use App\Models\PosUser;
+use App\Models\Role;
 use App\Models\PosWallet;
 use App\Models\SecurityBan;
 use App\Models\User;
@@ -63,7 +66,13 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::firstOrFail();
+        $this->user = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Adversarial Network Owner '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
 
         $auth = $this->createAuthenticatedSession($this->user);
         $this->session = $auth['session'];
@@ -137,6 +146,22 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
             'network_id' => $this->networkB->network_id,
             'pos_id' => $this->posB->pos_id,
             'status' => true,
+        ]);
+
+        // This actor is a network owner and also an authorized POS agent
+        // in both test points, so request-creation checks use a real POS scope.
+        $posAgentRole = Role::byKey(RoleKey::POS_AGENT)->firstOrFail();
+        PosUser::query()->create([
+            'pos_id' => $this->posA->pos_id,
+            'user_id' => $this->user->user_id,
+            'role_id' => $posAgentRole->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        PosUser::query()->create([
+            'pos_id' => $this->posB->pos_id,
+            'user_id' => $this->user->user_id,
+            'role_id' => $posAgentRole->role_id,
+            'status' => 'ACTIVE',
         ]);
 
         $this->networkWalletA = NetworkWallet::create([
