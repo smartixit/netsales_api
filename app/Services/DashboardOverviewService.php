@@ -41,7 +41,20 @@ class DashboardOverviewService
             ? $now->copy()->startOfMonth()->subMonths(11)
             : $now->copy()->subDays($periodDays - 1)->startOfDay();
         $bucket = $this->periodBucket($period);
-        $permissions = array_fill_keys($user->getAllPermissions(), true);
+        // Dashboard authorization must use platform grants only. The
+        // getAllPermissions() helper intentionally unions tenant memberships
+        // for clients and must not unlock global platform metrics.
+        $platformRolePermissions = $user->role?->scope === \\App\\Enums\\RoleScope::PLATFORM
+            ? $user->role->permissions()->where('status', true)->pluck('permission_key')->all()
+            : [];
+        $directPermissions = $user->permissions()
+            ->where('status', true)
+            ->pluck('permission_key')
+            ->all();
+        $permissions = array_fill_keys(
+            array_values(array_unique(array_merge($platformRolePermissions, $directPermissions))),
+            true
+        );
         $can = static fn (string $permission): bool => $user->isSuperAdmin()
             || isset($permissions[$permission]);
 
