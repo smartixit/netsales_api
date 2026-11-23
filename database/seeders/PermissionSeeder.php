@@ -117,6 +117,7 @@ class PermissionSeeder extends Seeder
                 'deposit' => ['إيداع مبلغ في محفظة الشبكة', 'NETWORK'],
                 'withdraw' => ['سحب مبلغ من محفظة الشبكة', 'NETWORK'],
                 'update_wallet_status' => ['تغيير حالة محفظة الشبكة', 'NETWORK'],
+                'view_trashed' => ['عرض محافظ الشبكات المحذوفة', 'PLATFORM'],
                 'delete_wallet' => ['حذف محفظة شبكة', 'PLATFORM'],
                 'restore_wallet' => ['استعادة محفظة شبكة', 'PLATFORM'],
                 'force_delete_wallet' => ['حذف محفظة شبكة نهائياً', 'PLATFORM'],
@@ -155,6 +156,7 @@ class PermissionSeeder extends Seeder
                 'transfer_to_network' => ['تحويل رصيد من نقطة البيع إلى الشبكة', 'NETWORK'],
                 'manage_credit_limit' => ['تعديل السقف الائتماني لنقطة البيع', 'NETWORK'],
                 'update_wallet_status' => ['تغيير حالة محفظة نقطة البيع', 'NETWORK'],
+                'view_trashed' => ['عرض محافظ نقاط البيع المحذوفة', 'PLATFORM'],
                 'delete_wallet' => ['حذف محفظة نقطة بيع', 'PLATFORM'],
                 'restore_wallet' => ['استعادة محفظة نقطة بيع', 'PLATFORM'],
                 'force_delete_wallet' => ['حذف محفظة نقطة بيع نهائياً', 'PLATFORM'],
@@ -189,7 +191,6 @@ class PermissionSeeder extends Seeder
             'requests' => [
                 'view' => ['عرض طلبات التوريد', 'SHARED'],
                 'create' => ['إنشاء طلب توريد لنقطة بيع', 'POS'],
-                'quote' => ['احتساب عرض سعر لطلب توريد جديد', 'POS'],
                 'quote' => ['احتساب عرض سعر لطلب توريد جديد', 'POS'],
                 'update' => ['تعديل طلب توريد معلق', 'POS'],
                 'cancel' => ['إلغاء طلب توريد مقدم', 'POS'],
