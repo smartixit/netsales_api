@@ -142,11 +142,21 @@ class EnsurePermissionMiddleware
             $networkId = (int) ($request->input('network_id') ?? $request->query('network_id') ?? $invoice?->network_id ?? 0);
             $posId = (int) ($request->input('pos_id') ?? $request->query('pos_id') ?? $invoice?->pos_id ?? 0);
 
-            $authorized = ($networkId > 0 && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission))
-                || ($posId > 0 && $this->tenantPermissions->allowsPos($user, $posId, $permission));
+            if ($invoice === null && $request->has('ids')) {
+                $ids = array_values(array_unique(array_map('intval', (array) $request->input('ids', []))));
+                $invoices = SaleInvoice::withTrashed()->whereIn('invoice_id', $ids)->get();
 
-            if ($networkId <= 0 && $posId <= 0 && $invoice === null && $permission === 'sales.view') {
-                $authorized = $this->tenantPermissions->allowsAnyOperational($user, $permission);
+                $authorized = $ids !== [] && $invoices->count() === count($ids)
+                    && $invoices->every(fn (SaleInvoice $record): bool =>
+                        $this->tenantPermissions->allowsNetwork($user, (int) $record->network_id, $permission)
+                        || $this->tenantPermissions->allowsPos($user, (int) $record->pos_id, $permission));
+            } else {
+                $authorized = ($networkId > 0 && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission))
+                    || ($posId > 0 && $this->tenantPermissions->allowsPos($user, $posId, $permission));
+
+                if ($networkId <= 0 && $posId <= 0 && $invoice === null && $permission === 'sales.view') {
+                    $authorized = $this->tenantPermissions->allowsAnyOperational($user, $permission);
+                }
             }
 
             if (! $authorized) {
