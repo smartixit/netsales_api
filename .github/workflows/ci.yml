@@ -60,6 +60,10 @@ jobs:
           extensions: mbstring, pdo_mysql, intl, zip
           coverage: none
 
+      - name: Validate PHP syntax across application and tests
+        run: |
+          find app database routes tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
       - name: Validate Composer configuration
         run: composer validate --strict
 
