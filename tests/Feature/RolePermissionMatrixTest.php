@@ -59,7 +59,18 @@ class RolePermissionMatrixTest extends TestCase
         $this->assertNotContains('settings.edit', $permissions);
     }
 
-    public function test_network_accountant_gets_operational_finance_but_not_approval_or_lifecycle_privileges(): void
+        public function test_network_owner_can_toggle_package_status_but_network_user_and_accountant_cannot(): void
+    {
+        $ownerPermissions = $this->permissionKeys(RoleKey::NETWORK_OWNER);
+        $accountantPermissions = $this->permissionKeys(RoleKey::NETWORK_ACCOUNTANT);
+        $userPermissions = $this->permissionKeys(RoleKey::NETWORK_USER);
+
+        $this->assertContains('voucher_packages.toggle_status', $ownerPermissions);
+        $this->assertNotContains('voucher_packages.toggle_status', $accountantPermissions);
+        $this->assertNotContains('voucher_packages.toggle_status', $userPermissions);
+    }
+
+public function test_network_accountant_gets_operational_finance_but_not_approval_or_lifecycle_privileges(): void
     {
         $permissions = $this->permissionKeys(RoleKey::NETWORK_ACCOUNTANT);
 
