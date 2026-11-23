@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\V1\AdminNotificationController;
 use App\Http\Controllers\API\V1\AuthController;
 use App\Http\Controllers\API\V1\BackupController;
+use App\Http\Controllers\API\V1\BankAccountController;
 use App\Http\Controllers\API\V1\Billing\BillingCatalogController;
 use App\Http\Controllers\API\V1\Billing\BillingFinanceController;
 use App\Http\Controllers\API\V1\Billing\BillingPolicyController;
@@ -549,6 +550,38 @@ Route::prefix('v1')->group(function () {
             Route::get('{reportType}', [BillingReportController::class, 'platformShow'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.show');
             Route::get('{reportType}/summary', [BillingReportController::class, 'platformSummary'])->where('reportType', '[a-z_]+')->middleware('throttle:api-read')->name('api.v1.platform.billing.reports.summary');
             Route::get('{reportType}/export.csv', [BillingReportController::class, 'platformExportCsv'])->where('reportType', '[a-z_]+')->middleware(['throttle:api-read', 'permission:billing.export'])->name('api.v1.platform.billing.reports.export');
+        });
+
+        // Platform bank accounts — payment collection infrastructure.
+        // Account numbers and balances are limited to platform finance roles.
+        Route::prefix('bank-accounts')->middleware('platform.user.scope')->group(function () {
+            Route::middleware(['throttle:api-read', 'permission:bank_accounts.view'])->group(function () {
+                Route::get('/', [BankAccountController::class, 'index'])->name('api.v1.bank_accounts.index');
+                Route::get('active', [BankAccountController::class, 'active'])->name('api.v1.bank_accounts.active');
+                Route::get('trashed', [BankAccountController::class, 'trashed'])->name('api.v1.bank_accounts.trashed');
+                Route::get('{id}', [BankAccountController::class, 'show'])->whereNumber('id')->name('api.v1.bank_accounts.show');
+            });
+
+            Route::middleware('throttle:api-write')->group(function () {
+                Route::post('/', [BankAccountController::class, 'store'])
+                    ->middleware('permission:bank_accounts.create')->name('api.v1.bank_accounts.store');
+                Route::put('{id}', [BankAccountController::class, 'update'])
+                    ->whereNumber('id')->middleware('permission:bank_accounts.edit')->name('api.v1.bank_accounts.update');
+                Route::post('{id}/toggle-status', [BankAccountController::class, 'toggleStatus'])
+                    ->whereNumber('id')->middleware('permission:bank_accounts.toggle_status')->name('api.v1.bank_accounts.toggle_status');
+                Route::delete('{id}', [BankAccountController::class, 'destroy'])
+                    ->whereNumber('id')->middleware('permission:bank_accounts.delete')->name('api.v1.bank_accounts.destroy');
+                Route::post('{id}/restore', [BankAccountController::class, 'restore'])
+                    ->whereNumber('id')->middleware('permission:bank_accounts.restore')->name('api.v1.bank_accounts.restore');
+                Route::delete('{id}/force', [BankAccountController::class, 'forceDelete'])
+                    ->whereNumber('id')->middleware('permission:bank_accounts.force_delete')->name('api.v1.bank_accounts.force_delete');
+                Route::post('batch-delete', [BankAccountController::class, 'batchDelete'])
+                    ->middleware('permission:bank_accounts.delete')->name('api.v1.bank_accounts.batch_delete');
+                Route::post('batch-restore', [BankAccountController::class, 'batchRestore'])
+                    ->middleware('permission:bank_accounts.restore')->name('api.v1.bank_accounts.batch_restore');
+                Route::post('batch-force-delete', [BankAccountController::class, 'batchForceDelete'])
+                    ->middleware('permission:bank_accounts.force_delete')->name('api.v1.bank_accounts.batch_force_delete');
+            });
         });
 
         // Platform Billing — Windows Platform Scope only
