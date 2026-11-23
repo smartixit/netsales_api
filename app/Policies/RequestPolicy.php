@@ -38,7 +38,7 @@ class RequestPolicy
     {
         $permissions = app(TenantPermissionService::class);
 
-        return $permissions->allowsPos($user, (int) $request->pos_id, 'requests.edit')
+        return $permissions->allowsPos($user, (int) $request->pos_id, 'requests.update)
             || $permissions->allowsNetwork($user, (int) $request->network_id, 'requests.edit');
     }
 
