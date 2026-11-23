@@ -74,7 +74,7 @@ class RolePermissionSeeder extends Seeder
                     'network_wallets.export',
                     'pos_wallets.view',
                     'pos_wallets.create',
-                    'pos_wallets.update',
+                    'pos_wallets.edit',
                     'pos_wallets.deposit',
                     'pos_wallets.withdraw',
                     'pos_wallets.transfer_from_network',
