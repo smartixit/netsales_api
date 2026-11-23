@@ -11,8 +11,8 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * وسيط حظر حسابات إدارة المنصة العامة من العمليات التشغيلية الميدانية.
  *
- * يضمن السيادة الأمنية وعزل المنصات عبر رفض وصول حسابات SUPER_ADMIN و SUPPORT_AGENT
- * إلى مسارات B2B التشغيلية، وتوجيههم حصرياً لتطبيق Windows المكتبي المخصص لإدارة المنصة.
+ * يضمن السيادة الأمنية وعزل المنصات عبر رفض وصول جميع حسابات PLATFORM
+ * إلى مسارات B2B التشغيلية، وتوجيهها إلى مساحة إدارة المنصة المخصصة.
  */
 class EnsureOperationalWorkspaceScope
 {
@@ -33,4 +33,5 @@ class EnsureOperationalWorkspaceScope
         }
 
         return $next($request);
-    }}
+    }
+}
