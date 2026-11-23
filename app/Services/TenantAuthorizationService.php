@@ -140,7 +140,7 @@ class TenantAuthorizationService
         }
 
         $managedNetworks = $this->getUserAuthorizedNetworkIds($user, 'package_discounts.view') ?? [];
-        $authorizedPosIds = $this->getUserAuthorizedPosIds($user, 'voucher_packages.view') ?? [];
+        $authorizedPosIds = $this->getUserAuthorizedPosIds($user, 'package_discounts.view') ?? [];
 
         return [
             'managed_network_ids' => $managedNetworks,
@@ -229,7 +229,7 @@ class TenantAuthorizationService
         }
 
         // 2. نقطة البيع المعنية بالخصم حصراً (يُمنع منعاً باتاً رؤية خصومات نقاط بيع أخرى)
-        $userPosIds = $this->getUserAuthorizedPosIds($user, 'voucher_packages.view') ?? [];
+        $userPosIds = $this->getUserAuthorizedPosIds($user, 'package_discounts.view') ?? [];
         if (in_array($posId, $userPosIds, true)) {
             // والتأكد من وجود ارتباط تجاري نشط
             return NetworkPos::where('network_id', $networkId)
