@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\RoleKey;
 use App\Enums\RoleScope;
+use App\Services\PlatformPermissionRegistry;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -310,10 +311,10 @@ class RolePermissionSeeder extends Seeder
                         ->where('permissions.status', true)
                         ->whereNull('permissions.deleted_at')
                         ->where(function ($query): void {
-                            $query->whereIn('modules.module_key', \\App\\Services\\PlatformPermissionRegistry::MODULE_KEYS)
+                            $query->whereIn('modules.module_key', PlatformPermissionRegistry::MODULE_KEYS)
                                 ->orWhereIn(
                                     'permissions.permission_key',
-                                    \\App\\Services\\PlatformPermissionRegistry::SHARED_READ_PERMISSION_KEYS
+                                    PlatformPermissionRegistry::SHARED_READ_PERMISSION_KEYS
                                 );
                         });
                 });
