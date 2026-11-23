@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\RoleScope;
 use App\Models\NetworkPos;
+use App\Interfaces\SupportTicketRepositoryInterface;
 use App\Models\SupportTicket;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -12,6 +13,7 @@ final class SupportTicketAuthorizationService
 {
     public function __construct(
         private readonly TenantPermissionService $tenantPermissions,
+        private readonly SupportTicketRepositoryInterface $ticketRepository,
     ) {}
 
     /**
@@ -64,6 +66,36 @@ final class SupportTicketAuthorizationService
     public function assertTicket(User $actor, SupportTicket $ticket, string $permission): void
     {
         $this->assertTarget($actor, (int) $ticket->network_id, (int) ($ticket->pos_id ?? 0), $permission);
+    }
+
+    /**
+     * @param array<int, int> $ids
+     */
+    public function assertBatch(
+        User $actor,
+        array $ids,
+        string $permission,
+        bool $withTrashed = false
+    ): void {
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+
+        if ($ids === []) {
+            throw ValidationException::withMessages([
+                'ids' => ['يجب تحديد تذكرة واحدة على الأقل.'],
+            ]);
+        }
+
+        $tickets = $this->ticketRepository->findManyByIds($ids, $withTrashed);
+
+        if ($tickets->count() !== count($ids)) {
+            throw ValidationException::withMessages([
+                'ids' => ['بعض التذاكر المحددة غير موجودة أو لا تطابق حالة الحذف المطلوبة.'],
+            ]);
+        }
+
+        foreach ($tickets as $ticket) {
+            $this->assertTicket($actor, $ticket, $permission);
+        }
     }
 
     public function assertTarget(User $actor, int $networkId, ?int $posId, string $permission): void
