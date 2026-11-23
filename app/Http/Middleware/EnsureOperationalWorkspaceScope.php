@@ -2,7 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Enums\RoleScope;
+use App\Enums\RoleKey;
+use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponseTrait;
 use Closure;
 use Illuminate\Http\Request;
@@ -23,16 +24,22 @@ class EnsureOperationalWorkspaceScope
         $user = $request->user();
 
         if ($user) {
-            $roleScope = $user->role?->scope;
-            $isPlatformUser = $roleScope === RoleScope::PLATFORM
-                || $roleScope === RoleScope::PLATFORM->value
-                || $user->role_scope === RoleScope::PLATFORM->value;
+            $roleKey = $user->role?->role_key;
 
-            if ($isPlatformUser) {
+            if ($roleKey === null && $user->role_id) {
+                $roleKey = DB::table('roles')
+                    ->where('role_id', $user->role_id)
+                    ->value('role_key');
+            }
+
+            if (in_array($roleKey, [
+                RoleKey::SUPER_ADMIN->value,
+                RoleKey::SUPPORT_AGENT->value,
+            ], true)) {
                 return $this->errorResponse(
-                    'حسابات نطاق المنصة مخصصة حصرياً لتطبيق إدارة المنصة، ولا يمكنها تنفيذ العمليات التشغيلية لمساحات عمل الشبكات ونقاط البيع.',
+                    'حسابات إدارة المنصة العامة (SUPER_ADMIN / SUPPORT_AGENT) مخصصة لتطبيق إدارة المنصة ولا تستخدم العمليات التشغيلية الميدانية.',
                     [
-                        'scope' => ['لا يُسمح لحسابات PLATFORM باستخدام واجهات NETWORK أو POS التشغيلية.'],
+                        'scope' => ['غير مصرح لحسابات إدارة المنصة العامة بتنفيذ العمليات الميدانية لمساحات NETWORK وPOS.'],
                     ],
                     403
                 );
