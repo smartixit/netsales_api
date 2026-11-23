@@ -20,6 +20,7 @@ class ActionTypeSeeder extends Seeder
             'view' => 'عرض',
             'create' => 'إنشاء',
             'edit' => 'تعديل',
+            'toggle_status' => 'تغيير الحالة',
             'delete' => 'حذف',
             'restore' => 'استعادة',
             'force_delete' => 'حذف نهائي',
