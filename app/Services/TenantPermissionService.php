@@ -43,7 +43,7 @@ final class TenantPermissionService
     {
         if ($networkId <= 0
             || ! $user->isActive()
-            || $user->role?->scope === RoleScope::PLATFORM
+            || $user->role_scope === RoleScope::PLATFORM->value
         ) {
             return false;
         }
@@ -76,7 +76,7 @@ final class TenantPermissionService
     {
         if ($posId <= 0
             || ! $user->isActive()
-            || $user->role?->scope === RoleScope::PLATFORM
+            || $user->role_scope === RoleScope::PLATFORM->value
         ) {
             return false;
         }
@@ -167,7 +167,7 @@ final class TenantPermissionService
      */
     public function authorizedNetworkIds(User $user, string $permission): array
     {
-        if (! $user->isActive() || $user->role?->scope === RoleScope::PLATFORM) {
+        if (! $user->isActive() || $user->role_scope === RoleScope::PLATFORM->value) {
             return [];
         }
 
@@ -208,7 +208,7 @@ final class TenantPermissionService
      */
     public function authorizedPosIds(User $user, string $permission): array
     {
-        if (! $user->isActive() || $user->role?->scope === RoleScope::PLATFORM) {
+        if (! $user->isActive() || $user->role_scope === RoleScope::PLATFORM->value) {
             return [];
         }
 
