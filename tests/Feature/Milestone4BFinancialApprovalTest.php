@@ -62,8 +62,14 @@ class Milestone4BFinancialApprovalTest extends TestCase
 
         $suffix = uniqid();
 
-        // 1. سوبر أدمن النظام للاختبارات
-        $this->user = User::firstOrFail();
+        // The scenario exercises tenant-side financial approval, not platform administration.
+        $this->user = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Operational Network Owner '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
 
         $devUuid = 'DEV-4B-'.$suffix;
         UserDevice::firstOrCreate([
