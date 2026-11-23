@@ -229,6 +229,32 @@ class SecurityController extends BaseController
             new OA\Response(response: 422, description: 'سجل الحظر غير موجود'),
         ]
     )]
+    public function unbanUser(int $id): JsonResponse
+    {
+        try {
+            $this->securityService->unbanUser($id, $this->currentUserId());
+
+            return $this->successResponse('تم رفع الحظر عن المستخدم بنجاح.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر رفع الحظر عن المستخدم: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    public function unbanDevice(int $id): JsonResponse
+    {
+        try {
+            $this->securityService->unbanDevice($id, $this->currentUserId());
+
+            return $this->successResponse('تم رفع الحظر عن الجهاز بنجاح.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر رفع الحظر عن الجهاز: '.$e->getMessage(), [], 422);
+        }
+    }
+
     public function unban(int $id): JsonResponse
     {
         try {

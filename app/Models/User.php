@@ -376,10 +376,6 @@ class User extends Authenticatable
     }
     public function hasPermission(string $permissionKey, ?int $tenantId = null): bool
     {
-        if ($this->isSuperAdmin()) {
-            return true;
-        }
-
         $upperKey = strtoupper($permissionKey);
 
         // user_permissions has no tenant discriminator. The generated
@@ -529,13 +525,6 @@ class User extends Authenticatable
             return [];
         }
 
-        if ($this->isSuperAdmin()) {
-            return Permission::query()
-                ->where('status', true)
-                ->pluck('permission_key')
-                ->all();
-        }
-
         // Platform identities expose only platform role + direct user grants.
         // They never inherit capability unions from operational memberships.
         if ($this->role_scope === RoleScope::PLATFORM->value) {
@@ -556,7 +545,12 @@ class User extends Authenticatable
                 ->pluck('permissions.permission_key')
                 ->all();
 
-            return array_values(array_unique(array_merge($rolePermissions, $directPermissions)));
+            $platformRegistry = app(PlatformPermissionRegistry::class);
+
+            return array_values(array_unique(array_filter(
+                array_merge($rolePermissions, $directPermissions),
+                static fn (string $permission): bool => $platformRegistry->allows($permission)
+            )));
         }
 
         // Operational identities inherit permissions only from active

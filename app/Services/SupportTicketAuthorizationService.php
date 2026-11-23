@@ -29,10 +29,6 @@ final class SupportTicketAuthorizationService
      */
     public function scopeListFilters(User $actor, array $filters, string $permission = 'support.view'): array
     {
-        if ($actor->isSuperAdmin()) {
-            return $filters;
-        }
-
         if ($actor->role_scope === RoleScope::PLATFORM->value) {
             $this->assertPlatformPermission($actor, $permission);
 
@@ -124,10 +120,6 @@ final class SupportTicketAuthorizationService
 
     public function assertTarget(User $actor, int $networkId, ?int $posId, string $permission): void
     {
-        if ($actor->isSuperAdmin()) {
-            return;
-        }
-
         if ($actor->role_scope === RoleScope::PLATFORM->value) {
             $this->assertPlatformPermission($actor, $permission);
 

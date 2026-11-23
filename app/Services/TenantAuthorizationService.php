@@ -41,10 +41,6 @@ class TenantAuthorizationService
      */
     public function getUserAuthorizedNetworkIds(User $user, ?string $permission = null): ?array
     {
-        if ($this->isSuperAdmin($user)) {
-            return null;
-        }
-
         if ($permission === null || $permission === '') {
             return [];
         }
@@ -59,10 +55,6 @@ class TenantAuthorizationService
      */
     public function getUserAuthorizedPosIds(User $user, ?string $permission = null): ?array
     {
-        if ($this->isSuperAdmin($user)) {
-            return null;
-        }
-
         if ($permission === null || $permission === '') {
             return [];
         }
@@ -77,10 +69,6 @@ class TenantAuthorizationService
     public function getUserLinkedNetworkIdsForPos(User $user): array
     {
         $posIds = $this->getUserAuthorizedPosIds($user, 'voucher_packages.view');
-
-        if ($posIds === null) {
-            return Network::pluck('network_id')->toArray();
-        }
 
         if (empty($posIds)) {
             return [];
@@ -99,10 +87,6 @@ class TenantAuthorizationService
      */
     public function getViewableNetworkIdsForPackages(User $user): ?array
     {
-        if ($this->isSuperAdmin($user)) {
-            return null;
-        }
-
         $managedNetworks = $this->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
         $linkedNetworks = $this->getUserLinkedNetworkIdsForPos($user);
 
@@ -117,10 +101,6 @@ class TenantAuthorizationService
      */
     public function getPackageVisibilityScope(User $user): ?array
     {
-        if ($this->isSuperAdmin($user)) {
-            return null;
-        }
-
         $managedNetworks = $this->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
         $linkedNetworks = $this->getUserLinkedNetworkIdsForPos($user);
         $posLinkedOnly = array_values(array_diff($linkedNetworks, $managedNetworks));
@@ -139,12 +119,8 @@ class TenantAuthorizationService
      */
     public function getDiscountVisibilityScope(User $user): ?array
     {
-        if ($this->isSuperAdmin($user)) {
-            return null;
-        }
-
-        $managedNetworks = $this->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
-        $authorizedPosIds = $this->getUserAuthorizedPosIds($user, 'voucher_packages.view') ?? [];
+        $managedNetworks = $this->getUserAuthorizedNetworkIds($user, 'voucher_package_discounts.view') ?? [];
+        $authorizedPosIds = $this->getUserAuthorizedPosIds($user, 'voucher_package_discounts.view') ?? [];
 
         return [
             'managed_network_ids' => $managedNetworks,
@@ -157,10 +133,6 @@ class TenantAuthorizationService
      */
     public function canViewNetworkPackages(User $user, int $networkId): bool
     {
-        if ($this->isSuperAdmin($user)) {
-            return true;
-        }
-
         $viewableIds = $this->getViewableNetworkIdsForPackages($user);
 
         return $viewableIds !== null && in_array($networkId, $viewableIds, true);
@@ -171,10 +143,6 @@ class TenantAuthorizationService
      */
     public function canManageNetworkPackages(User $user, int $networkId, string $permission): bool
     {
-        if ($this->isSuperAdmin($user)) {
-            return true;
-        }
-
         return $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
     }
     /**
@@ -182,10 +150,6 @@ class TenantAuthorizationService
      */
     public function canViewPackage(User $user, VoucherPackage $package): bool
     {
-        if ($this->isSuperAdmin($user)) {
-            return true;
-        }
-
         $networkId = (int) $package->network_id;
 
         // 1. إذا كان مديراً أو موظفاً في الشبكة
@@ -223,20 +187,16 @@ class TenantAuthorizationService
      */
     public function canViewDiscount(User $user, VoucherPackageDiscount $discount): bool
     {
-        if ($this->isSuperAdmin($user)) {
-            return true;
-        }
-
         $networkId = (int) $discount->network_id;
         $posId = (int) $discount->pos_id;
 
         // 1. مزود الشبكة التابع لها الخصم
-        if ($this->canManageNetworkPackages($user, $networkId, 'voucher_packages.view')) {
+        if ($this->tenantPermissions->allowsNetwork($user, $networkId, 'voucher_package_discounts.view')) {
             return true;
         }
 
         // 2. نقطة البيع المعنية بالخصم حصراً (يُمنع منعاً باتاً رؤية خصومات نقاط بيع أخرى)
-        $userPosIds = $this->getUserAuthorizedPosIds($user, 'voucher_packages.view') ?? [];
+        $userPosIds = $this->getUserAuthorizedPosIds($user, 'voucher_package_discounts.view') ?? [];
         if (in_array($posId, $userPosIds, true)) {
             // والتأكد من وجود ارتباط تجاري نشط
             return NetworkPos::where('network_id', $networkId)
@@ -261,7 +221,7 @@ class TenantAuthorizationService
      */
     public function canCreateDiscount(User $user, int $networkId, int $posId, int $packageId): bool
     {
-        if (! $this->canManageNetworkPackages($user, $networkId, 'voucher_packages.create')) {
+        if (! $this->tenantPermissions->allowsNetwork($user, $networkId, 'voucher_package_discounts.create')) {
             return false;
         }
 
@@ -296,10 +256,6 @@ class TenantAuthorizationService
      */
     public function authorizeNetworkPosPricing(User $user, int $networkId, int $posId): void
     {
-        if ($this->isSuperAdmin($user)) {
-            return;
-        }
-
         $userNetworkIds = $this->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
         $userPosIds = $this->getUserAuthorizedPosIds($user, 'voucher_packages.view') ?? [];
         $isNetworkActor = in_array($networkId, $userNetworkIds, true);
@@ -322,10 +278,6 @@ class TenantAuthorizationService
     public function authorizeEffectiveDiscount(User $user, int $networkId, int $posId, int $packageId): void
     {
         $this->authorizeNetworkPosPricing($user, $networkId, $posId);
-        if ($this->isSuperAdmin($user)) {
-            return;
-        }
-
         $package = VoucherPackage::where('package_id', $packageId)
             ->where('network_id', $networkId)
             ->first();

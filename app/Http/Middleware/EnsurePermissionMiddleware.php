@@ -38,7 +38,7 @@ class EnsurePermissionMiddleware
             throw new AuthorizationException('الحساب غير نشط ولا يمكنه تنفيذ عمليات محمية.');
         }
 
-        if ($user->isSuperAdmin() || $this->tenantPermissions->allowsPlatform($user, $permission)) {
+        if ($this->tenantPermissions->allowsPlatform($user, $permission)) {
             return $next($request);
         }
 
@@ -231,7 +231,9 @@ class EnsurePermissionMiddleware
             return $this->authorizePosWalletPermission($request, $user, $permission);
         }
 
-        if (str_starts_with($permission, 'voucher_packages.')) {
+        if (str_starts_with($permission, 'voucher_packages.')
+            || str_starts_with($permission, 'voucher_package_discounts.')
+        ) {
             return $this->authorizeVoucherPackagePermission($request, $user, $permission);
         }
 
@@ -243,6 +245,19 @@ class EnsurePermissionMiddleware
         $networkIds = [];
         $posIds = [];
         $routeName = (string) ($request->route()?->getName() ?? '');
+
+        if ($routeName === 'api.v1.network_pos.challenges.status') {
+            $challengeUuid = (string) ($request->route('uuid') ?? '');
+            $challenge = NetworkPosLinkingChallenge::query()
+                ->where('challenge_uuid', $challengeUuid)
+                ->first();
+
+            return $challenge !== null
+                && (
+                    $this->tenantPermissions->allowsNetwork($user, (int) $challenge->network_id, $permission)
+                    || $this->tenantPermissions->allowsPos($user, (int) $challenge->pos_id, $permission)
+                );
+        }
 
         if ($request->route('networkId') !== null) {
             $networkIds[] = (int) $request->route('networkId');
@@ -360,6 +375,15 @@ class EnsurePermissionMiddleware
     {
         $posIds = [];
         $routeName = (string) ($request->route()?->getName() ?? '');
+        if (in_array($routeName, [
+            'api.v1.network_pos.challenges.preview',
+            'api.v1.network_pos.challenges.confirm',
+        ], true)) {
+            // The FormRequest must validate payload/UUID first. The challenge
+            // service then authorizes the exact POS target before executing.
+            return $user->hasPermission($permission);
+        }
+
         $posUuid = (string) ($request->input('pos_uuid') ?? $request->query('pos_uuid') ?? '');
 
         if ($posUuid !== '') {
@@ -545,6 +569,9 @@ class EnsurePermissionMiddleware
         $networkIds = [];
         $posTargets = [];
         $routeName = (string) ($request->route()?->getName() ?? '');
+        $viewPermission = str_starts_with($routeName, 'api.v1.voucher_package_discounts.')
+            ? 'voucher_package_discounts.view'
+            : $viewPermission;
 
         if ($routeName === 'api.v1.networks.voucher_packages') {
             $networkId = (int) ($request->route('id') ?? 0);
@@ -620,12 +647,12 @@ class EnsurePermissionMiddleware
         $networkIds = $this->positiveIds($networkIds);
 
         if ($networkIds === [] && $posTargets === []) {
-            return $permission === 'voucher_packages.view'
+            return $permission === $viewPermission
                 && $this->tenantPermissions->allowsAnyOperational($user, $permission);
         }
 
         foreach ($networkIds as $networkId) {
-            if ($permission === 'voucher_packages.view'
+            if ($permission === $viewPermission
                 && $this->tenantPermissions->allowsNetworkThroughNetworkOrLinkedPos($user, $networkId, $permission)
             ) {
                 continue;
@@ -635,7 +662,7 @@ class EnsurePermissionMiddleware
                 continue;
             }
 
-            $linkedAuthorizedPos = $permission === 'voucher_packages.view'
+            $linkedAuthorizedPos = $permission === $viewPermission
                 && collect($posTargets)->contains(function (array $target) use ($user, $networkId, $permission): bool {
                     return (int) $target['pos_id'] > 0
                         && $this->tenantPermissions->allowsPos($user, (int) $target['pos_id'], $permission)
@@ -660,7 +687,7 @@ class EnsurePermissionMiddleware
                     return false;
                 }
 
-                if ($permission === 'voucher_packages.view'
+                if ($permission === $viewPermission
                     && ! $this->tenantPermissions->allowsPos($user, (int) $target['pos_id'], $permission)
                     && ! $this->tenantPermissions->allowsNetwork($user, (int) $target['network_id'], $permission)
                 ) {
@@ -673,14 +700,7 @@ class EnsurePermissionMiddleware
 
         return true;
     }
-
-    /**
-     * @param mixed $ids
-     * @return array<int, int>
-     */
-    private function positiveIds(mixed $ids): array
-    {
-        if (! is_array($ids)) {
+  if (! is_array($ids)) {
             $ids = [$ids];
         }
 
