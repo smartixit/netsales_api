@@ -113,6 +113,7 @@ class PermissionSeeder extends Seeder
                 'view' => 'عرض باقات الكروت',
                 'create' => 'إنشاء باقة كروت',
                 'edit' => 'تعديل باقة كروت',
+                'toggle_status' => 'تغيير حالة باقة أو خصم',
                 'delete' => 'حذف باقة كروت',
                 'restore' => 'استعادة باقة كروت',
                 'force_delete' => 'حذف باقة كروت نهائياً',
