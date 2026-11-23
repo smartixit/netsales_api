@@ -7,6 +7,7 @@ use App\Enums\UserStatus;
 use App\Http\Requests\API\V1\User\StoreUserRequest;
 use App\Http\Requests\API\V1\User\UpdateUserRequest;
 use App\Interfaces\UserRepositoryInterface;
+use App\Models\Permission;
 use App\Models\User;
 use App\Services\Support\FileUploadService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -353,14 +354,19 @@ class UserService
         }
 
         $permissionIds = array_values(array_unique(array_map('intval', $permissionIds)));
-        $activePermissionCount = \App\Models\Permission::query()
+        $permissions = Permission::query()
             ->whereIn('permission_id', $permissionIds)
             ->where('status', true)
-            ->count();
+            ->get(['permission_id', 'permission_key']);
+        $platformPermissionRegistry = app(PlatformPermissionRegistry::class);
 
-        if ($activePermissionCount !== count($permissionIds)) {
+        if ($permissions->count() !== count($permissionIds)
+            || $permissions->contains(
+                fn (Permission $permission): bool => ! $platformPermissionRegistry->allows($permission->permission_key)
+            )
+        ) {
             throw ValidationException::withMessages([
-                'permissions' => ['تتضمن القائمة صلاحية غير موجودة أو معطلة.'],
+                'permissions' => ['تتضمن القائمة صلاحية غير موجودة أو معطلة أو خارج نطاق صلاحيات المنصة القابلة للإسناد المباشر.'],
             ]);
         }
 
