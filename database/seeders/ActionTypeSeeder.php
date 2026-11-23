@@ -109,6 +109,7 @@ class ActionTypeSeeder extends Seeder
                 [
                     'action_type_name' => $label,
                     'status' => true,
+                    'deleted_at' => null,
                     'updated_at' => $now,
                     'created_at' => $now,
                 ]
