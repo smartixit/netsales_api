@@ -18,16 +18,18 @@ class NetworkWalletPolicy
 
     public function viewAny(User $user): bool
     {
-        return app(TenantPermissionService::class)->allowsAnyNetwork($user, 'network_wallets.view');
+        $permissions = app(TenantPermissionService::class);
+
+        return $permissions->allowsPlatform($user, 'network_wallets.view')
+            || $permissions->allowsAnyNetwork($user, 'network_wallets.view');
     }
 
     public function view(User $user, NetworkWallet $wallet): bool
     {
-        return app(TenantPermissionService::class)->allowsNetwork(
-            $user,
-            (int) $wallet->network_id,
-            'network_wallets.view'
-        );
+        $permissions = app(TenantPermissionService::class);
+
+        return $permissions->allowsPlatform($user, 'network_wallets.view')
+            || $permissions->allowsNetwork($user, (int) $wallet->network_id, 'network_wallets.view');
     }
 
     public function createForNetwork(User $user, int $networkId): bool
