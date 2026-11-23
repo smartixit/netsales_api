@@ -81,6 +81,15 @@ class RolePermissionMatrixTest extends TestCase
 public function test_network_accountant_gets_operational_finance_but_not_approval_or_lifecycle_privileges(): void
     {
         $permissions = $this->permissionKeys(RoleKey::NETWORK_ACCOUNTANT);
+        $networkOwnerPermissions = $this->permissionKeys(RoleKey::NETWORK_OWNER);
+
+        // Network wallet funding/withdrawal are owned by the network owner,
+        // not by the read/report-focused network accountant.
+        $this->assertContains('network_wallets.deposit', $networkOwnerPermissions);
+        $this->assertContains('network_wallets.withdraw', $networkOwnerPermissions);
+        $this->assertNotContains('network_wallets.create', $networkOwnerPermissions);
+        $this->assertNotContains('network_wallets.edit', $networkOwnerPermissions);
+        $this->assertNotContains('network_wallets.deposit', $permissions);
 
         $this->assertNotContains('dashboard.view', $permissions);
         $this->assertContains('network_wallets.report', $permissions);
