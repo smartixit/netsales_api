@@ -247,14 +247,14 @@ Route::prefix('v1')->group(function () {
 
         // 3.1. إدارة أعضاء وموظفي الشبكة (Scoped Network Memberships)
         Route::middleware(['throttle:api-read', 'operational.scope'])->group(function () {
-            Route::get('networks/{networkId}/members/assignable-roles', [NetworkMembershipController::class, 'assignableRoles'])->whereNumber('networkId')->name('api.v1.networks.members.assignable_roles');
-            Route::get('networks/{networkId}/members', [NetworkMembershipController::class, 'index'])->whereNumber('networkId')->name('api.v1.networks.members.index');
+            Route::get('networks/{networkId}/members/assignable-roles', [NetworkMembershipController::class, 'assignableRoles'])->whereNumber('networkId')->middleware('permission:network_members.view')->name('api.v1.networks.members.assignable_roles');
+            Route::get('networks/{networkId}/members', [NetworkMembershipController::class, 'index'])->whereNumber('networkId')->middleware('permission:network_members.view')->name('api.v1.networks.members.index');
         });
         Route::middleware(['throttle:api-write', 'operational.scope'])->group(function () {
-            Route::post('networks/{networkId}/members', [NetworkMembershipController::class, 'store'])->whereNumber('networkId')->name('api.v1.networks.members.store');
-            Route::put('networks/{networkId}/members/{userId}/role', [NetworkMembershipController::class, 'updateRole'])->whereNumber('networkId')->whereNumber('userId')->name('api.v1.networks.members.update_role');
-            Route::put('networks/{networkId}/members/{userId}/status', [NetworkMembershipController::class, 'updateStatus'])->whereNumber('networkId')->whereNumber('userId')->name('api.v1.networks.members.update_status');
-            Route::delete('networks/{networkId}/members/{userId}', [NetworkMembershipController::class, 'destroy'])->whereNumber('networkId')->whereNumber('userId')->name('api.v1.networks.members.destroy');
+            Route::post('networks/{networkId}/members', [NetworkMembershipController::class, 'store'])->whereNumber('networkId')->middleware('permission:network_members.create')->name('api.v1.networks.members.store');
+            Route::put('networks/{networkId}/members/{userId}/role', [NetworkMembershipController::class, 'updateRole'])->whereNumber('networkId')->whereNumber('userId')->middleware('permission:network_members.edit')->name('api.v1.networks.members.update_role');
+            Route::put('networks/{networkId}/members/{userId}/status', [NetworkMembershipController::class, 'updateStatus'])->whereNumber('networkId')->whereNumber('userId')->middleware('permission:network_members.toggle_status')->name('api.v1.networks.members.update_status');
+            Route::delete('networks/{networkId}/members/{userId}', [NetworkMembershipController::class, 'destroy'])->whereNumber('networkId')->whereNumber('userId')->middleware('permission:network_members.delete')->name('api.v1.networks.members.destroy');
         });
 
         // ==========================================
@@ -281,14 +281,14 @@ Route::prefix('v1')->group(function () {
 
         // 4.1. إدارة أعضاء وموظفي نقاط البيع (Scoped POS Memberships)
         Route::middleware(['throttle:api-read', 'operational.scope'])->group(function () {
-            Route::get('pos/{posId}/members/assignable-roles', [PosMembershipController::class, 'assignableRoles'])->whereNumber('posId')->name('api.v1.pos.members.assignable_roles');
-            Route::get('pos/{posId}/members', [PosMembershipController::class, 'index'])->whereNumber('posId')->name('api.v1.pos.members.index');
+            Route::get('pos/{posId}/members/assignable-roles', [PosMembershipController::class, 'assignableRoles'])->whereNumber('posId')->middleware('permission:pos_members.view')->name('api.v1.pos.members.assignable_roles');
+            Route::get('pos/{posId}/members', [PosMembershipController::class, 'index'])->whereNumber('posId')->middleware('permission:pos_members.view')->name('api.v1.pos.members.index');
         });
         Route::middleware(['throttle:api-write', 'operational.scope'])->group(function () {
-            Route::post('pos/{posId}/members', [PosMembershipController::class, 'store'])->whereNumber('posId')->name('api.v1.pos.members.store');
-            Route::put('pos/{posId}/members/{userId}/role', [PosMembershipController::class, 'updateRole'])->whereNumber('posId')->whereNumber('userId')->name('api.v1.pos.members.update_role');
-            Route::put('pos/{posId}/members/{userId}/status', [PosMembershipController::class, 'updateStatus'])->whereNumber('posId')->whereNumber('userId')->name('api.v1.pos.members.update_status');
-            Route::delete('pos/{posId}/members/{userId}', [PosMembershipController::class, 'destroy'])->whereNumber('posId')->whereNumber('userId')->name('api.v1.pos.members.destroy');
+            Route::post('pos/{posId}/members', [PosMembershipController::class, 'store'])->whereNumber('posId')->middleware('permission:pos_members.create')->name('api.v1.pos.members.store');
+            Route::put('pos/{posId}/members/{userId}/role', [PosMembershipController::class, 'updateRole'])->whereNumber('posId')->whereNumber('userId')->middleware('permission:pos_members.edit')->name('api.v1.pos.members.update_role');
+            Route::put('pos/{posId}/members/{userId}/status', [PosMembershipController::class, 'updateStatus'])->whereNumber('posId')->whereNumber('userId')->middleware('permission:pos_members.toggle_status')->name('api.v1.pos.members.update_status');
+            Route::delete('pos/{posId}/members/{userId}', [PosMembershipController::class, 'destroy'])->whereNumber('posId')->whereNumber('userId')->middleware('permission:pos_members.delete')->name('api.v1.pos.members.destroy');
         });
 
         // ==========================================
