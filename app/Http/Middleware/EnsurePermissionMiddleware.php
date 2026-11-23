@@ -51,9 +51,37 @@ class EnsurePermissionMiddleware
         $isOperationalPermission = collect($operationalPrefixes)
             ->contains(fn (string $prefix): bool => str_starts_with($permission, $prefix));
 
+        $platformOnlyOperationalPermissions = [
+            'networks.create',
+            'networks.restore',
+            'networks.force_delete',
+            'networks.approve',
+            'networks.reject',
+            'pos.create',
+            'pos.delete',
+            'pos.restore',
+            'pos.force_delete',
+            'pos.approve',
+            'pos.reject',
+            'network_wallets.view_trashed',
+            'network_wallets.delete_wallet',
+            'network_wallets.restore_wallet',
+            'network_wallets.force_delete_wallet',
+            'network_wallets.bulk_delete_wallets',
+            'network_wallets.bulk_restore_wallets',
+            'network_wallets.bulk_force_delete_wallets',
+            'pos_wallets.view_trashed',
+            'pos_wallets.delete_wallet',
+            'pos_wallets.restore_wallet',
+            'pos_wallets.force_delete_wallet',
+            'pos_wallets.bulk_delete_wallets',
+            'pos_wallets.bulk_restore_wallets',
+            'pos_wallets.bulk_force_delete_wallets',
+        ];
+
         if ($isOperationalPermission && (
-            $user->isSuperAdmin()
-            || $user->hasRole(RoleKey::SUPPORT_AGENT)
+            $user->hasRole(RoleKey::SUPPORT_AGENT)
+            || ($user->isSuperAdmin() && ! in_array($permission, $platformOnlyOperationalPermissions, true))
         )) {
             throw new AuthorizationException('حسابات إدارة المنصة العامة لا تستخدم الصلاحيات التشغيلية للشبكات ونقاط البيع.');
         }
@@ -199,7 +227,7 @@ class EnsurePermissionMiddleware
         }
 
         if (str_starts_with($permission, 'voucher_packages.')) {
-            if ($permission === 'voucher_packages.view') {
+            if (in_array($permission, ['voucher_packages.view', 'voucher_packages.view_trashed'], true)) {
                 $authorized = $this->tenantPermissions->allowsAnyNetwork($user, $permission)
                     || $this->tenantPermissions->allowsAnyPos($user, $permission);
             } else {
@@ -230,7 +258,7 @@ class EnsurePermissionMiddleware
         }
 
         if (str_starts_with($permission, 'package_discounts.')) {
-            if ($permission === 'package_discounts.view') {
+            if (in_array($permission, ['package_discounts.view', 'package_discounts.view_trashed'], true)) {
                 $authorized = $this->tenantPermissions->allowsAnyNetwork($user, $permission)
                     || $this->tenantPermissions->allowsAnyPos($user, $permission);
             } else {
