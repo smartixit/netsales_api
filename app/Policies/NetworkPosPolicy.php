@@ -11,15 +11,6 @@ class NetworkPosPolicy
 {
     use HandlesAuthorization;
 
-    public function before(User $user, string $ability): ?bool
-    {
-        if ($user->isSuperAdmin()) {
-            return true;
-        }
-
-        return null;
-    }
-
     public function viewAny(User $user): bool
     {
         $permissions = app(TenantPermissionService::class);

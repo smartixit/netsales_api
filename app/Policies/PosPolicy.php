@@ -12,11 +12,6 @@ class PosPolicy
 {
     use HandlesAuthorization;
 
-    public function before(User $user, string $ability): ?bool
-    {
-        return $user->isSuperAdmin() ? true : null;
-    }
-
     public function viewAny(User $user): bool
     {
         $permissions = app(TenantPermissionService::class);
@@ -77,11 +72,11 @@ class PosPolicy
 
     public function approve(User $user, Pos $pos): bool
     {
-        return $user->isSuperAdmin();
+        return app(TenantPermissionService::class)->allowsPlatform($user, 'pos.approve');
     }
 
     public function reject(User $user, Pos $pos): bool
     {
-        return $user->isSuperAdmin();
+        return app(TenantPermissionService::class)->allowsPlatform($user, 'pos.reject');
     }
 }

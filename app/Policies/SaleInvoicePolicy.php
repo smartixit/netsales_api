@@ -11,11 +11,6 @@ class SaleInvoicePolicy
 {
     use HandlesAuthorization;
 
-    public function before(User $user, string $ability): ?bool
-    {
-        return $user->isSuperAdmin() ? true : null;
-    }
-
     public function viewAny(User $user): bool
     {
         $permissions = app(TenantPermissionService::class);

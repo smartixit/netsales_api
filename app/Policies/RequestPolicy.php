@@ -11,11 +11,6 @@ class RequestPolicy
 {
     use HandlesAuthorization;
 
-    public function before(User $user, string $ability): ?bool
-    {
-        return $user->isSuperAdmin() ? true : null;
-    }
-
     public function viewAny(User $user): bool
     {
         return app(TenantPermissionService::class)->allowsAnyOperational($user, 'requests.view');

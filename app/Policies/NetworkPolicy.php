@@ -12,11 +12,6 @@ class NetworkPolicy
 {
     use HandlesAuthorization;
 
-    public function before(User $user, string $ability): ?bool
-    {
-        return $user->isSuperAdmin() ? true : null;
-    }
-
     public function viewAny(User $user): bool
     {
         $permissions = app(TenantPermissionService::class);
@@ -77,11 +72,11 @@ class NetworkPolicy
 
     public function approve(User $user, Network $network): bool
     {
-        return $user->isSuperAdmin();
+        return app(TenantPermissionService::class)->allowsPlatform($user, 'networks.approve');
     }
 
     public function reject(User $user, Network $network): bool
     {
-        return $user->isSuperAdmin();
+        return app(TenantPermissionService::class)->allowsPlatform($user, 'networks.reject');
     }
 }
