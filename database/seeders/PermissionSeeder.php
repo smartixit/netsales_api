@@ -64,6 +64,8 @@ class PermissionSeeder extends Seeder
             ],
             'network_wallets' => [
                 'view' => 'عرض محافظ الشبكات وحركاتها',
+                'restore' => 'استعادة محفظة شبكة',
+                'force_delete' => 'حذف محفظة شبكة نهائياً',
                 'create' => 'إنشاء محفظة شبكة',
                 'edit' => 'تعديل بيانات محفظة شبكة',
                 'deposit' => 'إيداع رصيد في محفظة الشبكة',
@@ -87,6 +89,9 @@ class PermissionSeeder extends Seeder
             ],
             'pos_wallets' => [
                 'view' => 'عرض محافظ نقاط البيع وحركاتها',
+                'delete' => 'حذف محفظة نقطة بيع',
+                'restore' => 'استعادة محفظة نقطة بيع',
+                'force_delete' => 'حذف محفظة نقطة بيع نهائياً',
                 'create' => 'إنشاء محفظة نقطة بيع',
                 'edit' => 'تعديل بيانات محفظة نقطة بيع',
                 'deposit' => 'إيداع رصيد في محفظة نقطة البيع',
