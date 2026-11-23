@@ -45,7 +45,7 @@ class DashboardOverviewService
         // Dashboard authorization must use platform grants only. The
         // getAllPermissions() helper intentionally unions tenant memberships
         // for clients and must not unlock global platform metrics.
-        $platformRolePermissions = $user->role?->scope === \\App\\Enums\\RoleScope::PLATFORM
+        $platformRolePermissions = $user->role?->scope === RoleScope::PLATFORM
             ? $user->role->permissions()->where('status', true)->pluck('permission_key')->all()
             : [];
         $directPermissions = $user->permissions()
