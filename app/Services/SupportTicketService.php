@@ -70,6 +70,30 @@ class SupportTicketService
         return $ticket;
     }
 
+    public function getTrashedById(int $id): SupportTicket
+    {
+        /** @var SupportTicket|null $ticket */
+        $ticket = $this->ticketRepository->findTrashedById($id);
+
+        if (! $ticket) {
+            throw ValidationException::withMessages([
+                'ticket_id' => ["تذكرة الدعم الفني المحذوفة برقم [{$id}] غير موجودة."],
+            ]);
+        }
+
+        $ticket->load(['network', 'pos', 'messages.sentBy', 'latestMessage.sentBy']);
+
+        return $ticket;
+    }
+
+    /**
+     * @param array<int, int> $ids
+     */
+    public function getManyByIdsForAuthorization(array $ids, bool $withTrashed = false): Collection
+    {
+        return $this->ticketRepository->findManyByIds($ids, $withTrashed);
+    }
+
     /**
      * جلب تفاصيل تذكرة عبر المعرف الفريد للأعمال (ticket_uuid).
      */
