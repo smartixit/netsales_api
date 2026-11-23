@@ -52,7 +52,7 @@ class SupportTicketController extends BaseController
     {
         try {
             $filters = $request->only(['network_id', 'pos_id', 'search', 'per_page', 'all']);
-            $tickets = $this->ticketService->getFiltered($filters);
+            $tickets = $this->ticketService->getFiltered($filters, $this->currentUserId());
 
             return $this->successResponse('تم استرجاع قائمة تذاكر الدعم الفني بنجاح.', SupportTicketResource::collection($tickets));
         } catch (ValidationException $e) {
@@ -154,7 +154,7 @@ class SupportTicketController extends BaseController
     public function show(int $id): JsonResponse
     {
         try {
-            $ticket = $this->ticketService->getById($id);
+            $ticket = $this->ticketService->getByIdForActor($id, $this->currentUserId());
 
             return $this->successResponse('تم استرجاع تفاصيل تذكرة الدعم الفني بنجاح.', new SupportTicketResource($ticket));
         } catch (ValidationException $e) {
@@ -197,7 +197,7 @@ class SupportTicketController extends BaseController
     public function update(UpdateSupportTicketRequest $request, int $id): JsonResponse
     {
         try {
-            $ticket = $this->ticketService->update($request, $id);
+            $ticket = $this->ticketService->update($request, $id, $this->currentUserId());
 
             return $this->successResponse('تم تحديث بيانات تذكرة الدعم الفني بنجاح.', new SupportTicketResource($ticket));
         } catch (ValidationException $e) {
@@ -423,7 +423,7 @@ class SupportTicketController extends BaseController
     public function messages(int $id): JsonResponse
     {
         try {
-            $messages = $this->ticketService->getMessages($id);
+            $messages = $this->ticketService->getMessages($id, $this->currentUserId());
 
             return $this->successResponse('تم استرجاع رسائل التذكرة بنجاح.', SupportTicketMessageResource::collection($messages));
         } catch (ValidationException $e) {
