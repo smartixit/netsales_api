@@ -48,7 +48,6 @@ class RolePermissionSeeder extends Seeder
                     'bank_accounts.toggle_status',
                     'bank_accounts.delete',
                     'bank_accounts.restore',
-                    'bank_accounts.export',
                     'billing.view',
                     'billing.report',
                     'billing.export',
@@ -178,7 +177,6 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'pos.view',
                     'pos.edit',
-                    'pos.restore',
                     'pos.preview_link_challenge',
                     'pos.confirm_link_challenge',
                     'networks.view',
