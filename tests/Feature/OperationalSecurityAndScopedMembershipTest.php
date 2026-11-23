@@ -402,7 +402,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             ])
             ->assertForbidden();
 
-        // A NETWORK_OWNER membership grants member administration only for its own network.
+        // The NETWORK_OWNER membership and network owner_id must describe the same tenant owner.
         $scopedNetworkOwner = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Net Owner '.uniqid(),
@@ -410,6 +410,9 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'user_password' => bcrypt('password'),
             'status' => UserStatus::ACTIVE,
         ]);
+        $this->networkA->owner_id = $scopedNetworkOwner->user_id;
+        $this->networkA->save();
+
         NetworkUser::create([
             'network_id' => $this->networkA->network_id,
             'user_id' => $scopedNetworkOwner->user_id,
