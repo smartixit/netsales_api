@@ -60,19 +60,19 @@ class NetworkWalletPolicy
         return $this->hasNetworkPermission(
             $user,
             (int) $wallet->network_id,
-            'network_wallets.create',
+            'network_wallets.deposit',
         );
     }
 
     /**
-     * Direct withdrawals/status changes require the network-scoped edit grant.
+     * Direct withdrawals require a network-scoped withdrawal grant.
      */
     public function withdraw(User $user, NetworkWallet $wallet): bool
     {
         return $this->hasNetworkPermission(
             $user,
             (int) $wallet->network_id,
-            'network_wallets.edit',
+            'network_wallets.withdraw',
         );
     }
 
