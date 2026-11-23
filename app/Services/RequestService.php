@@ -390,7 +390,7 @@ class RequestService
             ]);
         }
 
-        $this->authorizeRequestTenant($userId, $request, 'requests.approve', allowPos: false);
+        $this->authorizeRequestTenant($userId, $request, 'requests.preview_modification', allowPos: false);
 
         if ($saleType !== null && $saleType !== $request->sale_type) {
             throw ValidationException::withMessages([
@@ -605,7 +605,7 @@ class RequestService
                 ]);
             }
 
-            $this->authorizeRequestTenant($userId, $request, 'requests.edit', allowNetwork: false);
+            $this->authorizeRequestTenant($userId, $request, 'requests.cancel', allowNetwork: false);
 
             $this->requestRepository->updateStatus(
                 $requestId,
@@ -666,7 +666,7 @@ class RequestService
             if (! $request) {
                 return false;
             }
-            $this->authorizeRequestTenant($userId, $request, 'requests.edit');
+            $this->authorizeRequestTenant($userId, $request, 'requests.restore');
 
             return (bool) $this->requestRepository->restore($requestId);
         });
@@ -687,7 +687,7 @@ class RequestService
                 ]);
             }
 
-            $this->authorizeRequestTenant($userId, $request, 'requests.delete');
+            $this->authorizeRequestTenant($userId, $request, 'requests.force_delete');
 
             if (! $request->isPending() && ! $request->isCancelled()) {
                 throw ValidationException::withMessages([
@@ -731,7 +731,7 @@ class RequestService
             foreach ($ids as $id) {
                 $request = $this->requestRepository->findTrashedById((int) $id);
                 if ($request) {
-                    $this->authorizeRequestTenant($userId, $request, 'requests.edit');
+                    $this->authorizeRequestTenant($userId, $request, 'requests.restore');
                 }
             }
 
@@ -753,7 +753,7 @@ class RequestService
                         'ids' => ["الطلب رقم #{$id} غير موجود في سلة المحذوفات."],
                     ]);
                 }
-                $this->authorizeRequestTenant($userId, $request, 'requests.delete');
+                $this->authorizeRequestTenant($userId, $request, 'requests.force_delete');
                 if (! $request->isPending() && ! $request->isCancelled()) {
                     throw ValidationException::withMessages([
                         'ids' => ["الطلب رقم #{$request->request_uuid} تم اعتماده أو رفضه ولا يمكن حذفه نهائياً."],
