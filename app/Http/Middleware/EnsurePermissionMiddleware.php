@@ -11,6 +11,8 @@ use App\Models\Pos;
 use App\Models\PosWallet;
 use App\Models\Request as RequestModel;
 use App\Models\SaleInvoice;
+use App\Models\SupportTicket;
+use App\Services\SupportTicketAuthorizationService;
 use App\Models\User;
 use App\Models\VoucherPackage;
 use App\Models\VoucherPackageDiscount;
@@ -92,7 +94,11 @@ class EnsurePermissionMiddleware
             $routeName = (string) ($request->route()?->getName() ?? '');
             $requestId = (int) ($request->route('id') ?? 0);
             $record = $requestId > 0 ? RequestModel::withTrashed()->find($requestId) : null;
-            $networkOnly = in_array($permission, ['requests.approve', 'requests.reject'], true);
+            $networkOnly = in_array($permission, [
+                'requests.approve',
+                'requests.reject',
+                'requests.preview_modification',
+            ], true);
 
             if (str_contains($routeName, 'batch_') && $request->has('ids')) {
                 $ids = $this->positiveIds($request->input('ids', []));
@@ -215,6 +221,10 @@ class EnsurePermissionMiddleware
 
     private function authorizeScopedPermission(Request $request, User $user, string $permission): ?bool
     {
+        if (str_starts_with($permission, 'support.')) {
+            return $this->authorizeSupportPermission($request, $user, $permission);
+        }
+
         if (str_starts_with($permission, 'networks.')) {
             return $this->authorizeNetworkPermission($request, $user, $permission);
         }
@@ -238,6 +248,57 @@ class EnsurePermissionMiddleware
         }
 
         return null;
+    }
+
+    private function authorizeSupportPermission(Request $request, User $user, string $permission): bool
+    {
+        if ($user->role_scope === \App\Enums\RoleScope::PLATFORM->value) {
+            return $this->tenantPermissions->allowsPlatform($user, $permission);
+        }
+
+        $authorization = app(SupportTicketAuthorizationService::class);
+        $routeName = (string) ($request->route()?->getName() ?? '');
+
+        if (str_contains($routeName, '.batch_') && $request->has('ids')) {
+            $withTrashed = in_array($permission, ['support.restore', 'support.force_delete'], true);
+            $authorization->assertBatch(
+                $user,
+                $this->positiveIds($request->input('ids', [])),
+                $permission,
+                $withTrashed
+            );
+
+            return true;
+        }
+
+        $ticketId = (int) ($request->route('id') ?? 0);
+        if ($ticketId > 0) {
+            $ticket = SupportTicket::withTrashed()->find($ticketId);
+            if (! $ticket) {
+                return $this->tenantPermissions->allowsAnyOperational($user, $permission);
+            }
+
+            $authorization->assertTicket($user, $ticket, $permission);
+
+            return true;
+        }
+
+        if ($permission === 'support.create') {
+            $networkId = (int) ($request->input('network_id') ?? 0);
+            $posValue = $request->input('pos_id');
+            if ($networkId <= 0 || $posValue === null || $posValue === '') {
+                // Let the FormRequest return the canonical 422 field errors.
+                return $this->tenantPermissions->allowsAnyOperational($user, $permission);
+            }
+
+            $authorization->assertTarget($user, $networkId, (int) $posValue, $permission);
+
+            return true;
+        }
+
+        // Collection routes are scoped by SupportTicketAuthorizationService
+        // before data is returned. A client filter may only narrow that scope.
+        return $this->tenantPermissions->allowsAnyOperational($user, $permission);
     }
 
     private function authorizeNetworkPermission(Request $request, User $user, string $permission): bool
@@ -278,7 +339,9 @@ class EnsurePermissionMiddleware
 
                 if ($challenge) {
                     $networkIds[] = (int) $challenge->network_id;
-                    $posIds[] = (int) $challenge->pos_id;
+                    if ($permission === 'networks.view') {
+                        $posIds[] = (int) $challenge->pos_id;
+                    }
                 }
             }
 
@@ -382,7 +445,7 @@ class EnsurePermissionMiddleware
         ], true)) {
             // The FormRequest must validate payload/UUID first. The challenge
             // service then authorizes the exact POS target before executing.
-            return $user->hasPermission($permission);
+            return $this->tenantPermissions->mayAttemptPosPermission($user, $permission);
         }
 
         $posUuid = (string) ($request->input('pos_uuid') ?? $request->query('pos_uuid') ?? '');

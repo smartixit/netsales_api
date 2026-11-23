@@ -108,6 +108,49 @@ final class TenantPermissionService
             ->exists();
     }
 
+    /**
+     * Coarse capability check for POS challenge attempts.
+     *
+     * This deliberately does not authorize a target POS. It only allows the
+     * request to reach FormRequest validation; the challenge service performs
+     * the exact active-membership/ownership check before any state change.
+     */
+    public function mayAttemptPosPermission(User $user, string $permission): bool
+    {
+        if (! $user->isActive() || $user->role_scope === RoleScope::PLATFORM->value) {
+            return false;
+        }
+
+        $hasRoleGrant = Role::query()
+            ->where('status', true)
+            ->where('scope', RoleScope::POS->value)
+            ->whereHas('permissions', fn ($query) => $query
+                ->where('permission_key', $permission)
+                ->where('status', true))
+            ->where(function ($query) use ($user): void {
+                $query->where('role_key', RoleKey::POS_AGENT->value)
+                    ->orWhereIn('role_id', PosUser::query()
+                        ->select('role_id')
+                        ->where('user_id', $user->user_id));
+            })
+            ->exists();
+
+        if (! $hasRoleGrant) {
+            return false;
+        }
+
+        return Pos::query()->where('owner_id', $user->user_id)->exists()
+            || PosUser::query()
+                ->where('user_id', $user->user_id)
+                ->whereHas('role', fn ($query) => $query
+                    ->where('scope', RoleScope::POS->value)
+                    ->where('status', true)
+                    ->whereHas('permissions', fn ($permissions) => $permissions
+                        ->where('permission_key', $permission)
+                        ->where('status', true)))
+                ->exists();
+    }
+
     public function allowsNetworkOrPos(
         User $user,
         int $networkId,
