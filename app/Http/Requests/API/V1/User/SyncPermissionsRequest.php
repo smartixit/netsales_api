@@ -27,7 +27,10 @@ class SyncPermissionsRequest extends FormRequest
             ],
             'permissions.*' => [
                 'integer',
-                Rule::exists('permissions', 'permission_id')->whereNull('deleted_at'),
+                Rule::exists('permissions', 'permission_id')
+                    ->whereNull('deleted_at')
+                    ->where('scope', 'PLATFORM')
+                    ->where('status', true),
             ],
         ];
     }
