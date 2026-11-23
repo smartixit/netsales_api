@@ -111,6 +111,28 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
         }
     }
 
+    public function test_request_permissions_follow_the_side_that_owns_each_action(): void
+    {
+        $networkOwnerPermissions = $this->permissionKeys(RoleKey::NETWORK_OWNER);
+        $posAgentPermissions = $this->permissionKeys(RoleKey::POS_AGENT);
+
+        // Editing and cancelling a procurement request belong to its POS owner.
+        $this->assertNotContains('requests.edit', $networkOwnerPermissions);
+        $this->assertNotContains('requests.cancel', $networkOwnerPermissions);
+        $this->assertContains('requests.edit', $posAgentPermissions);
+        $this->assertContains('requests.cancel', $posAgentPermissions);
+
+        // Preview, approval, and rejection are network-side review operations.
+        foreach (['requests.preview_modification', 'requests.approve', 'requests.reject'] as $permission) {
+            $this->assertContains($permission, $networkOwnerPermissions);
+            $this->assertNotContains($permission, $posAgentPermissions);
+        }
+
+        // Invoice restoration is prohibited after financial reversal.
+        $this->assertNotContains('sales.restore', $networkOwnerPermissions);
+        $this->assertNotContains('sales.restore', $posAgentPermissions);
+    }
+
     public function test_network_user_cannot_approve_requests_or_change_financial_records(): void
     {
         $permissions = $this->permissionKeys(RoleKey::NETWORK_USER);
