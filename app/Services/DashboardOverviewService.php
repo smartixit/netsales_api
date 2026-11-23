@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\BillingSubscriptionStatus;
-use App\Enums\RoleScope;
 use App\Enums\NetworkStatus;
 use App\Enums\PosStatus;
 use App\Models\BillingSubscription;
@@ -21,6 +20,10 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardOverviewService
 {
+    public function __construct(
+        private readonly TenantPermissionService $tenantPermissions
+    ) {}
+
     private const TIMEZONE = 'Asia/Aden';
 
     private const EXPIRING_WITHIN_DAYS = 7;
@@ -42,22 +45,11 @@ class DashboardOverviewService
             ? $now->copy()->startOfMonth()->subMonths(11)
             : $now->copy()->subDays($periodDays - 1)->startOfDay();
         $bucket = $this->periodBucket($period);
-        // Dashboard authorization must use platform grants only. The
-        // getAllPermissions() helper intentionally unions tenant memberships
-        // for clients and must not unlock global platform metrics.
-        $platformRolePermissions = $user->role?->scope === RoleScope::PLATFORM
-            ? $user->role->permissions()->where('status', true)->pluck('permission_key')->all()
-            : [];
-        $directPermissions = $user->permissions()
-            ->where('status', true)
-            ->pluck('permission_key')
-            ->all();
-        $permissions = array_fill_keys(
-            array_values(array_unique(array_merge($platformRolePermissions, $directPermissions))),
-            true
-        );
-        $can = static fn (string $permission): bool => $user->isSuperAdmin()
-            || isset($permissions[$permission]);
+        // Every platform metric uses the same scope-aware authorization
+        // source as the route middleware. Direct grants are valid only for
+        // active PLATFORM accounts; tenant membership grants never unlock
+        // platform-wide metrics.
+        $can = fn (string $permission): bool => $this->tenantPermissions->allowsPlatform($user, $permission);
 
         $metrics = [];
         $charts = [
