@@ -336,7 +336,7 @@ Route::prefix('v1')->group(function () {
             Route::post('voucher-packages/batch-force-delete', [VoucherPackageController::class, 'batchForceDelete'])->name('api.v1.voucher_packages.batch_force_delete')->middleware('permission:voucher_packages.force_delete');
             Route::post('voucher-packages/{id}/restore', [VoucherPackageController::class, 'restore'])->whereNumber('id')->name('api.v1.voucher_packages.restore')->middleware('permission:voucher_packages.restore');
             Route::delete('voucher-packages/{id}/force', [VoucherPackageController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.voucher_packages.force_delete')->middleware('permission:voucher_packages.force_delete');
-            Route::post('voucher-packages/{id}/toggle-status', [VoucherPackageController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.voucher_packages.toggle_status')->middleware('permission:voucher_packages.edit');
+            Route::post('voucher-packages/{id}/toggle-status', [VoucherPackageController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.voucher_packages.toggle_status')->middleware('permission:voucher_packages.toggle_status');
         });
 
         // ==========================================
@@ -359,7 +359,7 @@ Route::prefix('v1')->group(function () {
             Route::post('voucher-package-discounts/batch-force-delete', [VoucherPackageDiscountController::class, 'batchForceDelete'])->name('api.v1.voucher_package_discounts.batch_force_delete')->middleware('permission:voucher_packages.force_delete');
             Route::post('voucher-package-discounts/{id}/restore', [VoucherPackageDiscountController::class, 'restore'])->whereNumber('id')->name('api.v1.voucher_package_discounts.restore')->middleware('permission:voucher_packages.restore');
             Route::delete('voucher-package-discounts/{id}/force', [VoucherPackageDiscountController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.voucher_package_discounts.force_delete')->middleware('permission:voucher_packages.force_delete');
-            Route::post('voucher-package-discounts/{id}/toggle-status', [VoucherPackageDiscountController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.voucher_package_discounts.toggle_status')->middleware('permission:voucher_packages.edit');
+            Route::post('voucher-package-discounts/{id}/toggle-status', [VoucherPackageDiscountController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.voucher_package_discounts.toggle_status')->middleware('permission:voucher_packages.toggle_status');
         });
 
         // ==========================================
