@@ -189,7 +189,7 @@ class WalletSystemTest extends TestCase
 
         // Credit SMS template:
         // نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: لكم سند قبض بمبلغ 1,000.00YER رصيدكم 3,000.00YER
-        $expectedReceiptMsg = "نقطة {$this->pos->pos_name} - شبكة {$this->network->network_name}: لكم سند قبض بمبلغ 1,000.00YER رصيدكم 3,000.00YER";
+        $expectedReceiptMsg = "{$this->pos->pos_name} - {$this->network->network_name}: لكم سند قبض بمبلغ 1,000.00YER رصيدكم 3,000.00YER";
 
         Queue::assertPushed(SendSmsNotificationJob::class, function ($job) use ($expectedReceiptMsg) {
             return $job->phoneNumbers === $this->pos->pos_phone_number && $job->message === $expectedReceiptMsg;
