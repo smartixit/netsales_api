@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Enums\UserStatus;
+use App\Services\PlatformPermissionRegistry;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -385,7 +386,7 @@ class User extends Authenticatable
         // users.role_scope column is the authoritative identity boundary,
         // even when the referenced role has been soft-deleted.
         if ($this->role_scope === RoleScope::PLATFORM->value) {
-            if (! app(\\App\\Services\\PlatformPermissionRegistry::class)->allows($permissionKey)) {
+            if (! app(PlatformPermissionRegistry::class)->allows($permissionKey)) {
                 return false;
             }
 
