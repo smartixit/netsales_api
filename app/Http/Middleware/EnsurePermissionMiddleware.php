@@ -66,10 +66,10 @@ class EnsurePermissionMiddleware
             return $next($request);
         }
 
-        if ($permission === 'requests.create') {
+        if (in_array($permission, ['requests.create', 'requests.quote'], true)) {
             $posId = (int) ($request->input('pos_id') ?? $request->header('X-Pos-Id') ?? 0);
             if ($posId <= 0 || ! $this->tenantPermissions->allowsPos($user, $posId, $permission)) {
-                throw new AuthorizationException('عذراً، لا تملك صلاحية إنشاء الطلب داخل نقطة البيع المحددة.');
+                throw new AuthorizationException('عذراً، لا تملك الصلاحية المحددة داخل نقطة البيع.');
             }
 
             return $next($request);
@@ -104,7 +104,7 @@ class EnsurePermissionMiddleware
             } elseif ($networkId > 0 && $posId > 0) {
                 $networkAuthorized = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
                 $posAuthorized = $this->tenantPermissions->allowsPos($user, $posId, $permission);
-                $authorized = in_array($permission, ['requests.approve', 'requests.reject'], true)
+                $authorized = in_array($permission, ['requests.approve', 'requests.reject', 'requests.preview_modification'], true)
                     ? $networkAuthorized
                     : ($networkAuthorized || $posAuthorized);
             } elseif ($networkId > 0) {
