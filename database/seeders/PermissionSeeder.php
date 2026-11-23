@@ -75,6 +75,13 @@ class PermissionSeeder extends Seeder
                 'create_link_challenge' => 'إنشاء تحدي ربط نقطة بيع',
                 'revoke_link_challenge' => 'إلغاء تحدي ربط نقطة بيع',
             ],
+            'network_members' => [
+                'view' => 'عرض أعضاء الشبكة وأدوارهم',
+                'create' => 'إضافة عضو إلى الشبكة',
+                'edit' => 'تغيير دور عضو الشبكة',
+                'toggle_status' => 'تغيير حالة عضوية الشبكة',
+                'delete' => 'إنهاء عضوية مستخدم في الشبكة',
+            ],
             'network_wallets' => [
                 'view' => 'عرض محافظ الشبكات وحركاتها',
                 'delete' => 'حذف محفظة شبكة',
@@ -98,6 +105,13 @@ class PermissionSeeder extends Seeder
                 'reject' => 'رفض نقطة بيع',
                 'preview_link_challenge' => 'معاينة طلب ربط نقطة بيع',
                 'confirm_link_challenge' => 'تأكيد طلب ربط نقطة بيع',
+            ],
+            'pos_members' => [
+                'view' => 'عرض أعضاء نقطة البيع وأدوارهم',
+                'create' => 'إضافة عضو إلى نقطة البيع',
+                'edit' => 'تغيير دور عضو نقطة البيع',
+                'toggle_status' => 'تغيير حالة عضوية نقطة البيع',
+                'delete' => 'إنهاء عضوية مستخدم في نقطة البيع',
             ],
             'pos_wallets' => [
                 'view' => 'عرض محافظ نقاط البيع وحركاتها',
