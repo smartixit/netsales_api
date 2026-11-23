@@ -65,6 +65,25 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
         $this->postJson('/api/v1/admin/notifications/user', [], $headers)->assertForbidden();
     }
 
+    public function test_bank_account_management_is_restricted_to_platform_finance_roles(): void
+    {
+        $accountant = $this->makeUserWithRole(RoleKey::ACCOUNTANT);
+        $accountantHeaders = $this->createAuthenticatedSession($accountant)['headers'];
+
+        $this->getJson('/api/v1/bank-accounts', $accountantHeaders)->assertOk();
+
+        // The accountant may manage ordinary bank-account operations but may
+        // not permanently erase financial account records.
+        $this->deleteJson('/api/v1/bank-accounts/1/force', [], $accountantHeaders)
+            ->assertForbidden();
+
+        $networkOwner = $this->makeUserWithRole(RoleKey::NETWORK_OWNER);
+        $networkHeaders = $this->createAuthenticatedSession($networkOwner)['headers'];
+
+        $this->getJson('/api/v1/bank-accounts', $networkHeaders)->assertForbidden();
+        $this->postJson('/api/v1/bank-accounts', [], $networkHeaders)->assertForbidden();
+    }
+
     private function makeUserWithRole(RoleKey $roleKey): User
     {
         $role = Role::byKey($roleKey)->firstOrFail();
