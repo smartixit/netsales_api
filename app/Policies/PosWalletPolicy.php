@@ -20,7 +20,8 @@ class PosWalletPolicy
     {
         $permissions = app(TenantPermissionService::class);
 
-        return $permissions->allowsAnyNetwork($user, 'pos_wallets.view')
+        return $permissions->allowsPlatform($user, 'pos_wallets.view')
+            || $permissions->allowsAnyNetwork($user, 'pos_wallets.view')
             || $permissions->allowsAnyPos($user, 'pos_wallets.view');
     }
 
@@ -28,11 +29,12 @@ class PosWalletPolicy
     {
         $permissions = app(TenantPermissionService::class);
 
-        return $permissions->allowsNetwork(
-            $user,
-            (int) $wallet->network_id,
-            'pos_wallets.view'
-        ) || $permissions->allowsPos(
+        return $permissions->allowsPlatform($user, 'pos_wallets.view')
+            || $permissions->allowsNetwork(
+                $user,
+                (int) $wallet->network_id,
+                'pos_wallets.view'
+            ) || $permissions->allowsPos(
             $user,
             (int) $wallet->pos_id,
             'pos_wallets.view'
