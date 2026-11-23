@@ -344,8 +344,8 @@ class UserService
         // user_permissions has no network_id/pos_id columns. A direct grant
         // is therefore global and is safe only for an active PLATFORM user.
         if (! $user->isActive()
-            || $user->role?->scope !== RoleScope::PLATFORM
-            || ! $user->role->isActive()
+            || $user->role_scope !== RoleScope::PLATFORM->value
+            || ! $user->role?->isActive()
         ) {
             throw ValidationException::withMessages([
                 'user_id' => ['لا يمكن إسناد صلاحيات مباشرة لمستخدم تشغيلي. تُمنح صلاحياته عبر دور عضويته داخل الشبكة أو نقطة البيع.'],
