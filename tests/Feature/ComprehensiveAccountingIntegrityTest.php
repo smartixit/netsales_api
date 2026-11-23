@@ -178,7 +178,8 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
                     'amount' => $amount,
                     'statement' => 'إيداع تجريبي غير صالح',
                 ]);
-            $depositResponse->assertStatus(422);
+            // Network wallet funding is platform-managed and must be denied before amount validation.
+            $depositResponse->assertForbidden();
 
             // محاولة سحب بمبلغ غير صالح
             $withdrawResponse = $this->withHeaders($this->headers)
@@ -186,7 +187,7 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
                     'amount' => $amount,
                     'statement' => 'سحب تجريبي غير صالح',
                 ]);
-            $withdrawResponse->assertStatus(422);
+            $withdrawResponse->assertForbidden();
 
             // محاولة تحويل بيني بمبلغ غير صالح
             $transferResponse = $this->withHeaders($this->headers)
@@ -207,7 +208,7 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
     /**
      * اختبار: منع السحب الذي يتجاوز الرصيد المتوفر في محفظة الشبكة
      */
-    public function test_prevent_overdraft_on_network_wallet(): void
+    public function test_network_owner_cannot_withdraw_from_platform_managed_network_wallet(): void
     {
         $currentBalance = (float) $this->networkWallet->wallet_balance;
         $excessiveAmount = $currentBalance + 0.01;
@@ -218,7 +219,7 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
                 'statement' => 'محاولة سحب مكشوف غير مسموح به',
             ]);
 
-        $response->assertStatus(422);
+        $response->assertForbidden();
 
         $this->networkWallet->refresh();
         $this->assertEquals($currentBalance, (float) $this->networkWallet->wallet_balance);
