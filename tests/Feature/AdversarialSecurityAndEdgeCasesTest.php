@@ -327,7 +327,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
                         'voucher_count' => 2,
                     ],
                 ],
-            ])->json('data.request_id');
+            ], $this->posHeadersA)->assertCreated()->json('data.request_id');
 
         // الرفض الأول
         $this->withHeaders($this->headers)
@@ -339,7 +339,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
         $secondReject = $this->withHeaders($this->headers)
             ->postJson("/api/v1/requests/{$anotherRequest}/reject", [
                 'rejection_reason' => 'الرفض الثاني غير المسموح به',
-            ], $this->posHeadersA);
+            ]);
 
         $secondReject->assertStatus(422);
     }
@@ -390,8 +390,8 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
                 'statement' => 'محاولة اختراق عزل الشبكات',
             ]);
 
-        // Authorization is rejected before business validation for cross-tenant targets.
-        $response->assertForbidden();
+        // The actor may operate on Network A; the domain guard rejects the unlinked POS B.
+        $response->assertStatus(422)->assertJsonValidationErrors(['pos_id']);
     }
 
     /**
