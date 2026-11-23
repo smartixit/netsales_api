@@ -114,7 +114,7 @@ class RequestService
             $user = $this->userRepository->findById($userId);
             if (! $user || ! $user->isActive()
                 || (! $user->isSuperAdmin()
-                    && ! app(TenantPermissionService::class)->allowsPos($user, (int) $posId, 'requests.create'))) {
+                    && ! app(TenantPermissionService::class)->allowsPos($user, (int) $posId, 'requests.quote'))) {
                 throw ValidationException::withMessages([
                     'pos_id' => ['غير مصرح لك بإنشاء طلب باسم نقطة البيع المحددة.'],
                 ]);
@@ -669,7 +669,7 @@ class RequestService
             if (! $request) {
                 return false;
             }
-            $this->authorizeRequestTenant($userId, $request, 'requests.edit');
+            $this->authorizeRequestTenant($userId, $request, 'requests.restore');
 
             return (bool) $this->requestRepository->restore($requestId);
         });
