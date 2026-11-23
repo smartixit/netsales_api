@@ -28,6 +28,7 @@ class RolePermissionSeeder extends Seeder
             RoleKey::SUPPORT_AGENT->value => [
                 'scope' => RoleScope::PLATFORM->value,
                 'permissions' => [
+                    'dashboard.view',
                     'users.view',
                     'networks.view',
                     'pos.view',
@@ -42,6 +43,7 @@ class RolePermissionSeeder extends Seeder
             RoleKey::ACCOUNTANT->value => [
                 'scope' => RoleScope::PLATFORM->value,
                 'permissions' => [
+                    'dashboard.view',
                     'bank_accounts.view',
                     'bank_accounts.create',
                     'bank_accounts.edit',
