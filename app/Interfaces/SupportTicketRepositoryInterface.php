@@ -17,6 +17,13 @@ interface SupportTicketRepositoryInterface extends BaseRepositoryInterface
     public function findByUuid(string $uuid): ?SupportTicket;
 
     /**
+     * Resolve a set of tickets for service-layer authorization checks.
+     *
+     * @param array<int, int> $ids
+     */
+    public function findManyByIds(array $ids, bool $withTrashed = false): Collection;
+
+    /**
      * جلب قائمة التذاكر مع الفلترة والترقيم بالمؤشر والعلاقات.
      */
     public function getFiltered(
