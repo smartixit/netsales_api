@@ -4,11 +4,16 @@ namespace App\Policies;
 
 use App\Models\PosWallet;
 use App\Models\User;
+use App\Services\TenantPermissionService;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class PosWalletPolicy
 {
     use HandlesAuthorization;
+
+    public function __construct(
+        private readonly TenantPermissionService $tenantPermissions
+    ) {}
 
     public function before(User $user, string $ability): ?bool
     {
@@ -21,72 +26,66 @@ class PosWalletPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->pos()->exists()
-            || $user->posUsers()->where('status', 'ACTIVE')->exists()
-            || $user->networks()->exists()
-            || $user->networkUsers()->where('status', 'ACTIVE')->exists();
+        return $this->tenantPermissions->allowsAnyNetwork($user, 'pos_wallets.view')
+            || $this->tenantPermissions->allowsAnyPos($user, 'pos_wallets.view');
     }
 
     public function view(User $user, PosWallet $wallet): bool
     {
-        // 1. Check if user is owner of the POS
-        if ($user->pos && (int) $user->pos->pos_id === (int) $wallet->pos_id) {
-            return true;
-        }
-
-        // 2. Check if user belongs to the POS
-        if ($user->posUsers()->where('pos_id', $wallet->pos_id)->where('status', 'ACTIVE')->exists()) {
-            return true;
-        }
-
-        // 3. Check if user is owner or member of the associated Network
-        if ($user->networks()->where('networks.network_id', $wallet->network_id)->exists()) {
-            return true;
-        }
-        if ($user->networkUsers()->where('network_id', $wallet->network_id)->where('status', 'ACTIVE')->exists()) {
-            return true;
-        }
-
-        return false;
+        return $this->tenantPermissions->allowsNetwork(
+            $user,
+            (int) $wallet->network_id,
+            'pos_wallets.view'
+        ) || $this->tenantPermissions->allowsPos(
+            $user,
+            (int) $wallet->pos_id,
+            'pos_wallets.view'
+        );
     }
 
-    /**
-     * Create a POS wallet only for an actor with permission in the owning
-     * network or in the specific POS membership.
-     */
     public function createForNetwork(User $user, int $networkId, int $posId): bool
     {
-        return $this->hasPosWalletPermission($user, $networkId, $posId, 'pos_wallets.create');
+        return $this->tenantPermissions->allowsNetwork(
+            $user,
+            $networkId,
+            'pos_wallets.create_wallet'
+        );
     }
 
     public function deposit(User $user, PosWallet $wallet): bool
     {
-        return $this->hasPosWalletPermission(
+        return $this->tenantPermissions->allowsNetwork(
             $user,
             (int) $wallet->network_id,
-            (int) $wallet->pos_id,
-            'pos_wallets.create',
+            'pos_wallets.deposit'
         );
     }
 
     public function withdraw(User $user, PosWallet $wallet): bool
     {
-        return $this->hasPosWalletPermission(
+        return $this->tenantPermissions->allowsNetwork(
             $user,
             (int) $wallet->network_id,
-            (int) $wallet->pos_id,
-            'pos_wallets.edit',
+            'pos_wallets.withdraw'
         );
     }
 
     public function transferFromNetwork(User $user, int $networkId, int $posId): bool
     {
-        return $this->hasPosWalletPermission($user, $networkId, $posId, 'pos_wallets.create');
+        return $this->tenantPermissions->allowsNetwork(
+            $user,
+            $networkId,
+            'pos_wallets.transfer_from_network'
+        );
     }
 
     public function transferToNetwork(User $user, int $networkId, int $posId): bool
     {
-        return $this->hasPosWalletPermission($user, $networkId, $posId, 'pos_wallets.edit');
+        return $this->tenantPermissions->allowsNetwork(
+            $user,
+            $networkId,
+            'pos_wallets.transfer_to_network'
+        );
     }
 
     public function create(User $user): bool
@@ -96,11 +95,10 @@ class PosWalletPolicy
 
     public function update(User $user, PosWallet $wallet): bool
     {
-        return $this->hasPosWalletPermission(
+        return $this->tenantPermissions->allowsNetwork(
             $user,
             (int) $wallet->network_id,
-            (int) $wallet->pos_id,
-            'pos_wallets.edit',
+            'pos_wallets.update_wallet_status'
         );
     }
 
@@ -119,68 +117,19 @@ class PosWalletPolicy
 
     public function manageCreditLimit(User $user, PosWallet $wallet): bool
     {
-        // A POS owner/member must never change its own credit facility.
-        if ($user->pos && (int) $user->pos->pos_id === (int) $wallet->pos_id) {
-            return false;
-        }
-        if ($user->posUsers()
-            ->where('pos_id', $wallet->pos_id)
-            ->where('status', 'ACTIVE')
-            ->exists()) {
+        // The POS owner or member must never modify its own credit facility.
+        if ($this->tenantPermissions->allowsPos(
+            $user,
+            (int) $wallet->pos_id,
+            'pos_wallets.view'
+        )) {
             return false;
         }
 
-        return $this->hasPosWalletPermission(
+        return $this->tenantPermissions->allowsNetwork(
             $user,
             (int) $wallet->network_id,
-            (int) $wallet->pos_id,
-            'pos_wallets.manage',
+            'pos_wallets.manage_credit_limit'
         );
-    }
-
-    /**
-     * Resolve direct/platform grants globally and tenant role grants only
-     * through the exact ACTIVE network/POS membership. Do not use
-     * User::hasPermission($key, $tenantId) here because the same numeric ID
-     * can exist in both network_id and pos_id namespaces.
-     */
-    private function hasPosWalletPermission(
-        User $user,
-        int $networkId,
-        int $posId,
-        string $permission,
-    ): bool {
-        if ($networkId <= 0 || $posId <= 0) {
-            return false;
-        }
-
-        $keys = [$permission, strtoupper($permission)];
-
-        if ($user->permissions()->whereIn('permission_key', $keys)->exists()) {
-            return true;
-        }
-
-        if ($user->role()
-            ->where('scope', 'PLATFORM')
-            ->whereHas('permissions', fn ($query) => $query->whereIn('permission_key', $keys))
-            ->exists()) {
-            return true;
-        }
-
-        $networkMembershipGrant = $user->networkUsers()
-            ->where('network_id', $networkId)
-            ->where('status', 'ACTIVE')
-            ->whereHas('role.permissions', fn ($query) => $query->whereIn('permission_key', $keys))
-            ->exists();
-
-        if ($networkMembershipGrant) {
-            return true;
-        }
-
-        return $user->posUsers()
-            ->where('pos_id', $posId)
-            ->where('status', 'ACTIVE')
-            ->whereHas('role.permissions', fn ($query) => $query->whereIn('permission_key', $keys))
-            ->exists();
     }
 }
