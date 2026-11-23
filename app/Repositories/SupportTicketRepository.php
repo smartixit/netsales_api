@@ -36,7 +36,42 @@ class SupportTicketRepository extends BaseRepository implements SupportTicketRep
      */
     protected function applyFilters(Builder $query, array $filters): void
     {
+        $authorizedNetworkIds = array_values(array_unique(array_map(
+            'intval',
+            (array) ($filters['authorized_network_ids'] ?? [])
+        )));
+        $authorizedPosIds = array_values(array_unique(array_map(
+            'intval',
+            (array) ($filters['authorized_pos_ids'] ?? [])
+        )));
+
+        unset($filters['authorized_network_ids'], $filters['authorized_pos_ids']);
+
         parent::applyFilters($query, $filters);
+
+        if (array_key_exists('authorized_network_ids', $filters) || $authorizedNetworkIds !== [] || $authorizedPosIds !== []) {
+            $query->where(function (Builder $scope) use ($authorizedNetworkIds, $authorizedPosIds): void {
+                $hasCondition = false;
+
+                if ($authorizedNetworkIds !== []) {
+                    $scope->whereIn('network_id', $authorizedNetworkIds);
+                    $hasCondition = true;
+                }
+
+                if ($authorizedPosIds !== []) {
+                    if ($hasCondition) {
+                        $scope->orWhereIn('pos_id', $authorizedPosIds);
+                    } else {
+                        $scope->whereIn('pos_id', $authorizedPosIds);
+                    }
+                    $hasCondition = true;
+                }
+
+                if (! $hasCondition) {
+                    $scope->whereRaw('0 = 1');
+                }
+            });
+        }
 
         if (! empty($filters['search'])) {
             $term = trim((string) $filters['search']);
