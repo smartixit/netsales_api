@@ -147,13 +147,13 @@ Route::prefix('v1')->group(function () {
             Route::post('users/batch-delete', [UserController::class, 'bulkDelete'])
                 ->middleware('permission:users.delete')->name('api.v1.users.batch_delete');
             Route::post('users/batch-restore', [UserController::class, 'bulkRestore'])
-                ->middleware('permission:users.edit')->name('api.v1.users.batch_restore');
+                ->middleware('permission:users.restore')->name('api.v1.users.batch_restore');
             Route::post('users/batch-force-delete', [UserController::class, 'bulkForceDelete'])
-                ->middleware('permission:users.delete')->name('api.v1.users.batch_force_delete');
+                ->middleware('permission:users.force_delete')->name('api.v1.users.batch_force_delete');
             Route::post('users/{id}/restore', [UserController::class, 'restore'])
-                ->whereNumber('id')->middleware('permission:users.edit')->name('api.v1.users.restore');
+                ->whereNumber('id')->middleware('permission:users.restore')->name('api.v1.users.restore');
             Route::delete('users/{id}/force', [UserController::class, 'forceDelete'])
-                ->whereNumber('id')->middleware('permission:users.delete')->name('api.v1.users.force_delete');
+                ->whereNumber('id')->middleware('permission:users.force_delete')->name('api.v1.users.force_delete');
             Route::post('users', [UserController::class, 'store'])
                 ->middleware('permission:users.create')->name('api.v1.users.store');
             Route::put('users/{id}', [UserController::class, 'update'])
@@ -161,7 +161,7 @@ Route::prefix('v1')->group(function () {
             Route::delete('users/{id}', [UserController::class, 'destroy'])
                 ->whereNumber('id')->middleware('permission:users.delete')->name('api.v1.users.destroy');
             Route::post('users/{id}/status', [UserController::class, 'updateStatus'])
-                ->whereNumber('id')->middleware('permission:users.edit')->name('api.v1.users.update_status');
+                ->whereNumber('id')->middleware('permission:users.toggle_status')->name('api.v1.users.update_status');
         });
 
         Route::post('users/{id}/profile-picture', [UserController::class, 'updateProfilePicture'])
