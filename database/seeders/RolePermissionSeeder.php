@@ -33,7 +33,6 @@ class RolePermissionSeeder extends Seeder
                     'users.view',
                     'networks.view',
                     'pos.view',
-                    'auth.view_sessions',
                     'support.view',
                     'support.reply',
                     'support.edit',
