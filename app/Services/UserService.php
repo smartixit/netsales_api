@@ -341,7 +341,20 @@ class UserService
             ]);
         }
 
-        DB::transaction(function () use ($user, $permissionIds) {
+        $permissionIds = array_values(array_unique(array_map('intval', $permissionIds)));
+        $invalidCount = DB::table('permissions')
+            ->whereIn('permission_id', $permissionIds)
+            ->where('status', true)
+            ->where('scope', 'PLATFORM')
+            ->count();
+
+        if ($invalidCount !== count($permissionIds)) {
+            throw ValidationException::withMessages([
+                'permissions' => ['يمكن إسناد الصلاحيات المباشرة لحساب المنصة من نطاق PLATFORM فقط. صلاحيات NETWORK وPOS وSHARED تُمنح من خلال الدور والعضوية المصرح بها.'],
+            ]);
+        }
+
+        DB::transaction(function () use ($user, $permissionIds): void {
             $this->userRepository->syncDirectPermissions($user, $permissionIds);
         });
 
