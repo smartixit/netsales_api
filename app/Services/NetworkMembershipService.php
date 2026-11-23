@@ -83,6 +83,12 @@ class NetworkMembershipService
                 ]);
             }
 
+            if ($user->role?->scope === RoleScope::PLATFORM) {
+                throw ValidationException::withMessages([
+                    'user_phone_number' => ['لا يمكن إضافة حساب من نطاق المنصة إلى عضوية تشغيلية داخل شبكة.'],
+                ]);
+            }
+
             // لا تسمح عضويات التشغيل بترقية عضو إلى مالك أو محاسب أو دور منصة.
             $this->resolveAssignableRole($roleId);
 
@@ -330,8 +336,20 @@ class NetworkMembershipService
     {
         $actor = User::findOrFail($actorId);
 
+        if (! $actor->isActive()) {
+            throw ValidationException::withMessages([
+                'actor' => ['لا يمكن لحساب غير نشط إدارة عضويات الشبكة.'],
+            ]);
+        }
+
         if ($actor->isSuperAdmin()) {
             return;
+        }
+
+        if ($actor->role?->scope === RoleScope::PLATFORM) {
+            throw ValidationException::withMessages([
+                'actor' => ['حسابات نطاق المنصة لا تدير عضويات NETWORK أو POS.'],
+            ]);
         }
 
         $network = Network::findOrFail($networkId);
