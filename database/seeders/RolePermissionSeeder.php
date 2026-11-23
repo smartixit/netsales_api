@@ -248,6 +248,7 @@ class RolePermissionSeeder extends Seeder
         ];
 
         $roleRows = DB::table('roles')
+            ->whereNull('deleted_at')
             ->whereIn('role_key', array_keys($assignments))
             ->get(['role_id', 'role_key', 'scope', 'status'])
             ->keyBy('role_key');
@@ -268,6 +269,7 @@ class RolePermissionSeeder extends Seeder
 
         $permissionRows = DB::table('permissions')
             ->where('status', true)
+            ->whereNull('deleted_at')
             ->whereIn('permission_key', array_values(array_unique($requestedPermissionKeys)))
             ->get(['permission_id', 'permission_key'])
             ->keyBy('permission_key');
@@ -284,6 +286,7 @@ class RolePermissionSeeder extends Seeder
 
         $allActivePermissionIds = DB::table('permissions')
             ->where('status', true)
+            ->whereNull('deleted_at')
             ->pluck('permission_id')
             ->all();
 
@@ -295,7 +298,9 @@ class RolePermissionSeeder extends Seeder
                     ->from('users')
                     ->join('roles', 'roles.role_id', '=', 'users.role_id')
                     ->where('roles.scope', RoleScope::PLATFORM->value)
-                    ->where('roles.status', true);
+                    ->where('roles.status', true)
+                    ->whereNull('roles.deleted_at')
+                    ->where('users.status', 'ACTIVE');
             })
             ->delete();
 
