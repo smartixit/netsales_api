@@ -189,9 +189,9 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'pos.view',
                     'pos.edit',
+                    'pos.restore',
                     'pos.preview_link_challenge',
                     'pos.confirm_link_challenge',
-                    'pos.edit',
                     'networks.view',
                     'pos_wallets.view',
                     'pos_wallets.report',
