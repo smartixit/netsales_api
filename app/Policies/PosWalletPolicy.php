@@ -65,7 +65,7 @@ class PosWalletPolicy
             $user,
             (int) $wallet->network_id,
             (int) $wallet->pos_id,
-            'pos_wallets.create',
+            'pos_wallets.deposit',
         );
     }
 
@@ -75,18 +75,18 @@ class PosWalletPolicy
             $user,
             (int) $wallet->network_id,
             (int) $wallet->pos_id,
-            'pos_wallets.edit',
+            'pos_wallets.withdraw',
         );
     }
 
     public function transferFromNetwork(User $user, int $networkId, int $posId): bool
     {
-        return $this->hasPosWalletPermission($user, $networkId, $posId, 'pos_wallets.create');
+        return $this->hasPosWalletPermission($user, $networkId, $posId, 'pos_wallets.transfer_from_network');
     }
 
     public function transferToNetwork(User $user, int $networkId, int $posId): bool
     {
-        return $this->hasPosWalletPermission($user, $networkId, $posId, 'pos_wallets.edit');
+        return $this->hasPosWalletPermission($user, $networkId, $posId, 'pos_wallets.transfer_to_network');
     }
 
     public function create(User $user): bool
@@ -134,7 +134,7 @@ class PosWalletPolicy
             $user,
             (int) $wallet->network_id,
             (int) $wallet->pos_id,
-            'pos_wallets.manage',
+            'pos_wallets.manage_credit_limit',
         );
     }
 
