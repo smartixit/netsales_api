@@ -228,11 +228,10 @@ Route::prefix('v1')->group(function () {
             Route::post('networks/batch-delete', [NetworkController::class, 'batchDelete'])->name('api.v1.networks.batch_delete')->middleware('permission:networks.delete');
             Route::post('networks/batch-restore', [NetworkController::class, 'batchRestore'])->name('api.v1.networks.batch_restore')->middleware('permission:networks.edit');
             Route::post('networks/batch-force-delete', [NetworkController::class, 'batchForceDelete'])->name('api.v1.networks.batch_force_delete')->middleware('permission:networks.delete');
-            Route::post('networks/{id}/restore', [NetworkController::class, 'restore'])->name('api.v1.networks.restore')->middleware('permission:networks.edit');
-            Route::delete('networks/{id}/force', [NetworkController::class, 'forceDelete'])->name('api.v1.networks.force_delete')->middleware('permission:networks.delete');
+            Route::post('networks/{id}/restore', [NetworkController::class, 'restore'])->name('api.v1.networks.restore')->middleware('permission:networks.restore');
+            Route::delete('networks/{id}/force', [NetworkController::class, 'forceDelete'])->name('api.v1.networks.force_delete')->middleware('permission:networks.force_delete');
             Route::post('networks/{id}/approve', [NetworkController::class, 'approve'])->whereNumber('id')->name('api.v1.networks.approve')->middleware('permission:networks.approve');
             Route::post('networks/{id}/reject', [NetworkController::class, 'reject'])->whereNumber('id')->name('api.v1.networks.reject')->middleware('permission:networks.reject');
-            Route::apiResource('networks', NetworkController::class)->parameters(['networks' => 'id'])->except(['index', 'show', 'store', 'update', 'destroy']);
         });
 
         // ملخص مساحة عمل الشبكة: scoped to an active network owner/member and permission set.
@@ -268,13 +267,12 @@ Route::prefix('v1')->group(function () {
             Route::put('pos/{id}', [PosController::class, 'update'])->whereNumber('id')->name('api.v1.pos.update')->middleware('permission:pos.edit');
             Route::delete('pos/{id}', [PosController::class, 'destroy'])->whereNumber('id')->name('api.v1.pos.destroy')->middleware('permission:pos.delete');
             Route::post('pos/batch-delete', [PosController::class, 'batchDelete'])->name('api.v1.pos.batch_delete')->middleware('permission:pos.delete');
-            Route::post('pos/batch-restore', [PosController::class, 'batchRestore'])->name('api.v1.pos.batch_restore')->middleware('permission:pos.edit');
-            Route::post('pos/batch-force-delete', [PosController::class, 'batchForceDelete'])->name('api.v1.pos.batch_force_delete')->middleware('permission:pos.delete');
-            Route::post('pos/{id}/restore', [PosController::class, 'restore'])->name('api.v1.pos.restore')->middleware('permission:pos.edit');
-            Route::delete('pos/{id}/force', [PosController::class, 'forceDelete'])->name('api.v1.pos.force_delete')->middleware('permission:pos.delete');
+            Route::post('pos/batch-restore', [PosController::class, 'batchRestore'])->name('api.v1.pos.batch_restore')->middleware('permission:pos.restore');
+            Route::post('pos/batch-force-delete', [PosController::class, 'batchForceDelete'])->name('api.v1.pos.batch_force_delete')->middleware('permission:pos.force_delete');
+            Route::post('pos/{id}/restore', [PosController::class, 'restore'])->name('api.v1.pos.restore')->middleware('permission:pos.restore');
+            Route::delete('pos/{id}/force', [PosController::class, 'forceDelete'])->name('api.v1.pos.force_delete')->middleware('permission:pos.force_delete');
             Route::post('pos/{id}/approve', [PosController::class, 'approve'])->whereNumber('id')->name('api.v1.pos.approve')->middleware('permission:pos.approve');
             Route::post('pos/{id}/reject', [PosController::class, 'reject'])->whereNumber('id')->name('api.v1.pos.reject')->middleware('permission:pos.reject');
-            Route::apiResource('pos', PosController::class)->parameters(['pos' => 'id'])->except(['index', 'show', 'store', 'update', 'destroy']);
         });
 
         // 4.1. إدارة أعضاء وموظفي نقاط البيع (Scoped POS Memberships)
@@ -333,10 +331,10 @@ Route::prefix('v1')->group(function () {
             Route::patch('voucher-packages/{id}', [VoucherPackageController::class, 'update'])->whereNumber('id')->name('api.v1.voucher_packages.update')->middleware('permission:voucher_packages.edit');
             Route::delete('voucher-packages/{id}', [VoucherPackageController::class, 'destroy'])->whereNumber('id')->name('api.v1.voucher_packages.destroy')->middleware('permission:voucher_packages.delete');
             Route::post('voucher-packages/batch-delete', [VoucherPackageController::class, 'batchDelete'])->name('api.v1.voucher_packages.batch_delete')->middleware('permission:voucher_packages.delete');
-            Route::post('voucher-packages/batch-restore', [VoucherPackageController::class, 'batchRestore'])->name('api.v1.voucher_packages.batch_restore')->middleware('permission:voucher_packages.edit');
-            Route::post('voucher-packages/batch-force-delete', [VoucherPackageController::class, 'batchForceDelete'])->name('api.v1.voucher_packages.batch_force_delete')->middleware('permission:voucher_packages.delete');
-            Route::post('voucher-packages/{id}/restore', [VoucherPackageController::class, 'restore'])->whereNumber('id')->name('api.v1.voucher_packages.restore')->middleware('permission:voucher_packages.edit');
-            Route::delete('voucher-packages/{id}/force', [VoucherPackageController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.voucher_packages.force_delete')->middleware('permission:voucher_packages.delete');
+            Route::post('voucher-packages/batch-restore', [VoucherPackageController::class, 'batchRestore'])->name('api.v1.voucher_packages.batch_restore')->middleware('permission:voucher_packages.restore');
+            Route::post('voucher-packages/batch-force-delete', [VoucherPackageController::class, 'batchForceDelete'])->name('api.v1.voucher_packages.batch_force_delete')->middleware('permission:voucher_packages.force_delete');
+            Route::post('voucher-packages/{id}/restore', [VoucherPackageController::class, 'restore'])->whereNumber('id')->name('api.v1.voucher_packages.restore')->middleware('permission:voucher_packages.restore');
+            Route::delete('voucher-packages/{id}/force', [VoucherPackageController::class, 'forceDelete'])->whereNumber('id')->name('api.v1.voucher_packages.force_delete')->middleware('permission:voucher_packages.force_delete');
             Route::post('voucher-packages/{id}/toggle-status', [VoucherPackageController::class, 'toggleStatus'])->whereNumber('id')->name('api.v1.voucher_packages.toggle_status')->middleware('permission:voucher_packages.edit');
         });
 
