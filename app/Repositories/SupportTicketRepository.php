@@ -70,9 +70,19 @@ class SupportTicketRepository extends BaseRepository implements SupportTicketRep
                 }
 
                 if ($posIds !== []) {
+                    $posScope = static function (Builder $query) use ($posIds): void {
+                        $query->whereIn('pos_id', $posIds)
+                            ->whereExists(function ($linkQuery): void {
+                                $linkQuery->selectRaw('1')
+                                    ->from('network_pos')
+                                    ->whereColumn('network_pos.network_id', 'support_tickets.network_id')
+                                    ->whereColumn('network_pos.pos_id', 'support_tickets.pos_id');
+                            });
+                    };
+
                     $hasScope
-                        ? $scope->orWhereIn('pos_id', $posIds)
-                        : $scope->whereIn('pos_id', $posIds);
+                        ? $scope->orWhere($posScope)
+                        : $scope->where($posScope);
 
                     $hasScope = true;
                 }
