@@ -465,7 +465,11 @@ class User extends Authenticatable
             ->where('status', 'ACTIVE')
             ->with('role.permissions')
             ->get()
-            ->map(static fn (NetworkUser $membership): ?array => ($membership->role === null || ! $membership->role->isActive())
+            ->map(static fn (NetworkUser $membership): ?array => (
+                $membership->role === null
+                || ! $membership->role->isActive()
+                || $membership->role->scope !== RoleScope::NETWORK
+            )
                 ? null
                 : [
                     'scope' => 'NETWORK',
@@ -485,7 +489,11 @@ class User extends Authenticatable
             ->where('status', 'ACTIVE')
             ->with('role.permissions')
             ->get()
-            ->map(static fn (PosUser $membership): ?array => ($membership->role === null || ! $membership->role->isActive())
+            ->map(static fn (PosUser $membership): ?array => (
+                $membership->role === null
+                || ! $membership->role->isActive()
+                || $membership->role->scope !== RoleScope::POS
+            )
                 ? null
                 : [
                     'scope' => 'POS',
@@ -512,32 +520,71 @@ class User extends Authenticatable
      */
     public function getAllPermissions(): array
     {
-        if ($this->isSuperAdmin()) {
-            return Permission::pluck('permission_key')->toArray();
+        if (! $this->isActive()) {
+            return [];
         }
 
-        $rolePermissions = $this->role
-            ? $this->role->permissions()->pluck('permission_key')->toArray()
-            : [];
-        $directPermissions = $this->permissions()->pluck('permission_key')->toArray();
+        if ($this->isSuperAdmin()) {
+            return Permission::query()
+                ->where('status', true)
+                ->pluck('permission_key')
+                ->all();
+        }
 
+        // Platform identities expose only platform role + direct user grants.
+        // They never inherit capability unions from operational memberships.
+        if ($this->role_scope === RoleScope::PLATFORM->value) {
+            if ($this->role === null
+                || ! $this->role->isActive()
+                || $this->role->scope !== RoleScope::PLATFORM
+            ) {
+                return [];
+            }
+
+            $rolePermissions = $this->role->permissions()
+                ->where('permissions.status', true)
+                ->pluck('permissions.permission_key')
+                ->all();
+
+            $directPermissions = $this->permissions()
+                ->where('permissions.status', true)
+                ->pluck('permissions.permission_key')
+                ->all();
+
+            return array_values(array_unique(array_merge($rolePermissions, $directPermissions)));
+        }
+
+        // Operational identities inherit permissions only from active
+        // memberships whose role scope matches the membership table.
         $networkPermissions = $this->networkUsers()
             ->where('status', 'ACTIVE')
             ->with('role.permissions')
             ->get()
-            ->flatMap(static fn (NetworkUser $membership) => $membership->role?->permissions
-                ->pluck('permission_key') ?? collect());
+            ->flatMap(static fn (NetworkUser $membership) => (
+                $membership->role !== null
+                && $membership->role->isActive()
+                && $membership->role->scope === RoleScope::NETWORK
+            )
+                ? $membership->role->permissions
+                    ->where('status', true)
+                    ->pluck('permission_key')
+                : collect());
 
         $posPermissions = $this->posUsers()
             ->where('status', 'ACTIVE')
             ->with('role.permissions')
             ->get()
-            ->flatMap(static fn (PosUser $membership) => $membership->role?->permissions
-                ->pluck('permission_key') ?? collect());
+            ->flatMap(static fn (PosUser $membership) => (
+                $membership->role !== null
+                && $membership->role->isActive()
+                && $membership->role->scope === RoleScope::POS
+            )
+                ? $membership->role->permissions
+                    ->where('status', true)
+                    ->pluck('permission_key')
+                : collect());
 
         return array_values(array_unique(array_merge(
-            $rolePermissions,
-            $directPermissions,
             $networkPermissions->all(),
             $posPermissions->all(),
         )));
