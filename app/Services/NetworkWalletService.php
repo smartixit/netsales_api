@@ -16,6 +16,7 @@ use App\Interfaces\NetworkWalletRepositoryInterface;
 use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Exception;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -32,6 +33,7 @@ class NetworkWalletService
         protected NetworkWalletLogRepositoryInterface $networkWalletLogRepository,
         protected NetworkRepositoryInterface $networkRepository,
         protected NotificationService $notificationService,
+        protected TenantPermissionService $tenantPermissions,
     ) {}
 
     /**
@@ -48,7 +50,10 @@ class NetworkWalletService
     public function getWalletsForUser(array $filters, User $user): Collection|CursorPaginator
     {
         if (! $user->isSuperAdmin()) {
-            $filters['authorized_user_id'] = (int) $user->user_id;
+            $filters['authorized_network_ids'] = $this->tenantPermissions->authorizedNetworkIds(
+                $user,
+                'network_wallets.view'
+            );
         }
 
         return $this->getWallets($filters);
@@ -68,7 +73,7 @@ class NetworkWalletService
     public function getTrashedWalletsForUser(array $filters, User $user): Collection|CursorPaginator
     {
         if (! $user->isSuperAdmin()) {
-            $filters['authorized_user_id'] = (int) $user->user_id;
+            throw new AuthorizationException('عرض محافظ الشبكات المحذوفة متاح لمدير المنصة العام فقط.');
         }
 
         return $this->getTrashedWallets($filters);
