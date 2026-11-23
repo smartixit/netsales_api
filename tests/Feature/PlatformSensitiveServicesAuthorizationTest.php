@@ -102,6 +102,8 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
             )
         );
         $this->assertFalse($freshPlatformUser->hasPermission('requests.view'));
+        $this->assertNotContains('requests.view', $freshPlatformUser->getAllPermissions());
+        $this->assertNotContains('sales.view', $freshPlatformUser->getAllPermissions());
         $this->assertSame([], $freshPlatformUser->getWorkspaceRoles());
     }
 
