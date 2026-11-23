@@ -248,7 +248,9 @@ class EnsurePermissionMiddleware
                 $link = NetworkPos::query()->find($linkId);
                 if ($link) {
                     $networkIds[] = (int) $link->network_id;
-                    $posIds[] = (int) $link->pos_id;
+                    if ($permission === 'networks.view') {
+                        $posIds[] = (int) $link->pos_id;
+                    }
                 } else {
                     return false;
                 }
@@ -263,7 +265,9 @@ class EnsurePermissionMiddleware
 
                 foreach ($links as $link) {
                     $networkIds[] = (int) $link->network_id;
-                    $posIds[] = (int) $link->pos_id;
+                    if ($permission === 'networks.view') {
+                        $posIds[] = (int) $link->pos_id;
+                    }
                 }
             }
         } elseif (str_starts_with($routeName, 'api.v1.networks.')) {
