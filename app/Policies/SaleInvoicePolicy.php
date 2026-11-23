@@ -38,12 +38,34 @@ class SaleInvoicePolicy
     {
         $permissions = app(TenantPermissionService::class);
 
-        return $permissions->allowsNetwork($user, (int) $invoice->network_id, 'sales.edit')
+        return $permissions->allowsNetwork($user, (int) $invoice->network_id, 'sales.update')
             || $permissions->allowsPos($user, (int) $invoice->pos_id, 'sales.edit');
     }
 
     public function delete(User $user, SaleInvoice $invoice): bool
     {
-        return false;
+        return app(TenantPermissionService::class)->allowsNetwork(
+            $user,
+            (int) $invoice->network_id,
+            'sales.delete'
+        );
+    }
+
+    public function restore(User $user, SaleInvoice $invoice): bool
+    {
+        return app(TenantPermissionService::class)->allowsNetwork(
+            $user,
+            (int) $invoice->network_id,
+            'sales.restore'
+        );
+    }
+
+    public function forceDelete(User $user, SaleInvoice $invoice): bool
+    {
+        return app(TenantPermissionService::class)->allowsNetwork(
+            $user,
+            (int) $invoice->network_id,
+            'sales.force_delete'
+        );
     }
 }
