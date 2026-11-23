@@ -72,6 +72,12 @@ class PosMembershipService
                 ]);
             }
 
+            if ($user->role?->scope === RoleScope::PLATFORM) {
+                throw ValidationException::withMessages([
+                    'user_phone_number' => ['لا يمكن إضافة حساب من نطاق المنصة إلى عضوية تشغيلية داخل نقطة بيع.'],
+                ]);
+            }
+
             // لا تسمح عضويات التشغيل بترقية عضو إلى وكيل أو محاسب أو دور منصة.
             $this->resolveAssignableRole($roleId);
 
@@ -283,8 +289,20 @@ class PosMembershipService
     {
         $actor = User::findOrFail($actorId);
 
+        if (! $actor->isActive()) {
+            throw ValidationException::withMessages([
+                'actor' => ['لا يمكن لحساب غير نشط إدارة عضويات نقطة البيع.'],
+            ]);
+        }
+
         if ($actor->isSuperAdmin()) {
             return;
+        }
+
+        if ($actor->role?->scope === RoleScope::PLATFORM) {
+            throw ValidationException::withMessages([
+                'actor' => ['حسابات نطاق المنصة لا تدير عضويات NETWORK أو POS.'],
+            ]);
         }
 
         $pos = Pos::findOrFail($posId);
