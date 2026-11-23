@@ -3,141 +3,152 @@
 namespace Database\Seeders;
 
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class RolePermissionSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Rebuild exact permission grants for every system role.
+     *
+     * The arrays are intentionally explicit: missing permission keys or a role
+     * with an unexpected scope stop seeding instead of silently granting a
+     * partial or cross-scope role.
      */
     public function run(): void
     {
-        $roles = DB::table('roles')->pluck('role_id', 'role_key');
-        $allPermissions = DB::table('permissions')->get()->keyBy('permission_key');
+        $assignments = [
+            RoleKey::SUPER_ADMIN->value => [
+                'scope' => RoleScope::PLATFORM->value,
+                'permissions' => null, // All active catalog permissions.
+            ],
 
-        $roleAssignments = [
-            // 1. مدير النظام العام (Full Platform SaaS & Administrative Authority)
-            RoleKey::SUPER_ADMIN->value => $allPermissions->pluck('permission_id')->all(),
-
-            // 2. الدعم الفني للمنصة (Platform Ticketing & Support)
-            RoleKey::SUPPORT_AGENT->value => $allPermissions->filter(function ($perm) {
-                return in_array($perm->permission_key, [
+            RoleKey::SUPPORT_AGENT->value => [
+                'scope' => RoleScope::PLATFORM->value,
+                'permissions' => [
                     'users.view',
                     'networks.view',
                     'pos.view',
+                    'auth.view_sessions',
                     'support.view',
-                    'support.create',
+                    'support.reply',
                     'support.edit',
-                    'support.manage',
-                    'notifications.view',
-                    'notifications.create',
-                ]);
-            })->pluck('permission_id')->all(),
+                    'support.assign',
+                ],
+            ],
 
-            // 3. محاسب المنصة العام (Platform Financial Controller)
-            RoleKey::ACCOUNTANT->value => $allPermissions->filter(function ($perm) {
-                return in_array($perm->permission_key, [
-                    'networks.view',
-                    'networks.report',
-                    'networks.export',
-                    'network_wallets.view',
-                    'network_wallets.report',
-                    'network_wallets.export',
-                    'pos.view',
-                    'pos.report',
-                    'pos.export',
-                    'pos_wallets.view',
-                    'pos_wallets.report',
-                    'pos_wallets.export',
-                    'sales.view',
-                    'sales.report',
-                    'sales.export',
-                    'expenses.view',
-                    'expenses.create',
-                    'expenses.edit',
-                    'expenses.delete',
-                    'expenses.approve',
-                    'expenses.report',
-                    'expenses.export',
+            RoleKey::ACCOUNTANT->value => [
+                'scope' => RoleScope::PLATFORM->value,
+                'permissions' => [
                     'billing.view',
-                    'billing.approve',
                     'billing.report',
-                    'bank_accounts.view',
-                    'bank_accounts.manage',
-                    'notifications.view',
-                ]);
-            })->pluck('permission_id')->all(),
+                    'billing.export',
+                    'billing.verify_payment',
+                    'billing.reject_payment',
+                    'billing.issue_credit_note',
+                    'billing.refund_payment',
+                    'billing.void_invoice',
+                    'billing.create_treasury_account',
+                    'billing.update_treasury_status',
+                    'billing.create_exchange_rate',
+                    'billing.convert_currency',
+                ],
+            ],
 
-            // 4. مزود الشبكة (Network Tenant Master Admin)
-            RoleKey::NETWORK_OWNER->value => $allPermissions->filter(function ($perm) {
-                return in_array($perm->permission_key, [
+            RoleKey::NETWORK_OWNER->value => [
+                'scope' => RoleScope::NETWORK->value,
+                'permissions' => [
                     'networks.view',
                     'networks.edit',
+                    'networks.create_pos_link',
+                    'networks.update_pos_link',
+                    'networks.delete_pos_link',
+                    'networks.toggle_pos_link',
+                    'networks.create_link_challenge',
+                    'networks.revoke_link_challenge',
+                    'pos.view',
                     'network_wallets.view',
                     'network_wallets.report',
                     'network_wallets.export',
-                    'pos.view',
-                    'pos.create',
-                    'pos.edit',
-                    'pos.delete',
-                    'pos.report',
-                    'pos.export',
                     'pos_wallets.view',
                     'pos_wallets.create',
-                    'pos_wallets.edit',
+                    'pos_wallets.update',
+                    'pos_wallets.deposit',
+                    'pos_wallets.withdraw',
+                    'pos_wallets.transfer_from_network',
+                    'pos_wallets.transfer_to_network',
+                    'pos_wallets.manage_credit_limit',
                     'pos_wallets.report',
                     'pos_wallets.export',
-                    'pos_wallets.manage',
                     'voucher_packages.view',
                     'voucher_packages.create',
                     'voucher_packages.edit',
                     'voucher_packages.delete',
+                    'voucher_packages.restore',
+                    'voucher_packages.force_delete',
                     'voucher_packages.export',
                     'requests.view',
-                    'requests.create',
                     'requests.edit',
-                    'requests.delete',
+                    'requests.cancel',
                     'requests.approve',
                     'requests.reject',
+                    'requests.delete',
+                    'requests.restore',
+                    'requests.force_delete',
                     'requests.report',
-                    'requests.export',
                     'requests.export',
                     'sales.view',
                     'sales.create',
                     'sales.edit',
                     'sales.delete',
+                    'sales.restore',
+                    'sales.force_delete',
                     'sales.report',
                     'sales.export',
                     'expenses.view',
                     'expenses.create',
                     'expenses.edit',
                     'expenses.delete',
-                    'expenses.approve',
+                    'expenses.restore',
+                    'expenses.force_delete',
                     'expenses.report',
                     'expenses.export',
                     'support.view',
                     'support.create',
-                    'support.edit',
+                    'support.reply',
                     'notifications.view',
-                ]);
-            })->pluck('permission_id')->all(),
+                ],
+            ],
 
-            // 5. محاسب الشبكة (Network Financial Auditor & Bookkeeper)
-            RoleKey::NETWORK_ACCOUNTANT->value => $allPermissions->filter(function ($perm) {
-                return in_array($perm->permission_key, [
+            RoleKey::NETWORK_USER->value => [
+                'scope' => RoleScope::NETWORK->value,
+                'permissions' => [
                     'networks.view',
+                    'pos.view',
+                    'voucher_packages.view',
+                    'requests.view',
+                    'sales.view',
+                    'support.view',
+                    'support.create',
+                    'support.reply',
+                    'notifications.view',
+                ],
+            ],
+
+            RoleKey::NETWORK_ACCOUNTANT->value => [
+                'scope' => RoleScope::NETWORK->value,
+                'permissions' => [
+                    'networks.view',
+                    'pos.view',
                     'network_wallets.view',
                     'network_wallets.report',
                     'network_wallets.export',
-                    'pos.view',
-                    'pos.report',
-                    'pos.export',
                     'pos_wallets.view',
                     'pos_wallets.report',
                     'pos_wallets.export',
                     'voucher_packages.view',
-                    'voucher_packages.export',
                     'requests.view',
                     'requests.report',
                     'sales.view',
@@ -150,35 +161,14 @@ class RolePermissionSeeder extends Seeder
                     'expenses.export',
                     'support.view',
                     'support.create',
+                    'support.reply',
                     'notifications.view',
-                ]);
-            })->pluck('permission_id')->all(),
+                ],
+            ],
 
-            // 6. مستخدم الشبكة (Network Staff / Operational Operator)
-            RoleKey::NETWORK_USER->value => $allPermissions->filter(function ($perm) {
-                return in_array($perm->permission_key, [
-                    'networks.view',
-                    'pos.view',
-                    'voucher_packages.view',
-                    'voucher_packages.export',
-                    'requests.view',
-                    'requests.create',
-                    'requests.edit',
-                    'requests.approve',
-                    'requests.reject',
-                    'requests.report',
-                    'sales.view',
-                    'sales.report',
-                    'support.view',
-                    'support.create',
-                    'support.edit',
-                    'notifications.view',
-                ]);
-            })->pluck('permission_id')->all(),
-
-            // 7. وكيل نقطة البيع (POS Store Master Agent / Owner)
-            RoleKey::POS_AGENT->value => $allPermissions->filter(function ($perm) {
-                return in_array($perm->permission_key, [
+            RoleKey::POS_AGENT->value => [
+                'scope' => RoleScope::POS->value,
+                'permissions' => [
                     'pos.view',
                     'pos.edit',
                     'networks.view',
@@ -189,24 +179,45 @@ class RolePermissionSeeder extends Seeder
                     'requests.view',
                     'requests.create',
                     'requests.edit',
+                    'requests.cancel',
                     'requests.delete',
-                    'requests.report',
                     'sales.view',
                     'sales.create',
                     'sales.edit',
                     'sales.delete',
+                    'sales.restore',
+                    'sales.force_delete',
                     'sales.report',
                     'sales.export',
                     'support.view',
                     'support.create',
-                    'support.edit',
+                    'support.reply',
                     'notifications.view',
-                ]);
-            })->pluck('permission_id')->all(),
+                ],
+            ],
 
-            // 8. محاسب نقطة البيع (POS Financial Auditor & Bookkeeper)
-            RoleKey::POS_ACCOUNTANT->value => $allPermissions->filter(function ($perm) {
-                return in_array($perm->permission_key, [
+            RoleKey::POS_USER->value => [
+                'scope' => RoleScope::POS->value,
+                'permissions' => [
+                    'pos.view',
+                    'networks.view',
+                    'pos_wallets.view',
+                    'voucher_packages.view',
+                    'requests.view',
+                    'requests.create',
+                    'requests.cancel',
+                    'sales.view',
+                    'sales.create',
+                    'support.view',
+                    'support.create',
+                    'support.reply',
+                    'notifications.view',
+                ],
+            ],
+
+            RoleKey::POS_ACCOUNTANT->value => [
+                'scope' => RoleScope::POS->value,
+                'permissions' => [
                     'pos.view',
                     'networks.view',
                     'pos_wallets.view',
@@ -218,50 +229,93 @@ class RolePermissionSeeder extends Seeder
                     'sales.view',
                     'sales.report',
                     'sales.export',
+                    'expenses.view',
+                    'expenses.create',
+                    'expenses.edit',
+                    'expenses.report',
+                    'expenses.export',
                     'support.view',
                     'support.create',
+                    'support.reply',
                     'notifications.view',
-                ]);
-            })->pluck('permission_id')->all(),
-
-            // 9. مستخدم نقطة البيع (POS Clerk / Cashier)
-            RoleKey::POS_USER->value => $allPermissions->filter(function ($perm) {
-                return in_array($perm->permission_key, [
-                    'pos.view',
-                    'networks.view',
-                    'pos_wallets.view',
-                    'pos_wallets.report',
-                    'voucher_packages.view',
-                    'requests.view',
-                    'requests.create',
-                    'sales.view',
-                    'sales.create',
-                    'support.view',
-                    'support.create',
-                    'support.edit',
-                    'notifications.view',
-                ]);
-            })->pluck('permission_id')->all(),
+                ],
+            ],
         ];
 
-        foreach ($roleAssignments as $roleKey => $permissionIds) {
-            $roleId = $roles[$roleKey] ?? null;
-            if (! $roleId) {
-                continue;
+        $roleRows = DB::table('roles')
+            ->whereIn('role_key', array_keys($assignments))
+            ->get(['role_id', 'role_key', 'scope', 'status'])
+            ->keyBy('role_key');
+
+        $missingRoles = array_values(array_diff(array_keys($assignments), $roleRows->keys()->all()));
+        if ($missingRoles !== []) {
+            throw new RuntimeException(
+                'Role permission seeding is blocked; missing system roles: '.implode(', ', $missingRoles)
+            );
+        }
+
+        $requestedPermissionKeys = [];
+        foreach ($assignments as $assignment) {
+            if ($assignment['permissions'] !== null) {
+                $requestedPermissionKeys = array_merge($requestedPermissionKeys, $assignment['permissions']);
+            }
+        }
+
+        $permissionRows = DB::table('permissions')
+            ->where('status', true)
+            ->whereIn('permission_key', array_values(array_unique($requestedPermissionKeys)))
+            ->get(['permission_id', 'permission_key'])
+            ->keyBy('permission_key');
+
+        $missingPermissions = array_values(array_diff(
+            array_values(array_unique($requestedPermissionKeys)),
+            $permissionRows->keys()->all()
+        ));
+        if ($missingPermissions !== []) {
+            throw new RuntimeException(
+                'Role permission seeding is blocked; missing permission keys: '.implode(', ', $missingPermissions)
+            );
+        }
+
+        $allActivePermissionIds = DB::table('permissions')
+            ->where('status', true)
+            ->pluck('permission_id')
+            ->all();
+
+        $now = now('Asia/Aden');
+
+        foreach ($assignments as $roleKey => $assignment) {
+            $role = $roleRows[$roleKey];
+
+            if ($role->scope !== $assignment['scope']) {
+                throw new RuntimeException(
+                    "Role [{$roleKey}] has scope [{$role->scope}], expected [{$assignment['scope']}]."
+                );
             }
 
-            // مزامنة دقيقة لصلاحيات الدور
-            DB::table('role_permissions')->where('role_id', $roleId)->delete();
+            if (! (bool) $role->status) {
+                throw new RuntimeException("System role [{$roleKey}] is inactive; refusing to seed its grants.");
+            }
 
-            $insertData = array_map(fn ($permId) => [
-                'role_id' => $roleId,
-                'permission_id' => $permId,
-                'created_at' => now('Asia/Aden'),
-                'updated_at' => now('Asia/Aden'),
-            ], $permissionIds);
+            $permissionKeys = $assignment['permissions'];
+            $permissionIds = $permissionKeys === null
+                ? $allActivePermissionIds
+                : array_values(array_unique(array_map(
+                    static fn (string $key): int => (int) $permissionRows[$key]->permission_id,
+                    $permissionKeys
+                )));
 
-            if (! empty($insertData)) {
-                DB::table('role_permissions')->insert($insertData);
+            DB::table('role_permissions')->where('role_id', $role->role_id)->delete();
+
+            if ($permissionIds !== []) {
+                $rows = array_map(static fn (int $permissionId): array => [
+                    'role_id' => $role->role_id,
+                    'permission_id' => $permissionId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ], $permissionIds);
+
+                DB::table('role_permissions')->insert($rows);
             }
         }
     }
