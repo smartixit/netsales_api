@@ -8,9 +8,9 @@ use App\Http\Requests\API\V1\Ticket\StoreSupportTicketRequest;
 use App\Http\Requests\API\V1\Ticket\UpdateSupportTicketRequest;
 use App\Http\Resources\API\V1\Ticket\SupportTicketMessageResource;
 use App\Http\Resources\API\V1\Ticket\SupportTicketResource;
-use App\Models\SupportTicket;
 use App\Services\SupportTicketAuthorizationService;
 use App\Services\SupportTicketService;
+use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -258,11 +258,11 @@ class SupportTicketController extends BaseController
             new OA\Response(response: 200, description: 'تم حذف التذكرة بنجاح'),
         ]
     )]
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
         try {
             $ticket = $this->ticketService->getById($id);
-            $this->ticketAuthorization->assertTicket(request()->user(), $ticket, 'support.delete');
+            $this->ticketAuthorization->assertTicket($request->user(), $ticket, 'support.delete');
             $this->ticketService->delete($id);
 
             return $this->successResponse('تم حذف تذكرة الدعم الفني بنجاح.');
@@ -290,11 +290,11 @@ class SupportTicketController extends BaseController
             new OA\Response(response: 200, description: 'تم استعادة التذكرة بنجاح'),
         ]
     )]
-    public function restore(int $id): JsonResponse
+    public function restore(Request $request, int $id): JsonResponse
     {
         try {
-            $ticket = SupportTicket::withTrashed()->findOrFail($id);
-            $this->ticketAuthorization->assertTicket(request()->user(), $ticket, 'support.restore');
+            $ticket = $this->ticketService->getTrashedById($id);
+            $this->ticketAuthorization->assertTicket($request->user(), $ticket, 'support.restore');
             $ticket = $this->ticketService->restore($id);
 
             return $this->successResponse('تم استعادة تذكرة الدعم الفني بنجاح.', new SupportTicketResource($ticket));
@@ -322,11 +322,11 @@ class SupportTicketController extends BaseController
             new OA\Response(response: 200, description: 'تم الحذف النهائي للتذكرة بنجاح'),
         ]
     )]
-    public function forceDelete(int $id): JsonResponse
+    public function forceDelete(Request $request, int $id): JsonResponse
     {
         try {
-            $ticket = SupportTicket::withTrashed()->findOrFail($id);
-            $this->ticketAuthorization->assertTicket(request()->user(), $ticket, 'support.force_delete');
+            $ticket = $this->ticketService->getTrashedById($id);
+            $this->ticketAuthorization->assertTicket($request->user(), $ticket, 'support.force_delete');
             $this->ticketService->forceDelete($id);
 
             return $this->successResponse('تم الحذف النهائي لتذكرة الدعم الفني بنجاح.');
@@ -367,6 +367,7 @@ class SupportTicketController extends BaseController
     public function batchDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
+            $this->authorizeBatchTickets($request, 'support.delete');
             $count = $this->ticketService->bulkDelete($request);
 
             return $this->successResponse("تم حذف [{$count}] تذكرة بنجاح.", ['deleted_count' => $count]);
@@ -407,6 +408,7 @@ class SupportTicketController extends BaseController
     public function batchRestore(BatchIdsRequest $request): JsonResponse
     {
         try {
+            $this->authorizeBatchTickets($request, 'support.restore', true);
             $count = $this->ticketService->bulkRestore($request);
 
             return $this->successResponse("تم استعادة [{$count}] تذكرة بنجاح.", ['restored_count' => $count]);
@@ -447,6 +449,7 @@ class SupportTicketController extends BaseController
     public function batchForceDelete(BatchIdsRequest $request): JsonResponse
     {
         try {
+            $this->authorizeBatchTickets($request, 'support.force_delete', true);
             $count = $this->ticketService->bulkForceDelete($request);
 
             return $this->successResponse("تم الحذف النهائي لـ [{$count}] تذكرة بنجاح.", ['force_deleted_count' => $count]);
@@ -474,11 +477,11 @@ class SupportTicketController extends BaseController
             new OA\Response(response: 200, description: 'تم استرجاع رسائل التذكرة بنجاح'),
         ]
     )]
-    public function messages(int $id): JsonResponse
+    public function messages(Request $request, int $id): JsonResponse
     {
         try {
             $ticket = $this->ticketService->getById($id);
-            $this->ticketAuthorization->assertTicket(request()->user(), $ticket, 'support.view');
+            $this->ticketAuthorization->assertTicket($request->user(), $ticket, 'support.view');
             $messages = $this->ticketService->getMessages($id);
 
             return $this->successResponse('تم استرجاع رسائل التذكرة بنجاح.', SupportTicketMessageResource::collection($messages));
@@ -576,4 +579,33 @@ class SupportTicketController extends BaseController
             return $this->errorResponse('تعذر تمييز الرسائل كمقروءة: '.$e->getMessage(), [], 422);
         }
     }
+    private function authorizeBatchTickets(
+        BatchIdsRequest $request,
+        string $permission,
+        bool $withTrashed = false
+    ): void {
+        $actor = $request->user();
+        if (! $actor instanceof User) {
+            throw new AuthorizationException('يجب تسجيل الدخول لتنفيذ هذه العملية.');
+        }
+
+        $ids = array_values(array_unique(array_map('intval', $request->getIds())));
+        if ($ids === []) {
+            throw ValidationException::withMessages([
+                'ids' => ['يجب تحديد تذكرة واحدة على الأقل.'],
+            ]);
+        }
+
+        $tickets = $this->ticketService->getManyByIdsForAuthorization($ids, $withTrashed);
+        if ($tickets->count() !== count($ids)) {
+            throw ValidationException::withMessages([
+                'ids' => ['بعض التذاكر المحددة غير موجودة أو لا تطابق حالة الحذف المطلوبة.'],
+            ]);
+        }
+
+        foreach ($tickets as $ticket) {
+            $this->ticketAuthorization->assertTicket($actor, $ticket, $permission);
+        }
+    }
+
 }
