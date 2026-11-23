@@ -2,7 +2,14 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\RoleKey;
 use App\Models\Expense;
+use App\Models\Network;
+use App\Models\NetworkPos;
+use App\Models\NetworkPosLinkingChallenge;
+use App\Models\Pos;
+use App\Models\VoucherPackage;
+use App\Models\VoucherPackageDiscount;
 use App\Models\Request as RequestModel;
 use App\Models\SaleInvoice;
 use App\Services\TenantPermissionService;
@@ -29,7 +36,236 @@ class EnsurePermissionMiddleware
             throw new AuthorizationException('الحساب غير نشط ولا يمكنه تنفيذ عمليات محمية.');
         }
 
+        $operationalPrefixes = [
+            'networks.',
+            'pos.',
+            'network_pos.',
+            'network_wallets.',
+            'pos_wallets.',
+            'voucher_packages.',
+            'package_discounts.',
+            'requests.',
+            'sales.',
+            'expenses.',
+        ];
+        $isOperationalPermission = collect($operationalPrefixes)
+            ->contains(fn (string $prefix): bool => str_starts_with($permission, $prefix));
+
+        if ($isOperationalPermission && (
+            $user->isSuperAdmin()
+            || $user->hasRole(RoleKey::SUPPORT_AGENT)
+        )) {
+            throw new AuthorizationException('حسابات إدارة المنصة العامة لا تستخدم الصلاحيات التشغيلية للشبكات ونقاط البيع.');
+        }
+
         if ($user->isSuperAdmin()) {
+            return $next($request);
+        }
+
+        if (str_starts_with($permission, 'networks.')) {
+            if (in_array($permission, [
+                'networks.create',
+                'networks.restore',
+                'networks.force_delete',
+                'networks.approve',
+                'networks.reject',
+            ], true)) {
+                if (! $user->hasPermission($permission)) {
+                    throw new AuthorizationException('هذه العملية متاحة لإدارة المنصة فقط.');
+                }
+
+                return $next($request);
+            }
+
+            $networkId = (int) (
+                $request->input('network_id')
+                ?? $request->query('network_id')
+                ?? $request->route('networkId')
+                ?? $request->route('id')
+                ?? 0
+            );
+
+            $authorized = $networkId > 0
+                ? $this->tenantPermissions->allowsNetwork($user, $networkId, $permission)
+                : $this->tenantPermissions->allowsAnyNetwork($user, $permission);
+
+            if (! $authorized && $permission === 'networks.view' && $networkId > 0) {
+                $posIds = $this->tenantPermissions->authorizedPosIds($user, 'network_pos.view');
+                $authorized = $posIds !== [] && NetworkPos::query()
+                    ->where('network_id', $networkId)
+                    ->whereIn('pos_id', $posIds)
+                    ->where('status', true)
+                    ->exists();
+            }
+
+            if (! $authorized) {
+                throw new AuthorizationException('لا تملك الصلاحية المطلوبة داخل الشبكة المحددة.');
+            }
+
+            return $next($request);
+        }
+
+        if (str_starts_with($permission, 'pos.')) {
+            if (in_array($permission, [
+                'pos.create',
+                'pos.delete',
+                'pos.restore',
+                'pos.force_delete',
+                'pos.approve',
+                'pos.reject',
+            ], true)) {
+                if (! $user->hasPermission($permission)) {
+                    throw new AuthorizationException('هذه العملية متاحة لإدارة المنصة فقط.');
+                }
+
+                return $next($request);
+            }
+
+            $posId = (int) ($request->route('id') ?? $request->input('pos_id') ?? $request->query('pos_id') ?? 0);
+            if ($posId > 0) {
+                $authorized = $this->tenantPermissions->allowsPos($user, $posId, $permission);
+
+                if (! $authorized && $permission === 'pos.view') {
+                    $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, 'pos.view');
+                    $authorized = $networkIds !== [] && NetworkPos::query()
+                        ->where('pos_id', $posId)
+                        ->whereIn('network_id', $networkIds)
+                        ->where('status', true)
+                        ->exists();
+                }
+            } else {
+                $authorized = $this->tenantPermissions->allowsAnyPos($user, $permission)
+                    || ($permission === 'pos.view' && $this->tenantPermissions->allowsAnyNetwork($user, $permission));
+            }
+
+            if (! $authorized) {
+                throw new AuthorizationException('لا تملك الصلاحية المطلوبة داخل نقطة البيع المحددة.');
+            }
+
+            return $next($request);
+        }
+
+        if (str_starts_with($permission, 'network_pos.')) {
+            $challengeUuid = (string) ($request->route('uuid') ?? $request->input('challenge_uuid') ?? '');
+            $challenge = $challengeUuid !== ''
+                ? NetworkPosLinkingChallenge::query()->where('challenge_uuid', $challengeUuid)->first()
+                : null;
+
+            if (in_array($permission, [
+                'network_pos.preview_invitation',
+                'network_pos.confirm_invitation',
+            ], true)) {
+                $authorized = $challenge !== null
+                    ? $this->tenantPermissions->allowsPos($user, (int) $challenge->pos_id, $permission)
+                    : $this->tenantPermissions->allowsAnyPos($user, $permission);
+            } elseif ($permission === 'network_pos.view_invitation_status') {
+                $authorized = $challenge !== null && (
+                    $this->tenantPermissions->allowsNetwork($user, (int) $challenge->network_id, $permission)
+                    || $this->tenantPermissions->allowsPos($user, (int) $challenge->pos_id, $permission)
+                );
+            } elseif ($permission === 'network_pos.revoke_invitation') {
+                $authorized = $challenge !== null
+                    && $this->tenantPermissions->allowsNetwork($user, (int) $challenge->network_id, $permission);
+            } elseif ($permission === 'network_pos.view') {
+                $authorized = $this->tenantPermissions->allowsAnyNetwork($user, $permission)
+                    || $this->tenantPermissions->allowsAnyPos($user, $permission);
+            } elseif ($request->has('ids')) {
+                $ids = array_values(array_unique(array_map('intval', (array) $request->input('ids', []))));
+                $records = NetworkPos::query()->whereIn('network_pos_id', $ids)->get();
+                $authorized = $ids !== [] && $records->count() === count($ids)
+                    && $records->every(fn (NetworkPos $link): bool =>
+                        $this->tenantPermissions->allowsNetwork($user, (int) $link->network_id, $permission));
+            } else {
+                $networkId = (int) (
+                    $request->input('network_id')
+                    ?? $request->query('network_id')
+                    ?? $request->route('networkId')
+                    ?? 0
+                );
+                if ($networkId <= 0 && $request->route('id') !== null) {
+                    $link = NetworkPos::query()->find((int) $request->route('id'));
+                    $networkId = (int) ($link?->network_id ?? 0);
+                }
+                $authorized = $networkId > 0
+                    ? $this->tenantPermissions->allowsNetwork($user, $networkId, $permission)
+                    : $this->tenantPermissions->allowsAnyNetwork($user, $permission);
+            }
+
+            if (! $authorized) {
+                throw new AuthorizationException('لا تملك الصلاحية المطلوبة لإدارة ارتباطات الشبكة ونقاط البيع.');
+            }
+
+            return $next($request);
+        }
+
+        if (str_starts_with($permission, 'voucher_packages.')) {
+            if ($permission === 'voucher_packages.view') {
+                $authorized = $this->tenantPermissions->allowsAnyNetwork($user, $permission)
+                    || $this->tenantPermissions->allowsAnyPos($user, $permission);
+            } else {
+                $packageId = (int) $request->route('id');
+                $package = $packageId > 0 ? VoucherPackage::withTrashed()->find($packageId) : null;
+                if ($permission === 'voucher_packages.create') {
+                    $networkId = (int) ($request->input('network_id') ?? $request->query('network_id') ?? 0);
+                } else {
+                    $networkId = (int) ($package?->network_id ?? 0);
+                }
+                if ($request->has('ids')) {
+                    $ids = array_values(array_unique(array_map('intval', (array) $request->input('ids', []))));
+                    $packages = VoucherPackage::withTrashed()->whereIn('package_id', $ids)->get();
+                    $authorized = $ids !== [] && $packages->count() === count($ids)
+                        && $packages->every(fn (VoucherPackage $item): bool =>
+                            $this->tenantPermissions->allowsNetwork($user, (int) $item->network_id, $permission));
+                } else {
+                    $authorized = $networkId > 0
+                        && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
+                }
+            }
+
+            if (! $authorized) {
+                throw new AuthorizationException('لا تملك الصلاحية المطلوبة لإدارة باقات هذه الشبكة.');
+            }
+
+            return $next($request);
+        }
+
+        if (str_starts_with($permission, 'package_discounts.')) {
+            if ($permission === 'package_discounts.view') {
+                $authorized = $this->tenantPermissions->allowsAnyNetwork($user, $permission)
+                    || $this->tenantPermissions->allowsAnyPos($user, $permission);
+            } else {
+                $discountId = (int) $request->route('id');
+                $discount = $discountId > 0 ? VoucherPackageDiscount::withTrashed()->find($discountId) : null;
+                if ($permission === 'package_discounts.create') {
+                    $networkId = (int) ($request->input('network_id') ?? $request->query('network_id') ?? 0);
+                } else {
+                    $networkId = (int) ($discount?->network_id ?? 0);
+                }
+                if ($request->has('ids')) {
+                    $ids = array_values(array_unique(array_map('intval', (array) $request->input('ids', []))));
+                    $discounts = VoucherPackageDiscount::withTrashed()->whereIn('discount_id', $ids)->get();
+                    $authorized = $ids !== [] && $discounts->count() === count($ids)
+                        && $discounts->every(fn (VoucherPackageDiscount $item): bool =>
+                            $this->tenantPermissions->allowsNetwork($user, (int) $item->network_id, $permission));
+                } else {
+                    $authorized = $networkId > 0
+                        && $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
+                }
+            }
+
+            if (! $authorized) {
+                throw new AuthorizationException('لا تملك الصلاحية المطلوبة لإدارة خصومات هذه الشبكة.');
+            }
+
+            return $next($request);
+        }
+
+        if (str_starts_with($permission, 'support_tickets.')) {
+            $authorized = $this->tenantPermissions->allowsAnyOperational($user, $permission);
+            if (! $authorized) {
+                throw new AuthorizationException('لا تملك الصلاحية المطلوبة لتذاكر الدعم.');
+            }
+
             return $next($request);
         }
 
