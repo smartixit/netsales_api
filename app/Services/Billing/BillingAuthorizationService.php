@@ -3,6 +3,7 @@
 namespace App\Services\Billing;
 
 use App\Enums\RoleScope;
+use App\Services\TenantPermissionService;
 use App\Models\BillingAccount;
 use App\Models\Network;
 use App\Models\User;
@@ -11,16 +12,23 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class BillingAuthorizationService
 {
+    public function __construct(
+        private readonly TenantPermissionService $tenantPermissions
+    ) {}
+
     public function assertPlatform(User $user): void
     {
-        if ($user->role?->scope !== RoleScope::PLATFORM) {
+        if (! $user->isActive()
+            || $user->role_scope !== RoleScope::PLATFORM->value
+            || ! $user->role?->isActive()
+        ) {
             throw new AuthorizationException('هذا الإجراء متاح لمستخدمي نطاق المنصة فقط.');
         }
     }
 
     public function assertBillingAccountAccess(User $user, BillingAccount $account): void
     {
-        if ($user->role?->scope === RoleScope::PLATFORM) {
+        if ($user->role_scope === RoleScope::PLATFORM->value) {
             $this->assertPlatform($user);
 
             return;
@@ -37,17 +45,7 @@ class BillingAuthorizationService
             throw (new ModelNotFoundException)->setModel(Network::class, [$networkId]);
         }
 
-        if ((int) $network->owner_id === (int) $user->user_id) {
-            return $network;
-        }
-
-        $allowed = $user->networkUsers()
-            ->where('network_id', $networkId)
-            ->where('status', 'ACTIVE')
-            ->whereHas('role.permissions', fn ($query) => $query->where('permission_key', $permission))
-            ->exists();
-
-        if (! $allowed) {
+        if (! $this->tenantPermissions->allowsNetwork($user, $networkId, $permission)) {
             throw new AuthorizationException('لا تملك الصلاحية المطلوبة ضمن نطاق هذه الشبكة.');
         }
 
