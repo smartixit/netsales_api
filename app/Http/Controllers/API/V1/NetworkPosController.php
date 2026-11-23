@@ -21,6 +21,7 @@ use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\Pos;
 use App\Services\NetworkPosLinkingChallengeService;
+use App\Services\TenantPermissionService;
 use App\Services\NetworkPosService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -42,6 +43,7 @@ class NetworkPosController extends BaseController
     public function __construct(
         protected NetworkPosService $networkPosService,
         protected NetworkPosLinkingChallengeService $challengeService,
+        protected TenantPermissionService $tenantPermissions,
     ) {}
 
     /**
@@ -70,15 +72,14 @@ class NetworkPosController extends BaseController
             $filters = $request->validated();
             $user = $this->currentUser();
             if ($user && ! $user->isSuperAdmin()) {
-                $networkIds = $user->networks()->pluck('networks.network_id')
-                    ->merge($user->networkUsers()->pluck('network_id'))
-                    ->unique()->values()->toArray();
-                $posIds = $user->pos()->pluck('pos.pos_id')
-                    ->merge($user->posUsers()->pluck('pos_id'))
-                    ->unique()->values()->toArray();
-
-                $filters['scoped_network_ids'] = $networkIds;
-                $filters['scoped_pos_ids'] = $posIds;
+                $filters['scoped_network_ids'] = $this->tenantPermissions->authorizedNetworkIds(
+                    $user,
+                    'network_pos.view'
+                );
+                $filters['scoped_pos_ids'] = $this->tenantPermissions->authorizedPosIds(
+                    $user,
+                    'network_pos.view'
+                );
             }
             $links = $this->networkPosService->getFiltered($filters);
 
