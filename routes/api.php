@@ -125,7 +125,7 @@ Route::prefix('v1')->group(function () {
         // ==========================================
         // 0. لوحة القيادة والمؤشرات التجميعية (Executive Dashboard & Aggregations)
         // ==========================================
-        Route::middleware('throttle:api-read')->group(function () {
+        Route::middleware(['throttle:api-read', 'platform.user.scope', 'permission:dashboard.view'])->group(function () {
             Route::get('dashboard/overview', [DashboardController::class, 'overview'])->name('api.v1.dashboard.overview');
         });
 
