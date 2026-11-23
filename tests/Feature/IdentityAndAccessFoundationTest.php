@@ -677,7 +677,7 @@ class IdentityAndAccessFoundationTest extends TestCase
             'X-Device-Uuid' => $deviceA->device_uuid,
             'X-Bypass-Encryption' => 'true',
         ]);
-        $respMembers->assertStatus(422);
+        $respMembers->assertForbidden();
     }
 
     /**
