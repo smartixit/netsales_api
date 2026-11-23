@@ -74,6 +74,8 @@ class EnsurePermissionMiddleware
                 throw new AuthorizationException('عذراً، لا تملك هذه الصلاحية داخل الشبكة الفعلية المرتبطة بالسجل.');
             }
 
+            $request->attributes->set('tenant_permission', $permission);
+
             return $next($request);
         }
 
