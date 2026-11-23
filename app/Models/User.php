@@ -321,6 +321,7 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return $this->isActive()
+            && $this->role_scope === RoleScope::PLATFORM->value
             && $this->role?->role_key === RoleKey::SUPER_ADMIN->value
             && $this->role?->scope === RoleScope::PLATFORM
             && $this->role->isActive();
@@ -361,9 +362,14 @@ class User extends Authenticatable
 
         $upperKey = strtoupper($permissionKey);
 
-        // user_permissions has no tenant discriminator. Direct grants are
-        // global, so only an active PLATFORM account may exercise them.
-        if ($this->role?->scope === RoleScope::PLATFORM && $this->role->isActive() && $this->isActive()) {
+        // user_permissions has no tenant discriminator. The generated
+        // users.role_scope column is the authoritative identity boundary,
+        // even when the referenced role has been soft-deleted.
+        if ($this->role_scope === RoleScope::PLATFORM->value) {
+            if (! $this->isActive() || ! $this->role?->isActive()) {
+                return false;
+            }
+
             $directGrant = $this->permissions()
                 ->where(function ($query) use ($upperKey, $permissionKey): void {
                     $query->where('permissions.permission_key', $upperKey)
@@ -384,13 +390,7 @@ class User extends Authenticatable
                 ->where('permissions.status', true)
                 ->exists();
 
-            if ($platformRoleGrant) {
-                return true;
-            }
-
-            // Platform identities never inherit tenant grants from legacy
-            // membership rows; their scope is globally isolated.
-            return false;
+            return $platformRoleGrant;
         }
 
         $hasNetPerm = $this->networkUsers()
@@ -438,7 +438,7 @@ class User extends Authenticatable
      */
     public function getWorkspaceRoles(): array
     {
-        if (! $this->isActive() || $this->role?->scope === RoleScope::PLATFORM) {
+        if (! $this->isActive() || $this->role_scope === RoleScope::PLATFORM->value) {
             return [];
         }
 
