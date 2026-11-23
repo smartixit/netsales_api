@@ -34,12 +34,18 @@ final class TenantPermissionService
             return false;
         }
 
-        $hasMembership = NetworkUser::query()
+        // Explicit ownership is authoritative. A stale or inactive membership
+        // row must never suppress the permissions of the actual network owner.
+        $ownsNetwork = Network::query()
             ->where('network_id', $networkId)
-            ->where('user_id', $user->user_id)
+            ->where('owner_id', $user->user_id)
             ->exists();
 
-        $hasScopedPermission = NetworkUser::query()
+        if ($ownsNetwork && $this->roleAllows(RoleKey::NETWORK_OWNER, RoleScope::NETWORK, $permission)) {
+            return true;
+        }
+
+        return NetworkUser::query()
             ->where('network_id', $networkId)
             ->where('user_id', $user->user_id)
             ->where('status', 'ACTIVE')
@@ -50,20 +56,6 @@ final class TenantPermissionService
                     ->where('permission_key', $permission)
                     ->where('status', true)))
             ->exists();
-
-        if ($hasScopedPermission) {
-            return true;
-        }
-
-        if ($hasMembership) {
-            return false;
-        }
-
-        return Network::query()
-            ->where('network_id', $networkId)
-            ->where('owner_id', $user->user_id)
-            ->exists()
-            && $this->roleAllows(RoleKey::NETWORK_OWNER, RoleScope::NETWORK, $permission);
     }
 
     public function allowsPos(User $user, int $posId, string $permission): bool
@@ -72,12 +64,17 @@ final class TenantPermissionService
             return false;
         }
 
-        $hasMembership = PosUser::query()
+        // POS ownership remains independent of any historical membership row.
+        $ownsPos = Pos::query()
             ->where('pos_id', $posId)
-            ->where('user_id', $user->user_id)
+            ->where('owner_id', $user->user_id)
             ->exists();
 
-        $hasScopedPermission = PosUser::query()
+        if ($ownsPos && $this->roleAllows(RoleKey::POS_AGENT, RoleScope::POS, $permission)) {
+            return true;
+        }
+
+        return PosUser::query()
             ->where('pos_id', $posId)
             ->where('user_id', $user->user_id)
             ->where('status', 'ACTIVE')
@@ -88,20 +85,6 @@ final class TenantPermissionService
                     ->where('permission_key', $permission)
                     ->where('status', true)))
             ->exists();
-
-        if ($hasScopedPermission) {
-            return true;
-        }
-
-        if ($hasMembership) {
-            return false;
-        }
-
-        return Pos::query()
-            ->where('pos_id', $posId)
-            ->where('owner_id', $user->user_id)
-            ->exists()
-            && $this->roleAllows(RoleKey::POS_AGENT, RoleScope::POS, $permission);
     }
 
     public function allowsNetworkOrPos(
@@ -158,8 +141,6 @@ final class TenantPermissionService
 
         $ownerNetworkIds = Network::query()
             ->where('owner_id', $user->user_id)
-            ->whereDoesntHave('memberships', fn ($query) => $query
-                ->where('user_id', $user->user_id))
             ->pluck('network_id')
             ->map(static fn ($id): int => (int) $id)
             ->all();
@@ -201,8 +182,6 @@ final class TenantPermissionService
 
         $ownerPosIds = Pos::query()
             ->where('owner_id', $user->user_id)
-            ->whereDoesntHave('memberships', fn ($query) => $query
-                ->where('user_id', $user->user_id))
             ->pluck('pos_id')
             ->map(static fn ($id): int => (int) $id)
             ->all();
