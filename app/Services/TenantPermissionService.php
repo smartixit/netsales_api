@@ -19,10 +19,6 @@ final class TenantPermissionService
             return false;
         }
 
-        if ($this->hasPlatformSharedPermission($user, $permission)) {
-            return true;
-        }
-
         $hasMembership = NetworkUser::query()
             ->where('network_id', $networkId)
             ->where('user_id', $user->user_id)
@@ -128,13 +124,6 @@ final class TenantPermissionService
             return [];
         }
 
-        if ($this->hasPlatformSharedPermission($user, $permission)) {
-            return Network::query()
-                ->pluck('network_id')
-                ->map(static fn ($id): int => (int) $id)
-                ->all();
-        }
-
         $memberNetworkIds = NetworkUser::query()
             ->where('user_id', $user->user_id)
             ->where('status', 'ACTIVE')
@@ -177,13 +166,6 @@ final class TenantPermissionService
     {
         if (! $user->isActive()) {
             return [];
-        }
-
-        if ($this->hasPlatformSharedPermission($user, $permission)) {
-            return Pos::query()
-                ->pluck('pos_id')
-                ->map(static fn ($id): int => (int) $id)
-                ->all();
         }
 
         $memberPosIds = PosUser::query()
@@ -240,21 +222,4 @@ final class TenantPermissionService
             ->exists();
     }
 
-    private function hasPlatformSharedPermission(User $user, string $permission): bool
-    {
-        $role = $user->role;
-
-        if (! $user->isActive()
-            || $role === null
-            || ! $role->isActive()
-            || $role->scope !== RoleScope::PLATFORM) {
-            return false;
-        }
-
-        return $role->permissions()
-            ->where('permission_key', $permission)
-            ->where('permissions.status', true)
-            ->where('permissions.scope', 'SHARED')
-            ->exists();
-    }
 }
