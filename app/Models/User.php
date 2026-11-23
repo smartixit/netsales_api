@@ -320,7 +320,10 @@ class User extends Authenticatable
 
     public function isSuperAdmin(): bool
     {
-        return $this->hasRole(RoleKey::SUPER_ADMIN);
+        return $this->isActive()
+            && $this->role?->role_key === RoleKey::SUPER_ADMIN->value
+            && $this->role?->scope === RoleScope::PLATFORM
+            && $this->role->isActive();
     }
 
     public function hasRole(string|RoleKey $roleKey, ?int $tenantId = null): bool
