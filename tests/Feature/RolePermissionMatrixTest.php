@@ -90,6 +90,9 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
         $this->assertNotContains('network_wallets.create', $networkOwnerPermissions);
         $this->assertNotContains('network_wallets.edit', $networkOwnerPermissions);
         $this->assertNotContains('network_wallets.deposit', $permissions);
+        $this->assertNotContains('network_wallets.withdraw', $permissions);
+        $this->assertNotContains('network_wallets.deposit', $networkOwnerPermissions);
+        $this->assertNotContains('network_wallets.withdraw', $networkOwnerPermissions);
 
         $this->assertNotContains('dashboard.view', $permissions);
         $this->assertContains('network_wallets.report', $permissions);
