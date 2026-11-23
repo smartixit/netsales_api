@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\RoleScope;
 use App\Enums\UserStatus;
-use App\Enums\RoleScope;
 use App\Http\Requests\API\V1\User\StoreUserRequest;
 use App\Http\Requests\API\V1\User\UpdateUserRequest;
 use App\Interfaces\UserRepositoryInterface;
