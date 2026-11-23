@@ -77,9 +77,6 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
         $this->session = $auth['session'];
         $this->headers = $auth['headers'];
 
-        $posAuth = $this->createAuthenticatedSession($this->posUser);
-        $this->posHeaders = $posAuth['headers'];
-
         $suffix = uniqid();
 
         $this->posUser = $this->createUserWithScope(RoleScope::POS, [
@@ -89,6 +86,9 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
             'user_password' => bcrypt('password'),
             'status' => UserStatus::ACTIVE,
         ]);
+
+        $posAuth = $this->createAuthenticatedSession($this->posUser);
+        $this->posHeaders = $posAuth['headers'];
 
         $this->network = Network::create([
             'owner_id' => $this->user->user_id,
