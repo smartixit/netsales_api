@@ -42,7 +42,12 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
 
     protected User $user;
 
+    protected User $posUser;
+
     protected UserSession $session;
+
+    /** @var array<string, string> */
+    protected array $posHeaders;
 
     protected Network $network;
 
@@ -72,9 +77,12 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
         $this->session = $auth['session'];
         $this->headers = $auth['headers'];
 
+        $posAuth = $this->createAuthenticatedSession($this->posUser);
+        $this->posHeaders = $posAuth['headers'];
+
         $suffix = uniqid();
 
-        $posUser = $this->createUserWithScope(RoleScope::POS, [
+        $this->posUser = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Agent '.$suffix,
             'user_phone_number' => '73'.rand(1000000, 9999999),
@@ -92,9 +100,9 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
         ]);
 
         $this->pos = Pos::create([
-            'owner_id' => $posUser->user_id,
+            'owner_id' => $this->posUser->user_id,
             'pos_name' => 'FinPOS '.$suffix,
-            'pos_phone_number' => $posUser->user_phone_number,
+            'pos_phone_number' => $this->posUser->user_phone_number,
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => PosStatus::ACTIVE,
@@ -320,7 +328,7 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
                         'voucher_count' => 10,
                     ],
                 ],
-            ]);
+            ], $this->posHeaders);
 
         $requestResponse->assertStatus(201);
         $requestId = $requestResponse->json('data.request_id');
