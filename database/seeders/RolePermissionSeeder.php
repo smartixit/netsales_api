@@ -294,14 +294,29 @@ class RolePermissionSeeder extends Seeder
         // Direct permission assignments are global: the pivot contains no
         // network_id or pos_id. Keep them only on active PLATFORM users.
         DB::table('user_permissions')
-            ->whereNotIn('user_id', function ($query): void {
-                $query->select('users.user_id')
-                    ->from('users')
-                    ->join('roles', 'roles.role_id', '=', 'users.role_id')
-                    ->where('roles.scope', RoleScope::PLATFORM->value)
-                    ->where('roles.status', true)
-                    ->whereNull('roles.deleted_at')
-                    ->where('users.status', 'ACTIVE');
+            ->where(function ($query): void {
+                $query->whereNotIn('user_id', function ($platformUsers): void {
+                    $platformUsers->select('users.user_id')
+                        ->from('users')
+                        ->join('roles', 'roles.role_id', '=', 'users.role_id')
+                        ->where('roles.scope', RoleScope::PLATFORM->value)
+                        ->where('roles.status', true)
+                        ->whereNull('roles.deleted_at')
+                        ->where('users.status', 'ACTIVE');
+                })->orWhereNotIn('permission_id', function ($platformPermissions): void {
+                    $platformPermissions->select('permissions.permission_id')
+                        ->from('permissions')
+                        ->join('modules', 'modules.module_id', '=', 'permissions.module_id')
+                        ->where('permissions.status', true)
+                        ->whereNull('permissions.deleted_at')
+                        ->where(function ($query): void {
+                            $query->whereIn('modules.module_key', \\App\\Services\\PlatformPermissionRegistry::MODULE_KEYS)
+                                ->orWhereIn(
+                                    'permissions.permission_key',
+                                    \\App\\Services\\PlatformPermissionRegistry::SHARED_READ_PERMISSION_KEYS
+                                );
+                        });
+                });
             })
             ->delete();
 
