@@ -166,6 +166,7 @@ class PermissionSeeder extends Seeder
             ],
             'voucher_packages' => [
                 'view' => ['عرض باقات الشبكات المرتبطة', 'SHARED'],
+                'view_trashed' => ['عرض الباقات المحذوفة للشبكة', 'NETWORK'],
                 'create' => ['إنشاء باقة للشبكة', 'NETWORK'],
                 'update' => ['تعديل بيانات الباقة', 'NETWORK'],
                 'delete' => ['حذف باقة مؤقتاً', 'NETWORK'],
@@ -178,6 +179,7 @@ class PermissionSeeder extends Seeder
             ],
             'package_discounts' => [
                 'view' => ['عرض الخصومات التعاقدية المسموح بها', 'SHARED'],
+                'view_trashed' => ['عرض الخصومات التعاقدية المحذوفة للشبكة', 'NETWORK'],
                 'create' => ['إنشاء خصم تعاقدي لنقطة بيع', 'NETWORK'],
                 'update' => ['تعديل خصم تعاقدي', 'NETWORK'],
                 'delete' => ['حذف خصم تعاقدي مؤقتاً', 'NETWORK'],
