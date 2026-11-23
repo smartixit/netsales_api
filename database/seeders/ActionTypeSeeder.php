@@ -11,10 +11,12 @@ class ActionTypeSeeder extends Seeder
     {
         $actions = [
             'view' => 'عرض',
+            'view_trashed' => 'عرض السجلات المحذوفة',
             'report' => 'استعراض تقرير',
             'export' => 'تصدير',
             'create' => 'إنشاء',
             'update' => 'تحديث',
+            'reassign' => 'إعادة إسناد التذكرة',
             'delete' => 'حذف',
             'restore' => 'استعادة',
             'force_delete' => 'حذف نهائي',
