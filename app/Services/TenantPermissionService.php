@@ -16,6 +16,10 @@ final class TenantPermissionService
 {
     public function allowsPlatform(User $user, string $permission): bool
     {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         if (! app(PlatformPermissionRegistry::class)->allows($permission)) {
             return false;
         }
