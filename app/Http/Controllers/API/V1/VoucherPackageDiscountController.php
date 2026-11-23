@@ -469,7 +469,7 @@ class VoucherPackageDiscountController extends BaseController
                 return $this->errorResponse('بعض سجلات الخصم المحددة غير موجودة في النظام.', [], 404);
             }
 
-            if ($user && ! $user->isSuperAdmin()) {
+            if ($user) {
                 foreach ($discounts as $disc) {
                     if (! Gate::forUser($user)->allows('delete', $disc)) {
                         return $this->errorResponse('عذراً، غير مصرح لك بحذف بعض سجلات الخصم المحددة.', [], 403);

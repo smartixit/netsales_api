@@ -37,6 +37,7 @@ class RolePermissionSeeder extends Seeder
                     'support.mark_as_read',
                     'support.reply',
                     'support.edit',
+                    'notifications.view',
                 ],
             ],
 
@@ -62,6 +63,7 @@ class RolePermissionSeeder extends Seeder
                     'billing.update_treasury_status',
                     'billing.create_exchange_rate',
                     'billing.convert_currency',
+                    'notifications.view',
                 ],
             ],
 

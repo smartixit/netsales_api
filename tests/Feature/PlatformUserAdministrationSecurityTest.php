@@ -100,6 +100,12 @@ class PlatformUserAdministrationSecurityTest extends TestCase
         $banId = $detail->json('data.devices.0.security_bans.0.ban_id');
 
         $this->deleteJson('/api/v1/security/bans/'.$banId, [], $session['headers'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('ban_id');
+
+        $this->assertSame('BANNED', $device->fresh()->status->value ?? $device->fresh()->status);
+
+        $this->deleteJson('/api/v1/security/device-bans/'.$banId, [], $session['headers'])
             ->assertOk();
 
         $this->getJson('/api/v1/users/'.$target->user_id, $session['headers'])

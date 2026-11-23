@@ -72,6 +72,10 @@ class RolePermissionMatrixTest extends TestCase
         $this->assertContains('voucher_packages.toggle_status', $ownerPermissions);
         $this->assertNotContains('voucher_packages.toggle_status', $accountantPermissions);
         $this->assertNotContains('voucher_packages.toggle_status', $userPermissions);
+
+        $this->assertContains('voucher_package_discounts.toggle_status', $ownerPermissions);
+        $this->assertNotContains('voucher_package_discounts.toggle_status', $accountantPermissions);
+        $this->assertNotContains('voucher_package_discounts.toggle_status', $userPermissions);
     }
 
 public function test_network_accountant_gets_operational_finance_but_not_approval_or_lifecycle_privileges(): void
@@ -277,8 +281,12 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
 
         $this->assertTrue($freshSuperAdmin->isSuperAdmin());
         $this->assertTrue(
+            app(TenantPermissionService::class)->allowsPlatform($freshSuperAdmin, 'dashboard.view')
+        );
+        $this->assertFalse(
             app(TenantPermissionService::class)->allowsPlatform($freshSuperAdmin, 'sales.delete')
         );
+        $this->assertFalse($freshSuperAdmin->hasPermission('sales.delete'));
     }
 
 
