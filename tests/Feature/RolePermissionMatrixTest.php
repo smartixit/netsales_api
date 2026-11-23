@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Enums\RoleKey;
 use App\Enums\RoleScope;
+use App\Models\Network;
+use App\Models\NetworkUser;
 use App\Models\Role;
 use App\Models\Permission;
 use App\Models\User;
