@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
@@ -326,27 +327,31 @@ class User extends Authenticatable
     {
         $key = $roleKey instanceof RoleKey ? $roleKey->value : $roleKey;
 
-        if ($this->role?->role_key === $key) {
+        if ($this->role?->role_key === $key && $this->role->isActive()) {
             return true;
         }
 
-        $netQuery = $this->networkUsers()->whereHas('role', fn ($q) => $q->where('role_key', $key))->where('status', 'ACTIVE');
-        if ($tenantId) {
-            $netQuery->where('network_id', $tenantId);
-        }
-        if ($netQuery->exists()) {
+        $networkMembership = $this->networkUsers()
+            ->where('status', 'ACTIVE')
+            ->when($tenantId !== null, fn ($query) => $query->where('network_id', $tenantId))
+            ->whereHas('role', fn ($query) => $query
+                ->where('role_key', $key)
+                ->where('scope', RoleScope::NETWORK->value)
+                ->where('status', true))
+            ->exists();
+
+        if ($networkMembership) {
             return true;
         }
 
-        $posQuery = $this->posUsers()->whereHas('role', fn ($q) => $q->where('role_key', $key))->where('status', 'ACTIVE');
-        if ($tenantId) {
-            $posQuery->where('pos_id', $tenantId);
-        }
-        if ($posQuery->exists()) {
-            return true;
-        }
-
-        return false;
+        return $this->posUsers()
+            ->where('status', 'ACTIVE')
+            ->when($tenantId !== null, fn ($query) => $query->where('pos_id', $tenantId))
+            ->whereHas('role', fn ($query) => $query
+                ->where('role_key', $key)
+                ->where('scope', RoleScope::POS->value)
+                ->where('status', true))
+            ->exists();
     }
 
     public function hasPermission(string $permissionKey, ?int $tenantId = null): bool
@@ -355,39 +360,66 @@ class User extends Authenticatable
             return true;
         }
 
-        $upperKey = strtoupper($permissionKey);
+        $permissionKeys = array_values(array_unique([$permissionKey, strtoupper($permissionKey)]));
 
-        if ($this->permissions()->where(function ($q) use ($upperKey, $permissionKey) {
-            $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
-        })->exists()) {
+        $platformRole = $this->role;
+        if ($platformRole !== null
+            && $platformRole->isActive()
+            && $platformRole->scope === RoleScope::PLATFORM) {
+            if ($platformRole->permissions()
+                ->whereIn('permission_key', $permissionKeys)
+                ->where('permissions.status', true)
+                ->whereIn('permissions.scope', [RoleScope::PLATFORM->value, 'SHARED'])
+                ->exists()) {
+                return true;
+            }
+
+            if ($tenantId !== null && $platformRole->permissions()
+                ->whereIn('permission_key', $permissionKeys)
+                ->where('permissions.status', true)
+                ->where('permissions.scope', 'SHARED')
+                ->exists()) {
+                return true;
+            }
+        }
+
+        // Direct user grants are strictly platform-local. Tenant capabilities
+        // must originate from the exact active Network/POS membership role.
+        if ($tenantId === null && $this->permissions()
+            ->whereIn('permission_key', $permissionKeys)
+            ->where('permissions.status', true)
+            ->where('permissions.scope', RoleScope::PLATFORM->value)
+            ->exists()) {
             return true;
         }
 
-        if ($this->role?->permissions()->where(function ($q) use ($upperKey, $permissionKey) {
-            $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
-        })->exists()) {
-            return true;
-        }
-
-        $hasNetPerm = $this->networkUsers()
+        $networkGrant = $this->networkUsers()
             ->where('status', 'ACTIVE')
-            ->when($tenantId, fn ($q) => $q->where('network_id', $tenantId))
-            ->whereHas('role.permissions', function ($q) use ($upperKey, $permissionKey) {
-                $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
-            })->exists();
+            ->when($tenantId !== null, fn ($query) => $query->where('network_id', $tenantId))
+            ->whereHas('role', fn ($query) => $query
+                ->where('scope', RoleScope::NETWORK->value)
+                ->where('status', true)
+                ->whereHas('permissions', fn ($permissions) => $permissions
+                    ->whereIn('permission_key', $permissionKeys)
+                    ->where('permissions.status', true)
+                    ->whereIn('permissions.scope', [RoleScope::NETWORK->value, 'SHARED'])))
+            ->exists();
 
-        if ($hasNetPerm) {
+        if ($networkGrant) {
             return true;
         }
 
-        $hasPosPerm = $this->posUsers()
+        return $this->posUsers()
             ->where('status', 'ACTIVE')
-            ->when($tenantId, fn ($q) => $q->where('pos_id', $tenantId))
-            ->whereHas('role.permissions', function ($q) use ($upperKey, $permissionKey) {
-                $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
-            })->exists();
-
-        return $hasPosPerm;
+            ->when($tenantId !== null, fn ($query) => $query->where('pos_id', $tenantId))
+            ->whereHas('role', fn ($query) => $query
+                ->where('scope', RoleScope::POS->value)
+                ->where('status', true)
+                ->whereHas('permissions', fn ($permissions) => $permissions
+                    ->whereIn('permission_key', $permissionKeys)
+                    ->where('permissions.status', true)
+                    ->whereIn('permissions.scope', [RoleScope::POS->value, 'SHARED'])))
+            ->exists();
     }
 
     /**
