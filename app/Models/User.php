@@ -329,31 +329,50 @@ class User extends Authenticatable
 
     public function hasRole(string|RoleKey $roleKey, ?int $tenantId = null): bool
     {
+        if (! $this->isActive()) {
+            return false;
+        }
+
         $key = $roleKey instanceof RoleKey ? $roleKey->value : $roleKey;
 
-        if ($this->role?->role_key === $key) {
+        // A PLATFORM identity cannot inherit tenant roles from membership rows.
+        if ($this->role_scope === RoleScope::PLATFORM->value) {
+            return $this->role?->role_key === $key
+                && $this->role->isActive();
+        }
+
+        if ($this->role?->role_key === $key && $this->role->isActive()) {
             return true;
         }
 
-        $netQuery = $this->networkUsers()->whereHas('role', fn ($q) => $q->where('role_key', $key))->where('status', 'ACTIVE');
+        $networkQuery = $this->networkUsers()
+            ->where('status', 'ACTIVE')
+            ->whereHas('role', fn ($query) => $query
+                ->where('role_key', $key)
+                ->where('scope', RoleScope::NETWORK->value)
+                ->where('status', true));
+
         if ($tenantId) {
-            $netQuery->where('network_id', $tenantId);
+            $networkQuery->where('network_id', $tenantId);
         }
-        if ($netQuery->exists()) {
+
+        if ($networkQuery->exists()) {
             return true;
         }
 
-        $posQuery = $this->posUsers()->whereHas('role', fn ($q) => $q->where('role_key', $key))->where('status', 'ACTIVE');
+        $posQuery = $this->posUsers()
+            ->where('status', 'ACTIVE')
+            ->whereHas('role', fn ($query) => $query
+                ->where('role_key', $key)
+                ->where('scope', RoleScope::POS->value)
+                ->where('status', true));
+
         if ($tenantId) {
             $posQuery->where('pos_id', $tenantId);
         }
-        if ($posQuery->exists()) {
-            return true;
-        }
 
-        return false;
+        return $posQuery->exists();
     }
-
     public function hasPermission(string $permissionKey, ?int $tenantId = null): bool
     {
         if ($this->isSuperAdmin()) {
