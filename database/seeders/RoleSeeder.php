@@ -93,6 +93,7 @@ class RoleSeeder extends Seeder
             DB::table('roles')->updateOrInsert(
                 ['role_key' => $role['role_key']],
                 array_merge($role, [
+                    'deleted_at' => null,
                     'updated_at' => now('Asia/Aden'),
                     'created_at' => now('Asia/Aden'),
                 ])
