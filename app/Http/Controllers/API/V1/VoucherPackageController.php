@@ -76,7 +76,7 @@ class VoucherPackageController extends BaseController
                 $filters['pos_id'] = $posId;
             }
 
-            if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
+            if ($user) {
                 $scope = $this->tenantAuth->getPackageVisibilityScope($user);
                 $managedIds = $scope['managed_network_ids'] ?? [];
                 $posLinkedIds = $scope['pos_linked_network_ids'] ?? [];
@@ -331,7 +331,7 @@ class VoucherPackageController extends BaseController
             $user = $this->currentUser();
             $filters = [];
 
-            if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
+            if ($user) {
                 $authorizedNetworkIds = $this->tenantAuth->getUserAuthorizedNetworkIds($user, 'voucher_packages.view') ?? [];
                 $filters['network_ids'] = $authorizedNetworkIds;
             }
@@ -654,7 +654,7 @@ class VoucherPackageController extends BaseController
     {
         try {
             $user = $this->currentUser();
-            if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
+            if ($user) {
                 if (! $this->tenantAuth->canViewNetworkPackages($user, $id)) {
                     return $this->errorResponse('عذراً، ليس لديك الصلاحية لعرض باقات هذه الشبكة.', [], 403);
                 }
@@ -673,7 +673,7 @@ class VoucherPackageController extends BaseController
                 $filters['pos_id'] = $posId;
             }
 
-            if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
+            if ($user) {
                 $hasNetworkSideAccess = $this->tenantAuth->canManageNetworkPackages($user, $id, 'voucher_packages.view');
                 if (! $hasNetworkSideAccess) {
                     // وصول عبر نقطة بيع مرتبطة فقط -> إجبار الحالة نشطة فقط

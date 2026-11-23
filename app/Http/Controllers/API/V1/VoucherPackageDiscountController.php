@@ -59,7 +59,7 @@ class VoucherPackageDiscountController extends BaseController
             $user = $this->currentUser();
             $filters = $request->only(['network_id', 'pos_id', 'package_id', 'status', 'search', 'per_page', 'all']);
 
-            if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
+            if ($user) {
                 $scope = $this->tenantAuth->getDiscountVisibilityScope($user);
                 $authorizedNetworkIds = $scope['managed_network_ids'] ?? [];
                 $authorizedPosIds = $scope['pos_ids'] ?? [];
@@ -310,7 +310,7 @@ class VoucherPackageDiscountController extends BaseController
             $user = $this->currentUser();
             $filters = $request->only(['network_id', 'pos_id', 'package_id', 'search', 'per_page', 'all']);
 
-            if ($user && ! $this->tenantAuth->isSuperAdmin($user)) {
+            if ($user) {
                 $scope = $this->tenantAuth->getDiscountVisibilityScope($user);
                 $authorizedNetworkIds = $scope['managed_network_ids'] ?? [];
                 $authorizedPosIds = $scope['pos_ids'] ?? [];
