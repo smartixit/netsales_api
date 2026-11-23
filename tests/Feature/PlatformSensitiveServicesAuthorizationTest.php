@@ -11,6 +11,9 @@ use App\Models\Network;
 use App\Models\NetworkUser;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\NetworkMembershipService;
+use App\Services\TenantPermissionService;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -70,7 +73,62 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
         $accountant = $this->makeUserWithRole(RoleKey::ACCOUNTANT);
         $headers = $this->createAuthenticatedSession($accountant)['headers'];
 
-        $this->getJson('/api/v1/reports/catalog', $headers)->assertForbidden();
+        $this->getJson('/api/v1/networks/1/reports/catalog', $headers)->assertForbidden();
+    }
+
+    public function test_legacy_network_membership_cannot_grant_operational_access_to_platform_user(): void
+    {
+        $platformUser = $this->makeUserWithRole(RoleKey::SUPPORT_AGENT);
+        $networkOwner = $this->makeUserWithRole(RoleKey::NETWORK_OWNER);
+        $network = Network::query()->where('owner_id', $networkOwner->user_id)->firstOrFail();
+        $networkUserRole = Role::byKey(RoleKey::NETWORK_USER)->firstOrFail();
+
+        // Simulate a stale cross-scope membership from data predating the scope guard.
+        NetworkUser::query()->create([
+            'network_id' => $network->network_id,
+            'user_id' => $platformUser->user_id,
+            'role_id' => $networkUserRole->role_id,
+            'status' => 'ACTIVE',
+            'last_event_seq' => 1,
+        ]);
+
+        $freshPlatformUser = User::query()->findOrFail($platformUser->user_id);
+
+        $this->assertFalse(
+            app(TenantPermissionService::class)->allowsNetwork(
+                $freshPlatformUser,
+                (int) $network->network_id,
+                'requests.view'
+            )
+        );
+        $this->assertFalse($freshPlatformUser->hasPermission('requests.view'));
+        $this->assertSame([], $freshPlatformUser->getWorkspaceRoles());
+    }
+
+    public function test_network_owner_cannot_add_platform_identity_as_operational_member(): void
+    {
+        $networkOwner = $this->makeUserWithRole(RoleKey::NETWORK_OWNER);
+        $platformUser = $this->makeUserWithRole(RoleKey::ACCOUNTANT);
+        $network = Network::query()->where('owner_id', $networkOwner->user_id)->firstOrFail();
+        $networkUserRole = Role::byKey(RoleKey::NETWORK_USER)->firstOrFail();
+
+        try {
+            app(NetworkMembershipService::class)->addMember(
+                (int) $network->network_id,
+                (string) $platformUser->user_phone_number,
+                (int) $networkUserRole->role_id,
+                (int) $networkOwner->user_id
+            );
+
+            $this->fail('A PLATFORM account must not become an operational network member.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('user_phone_number', $exception->errors());
+        }
+
+        $this->assertDatabaseMissing('network_users', [
+            'network_id' => $network->network_id,
+            'user_id' => $platformUser->user_id,
+        ]);
     }
 
     public function test_bank_account_management_is_restricted_to_platform_finance_roles(): void
