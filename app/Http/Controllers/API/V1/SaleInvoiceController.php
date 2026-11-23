@@ -29,6 +29,7 @@ class SaleInvoiceController extends BaseController
 {
     public function __construct(
         protected SaleInvoiceService $saleInvoiceService,
+        protected TenantPermissionService $tenantPermissions,
     ) {}
 
     /**
@@ -440,7 +441,7 @@ class SaleInvoiceController extends BaseController
     {
         try {
             $filters = $request->only(['period', 'network_id', 'pos_id', 'from_date', 'to_date']);
-            $scopedFilters = $this->applyInvoiceTenantScope($filters);
+            $scopedFilters = $this->applyInvoiceTenantScope($filters, 'sales.report');
             if ($scopedFilters instanceof JsonResponse) {
                 return $scopedFilters;
             }
@@ -458,7 +459,7 @@ class SaleInvoiceController extends BaseController
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>|JsonResponse
      */
-    private function applyInvoiceTenantScope(array $filters): array|JsonResponse
+    private function applyInvoiceTenantScope(array $filters, string $permission = 'sales.view'): array|JsonResponse
     {
         $user = $this->currentUser();
         if (! $user) {
@@ -469,27 +470,37 @@ class SaleInvoiceController extends BaseController
             return $filters;
         }
 
-        $permissions = app(TenantPermissionService::class);
-        $networkIds = $permissions->authorizedNetworkIds($user, 'sales.view');
-        $posIds = $permissions->authorizedPosIds($user, 'sales.view');
+        $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, $permission);
+        $posIds = $this->tenantPermissions->authorizedPosIds($user, $permission);
 
         if ($networkIds === [] && $posIds === []) {
-            return $this->errorResponse('لا توجد عضوية نشطة تملك صلاحية عرض الفواتير.', [], 403);
+            return $this->errorResponse('لا توجد عضوية نشطة تملك الصلاحية المطلوبة لعرض فواتير المبيعات.', [], 403);
         }
 
-        if (! empty($filters['network_id']) && ! in_array((int) $filters['network_id'], $networkIds, true)) {
-            return $this->errorResponse('غير مصرح لك باستعراض فواتير هذه الشبكة.', [], 403);
-        }
-        if (! empty($filters['pos_id']) && ! in_array((int) $filters['pos_id'], $posIds, true)) {
-            return $this->errorResponse('غير مصرح لك باستعراض فواتير نقطة البيع هذه.', [], 403);
+        if (! empty($filters['network_id'])) {
+            $requestedNetworkId = (int) $filters['network_id'];
+            if (! $this->tenantPermissions->allowsNetworkThroughNetworkOrLinkedPos($user, $requestedNetworkId, $permission)) {
+                return $this->errorResponse('غير مصرح لك باستعراض فواتير هذه الشبكة.', [], 403);
+            }
+
+            if (in_array($requestedNetworkId, $networkIds, true)) {
+                $networkIds = [$requestedNetworkId];
+            }
         }
 
-        $filters['authorized_network_ids'] = ! empty($filters['network_id'])
-            ? [(int) $filters['network_id']]
-            : $networkIds;
-        $filters['authorized_pos_ids'] = ! empty($filters['pos_id'])
-            ? [(int) $filters['pos_id']]
-            : $posIds;
+        if (! empty($filters['pos_id'])) {
+            $requestedPosId = (int) $filters['pos_id'];
+            if (! $this->tenantPermissions->allowsPosThroughPosOrLinkedNetwork($user, $requestedPosId, $permission)) {
+                return $this->errorResponse('غير مصرح لك باستعراض فواتير نقطة البيع هذه.', [], 403);
+            }
+
+            if (in_array($requestedPosId, $posIds, true)) {
+                $posIds = [$requestedPosId];
+            }
+        }
+
+        $filters['authorized_network_ids'] = $networkIds;
+        $filters['authorized_pos_ids'] = $posIds;
 
         return $filters;
     }
