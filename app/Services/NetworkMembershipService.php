@@ -141,7 +141,7 @@ class NetworkMembershipService
      */
     public function updateRole(int $networkId, int $userId, int $newRoleId, int $actorId, ?string $reason = null): NetworkUser
     {
-        $this->authorizeActor($networkId, $actorId, 'network_members.edit');
+        $this->authorizeActor($networkId, $actorId, 'network_members.change_role');
 
         return DB::transaction(function () use ($networkId, $userId, $newRoleId, $actorId, $reason): NetworkUser {
             $network = Network::findOrFail($networkId);
@@ -189,7 +189,7 @@ class NetworkMembershipService
      */
     public function updateStatus(int $networkId, int $userId, string $newStatus, int $actorId, ?string $reason = null): NetworkUser
     {
-        $this->authorizeActor($networkId, $actorId, 'network_members.toggle_status');
+        $this->authorizeActor($networkId, $actorId, 'network_members.change_status');
 
         if (! in_array($newStatus, ['ACTIVE', 'SUSPENDED', 'INVITED'], true)) {
             throw ValidationException::withMessages([
