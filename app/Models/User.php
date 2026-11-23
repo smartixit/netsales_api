@@ -385,6 +385,10 @@ class User extends Authenticatable
         // users.role_scope column is the authoritative identity boundary,
         // even when the referenced role has been soft-deleted.
         if ($this->role_scope === RoleScope::PLATFORM->value) {
+            if (! app(\\App\\Services\\PlatformPermissionRegistry::class)->allows($permissionKey)) {
+                return false;
+            }
+
             if (! $this->isActive() || ! $this->role?->isActive()) {
                 return false;
             }
