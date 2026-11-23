@@ -273,7 +273,12 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
         $role->status = true;
         $role->save();
 
-        $this->assertTrue($activeUser->fresh()->isSuperAdmin());
+        $freshSuperAdmin = $activeUser->fresh();
+
+        $this->assertTrue($freshSuperAdmin->isSuperAdmin());
+        $this->assertTrue(
+            app(TenantPermissionService::class)->allowsPlatform($freshSuperAdmin, 'sales.delete')
+        );
     }
 
 
