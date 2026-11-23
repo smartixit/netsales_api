@@ -19,7 +19,7 @@ final class TenantPermissionService
             return false;
         }
 
-        if ($this->hasPlatformSharedPermission($user, $permission)) {
+        if ($user->isSuperAdmin() || $this->hasPlatformSharedPermission($user, $permission)) {
             return true;
         }
 
@@ -62,7 +62,7 @@ final class TenantPermissionService
             return false;
         }
 
-        if ($this->hasPlatformSharedPermission($user, $permission)) {
+        if ($user->isSuperAdmin() || $this->hasPlatformSharedPermission($user, $permission)) {
             return true;
         }
 
@@ -128,7 +128,7 @@ final class TenantPermissionService
             return [];
         }
 
-        if ($this->hasPlatformSharedPermission($user, $permission)) {
+        if ($user->isSuperAdmin() || $this->hasPlatformSharedPermission($user, $permission)) {
             return Network::query()
                 ->pluck('network_id')
                 ->map(static fn ($id): int => (int) $id)
@@ -179,7 +179,7 @@ final class TenantPermissionService
             return [];
         }
 
-        if ($this->hasPlatformSharedPermission($user, $permission)) {
+        if ($user->isSuperAdmin() || $this->hasPlatformSharedPermission($user, $permission)) {
             return Pos::query()
                 ->pluck('pos_id')
                 ->map(static fn ($id): int => (int) $id)
