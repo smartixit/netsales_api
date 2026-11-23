@@ -286,8 +286,28 @@ class PosController extends BaseController
     public function trashed(Request $request): JsonResponse
     {
         try {
-            $perPage = (int) $request->input('per_page', 15);
-            $trashed = $this->posService->getTrashed($perPage);
+            $filters = $request->only(['search', 'per_page', 'all']);
+            $user = $this->currentUser();
+
+            if ($user && ! $user->isSuperAdmin()
+                && ! $this->tenantPermissions->allowsPlatform($user, 'pos.view')
+            ) {
+                $posIds = $this->tenantPermissions->authorizedPosIds($user, 'pos.view');
+                $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, 'pos.view');
+
+                if ($networkIds !== []) {
+                    $linkedPosIds = \\App\\Models\\NetworkPos::query()
+                        ->whereIn('network_id', $networkIds)
+                        ->pluck('pos_id')
+                        ->map(static fn ($id): int => (int) $id)
+                        ->all();
+                    $posIds = array_merge($posIds, $linkedPosIds);
+                }
+
+                $filters['pos_ids'] = array_values(array_unique($posIds));
+            }
+
+            $trashed = $this->posService->getTrashedFiltered($filters);
 
             return $this->successResponse('تم استرجاع سلة محذوفات نقاط البيع بنجاح.', PosResource::collection($trashed));
         } catch (ValidationException $e) {
