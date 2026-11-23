@@ -40,7 +40,10 @@ final class TenantPermissionService
 
     public function allowsNetwork(User $user, int $networkId, string $permission): bool
     {
-        if ($networkId <= 0 || ! $user->isActive()) {
+        if ($networkId <= 0
+            || ! $user->isActive()
+            || $user->role?->scope === RoleScope::PLATFORM
+        ) {
             return false;
         }
 
@@ -70,7 +73,10 @@ final class TenantPermissionService
 
     public function allowsPos(User $user, int $posId, string $permission): bool
     {
-        if ($posId <= 0 || ! $user->isActive()) {
+        if ($posId <= 0
+            || ! $user->isActive()
+            || $user->role?->scope === RoleScope::PLATFORM
+        ) {
             return false;
         }
 
@@ -122,7 +128,7 @@ final class TenantPermissionService
      */
     public function authorizedNetworkIds(User $user, string $permission): array
     {
-        if (! $user->isActive()) {
+        if (! $user->isActive() || $user->role?->scope === RoleScope::PLATFORM) {
             return [];
         }
 
@@ -163,7 +169,7 @@ final class TenantPermissionService
      */
     public function authorizedPosIds(User $user, string $permission): array
     {
-        if (! $user->isActive()) {
+        if (! $user->isActive() || $user->role?->scope === RoleScope::PLATFORM) {
             return [];
         }
 
