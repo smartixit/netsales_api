@@ -145,7 +145,9 @@ class EnsurePermissionMiddleware
                 } elseif ($networkId > 0) {
                     $authorized = $this->tenantPermissions->allowsNetwork($user, $networkId, $permission);
                 } elseif ($posId > 0 && ! $networkOnly) {
-                    $authorized = $this->tenantPermissions->allowsPos($user, $posId, $permission);
+                    $authorized = in_array($permission, ['requests.view', 'requests.report'], true)
+                        ? $this->tenantPermissions->allowsPosThroughPosOrLinkedNetwork($user, $posId, $permission)
+                        : $this->tenantPermissions->allowsPos($user, $posId, $permission);
                 } else {
                     $authorized = in_array($permission, ['requests.view', 'requests.report'], true)
                         && $this->tenantPermissions->allowsAnyOperational($user, $permission);
@@ -206,7 +208,12 @@ class EnsurePermissionMiddleware
         $scopedAuthorization = $this->authorizeScopedPermission($request, $user, $permission);
         if ($scopedAuthorization !== null) {
             if (! $scopedAuthorization) {
-                throw new AuthorizationException('عذراً، لا تملك هذه الصلاحية داخل مساحة العمل أو الكيان المحدد.');
+                $message = str_starts_with($permission, 'network_wallets.')
+                    || str_starts_with($permission, 'pos_wallets.')
+                    ? 'غير مصرح لك بالوصول إلى هذه المحفظة.'
+                    : 'عذراً، لا تملك هذه الصلاحية داخل مساحة العمل أو الكيان المحدد.';
+
+                throw new AuthorizationException($message);
             }
 
             return $next($request);

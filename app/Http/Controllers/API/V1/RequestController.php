@@ -121,7 +121,9 @@ class RequestController extends BaseController
             return $this->errorResponse('يجب تسجيل الدخول لاستعراض طلبات التوريد.', [], 401);
         }
 
-        if ($currentUser->isSuperAdmin()) {
+        if ($currentUser->role_scope === \App\Enums\RoleScope::PLATFORM->value
+            && $this->tenantPermissions->allowsPlatform($currentUser, $permission)
+        ) {
             return $filters;
         }
 

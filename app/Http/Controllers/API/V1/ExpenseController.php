@@ -47,7 +47,7 @@ class ExpenseController extends BaseController
         $permission = (string) $request->attributes->get('tenant_permission', 'expenses.view');
         $tenantAuthorization = app(TenantPermissionService::class);
 
-        if ($currentUser->isSuperAdmin() || $tenantAuthorization->allowsPlatform($currentUser, $permission)) {
+        if ($tenantAuthorization->allowsPlatform($currentUser, $permission)) {
             return null;
         }
 
@@ -74,7 +74,7 @@ class ExpenseController extends BaseController
         }
 
         $tenantAuthorization = app(TenantPermissionService::class);
-        if ($currentUser->isSuperAdmin() || $tenantAuthorization->allowsPlatform($currentUser, $permission)) {
+        if ($tenantAuthorization->allowsPlatform($currentUser, $permission)) {
             return null;
         }
 
