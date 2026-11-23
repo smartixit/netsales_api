@@ -39,7 +39,6 @@ class RolePermissionSeeder extends Seeder
                     'support_tickets.reassign',
                     'support_tickets.reply',
                     'support_tickets.mark_read',
-                    'support_tickets.reassign',
                     'support_tickets.view_trashed',
                 ],
             ],
@@ -60,6 +59,7 @@ class RolePermissionSeeder extends Seeder
                     'sales.view',
                     'sales.report',
                     'sales.export',
+                    'expenses.view',
                     'expenses.report',
                     'expenses.export',
                     'billing.view',
@@ -80,6 +80,7 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'networks.view',
                     'networks.update',
+                    'networks.delete',
                     'network_members.view_members',
                     'network_members.add_member',
                     'network_members.change_member_role',
