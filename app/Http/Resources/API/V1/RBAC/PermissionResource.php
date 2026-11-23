@@ -26,6 +26,7 @@ class PermissionResource extends JsonResource
             'module_id' => $this->module_id,
             'action_type_id' => $this->action_type_id,
             'permission_key' => $this->permission_key,
+            'scope' => $this->scope,
             'permission_name' => $this->permission_name,
             'permission_desc' => $this->permission_desc,
             'status' => (bool) $this->status,
