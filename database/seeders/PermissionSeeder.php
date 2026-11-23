@@ -78,8 +78,8 @@ class PermissionSeeder extends Seeder
             'network_members' => [
                 'view' => 'عرض أعضاء الشبكة وأدوارهم',
                 'create' => 'إضافة عضو إلى الشبكة',
-                'edit' => 'تغيير دور عضو الشبكة',
-                'toggle_status' => 'تغيير حالة عضوية الشبكة',
+                'change_role' => 'تغيير دور عضو الشبكة',
+                'change_status' => 'تغيير حالة عضوية الشبكة',
                 'delete' => 'إنهاء عضوية مستخدم في الشبكة',
             ],
             'network_wallets' => [
@@ -109,8 +109,8 @@ class PermissionSeeder extends Seeder
             'pos_members' => [
                 'view' => 'عرض أعضاء نقطة البيع وأدوارهم',
                 'create' => 'إضافة عضو إلى نقطة البيع',
-                'edit' => 'تغيير دور عضو نقطة البيع',
-                'toggle_status' => 'تغيير حالة عضوية نقطة البيع',
+                'change_role' => 'تغيير دور عضو نقطة البيع',
+                'change_status' => 'تغيير حالة عضوية نقطة البيع',
                 'delete' => 'إنهاء عضوية مستخدم في نقطة البيع',
             ],
             'pos_wallets' => [
