@@ -4,11 +4,16 @@ namespace App\Policies;
 
 use App\Models\NetworkWallet;
 use App\Models\User;
+use App\Services\TenantPermissionService;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class NetworkWalletPolicy
 {
     use HandlesAuthorization;
+
+    public function __construct(
+        private readonly TenantPermissionService $tenantPermissions
+    ) {}
 
     public function before(User $user, string $ability): ?bool
     {
@@ -21,103 +26,60 @@ class NetworkWalletPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->networks()->exists()
-            || $user->networkUsers()->where('status', 'ACTIVE')->exists();
+        return $this->tenantPermissions->allowsAnyNetwork($user, 'network_wallets.view');
     }
 
     public function view(User $user, NetworkWallet $wallet): bool
     {
-        // 1. Check if user is owner of the network
-        if ($user->networks()->where('networks.network_id', $wallet->network_id)->exists()) {
-            return true;
-        }
-
-        // 2. Check if user belongs to the network
-        if ($user->networkUsers()
-            ->where('network_id', $wallet->network_id)
-            ->where('status', 'ACTIVE')
-            ->exists()) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Creating a network wallet is allowed only for an explicitly authorized
-     * platform actor or an active member holding the permission in this network.
-     */
-    public function createForNetwork(User $user, int $networkId): bool
-    {
-        return $this->hasNetworkPermission($user, $networkId, 'network_wallets.create');
-    }
-
-    /**
-     * Initial balance funding is a privileged financial operation.
-     */
-    public function deposit(User $user, NetworkWallet $wallet): bool
-    {
-        return $this->hasNetworkPermission(
+        return $this->tenantPermissions->allowsNetwork(
             $user,
             (int) $wallet->network_id,
-            'network_wallets.create',
+            'network_wallets.view'
         );
     }
 
-    /**
-     * Direct withdrawals/status changes require the network-scoped edit grant.
-     */
-    public function withdraw(User $user, NetworkWallet $wallet): bool
+    public function createForNetwork(User $user, int $networkId): bool
     {
-        return $this->hasNetworkPermission(
+        return $this->tenantPermissions->allowsNetwork(
+            $user,
+            $networkId,
+            'network_wallets.create_wallet'
+        );
+    }
+
+    public function deposit(User $user, NetworkWallet $wallet): bool
+    {
+        return $this->tenantPermissions->allowsNetwork(
             $user,
             (int) $wallet->network_id,
-            'network_wallets.edit',
+            'network_wallets.deposit'
+        );
+    }
+
+    public function withdraw(User $user, NetworkWallet $wallet): bool
+    {
+        return $this->tenantPermissions->allowsNetwork(
+            $user,
+            (int) $wallet->network_id,
+            'network_wallets.withdraw'
         );
     }
 
     public function update(User $user, NetworkWallet $wallet): bool
     {
-        return $this->hasNetworkPermission(
+        return $this->tenantPermissions->allowsNetwork(
             $user,
             (int) $wallet->network_id,
-            'network_wallets.edit',
+            'network_wallets.update_wallet_status'
         );
     }
 
     /**
      * Wallet deletion, restoration and force deletion remain platform-only.
-     * The before() hook grants this ability to Super Admin.
+     * The before() hook grants this lifecycle authority to Super Admin only.
      */
     public function manageLifecycle(User $user): bool
     {
         return false;
-    }
-
-    private function hasNetworkPermission(User $user, int $networkId, string $permission): bool
-    {
-        if ($networkId <= 0) {
-            return false;
-        }
-
-        $keys = [$permission, strtoupper($permission)];
-
-        if ($user->permissions()->whereIn('permission_key', $keys)->exists()) {
-            return true;
-        }
-
-        // A global permission may be granted only by a platform-scoped role.
-        if ($user->role()
-            ->where('scope', 'PLATFORM')
-            ->whereHas('permissions', fn ($query) => $query->whereIn('permission_key', $keys))
-            ->exists()) {
-            return true;
-        }
-
-        return $user->networkUsers()
-            ->where('network_id', $networkId)
-            ->where('status', 'ACTIVE')
-            ->whereHas('role.permissions', fn ($query) => $query->whereIn('permission_key', $keys))
-            ->exists();
     }
 }
