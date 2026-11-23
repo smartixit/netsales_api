@@ -413,6 +413,16 @@ class EnsurePermissionMiddleware
 
     private function authorizeNetworkWalletPermission(Request $request, User $user, string $permission): bool
     {
+        $routeName = (string) ($request->route()?->getName() ?? '');
+
+        // Collection endpoints apply the exact allowed tenant IDs in the
+        // service/repository layer. Client filters may only narrow that set,
+        // so a foreign network filter returns an empty list rather than 403.
+        if (in_array($routeName, ['api.v1.network_wallets.index', 'api.v1.network_wallets.trashed'], true)) {
+            return $permission === 'network_wallets.view'
+                && $this->tenantPermissions->allowsAnyNetwork($user, $permission);
+        }
+
         $networkIds = [];
         $routeId = (int) ($request->route('id') ?? 0);
 
@@ -458,6 +468,16 @@ class EnsurePermissionMiddleware
 
     private function authorizePosWalletPermission(Request $request, User $user, string $permission): bool
     {
+        $routeName = (string) ($request->route()?->getName() ?? '');
+
+        // The list query is scoped by permission-bearing network/POS IDs in
+        // PosWalletService. Treat a client filter as narrowing, not as an
+        // authorization target which can turn an empty result into a 403.
+        if (in_array($routeName, ['api.v1.pos_wallets.index', 'api.v1.pos_wallets.trashed'], true)) {
+            return $permission === 'pos_wallets.view'
+                && $this->tenantPermissions->allowsAnyOperational($user, $permission);
+        }
+
         $targets = [];
         $routeId = (int) ($request->route('id') ?? 0);
 
@@ -605,6 +625,12 @@ class EnsurePermissionMiddleware
         }
 
         foreach ($networkIds as $networkId) {
+            if ($permission === 'voucher_packages.view'
+                && $this->tenantPermissions->allowsNetworkThroughNetworkOrLinkedPos($user, $networkId, $permission)
+            ) {
+                continue;
+            }
+
             if ($this->tenantPermissions->allowsNetwork($user, $networkId, $permission)) {
                 continue;
             }
