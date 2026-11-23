@@ -13,6 +13,21 @@ use App\Models\User;
 
 final class TenantPermissionService
 {
+    public function allowsPlatform(User $user, string $permission): bool
+    {
+        if (! $user->isActive()
+            || $user->role?->scope !== RoleScope::PLATFORM
+            || ! $user->role->isActive()
+        ) {
+            return false;
+        }
+
+        return $user->role->permissions()
+            ->where('permission_key', $permission)
+            ->where('status', true)
+            ->exists();
+    }
+
     public function allowsNetwork(User $user, int $networkId, string $permission): bool
     {
         if ($networkId <= 0 || ! $user->isActive()) {
