@@ -46,6 +46,7 @@ class VoucherPackageDiscountController extends BaseController
             new OA\Parameter(name: 'pos_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
             new OA\Parameter(name: 'package_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'validity_state', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['EFFECTIVE', 'SCHEDULED', 'EXPIRED', 'DISABLED']), description: 'حالة السريان مستقلة عن حالة التفعيل'),
             new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
         ],
