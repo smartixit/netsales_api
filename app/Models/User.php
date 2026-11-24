@@ -382,7 +382,17 @@ class User extends Authenticatable
         // users.role_scope column is the authoritative identity boundary,
         // even when the referenced role has been soft-deleted.
         if ($this->role_scope === RoleScope::PLATFORM->value) {
-            if (! app(PlatformPermissionRegistry::class)->allows($permissionKey)) {
+            $platformPermissionRegistry = app(PlatformPermissionRegistry::class);
+
+            if (! $platformPermissionRegistry->allows($permissionKey)) {
+                return false;
+            }
+
+            if (in_array(
+                $permissionKey,
+                PlatformPermissionRegistry::SUPER_ADMIN_ONLY_PERMISSION_KEYS,
+                true
+            ) && ! $this->isSuperAdmin()) {
                 return false;
             }
 
@@ -552,7 +562,15 @@ class User extends Authenticatable
 
             return array_values(array_unique(array_filter(
                 array_merge($rolePermissions, $directPermissions),
-                static fn (string $permission): bool => $platformRegistry->allows($permission)
+                fn (string $permission): bool => $platformRegistry->allows($permission)
+                    && (
+                        ! in_array(
+                            $permission,
+                            PlatformPermissionRegistry::SUPER_ADMIN_ONLY_PERMISSION_KEYS,
+                            true
+                        )
+                        || $this->isSuperAdmin()
+                    )
             )));
         }
 
