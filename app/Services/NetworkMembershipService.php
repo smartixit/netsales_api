@@ -52,7 +52,10 @@ class NetworkMembershipService
 
         return Role::query()
             ->where('scope', RoleScope::NETWORK->value)
-            ->where('role_key', RoleKey::NETWORK_USER->value)
+            ->whereIn('role_key', [
+                RoleKey::NETWORK_USER->value,
+                RoleKey::NETWORK_ACCOUNTANT->value,
+            ])
             ->active()
             ->orderBy('role_name')
             ->get();
@@ -310,7 +313,8 @@ class NetworkMembershipService
     }
 
     /**
-     * لا تقبل إلا NETWORK_USER النشط؛ يمنع ذلك تصعيد الامتيازات عبر العضويات.
+     * تقبل NETWORK_USER وNETWORK_ACCOUNTANT النشطين فقط؛ يبقى NETWORK_OWNER
+     * محصوراً في هوية مالك الشبكة ولا يمكن منحه كعضوية فرعية.
      */
     protected function resolveAssignableRole(int $roleId): Role
     {
@@ -320,10 +324,13 @@ class NetworkMembershipService
             ! $role
             || ! $role->isActive()
             || $role->scope !== RoleScope::NETWORK
-            || $role->role_key !== RoleKey::NETWORK_USER->value
+            || ! in_array($role->role_key, [
+                RoleKey::NETWORK_USER->value,
+                RoleKey::NETWORK_ACCOUNTANT->value,
+            ], true)
         ) {
             throw ValidationException::withMessages([
-                'role_id' => ['الدور المحدد غير مسموح به لعضوية الشبكة. يسمح حالياً بدور مستخدم الشبكة التشغيلي فقط.'],
+                'role_id' => ['الدور المحدد غير مسموح به لعضوية الشبكة. يسمح فقط بدوري مستخدم الشبكة ومحاسب الشبكة.'],
             ]);
         }
 
