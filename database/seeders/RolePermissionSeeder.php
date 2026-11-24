@@ -12,6 +12,41 @@ use RuntimeException;
 class RolePermissionSeeder extends Seeder
 {
     /**
+     * Active API capabilities that deliberately have no assignable role.
+     *
+     * - Network/POS creation is self-registration; entity deletion and restore
+     *   are not supported through operational memberships.
+     * - Network wallets are provisioned by approval and are not actor-funded.
+     * - POS wallet lifecycle deletion is prohibited; its live balances and
+     *   ledger history must remain intact.
+     *
+     * Keep these keys out of all explicit roles and the PLATFORM registry.
+     * A permission added here remains a deliberate deny, never an omitted grant.
+     *
+     * @var list<string>
+     */
+    public const INTENTIONALLY_UNGRANTED_PERMISSION_KEYS = [
+        'networks.create',
+        'networks.delete',
+        'networks.restore',
+        'networks.force_delete',
+        'network_wallets.create',
+        'network_wallets.edit',
+        'network_wallets.delete',
+        'network_wallets.deposit',
+        'network_wallets.withdraw',
+        'network_wallets.restore',
+        'network_wallets.force_delete',
+        'pos.create',
+        'pos.delete',
+        'pos.restore',
+        'pos.force_delete',
+        'pos_wallets.delete',
+        'pos_wallets.restore',
+        'pos_wallets.force_delete',
+    ];
+
+    /**
      * Rebuild exact permission grants for every system role.
      *
      * The arrays are intentionally explicit: missing permission keys or a role
@@ -319,6 +354,34 @@ class RolePermissionSeeder extends Seeder
             );
         }
 
+        $activePermissionKeys = DB::table('permissions')
+            ->where('status', true)
+            ->whereNull('deleted_at')
+            ->pluck('permission_key')
+            ->all();
+
+        $missingIntentionalDenials = array_values(array_diff(
+            self::INTENTIONALLY_UNGRANTED_PERMISSION_KEYS,
+            $activePermissionKeys
+        ));
+        if ($missingIntentionalDenials !== []) {
+            throw new RuntimeException(
+                'Role permission seeding is blocked; intentional deny keys are missing from the active catalog: '
+                .implode(', ', $missingIntentionalDenials)
+            );
+        }
+
+        $explicitlyGrantedDenials = array_values(array_intersect(
+            self::INTENTIONALLY_UNGRANTED_PERMISSION_KEYS,
+            $requestedPermissionKeys
+        ));
+        if ($explicitlyGrantedDenials !== []) {
+            throw new RuntimeException(
+                'Role permission seeding is blocked; intentionally denied keys were assigned to a role: '
+                .implode(', ', $explicitlyGrantedDenials)
+            );
+        }
+
         $allActivePermissionIds = DB::table('permissions')
             ->join('modules', 'modules.module_id', '=', 'permissions.module_id')
             ->where('permissions.status', true)
@@ -337,6 +400,19 @@ class RolePermissionSeeder extends Seeder
             })
             ->pluck('permissions.permission_id')
             ->all();
+
+        $platformGrantedDenials = DB::table('permissions')
+            ->whereIn('permission_id', $allActivePermissionIds)
+            ->whereIn('permission_key', self::INTENTIONALLY_UNGRANTED_PERMISSION_KEYS)
+            ->pluck('permission_key')
+            ->all();
+
+        if ($platformGrantedDenials !== []) {
+            throw new RuntimeException(
+                'Role permission seeding is blocked; the PLATFORM root role cannot receive intentionally denied keys: '
+                .implode(', ', $platformGrantedDenials)
+            );
+        }
 
         // Direct permission assignments are global: the pivot contains no
         // network_id or pos_id. Keep them only on active PLATFORM users.
