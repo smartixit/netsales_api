@@ -138,8 +138,7 @@ class RolePermissionMatrixTest extends TestCase
         $legacySupportAgent = $supportAgent->fresh();
 
         $this->assertFalse($legacySupportAgent->hasPermission('network_wallets.deposit'));
-        $this->assertFalse($legacySupportAgent->getAllPermissions() !== []
-            && in_array('network_wallets.deposit', $legacySupportAgent->getAllPermissions(), true));
+        $this->assertNotContains('network_wallets.deposit', $legacySupportAgent->getAllPermissions());
         $this->assertFalse(
             app(TenantPermissionService::class)->allowsPlatform($legacySupportAgent, 'network_wallets.deposit')
         );
