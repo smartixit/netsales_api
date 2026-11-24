@@ -255,33 +255,6 @@ class SaleInvoiceController extends BaseController
     }
 
     /**
-     * استعادة فاتورة مبيعات محذوفة مؤقتاً.
-     */
-    #[OA\Post(
-        path: '/api/v1/sale-invoices/{id}/restore',
-        summary: 'استعادة فاتورة مبيعات محذوفة مؤقتاً',
-        tags: ['Sale Invoices'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'تم استعادة الفاتورة بنجاح'),
-        ]
-    )]
-    public function restore(int $id): JsonResponse
-    {
-        try {
-            $this->saleInvoiceService->restoreInvoice($id);
-
-            return $this->successResponse('تم استعادة فاتورة المبيعات بنجاح.');
-        } catch (ValidationException $e) {
-            return $this->validationErrorResponse($e);
-        } catch (Exception $e) {
-            return $this->errorResponse('تعذر استعادة الفاتورة: '.$e->getMessage(), [], 422);
-        }
-    }
-
-    /**
      * الحذف النهائي لفاتورة مبيعات.
      */
     #[OA\Delete(
@@ -342,43 +315,6 @@ class SaleInvoiceController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('تعذر تنفيذ الحذف المجمع: '.$e->getMessage(), [], 422);
-        }
-    }
-
-    /**
-     * الاستعادة المجمعة لفواتير المبيعات.
-     */
-    #[OA\Post(
-        path: '/api/v1/sale-invoices/batch-restore',
-        summary: 'استعادة مجمعة لفواتير المبيعات',
-        tags: ['Sale Invoices'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            description: 'بيانات الطلب',
-            content: new OA\MediaType(
-                mediaType: 'multipart/form-data',
-                schema: new OA\Schema(
-                    required: ['ids'],
-                    properties: [
-                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
-                    ]
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
-        ]
-    )]
-    public function batchRestore(BatchIdsRequest $request): JsonResponse
-    {
-        try {
-            $count = $this->saleInvoiceService->bulkRestore($request->getIds());
-
-            return $this->successResponse("تم استعادة ({$count}) فاتورة بنجاح.");
-        } catch (ValidationException $e) {
-            return $this->validationErrorResponse($e);
-        } catch (Exception $e) {
-            return $this->errorResponse('تعذر تنفيذ الاستعادة المجمعة: '.$e->getMessage(), [], 422);
         }
     }
 
