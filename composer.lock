@@ -1402,7 +1402,11 @@
                 "shasum": ""
             },
             "require": {
-                "php": "^8.2",
+                "brick/math": "^0.11|^0.12|^0.13|^0.14",
+                "composer-runtime-api": "^2.2",
+                "doctrine/inflector": "^2.0.5",
+                "dragonmantank/cron-expression": "^3.4",
+                "egulias/email-validator": "^3.2.1|^4.0",
                 "ext-ctype": "*",
                 "ext-filter": "*",
                 "ext-hash": "*",
@@ -1410,11 +1414,6 @@
                 "ext-openssl": "*",
                 "ext-session": "*",
                 "ext-tokenizer": "*",
-                "composer-runtime-api": "^2.2",
-                "brick/math": "^0.11|^0.12|^0.13|^0.14",
-                "doctrine/inflector": "^2.0.5",
-                "dragonmantank/cron-expression": "^3.4",
-                "egulias/email-validator": "^3.2.1|^4.0",
                 "fruitcake/php-cors": "^1.3",
                 "guzzlehttp/guzzle": "^7.8.2",
                 "guzzlehttp/uri-template": "^1.0",
@@ -1427,6 +1426,7 @@
                 "monolog/monolog": "^3.0",
                 "nesbot/carbon": "^3.8.4",
                 "nunomaduro/termwind": "^2.0",
+                "php": "^8.2",
                 "psr/container": "^1.1.1|^2.0.1",
                 "psr/log": "^1.0|^2.0|^3.0",
                 "psr/simple-cache": "^1.0|^2.0|^3.0",
@@ -1497,9 +1497,9 @@
                 "spatie/once": "*"
             },
             "require-dev": {
-                "ext-gmp": "*",
                 "ably/ably-php": "^1.0",
                 "aws/aws-sdk-php": "^3.322.9",
+                "ext-gmp": "*",
                 "fakerphp/faker": "^1.24",
                 "guzzlehttp/promises": "^2.0.3",
                 "guzzlehttp/psr7": "^2.4",
@@ -1524,6 +1524,9 @@
                 "symfony/translation": "^7.2.0"
             },
             "suggest": {
+                "ably/ably-php": "Required to use the Ably broadcast driver (^1.0).",
+                "aws/aws-sdk-php": "Required to use the SQS queue driver, DynamoDb failed job storage, and SES mail driver (^3.322.9).",
+                "brianium/paratest": "Required to run tests in parallel (^7.0|^8.0).",
                 "ext-apcu": "Required to use the APC cache driver.",
                 "ext-fileinfo": "Required to use the Filesystem class.",
                 "ext-ftp": "Required to use the Flysystem FTP driver.",
@@ -1533,9 +1536,6 @@
                 "ext-pdo": "Required to use all database features.",
                 "ext-posix": "Required to use all features of the queue worker.",
                 "ext-redis": "Required to use the Redis cache and queue drivers (^4.0|^5.0|^6.0).",
-                "ably/ably-php": "Required to use the Ably broadcast driver (^1.0).",
-                "aws/aws-sdk-php": "Required to use the SQS queue driver, DynamoDb failed job storage, and SES mail driver (^3.322.9).",
-                "brianium/paratest": "Required to run tests in parallel (^7.0|^8.0).",
                 "fakerphp/faker": "Required to generate fake data using the fake() helper (^1.23).",
                 "filp/whoops": "Required for friendly error pages in development (^2.14.3).",
                 "laravel/tinker": "Required to use the tinker console command (^2.0).",
@@ -1607,7 +1607,7 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2026-11-03T15:08:25Z"
+            "time": "2026-11-03T15:08:25+00:00"
         },
         {
             "name": "laravel/prompts",
@@ -7192,16 +7192,16 @@
         },
         {
             "name": "dedoc/scramble",
-            "version": "v0.13.52",
+            "version": "v0.13.55",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dedoc/scramble.git",
-                "reference": "73ec5bb926023716ca0006e34ef5ba52711fbead"
+                "reference": "e698d00c77a620cf05200102695a0d4107be804d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dedoc/scramble/zipball/73ec5bb926023716ca0006e34ef5ba52711fbead",
-                "reference": "73ec5bb926023716ca0006e34ef5ba52711fbead",
+                "url": "https://api.github.com/repos/dedoc/scramble/zipball/e698d00c77a620cf05200102695a0d4107be804d",
+                "reference": "e698d00c77a620cf05200102695a0d4107be804d",
                 "shasum": ""
             },
             "require": {
@@ -7261,7 +7261,7 @@
             ],
             "support": {
                 "issues": "https://github.com/dedoc/scramble/issues",
-                "source": "https://github.com/dedoc/scramble/tree/v0.13.52"
+                "source": "https://github.com/dedoc/scramble/tree/v0.13.55"
             },
             "funding": [
                 {
@@ -7269,7 +7269,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-28T12:06:24+00:00"
+            "time": "2026-11-16T14:41:39+00:00"
         },
         {
             "name": "fakerphp/faker",
