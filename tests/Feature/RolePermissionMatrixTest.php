@@ -6,10 +6,12 @@ use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Models\Network;
 use App\Models\NetworkUser;
+use App\Models\NetworkWallet;
 use App\Models\Role;
 use App\Models\Permission;
 use App\Models\User;
 use App\Services\TenantPermissionService;
+use App\Policies\NetworkWalletPolicy;
 use App\Services\Billing\BillingAuthorizationService;
 use Illuminate\Auth\Access\AuthorizationException;
 use App\Services\UserService;
@@ -82,9 +84,9 @@ class RolePermissionMatrixTest extends TestCase
             $this->assertFalse(app(TenantPermissionService::class)->allowsPlatform($accountant, $permissionKey));
         }
 
-        $wallet = new \\App\\Models\\NetworkWallet;
+        $wallet = new NetworkWallet;
         $wallet->network_id = 123;
-        $policy = app(\\App\\Policies\\NetworkWalletPolicy::class);
+        $policy = app(NetworkWalletPolicy::class);
 
         $this->assertTrue($policy->viewAny($superAdmin));
         $this->assertTrue($policy->view($superAdmin, $wallet));
