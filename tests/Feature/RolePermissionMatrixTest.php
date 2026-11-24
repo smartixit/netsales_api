@@ -79,6 +79,11 @@ class RolePermissionMatrixTest extends TestCase
             'status' => 'ACTIVE',
         ]);
 
+        // role_scope is a generated database column; refresh newly inserted fixtures.
+        $superAdmin->refresh();
+        $accountant->refresh();
+        $supportAgent->refresh();
+
         $platformTreasuryPermissions = [
             'network_wallets.view',
             'network_wallets.create',
