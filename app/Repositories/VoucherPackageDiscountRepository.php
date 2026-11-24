@@ -108,7 +108,7 @@ class VoucherPackageDiscountRepository extends BaseRepository implements Voucher
                     ->where(function ($q) use ($now) {
                         $q->whereNull('discount_end_date')->orWhere('discount_end_date', '>', $now);
                     }),
-                default => throw \\Illuminate\\Validation\\ValidationException::withMessages([
+                default => throw \Illuminate\Validation\ValidationException::withMessages([
                     'validity_state' => ['قيمة حالة السريان غير مدعومة.'],
                 ]),
             };
