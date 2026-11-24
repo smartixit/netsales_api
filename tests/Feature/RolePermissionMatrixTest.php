@@ -53,6 +53,9 @@ class RolePermissionMatrixTest extends TestCase
         $accountantRole = Role::query()
             ->where('role_key', RoleKey::ACCOUNTANT->value)
             ->firstOrFail();
+        $supportRole = Role::query()
+            ->where('role_key', RoleKey::SUPPORT_AGENT->value)
+            ->firstOrFail();
 
         $superAdmin = $this->createUserWithScope(RoleScope::PLATFORM, [
             'role_id' => $superAdminRole->role_id,
@@ -64,6 +67,13 @@ class RolePermissionMatrixTest extends TestCase
         $accountant = $this->createUserWithScope(RoleScope::PLATFORM, [
             'role_id' => $accountantRole->role_id,
             'user_full_name' => 'Platform Accountant Treasury Boundary '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => 'ACTIVE',
+        ]);
+        $supportAgent = $this->createUserWithScope(RoleScope::PLATFORM, [
+            'role_id' => $supportRole->role_id,
+            'user_full_name' => 'Platform Support Treasury Boundary '.uniqid(),
             'user_phone_number' => '77'.random_int(10000000, 99999999),
             'user_password' => bcrypt('password'),
             'status' => 'ACTIVE',
@@ -80,8 +90,12 @@ class RolePermissionMatrixTest extends TestCase
         foreach ($platformTreasuryPermissions as $permissionKey) {
             $this->assertTrue($superAdmin->fresh()->hasPermission($permissionKey), $permissionKey);
             $this->assertFalse($accountant->fresh()->hasPermission($permissionKey), $permissionKey);
+            $this->assertFalse($supportAgent->fresh()->hasPermission($permissionKey), $permissionKey);
+            $this->assertNotContains($permissionKey, $accountant->fresh()->getAllPermissions());
+            $this->assertNotContains($permissionKey, $supportAgent->fresh()->getAllPermissions());
             $this->assertTrue(app(TenantPermissionService::class)->allowsPlatform($superAdmin, $permissionKey));
             $this->assertFalse(app(TenantPermissionService::class)->allowsPlatform($accountant, $permissionKey));
+            $this->assertFalse(app(TenantPermissionService::class)->allowsPlatform($supportAgent, $permissionKey));
         }
 
         $wallet = new NetworkWallet;
@@ -101,6 +115,24 @@ class RolePermissionMatrixTest extends TestCase
         $this->assertFalse($policy->deposit($accountant, $wallet));
         $this->assertFalse($policy->withdraw($accountant, $wallet));
         $this->assertFalse($policy->manageLifecycle($superAdmin));
+
+        $depositPermission = Permission::query()
+            ->where('permission_key', 'network_wallets.deposit')
+            ->where('status', true)
+            ->firstOrFail();
+
+        try {
+            app(UserService::class)->syncPermissions(
+                (int) $supportAgent->user_id,
+                [(int) $depositPermission->permission_id]
+            );
+
+            $this->fail('A treasury operation cannot be delegated through direct platform permissions.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('permissions', $exception->errors());
+        }
+
+        $this->assertFalse($supportAgent->fresh()->hasPermission('network_wallets.deposit'));
     }
 
     public function test_platform_accountant_is_limited_to_platform_finance(): void
