@@ -43,6 +43,18 @@ final class PlatformPermissionRegistry
         'network_wallets.withdraw',
     ];
 
+    /**
+     * Treasury capabilities are inherited only from the SUPER_ADMIN system role.
+     * They must never be delegated through the global user_permissions pivot.
+     */
+    public const SUPER_ADMIN_ONLY_PERMISSION_KEYS = [
+        'network_wallets.view',
+        'network_wallets.create',
+        'network_wallets.edit',
+        'network_wallets.deposit',
+        'network_wallets.withdraw',
+    ];
+
     public const SHARED_READ_PERMISSION_KEYS = [
         'networks.view',
         'pos.view',
