@@ -43,6 +43,64 @@ class RolePermissionMatrixTest extends TestCase
         }
     }
 
+    public function test_platform_super_admin_owns_network_wallet_treasury_operations(): void
+    {
+        $superAdminRole = Role::query()
+            ->where('role_key', RoleKey::SUPER_ADMIN->value)
+            ->firstOrFail();
+        $accountantRole = Role::query()
+            ->where('role_key', RoleKey::ACCOUNTANT->value)
+            ->firstOrFail();
+
+        $superAdmin = $this->createUserWithScope(RoleScope::PLATFORM, [
+            'role_id' => $superAdminRole->role_id,
+            'user_full_name' => 'Platform Treasury Admin '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => 'ACTIVE',
+        ]);
+        $accountant = $this->createUserWithScope(RoleScope::PLATFORM, [
+            'role_id' => $accountantRole->role_id,
+            'user_full_name' => 'Platform Accountant Treasury Boundary '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => 'ACTIVE',
+        ]);
+
+        $platformTreasuryPermissions = [
+            'network_wallets.view',
+            'network_wallets.create',
+            'network_wallets.edit',
+            'network_wallets.deposit',
+            'network_wallets.withdraw',
+        ];
+
+        foreach ($platformTreasuryPermissions as $permissionKey) {
+            $this->assertTrue($superAdmin->fresh()->hasPermission($permissionKey), $permissionKey);
+            $this->assertFalse($accountant->fresh()->hasPermission($permissionKey), $permissionKey);
+            $this->assertTrue(app(TenantPermissionService::class)->allowsPlatform($superAdmin, $permissionKey));
+            $this->assertFalse(app(TenantPermissionService::class)->allowsPlatform($accountant, $permissionKey));
+        }
+
+        $wallet = new \\App\\Models\\NetworkWallet;
+        $wallet->network_id = 123;
+        $policy = app(\\App\\Policies\\NetworkWalletPolicy::class);
+
+        $this->assertTrue($policy->viewAny($superAdmin));
+        $this->assertTrue($policy->view($superAdmin, $wallet));
+        $this->assertTrue($policy->createForNetwork($superAdmin, 123));
+        $this->assertTrue($policy->update($superAdmin, $wallet));
+        $this->assertTrue($policy->deposit($superAdmin, $wallet));
+        $this->assertTrue($policy->withdraw($superAdmin, $wallet));
+
+        $this->assertFalse($policy->viewAny($accountant));
+        $this->assertFalse($policy->createForNetwork($accountant, 123));
+        $this->assertFalse($policy->update($accountant, $wallet));
+        $this->assertFalse($policy->deposit($accountant, $wallet));
+        $this->assertFalse($policy->withdraw($accountant, $wallet));
+        $this->assertFalse($policy->manageLifecycle($superAdmin));
+    }
+
     public function test_platform_accountant_is_limited_to_platform_finance(): void
     {
         $permissions = $this->permissionKeys(RoleKey::ACCOUNTANT);
@@ -84,13 +142,18 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
         $permissions = $this->permissionKeys(RoleKey::NETWORK_ACCOUNTANT);
         $networkOwnerPermissions = $this->permissionKeys(RoleKey::NETWORK_OWNER);
 
-        // Network wallet funding is provisioned by the approval workflow, not by actor-granted permissions.
+        // Network wallet treasury actions are PLATFORM-root only, not operational membership permissions.
         $this->assertNotContains('network_wallets.create', $networkOwnerPermissions);
         $this->assertNotContains('network_wallets.edit', $networkOwnerPermissions);
-        $this->assertNotContains('network_wallets.deposit', $permissions);
-        $this->assertNotContains('network_wallets.withdraw', $permissions);
-        $this->assertNotContains('network_wallets.deposit', $networkOwnerPermissions);
-        $this->assertNotContains('network_wallets.withdraw', $networkOwnerPermissions);
+        foreach ([
+            'network_wallets.create',
+            'network_wallets.edit',
+            'network_wallets.deposit',
+            'network_wallets.withdraw',
+        ] as $platformOnlyPermission) {
+            $this->assertNotContains($platformOnlyPermission, $permissions);
+            $this->assertNotContains($platformOnlyPermission, $networkOwnerPermissions);
+        }
 
         $this->assertNotContains('dashboard.view', $permissions);
         $this->assertContains('network_wallets.report', $permissions);
