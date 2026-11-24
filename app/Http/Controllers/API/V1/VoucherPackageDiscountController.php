@@ -58,7 +58,7 @@ class VoucherPackageDiscountController extends BaseController
     {
         try {
             $user = $this->currentUser();
-            $filters = $request->only(['network_id', 'pos_id', 'package_id', 'status', 'search', 'per_page', 'all']);
+            $filters = $request->only(['network_id', 'pos_id', 'package_id', 'status', 'validity_state', 'search', 'per_page', 'all']);
 
             if ($user) {
                 $scope = $this->tenantAuth->getDiscountVisibilityScope($user);
