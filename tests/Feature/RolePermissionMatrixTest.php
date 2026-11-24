@@ -59,21 +59,21 @@ class RolePermissionMatrixTest extends TestCase
 
         $superAdmin = $this->createUserWithScope(RoleScope::PLATFORM, [
             'role_id' => $superAdminRole->role_id,
-            'user_full_name' => 'Platform Treasury Admin '.uniqid(),
+            'user_full_name' => 'Treasury Admin '.uniqid(),
             'user_phone_number' => '77'.random_int(10000000, 99999999),
             'user_password' => bcrypt('password'),
             'status' => 'ACTIVE',
         ]);
         $accountant = $this->createUserWithScope(RoleScope::PLATFORM, [
             'role_id' => $accountantRole->role_id,
-            'user_full_name' => 'Platform Accountant Treasury Boundary '.uniqid(),
+            'user_full_name' => 'Treasury Accountant '.uniqid(),
             'user_phone_number' => '77'.random_int(10000000, 99999999),
             'user_password' => bcrypt('password'),
             'status' => 'ACTIVE',
         ]);
         $supportAgent = $this->createUserWithScope(RoleScope::PLATFORM, [
             'role_id' => $supportRole->role_id,
-            'user_full_name' => 'Platform Support Treasury Boundary '.uniqid(),
+            'user_full_name' => 'Treasury Support '.uniqid(),
             'user_phone_number' => '77'.random_int(10000000, 99999999),
             'user_password' => bcrypt('password'),
             'status' => 'ACTIVE',
