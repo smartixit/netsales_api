@@ -554,6 +554,17 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'user_id' => $changeCandidate->user_id,
             'role_id' => $networkAccountantRole->role_id,
         ]);
+        $this->assertEquals(
+            [1, 2, 3],
+            array_map(
+                'intval',
+                \\Illuminate\\Support\\Facades\\DB::table('network_membership_audit_logs')
+                    ->where('network_id', $this->networkA->network_id)
+                    ->orderBy('event_seq')
+                    ->pluck('event_seq')
+                    ->all()
+            )
+        );
 
         $this->withHeaders($ownerAuth['headers'])
             ->putJson("/api/v1/networks/{$this->networkA->network_id}/members/{$changeCandidate->user_id}/role", [
@@ -663,6 +674,17 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'user_id' => $changeCandidate->user_id,
             'role_id' => $posAccountantRole->role_id,
         ]);
+        $this->assertEquals(
+            [1, 2, 3],
+            array_map(
+                'intval',
+                \\Illuminate\\Support\\Facades\\DB::table('pos_membership_audit_logs')
+                    ->where('pos_id', $this->posA->pos_id)
+                    ->orderBy('event_seq')
+                    ->pluck('event_seq')
+                    ->all()
+            )
+        );
 
         $this->withHeaders($ownerAuth['headers'])
             ->putJson("/api/v1/pos/{$this->posA->pos_id}/members/{$changeCandidate->user_id}/role", [
