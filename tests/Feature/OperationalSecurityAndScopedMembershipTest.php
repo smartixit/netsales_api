@@ -508,6 +508,8 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
+        $this->assertFalse($accountantCandidate->hasPermission('expenses.create'));
+
         $this->withHeaders($ownerAuth['headers'])
             ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
                 'user_phone_number' => $accountantCandidate->user_phone_number,
@@ -520,6 +522,11 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'user_id' => $accountantCandidate->user_id,
             'role_id' => $networkAccountantRole->role_id,
         ]);
+        $effectiveNetworkAccountant = $accountantCandidate->fresh();
+        $this->assertTrue($effectiveNetworkAccountant->hasPermission('expenses.create'));
+        $this->assertTrue($effectiveNetworkAccountant->hasPermission('sales.report'));
+        $this->assertFalse($effectiveNetworkAccountant->hasPermission('network_members.change_role'));
+        $this->assertFalse($effectiveNetworkAccountant->hasPermission('network_wallets.deposit'));
 
         $changeCandidate = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
@@ -610,6 +617,8 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
+        $this->assertFalse($accountantCandidate->hasPermission('sales.report'));
+
         $this->withHeaders($ownerAuth['headers'])
             ->postJson("/api/v1/pos/{$this->posA->pos_id}/members", [
                 'user_phone_number' => $accountantCandidate->user_phone_number,
@@ -622,6 +631,11 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'user_id' => $accountantCandidate->user_id,
             'role_id' => $posAccountantRole->role_id,
         ]);
+        $effectivePosAccountant = $accountantCandidate->fresh();
+        $this->assertTrue($effectivePosAccountant->hasPermission('sales.report'));
+        $this->assertTrue($effectivePosAccountant->hasPermission('pos_wallets.report'));
+        $this->assertFalse($effectivePosAccountant->hasPermission('pos_members.change_role'));
+        $this->assertFalse($effectivePosAccountant->hasPermission('sales.create'));
 
         $changeCandidate = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
