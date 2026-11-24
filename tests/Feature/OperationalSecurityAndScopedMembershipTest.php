@@ -558,7 +558,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             [1, 2, 3],
             array_map(
                 'intval',
-                \\Illuminate\\Support\\Facades\\DB::table('network_membership_audit_logs')
+                \Illuminate\Support\Facades\DB::table('network_membership_audit_logs')
                     ->where('network_id', $this->networkA->network_id)
                     ->orderBy('event_seq')
                     ->pluck('event_seq')
@@ -678,7 +678,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             [1, 2, 3],
             array_map(
                 'intval',
-                \\Illuminate\\Support\\Facades\\DB::table('pos_membership_audit_logs')
+                \Illuminate\Support\Facades\DB::table('pos_membership_audit_logs')
                     ->where('pos_id', $this->posA->pos_id)
                     ->orderBy('event_seq')
                     ->pluck('event_seq')
