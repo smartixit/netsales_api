@@ -13,6 +13,7 @@ use App\Services\TenantPermissionService;
 use App\Services\Billing\BillingAuthorizationService;
 use Illuminate\Auth\Access\AuthorizationException;
 use App\Services\UserService;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -390,6 +391,7 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
             'pos.export',
             'voucher_packages.export',
             'voucher_package_discounts.export',
+            'sales.restore',
         ];
 
         foreach ($retiredKeys as $permissionKey) {
@@ -397,6 +399,52 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
                 'permission_key' => $permissionKey,
                 'status' => true,
             ]);
+        }
+    }
+
+    public function test_intentionally_ungranted_capabilities_stay_denied_to_every_system_role(): void
+    {
+        $deniedKeys = RolePermissionSeeder::INTENTIONALLY_UNGRANTED_PERMISSION_KEYS;
+
+        $this->assertNotEmpty($deniedKeys);
+
+        $allRoleGrants = Role::query()
+            ->with('permissions')
+            ->get()
+            ->flatMap(fn (Role $role) => $role->permissions
+                ->where('status', true)
+                ->pluck('permission_key'))
+            ->unique()
+            ->values()
+            ->all();
+
+        $this->assertSame([], array_values(array_intersect($deniedKeys, $allRoleGrants)));
+
+        foreach ($deniedKeys as $permissionKey) {
+            $this->assertDatabaseHas('permissions', [
+                'permission_key' => $permissionKey,
+                'status' => true,
+                'deleted_at' => null,
+            ]);
+        }
+
+        $superAdminRole = Role::query()
+            ->where('role_key', RoleKey::SUPER_ADMIN->value)
+            ->firstOrFail();
+        $superAdmin = $this->createUserWithScope(RoleScope::PLATFORM, [
+            'role_id' => $superAdminRole->role_id,
+            'user_full_name' => 'Deny Listed Super Admin '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => 'ACTIVE',
+        ]);
+
+        foreach ($deniedKeys as $permissionKey) {
+            $this->assertFalse($superAdmin->fresh()->hasPermission($permissionKey), $permissionKey);
+            $this->assertFalse(
+                app(TenantPermissionService::class)->allowsPlatform($superAdmin, $permissionKey),
+                $permissionKey
+            );
         }
     }
 
