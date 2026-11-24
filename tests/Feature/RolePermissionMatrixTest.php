@@ -132,7 +132,17 @@ class RolePermissionMatrixTest extends TestCase
             $this->assertArrayHasKey('permissions', $exception->errors());
         }
 
-        $this->assertFalse($supportAgent->fresh()->hasPermission('network_wallets.deposit'));
+        // Simulate a legacy/direct pivot grant: runtime authorization must still
+        // ignore it for non-SUPER_ADMIN identities even if the key is allowlisted.
+        $supportAgent->permissions()->attach($depositPermission->permission_id);
+        $legacySupportAgent = $supportAgent->fresh();
+
+        $this->assertFalse($legacySupportAgent->hasPermission('network_wallets.deposit'));
+        $this->assertFalse($legacySupportAgent->getAllPermissions() !== []
+            && in_array('network_wallets.deposit', $legacySupportAgent->getAllPermissions(), true));
+        $this->assertFalse(
+            app(TenantPermissionService::class)->allowsPlatform($legacySupportAgent, 'network_wallets.deposit')
+        );
     }
 
     public function test_platform_accountant_is_limited_to_platform_finance(): void
