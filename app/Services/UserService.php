@@ -363,10 +363,15 @@ class UserService
         if ($permissions->count() !== count($permissionIds)
             || $permissions->contains(
                 fn (Permission $permission): bool => ! $platformPermissionRegistry->allows($permission->permission_key)
+                    || in_array(
+                        $permission->permission_key,
+                        PlatformPermissionRegistry::SUPER_ADMIN_ONLY_PERMISSION_KEYS,
+                        true
+                    )
             )
         ) {
             throw ValidationException::withMessages([
-                'permissions' => ['تتضمن القائمة صلاحية غير موجودة أو معطلة أو خارج نطاق صلاحيات المنصة القابلة للإسناد المباشر.'],
+                'permissions' => ['تتضمن القائمة صلاحية غير موجودة أو معطلة أو خارج نطاق صلاحيات المنصة القابلة للإسناد المباشر. لا يجوز إسناد صلاحيات خزينة الشبكات مباشرة؛ فهي حصرية لدور SUPER_ADMIN.'],
             ]);
         }
 
