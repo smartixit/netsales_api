@@ -50,7 +50,10 @@ class PosMembershipService
 
         return Role::query()
             ->where('scope', RoleScope::POS->value)
-            ->where('role_key', RoleKey::POS_USER->value)
+            ->whereIn('role_key', [
+                RoleKey::POS_USER->value,
+                RoleKey::POS_ACCOUNTANT->value,
+            ])
             ->active()
             ->orderBy('role_name')
             ->get();
@@ -266,7 +269,8 @@ class PosMembershipService
     }
 
     /**
-     * لا تقبل إلا POS_USER النشط؛ يمنع ذلك تصعيد الامتيازات عبر العضويات.
+     * تقبل POS_USER وPOS_ACCOUNTANT النشطين فقط؛ يبقى POS_AGENT
+     * محصوراً في هوية مالك نقطة البيع ولا يمكن منحه كعضوية فرعية.
      */
     protected function resolveAssignableRole(int $roleId): Role
     {
@@ -276,10 +280,13 @@ class PosMembershipService
             ! $role
             || ! $role->isActive()
             || $role->scope !== RoleScope::POS
-            || $role->role_key !== RoleKey::POS_USER->value
+            || ! in_array($role->role_key, [
+                RoleKey::POS_USER->value,
+                RoleKey::POS_ACCOUNTANT->value,
+            ], true)
         ) {
             throw ValidationException::withMessages([
-                'role_id' => ['الدور المحدد غير مسموح به لعضوية نقطة البيع. يسمح حالياً بدور مستخدم نقطة البيع التشغيلي فقط.'],
+                'role_id' => ['الدور المحدد غير مسموح به لعضوية نقطة البيع. يسمح فقط بدوري مستخدم نقطة البيع ومحاسب نقطة البيع.'],
             ]);
         }
 
