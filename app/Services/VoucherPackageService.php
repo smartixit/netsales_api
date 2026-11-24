@@ -134,7 +134,7 @@ class VoucherPackageService
         }
 
         if ($request instanceof UpdateVoucherPackageRequest) {
-            $candidateData = [
+            $data = array_filter([
                 'package_name' => $request->package_name,
                 'package_color' => $request->package_color,
                 'package_balance' => $request->package_balance !== null ? (int) $request->package_balance : null,
@@ -145,16 +145,7 @@ class VoucherPackageService
                 'package_default_cash_discount' => $request->package_default_cash_discount !== null ? (float) $request->package_default_cash_discount : null,
                 'package_default_credit_discount' => $request->package_default_credit_discount !== null ? (float) $request->package_default_credit_discount : null,
                 'status' => $request->status !== null ? (bool) $request->status : null,
-            ];
-
-            // Preserve explicit nullable values (notably clearing uptime/validity)
-            // while keeping omitted keys out of a partial update.
-            $data = [];
-            foreach ($candidateData as $key => $value) {
-                if ($request->exists($key)) {
-                    $data[$key] = $value;
-                }
-            }
+            ], fn ($val) => $val !== null);
         } else {
             $data = $request;
         }
