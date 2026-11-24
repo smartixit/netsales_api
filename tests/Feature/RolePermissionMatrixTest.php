@@ -84,7 +84,7 @@ public function test_network_accountant_gets_operational_finance_but_not_approva
         $permissions = $this->permissionKeys(RoleKey::NETWORK_ACCOUNTANT);
         $networkOwnerPermissions = $this->permissionKeys(RoleKey::NETWORK_OWNER);
 
-        // Network wallet funding is platform-managed, not an operational role capability.
+        // Network wallet funding is provisioned by the approval workflow, not by actor-granted permissions.
         $this->assertNotContains('network_wallets.create', $networkOwnerPermissions);
         $this->assertNotContains('network_wallets.edit', $networkOwnerPermissions);
         $this->assertNotContains('network_wallets.deposit', $permissions);
