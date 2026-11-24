@@ -90,6 +90,30 @@ class VoucherPackageDiscountRepository extends BaseRepository implements Voucher
             $status ? $query->active() : $query->inactive();
         }
 
+        // Activation and lifecycle are separate dimensions, matching resolveValidityState().
+        if (! empty($filters['validity_state'])) {
+            $now = now('Asia/Aden');
+            $validityState = strtoupper((string) $filters['validity_state']);
+
+            match ($validityState) {
+                'DISABLED' => $query->inactive(),
+                'SCHEDULED' => $query->active()->whereNotNull('discount_start_date')
+                    ->where('discount_start_date', '>', $now),
+                'EXPIRED' => $query->active()->whereNotNull('discount_end_date')
+                    ->where('discount_end_date', '<=', $now),
+                'EFFECTIVE' => $query->active()
+                    ->where(function ($q) use ($now) {
+                        $q->whereNull('discount_start_date')->orWhere('discount_start_date', '<=', $now);
+                    })
+                    ->where(function ($q) use ($now) {
+                        $q->whereNull('discount_end_date')->orWhere('discount_end_date', '>', $now);
+                    }),
+                default => throw \\Illuminate\\Validation\\ValidationException::withMessages([
+                    'validity_state' => ['قيمة حالة السريان غير مدعومة.'],
+                ]),
+            };
+        }
+
         if (! empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
