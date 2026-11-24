@@ -16,9 +16,10 @@ class RolePermissionSeeder extends Seeder
      *
      * - Network/POS creation is self-registration; entity deletion and restore
      *   are not supported through operational memberships.
-     * - Network wallets are provisioned by approval and are not actor-funded.
-     * - POS wallet lifecycle deletion is prohibited; its live balances and
-     *   ledger history must remain intact.
+     * - Network-wallet treasury operations are reserved for PLATFORM root;
+     *   operational roles cannot create, edit, deposit, or withdraw its balance.
+     * - Wallet deletion/restoration is prohibited to preserve balances and
+     *   ledger history.
      *
      * Keep these keys out of all explicit roles and the PLATFORM registry.
      * A permission added here remains a deliberate deny, never an omitted grant.
@@ -30,11 +31,7 @@ class RolePermissionSeeder extends Seeder
         'networks.delete',
         'networks.restore',
         'networks.force_delete',
-        'network_wallets.create',
-        'network_wallets.edit',
         'network_wallets.delete',
-        'network_wallets.deposit',
-        'network_wallets.withdraw',
         'network_wallets.restore',
         'network_wallets.force_delete',
         'pos.create',
