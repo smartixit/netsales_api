@@ -16,7 +16,17 @@ final class TenantPermissionService
 {
     public function allowsPlatform(User $user, string $permission): bool
     {
-        if (! app(PlatformPermissionRegistry::class)->allows($permission)) {
+        $platformPermissionRegistry = app(PlatformPermissionRegistry::class);
+
+        if (! $platformPermissionRegistry->allows($permission)) {
+            return false;
+        }
+
+        if (in_array(
+            $permission,
+            PlatformPermissionRegistry::SUPER_ADMIN_ONLY_PERMISSION_KEYS,
+            true
+        ) && ! $user->isSuperAdmin()) {
             return false;
         }
 
