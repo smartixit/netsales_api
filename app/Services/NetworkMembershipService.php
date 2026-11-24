@@ -111,19 +111,21 @@ class NetworkMembershipService
                 $this->assertNetworkMemberQuota($networkId, (int) $network->owner_id);
             }
 
+            $nextSeq = $this->nextAuditSequence($networkId);
+
             $member = NetworkUser::create([
                 'network_id' => $networkId,
                 'user_id' => $user->user_id,
                 'role_id' => $roleId,
                 'status' => $normalizedStatus,
-                'last_event_seq' => 1,
+                'last_event_seq' => $nextSeq,
             ]);
 
             // توثيق العملية في سجل التدقيق
             NetworkMembershipAuditLog::create([
                 'network_id' => $networkId,
                 'user_id' => $user->user_id,
-                'event_seq' => 1,
+                'event_seq' => $nextSeq,
                 'action' => 'ASSIGNED',
                 'actor_id' => $actorId,
                 'old_state' => null,
@@ -147,7 +149,7 @@ class NetworkMembershipService
         $this->authorizeActor($networkId, $actorId, 'network_members.change_role');
 
         return DB::transaction(function () use ($networkId, $userId, $newRoleId, $actorId, $reason): NetworkUser {
-            $network = Network::findOrFail($networkId);
+            $network = Network::query()->lockForUpdate()->findOrFail($networkId);
             if ((int) $network->owner_id === $userId) {
                 throw ValidationException::withMessages([
                     'role_id' => ['لا يمكن تغيير دور مالك الشبكة الرئيسي للشبكة.'],
@@ -166,7 +168,7 @@ class NetworkMembershipService
                 return $member->load(['user', 'role']);
             }
 
-            $nextSeq = (int) $member->last_event_seq + 1;
+            $nextSeq = $this->nextAuditSequence($networkId);
             $member->update([
                 'role_id' => $newRoleId,
                 'last_event_seq' => $nextSeq,
@@ -223,7 +225,7 @@ class NetworkMembershipService
                 $this->assertNetworkMemberQuota($networkId, (int) $network->owner_id);
             }
 
-            $nextSeq = (int) $member->last_event_seq + 1;
+            $nextSeq = $this->nextAuditSequence($networkId);
             $member->update([
                 'status' => $newStatus,
                 'last_event_seq' => $nextSeq,
@@ -252,7 +254,7 @@ class NetworkMembershipService
         $this->authorizeActor($networkId, $actorId, 'network_members.delete');
 
         return DB::transaction(function () use ($networkId, $userId, $actorId, $reason): bool {
-            $network = Network::findOrFail($networkId);
+            $network = Network::query()->lockForUpdate()->findOrFail($networkId);
             if ((int) $network->owner_id === $userId) {
                 throw ValidationException::withMessages([
                     'user_id' => ['لا يمكن إزالة أو حذف عضوية مالك الشبكة الرئيسي من الشبكة.'],
@@ -261,9 +263,10 @@ class NetworkMembershipService
 
             $member = NetworkUser::where('network_id', $networkId)
                 ->where('user_id', $userId)
+                ->lockForUpdate()
                 ->firstOrFail();
 
-            $nextSeq = (int) $member->last_event_seq + 1;
+            $nextSeq = $this->nextAuditSequence($networkId);
 
             NetworkMembershipAuditLog::create([
                 'network_id' => $networkId,
@@ -310,6 +313,17 @@ class NetworkMembershipService
             'max_network_members',
             $currentCount
         );
+    }
+
+    /**
+     * Reserve the next tenant-wide audit sequence. The caller must hold a
+     * lock on the parent network row until the transaction commits.
+     */
+    private function nextAuditSequence(int $networkId): int
+    {
+        return (int) NetworkMembershipAuditLog::query()
+            ->where('network_id', $networkId)
+            ->max('event_seq') + 1;
     }
 
     /**
