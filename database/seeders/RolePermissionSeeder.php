@@ -411,8 +411,21 @@ class RolePermissionSeeder extends Seeder
             );
         }
 
+        // Treasury capabilities are supplied by the SUPER_ADMIN role itself;
+        // never preserve direct grants that could delegate them to other roles.
+        $superAdminOnlyPermissionIds = DB::table('permissions')
+            ->whereIn('permission_key', PlatformPermissionRegistry::SUPER_ADMIN_ONLY_PERMISSION_KEYS)
+            ->pluck('permission_id')
+            ->all();
+
+        if ($superAdminOnlyPermissionIds !== []) {
+            DB::table('user_permissions')
+                ->whereIn('permission_id', $superAdminOnlyPermissionIds)
+                ->delete();
+        }
+
         // Direct permission assignments are global: the pivot contains no
-        // network_id or pos_id. Keep them only on active PLATFORM users.
+        // network_id or pos_id. Keep the remaining grants only on active PLATFORM users.
         DB::table('user_permissions')
             ->where(function ($query): void {
                 $query->whereNotIn('user_id', function ($platformUsers): void {
