@@ -29,38 +29,46 @@ class NetworkWalletPolicy
 
     public function createForNetwork(User $user, int $networkId): bool
     {
-        return app(TenantPermissionService::class)->allowsNetwork(
-            $user,
-            $networkId,
-            'network_wallets.create'
-        );
+        $permissions = app(TenantPermissionService::class);
+
+        return $permissions->allowsPlatform($user, 'network_wallets.create')
+            || $permissions->allowsNetwork($user, $networkId, 'network_wallets.create');
     }
 
     public function deposit(User $user, NetworkWallet $wallet): bool
     {
-        return app(TenantPermissionService::class)->allowsNetwork(
-            $user,
-            (int) $wallet->network_id,
-            'network_wallets.deposit'
-        );
+        $permissions = app(TenantPermissionService::class);
+
+        return $permissions->allowsPlatform($user, 'network_wallets.deposit')
+            || $permissions->allowsNetwork(
+                $user,
+                (int) $wallet->network_id,
+                'network_wallets.deposit'
+            );
     }
 
     public function withdraw(User $user, NetworkWallet $wallet): bool
     {
-        return app(TenantPermissionService::class)->allowsNetwork(
-            $user,
-            (int) $wallet->network_id,
-            'network_wallets.withdraw'
-        );
+        $permissions = app(TenantPermissionService::class);
+
+        return $permissions->allowsPlatform($user, 'network_wallets.withdraw')
+            || $permissions->allowsNetwork(
+                $user,
+                (int) $wallet->network_id,
+                'network_wallets.withdraw'
+            );
     }
 
     public function update(User $user, NetworkWallet $wallet): bool
     {
-        return app(TenantPermissionService::class)->allowsNetwork(
-            $user,
-            (int) $wallet->network_id,
-            'network_wallets.edit'
-        );
+        $permissions = app(TenantPermissionService::class);
+
+        return $permissions->allowsPlatform($user, 'network_wallets.edit')
+            || $permissions->allowsNetwork(
+                $user,
+                (int) $wallet->network_id,
+                'network_wallets.edit'
+            );
     }
 
     public function manageLifecycle(User $user): bool
