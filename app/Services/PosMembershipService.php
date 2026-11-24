@@ -72,6 +72,9 @@ class PosMembershipService
         $this->authorizeActor($posId, $actorId, 'pos_members.create');
 
         return DB::transaction(function () use ($posId, $phoneNumber, $roleId, $actorId, $status): PosUser {
+            // Serialize all membership audit events for this POS.
+            Pos::query()->lockForUpdate()->findOrFail($posId);
+
             $user = User::where('user_phone_number', $phoneNumber)->first();
             if (! $user) {
                 throw ValidationException::withMessages([
@@ -99,19 +102,21 @@ class PosMembershipService
                 ]);
             }
 
+            $nextSeq = $this->nextAuditSequence($posId);
+
             $member = PosUser::create([
                 'pos_id' => $posId,
                 'user_id' => $user->user_id,
                 'role_id' => $roleId,
                 'status' => in_array($status, ['ACTIVE', 'SUSPENDED', 'INVITED'], true) ? $status : 'ACTIVE',
-                'last_event_seq' => 1,
+                'last_event_seq' => $nextSeq,
             ]);
 
             // توثيق العملية في سجل التدقيق
             PosMembershipAuditLog::create([
                 'pos_id' => $posId,
                 'user_id' => $user->user_id,
-                'event_seq' => 1,
+                'event_seq' => $nextSeq,
                 'action' => 'ASSIGNED',
                 'actor_id' => $actorId,
                 'old_state' => null,
@@ -135,7 +140,7 @@ class PosMembershipService
         $this->authorizeActor($posId, $actorId, 'pos_members.change_role');
 
         return DB::transaction(function () use ($posId, $userId, $newRoleId, $actorId, $reason): PosUser {
-            $pos = Pos::findOrFail($posId);
+            $pos = Pos::query()->lockForUpdate()->findOrFail($posId);
             if ((int) $pos->owner_id === $userId) {
                 throw ValidationException::withMessages([
                     'role_id' => ['لا يمكن تغيير دور مالك نقطة البيع المعتمد.'],
@@ -154,7 +159,7 @@ class PosMembershipService
                 return $member->load(['user', 'role']);
             }
 
-            $nextSeq = (int) $member->last_event_seq + 1;
+            $nextSeq = $this->nextAuditSequence($posId);
             $member->update([
                 'role_id' => $newRoleId,
                 'last_event_seq' => $nextSeq,
@@ -189,7 +194,7 @@ class PosMembershipService
         }
 
         return DB::transaction(function () use ($posId, $userId, $newStatus, $actorId, $reason): PosUser {
-            $pos = Pos::findOrFail($posId);
+            $pos = Pos::query()->lockForUpdate()->findOrFail($posId);
             if ((int) $pos->owner_id === $userId && $newStatus !== 'ACTIVE') {
                 throw ValidationException::withMessages([
                     'status' => ['لا يمكن تجميد أو إيقاف عضوية مالك نقطة البيع الرئيسي.'],
@@ -206,7 +211,7 @@ class PosMembershipService
                 return $member->load(['user', 'role']);
             }
 
-            $nextSeq = (int) $member->last_event_seq + 1;
+            $nextSeq = $this->nextAuditSequence($posId);
             $member->update([
                 'status' => $newStatus,
                 'last_event_seq' => $nextSeq,
@@ -235,7 +240,7 @@ class PosMembershipService
         $this->authorizeActor($posId, $actorId, 'pos_members.delete');
 
         return DB::transaction(function () use ($posId, $userId, $actorId, $reason): bool {
-            $pos = Pos::findOrFail($posId);
+            $pos = Pos::query()->lockForUpdate()->findOrFail($posId);
             if ((int) $pos->owner_id === $userId) {
                 throw ValidationException::withMessages([
                     'user_id' => ['لا يمكن إزالة أو حذف عضوية مالك نقطة البيع المعتمد.'],
@@ -244,9 +249,10 @@ class PosMembershipService
 
             $member = PosUser::where('pos_id', $posId)
                 ->where('user_id', $userId)
+                ->lockForUpdate()
                 ->firstOrFail();
 
-            $nextSeq = (int) $member->last_event_seq + 1;
+            $nextSeq = $this->nextAuditSequence($posId);
 
             PosMembershipAuditLog::create([
                 'pos_id' => $posId,
@@ -266,6 +272,17 @@ class PosMembershipService
 
             return true;
         });
+    }
+
+    /**
+     * Reserve the next tenant-wide audit sequence. The caller must hold a
+     * lock on the parent POS row until the transaction commits.
+     */
+    private function nextAuditSequence(int $posId): int
+    {
+        return (int) PosMembershipAuditLog::query()
+            ->where('pos_id', $posId)
+            ->max('event_seq') + 1;
     }
 
     /**
