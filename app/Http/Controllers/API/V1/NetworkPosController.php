@@ -22,6 +22,7 @@ use App\Models\NetworkPos;
 use App\Models\Pos;
 use App\Services\NetworkPosLinkingChallengeService;
 use App\Services\NetworkPosService;
+use App\Services\TenantPermissionService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
@@ -42,6 +43,7 @@ class NetworkPosController extends BaseController
     public function __construct(
         protected NetworkPosService $networkPosService,
         protected NetworkPosLinkingChallengeService $challengeService,
+        protected TenantPermissionService $tenantPermissions,
     ) {}
 
     /**
@@ -69,16 +71,9 @@ class NetworkPosController extends BaseController
         try {
             $filters = $request->validated();
             $user = $this->currentUser();
-            if ($user && ! $user->isSuperAdmin()) {
-                $networkIds = $user->networks()->pluck('networks.network_id')
-                    ->merge($user->networkUsers()->pluck('network_id'))
-                    ->unique()->values()->toArray();
-                $posIds = $user->pos()->pluck('pos.pos_id')
-                    ->merge($user->posUsers()->pluck('pos_id'))
-                    ->unique()->values()->toArray();
-
-                $filters['scoped_network_ids'] = $networkIds;
-                $filters['scoped_pos_ids'] = $posIds;
+            if ($user && ! $this->tenantPermissions->allowsPlatform($user, 'networks.view')) {
+                $filters['scoped_network_ids'] = $this->tenantPermissions->authorizedNetworkIds($user, 'networks.view');
+                $filters['scoped_pos_ids'] = $this->tenantPermissions->authorizedPosIds($user, 'networks.view');
             }
             $links = $this->networkPosService->getFiltered($filters);
 
@@ -250,7 +245,7 @@ class NetworkPosController extends BaseController
             }
 
             $currentUser = $this->currentUser();
-            if ($currentUser && ! Gate::forUser($currentUser)->allows('update', $link)) {
+            if ($currentUser && ! Gate::forUser($currentUser)->allows('toggle', $link)) {
                 return $this->errorResponse('غير مصرح لك بتعديل حالة هذا الارتباط.', [], 403);
             }
 
@@ -336,12 +331,12 @@ class NetworkPosController extends BaseController
             $ids = $request->getIds();
 
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                $unauthorized = NetworkPos::whereIn('network_pos_id', $ids)
-                    ->whereDoesntHave('network', function ($q) use ($currentUser) {
-                        $q->where('owner_id', $currentUser->user_id)
-                            ->orWhereHas('memberships', fn ($m) => $m->where('user_id', $currentUser->user_id));
-                    })->exists();
+            if ($currentUser) {
+                $permissionService = app(\App\Services\TenantPermissionService::class);
+                $links = NetworkPos::whereIn('network_pos_id', $ids)->get(['network_pos_id', 'network_id']);
+                $unauthorized = $ids === [] || $links->count() !== count($ids)
+                    || $links->contains(fn (NetworkPos $link): bool =>
+                        ! $permissionService->allowsNetwork($currentUser, (int) $link->network_id, 'networks.delete_pos_link'));
 
                 if ($unauthorized) {
                     return $this->errorResponse('غير مصرح لك بفك ارتباطات لا تتبع لشبكاتك.', [], 403);
@@ -390,12 +385,12 @@ class NetworkPosController extends BaseController
             $status = $request->getStatus();
 
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                $unauthorized = NetworkPos::whereIn('network_pos_id', $ids)
-                    ->whereDoesntHave('network', function ($q) use ($currentUser) {
-                        $q->where('owner_id', $currentUser->user_id)
-                            ->orWhereHas('memberships', fn ($m) => $m->where('user_id', $currentUser->user_id));
-                    })->exists();
+            if ($currentUser) {
+                $permissionService = app(\App\Services\TenantPermissionService::class);
+                $links = NetworkPos::whereIn('network_pos_id', $ids)->get(['network_pos_id', 'network_id']);
+                $unauthorized = $ids === [] || $links->count() !== count($ids)
+                    || $links->contains(fn (NetworkPos $link): bool =>
+                        ! $permissionService->allowsNetwork($currentUser, (int) $link->network_id, 'networks.toggle_pos_link'));
 
                 if ($unauthorized) {
                     return $this->errorResponse('غير مصرح لك بتعديل ارتباطات لا تتبع لشبكاتك.', [], 403);

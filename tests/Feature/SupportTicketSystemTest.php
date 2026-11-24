@@ -7,6 +7,7 @@ use App\Enums\PosStatus;
 use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Models\Network;
+use App\Models\NetworkPos;
 use App\Models\Pos;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketMessage;
@@ -33,13 +34,18 @@ class SupportTicketSystemTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::firstOrFail();
+        $suffix = uniqid();
+        $this->user = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Network Ticket Owner '.$suffix,
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
 
         $auth = $this->createAuthenticatedSession($this->user);
         $this->session = $auth['session'];
         $this->headers = $auth['headers'];
-
-        $suffix = uniqid();
 
         $posUser = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
@@ -66,6 +72,12 @@ class SupportTicketSystemTest extends TestCase
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => PosStatus::ACTIVE,
+        ]);
+
+        NetworkPos::query()->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => true,
         ]);
     }
 

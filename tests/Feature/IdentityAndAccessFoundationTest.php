@@ -600,14 +600,14 @@ class IdentityAndAccessFoundationTest extends TestCase
         ]);
         $networkWalletResp->assertStatus(403);
 
-        // 2. محاولة مستخدم نقطة البيع استعراض أعضاء الشبكة 1 تُرفض بـ 422 لعدم امتلاك صلاحية مالك الشبكة
+        // 2. محاولة مستخدم نقطة البيع استعراض أعضاء الشبكة 1 تُرفض مبكراً بـ 403 لغياب صلاحية عرض العضويات
         $membersResp = $this->getJson("/api/v1/networks/{$network1->network_id}/members", [
             'X-Session-Id' => $rawTokenPos1,
             'X-Device-Uuid' => $devicePos1->device_uuid,
             'X-Bypass-Encryption' => 'true',
         ]);
-        $membersResp->assertStatus(422);
-        $this->assertStringContainsString('غير مصرح لك بإدارة موظفي وعضويات هذه الشبكة', $membersResp->json('message'));
+        $membersResp->assertForbidden()
+            ->assertJsonPath('message', 'لا تملك صلاحية إدارة أعضاء هذه الشبكة أو الوصول إلى نطاقها.');
     }
 
     /**
@@ -677,7 +677,7 @@ class IdentityAndAccessFoundationTest extends TestCase
             'X-Device-Uuid' => $deviceA->device_uuid,
             'X-Bypass-Encryption' => 'true',
         ]);
-        $respMembers->assertStatus(422);
+        $respMembers->assertForbidden();
     }
 
     /**

@@ -38,7 +38,14 @@ class WalletSystemTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::firstOrFail();
+        $suffix = uniqid();
+        $this->user = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Wallet Network Owner '.$suffix,
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
 
         $deviceUuid = 'TEST-DEVICE-WALLET-'.uniqid();
         UserDevice::create([
@@ -65,8 +72,6 @@ class WalletSystemTest extends TestCase
             'X-Device-Uuid' => $deviceUuid,
             'X-Bypass-Encryption' => 'true',
         ];
-
-        $suffix = uniqid();
 
         $posUser = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
@@ -101,7 +106,7 @@ class WalletSystemTest extends TestCase
         ]);
     }
 
-    public function test_can_create_and_fund_network_wallet(): void
+    public function test_network_owner_cannot_create_or_fund_the_platform_managed_network_wallet(): void
     {
         $response = $this->withHeaders($this->headers)
             ->postJson('/api/v1/network-wallets', [
@@ -110,40 +115,10 @@ class WalletSystemTest extends TestCase
                 'status' => true,
             ]);
 
-        $response->assertStatus(201)
-            ->assertJsonPath('success', true)
-            ->assertJsonPath('data.wallet_balance', 50000);
-
-        $walletId = $response->json('data.wallet_id');
-
-        // Test deposit
-        $depositResponse = $this->withHeaders($this->headers)
-            ->postJson("/api/v1/network-wallets/{$walletId}/deposit", [
-                'amount' => 15000.00,
-                'statement' => 'تغذية بنكية مباشرة',
-            ]);
-
-        $depositResponse->assertStatus(200)
-            ->assertJsonPath('success', true)
-            ->assertJsonPath('data.wallet.wallet_balance', 65000);
-
-        // Test withdraw
-        $withdrawResponse = $this->withHeaders($this->headers)
-            ->postJson("/api/v1/network-wallets/{$walletId}/withdraw", [
-                'amount' => 10000.00,
-                'statement' => 'سحب نقدي',
-            ]);
-
-        $withdrawResponse->assertStatus(200)
-            ->assertJsonPath('success', true)
-            ->assertJsonPath('data.wallet.wallet_balance', 55000);
-
-        // Test logs
-        $logsResponse = $this->withHeaders($this->headers)
-            ->getJson("/api/v1/network-wallets/{$walletId}/logs");
-
-        $logsResponse->assertStatus(200)
-            ->assertJsonPath('success', true);
+        $response->assertForbidden();
+        $this->assertDatabaseMissing('network_wallets', [
+            'network_id' => $this->network->network_id,
+        ]);
     }
 
     public function test_can_perform_atomic_transfer_between_network_and_pos_wallets(): void
@@ -214,7 +189,7 @@ class WalletSystemTest extends TestCase
 
         // Credit SMS template:
         // نقطة {اسم_النقطة} - شبكة {اسم_الشبكة}: لكم سند قبض بمبلغ 1,000.00YER رصيدكم 3,000.00YER
-        $expectedReceiptMsg = "نقطة {$this->pos->pos_name} - شبكة {$this->network->network_name}: لكم سند قبض بمبلغ 1,000.00YER رصيدكم 3,000.00YER";
+        $expectedReceiptMsg = "{$this->pos->pos_name} - {$this->network->network_name}: لكم سند قبض بمبلغ 1,000.00YER رصيدكم 3,000.00YER";
 
         Queue::assertPushed(SendSmsNotificationJob::class, function ($job) use ($expectedReceiptMsg) {
             return $job->phoneNumbers === $this->pos->pos_phone_number && $job->message === $expectedReceiptMsg;

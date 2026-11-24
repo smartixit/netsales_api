@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\UserStatus;
+use App\Services\PlatformPermissionRegistry;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -319,77 +321,149 @@ class User extends Authenticatable
 
     public function isSuperAdmin(): bool
     {
-        return $this->hasRole(RoleKey::SUPER_ADMIN);
+        return $this->isActive()
+            && $this->role_scope === RoleScope::PLATFORM->value
+            && $this->role?->role_key === RoleKey::SUPER_ADMIN->value
+            && $this->role?->scope === RoleScope::PLATFORM
+            && $this->role->isActive();
     }
 
     public function hasRole(string|RoleKey $roleKey, ?int $tenantId = null): bool
     {
+        if (! $this->isActive()) {
+            return false;
+        }
+
         $key = $roleKey instanceof RoleKey ? $roleKey->value : $roleKey;
 
-        if ($this->role?->role_key === $key) {
+        // A PLATFORM identity cannot inherit tenant roles from membership rows.
+        if ($this->role_scope === RoleScope::PLATFORM->value) {
+            return $this->role?->role_key === $key
+                && $this->role->isActive();
+        }
+
+        if ($this->role?->role_key === $key && $this->role->isActive()) {
             return true;
         }
 
-        $netQuery = $this->networkUsers()->whereHas('role', fn ($q) => $q->where('role_key', $key))->where('status', 'ACTIVE');
+        $networkQuery = $this->networkUsers()
+            ->where('status', 'ACTIVE')
+            ->whereHas('role', fn ($query) => $query
+                ->where('role_key', $key)
+                ->where('scope', RoleScope::NETWORK->value)
+                ->where('status', true));
+
         if ($tenantId) {
-            $netQuery->where('network_id', $tenantId);
+            $networkQuery->where('network_id', $tenantId);
         }
-        if ($netQuery->exists()) {
+
+        if ($networkQuery->exists()) {
             return true;
         }
 
-        $posQuery = $this->posUsers()->whereHas('role', fn ($q) => $q->where('role_key', $key))->where('status', 'ACTIVE');
+        $posQuery = $this->posUsers()
+            ->where('status', 'ACTIVE')
+            ->whereHas('role', fn ($query) => $query
+                ->where('role_key', $key)
+                ->where('scope', RoleScope::POS->value)
+                ->where('status', true));
+
         if ($tenantId) {
             $posQuery->where('pos_id', $tenantId);
         }
-        if ($posQuery->exists()) {
-            return true;
-        }
 
-        return false;
+        return $posQuery->exists();
     }
-
     public function hasPermission(string $permissionKey, ?int $tenantId = null): bool
     {
-        if ($this->isSuperAdmin()) {
-            return true;
-        }
-
         $upperKey = strtoupper($permissionKey);
 
-        if ($this->permissions()->where(function ($q) use ($upperKey, $permissionKey) {
-            $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
-        })->exists()) {
-            return true;
-        }
+        // user_permissions has no tenant discriminator. The generated
+        // users.role_scope column is the authoritative identity boundary,
+        // even when the referenced role has been soft-deleted.
+        if ($this->role_scope === RoleScope::PLATFORM->value) {
+            $platformPermissionRegistry = app(PlatformPermissionRegistry::class);
 
-        if ($this->role?->permissions()->where(function ($q) use ($upperKey, $permissionKey) {
-            $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
-        })->exists()) {
-            return true;
+            if (! $platformPermissionRegistry->allows($permissionKey)) {
+                return false;
+            }
+
+            if (in_array(
+                $permissionKey,
+                PlatformPermissionRegistry::SUPER_ADMIN_ONLY_PERMISSION_KEYS,
+                true
+            ) && ! $this->isSuperAdmin()) {
+                return false;
+            }
+
+            if (! $this->isActive()
+                || ! $this->role?->isActive()
+                || $this->role->scope !== RoleScope::PLATFORM
+            ) {
+                return false;
+            }
+
+            $directGrant = $this->permissions()
+                ->where(function ($query) use ($upperKey, $permissionKey): void {
+                    $query->where('permissions.permission_key', $upperKey)
+                        ->orWhere('permissions.permission_key', $permissionKey);
+                })
+                ->where('permissions.status', true)
+                ->exists();
+
+            if ($directGrant) {
+                return true;
+            }
+
+            $platformRoleGrant = $this->role->permissions()
+                ->where(function ($query) use ($upperKey, $permissionKey): void {
+                    $query->where('permissions.permission_key', $upperKey)
+                        ->orWhere('permissions.permission_key', $permissionKey);
+                })
+                ->where('permissions.status', true)
+                ->exists();
+
+            return $platformRoleGrant;
         }
 
         $hasNetPerm = $this->networkUsers()
             ->where('status', 'ACTIVE')
-            ->when($tenantId, fn ($q) => $q->where('network_id', $tenantId))
-            ->whereHas('role.permissions', function ($q) use ($upperKey, $permissionKey) {
-                $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
-            })->exists();
+            ->when($tenantId, fn ($query) => $query->where('network_id', $tenantId))
+            ->whereHas('role', function ($roleQuery) use ($upperKey, $permissionKey): void {
+                $roleQuery->where('scope', RoleScope::NETWORK->value)
+                    ->where('status', true)
+                    ->whereHas('permissions', function ($permissionQuery) use ($upperKey, $permissionKey): void {
+                        $permissionQuery
+                            ->where(function ($query) use ($upperKey, $permissionKey): void {
+                                $query->where('permissions.permission_key', $upperKey)
+                                    ->orWhere('permissions.permission_key', $permissionKey);
+                            })
+                            ->where('permissions.status', true);
+                    });
+            })
+            ->exists();
 
         if ($hasNetPerm) {
             return true;
         }
 
-        $hasPosPerm = $this->posUsers()
+        return $this->posUsers()
             ->where('status', 'ACTIVE')
-            ->when($tenantId, fn ($q) => $q->where('pos_id', $tenantId))
-            ->whereHas('role.permissions', function ($q) use ($upperKey, $permissionKey) {
-                $q->where('permission_key', $upperKey)->orWhere('permission_key', $permissionKey);
-            })->exists();
-
-        return $hasPosPerm;
+            ->when($tenantId, fn ($query) => $query->where('pos_id', $tenantId))
+            ->whereHas('role', function ($roleQuery) use ($upperKey, $permissionKey): void {
+                $roleQuery->where('scope', RoleScope::POS->value)
+                    ->where('status', true)
+                    ->whereHas('permissions', function ($permissionQuery) use ($upperKey, $permissionKey): void {
+                        $permissionQuery
+                            ->where(function ($query) use ($upperKey, $permissionKey): void {
+                                $query->where('permissions.permission_key', $upperKey)
+                                    ->orWhere('permissions.permission_key', $permissionKey);
+                            })
+                            ->where('permissions.status', true);
+                    });
+            })
+            ->exists();
     }
-
     /**
      * Return active operational memberships for client workspace routing.
      *
@@ -397,11 +471,19 @@ class User extends Authenticatable
      */
     public function getWorkspaceRoles(): array
     {
+        if (! $this->isActive() || $this->role_scope === RoleScope::PLATFORM->value) {
+            return [];
+        }
+
         $networkRoles = $this->networkUsers()
             ->where('status', 'ACTIVE')
             ->with('role.permissions')
             ->get()
-            ->map(static fn (NetworkUser $membership): ?array => ($membership->role === null || ! $membership->role->isActive())
+            ->map(static fn (NetworkUser $membership): ?array => (
+                $membership->role === null
+                || ! $membership->role->isActive()
+                || $membership->role->scope !== RoleScope::NETWORK
+            )
                 ? null
                 : [
                     'scope' => 'NETWORK',
@@ -421,7 +503,11 @@ class User extends Authenticatable
             ->where('status', 'ACTIVE')
             ->with('role.permissions')
             ->get()
-            ->map(static fn (PosUser $membership): ?array => ($membership->role === null || ! $membership->role->isActive())
+            ->map(static fn (PosUser $membership): ?array => (
+                $membership->role === null
+                || ! $membership->role->isActive()
+                || $membership->role->scope !== RoleScope::POS
+            )
                 ? null
                 : [
                     'scope' => 'POS',
@@ -448,32 +534,77 @@ class User extends Authenticatable
      */
     public function getAllPermissions(): array
     {
-        if ($this->isSuperAdmin()) {
-            return Permission::pluck('permission_key')->toArray();
+        if (! $this->isActive()) {
+            return [];
         }
 
-        $rolePermissions = $this->role
-            ? $this->role->permissions()->pluck('permission_key')->toArray()
-            : [];
-        $directPermissions = $this->permissions()->pluck('permission_key')->toArray();
+        // Platform identities expose only platform role + direct user grants.
+        // They never inherit capability unions from operational memberships.
+        if ($this->role_scope === RoleScope::PLATFORM->value) {
+            if ($this->role === null
+                || ! $this->role->isActive()
+                || $this->role->scope !== RoleScope::PLATFORM
+            ) {
+                return [];
+            }
 
+            $rolePermissions = $this->role->permissions()
+                ->where('permissions.status', true)
+                ->pluck('permissions.permission_key')
+                ->all();
+
+            $directPermissions = $this->permissions()
+                ->where('permissions.status', true)
+                ->pluck('permissions.permission_key')
+                ->all();
+
+            $platformRegistry = app(PlatformPermissionRegistry::class);
+
+            return array_values(array_unique(array_filter(
+                array_merge($rolePermissions, $directPermissions),
+                fn (string $permission): bool => $platformRegistry->allows($permission)
+                    && (
+                        ! in_array(
+                            $permission,
+                            PlatformPermissionRegistry::SUPER_ADMIN_ONLY_PERMISSION_KEYS,
+                            true
+                        )
+                        || $this->isSuperAdmin()
+                    )
+            )));
+        }
+
+        // Operational identities inherit permissions only from active
+        // memberships whose role scope matches the membership table.
         $networkPermissions = $this->networkUsers()
             ->where('status', 'ACTIVE')
             ->with('role.permissions')
             ->get()
-            ->flatMap(static fn (NetworkUser $membership) => $membership->role?->permissions
-                ->pluck('permission_key') ?? collect());
+            ->flatMap(static fn (NetworkUser $membership) => (
+                $membership->role !== null
+                && $membership->role->isActive()
+                && $membership->role->scope === RoleScope::NETWORK
+            )
+                ? $membership->role->permissions
+                    ->where('status', true)
+                    ->pluck('permission_key')
+                : collect());
 
         $posPermissions = $this->posUsers()
             ->where('status', 'ACTIVE')
             ->with('role.permissions')
             ->get()
-            ->flatMap(static fn (PosUser $membership) => $membership->role?->permissions
-                ->pluck('permission_key') ?? collect());
+            ->flatMap(static fn (PosUser $membership) => (
+                $membership->role !== null
+                && $membership->role->isActive()
+                && $membership->role->scope === RoleScope::POS
+            )
+                ? $membership->role->permissions
+                    ->where('status', true)
+                    ->pluck('permission_key')
+                : collect());
 
         return array_values(array_unique(array_merge(
-            $rolePermissions,
-            $directPermissions,
             $networkPermissions->all(),
             $posPermissions->all(),
         )));

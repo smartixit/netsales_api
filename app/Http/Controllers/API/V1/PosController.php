@@ -9,6 +9,7 @@ use App\Http\Requests\API\V1\Pos\UpdatePosRequest;
 use App\Http\Resources\API\V1\Pos\PosResource;
 use App\Models\NetworkPos;
 use App\Services\PosService;
+use App\Services\TenantPermissionService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ class PosController extends BaseController
 {
     public function __construct(
         protected PosService $posService,
+        protected TenantPermissionService $tenantPermissions,
     ) {}
 
     /**
@@ -55,19 +57,20 @@ class PosController extends BaseController
         try {
             $filters = $request->only(['search', 'status', 'governorate_id', 'directorate_id', 'per_page', 'all']);
             $user = $this->currentUser();
-            if ($user && ! $user->isSuperAdmin()) {
-                $posIds = $user->pos()->pluck('pos.pos_id')
-                    ->merge($user->posUsers()->pluck('pos_id'))
-                    ->unique()->values()->toArray();
+            if ($user && ! $this->tenantPermissions->allowsPlatform($user, 'pos.view')) {
+                $posIds = $this->tenantPermissions->authorizedPosIds($user, 'pos.view');
+                $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, 'pos.view');
 
-                $networkIds = $user->networks()->pluck('networks.network_id')
-                    ->merge($user->networkUsers()->pluck('network_id'))
-                    ->unique()->values()->toArray();
-                if (! empty($networkIds)) {
-                    $linkedPosIds = NetworkPos::whereIn('network_id', $networkIds)->pluck('pos_id')->toArray();
-                    $posIds = array_unique(array_merge($posIds, $linkedPosIds));
+                if ($networkIds !== []) {
+                    $linkedPosIds = NetworkPos::query()
+                        ->whereIn('network_id', $networkIds)
+                        ->pluck('pos_id')
+                        ->map(static fn ($id): int => (int) $id)
+                        ->all();
+                    $posIds = array_merge($posIds, $linkedPosIds);
                 }
-                $filters['pos_ids'] = $posIds;
+
+                $filters['pos_ids'] = array_values(array_unique($posIds));
             }
             $posList = $this->posService->getFiltered($filters);
 
@@ -281,8 +284,26 @@ class PosController extends BaseController
     public function trashed(Request $request): JsonResponse
     {
         try {
-            $perPage = (int) $request->input('per_page', 15);
-            $trashed = $this->posService->getTrashed($perPage);
+            $filters = $request->only(['search', 'per_page', 'all']);
+            $user = $this->currentUser();
+
+            if ($user && ! $this->tenantPermissions->allowsPlatform($user, 'pos.view')) {
+                $posIds = $this->tenantPermissions->authorizedPosIds($user, 'pos.view');
+                $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, 'pos.view');
+
+                if ($networkIds !== []) {
+                    $linkedPosIds = NetworkPos::query()
+                        ->whereIn('network_id', $networkIds)
+                        ->pluck('pos_id')
+                        ->map(static fn ($id): int => (int) $id)
+                        ->all();
+                    $posIds = array_merge($posIds, $linkedPosIds);
+                }
+
+                $filters['pos_ids'] = array_values(array_unique($posIds));
+            }
+
+            $trashed = $this->posService->getTrashedFiltered($filters);
 
             return $this->successResponse('تم استرجاع سلة محذوفات نقاط البيع بنجاح.', PosResource::collection($trashed));
         } catch (ValidationException $e) {
@@ -486,8 +507,8 @@ class PosController extends BaseController
     {
         try {
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                return $this->errorResponse('عملية الاعتماد محصورة بإدارة المنصة.', [], 403);
+            if ($currentUser && ! $this->tenantPermissions->allowsPlatform($currentUser, 'pos.approve')) {
+                return $this->errorResponse('لا تملك صلاحية اعتماد طلبات نقاط البيع على مستوى المنصة.', [], 403);
             }
 
             $pos = $this->posService->approve($id, (int) $this->currentUserId());
@@ -532,8 +553,8 @@ class PosController extends BaseController
     {
         try {
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                return $this->errorResponse('عملية الرفض محصورة بإدارة المنصة.', [], 403);
+            if ($currentUser && ! $this->tenantPermissions->allowsPlatform($currentUser, 'pos.reject')) {
+                return $this->errorResponse('لا تملك صلاحية رفض طلبات نقاط البيع على مستوى المنصة.', [], 403);
             }
 
             $pos = $this->posService->reject($id, (int) $this->currentUserId(), (string) $request->reason);

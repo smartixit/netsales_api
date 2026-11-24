@@ -19,6 +19,7 @@ interface NetworkRepositoryInterface extends BaseRepositoryInterface
      * @return Collection<int, Network>|CursorPaginator
      */
     public function getFiltered(array $filters = [], array $relations = []): Collection|CursorPaginator;
+    public function getTrashedFiltered(array $filters = [], array $relations = []): Collection|CursorPaginator;
 
     /**
      * تحديث رقم الهاتف لجميع الشبكات التي يمتلكها المستخدم (owner_id).

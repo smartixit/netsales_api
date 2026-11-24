@@ -220,7 +220,7 @@ class TenantIsolationSecurityTest extends TestCase
         $response->assertStatus(403);
         $response->assertJson([
             'success' => false,
-            'message' => 'غير مصرح لك بالوصول إلى هذه الفاتورة.',
+            'message' => 'عذراً، لا تملك هذه الصلاحية في مساحة العمل الفعلية المرتبطة بالفاتورة.',
         ]);
     }
 

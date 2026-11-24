@@ -40,6 +40,7 @@ class NetworkPosLinkingChallengeService
         protected PosRepositoryInterface $posRepository,
         protected NetworkPosRepositoryInterface $networkPosRepository,
         protected NetworkPosLinkingChallengeRepositoryInterface $challengeRepository,
+        protected TenantPermissionService $tenantPermissions,
     ) {}
 
     /**
@@ -58,19 +59,7 @@ class NetworkPosLinkingChallengeService
 
         $network->ensureActive();
 
-        if (! $actor->isSuperAdmin()) {
-            $isOwner = (int) $network->owner_id === (int) $actor->user_id;
-            $isActiveMember = $actor->networkUsers()
-                ->where('network_id', $networkId)
-                ->where('status', 'ACTIVE')
-                ->exists();
-
-            if (! $isOwner && ! $isActiveMember) {
-                throw ValidationException::withMessages([
-                    'network_id' => ['غير مصرح لك بإدارة دعوات هذه الشبكة.'],
-                ]);
-            }
-        }
+        $this->assertNetworkPermission($actor, $networkId, 'networks.create_link_challenge', 'غير مصرح لك بإدارة دعوات هذه الشبكة.');
 
         try {
             $pos = $this->posRepository->findByUuid(strtoupper(trim($posBusinessCode)));
@@ -118,19 +107,7 @@ class NetworkPosLinkingChallengeService
 
         $network->ensureActive();
 
-        if (! $actor->isSuperAdmin()) {
-            $isOwner = (int) $network->owner_id === (int) $actor->user_id;
-            $isActiveMember = $actor->networkUsers()
-                ->where('network_id', $networkId)
-                ->where('status', 'ACTIVE')
-                ->exists();
-
-            if (! $isOwner && ! $isActiveMember) {
-                throw ValidationException::withMessages([
-                    'network_id' => ['غير مصرح لك بالبحث عن نقاط بيع لهذه الشبكة.'],
-                ]);
-            }
-        }
+        $this->assertNetworkPermission($actor, $networkId, 'networks.create_link_challenge', 'غير مصرح لك بالبحث عن نقاط بيع لهذه الشبكة.');
 
         $results = $this->posRepository->getFiltered([
             'linkable_network_id' => $networkId,
@@ -165,19 +142,7 @@ class NetworkPosLinkingChallengeService
 
         $network->ensureActive();
 
-        if (! $actor->isSuperAdmin()) {
-            $isOwner = (int) $network->owner_id === (int) $actor->user_id;
-            $isActiveMember = $actor->networkUsers()
-                ->where('network_id', $networkId)
-                ->where('status', 'ACTIVE')
-                ->exists();
-
-            if (! $isOwner && ! $isActiveMember) {
-                throw ValidationException::withMessages([
-                    'network_id' => ['غير مصرح لك بإنشاء دعوة ربط لهذه الشبكة.'],
-                ]);
-            }
-        }
+        $this->assertNetworkPermission($actor, $networkId, 'networks.create_link_challenge', 'غير مصرح لك بإنشاء دعوة ربط لهذه الشبكة.');
 
         return DB::transaction(function () use ($actor, $networkId, $posUuid, $durationMinutes): NetworkPosLinkingChallenge {
             $pos = $this->posRepository->findByUuidForUpdate(strtoupper(trim($posUuid)));
@@ -300,19 +265,7 @@ class NetworkPosLinkingChallengeService
             ]);
         }
 
-        if (! $actor->isSuperAdmin()) {
-            $isOwner = (int) $pos->owner_id === (int) $actor->user_id;
-            $isActiveMember = $actor->posUsers()
-                ->where('pos_id', $pos->pos_id)
-                ->where('status', 'ACTIVE')
-                ->exists();
-
-            if (! $isOwner && ! $isActiveMember) {
-                throw ValidationException::withMessages([
-                    'pos_uuid' => ['غير مصرح لك بإدارة نقطة البيع هذه.'],
-                ]);
-            }
-        }
+        $this->assertPosPermission($actor, (int) $pos->pos_id, 'pos.preview_link_challenge', 'غير مصرح لك بمعاينة دعوة الربط داخل نقطة البيع هذه.');
 
         $network = $challenge->network;
         $network->ensureActive();
@@ -382,19 +335,7 @@ class NetworkPosLinkingChallengeService
                 ]);
             }
 
-            if (! $actor->isSuperAdmin()) {
-                $isOwner = (int) $pos->owner_id === (int) $actor->user_id;
-                $isActiveMember = $actor->posUsers()
-                    ->where('pos_id', $pos->pos_id)
-                    ->where('status', 'ACTIVE')
-                    ->exists();
-
-                if (! $isOwner && ! $isActiveMember) {
-                    throw ValidationException::withMessages([
-                        'pos_uuid' => ['غير مصرح لك بإدارة نقطة البيع هذه.'],
-                    ]);
-                }
-            }
+            $this->assertPosPermission($actor, (int) $pos->pos_id, 'pos.confirm_link_challenge', 'غير مصرح لك بتأكيد دعوة الربط داخل نقطة البيع هذه.');
 
             try {
                 $network = $this->networkRepository->findById($challenge->network_id);
@@ -443,20 +384,12 @@ class NetworkPosLinkingChallengeService
                 return false;
             }
 
-            if (! $actor->isSuperAdmin()) {
-                $network = $challenge->network;
-                $isOwner = (int) $network->owner_id === (int) $actor->user_id;
-                $isActiveMember = $actor->networkUsers()
-                    ->where('network_id', $challenge->network_id)
-                    ->where('status', 'ACTIVE')
-                    ->exists();
-
-                if (! $isOwner && ! $isActiveMember) {
-                    throw ValidationException::withMessages([
-                        'challenge_uuid' => ['غير مصرح لك بإلغاء دعوة الربط هذه.'],
-                    ]);
-                }
-            }
+            $this->assertNetworkPermission(
+                $actor,
+                (int) $challenge->network_id,
+                'networks.revoke_link_challenge',
+                'غير مصرح لك بإلغاء دعوة الربط هذه.'
+            );
 
             if ($challenge->status !== LinkingChallengeStatus::PENDING) {
                 return false;
@@ -482,19 +415,24 @@ class NetworkPosLinkingChallengeService
             return null;
         }
 
-        if (! $actor->isSuperAdmin()) {
-            $network = $challenge->network;
-            $isOwner = (int) $network->owner_id === (int) $actor->user_id;
-            $isActiveMember = $actor->networkUsers()
-                ->where('network_id', $challenge->network_id)
-                ->where('status', 'ACTIVE')
-                ->exists();
+        $canViewNetwork = $this->tenantPermissions->allowsNetwork(
+            $actor,
+            (int) $challenge->network_id,
+            'networks.view'
+        );
+        $canViewPos = $this->tenantPermissions->allowsPos(
+            $actor,
+            (int) $challenge->pos_id,
+            'networks.view'
+        );
 
-            if (! $isOwner && ! $isActiveMember) {
-                throw ValidationException::withMessages([
-                    'challenge_uuid' => ['غير مصرح لك بالاطلاع على حالة دعوة الربط هذه.'],
-                ]);
-            }
+        if (! $this->tenantPermissions->allowsPlatform($actor, 'networks.view')
+            && ! $canViewNetwork
+            && ! $canViewPos
+        ) {
+            throw ValidationException::withMessages([
+                'challenge_uuid' => ['غير مصرح لك بالاطلاع على حالة دعوة الربط هذه.'],
+            ]);
         }
 
         if (
@@ -525,6 +463,36 @@ class NetworkPosLinkingChallengeService
      *     exp: int
      * }
      */
+    private function assertNetworkPermission(
+        User $actor,
+        int $networkId,
+        string $permission,
+        string $message
+    ): void {
+        if ($this->tenantPermissions->allowsNetwork($actor, $networkId, $permission)) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'network_id' => [$message],
+        ]);
+    }
+
+    private function assertPosPermission(
+        User $actor,
+        int $posId,
+        string $permission,
+        string $message
+    ): void {
+        if ($this->tenantPermissions->allowsPos($actor, $posId, $permission)) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'pos_uuid' => [$message],
+        ]);
+    }
+
     protected function decryptAndValidatePayload(string $payloadToken): array
     {
         $trimmed = trim($payloadToken);

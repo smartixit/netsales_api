@@ -20,6 +20,10 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardOverviewService
 {
+    public function __construct(
+        private readonly TenantPermissionService $tenantPermissions
+    ) {}
+
     private const TIMEZONE = 'Asia/Aden';
 
     private const EXPIRING_WITHIN_DAYS = 7;
@@ -41,9 +45,11 @@ class DashboardOverviewService
             ? $now->copy()->startOfMonth()->subMonths(11)
             : $now->copy()->subDays($periodDays - 1)->startOfDay();
         $bucket = $this->periodBucket($period);
-        $permissions = array_fill_keys($user->getAllPermissions(), true);
-        $can = static fn (string $permission): bool => $user->isSuperAdmin()
-            || isset($permissions[$permission]);
+        // Every platform metric uses the same scope-aware authorization
+        // source as the route middleware. Direct grants are valid only for
+        // active PLATFORM accounts; tenant membership grants never unlock
+        // platform-wide metrics.
+        $can = fn (string $permission): bool => $this->tenantPermissions->allowsPlatform($user, $permission);
 
         $metrics = [];
         $charts = [

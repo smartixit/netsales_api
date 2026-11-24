@@ -190,6 +190,14 @@ class NetworkService
         return $this->networkRepository->getTrashed($perPage);
     }
 
+    public function getTrashedFiltered(array $filters = []): Collection|CursorPaginator
+    {
+        return $this->networkRepository->getTrashedFiltered(
+            $filters,
+            ['governorate', 'directorate', 'wallet']
+        );
+    }
+
     /**
      * استعادة شبكة محذوفة مؤقتاً.
      */

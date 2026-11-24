@@ -899,7 +899,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
 
         $confirmRes->assertStatus(422)
             ->assertJsonValidationErrors(['pos_uuid']);
-        $this->assertStringContainsString('غير مصرح لك بإدارة نقطة البيع هذه', $confirmRes->json('errors.pos_uuid.0'));
+        $this->assertStringContainsString('غير مصرح لك بتأكيد دعوة الربط داخل نقطة البيع هذه.', $confirmRes->json('errors.pos_uuid.0'));
     }
 
     public function test_confirmation_from_different_pos_than_targeted_pos_is_rejected(): void
@@ -990,14 +990,21 @@ class NetworkPosLinkingChallengeTest extends TestCase
         if ($netEditPerm) {
             $ownerB->permissions()->syncWithoutDetaching([$netEditPerm->permission_id]);
         }
+        Network::query()->create([
+            'owner_id' => $ownerB->user_id,
+            'network_name' => 'Cross Tenant Network B '.uniqid(),
+            'network_phone_number' => '77'.random_int(10000000, 99999999),
+            'governorate_id' => $this->network->governorate_id,
+            'directorate_id' => $this->network->directorate_id,
+            'status' => NetworkStatus::ACTIVE,
+        ]);
         $sessionB = $this->createAuthenticatedSession($ownerB);
 
         $crossTenantRes = $this->withHeaders($sessionB['headers'])
             ->deleteJson("/api/v1/network-pos/challenges/{$uuid}");
 
-        $crossTenantRes->assertStatus(422)
-            ->assertJsonValidationErrors(['challenge_uuid']);
-        $this->assertStringContainsString('غير مصرح لك بإلغاء دعوة الربط هذه', $crossTenantRes->json('errors.challenge_uuid.0'));
+        $crossTenantRes->assertForbidden()
+            ->assertJsonPath('message', 'عذراً، لا تملك هذه الصلاحية داخل مساحة العمل أو الكيان المحدد.');
     }
 
     public function test_row_locking_and_concurrent_duplicate_confirmation_guarantees_single_consumption(): void

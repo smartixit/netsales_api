@@ -12,6 +12,7 @@ use App\Http\Requests\API\V1\Request\UpdateRequestRequest;
 use App\Http\Resources\API\V1\Request\RequestResource;
 use App\Http\Resources\API\V1\SaleInvoice\SaleInvoiceResource;
 use App\Services\RequestService;
+use App\Services\TenantPermissionService;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -33,6 +34,7 @@ class RequestController extends BaseController
 {
     public function __construct(
         protected RequestService $requestService,
+        protected TenantPermissionService $tenantPermissions,
     ) {}
 
     /**
@@ -90,7 +92,7 @@ class RequestController extends BaseController
     public function summary(Request $request): JsonResponse
     {
         try {
-            $filters = $this->applyRequestUserScope($request->only(['network_id', 'pos_id']));
+            $filters = $this->applyRequestUserScope($request->only(['network_id', 'pos_id']), 'requests.report');
             if ($filters instanceof JsonResponse) {
                 return $filters;
             }
@@ -112,40 +114,56 @@ class RequestController extends BaseController
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>|JsonResponse
      */
-    private function applyRequestUserScope(array $filters): array|JsonResponse
+    private function applyRequestUserScope(array $filters, string $permission = 'requests.view'): array|JsonResponse
     {
         $currentUser = $this->currentUser();
         if (! $currentUser) {
             return $this->errorResponse('يجب تسجيل الدخول لاستعراض طلبات التوريد.', [], 401);
         }
 
-        if ($currentUser->isSuperAdmin()) {
+        if ($currentUser->role_scope === \App\Enums\RoleScope::PLATFORM->value
+            && $this->tenantPermissions->allowsPlatform($currentUser, $permission)
+        ) {
             return $filters;
         }
 
-        $authorization = app(\App\Services\TenantPermissionService::class);
-        $networkIds = $authorization->authorizedNetworkIds($currentUser, 'requests.view');
-        $posIds = $authorization->authorizedPosIds($currentUser, 'requests.view');
+        $networkIds = $this->tenantPermissions->authorizedNetworkIds($currentUser, $permission);
+        $posIds = $this->tenantPermissions->authorizedPosIds($currentUser, $permission);
 
         if (! empty($filters['network_id'])) {
-            $requestedId = (int) $filters['network_id'];
-            if (! in_array($requestedId, $networkIds, true)) {
+            $requestedNetworkId = (int) $filters['network_id'];
+            if (! $this->tenantPermissions->allowsNetworkThroughNetworkOrLinkedPos(
+                $currentUser,
+                $requestedNetworkId,
+                $permission
+            )) {
                 return $this->errorResponse('غير مصرح لك باستعراض طلبات هذه الشبكة.', [], 403);
             }
-            $filters['authorized_network_ids'] = [$requestedId];
-        } else {
-            $filters['authorized_network_ids'] = $networkIds;
+
+            if (in_array($requestedNetworkId, $networkIds, true)) {
+                $networkIds = [$requestedNetworkId];
+            }
+            // Keep network_id as a narrowing query filter even for POS-derived access.
         }
 
         if (! empty($filters['pos_id'])) {
-            $requestedId = (int) $filters['pos_id'];
-            if (! in_array($requestedId, $posIds, true)) {
+            $requestedPosId = (int) $filters['pos_id'];
+            if (! $this->tenantPermissions->allowsPosThroughPosOrLinkedNetwork(
+                $currentUser,
+                $requestedPosId,
+                $permission
+            )) {
                 return $this->errorResponse('غير مصرح لك باستعراض طلبات نقطة البيع هذه.', [], 403);
             }
-            $filters['authorized_pos_ids'] = [$requestedId];
-        } else {
-            $filters['authorized_pos_ids'] = $posIds;
+
+            if (in_array($requestedPosId, $posIds, true)) {
+                $posIds = [$requestedPosId];
+            }
+            // Keep pos_id as a narrowing query filter for network-derived access.
         }
+
+        $filters['authorized_network_ids'] = $networkIds;
+        $filters['authorized_pos_ids'] = $posIds;
 
         if ($filters['authorized_network_ids'] === [] && $filters['authorized_pos_ids'] === []) {
             return $this->errorResponse('لا توجد عضوية نشطة تملك صلاحية عرض الطلبات.', [], 403);

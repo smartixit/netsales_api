@@ -15,15 +15,6 @@ class VoucherPackagePolicy
         protected TenantAuthorizationService $tenantAuth
     ) {}
 
-    public function before(User $user, string $ability): ?bool
-    {
-        if ($user->isSuperAdmin()) {
-            return true;
-        }
-
-        return null;
-    }
-
     public function viewAny(User $user): bool
     {
         $networkIds = $this->tenantAuth->getViewableNetworkIdsForPackages($user);
@@ -59,11 +50,11 @@ class VoucherPackagePolicy
 
     public function restore(User $user, VoucherPackage $package): bool
     {
-        return $this->tenantAuth->canManagePackage($user, $package, 'voucher_packages.delete');
+        return $this->tenantAuth->canManagePackage($user, $package, 'voucher_packages.restore');
     }
 
     public function forceDelete(User $user, VoucherPackage $package): bool
     {
-        return $this->tenantAuth->canManagePackage($user, $package, 'voucher_packages.delete');
+        return $this->tenantAuth->canManagePackage($user, $package, 'voucher_packages.force_delete');
     }
 }

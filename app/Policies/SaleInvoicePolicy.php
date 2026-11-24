@@ -11,21 +11,20 @@ class SaleInvoicePolicy
 {
     use HandlesAuthorization;
 
-    public function before(User $user, string $ability): ?bool
-    {
-        return $user->isSuperAdmin() ? true : null;
-    }
-
     public function viewAny(User $user): bool
     {
-        return app(TenantPermissionService::class)->allowsAnyOperational($user, 'sales.view');
+        $permissions = app(TenantPermissionService::class);
+
+        return $permissions->allowsPlatform($user, 'sales.view')
+            || $permissions->allowsAnyOperational($user, 'sales.view');
     }
 
     public function view(User $user, SaleInvoice $invoice): bool
     {
         $permissions = app(TenantPermissionService::class);
 
-        return $permissions->allowsNetwork($user, (int) $invoice->network_id, 'sales.view')
+        return $permissions->allowsPlatform($user, 'sales.view')
+            || $permissions->allowsNetwork($user, (int) $invoice->network_id, 'sales.view')
             || $permissions->allowsPos($user, (int) $invoice->pos_id, 'sales.view');
     }
 

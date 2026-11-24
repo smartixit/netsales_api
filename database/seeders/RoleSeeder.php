@@ -18,7 +18,7 @@ class RoleSeeder extends Seeder
             [
                 'role_key' => RoleKey::SUPER_ADMIN->value,
                 'role_name' => RoleKey::SUPER_ADMIN->label(),
-                'role_desc' => 'كامل الصلاحيات الفنية والإدارية والمالية على كافة وحدات النظام',
+                'role_desc' => 'إدارة شاملة لنطاق المنصة وصلاحياتها السيادية، مع بقاء تشغيل الشبكات ونقاط البيع ضمن نطاقاتهما المستقلة',
                 'scope' => RoleScope::PLATFORM->value,
                 'is_system' => true,
                 'status' => true,
@@ -93,6 +93,7 @@ class RoleSeeder extends Seeder
             DB::table('roles')->updateOrInsert(
                 ['role_key' => $role['role_key']],
                 array_merge($role, [
+                    'deleted_at' => null,
                     'updated_at' => now('Asia/Aden'),
                     'created_at' => now('Asia/Aden'),
                 ])

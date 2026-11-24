@@ -41,6 +41,8 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
 
     protected User $user;
 
+    protected User $posUserA;
+
     protected UserSession $session;
 
     protected Network $networkA;
@@ -59,11 +61,20 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
 
     protected array $headers;
 
+    /** @var array<string, string> */
+    protected array $posHeadersA;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->user = User::firstOrFail();
+        $this->user = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Adversarial Network Owner '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
 
         $auth = $this->createAuthenticatedSession($this->user);
         $this->session = $auth['session'];
@@ -91,7 +102,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
             'status' => NetworkStatus::ACTIVE,
         ]);
 
-        $posUserA = $this->createUserWithScope(RoleScope::POS, [
+        $this->posUserA = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Agent A '.$suffix,
             'user_phone_number' => '73'.rand(1000000, 9999999),
@@ -109,9 +120,9 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
 
         // نقطة البيع A تابعة للشبكة A
         $this->posA = Pos::create([
-            'owner_id' => $posUserA->user_id,
+            'owner_id' => $this->posUserA->user_id,
             'pos_name' => 'SecPOS A '.$suffix,
-            'pos_phone_number' => $posUserA->user_phone_number,
+            'pos_phone_number' => $this->posUserA->user_phone_number,
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => PosStatus::ACTIVE,
@@ -138,6 +149,11 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
             'pos_id' => $this->posB->pos_id,
             'status' => true,
         ]);
+
+        // Request creation is performed by the actual POS owner. Network
+        // review and approval are performed by the separate network owner.
+        $posAuth = $this->createAuthenticatedSession($this->posUserA);
+        $this->posHeadersA = $posAuth['headers'];
 
         $this->networkWalletA = NetworkWallet::create([
             'network_id' => $this->networkA->network_id,
@@ -243,7 +259,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
                         'voucher_count' => 10,
                     ],
                 ],
-            ]);
+            ], $this->posHeadersA);
 
         $requestResponse->assertStatus(201);
         $requestId = $requestResponse->json('data.request_id');
@@ -283,7 +299,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
                         'voucher_count' => 5,
                     ],
                 ],
-            ]);
+            ], $this->posHeadersA);
 
         $requestId = $requestResponse->json('data.request_id');
 
@@ -311,7 +327,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
                         'voucher_count' => 2,
                     ],
                 ],
-            ])->json('data.request_id');
+            ], $this->posHeadersA)->assertCreated()->json('data.request_id');
 
         // الرفض الأول
         $this->withHeaders($this->headers)
@@ -343,7 +359,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
                         'voucher_count' => 1,
                     ],
                 ],
-            ]);
+            ], $this->posHeadersA);
 
         $requestId = $requestResponse->json('data.request_id');
 
@@ -353,7 +369,7 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
             ->assertStatus(200);
 
         // محاولة الإلغاء للطلب المعتمد
-        $cancelResponse = $this->withHeaders($this->headers)
+        $cancelResponse = $this->withHeaders($this->posHeadersA)
             ->postJson("/api/v1/requests/{$requestId}/cancel");
 
         $cancelResponse->assertStatus(422);
@@ -374,11 +390,8 @@ class AdversarialSecurityAndEdgeCasesTest extends TestCase
                 'statement' => 'محاولة اختراق عزل الشبكات',
             ]);
 
-        $response->assertStatus(422);
-        $this->assertTrue(
-            str_contains($response->json('message'), 'غير مرتبطة') ||
-            str_contains($response->json('message'), 'محفظة')
-        );
+        // The actor may operate on Network A; the domain guard rejects the unlinked POS B.
+        $response->assertStatus(422)->assertJsonValidationErrors(['pos_id']);
     }
 
     /**

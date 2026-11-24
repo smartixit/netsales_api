@@ -29,6 +29,7 @@ class SaleInvoiceController extends BaseController
 {
     public function __construct(
         protected SaleInvoiceService $saleInvoiceService,
+        protected TenantPermissionService $tenantPermissions,
     ) {}
 
     /**
@@ -254,33 +255,6 @@ class SaleInvoiceController extends BaseController
     }
 
     /**
-     * استعادة فاتورة مبيعات محذوفة مؤقتاً.
-     */
-    #[OA\Post(
-        path: '/api/v1/sale-invoices/{id}/restore',
-        summary: 'استعادة فاتورة مبيعات محذوفة مؤقتاً',
-        tags: ['Sale Invoices'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'تم استعادة الفاتورة بنجاح'),
-        ]
-    )]
-    public function restore(int $id): JsonResponse
-    {
-        try {
-            $this->saleInvoiceService->restoreInvoice($id);
-
-            return $this->successResponse('تم استعادة فاتورة المبيعات بنجاح.');
-        } catch (ValidationException $e) {
-            return $this->validationErrorResponse($e);
-        } catch (Exception $e) {
-            return $this->errorResponse('تعذر استعادة الفاتورة: '.$e->getMessage(), [], 422);
-        }
-    }
-
-    /**
      * الحذف النهائي لفاتورة مبيعات.
      */
     #[OA\Delete(
@@ -345,43 +319,6 @@ class SaleInvoiceController extends BaseController
     }
 
     /**
-     * الاستعادة المجمعة لفواتير المبيعات.
-     */
-    #[OA\Post(
-        path: '/api/v1/sale-invoices/batch-restore',
-        summary: 'استعادة مجمعة لفواتير المبيعات',
-        tags: ['Sale Invoices'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            description: 'بيانات الطلب',
-            content: new OA\MediaType(
-                mediaType: 'multipart/form-data',
-                schema: new OA\Schema(
-                    required: ['ids'],
-                    properties: [
-                        new OA\Property(property: 'ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
-                    ]
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(response: 200, description: 'تمت الاستعادة المجمعة بنجاح'),
-        ]
-    )]
-    public function batchRestore(BatchIdsRequest $request): JsonResponse
-    {
-        try {
-            $count = $this->saleInvoiceService->bulkRestore($request->getIds());
-
-            return $this->successResponse("تم استعادة ({$count}) فاتورة بنجاح.");
-        } catch (ValidationException $e) {
-            return $this->validationErrorResponse($e);
-        } catch (Exception $e) {
-            return $this->errorResponse('تعذر تنفيذ الاستعادة المجمعة: '.$e->getMessage(), [], 422);
-        }
-    }
-
-    /**
      * الحذف النهائي المجمع لفواتير المبيعات.
      */
     #[OA\Post(
@@ -440,7 +377,7 @@ class SaleInvoiceController extends BaseController
     {
         try {
             $filters = $request->only(['period', 'network_id', 'pos_id', 'from_date', 'to_date']);
-            $scopedFilters = $this->applyInvoiceTenantScope($filters);
+            $scopedFilters = $this->applyInvoiceTenantScope($filters, 'sales.report');
             if ($scopedFilters instanceof JsonResponse) {
                 return $scopedFilters;
             }
@@ -458,38 +395,48 @@ class SaleInvoiceController extends BaseController
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>|JsonResponse
      */
-    private function applyInvoiceTenantScope(array $filters): array|JsonResponse
+    private function applyInvoiceTenantScope(array $filters, string $permission = 'sales.view'): array|JsonResponse
     {
         $user = $this->currentUser();
         if (! $user) {
             return $this->errorResponse('يجب تسجيل الدخول أولاً.', [], 401);
         }
 
-        if ($user->isSuperAdmin()) {
+        if ($this->tenantPermissions->allowsPlatform($user, $permission)) {
             return $filters;
         }
 
-        $permissions = app(TenantPermissionService::class);
-        $networkIds = $permissions->authorizedNetworkIds($user, 'sales.view');
-        $posIds = $permissions->authorizedPosIds($user, 'sales.view');
+        $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, $permission);
+        $posIds = $this->tenantPermissions->authorizedPosIds($user, $permission);
 
         if ($networkIds === [] && $posIds === []) {
-            return $this->errorResponse('لا توجد عضوية نشطة تملك صلاحية عرض الفواتير.', [], 403);
+            return $this->errorResponse('لا توجد عضوية نشطة تملك الصلاحية المطلوبة لعرض فواتير المبيعات.', [], 403);
         }
 
-        if (! empty($filters['network_id']) && ! in_array((int) $filters['network_id'], $networkIds, true)) {
-            return $this->errorResponse('غير مصرح لك باستعراض فواتير هذه الشبكة.', [], 403);
-        }
-        if (! empty($filters['pos_id']) && ! in_array((int) $filters['pos_id'], $posIds, true)) {
-            return $this->errorResponse('غير مصرح لك باستعراض فواتير نقطة البيع هذه.', [], 403);
+        if (! empty($filters['network_id'])) {
+            $requestedNetworkId = (int) $filters['network_id'];
+            if (! $this->tenantPermissions->allowsNetworkThroughNetworkOrLinkedPos($user, $requestedNetworkId, $permission)) {
+                return $this->errorResponse('غير مصرح لك باستعراض فواتير هذه الشبكة.', [], 403);
+            }
+
+            if (in_array($requestedNetworkId, $networkIds, true)) {
+                $networkIds = [$requestedNetworkId];
+            }
         }
 
-        $filters['authorized_network_ids'] = ! empty($filters['network_id'])
-            ? [(int) $filters['network_id']]
-            : $networkIds;
-        $filters['authorized_pos_ids'] = ! empty($filters['pos_id'])
-            ? [(int) $filters['pos_id']]
-            : $posIds;
+        if (! empty($filters['pos_id'])) {
+            $requestedPosId = (int) $filters['pos_id'];
+            if (! $this->tenantPermissions->allowsPosThroughPosOrLinkedNetwork($user, $requestedPosId, $permission)) {
+                return $this->errorResponse('غير مصرح لك باستعراض فواتير نقطة البيع هذه.', [], 403);
+            }
+
+            if (in_array($requestedPosId, $posIds, true)) {
+                $posIds = [$requestedPosId];
+            }
+        }
+
+        $filters['authorized_network_ids'] = $networkIds;
+        $filters['authorized_pos_ids'] = $posIds;
 
         return $filters;
     }

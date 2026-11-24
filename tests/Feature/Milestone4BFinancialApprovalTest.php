@@ -7,11 +7,14 @@ use App\Enums\NetworkStatus;
 use App\Enums\NotificationType;
 use App\Enums\PosStatus;
 use App\Enums\RequestStatus;
+use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Enums\SaleType;
 use App\Enums\UserStatus;
 use App\Enums\WalletOperationType;
 use App\Models\Network;
+use App\Models\NetworkUser;
+use App\Models\Role;
 use App\Models\NetworkPos;
 use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
@@ -62,8 +65,14 @@ class Milestone4BFinancialApprovalTest extends TestCase
 
         $suffix = uniqid();
 
-        // 1. سوبر أدمن النظام للاختبارات
-        $this->user = User::firstOrFail();
+        // The scenario exercises tenant-side financial approval, not platform administration.
+        $this->user = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Operational Network Owner '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
 
         $devUuid = 'DEV-4B-'.$suffix;
         UserDevice::firstOrCreate([
@@ -834,23 +843,32 @@ class Milestone4BFinancialApprovalTest extends TestCase
         $this->network->owner_id = $netOwner->user_id;
         $this->network->save();
 
+        NetworkUser::query()->create([
+            'network_id' => $this->network->network_id,
+            'user_id' => $netOwner->user_id,
+            'role_id' => Role::byKey(RoleKey::NETWORK_OWNER)->active()->firstOrFail()->role_id,
+            'status' => 'ACTIVE',
+        ]);
+
         $this->pos->owner_id = $posOwner->user_id;
         $this->pos->save();
 
         $this->posWallet->wallet_balance = 100000.00;
         $this->posWallet->save();
 
-        $reqId = $this->postProcurementRequest([
+        $posOwnerAuth = $this->createAuthenticatedSession($posOwner);
+        $netOwnerAuth = $this->createAuthenticatedSession($netOwner);
+        $requestResponse = $this->postProcurementRequest([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'sale_type' => SaleType::CASH->value,
             'items' => [['package_id' => $this->packageA->package_id, 'voucher_count' => 50]],
-        ])->json('data.request_id');
+        ], $posOwnerAuth['headers']);
 
-        // تعيين منشئ الطلب كوكيل نقطة البيع
-        RequestModel::where('request_id', $reqId)->update(['created_by' => $posOwner->user_id]);
+        $requestResponse->assertCreated();
+        $reqId = $requestResponse->json('data.request_id');
 
-        $this->withHeaders($this->headers)
+        $this->withHeaders($netOwnerAuth['headers'])
             ->postJson("/api/v1/requests/{$reqId}/approve")
             ->assertStatus(200);
 

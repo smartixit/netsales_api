@@ -29,17 +29,11 @@ class NetworkWalletRepository extends BaseRepository implements NetworkWalletRep
     {
         parent::applyFilters($query, $filters);
 
-        // This filter is injected only by the authenticated service layer.
-        // Client-supplied network_id/search filters can only narrow this scope.
-        if (isset($filters['authorized_user_id'])) {
-            $userId = (int) $filters['authorized_user_id'];
-            $query->whereHas('network', function (Builder $networkQuery) use ($userId): void {
-                $networkQuery->where('owner_id', $userId)
-                    ->orWhereHas('memberships', function (Builder $membershipQuery) use ($userId): void {
-                        $membershipQuery->where('user_id', $userId)
-                            ->where('status', 'ACTIVE');
-                    });
-            });
+        // Injected by the service from the exact tenant permission grants.
+        // An empty list intentionally produces no rows (fail closed).
+        if (isset($filters['authorized_network_ids'])) {
+            $networkIds = array_values(array_unique(array_map('intval', (array) $filters['authorized_network_ids'])));
+            $query->whereIn('network_id', $networkIds);
         }
 
         if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {

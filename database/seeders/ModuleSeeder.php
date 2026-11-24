@@ -21,6 +21,13 @@ class ModuleSeeder extends Seeder
                 'status' => true,
             ],
             [
+                'module_key' => 'dashboard',
+                'module_name' => 'لوحة المنصة ومؤشراتها',
+                'module_icon' => 'heroicon-o-chart-bar-square',
+                'module_desc' => 'عرض مؤشرات المنصة وتجميعاتها وفق صلاحيات دور المنصة',
+                'status' => true,
+            ],
+            [
                 'module_key' => 'users',
                 'module_name' => 'المستخدمين',
                 'module_icon' => 'heroicon-o-users',
@@ -35,10 +42,17 @@ class ModuleSeeder extends Seeder
                 'status' => true,
             ],
             [
-                'module_key' => 'geography',
-                'module_name' => 'الدليل الجغرافي',
+                'module_key' => 'governorates',
+                'module_name' => 'المحافظات',
                 'module_icon' => 'heroicon-o-map',
-                'module_desc' => 'إدارة المحافظات والمديريات والمناطق الجغرافية',
+                'module_desc' => 'إدارة المحافظات بصورة مستقلة',
+                'status' => true,
+            ],
+            [
+                'module_key' => 'directorates',
+                'module_name' => 'المديريات',
+                'module_icon' => 'heroicon-o-map-pin',
+                'module_desc' => 'إدارة المديريات وربطها بمحافظاتها',
                 'status' => true,
             ],
             [
@@ -46,6 +60,13 @@ class ModuleSeeder extends Seeder
                 'module_name' => 'الشبكات والمزودين',
                 'module_icon' => 'heroicon-o-wifi',
                 'module_desc' => 'إدارة شبكات الإنترنت المسجلة والمزودين وحالات الاعتماد',
+                'status' => true,
+            ],
+            [
+                'module_key' => 'network_members',
+                'module_name' => 'أعضاء الشبكة',
+                'module_icon' => 'heroicon-o-users',
+                'module_desc' => 'عرض وإدارة عضويات فريق الشبكة وأدوارهم وحالاتهم',
                 'status' => true,
             ],
             [
@@ -63,6 +84,13 @@ class ModuleSeeder extends Seeder
                 'status' => true,
             ],
             [
+                'module_key' => 'pos_members',
+                'module_name' => 'أعضاء نقطة البيع',
+                'module_icon' => 'heroicon-o-users',
+                'module_desc' => 'عرض وإدارة عضويات فريق نقطة البيع وأدوارهم وحالاتهم',
+                'status' => true,
+            ],
+            [
                 'module_key' => 'pos_wallets',
                 'module_name' => 'محافظ نقاط البيع',
                 'module_icon' => 'heroicon-o-banknotes',
@@ -74,6 +102,13 @@ class ModuleSeeder extends Seeder
                 'module_name' => 'باقات وكروت الشبكة',
                 'module_icon' => 'heroicon-o-ticket',
                 'module_desc' => 'إدارة فئات الكروت، أسعارها، الخصومات، وباقات البيانات',
+                'status' => true,
+            ],
+            [
+                'module_key' => 'voucher_package_discounts',
+                'module_name' => 'خصومات باقات الكروت',
+                'module_icon' => 'heroicon-o-receipt-percent',
+                'module_desc' => 'إدارة الخصومات التعاقدية المخصصة لنقاط البيع',
                 'status' => true,
             ],
             [
@@ -166,10 +201,17 @@ class ModuleSeeder extends Seeder
             DB::table('modules')->updateOrInsert(
                 ['module_key' => $module['module_key']],
                 array_merge($module, [
+                    'deleted_at' => null,
                     'updated_at' => now('Asia/Aden'),
                     'created_at' => now('Asia/Aden'),
                 ])
             );
         }
+
+        DB::table('modules')->where('module_key', 'geography')->update([
+            'status' => false,
+            'deleted_at' => now('Asia/Aden'),
+            'updated_at' => now('Asia/Aden'),
+        ]);
     }
 }

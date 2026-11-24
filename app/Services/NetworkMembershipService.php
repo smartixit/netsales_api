@@ -20,7 +20,8 @@ use Illuminate\Validation\ValidationException;
 class NetworkMembershipService
 {
     public function __construct(
-        private BillingEntitlementService $billingEntitlements
+        private BillingEntitlementService $billingEntitlements,
+        private TenantPermissionService $tenantPermissions
     ) {}
 
     /**
@@ -28,7 +29,7 @@ class NetworkMembershipService
      */
     public function getMembers(int $networkId, int $actorId): Collection
     {
-        $this->authorizeActor($networkId, $actorId);
+        $this->authorizeActor($networkId, $actorId, 'network_members.view');
 
         $ownerId = (int) Network::query()->whereKey($networkId)->value('owner_id');
 
@@ -47,11 +48,14 @@ class NetworkMembershipService
      */
     public function getAssignableRoles(int $networkId, int $actorId): Collection
     {
-        $this->authorizeActor($networkId, $actorId);
+        $this->authorizeActor($networkId, $actorId, 'network_members.view');
 
         return Role::query()
             ->where('scope', RoleScope::NETWORK->value)
-            ->where('role_key', RoleKey::NETWORK_USER->value)
+            ->whereIn('role_key', [
+                RoleKey::NETWORK_USER->value,
+                RoleKey::NETWORK_ACCOUNTANT->value,
+            ])
             ->active()
             ->orderBy('role_name')
             ->get();
@@ -67,7 +71,7 @@ class NetworkMembershipService
         int $actorId,
         string $status = 'ACTIVE'
     ): NetworkUser {
-        $this->authorizeActor($networkId, $actorId);
+        $this->authorizeActor($networkId, $actorId, 'network_members.create');
 
         return DB::transaction(function () use ($networkId, $phoneNumber, $roleId, $actorId, $status): NetworkUser {
             // تسلسل حجز المقاعد داخل الشبكة لمنع تجاوز الحد بطلبات متزامنة.
@@ -83,7 +87,13 @@ class NetworkMembershipService
                 ]);
             }
 
-            // لا تسمح عضويات التشغيل بترقية عضو إلى مالك أو محاسب أو دور منصة.
+            if ($user->role_scope === RoleScope::PLATFORM->value) {
+                throw ValidationException::withMessages([
+                    'user_phone_number' => ['لا يمكن إضافة حساب من نطاق المنصة إلى عضوية تشغيلية داخل شبكة.'],
+                ]);
+            }
+
+            // لا تسمح عضويات التشغيل بترقية عضو إلى مالك أو دور منصة؛ المحاسب دور تشغيلي قابل للإسناد.
             $this->resolveAssignableRole($roleId);
 
             // منع التكرار
@@ -101,19 +111,21 @@ class NetworkMembershipService
                 $this->assertNetworkMemberQuota($networkId, (int) $network->owner_id);
             }
 
+            $nextSeq = $this->nextAuditSequence($networkId);
+
             $member = NetworkUser::create([
                 'network_id' => $networkId,
                 'user_id' => $user->user_id,
                 'role_id' => $roleId,
                 'status' => $normalizedStatus,
-                'last_event_seq' => 1,
+                'last_event_seq' => $nextSeq,
             ]);
 
             // توثيق العملية في سجل التدقيق
             NetworkMembershipAuditLog::create([
                 'network_id' => $networkId,
                 'user_id' => $user->user_id,
-                'event_seq' => 1,
+                'event_seq' => $nextSeq,
                 'action' => 'ASSIGNED',
                 'actor_id' => $actorId,
                 'old_state' => null,
@@ -134,10 +146,10 @@ class NetworkMembershipService
      */
     public function updateRole(int $networkId, int $userId, int $newRoleId, int $actorId, ?string $reason = null): NetworkUser
     {
-        $this->authorizeActor($networkId, $actorId);
+        $this->authorizeActor($networkId, $actorId, 'network_members.change_role');
 
         return DB::transaction(function () use ($networkId, $userId, $newRoleId, $actorId, $reason): NetworkUser {
-            $network = Network::findOrFail($networkId);
+            $network = Network::query()->lockForUpdate()->findOrFail($networkId);
             if ((int) $network->owner_id === $userId) {
                 throw ValidationException::withMessages([
                     'role_id' => ['لا يمكن تغيير دور مالك الشبكة الرئيسي للشبكة.'],
@@ -156,7 +168,7 @@ class NetworkMembershipService
                 return $member->load(['user', 'role']);
             }
 
-            $nextSeq = (int) $member->last_event_seq + 1;
+            $nextSeq = $this->nextAuditSequence($networkId);
             $member->update([
                 'role_id' => $newRoleId,
                 'last_event_seq' => $nextSeq,
@@ -182,7 +194,7 @@ class NetworkMembershipService
      */
     public function updateStatus(int $networkId, int $userId, string $newStatus, int $actorId, ?string $reason = null): NetworkUser
     {
-        $this->authorizeActor($networkId, $actorId);
+        $this->authorizeActor($networkId, $actorId, 'network_members.change_status');
 
         if (! in_array($newStatus, ['ACTIVE', 'SUSPENDED', 'INVITED'], true)) {
             throw ValidationException::withMessages([
@@ -213,7 +225,7 @@ class NetworkMembershipService
                 $this->assertNetworkMemberQuota($networkId, (int) $network->owner_id);
             }
 
-            $nextSeq = (int) $member->last_event_seq + 1;
+            $nextSeq = $this->nextAuditSequence($networkId);
             $member->update([
                 'status' => $newStatus,
                 'last_event_seq' => $nextSeq,
@@ -239,10 +251,10 @@ class NetworkMembershipService
      */
     public function removeMember(int $networkId, int $userId, int $actorId, ?string $reason = null): bool
     {
-        $this->authorizeActor($networkId, $actorId);
+        $this->authorizeActor($networkId, $actorId, 'network_members.delete');
 
         return DB::transaction(function () use ($networkId, $userId, $actorId, $reason): bool {
-            $network = Network::findOrFail($networkId);
+            $network = Network::query()->lockForUpdate()->findOrFail($networkId);
             if ((int) $network->owner_id === $userId) {
                 throw ValidationException::withMessages([
                     'user_id' => ['لا يمكن إزالة أو حذف عضوية مالك الشبكة الرئيسي من الشبكة.'],
@@ -251,9 +263,10 @@ class NetworkMembershipService
 
             $member = NetworkUser::where('network_id', $networkId)
                 ->where('user_id', $userId)
+                ->lockForUpdate()
                 ->firstOrFail();
 
-            $nextSeq = (int) $member->last_event_seq + 1;
+            $nextSeq = $this->nextAuditSequence($networkId);
 
             NetworkMembershipAuditLog::create([
                 'network_id' => $networkId,
@@ -303,7 +316,19 @@ class NetworkMembershipService
     }
 
     /**
-     * لا تقبل إلا NETWORK_USER النشط؛ يمنع ذلك تصعيد الامتيازات عبر العضويات.
+     * Reserve the next tenant-wide audit sequence. The caller must hold a
+     * lock on the parent network row until the transaction commits.
+     */
+    private function nextAuditSequence(int $networkId): int
+    {
+        return (int) NetworkMembershipAuditLog::query()
+            ->where('network_id', $networkId)
+            ->max('event_seq') + 1;
+    }
+
+    /**
+     * تقبل NETWORK_USER وNETWORK_ACCOUNTANT النشطين فقط؛ يبقى NETWORK_OWNER
+     * محصوراً في هوية مالك الشبكة ولا يمكن منحه كعضوية فرعية.
      */
     protected function resolveAssignableRole(int $roleId): Role
     {
@@ -313,10 +338,13 @@ class NetworkMembershipService
             ! $role
             || ! $role->isActive()
             || $role->scope !== RoleScope::NETWORK
-            || $role->role_key !== RoleKey::NETWORK_USER->value
+            || ! in_array($role->role_key, [
+                RoleKey::NETWORK_USER->value,
+                RoleKey::NETWORK_ACCOUNTANT->value,
+            ], true)
         ) {
             throw ValidationException::withMessages([
-                'role_id' => ['الدور المحدد غير مسموح به لعضوية الشبكة. يسمح حالياً بدور مستخدم الشبكة التشغيلي فقط.'],
+                'role_id' => ['الدور المحدد غير مسموح به لعضوية الشبكة. يسمح فقط بدوري مستخدم الشبكة ومحاسب الشبكة.'],
             ]);
         }
 
@@ -326,26 +354,27 @@ class NetworkMembershipService
     /**
      * التحقق من تخويل الفاعل لإدارة عضويات الشبكة.
      */
-    protected function authorizeActor(int $networkId, int $actorId): void
+    protected function authorizeActor(int $networkId, int $actorId, string $permission): void
     {
-        $actor = User::findOrFail($actorId);
+        $actor = User::query()->findOrFail($actorId);
 
-        if ($actor->isSuperAdmin()) {
-            return;
+        if (! $actor->isActive()) {
+            throw ValidationException::withMessages([
+                'actor' => ['لا يمكن لحساب غير نشط إدارة عضويات الشبكة.'],
+            ]);
         }
 
-        $network = Network::findOrFail($networkId);
-
-        $isOwner = (int) $network->owner_id === $actorId;
-        $hasOwnerMembership = NetworkUser::where('network_id', $networkId)
-            ->where('user_id', $actorId)
-            ->where('status', 'ACTIVE')
-            ->whereHas('role', fn ($q) => $q->where('role_key', 'NETWORK_OWNER'))
-            ->exists();
-
-        if (! $isOwner && ! $hasOwnerMembership) {
+        if ($actor->role_scope === RoleScope::PLATFORM->value) {
             throw ValidationException::withMessages([
-                'actor' => ['غير مصرح لك بإدارة موظفي وعضويات هذه الشبكة (مطلوب صلاحية مالك الشبكة).'],
+                'actor' => ['حسابات نطاق المنصة لا تدير عضويات NETWORK أو POS.'],
+            ]);
+        }
+
+        Network::query()->findOrFail($networkId);
+
+        if (! $this->tenantPermissions->allowsNetwork($actor, $networkId, $permission)) {
+            throw ValidationException::withMessages([
+                'actor' => ['لا تملك صلاحية العملية المطلوبة داخل هذه الشبكة.'],
             ]);
         }
     }

@@ -190,8 +190,29 @@ class SecurityService
     /**
      * رفع الحظر الأمني واستعادة الحالة الطبيعية للمستخدم أو الجهاز.
      */
+    public function unbanUser(int $banId, ?int $adminUserId = null): bool
+    {
+        return $this->unbanByTargetType($banId, 'user', $adminUserId);
+    }
+
+    public function unbanDevice(int $banId, ?int $adminUserId = null): bool
+    {
+        return $this->unbanByTargetType($banId, 'device', $adminUserId);
+    }
+
+    /**
+     * Backward-compatible generic operation. New API routes use the typed methods.
+     */
     public function unban(int $banId, ?int $adminUserId = null): bool
     {
+        return $this->unbanByTargetType($banId, null, $adminUserId);
+    }
+
+    private function unbanByTargetType(
+        int $banId,
+        ?string $expectedTarget,
+        ?int $adminUserId
+    ): bool {
         try {
             $ban = $this->securityBanRepository->findById($banId);
         } catch (ModelNotFoundException) {
@@ -200,17 +221,32 @@ class SecurityService
             ]);
         }
 
+        $hasUserTarget = $ban->user_id !== null;
+        $hasDeviceTarget = $ban->device_id !== null;
+        if ($hasUserTarget === $hasDeviceTarget) {
+            throw ValidationException::withMessages([
+                'ban_id' => ['سجل الحظر لا يحدد هدفاً واحداً صالحاً.'],
+            ]);
+        }
+
+        $actualTarget = $hasUserTarget ? 'user' : 'device';
+        if ($expectedTarget !== null && $actualTarget !== $expectedTarget) {
+            throw ValidationException::withMessages([
+                'ban_id' => [$expectedTarget === 'user'
+                    ? 'سجل الحظر المحدد لا يعود إلى مستخدم.'
+                    : 'سجل الحظر المحدد لا يعود إلى جهاز.'],
+            ]);
+        }
+
         $adminUserId = $adminUserId ?? (auth()->id() ? (int) auth()->id() : 0);
 
         return DB::transaction(function () use ($ban, $banId, $adminUserId) {
-            // 1. رفع سجل الحظر المحدد أولاً.
             if (! $this->securityBanRepository->liftBan($banId)) {
                 throw ValidationException::withMessages([
                     'ban_id' => ['تعذر رفع سجل الحظر الأمني المحدد.'],
                 ]);
             }
 
-            // 2. لا تعد الحالة النشطة ما دام سجل حظر آخر سارياً.
             if ($ban->user_id && ! $this->securityBanRepository->isUserBanned($ban->user_id)) {
                 $user = $this->userRepository->findById($ban->user_id);
                 if ($user->status === UserStatus::BANNED) {
@@ -225,7 +261,6 @@ class SecurityService
                 }
             }
 
-            // 4. توثيق أمني
             SystemLoggerService::log(
                 module: 'security',
                 action: 'ban_lifted',

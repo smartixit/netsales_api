@@ -42,7 +42,12 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
 
     protected User $user;
 
+    protected User $posUser;
+
     protected UserSession $session;
+
+    /** @var array<string, string> */
+    protected array $posHeaders;
 
     protected Network $network;
 
@@ -60,7 +65,13 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::firstOrFail();
+        $this->user = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Accounting Integrity Network Owner '.uniqid(),
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
 
         $auth = $this->createAuthenticatedSession($this->user);
         $this->session = $auth['session'];
@@ -68,13 +79,16 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
 
         $suffix = uniqid();
 
-        $posUser = $this->createUserWithScope(RoleScope::POS, [
+        $this->posUser = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
             'user_full_name' => 'POS Agent '.$suffix,
             'user_phone_number' => '73'.rand(1000000, 9999999),
             'user_password' => bcrypt('password'),
             'status' => UserStatus::ACTIVE,
         ]);
+
+        $posAuth = $this->createAuthenticatedSession($this->posUser);
+        $this->posHeaders = $posAuth['headers'];
 
         $this->network = Network::create([
             'owner_id' => $this->user->user_id,
@@ -86,9 +100,9 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
         ]);
 
         $this->pos = Pos::create([
-            'owner_id' => $posUser->user_id,
+            'owner_id' => $this->posUser->user_id,
             'pos_name' => 'FinPOS '.$suffix,
-            'pos_phone_number' => $posUser->user_phone_number,
+            'pos_phone_number' => $this->posUser->user_phone_number,
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => PosStatus::ACTIVE,
@@ -172,7 +186,8 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
                     'amount' => $amount,
                     'statement' => 'إيداع تجريبي غير صالح',
                 ]);
-            $depositResponse->assertStatus(422);
+            // Network wallet funding is platform-managed and must be denied before amount validation.
+            $depositResponse->assertForbidden();
 
             // محاولة سحب بمبلغ غير صالح
             $withdrawResponse = $this->withHeaders($this->headers)
@@ -180,7 +195,7 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
                     'amount' => $amount,
                     'statement' => 'سحب تجريبي غير صالح',
                 ]);
-            $withdrawResponse->assertStatus(422);
+            $withdrawResponse->assertForbidden();
 
             // محاولة تحويل بيني بمبلغ غير صالح
             $transferResponse = $this->withHeaders($this->headers)
@@ -201,7 +216,7 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
     /**
      * اختبار: منع السحب الذي يتجاوز الرصيد المتوفر في محفظة الشبكة
      */
-    public function test_prevent_overdraft_on_network_wallet(): void
+    public function test_network_owner_cannot_withdraw_from_platform_managed_network_wallet(): void
     {
         $currentBalance = (float) $this->networkWallet->wallet_balance;
         $excessiveAmount = $currentBalance + 0.01;
@@ -212,7 +227,7 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
                 'statement' => 'محاولة سحب مكشوف غير مسموح به',
             ]);
 
-        $response->assertStatus(422);
+        $response->assertForbidden();
 
         $this->networkWallet->refresh();
         $this->assertEquals($currentBalance, (float) $this->networkWallet->wallet_balance);
@@ -313,7 +328,7 @@ class ComprehensiveAccountingIntegrityTest extends TestCase
                         'voucher_count' => 10,
                     ],
                 ],
-            ]);
+            ], $this->posHeaders);
 
         $requestResponse->assertStatus(201);
         $requestId = $requestResponse->json('data.request_id');

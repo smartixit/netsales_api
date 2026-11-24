@@ -157,7 +157,7 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             ->getJson("/api/v1/networks/{$this->networkA->network_id}/members");
 
         $response->assertStatus(403);
-        $this->assertStringContainsString('SUPER_ADMIN', $response->json('message'));
+        $this->assertStringContainsString('نطاق المنصة', $response->json('message'));
     }
 
     /**
@@ -374,7 +374,88 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
      * Membership role discovery and assignment must expose only least-privilege
      * operational roles; scope membership alone must never allow privilege escalation.
      */
-    public function test_network_membership_only_exposes_and_accepts_network_user_role(): void
+    public function test_membership_management_requires_exact_owner_capability_and_tenant_scope(): void
+    {
+        $networkUser = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Net Member '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+        NetworkUser::create([
+            'network_id' => $this->networkA->network_id,
+            'user_id' => $networkUser->user_id,
+            'role_id' => Role::where('role_key', RoleKey::NETWORK_USER->value)->firstOrFail()->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        $networkUserAuth = $this->createAuthenticatedSession($networkUser);
+
+        $this->withHeaders($networkUserAuth['headers'])
+            ->getJson("/api/v1/networks/{$this->networkA->network_id}/members")
+            ->assertForbidden();
+
+        $this->withHeaders($networkUserAuth['headers'])
+            ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
+                'user_phone_number' => '70'.rand(1000000, 9999999),
+                'role_id' => Role::where('role_key', RoleKey::NETWORK_USER->value)->firstOrFail()->role_id,
+            ])
+            ->assertForbidden();
+
+        // The NETWORK_OWNER membership and network owner_id must describe the same tenant owner.
+        $scopedNetworkOwner = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Net Owner '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+        $this->networkA->owner_id = $scopedNetworkOwner->user_id;
+        $this->networkA->save();
+
+        NetworkUser::create([
+            'network_id' => $this->networkA->network_id,
+            'user_id' => $scopedNetworkOwner->user_id,
+            'role_id' => Role::where('role_key', RoleKey::NETWORK_OWNER->value)->firstOrFail()->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        $scopedOwnerAuth = $this->createAuthenticatedSession($scopedNetworkOwner);
+
+        $this->withHeaders($scopedOwnerAuth['headers'])
+            ->getJson("/api/v1/networks/{$this->networkA->network_id}/members")
+            ->assertOk();
+
+        $this->withHeaders($scopedOwnerAuth['headers'])
+            ->getJson("/api/v1/networks/{$this->networkB->network_id}/members")
+            ->assertForbidden();
+
+        $posUser = $this->createUserWithScope(RoleScope::POS, [
+            'role_id' => null,
+            'user_full_name' => 'POS Member '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+        PosUser::create([
+            'pos_id' => $this->posA->pos_id,
+            'user_id' => $posUser->user_id,
+            'role_id' => Role::where('role_key', RoleKey::POS_USER->value)->firstOrFail()->role_id,
+            'status' => 'ACTIVE',
+        ]);
+        $posUserAuth = $this->createAuthenticatedSession($posUser);
+
+        $this->withHeaders($posUserAuth['headers'])
+            ->getJson("/api/v1/pos/{$this->posA->pos_id}/members")
+            ->assertForbidden();
+
+        $this->withHeaders($posUserAuth['headers'])
+            ->putJson("/api/v1/pos/{$this->posA->pos_id}/members/{$posUser->user_id}/status", [
+                'status' => 'SUSPENDED',
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_network_membership_exposes_user_and_accountant_roles_without_owner_escalation(): void
     {
         $ownerAuth = $this->createAuthenticatedSession($this->networkOwner);
         $networkUserRole = Role::where('role_key', 'NETWORK_USER')->firstOrFail();
@@ -385,13 +466,15 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $roles = $this->withHeaders($ownerAuth['headers'])
             ->getJson("/api/v1/networks/{$this->networkA->network_id}/members/assignable-roles")
             ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.role_key', 'NETWORK_USER');
+            ->assertJsonCount(2, 'data');
 
-        $this->assertSame('NETWORK_USER', $roles->json('data.0.role_key'));
+        $this->assertEqualsCanonicalizing(
+            ['NETWORK_USER', 'NETWORK_ACCOUNTANT'],
+            array_column($roles->json('data'), 'role_key')
+        );
 
         $rejectedCandidateIds = [];
-        foreach ([$networkAccountantRole, $networkOwnerRole, $platformRole] as $role) {
+        foreach ([$networkOwnerRole, $platformRole] as $role) {
             $candidate = $this->createUserWithScope(RoleScope::NETWORK, [
                 'role_id' => null,
                 'user_full_name' => 'Rejected Network Staff '.uniqid(),
@@ -402,13 +485,12 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
 
             $rejectedCandidateIds[] = $candidate->user_id;
 
-            $response = $this->withHeaders($ownerAuth['headers'])
+            $this->withHeaders($ownerAuth['headers'])
                 ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
                     'user_phone_number' => $candidate->user_phone_number,
                     'role_id' => $role->role_id,
-                ]);
-
-            $response->assertUnprocessable();
+                ])
+                ->assertUnprocessable();
         }
 
         foreach ($rejectedCandidateIds as $rejectedUserId) {
@@ -418,6 +500,34 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             ]);
         }
 
+        $accountantCandidate = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Network Accountant Candidate '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+
+        $this->assertFalse($accountantCandidate->hasPermission('expenses.create'));
+
+        $this->withHeaders($ownerAuth['headers'])
+            ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
+                'user_phone_number' => $accountantCandidate->user_phone_number,
+                'role_id' => $networkAccountantRole->role_id,
+            ])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('network_users', [
+            'network_id' => $this->networkA->network_id,
+            'user_id' => $accountantCandidate->user_id,
+            'role_id' => $networkAccountantRole->role_id,
+        ]);
+        $effectiveNetworkAccountant = $accountantCandidate->fresh();
+        $this->assertTrue($effectiveNetworkAccountant->hasPermission('expenses.create'));
+        $this->assertTrue($effectiveNetworkAccountant->hasPermission('sales.report'));
+        $this->assertFalse($effectiveNetworkAccountant->hasPermission('network_members.change_role'));
+        $this->assertFalse($effectiveNetworkAccountant->hasPermission('network_wallets.deposit'));
+
         $changeCandidate = $this->createUserWithScope(RoleScope::NETWORK, [
             'role_id' => null,
             'user_full_name' => 'Network Role Change Candidate '.uniqid(),
@@ -425,20 +535,47 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'user_password' => bcrypt('password'),
             'status' => UserStatus::ACTIVE,
         ]);
+
         $this->withHeaders($ownerAuth['headers'])
             ->postJson("/api/v1/networks/{$this->networkA->network_id}/members", [
                 'user_phone_number' => $changeCandidate->user_phone_number,
                 'role_id' => $networkUserRole->role_id,
-            ])->assertCreated();
+            ])
+            ->assertCreated();
+
         $this->withHeaders($ownerAuth['headers'])
             ->putJson("/api/v1/networks/{$this->networkA->network_id}/members/{$changeCandidate->user_id}/role", [
                 'role_id' => $networkAccountantRole->role_id,
-            ])->assertUnprocessable();
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('network_users', [
+            'network_id' => $this->networkA->network_id,
+            'user_id' => $changeCandidate->user_id,
+            'role_id' => $networkAccountantRole->role_id,
+        ]);
+        $this->assertEquals(
+            [1, 2, 3],
+            array_map(
+                'intval',
+                \Illuminate\Support\Facades\DB::table('network_membership_audit_logs')
+                    ->where('network_id', $this->networkA->network_id)
+                    ->orderBy('event_seq')
+                    ->pluck('event_seq')
+                    ->all()
+            )
+        );
+
+        $this->withHeaders($ownerAuth['headers'])
+            ->putJson("/api/v1/networks/{$this->networkA->network_id}/members/{$changeCandidate->user_id}/role", [
+                'role_id' => $networkOwnerRole->role_id,
+            ])
+            ->assertUnprocessable();
 
         $this->assertDatabaseHas('roles', ['role_id' => $networkUserRole->role_id]);
     }
 
-    public function test_pos_membership_only_exposes_and_accepts_pos_user_role(): void
+    public function test_pos_membership_exposes_user_and_accountant_roles_without_agent_escalation(): void
     {
         $ownerAuth = $this->createAuthenticatedSession($this->posOwner);
         $posUserRole = Role::where('role_key', 'POS_USER')->firstOrFail();
@@ -446,13 +583,18 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         $posAgentRole = Role::where('role_key', 'POS_AGENT')->firstOrFail();
         $platformRole = Role::where('role_key', 'SUPER_ADMIN')->firstOrFail();
 
-        $this->withHeaders($ownerAuth['headers'])
+        $roles = $this->withHeaders($ownerAuth['headers'])
             ->getJson("/api/v1/pos/{$this->posA->pos_id}/members/assignable-roles")
             ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.role_key', 'POS_USER');
+            ->assertJsonCount(2, 'data');
 
-        foreach ([$posAccountantRole, $posAgentRole, $platformRole] as $role) {
+        $this->assertEqualsCanonicalizing(
+            ['POS_USER', 'POS_ACCOUNTANT'],
+            array_column($roles->json('data'), 'role_key')
+        );
+
+        $rejectedCandidateIds = [];
+        foreach ([$posAgentRole, $platformRole] as $role) {
             $candidate = $this->createUserWithScope(RoleScope::POS, [
                 'role_id' => null,
                 'user_full_name' => 'Rejected POS Staff '.uniqid(),
@@ -461,19 +603,50 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
                 'status' => UserStatus::ACTIVE,
             ]);
 
-            $response = $this->withHeaders($ownerAuth['headers'])
+            $rejectedCandidateIds[] = $candidate->user_id;
+
+            $this->withHeaders($ownerAuth['headers'])
                 ->postJson("/api/v1/pos/{$this->posA->pos_id}/members", [
                     'user_phone_number' => $candidate->user_phone_number,
                     'role_id' => $role->role_id,
-                ]);
-
-            $response->assertUnprocessable();
+                ])
+                ->assertUnprocessable();
         }
 
-        $this->assertDatabaseMissing('pos_users', [
+        foreach ($rejectedCandidateIds as $rejectedUserId) {
+            $this->assertDatabaseMissing('pos_users', [
+                'pos_id' => $this->posA->pos_id,
+                'user_id' => $rejectedUserId,
+            ]);
+        }
+
+        $accountantCandidate = $this->createUserWithScope(RoleScope::POS, [
+            'role_id' => null,
+            'user_full_name' => 'POS Accountant Candidate '.uniqid(),
+            'user_phone_number' => '70'.rand(1000000, 9999999),
+            'user_password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
+        ]);
+
+        $this->assertFalse($accountantCandidate->hasPermission('sales.report'));
+
+        $this->withHeaders($ownerAuth['headers'])
+            ->postJson("/api/v1/pos/{$this->posA->pos_id}/members", [
+                'user_phone_number' => $accountantCandidate->user_phone_number,
+                'role_id' => $posAccountantRole->role_id,
+            ])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('pos_users', [
             'pos_id' => $this->posA->pos_id,
+            'user_id' => $accountantCandidate->user_id,
             'role_id' => $posAccountantRole->role_id,
         ]);
+        $effectivePosAccountant = $accountantCandidate->fresh();
+        $this->assertTrue($effectivePosAccountant->hasPermission('sales.report'));
+        $this->assertTrue($effectivePosAccountant->hasPermission('pos_wallets.report'));
+        $this->assertFalse($effectivePosAccountant->hasPermission('pos_members.change_role'));
+        $this->assertFalse($effectivePosAccountant->hasPermission('sales.create'));
 
         $changeCandidate = $this->createUserWithScope(RoleScope::POS, [
             'role_id' => null,
@@ -482,18 +655,46 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             'user_password' => bcrypt('password'),
             'status' => UserStatus::ACTIVE,
         ]);
+
         $this->withHeaders($ownerAuth['headers'])
             ->postJson("/api/v1/pos/{$this->posA->pos_id}/members", [
                 'user_phone_number' => $changeCandidate->user_phone_number,
                 'role_id' => $posUserRole->role_id,
-            ])->assertCreated();
+            ])
+            ->assertCreated();
+
         $this->withHeaders($ownerAuth['headers'])
             ->putJson("/api/v1/pos/{$this->posA->pos_id}/members/{$changeCandidate->user_id}/role", [
                 'role_id' => $posAccountantRole->role_id,
-            ])->assertUnprocessable();
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('pos_users', [
+            'pos_id' => $this->posA->pos_id,
+            'user_id' => $changeCandidate->user_id,
+            'role_id' => $posAccountantRole->role_id,
+        ]);
+        $this->assertEquals(
+            [1, 2, 3],
+            array_map(
+                'intval',
+                \Illuminate\Support\Facades\DB::table('pos_membership_audit_logs')
+                    ->where('pos_id', $this->posA->pos_id)
+                    ->orderBy('event_seq')
+                    ->pluck('event_seq')
+                    ->all()
+            )
+        );
+
+        $this->withHeaders($ownerAuth['headers'])
+            ->putJson("/api/v1/pos/{$this->posA->pos_id}/members/{$changeCandidate->user_id}/role", [
+                'role_id' => $posAgentRole->role_id,
+            ])
+            ->assertUnprocessable();
 
         $this->assertDatabaseHas('roles', ['role_id' => $posUserRole->role_id]);
     }
+
     public function test_permissions_are_isolated_per_active_network_membership(): void
     {
         $multiTenantUser = $this->createUserWithScope(RoleScope::NETWORK, [

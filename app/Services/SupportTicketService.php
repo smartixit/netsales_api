@@ -7,6 +7,7 @@ use App\Http\Requests\API\V1\Ticket\StoreSupportTicketMessageRequest;
 use App\Http\Requests\API\V1\Ticket\StoreSupportTicketRequest;
 use App\Http\Requests\API\V1\Ticket\UpdateSupportTicketRequest;
 use App\Interfaces\NetworkRepositoryInterface;
+use App\Interfaces\NetworkPosRepositoryInterface;
 use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\SupportTicketMessageRepositoryInterface;
 use App\Interfaces\SupportTicketRepositoryInterface;
@@ -31,7 +32,8 @@ class SupportTicketService
         protected SupportTicketRepositoryInterface $ticketRepository,
         protected SupportTicketMessageRepositoryInterface $messageRepository,
         protected NetworkRepositoryInterface $networkRepository,
-        protected PosRepositoryInterface $posRepository
+        protected PosRepositoryInterface $posRepository,
+        protected NetworkPosRepositoryInterface $networkPosRepository
     ) {}
 
     /**
@@ -68,6 +70,23 @@ class SupportTicketService
         return $ticket;
     }
 
+    public function getTrashedById(int $id): SupportTicket
+    {
+        /** @var SupportTicket|null $ticket */
+        $ticket = $this->ticketRepository->findTrashedById($id);
+
+        if (! $ticket) {
+            throw ValidationException::withMessages([
+                'ticket_id' => ["تذكرة الدعم الفني المحذوفة برقم [{$id}] غير موجودة."],
+            ]);
+        }
+
+        $ticket->load(['network', 'pos', 'messages.sentBy', 'latestMessage.sentBy']);
+
+        return $ticket;
+    }
+
+
     /**
      * جلب تفاصيل تذكرة عبر المعرف الفريد للأعمال (ticket_uuid).
      */
@@ -93,7 +112,7 @@ class SupportTicketService
             $network = $this->networkRepository->findById($networkId);
             if (! $network) {
                 throw ValidationException::withMessages([
-                    'network_id' => ["شبكة المزود برقم [{$network->network_name}] غير موجودة."],
+                    'network_id' => ["شبكة المزود برقم [{$networkId}] غير موجودة."],
                 ]);
             }
             $network->ensureActive();
@@ -103,10 +122,16 @@ class SupportTicketService
                 $pos = $this->posRepository->findById($posId);
                 if (! $pos) {
                     throw ValidationException::withMessages([
-                        'pos_id' => ["نقطة البيع برقم [{$pos->pos_name}] غير موجودة."],
+                        'pos_id' => ["نقطة البيع برقم [{$posId}] غير موجودة."],
                     ]);
                 }
                 $pos->ensureActive();
+
+                if (! $this->networkPosRepository->findByNetworkAndPos($networkId, $posId)) {
+                    throw ValidationException::withMessages([
+                        'pos_id' => ['نقطة البيع المحددة غير مرتبطة بهذه الشبكة.'],
+                    ]);
+                }
             }
 
             $ticketData = [
@@ -173,6 +198,17 @@ class SupportTicketService
                     $pos->ensureActive();
                 }
                 $updateData['pos_id'] = $posId;
+            }
+
+            $targetNetworkId = (int) ($updateData['network_id'] ?? $ticket->network_id);
+            $targetPosId = array_key_exists('pos_id', $updateData)
+                ? $updateData['pos_id']
+                : $ticket->pos_id;
+
+            if ($targetPosId !== null && ! $this->networkPosRepository->findByNetworkAndPos($targetNetworkId, (int) $targetPosId)) {
+                throw ValidationException::withMessages([
+                    'pos_id' => ['نقطة البيع المحددة غير مرتبطة بالشبكة المحددة.'],
+                ]);
             }
 
             if (! empty($updateData)) {

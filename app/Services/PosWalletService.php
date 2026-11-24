@@ -45,6 +45,7 @@ class PosWalletService
         protected NetworkRepositoryInterface $networkRepository,
         protected PosRepositoryInterface $posRepository,
         protected NotificationService $notificationService,
+        protected TenantPermissionService $tenantPermissions,
         protected ?NetworkPosRepositoryInterface $networkPosRepository = null,
     ) {
         $this->networkPosRepository = $networkPosRepository ?? app(NetworkPosRepositoryInterface::class);
@@ -63,8 +64,9 @@ class PosWalletService
      */
     public function getWalletsForUser(array $filters, User $user): Collection|CursorPaginator
     {
-        if (! $user->isSuperAdmin()) {
-            $filters['authorized_user_id'] = (int) $user->user_id;
+        if (! $this->tenantPermissions->allowsPlatform($user, 'pos_wallets.view')) {
+            $filters['authorized_network_ids'] = $this->tenantPermissions->authorizedNetworkIds($user, 'pos_wallets.view');
+            $filters['authorized_pos_ids'] = $this->tenantPermissions->authorizedPosIds($user, 'pos_wallets.view');
         }
 
         return $this->getWallets($filters);
@@ -83,8 +85,9 @@ class PosWalletService
      */
     public function getTrashedWalletsForUser(array $filters, User $user): Collection|CursorPaginator
     {
-        if (! $user->isSuperAdmin()) {
-            $filters['authorized_user_id'] = (int) $user->user_id;
+        if (! $this->tenantPermissions->allowsPlatform($user, 'pos_wallets.view')) {
+            $filters['authorized_network_ids'] = $this->tenantPermissions->authorizedNetworkIds($user, 'pos_wallets.view');
+            $filters['authorized_pos_ids'] = $this->tenantPermissions->authorizedPosIds($user, 'pos_wallets.view');
         }
 
         return $this->getTrashedWallets($filters);

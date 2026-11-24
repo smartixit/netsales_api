@@ -68,7 +68,12 @@ class EnsurePlatformUserScope
             return $session->user;
         }
 
-        if ($request->is('api/v1/security/bans/*') || $request->is('api/v1/bans/*')) {
+        if (
+            $request->is('api/v1/security/bans/*')
+            || $request->is('api/v1/bans/*')
+            || $request->is('api/v1/security/device-bans/*')
+            || $request->is('api/v1/device-bans/*')
+        ) {
             $ban = SecurityBan::withTrashed()->with([
                 'user' => fn ($query) => $query->withTrashed()->with('role'),
                 'device' => fn ($query) => $query->withTrashed()->with(['user' => fn ($userQuery) => $userQuery->withTrashed()->with('role')]),

@@ -32,12 +32,21 @@ class RequestRepository extends BaseRepository implements RequestRepositoryInter
             $networkIds = array_map('intval', (array) ($filters['authorized_network_ids'] ?? []));
             $posIds = array_map('intval', (array) ($filters['authorized_pos_ids'] ?? []));
             $query->where(function (Builder $scope) use ($networkIds, $posIds): void {
+                $hasAuthorizedScope = false;
+
                 if ($networkIds !== []) {
                     $scope->whereIn('network_id', $networkIds);
+                    $hasAuthorizedScope = true;
                 }
+
                 if ($posIds !== []) {
-                    $method = $networkIds === [] ? 'whereIn' : 'orWhereIn';
+                    $method = $hasAuthorizedScope ? 'orWhereIn' : 'whereIn';
                     $scope->{$method}('pos_id', $posIds);
+                    $hasAuthorizedScope = true;
+                }
+
+                if (! $hasAuthorizedScope) {
+                    $scope->whereRaw('1 = 0');
                 }
             });
         }

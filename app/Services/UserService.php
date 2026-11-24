@@ -7,6 +7,7 @@ use App\Enums\UserStatus;
 use App\Http\Requests\API\V1\User\StoreUserRequest;
 use App\Http\Requests\API\V1\User\UpdateUserRequest;
 use App\Interfaces\UserRepositoryInterface;
+use App\Models\Permission;
 use App\Models\User;
 use App\Services\Support\FileUploadService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -338,6 +339,39 @@ class UserService
         } catch (ModelNotFoundException) {
             throw ValidationException::withMessages([
                 'user_id' => ['المستخدم غير موجود في النظام.'],
+            ]);
+        }
+
+        // user_permissions has no network_id/pos_id columns. A direct grant
+        // is therefore global and is safe only for an active PLATFORM user.
+        if (! $user->isActive()
+            || $user->role_scope !== RoleScope::PLATFORM->value
+            || ! $user->role?->isActive()
+        ) {
+            throw ValidationException::withMessages([
+                'user_id' => ['لا يمكن إسناد صلاحيات مباشرة لمستخدم تشغيلي. تُمنح صلاحياته عبر دور عضويته داخل الشبكة أو نقطة البيع.'],
+            ]);
+        }
+
+        $permissionIds = array_values(array_unique(array_map('intval', $permissionIds)));
+        $permissions = Permission::query()
+            ->whereIn('permission_id', $permissionIds)
+            ->where('status', true)
+            ->get(['permission_id', 'permission_key']);
+        $platformPermissionRegistry = app(PlatformPermissionRegistry::class);
+
+        if ($permissions->count() !== count($permissionIds)
+            || $permissions->contains(
+                fn (Permission $permission): bool => ! $platformPermissionRegistry->allows($permission->permission_key)
+                    || in_array(
+                        $permission->permission_key,
+                        PlatformPermissionRegistry::SUPER_ADMIN_ONLY_PERMISSION_KEYS,
+                        true
+                    )
+            )
+        ) {
+            throw ValidationException::withMessages([
+                'permissions' => ['تتضمن القائمة صلاحية غير موجودة أو معطلة أو خارج نطاق صلاحيات المنصة القابلة للإسناد المباشر. لا يجوز إسناد صلاحيات خزينة الشبكات مباشرة؛ فهي حصرية لدور SUPER_ADMIN.'],
             ]);
         }
 

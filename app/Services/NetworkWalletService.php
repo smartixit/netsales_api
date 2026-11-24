@@ -32,6 +32,7 @@ class NetworkWalletService
         protected NetworkWalletLogRepositoryInterface $networkWalletLogRepository,
         protected NetworkRepositoryInterface $networkRepository,
         protected NotificationService $notificationService,
+        protected TenantPermissionService $tenantPermissions,
     ) {}
 
     /**
@@ -47,8 +48,8 @@ class NetworkWalletService
      */
     public function getWalletsForUser(array $filters, User $user): Collection|CursorPaginator
     {
-        if (! $user->isSuperAdmin()) {
-            $filters['authorized_user_id'] = (int) $user->user_id;
+        if (! $this->tenantPermissions->allowsPlatform($user, 'network_wallets.view')) {
+            $filters['authorized_network_ids'] = $this->tenantPermissions->authorizedNetworkIds($user, 'network_wallets.view');
         }
 
         return $this->getWallets($filters);
@@ -67,8 +68,8 @@ class NetworkWalletService
      */
     public function getTrashedWalletsForUser(array $filters, User $user): Collection|CursorPaginator
     {
-        if (! $user->isSuperAdmin()) {
-            $filters['authorized_user_id'] = (int) $user->user_id;
+        if (! $this->tenantPermissions->allowsPlatform($user, 'network_wallets.view')) {
+            $filters['authorized_network_ids'] = $this->tenantPermissions->authorizedNetworkIds($user, 'network_wallets.view');
         }
 
         return $this->getTrashedWallets($filters);

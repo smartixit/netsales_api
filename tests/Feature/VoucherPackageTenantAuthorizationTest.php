@@ -511,7 +511,7 @@ class VoucherPackageTenantAuthorizationTest extends TestCase
                 'discount_cash' => 20.0,
                 'discount_credit' => 10.0,
             ]);
-        $res->assertStatus(422);
+        $res->assertForbidden();
     }
 
     #[Test]

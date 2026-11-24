@@ -7,7 +7,9 @@ use App\Http\Requests\API\V1\Common\RejectRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkRequest;
 use App\Http\Resources\API\V1\Network\NetworkResource;
+use App\Models\NetworkPos;
 use App\Services\NetworkService;
+use App\Services\TenantPermissionService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,6 +30,7 @@ class NetworkController extends BaseController
 {
     public function __construct(
         protected NetworkService $networkService,
+        protected TenantPermissionService $tenantPermissions,
     ) {}
 
     /**
@@ -53,11 +56,20 @@ class NetworkController extends BaseController
         try {
             $filters = $request->only(['search', 'status', 'governorate_id', 'per_page']);
             $user = $this->currentUser();
-            if ($user && ! $user->isSuperAdmin()) {
-                $networkIds = $user->networks()->pluck('networks.network_id')
-                    ->merge($user->networkUsers()->pluck('network_id'))
-                    ->unique()->values()->toArray();
-                $filters['network_ids'] = $networkIds;
+            if ($user && ! $this->tenantPermissions->allowsPlatform($user, 'networks.view')) {
+                $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, 'networks.view');
+                $posIds = $this->tenantPermissions->authorizedPosIds($user, 'networks.view');
+
+                if ($posIds !== []) {
+                    $linkedNetworkIds = NetworkPos::query()
+                        ->whereIn('pos_id', $posIds)
+                        ->pluck('network_id')
+                        ->map(static fn ($id): int => (int) $id)
+                        ->all();
+                    $networkIds = array_merge($networkIds, $linkedNetworkIds);
+                }
+
+                $filters['network_ids'] = array_values(array_unique($networkIds));
             }
             $networks = $this->networkService->getFiltered($filters);
 
@@ -269,8 +281,26 @@ class NetworkController extends BaseController
     public function trashed(Request $request): JsonResponse
     {
         try {
-            $perPage = (int) $request->input('per_page', 15);
-            $trashed = $this->networkService->getTrashed($perPage);
+            $filters = $request->only(['search', 'per_page', 'all']);
+            $user = $this->currentUser();
+
+            if ($user && ! $this->tenantPermissions->allowsPlatform($user, 'networks.view')) {
+                $networkIds = $this->tenantPermissions->authorizedNetworkIds($user, 'networks.view');
+                $posIds = $this->tenantPermissions->authorizedPosIds($user, 'networks.view');
+
+                if ($posIds !== []) {
+                    $linkedNetworkIds = NetworkPos::query()
+                        ->whereIn('pos_id', $posIds)
+                        ->pluck('network_id')
+                        ->map(static fn ($id): int => (int) $id)
+                        ->all();
+                    $networkIds = array_merge($networkIds, $linkedNetworkIds);
+                }
+
+                $filters['network_ids'] = array_values(array_unique($networkIds));
+            }
+
+            $trashed = $this->networkService->getTrashedFiltered($filters);
 
             return $this->successResponse('تم استرجاع المحذوفات بنجاح.', NetworkResource::collection($trashed));
         } catch (ValidationException $e) {
@@ -476,8 +506,8 @@ class NetworkController extends BaseController
     {
         try {
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                return $this->errorResponse('عملية الاعتماد محصورة بإدارة المنصة.', [], 403);
+            if ($currentUser && ! $this->tenantPermissions->allowsPlatform($currentUser, 'networks.approve')) {
+                return $this->errorResponse('لا تملك صلاحية اعتماد طلبات الشبكات على مستوى المنصة.', [], 403);
             }
 
             $network = $this->networkService->approve($id, (int) $this->currentUserId());
@@ -523,8 +553,8 @@ class NetworkController extends BaseController
     {
         try {
             $currentUser = $this->currentUser();
-            if ($currentUser && ! $currentUser->isSuperAdmin()) {
-                return $this->errorResponse('عملية الرفض محصورة بإدارة المنصة.', [], 403);
+            if ($currentUser && ! $this->tenantPermissions->allowsPlatform($currentUser, 'networks.reject')) {
+                return $this->errorResponse('لا تملك صلاحية رفض طلبات الشبكات على مستوى المنصة.', [], 403);
             }
 
             $network = $this->networkService->reject($id, (int) $this->currentUserId(), $request->getReason());

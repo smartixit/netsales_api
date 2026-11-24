@@ -18,12 +18,16 @@ use Illuminate\Validation\ValidationException;
  */
 class PosMembershipService
 {
+    public function __construct(
+        private TenantPermissionService $tenantPermissions
+    ) {}
+
     /**
      * جلب قائمة موظفي وعضويات نقطة البيع.
      */
     public function getMembers(int $posId, int $actorId): Collection
     {
-        $this->authorizeActor($posId, $actorId);
+        $this->authorizeActor($posId, $actorId, 'pos_members.view');
 
         $ownerId = (int) Pos::query()->whereKey($posId)->value('owner_id');
 
@@ -42,11 +46,14 @@ class PosMembershipService
      */
     public function getAssignableRoles(int $posId, int $actorId): Collection
     {
-        $this->authorizeActor($posId, $actorId);
+        $this->authorizeActor($posId, $actorId, 'pos_members.view');
 
         return Role::query()
             ->where('scope', RoleScope::POS->value)
-            ->where('role_key', RoleKey::POS_USER->value)
+            ->whereIn('role_key', [
+                RoleKey::POS_USER->value,
+                RoleKey::POS_ACCOUNTANT->value,
+            ])
             ->active()
             ->orderBy('role_name')
             ->get();
@@ -62,9 +69,12 @@ class PosMembershipService
         int $actorId,
         string $status = 'ACTIVE'
     ): PosUser {
-        $this->authorizeActor($posId, $actorId);
+        $this->authorizeActor($posId, $actorId, 'pos_members.create');
 
         return DB::transaction(function () use ($posId, $phoneNumber, $roleId, $actorId, $status): PosUser {
+            // Serialize all membership audit events for this POS.
+            Pos::query()->lockForUpdate()->findOrFail($posId);
+
             $user = User::where('user_phone_number', $phoneNumber)->first();
             if (! $user) {
                 throw ValidationException::withMessages([
@@ -72,7 +82,13 @@ class PosMembershipService
                 ]);
             }
 
-            // لا تسمح عضويات التشغيل بترقية عضو إلى وكيل أو محاسب أو دور منصة.
+            if ($user->role_scope === RoleScope::PLATFORM->value) {
+                throw ValidationException::withMessages([
+                    'user_phone_number' => ['لا يمكن إضافة حساب من نطاق المنصة إلى عضوية تشغيلية داخل نقطة بيع.'],
+                ]);
+            }
+
+            // لا تسمح عضويات التشغيل بترقية عضو إلى وكيل أو دور منصة؛ المحاسب دور تشغيلي قابل للإسناد.
             $this->resolveAssignableRole($roleId);
 
             // منع التكرار
@@ -86,19 +102,21 @@ class PosMembershipService
                 ]);
             }
 
+            $nextSeq = $this->nextAuditSequence($posId);
+
             $member = PosUser::create([
                 'pos_id' => $posId,
                 'user_id' => $user->user_id,
                 'role_id' => $roleId,
                 'status' => in_array($status, ['ACTIVE', 'SUSPENDED', 'INVITED'], true) ? $status : 'ACTIVE',
-                'last_event_seq' => 1,
+                'last_event_seq' => $nextSeq,
             ]);
 
             // توثيق العملية في سجل التدقيق
             PosMembershipAuditLog::create([
                 'pos_id' => $posId,
                 'user_id' => $user->user_id,
-                'event_seq' => 1,
+                'event_seq' => $nextSeq,
                 'action' => 'ASSIGNED',
                 'actor_id' => $actorId,
                 'old_state' => null,
@@ -119,10 +137,10 @@ class PosMembershipService
      */
     public function updateRole(int $posId, int $userId, int $newRoleId, int $actorId, ?string $reason = null): PosUser
     {
-        $this->authorizeActor($posId, $actorId);
+        $this->authorizeActor($posId, $actorId, 'pos_members.change_role');
 
         return DB::transaction(function () use ($posId, $userId, $newRoleId, $actorId, $reason): PosUser {
-            $pos = Pos::findOrFail($posId);
+            $pos = Pos::query()->lockForUpdate()->findOrFail($posId);
             if ((int) $pos->owner_id === $userId) {
                 throw ValidationException::withMessages([
                     'role_id' => ['لا يمكن تغيير دور مالك نقطة البيع المعتمد.'],
@@ -141,7 +159,7 @@ class PosMembershipService
                 return $member->load(['user', 'role']);
             }
 
-            $nextSeq = (int) $member->last_event_seq + 1;
+            $nextSeq = $this->nextAuditSequence($posId);
             $member->update([
                 'role_id' => $newRoleId,
                 'last_event_seq' => $nextSeq,
@@ -167,7 +185,7 @@ class PosMembershipService
      */
     public function updateStatus(int $posId, int $userId, string $newStatus, int $actorId, ?string $reason = null): PosUser
     {
-        $this->authorizeActor($posId, $actorId);
+        $this->authorizeActor($posId, $actorId, 'pos_members.change_status');
 
         if (! in_array($newStatus, ['ACTIVE', 'SUSPENDED', 'INVITED'], true)) {
             throw ValidationException::withMessages([
@@ -176,7 +194,7 @@ class PosMembershipService
         }
 
         return DB::transaction(function () use ($posId, $userId, $newStatus, $actorId, $reason): PosUser {
-            $pos = Pos::findOrFail($posId);
+            $pos = Pos::query()->lockForUpdate()->findOrFail($posId);
             if ((int) $pos->owner_id === $userId && $newStatus !== 'ACTIVE') {
                 throw ValidationException::withMessages([
                     'status' => ['لا يمكن تجميد أو إيقاف عضوية مالك نقطة البيع الرئيسي.'],
@@ -193,7 +211,7 @@ class PosMembershipService
                 return $member->load(['user', 'role']);
             }
 
-            $nextSeq = (int) $member->last_event_seq + 1;
+            $nextSeq = $this->nextAuditSequence($posId);
             $member->update([
                 'status' => $newStatus,
                 'last_event_seq' => $nextSeq,
@@ -219,10 +237,10 @@ class PosMembershipService
      */
     public function removeMember(int $posId, int $userId, int $actorId, ?string $reason = null): bool
     {
-        $this->authorizeActor($posId, $actorId);
+        $this->authorizeActor($posId, $actorId, 'pos_members.delete');
 
         return DB::transaction(function () use ($posId, $userId, $actorId, $reason): bool {
-            $pos = Pos::findOrFail($posId);
+            $pos = Pos::query()->lockForUpdate()->findOrFail($posId);
             if ((int) $pos->owner_id === $userId) {
                 throw ValidationException::withMessages([
                     'user_id' => ['لا يمكن إزالة أو حذف عضوية مالك نقطة البيع المعتمد.'],
@@ -231,9 +249,10 @@ class PosMembershipService
 
             $member = PosUser::where('pos_id', $posId)
                 ->where('user_id', $userId)
+                ->lockForUpdate()
                 ->firstOrFail();
 
-            $nextSeq = (int) $member->last_event_seq + 1;
+            $nextSeq = $this->nextAuditSequence($posId);
 
             PosMembershipAuditLog::create([
                 'pos_id' => $posId,
@@ -256,7 +275,19 @@ class PosMembershipService
     }
 
     /**
-     * لا تقبل إلا POS_USER النشط؛ يمنع ذلك تصعيد الامتيازات عبر العضويات.
+     * Reserve the next tenant-wide audit sequence. The caller must hold a
+     * lock on the parent POS row until the transaction commits.
+     */
+    private function nextAuditSequence(int $posId): int
+    {
+        return (int) PosMembershipAuditLog::query()
+            ->where('pos_id', $posId)
+            ->max('event_seq') + 1;
+    }
+
+    /**
+     * تقبل POS_USER وPOS_ACCOUNTANT النشطين فقط؛ يبقى POS_AGENT
+     * محصوراً في هوية مالك نقطة البيع ولا يمكن منحه كعضوية فرعية.
      */
     protected function resolveAssignableRole(int $roleId): Role
     {
@@ -266,10 +297,13 @@ class PosMembershipService
             ! $role
             || ! $role->isActive()
             || $role->scope !== RoleScope::POS
-            || $role->role_key !== RoleKey::POS_USER->value
+            || ! in_array($role->role_key, [
+                RoleKey::POS_USER->value,
+                RoleKey::POS_ACCOUNTANT->value,
+            ], true)
         ) {
             throw ValidationException::withMessages([
-                'role_id' => ['الدور المحدد غير مسموح به لعضوية نقطة البيع. يسمح حالياً بدور مستخدم نقطة البيع التشغيلي فقط.'],
+                'role_id' => ['الدور المحدد غير مسموح به لعضوية نقطة البيع. يسمح فقط بدوري مستخدم نقطة البيع ومحاسب نقطة البيع.'],
             ]);
         }
 
@@ -279,26 +313,27 @@ class PosMembershipService
     /**
      * التحقق من تخويل الفاعل لإدارة عضويات نقطة البيع.
      */
-    protected function authorizeActor(int $posId, int $actorId): void
+    protected function authorizeActor(int $posId, int $actorId, string $permission): void
     {
-        $actor = User::findOrFail($actorId);
+        $actor = User::query()->findOrFail($actorId);
 
-        if ($actor->isSuperAdmin()) {
-            return;
+        if (! $actor->isActive()) {
+            throw ValidationException::withMessages([
+                'actor' => ['لا يمكن لحساب غير نشط إدارة عضويات نقطة البيع.'],
+            ]);
         }
 
-        $pos = Pos::findOrFail($posId);
-
-        $isOwner = (int) $pos->owner_id === $actorId;
-        $hasAgentMembership = PosUser::where('pos_id', $posId)
-            ->where('user_id', $actorId)
-            ->where('status', 'ACTIVE')
-            ->whereHas('role', fn ($q) => $q->where('role_key', 'POS_AGENT'))
-            ->exists();
-
-        if (! $isOwner && ! $hasAgentMembership) {
+        if ($actor->role_scope === RoleScope::PLATFORM->value) {
             throw ValidationException::withMessages([
-                'actor' => ['غير مصرح لك بإدارة موظفي وعضويات نقطة البيع هذه (مطلوب صلاحية وكيل نقطة البيع).'],
+                'actor' => ['حسابات نطاق المنصة لا تدير عضويات NETWORK أو POS.'],
+            ]);
+        }
+
+        Pos::query()->findOrFail($posId);
+
+        if (! $this->tenantPermissions->allowsPos($actor, $posId, $permission)) {
+            throw ValidationException::withMessages([
+                'actor' => ['لا تملك صلاحية العملية المطلوبة داخل نقطة البيع هذه.'],
             ]);
         }
     }

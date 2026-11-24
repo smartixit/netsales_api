@@ -32,11 +32,66 @@ class SupportTicketRepository extends BaseRepository implements SupportTicketRep
     }
 
     /**
+     * Resolve a set of tickets for service-layer authorization checks.
+     *
+     * @param array<int, int> $ids
+     */
+    public function findManyByIds(array $ids, bool $withTrashed = false): Collection
+    {
+        $query = $this->model->newQuery()
+            ->with(['network', 'pos']);
+
+        if ($withTrashed) {
+            $query->withTrashed();
+        }
+
+        return $query->whereIn('ticket_id', $ids)->get();
+    }
+
+    /**
      * تطبيق الفلاتر الخاصة بتذاكر الدعم الفني.
      */
     protected function applyFilters(Builder $query, array $filters): void
     {
         parent::applyFilters($query, $filters);
+
+        if (array_key_exists('authorized_network_ids', $filters)
+            || array_key_exists('authorized_pos_ids', $filters)
+        ) {
+            $networkIds = array_values(array_unique(array_map('intval', (array) ($filters['authorized_network_ids'] ?? []))));
+            $posIds = array_values(array_unique(array_map('intval', (array) ($filters['authorized_pos_ids'] ?? []))));
+
+            $query->where(function (Builder $scope) use ($networkIds, $posIds): void {
+                $hasScope = false;
+
+                if ($networkIds !== []) {
+                    $scope->whereIn('network_id', $networkIds);
+                    $hasScope = true;
+                }
+
+                if ($posIds !== []) {
+                    $posScope = static function (Builder $query) use ($posIds): void {
+                        $query->whereIn('pos_id', $posIds)
+                            ->whereExists(function ($linkQuery): void {
+                                $linkQuery->selectRaw('1')
+                                    ->from('network_pos')
+                                    ->whereColumn('network_pos.network_id', 'support_tickets.network_id')
+                                    ->whereColumn('network_pos.pos_id', 'support_tickets.pos_id');
+                            });
+                    };
+
+                    $hasScope
+                        ? $scope->orWhere($posScope)
+                        : $scope->where($posScope);
+
+                    $hasScope = true;
+                }
+
+                if (! $hasScope) {
+                    $scope->whereRaw('1 = 0');
+                }
+            });
+        }
 
         if (! empty($filters['search'])) {
             $term = trim((string) $filters['search']);
