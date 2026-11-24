@@ -1205,62 +1205,53 @@ class VoucherPackageDiscountValidityTest extends TestCase
     {
         Carbon::setTestNow(Carbon::parse('2026-11-24 12:00:00', 'Asia/Aden'));
 
-        $base = [
+        $discount = VoucherPackageDiscount::create([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'package_id' => $this->package->package_id,
             'discount_cash' => 12.00,
             'discount_credit' => 6.00,
-            'created_by' => $this->user->user_id,
-        ];
-
-        VoucherPackageDiscount::create($base + [
             'status' => true,
             'discount_start_date' => Carbon::now('Asia/Aden')->subDay(),
             'discount_end_date' => Carbon::now('Asia/Aden')->addDay(),
-        ]);
-        VoucherPackageDiscount::create($base + [
-            'status' => true,
-            'discount_start_date' => Carbon::now('Asia/Aden')->addDay(),
-            'discount_end_date' => null,
-        ]);
-        VoucherPackageDiscount::create($base + [
-            'status' => true,
-            'discount_start_date' => null,
-            'discount_end_date' => Carbon::now('Asia/Aden')->subDay(),
-        ]);
-        VoucherPackageDiscount::create($base + [
-            'status' => false,
-            'discount_start_date' => null,
-            'discount_end_date' => null,
+            'created_by' => $this->user->user_id,
         ]);
 
         $endpoint = '/api/v1/voucher-package-discounts?network_id='.$this->network->network_id
             .'&package_id='.$this->package->package_id.'&per_page=50';
 
-        $effective = $this->withHeaders($this->headers)
-            ->getJson($endpoint.'&validity_state=EFFECTIVE');
+        $effective = $this->withHeaders($this->headers)->getJson($endpoint.'&validity_state=EFFECTIVE');
         $effective->assertOk();
         $this->assertCount(1, $effective->json('data'));
         $effective->assertJsonPath('data.0.validity_state', 'EFFECTIVE');
 
-        $scheduled = $this->withHeaders($this->headers)
-            ->getJson($endpoint.'&validity_state=SCHEDULED');
+        $discount->update([
+            'discount_start_date' => Carbon::now('Asia/Aden')->addDay(),
+            'discount_end_date' => null,
+        ]);
+        $scheduled = $this->withHeaders($this->headers)->getJson($endpoint.'&validity_state=SCHEDULED');
         $scheduled->assertOk();
         $this->assertCount(1, $scheduled->json('data'));
         $scheduled->assertJsonPath('data.0.validity_state', 'SCHEDULED');
 
-        $disabled = $this->withHeaders($this->headers)
-            ->getJson($endpoint.'&status=false');
+        $discount->update([
+            'discount_start_date' => null,
+            'discount_end_date' => Carbon::now('Asia/Aden')->subDay(),
+        ]);
+        $expired = $this->withHeaders($this->headers)->getJson($endpoint.'&validity_state=EXPIRED');
+        $expired->assertOk();
+        $this->assertCount(1, $expired->json('data'));
+        $expired->assertJsonPath('data.0.validity_state', 'EXPIRED');
+
+        $discount->update(['status' => false, 'discount_end_date' => null]);
+        $disabled = $this->withHeaders($this->headers)->getJson($endpoint.'&status=false');
         $disabled->assertOk();
         $this->assertCount(1, $disabled->json('data'));
         $disabled->assertJsonPath('data.0.status', false);
 
-        $inactiveLifecycle = $this->withHeaders($this->headers)
-            ->getJson($endpoint.'&validity_state=DISABLED');
+        $inactiveLifecycle = $this->withHeaders($this->headers)->getJson($endpoint.'&validity_state=DISABLED');
         $inactiveLifecycle->assertOk();
         $this->assertCount(1, $inactiveLifecycle->json('data'));
         $inactiveLifecycle->assertJsonPath('data.0.validity_state', 'DISABLED');
     }
-
 }
