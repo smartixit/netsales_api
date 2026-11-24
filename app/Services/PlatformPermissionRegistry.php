@@ -5,10 +5,11 @@ namespace App\Services;
 /**
  * Defines which unscoped permission keys may be granted to PLATFORM identities.
  *
- * The user_permissions pivot has no tenant discriminator. Tenant operational
+ * The user_permissions pivot has no tenant discriminator. Tenant membership
  * permissions must therefore never be converted into global platform grants.
- * PLATFORM roles may see networks and POS records for support purposes, but
- * those shared keys are deliberately read-only.
+ * Cross-tenant actions are allowlisted explicitly below; network wallet
+ * treasury operations are owned by the PLATFORM root, while network and POS
+ * browsing remains read-only for support.
  */
 final class PlatformPermissionRegistry
 {
@@ -35,6 +36,11 @@ final class PlatformPermissionRegistry
         'networks.reject',
         'pos.approve',
         'pos.reject',
+        'network_wallets.view',
+        'network_wallets.create',
+        'network_wallets.edit',
+        'network_wallets.deposit',
+        'network_wallets.withdraw',
     ];
 
     public const SHARED_READ_PERMISSION_KEYS = [
