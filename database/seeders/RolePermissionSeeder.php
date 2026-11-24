@@ -401,16 +401,16 @@ class RolePermissionSeeder extends Seeder
             ->pluck('permissions.permission_id')
             ->all();
 
-        $platformGrantedDenials = DB::table('permissions')
-            ->whereIn('permission_id', $allActivePermissionIds)
-            ->whereIn('permission_key', self::INTENTIONALLY_UNGRANTED_PERMISSION_KEYS)
-            ->pluck('permission_key')
-            ->all();
+        $platformRegistry = app(PlatformPermissionRegistry::class);
+        $platformRegistryDenials = array_values(array_filter(
+            self::INTENTIONALLY_UNGRANTED_PERMISSION_KEYS,
+            static fn (string $permissionKey): bool => $platformRegistry->allows($permissionKey)
+        ));
 
-        if ($platformGrantedDenials !== []) {
+        if ($platformRegistryDenials !== []) {
             throw new RuntimeException(
-                'Role permission seeding is blocked; the PLATFORM root role cannot receive intentionally denied keys: '
-                .implode(', ', $platformGrantedDenials)
+                'Role permission seeding is blocked; intentionally denied keys cannot be added to the PLATFORM registry: '
+                .implode(', ', $platformRegistryDenials)
             );
         }
 
