@@ -1370,7 +1370,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->where('agreement_id', $agreement->agreement_id)
             ->update(['status' => 'ACTIVE']);
 
-        $this->assertSame(1, $service->expireDueAgreements(10));
+        $this->artisan('network-pos:expire-agreements', ['--limit' => 10])->assertExitCode(0);
         $this->assertSame('EXPIRED', $agreement->fresh()->status);
         $this->assertDatabaseHas('network_pos_events', [
             'network_pos_id' => $link->network_pos_id,
