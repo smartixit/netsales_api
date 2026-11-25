@@ -85,10 +85,10 @@ class NetworkPosAgreementService
             if ($agreement->status !== 'DRAFT') {
                 throw ValidationException::withMessages(['agreement' => ['لا يمكن اعتماد إلا مسودة اتفاقية.']]);
             }
-            if ($agreement->starts_at && $agreement->starts_at->isFuture()) {
+            if ($agreement->starts_at && $agreement->starts_at->greaterThan(now('Asia/Aden'))) {
                 throw ValidationException::withMessages(['starts_at' => ['لا يمكن اعتماد اتفاقية قبل تاريخ بدء سريانها.']]);
             }
-            if ($agreement->ends_at && $agreement->ends_at->isPast()) {
+            if ($agreement->ends_at && $agreement->ends_at->lessThanOrEqualTo(now('Asia/Aden'))) {
                 throw ValidationException::withMessages(['ends_at' => ['انتهت مدة الاتفاقية ولا يمكن اعتمادها.']]);
             }
             $expiredAgreements = NetworkPosAgreement::query()
