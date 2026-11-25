@@ -9,6 +9,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
+use LogicException;
 
 /**
  * مستودع إدارة بيانات المستخدمين وحساباتهم (Enterprise User Repository).
