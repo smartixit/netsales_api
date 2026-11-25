@@ -1,15 +1,14 @@
 <?php
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Enums\\ValueType;
-use App\\Interfaces\\BackupJobRepositoryInterface;
-use App\\Interfaces\\SystemSettingRepositoryInterface;
-use App\\Models\\SystemSetting;
-use App\\Services\\Backup\\BackupSettingsService;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
+use App\Enums\ValueType;
+use App\Interfaces\BackupJobRepositoryInterface;
+use App\Interfaces\SystemSettingRepositoryInterface;
+use App\Services\Backup\BackupSettingsService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
-use Tests\\TestCase;
+use Tests\TestCase;
 
 class BackupSettingsValueTypeTest extends TestCase
 {
@@ -57,7 +56,7 @@ class BackupSettingsValueTypeTest extends TestCase
             Mockery::mock(BackupJobRepositoryInterface::class)
         );
 
-        $this->expectException(\\InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
         $service->set('backup.runtime', '{}', 'unsupported');
     }
