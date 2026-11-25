@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\API\V1\Pos;
 
-use App\Enums\PosStatus;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class UpdatePosRequest extends FormRequest
 {
@@ -39,7 +39,7 @@ class UpdatePosRequest extends FormRequest
                 'sometimes',
                 'required',
                 'string',
-                'max:100',
+                'max:50',
                 Rule::unique('pos', 'pos_name')
                     ->ignore($posId, 'pos_id')
                     ->whereNull('deleted_at'),
@@ -63,7 +63,7 @@ class UpdatePosRequest extends FormRequest
                 'sometimes',
                 'required',
                 'integer',
-                Rule::exists('directorates', 'directorate_id')->whereNull('deleted_at'),
+                Rule::exists('directorates', 'directorate_id')->where('governorate_id', $this->input('governorate_id') ?? DB::table('pos')->where('pos_id', $posId)->value('governorate_id'))->whereNull('deleted_at'),
             ],
             'pos_address' => [
                 'nullable',
@@ -75,10 +75,6 @@ class UpdatePosRequest extends FormRequest
                 'image',
                 'mimes:jpeg,png,jpg,webp',
                 'max:2048',
-            ],
-            'status' => [
-                'sometimes',
-                Rule::enum(PosStatus::class),
             ],
         ];
     }
