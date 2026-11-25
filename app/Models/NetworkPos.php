@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 
 class NetworkPos extends Model
 {
-    use ExactDateSerialization;
+    use ExactDateSerialization;\n    use SoftDeletes;
 
     protected $table = 'network_pos';
 
@@ -46,7 +46,7 @@ class NetworkPos extends Model
         return $this->belongsTo(Pos::class, 'pos_id', 'pos_id');
     }
 
-    // Scopes
+    public function agreements()\n    {\n        return $this->hasMany(NetworkPosAgreement::class, 'network_pos_id', 'network_pos_id');\n    }\n\n    public function events()\n    {\n        return $this->hasMany(NetworkPosEvent::class, 'network_pos_id', 'network_pos_id')->orderByDesc('event_id');\n    }\n\n    // Scopes
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', true);
