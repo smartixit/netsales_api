@@ -10,7 +10,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('pos', function (Blueprint $table): void {
+            // MySQL requires the referenced owner_id index to remain available
+            // while the foreign key exists. Recreate the FK after removing
+            // the one-to-one unique constraint so the POS can have multiple owners.
+            $table->dropForeign(['owner_id']);
             $table->dropUnique('uq_pos_owner_id');
+            $table->foreign('owner_id')
+                ->references('user_id')
+                ->on('users')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
         });
 
         Schema::table('network_membership_audit_logs', function (Blueprint $table): void {
