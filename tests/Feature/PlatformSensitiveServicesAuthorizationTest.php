@@ -13,6 +13,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\NetworkMembershipService;
 use App\Services\TenantPermissionService;
+use App\Services\SmartSchedulerCatchupService;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
