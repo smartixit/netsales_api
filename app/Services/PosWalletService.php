@@ -819,7 +819,7 @@ class PosWalletService
         $this->notificationService->sendDirect(
             userId: $wallet->pos->owner_id,
             type: NotificationType::WALLET_TRANSFER,
-            title: 'حركة مالية',
+            title: '💰 حركة مالية',
             message: $message,
             inApp: true,
             push: true,
