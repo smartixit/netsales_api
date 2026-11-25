@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Enums\NetworkStatus;
+use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\NotificationType;
 use App\Enums\SmsMessageType;
 use App\Enums\UserDeviceStatus;
@@ -15,6 +17,9 @@ use App\Interfaces\NetworkWalletRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Models\Network;
+use App\Models\NetworkUser;
+use App\Models\NetworkMembershipAuditLog;
+use App\Models\Role;
 use App\Services\Support\FileUploadService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -82,24 +87,30 @@ class NetworkService
     {
         if ($request instanceof StoreNetworkRequest) {
             $logo = $request->file('network_profile_logo') ?? $request->file('network_logo');
-            $data = [
-                'network_name' => (string) $request->network_name,
-                'governorate_id' => (int) $request->governorate_id,
-                'directorate_id' => (int) $request->directorate_id,
-                'network_email' => $request->network_email,
-                'network_address' => $request->network_address,
-                'status' => $request->status ?? NetworkStatus::ACTIVE,
-            ];
+            $data = $request->safe()->only([
+                'network_name',
+                'governorate_id',
+                'directorate_id',
+                'network_email',
+                'network_address',
+            ]);
         } else {
-            $data = $request;
+            $data = array_intersect_key($request, array_flip([
+                'network_name',
+                'governorate_id',
+                'directorate_id',
+                'network_email',
+                'network_address',
+            ]));
         }
 
-        $resolvedOwnerId = $ownerId ?? ($data['owner_id'] ?? (auth()->id() ? (int) auth()->id() : null));
+        $resolvedOwnerId = $ownerId ?? (auth()->id() ? (int) auth()->id() : null);
         if (! $resolvedOwnerId) {
             throw ValidationException::withMessages([
-                'owner_id' => ['تعذر تحديد مالك الشبكة من الجلسة أو الطلب.'],
+                'owner_id' => ['تعذر تحديد مالك الشبكة من المستخدم المصادق عليه.'],
             ]);
         }
+
         $owner = $this->userRepository->findById($resolvedOwnerId);
         if (! $owner) {
             throw ValidationException::withMessages([
@@ -108,16 +119,57 @@ class NetworkService
         }
         $owner->ensureActive();
 
+        $ownerScope = $owner->role_scope instanceof RoleScope
+            ? $owner->role_scope->value
+            : $owner->role_scope;
+        if ($ownerScope === RoleScope::PLATFORM->value) {
+            throw ValidationException::withMessages([
+                'owner_id' => ['حسابات المنصة لا يمكنها امتلاك كيانات تشغيلية عبر هذا المسار.'],
+            ]);
+        }
+
+        $ownerRole = Role::query()
+            ->byKey(RoleKey::NETWORK_OWNER)
+            ->where('scope', RoleScope::NETWORK->value)
+            ->active()
+            ->first();
+
+        if (! $ownerRole) {
+            throw new \\RuntimeException('تعذر العثور على دور مالك الشبكة التشغيلي النشط.');
+        }
+
         $data['owner_id'] = $owner->user_id;
         $data['network_phone_number'] = (string) $owner->user_phone_number;
-        // unset($data['network_holder_name']);
+        $data['status'] = NetworkStatus::PENDING;
 
-        return DB::transaction(function () use ($data, $logo) {
+        return DB::transaction(function () use ($data, $logo, $owner, $ownerRole): Network {
             if ($logo) {
                 $data['network_profile_logo'] = $this->fileUploadService->uploadFile($logo, 'networks/logos');
             }
 
             $network = $this->networkRepository->create($data);
+
+            $membership = NetworkUser::query()->create([
+                'network_id' => $network->network_id,
+                'user_id' => $owner->user_id,
+                'role_id' => $ownerRole->role_id,
+                'status' => 'ACTIVE',
+                'last_event_seq' => 1,
+            ]);
+
+            NetworkMembershipAuditLog::query()->create([
+                'network_id' => $network->network_id,
+                'user_id' => $owner->user_id,
+                'event_seq' => 1,
+                'action' => 'OWNER_ASSIGNED',
+                'actor_id' => $owner->user_id,
+                'old_state' => null,
+                'new_state' => [
+                    'role_id' => $membership->role_id,
+                    'status' => $membership->status,
+                ],
+                'created_at' => now('Asia/Aden'),
+            ]);
 
             return $network->load(['governorate', 'directorate', 'owner']);
         });
