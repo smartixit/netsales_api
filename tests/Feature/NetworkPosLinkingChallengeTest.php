@@ -18,6 +18,8 @@ use App\Models\Pos;
 use App\Models\PosUser;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\NetworkPosService;
+use App\Services\NetworkPosAgreementService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\CreatesActiveBillingSubscription;
@@ -1209,6 +1211,80 @@ class NetworkPosLinkingChallengeTest extends TestCase
         if ($statusResponse->status() === 422) {
             $statusResponse->assertJsonValidationErrors(['challenge_uuid']);
         }
+    }
+
+    public function test_relationship_archive_restore_preserves_identity_and_event_history(): void
+    {
+        $service = app(NetworkPosService::class);
+        $link = $service->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => true,
+        ]);
+
+        $linkId = $link->network_pos_id;
+        $this->assertTrue($service->delete($linkId));
+        $archived = NetworkPos::withTrashed()->findOrFail($linkId);
+        $this->assertTrue($archived->trashed());
+
+        $this->assertDatabaseHas('network_pos_events', [
+            'network_pos_id' => $linkId,
+            'event_type' => 'CREATED',
+        ]);
+        $this->assertDatabaseHas('network_pos_events', [
+            'network_pos_id' => $linkId,
+            'event_type' => 'ARCHIVED',
+        ]);
+
+        $restored = $service->restore($linkId);
+        $this->assertNotNull($restored);
+        $this->assertSame($linkId, $restored->network_pos_id);
+        $this->assertFalse($restored->trashed());
+        $this->assertDatabaseHas('network_pos_events', [
+            'network_pos_id' => $linkId,
+            'event_type' => 'RESTORED',
+        ]);
+    }
+
+    public function test_agreement_versions_allow_only_one_active_revision(): void
+    {
+        $link = app(NetworkPosService::class)->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => true,
+        ]);
+        $service = app(NetworkPosAgreementService::class);
+        $first = $service->createDraft($link->network_pos_id, [
+            'title' => 'اتفاقية التوريد الأولى',
+            'reference' => 'AGR-001',
+            'terms' => 'شروط تجريبية للاختبار',
+            'starts_at' => now('Asia/Aden')->subMinute(),
+            'ends_at' => now('Asia/Aden')->addDay(),
+        ], $this->networkOwner->user_id);
+
+        $first = $service->activate($link->network_pos_id, $first->agreement_id, $this->networkOwner->user_id);
+        $this->assertSame('ACTIVE', $first->status);
+
+        $second = $service->createDraft($link->network_pos_id, [
+            'title' => 'اتفاقية التوريد الثانية',
+            'terms' => 'إصدار بديل',
+            'starts_at' => now('Asia/Aden')->subMinute(),
+        ], $this->networkOwner->user_id);
+
+        try {
+            $service->activate($link->network_pos_id, $second->agreement_id, $this->networkOwner->user_id);
+            $this->fail('يجب منع وجود اتفاقيتين نشطتين للعلاقة نفسها.');
+        } catch (\Illuminate\Validation\ValidationException) {
+            $this->assertSame('DRAFT', $second->fresh()->status);
+        }
+
+        $service->terminate($link->network_pos_id, $first->agreement_id, $this->networkOwner->user_id);
+        $activatedSecond = $service->activate($link->network_pos_id, $second->agreement_id, $this->networkOwner->user_id);
+        $this->assertSame('ACTIVE', $activatedSecond->status);
+        $this->assertDatabaseHas('network_pos_events', [
+            'network_pos_id' => $link->network_pos_id,
+            'event_type' => 'AGREEMENT_ACTIVATED',
+        ]);
     }
 
 }
