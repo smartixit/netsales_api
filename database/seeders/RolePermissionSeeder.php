@@ -119,8 +119,6 @@ class RolePermissionSeeder extends Seeder
                     'networks.view_pos_link_events',
                     'networks.restore_pos_link',
                     'pos.view',
-                    'networks.view_pos_agreements',
-                    'networks.view_pos_link_events',
                     'network_wallets.view',
                     'network_wallets.report',
                     'network_wallets.export',
@@ -209,6 +207,8 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'networks.view',
                     'pos.view',
+                    'networks.view_pos_agreements',
+                    'networks.view_pos_link_events',
                     'network_wallets.view',
                     'network_wallets.report',
                     'network_wallets.export',
@@ -305,6 +305,8 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'pos.view',
                     'networks.view',
+                    'pos.view_network_agreements',
+                    'pos.view_network_link_events',
                     'pos_wallets.view',
                     'pos_wallets.report',
                     'pos_wallets.export',
