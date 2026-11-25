@@ -1322,6 +1322,13 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->where('agreement_id', $expired->agreement_id)
             ->update(['status' => 'ACTIVE']);
 
+        try {
+            $service->terminate($link->network_pos_id, $expired->agreement_id, $this->networkOwner->user_id);
+            $this->fail('لا يجوز إنهاء اتفاقية تجاوزت تاريخ انتهاء سريانها.');
+        } catch (\\Illuminate\\Validation\\ValidationException) {
+            $this->assertSame('ACTIVE', $expired->fresh()->status);
+        }
+
         $replacement = $service->createDraft($link->network_pos_id, [
             'title' => 'اتفاقية بديلة',
             'terms' => 'الإصدار الجديد',
