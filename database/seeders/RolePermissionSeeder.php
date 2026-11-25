@@ -27,14 +27,12 @@ class RolePermissionSeeder extends Seeder
      * @var list<string>
      */
     public const INTENTIONALLY_UNGRANTED_PERMISSION_KEYS = [
-        'networks.create',
         'networks.delete',
         'networks.restore',
         'networks.force_delete',
         'network_wallets.delete',
         'network_wallets.restore',
         'network_wallets.force_delete',
-        'pos.create',
         'pos.delete',
         'pos.restore',
         'pos.force_delete',
@@ -102,6 +100,7 @@ class RolePermissionSeeder extends Seeder
             RoleKey::NETWORK_OWNER->value => [
                 'scope' => RoleScope::NETWORK->value,
                 'permissions' => [
+                    'networks.create',
                     'networks.view',
                     'network_members.view',
                     'network_members.create',
@@ -234,6 +233,7 @@ class RolePermissionSeeder extends Seeder
             RoleKey::POS_AGENT->value => [
                 'scope' => RoleScope::POS->value,
                 'permissions' => [
+                    'pos.create',
                     'pos.view',
                     'pos_members.view',
                     'pos_members.create',
