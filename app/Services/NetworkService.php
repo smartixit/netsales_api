@@ -48,7 +48,8 @@ class NetworkService
         protected NotificationService $notificationService,
         protected NetworkWalletRepositoryInterface $networkWalletRepository,
         protected NetworkSmsSettingRepositoryInterface $networkSmsSettingRepository,
-    ) {}
+    ) {
+    }
 
     /**
      * جلب قائمة مزودي الشبكات مع تطبيق الفلاتر والبحث والترقيم.
@@ -74,7 +75,7 @@ class NetworkService
         try {
             $network = $this->networkRepository->findById($id);
 
-            return ! empty($relations) ? $network->load($relations) : $network;
+            return !empty($relations) ? $network->load($relations) : $network;
         } catch (ModelNotFoundException) {
             return null;
         }
@@ -105,14 +106,14 @@ class NetworkService
         }
 
         $resolvedOwnerId = $ownerId ?? (auth()->id() ? (int) auth()->id() : null);
-        if (! $resolvedOwnerId) {
+        if (!$resolvedOwnerId) {
             throw ValidationException::withMessages([
                 'owner_id' => ['تعذر تحديد مالك الشبكة من المستخدم المصادق عليه.'],
             ]);
         }
 
         $owner = $this->userRepository->findById($resolvedOwnerId);
-        if (! $owner) {
+        if (!$owner) {
             throw ValidationException::withMessages([
                 'owner_id' => ['مالك الشبكة المحدد غير موجود بالنظام.'],
             ]);
@@ -134,7 +135,7 @@ class NetworkService
             ->active()
             ->first();
 
-        if (! $ownerRole) {
+        if (!$ownerRole) {
             throw new \RuntimeException('تعذر العثور على دور مالك الشبكة التشغيلي النشط.');
         }
 
@@ -196,9 +197,9 @@ class NetworkService
                 'directorate_id' => $request->directorate_id !== null ? (int) $request->directorate_id : null,
                 'network_email' => $request->network_email,
                 'network_address' => $request->network_address,
-            ], fn ($value) => $value !== null);
+            ], fn($value) => $value !== null);
         } else {
-            $data = array_intersect_key($request, array_flip(["network_name","governorate_id","directorate_id","network_email","network_address"]));
+            $data = array_intersect_key($request, array_flip(["network_name", "governorate_id", "directorate_id", "network_email", "network_address"]));
         }
 
         return DB::transaction(function () use ($network, $data, $logo) {
@@ -332,7 +333,7 @@ class NetworkService
 
             // 1. إنشاء محفظة مالية للشبكة برصيد 0.00 تلقائياً إذا لم تكن موجودة مسبقاً
             $wallet = $this->networkWalletRepository->findByNetworkId($network->network_id);
-            if (! $wallet) {
+            if (!$wallet) {
                 $this->networkWalletRepository->create([
                     'network_id' => $network->network_id,
                     'wallet_balance' => 0.00,
@@ -359,15 +360,15 @@ class NetworkService
                 $this->notificationService->sendDirect(
                     userId: (int) $user->user_id,
                     type: NotificationType::NETWORK_APPROVED,
-                    title: 'تمت الموافقة على طلب تسجيل الشبكة',
-                    message: "تهانينا! تمت الموافقة على طلب تسجيل شبكة {$network->network_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام.",
+                    title: '✅ تمت الموافقة على طلب تسجيل الشبكة',
+                    message: "🎊 تهانينا! تمت الموافقة على طلب تسجيل شبكة ({$network->network_name}) وتفعيل حسابكم بنجاح. يمكنكم الآن تسجيل الدخول إلى النظام والبدء باستخدام خدمات NetSales. 🚀",
                     inApp: true,
                     push: true,
                     sms: true,
                     email: true,
                     networkId: $network->network_id,
                     smsMessageType: SmsMessageType::ADMIN_BROADCAST,
-                    emailSubject: 'الموافقة على طلب تسجيل الشبكة - NetSales'
+                    emailSubject: '✅ تمت الموافقة على طلب تسجيل الشبكة - NetSales'
                 );
             }
 

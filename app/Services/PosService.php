@@ -359,15 +359,15 @@ class PosService
                 $this->notificationService->sendDirect(
                     userId: (int) $user->user_id,
                     type: NotificationType::POS_APPROVED,
-                    title: 'تمت الموافقة على طلب تسجيل نقطة البيع',
-                    message: "تهانينا! تمت الموافقة على طلب تسجيل نقطة بيع {$pos->pos_name} وتفعيل حسابكم بنجاح. يمكنك الآن تسجيل الدخول للنظام.",
+                    title: '✅ تمت الموافقة على طلب تسجيل نقطة البيع',
+                    message: "🎊 تهانينا! تمت الموافقة على طلب تسجيل نقطة بيع ({$pos->pos_name}) وتفعيل حسابكم بنجاح. يمكنكم الآن تسجيل الدخول للنظام. 🚀",
                     inApp: true,
                     push: true,
                     sms: true,
                     email: true,
                     networkId: null,
                     smsMessageType: SmsMessageType::ADMIN_BROADCAST,
-                    emailSubject: 'الموافقة على طلب تسجيل نقطة البيع - NetSales'
+                    emailSubject: '✅ الموافقة على طلب تسجيل نقطة البيع - NetSales'
                 );
             }
 
