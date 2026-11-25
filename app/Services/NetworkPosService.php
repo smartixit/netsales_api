@@ -273,7 +273,13 @@ class NetworkPosService
     public function bulkDelete(array $ids): int
     {
         return DB::transaction(function () use ($ids) {
-            return $this->networkPosRepository->bulkDelete($ids);
+            $links = NetworkPos::query()->whereIn('network_pos_id', $ids)->lockForUpdate()->get();
+            foreach ($links as $link) {
+                $link->delete();
+                $this->recordLifecycleEvent($link, 'ARCHIVED');
+            }
+
+            return $links->count();
         });
     }
 
