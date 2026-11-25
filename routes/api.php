@@ -295,7 +295,10 @@ Route::prefix('v1')->group(function () {
         // 5. ربط نقاط البيع بمزودي الشبكات (Network POS Links)
         // ==========================================
         Route::middleware(['throttle:api-read', 'permission:networks.view'])->group(function () {
-            Route::get('network-pos', [NetworkPosController::class, 'index'])->name('api.v1.network_pos.index');
+            Route::get('networks/{networkId}/network-pos/trashed', [NetworkPosController::class, 'trashedForNetwork'])->whereNumber('networkId')->name('api.v1.networks.pos.trashed');
+            Route::get('network-pos/{id}/agreements', [NetworkPosController::class, 'agreements'])->whereNumber('id')->name('api.v1.network_pos.agreements.index');
+            Route::get('network-pos/{id}/events', [NetworkPosController::class, 'relationshipEvents'])->whereNumber('id')->name('api.v1.network_pos.events.index');
+            Route::get('network-pos, [NetworkPosController::class, 'index'])->name('api.v1.network_pos.index');
             Route::get('network-pos/{id}', [NetworkPosController::class, 'show'])->whereNumber('id')->name('api.v1.network_pos.show');
             Route::get('networks/{id}/pos', [NetworkPosController::class, 'networkPosList'])->whereNumber('id')->name('api.v1.networks.pos_list');
         });
@@ -305,6 +308,11 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('throttle:api-write')->group(function () {
+            Route::post('network-pos/{id}/restore', [NetworkPosController::class, 'restoreLink'])->whereNumber('id')->name('api.v1.network_pos.restore');
+            Route::post('network-pos/{id}/agreements', [NetworkPosController::class, 'storeAgreement'])->whereNumber('id')->name('api.v1.network_pos.agreements.store');
+            Route::put('network-pos/{id}/agreements/{agreementId}', [NetworkPosController::class, 'updateAgreement'])->whereNumber('id')->whereNumber('agreementId')->name('api.v1.network_pos.agreements.update');
+            Route::post('network-pos/{id}/agreements/{agreementId}/activate', [NetworkPosController::class, 'activateAgreement'])->whereNumber('id')->whereNumber('agreementId')->name('api.v1.network_pos.agreements.activate');
+            Route::post('network-pos/{id}/agreements/{agreementId}/terminate', [NetworkPosController::class, 'terminateAgreement'])->whereNumber('id')->whereNumber('agreementId')->name('api.v1.network_pos.agreements.terminate');
             Route::post('network-pos', [NetworkPosController::class, 'store'])->name('api.v1.network_pos.store')->middleware('permission:networks.create_pos_link');
             Route::put('network-pos/{id}', [NetworkPosController::class, 'update'])->whereNumber('id')->name('api.v1.network_pos.update')->middleware('permission:networks.update_pos_link');
             Route::delete('network-pos/{id}', [NetworkPosController::class, 'destroy'])->whereNumber('id')->name('api.v1.network_pos.destroy')->middleware('permission:networks.delete_pos_link');
