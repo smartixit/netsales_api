@@ -334,6 +334,10 @@ class EnsurePermissionMiddleware
 
     private function authorizeNetworkPermission(Request $request, User $user, string $permission): bool
     {
+        if ($permission === 'networks.create') {
+            return $this->tenantPermissions->allowsAnyNetwork($user, $permission);
+        }
+
         $networkIds = [];
         $posIds = [];
         $routeName = (string) ($request->route()?->getName() ?? '');
@@ -468,6 +472,10 @@ class EnsurePermissionMiddleware
 
     private function authorizePosPermission(Request $request, User $user, string $permission): bool
     {
+        if ($permission === 'pos.create') {
+            return $this->tenantPermissions->allowsAnyPos($user, $permission);
+        }
+
         $posIds = [];
         $routeName = (string) ($request->route()?->getName() ?? '');
         if (in_array($routeName, [
