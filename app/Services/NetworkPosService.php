@@ -122,6 +122,7 @@ class NetworkPosService
             if ($existing && $existing->trashed()) {
                 $existing->restore();
                 $existing->update(['status' => $status]);
+                $this->ensureRelationshipWallet($networkId, $posId);
                 $this->recordLifecycleEvent($existing, 'RESTORED', ['status' => $status]);
 
                 return $existing->load(['network', 'pos']);
@@ -133,19 +134,7 @@ class NetworkPosService
                 'status' => $status,
             ]);
 
-            // إنشاء محفظة مالية لنقطة البيع لدى هذه الشبكة برصيد 0.00 تلقائياً إذا لم تكن موجودة مسبقاً
-            $wallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId);
-            if (! $wallet) {
-                $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId);
-                $this->posWalletRepository->create([
-                    'network_id' => $networkId,
-                    'pos_id' => $posId,
-                    'wallet_balance' => 0.00,
-                    'opening_balance_source' => 'INITIAL',
-                    'currency_code' => $networkWallet?->currency_code ?: 'YER',
-                    'status' => true,
-                ]);
-            }
+            $this->ensureRelationshipWallet($networkId, $posId);
 
             $this->recordLifecycleEvent($networkPos, 'CREATED', ['status' => $status]);
 
@@ -267,6 +256,24 @@ class NetworkPosService
     public function getTrashedForPos(int $posId, array $filters = []): Collection|CursorPaginator
     {
         return $this->networkPosRepository->getTrashedForPos($posId, $filters);
+    }
+
+    private function ensureRelationshipWallet(int $networkId, int $posId): void
+    {
+        // Preserve an existing wallet and its complete financial history; initialize only if absent.
+        if ($this->posWalletRepository->findByNetworkAndPos($networkId, $posId)) {
+            return;
+        }
+
+        $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId);
+        $this->posWalletRepository->create([
+            'network_id' => $networkId,
+            'pos_id' => $posId,
+            'wallet_balance' => 0.00,
+            'opening_balance_source' => 'INITIAL',
+            'currency_code' => $networkWallet?->currency_code ?: 'YER',
+            'status' => true,
+        ]);
     }
 
     private function recordLifecycleEvent(NetworkPos $link, string $type, array $payload = []): void
