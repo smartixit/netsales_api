@@ -147,31 +147,27 @@ class NetworkPosService
      */
     public function update(int $id, UpdateNetworkPosRequest|array $request): NetworkPos
     {
+        $status = $request instanceof UpdateNetworkPosRequest
+            ? $request->getStatus()
+            : (bool) $request['status'];
+
         try {
-            $networkPos = $this->networkPosRepository->findById($id);
+            return DB::transaction(function () use ($id, $status) {
+                $networkPos = NetworkPos::query()->lockForUpdate()->findOrFail($id);
+                $previousStatus = (bool) $networkPos->status;
+                $networkPos->update(['status' => $status]);
+
+                if ($previousStatus !== $status) {
+                    $this->recordLifecycleEvent($networkPos, $status ? 'ACTIVATED' : 'DEACTIVATED', ['status' => $status]);
+                }
+
+                return $networkPos->load(['network', 'pos']);
+            });
         } catch (ModelNotFoundException) {
             throw ValidationException::withMessages([
                 'network_pos_id' => ['سجل الارتباط المحدد غير موجود.'],
             ]);
         }
-
-        $status = $request instanceof UpdateNetworkPosRequest
-            ? $request->getStatus()
-            : (bool) $request['status'];
-
-        return DB::transaction(function () use ($networkPos, $status) {
-            $previousStatus = (bool) $networkPos->status;
-            $this->networkPosRepository->update($networkPos->network_pos_id, [
-                'status' => $status,
-            ]);
-
-            $networkPos->refresh();
-            if ($previousStatus !== $status) {
-                $this->recordLifecycleEvent($networkPos, $status ? 'ACTIVATED' : 'DEACTIVATED', ['status' => $status]);
-            }
-
-            return $networkPos->load(['network', 'pos']);
-        });
     }
 
     /**
@@ -180,24 +176,19 @@ class NetworkPosService
     public function toggleStatus(int $id): NetworkPos
     {
         try {
-            $networkPos = $this->networkPosRepository->findById($id);
+            return DB::transaction(function () use ($id) {
+                $networkPos = NetworkPos::query()->lockForUpdate()->findOrFail($id);
+                $newStatus = ! $networkPos->isActive();
+                $networkPos->update(['status' => $newStatus]);
+                $this->recordLifecycleEvent($networkPos, $newStatus ? 'ACTIVATED' : 'DEACTIVATED', ['status' => $newStatus]);
+
+                return $networkPos->load(['network', 'pos']);
+            });
         } catch (ModelNotFoundException) {
             throw ValidationException::withMessages([
                 'network_pos_id' => ['سجل الارتباط المحدد غير موجود.'],
             ]);
         }
-
-        return DB::transaction(function () use ($networkPos) {
-            $newStatus = ! $networkPos->isActive();
-            $this->networkPosRepository->update($networkPos->network_pos_id, [
-                'status' => $newStatus,
-            ]);
-            $this->recordLifecycleEvent($networkPos, $newStatus ? 'ACTIVATED' : 'DEACTIVATED', ['status' => $newStatus]);
-
-            $networkPos->refresh();
-
-            return $networkPos->load(['network', 'pos']);
-        });
     }
 
     /**
@@ -205,15 +196,15 @@ class NetworkPosService
      */
     public function delete(int $id): bool
     {
-        try {
-            $networkPos = $this->networkPosRepository->findById($id);
-        } catch (ModelNotFoundException) {
-            return false;
-        }
+        return DB::transaction(function () use ($id): bool {
+            $networkPos = NetworkPos::query()->lockForUpdate()->find($id);
+            if (! $networkPos) {
+                return false;
+            }
 
-        return DB::transaction(function () use ($networkPos) {
             $networkPos->delete();
             $this->recordLifecycleEvent($networkPos, 'ARCHIVED');
+
             return true;
         });
     }
@@ -221,7 +212,7 @@ class NetworkPosService
     public function restore(int $id): ?NetworkPos
     {
         return DB::transaction(function () use ($id): ?NetworkPos {
-            $link = $this->networkPosRepository->findByIdWithTrashed($id);
+            $link = NetworkPos::withTrashed()->lockForUpdate()->find($id);
             if (! $link || ! $link->trashed()) {
                 return null;
             }
