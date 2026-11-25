@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $roles = DB::table('roles')
-            ->get(['role_id', 'role_key', 'scope'])
+            ->get(['role_id', 'role_key'])
             ->keyBy('role_key');
 
         $superAdminRole = $roles->get('SUPER_ADMIN');
@@ -54,7 +54,6 @@ class UserSeeder extends Seeder
             ['user_phone_number' => $adminPhone],
             [
                 'role_id' => $superAdminRole->role_id,
-                'role_scope' => $superAdminRole->scope,
                 'user_full_name' => (string) config('netsales.platform_admin.name'),
                 'user_password' => Hash::make($adminPassword),
                 'user_email' => config('netsales.platform_admin.email'),
