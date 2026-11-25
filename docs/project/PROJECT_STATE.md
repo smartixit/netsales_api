@@ -1,9 +1,24 @@
 # NetSales — Current Project State & Authorization Snapshot
 
-**Last Updated Date:** 2026-11-25  
+**Last Updated Date:** 2026-11-26  
 **Active Working Tree Status:** Billing self-service/search pagination, subscription and Billing Reports integration, Operational Reports scope isolation, and official-document source hardening — implementation work continues; final validation remains pending  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
+
+---
+
+## Current execution snapshot — 2026-11-26
+
+### Session rejection and mobile scheduler activity tick
+- **Status:** IMPLEMENTED ON PAIRED FEATURE BRANCHES; exact-head CI and review pending.
+- **API branch:** `fix/session-auth-semantic-codes-and-activity-tick`, based on `c74a0f9b4807c20246313285410708cb9a227e94`.
+- **Flutter branch:** `fix/session-auth-semantic-codes-and-activity-tick`, based on `d112af91dcb07f9886270a95061960295f419a3b`.
+- Operational Network/POS roles receive `scheduled_tasks.run_activity_tick` only. The existing `runActivityTick()` method is the bounded app-triggered operation; operational requests cannot force execution or select a task.
+- Platform scheduler listing/statistics remain Platform-only. Full administrative catch-up remains gated by `scheduled_tasks.run_catchup`; SUPER_ADMIN retains this capability.
+- Laravel session middleware returns stable `SESSION_CREDENTIAL_MISSING`, `SESSION_DEVICE_ID_MISSING`, and generic `SESSION_INVALID` codes (also in `X-Error-Code`). Unknown/expired/revoked/device-mismatched credentials share the generic terminal code to avoid token-existence disclosure.
+- Flutter only terminates the matching current session generation on `SESSION_INVALID`; missing headers and unrelated 401 responses do not trigger automatic logout. Stale scheduler/FCM responses are guarded from mutating current-session local state.
+- **Verification:** Not yet run locally. Exact-head GitHub Actions, Pint/PHPUnit, Flutter formatting/analyze/tests, and governance checks remain pending. Do not merge until both PR heads pass and are reviewed.
+- **Next authorized action:** Validate both PR heads and fix any failures. Do not merge without explicit user approval.
 
 ---
 

@@ -117,6 +117,7 @@ class ActionTypeSeeder extends Seeder
             'update_network' => 'تعديل إعداد SMS للشبكة',
             'test_network' => 'اختبار بوابة SMS للشبكة',
             'run_catchup' => 'تشغيل الاستدراك المجدول',
+            'run_activity_tick' => 'تشغيل نبضة مهام التطبيق',
         ];
 
         $now = now('Asia/Aden');

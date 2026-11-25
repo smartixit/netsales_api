@@ -200,3 +200,13 @@ Valid statuses are strictly:
 - **Rationale:** The user's explicit correction is to delete Repayment, not to disable credit sales or receivables. Invoice-level payment state and initial payment are part of the invoice lifecycle and are not repayment collection.
 - **Financial authority:** Laravel remains the sole authority for invoice totals, paid/remaining amounts, payment status, credit-limit validation, wallet mutation, and accounting entries. Flutter may collect an initial paid amount where the API contract permits it, but must not calculate authoritative balances.
 - **Boundary:** No POS repayment collection/allocation/reversal workflow may be restored. Do not interpret this decision as permission to remove CREDIT, credit limits, partial initial payments, receivables aging, or invoice reversal semantics unrelated to repayment records.
+
+
+## DEC-SESSION-SCHED-01: Allow operational app activity ticks without exposing scheduler administration
+- **Status:** APPROVED
+- **Date:** 2026-11-26
+- **User Authorization:** The user explicitly instructed implementation after reviewing the proposed separation between operational activity ticks and Platform administration.
+- **Decision:** Keep `POST /api/v1/scheduled-tasks/catchup` as the application's activity-tick endpoint, but authorize operational callers with the distinct `scheduled_tasks.run_activity_tick` capability and a server-side active Network/POS membership check. Operational callers execute only the existing bounded `runActivityTick()` service method; they cannot force execution or select a task. Platform administration remains gated by `scheduled_tasks.run_catchup` and retains the full `runAllCatchupTasks(force, task)` behavior. Scheduler listings and statistics remain Platform-only.
+- **Session contract:** Session middleware emits stable `SESSION_CREDENTIAL_MISSING`, `SESSION_DEVICE_ID_MISSING`, and generic `SESSION_INVALID` codes. Unknown, expired, revoked, and device-mismatched credentials share the generic terminal code to avoid revealing token existence. Missing credentials are not proof that a stored client session has expired.
+- **Client safety:** The Flutter client terminates only the matching current session generation on `SESSION_INVALID`. Requests from earlier generations cannot terminate a newer login. Background scheduler and FCM completions must not restore local state after their originating session has ended.
+- **Consequence:** Keep the bounded operation and administrative catch-up distinct. Never grant `scheduled_tasks.run_catchup` to operational roles or infer administrative authority from request body fields.

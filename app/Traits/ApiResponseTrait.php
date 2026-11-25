@@ -16,14 +16,43 @@ trait ApiResponseTrait
      *
      * @param  mixed  $data
      */
-    protected function apiResponse(bool $success, string $message, $data = null, array $errors = [], int $statusCode = 200): JsonResponse
-    {
-        return response()->json([
+    protected function apiResponse(
+        bool $success,
+        string $message,
+        $data = null,
+        array $errors = [],
+        int $statusCode = 200,
+        ?string $code = null,
+        array $headers = []
+    ): JsonResponse {
+        $response = [
             'success' => $success,
             'message' => $message,
             'data' => $data ?? (object) [],
             'errors' => $errors,
-        ], $statusCode);
+        ];
+
+        if ($code !== null) {
+            $response['code'] = $code;
+        }
+
+        return response()->json($response, $statusCode, $headers);
+    }
+
+    /**
+     * Session authentication error response with a stable machine-readable code.
+     */
+    protected function sessionAuthenticationError(string $code, string $message): JsonResponse
+    {
+        return $this->apiResponse(
+            false,
+            $message,
+            null,
+            [],
+            401,
+            $code,
+            ['X-Error-Code' => $code]
+        );
     }
 
     /**

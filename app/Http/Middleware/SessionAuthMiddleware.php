@@ -63,7 +63,7 @@ class SessionAuthMiddleware
             ?? $request->query('session_id');
 
         if (! $sessionId) {
-            return $this->errorResponse('غير مصادق عليه. رمز الجلسة مفقود.', [], 401);
+            return $this->sessionAuthenticationError('SESSION_CREDENTIAL_MISSING', 'غير مصادق عليه. رمز الجلسة مفقود.');
         }
 
         $deviceUuid = $request->header('X-Device-Uuid') ?? $request->header('X-Device-Id');
@@ -71,7 +71,7 @@ class SessionAuthMiddleware
         if (empty($deviceUuid)) {
             RateLimiter::hit($rateLimitKey, 60);
 
-            return $this->errorResponse('غير مصادق عليه. ترويسة معرف الجهاز (X-Device-Uuid) مطلوبة.', [], 401);
+            return $this->sessionAuthenticationError('SESSION_DEVICE_ID_MISSING', 'غير مصادق عليه. ترويسة معرف الجهاز (X-Device-Uuid) مطلوبة.');
         }
 
         // 3. التحقق من صلاحية وسريان الجلسة ومطابقة الجهاز في جدول user_sessions
@@ -80,10 +80,9 @@ class SessionAuthMiddleware
         if (! $session) {
             RateLimiter::hit($rateLimitKey, 60);
 
-            return $this->errorResponse(
-                'انتهت صلاحية الجلسة أو أنها غير صالحة لهذا الجهاز.',
-                ['session' => ['الجلسة غير صالحة أو تم إبطالها أو لا تتطابق مع هذا الجهاز.']],
-                401
+            return $this->sessionAuthenticationError(
+                'SESSION_INVALID',
+                'انتهت صلاحية الجلسة أو أنها غير صالحة لهذا الجهاز.'
             );
         }
 

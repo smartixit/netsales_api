@@ -1274,3 +1274,27 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Branch / PR:** `fix/generated-role-scope-registration`, PR #42.
 - **Commits:** `bc269d2`, `0b123fb`, `27b879e`, `f032dfac` (repository hotfix HEAD at the time of this entry; subsequent documentation/test commits may advance it).
 - **Verification:** Reviewed schema, registration flow, repository implementation, and PR patch. No local PHP runtime/PHPUnit/Pint execution was available. GitHub Actions had not produced an exact-head run at the time of inspection; combined commit status was empty. Merge is blocked pending exact-head CI.
+
+
+## [2026-11-26] Task: Restore authorized mobile scheduler activity tick and harden session rejection handling
+
+- **Authorized Scope:** User instruction: execute the previously reviewed fix for mobile `ServerTaskRunnerService` authorization and stable Laravel session-rejection codes.
+- **Repositories / Branches:**
+  - API: `smartixit/netsales_api`, `fix/session-auth-semantic-codes-and-activity-tick`, based on `c74a0f9b4807c20246313285410708cb9a227e94`.
+  - Flutter: `smartixit/netsales`, `fix/session-auth-semantic-codes-and-activity-tick`, based on `d112af91dcb07f9886270a95061960295f419a3b`.
+- **API changes:**
+  - Added `scheduled_tasks.run_activity_tick` to the permission/action catalogs and assigned it to all six operational Network/POS system roles. The existing administrative `scheduled_tasks.run_catchup` remains ungranted to operational roles.
+  - Removed only the Platform-scope gate from the catchup POST route. Schedule listing and statistics remain Platform-only.
+  - Added server-derived permission mode: operational members with an active authorized membership execute only `runActivityTick()`; Platform identities with `scheduled_tasks.run_catchup` retain full administrative catch-up. Operational callers cannot pass `force=true` or a task selector.
+  - Added stable session-authentication response codes and matching `X-Error-Code` header. Device mismatch, unknown, expired, and revoked tokens intentionally share `SESSION_INVALID`.
+  - Added feature coverage for operational bounded execution, rejection of administrative parameters, preserved SUPER_ADMIN execution, operational role grants, and session rejection codes.
+- **Flutter changes:**
+  - Added local-only monotonically increasing session generations to authenticated requests; the generation is never sent to the API.
+  - Session teardown now advances the generation, and only a structured `SESSION_INVALID` response from the current generation can trigger automatic logout. Missing-header and unrelated 401 responses do not terminate the local session.
+  - Added stale-generation guards to the foreground scheduler runner and FCM token synchronization; stale scheduler completions cannot restore the runner's local cooldown state.
+  - Updated InfinityFree replay regression fixtures and added tests for missing-credential and stale-generation 401 responses.
+- **Contracts / governance:** Updated backend `API_CONTRACTS.md`, Flutter `shared-contract-reference.md`, and this decision/work log.
+- **Files changed:** API `ActionTypeSeeder.php`, `PermissionSeeder.php`, `RolePermissionSeeder.php`, `EnsurePermissionMiddleware.php`, `routes/api.php`, `ScheduledTaskRunController.php`, `SessionAuthMiddleware.php`, `PlatformSensitiveServicesAuthorizationTest.php`, `RolePermissionMatrixTest.php`, `SessionSecurityHardeningTest.php`, `API_CONTRACTS.md`, `DECISION_LOG.md`, `WORK_LOG.md`, `PROJECT_STATE.md`; Flutter `api_service.dart`, `session_service.dart`, `server_task_runner_service.dart`, `push_notification_service.dart`, `infinityfree_challenge_interceptor_test.dart`, `shared-contract-reference.md`.
+- **Verification:** No local PHP, Pint, PHPUnit, Dart format, Flutter analyze, or Flutter test command was executed in this environment. Exact-head GitHub Actions is required and pending. Do not merge until both repository PR heads pass their required checks and their diffs are reviewed.
+- **Deployment note:** Backend permission catalog and role grants require the project’s normal permission/action/role seeding process before operational clients receive the new capability.
+- **Status:** Implementation committed to paired branches; validation and review pending.

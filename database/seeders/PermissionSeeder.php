@@ -284,6 +284,7 @@ class PermissionSeeder extends Seeder
             'scheduled_tasks' => [
                 'view' => 'عرض سجلات المهام المجدولة',
                 'run_catchup' => 'تشغيل معالجة المهام المتأخرة',
+                'run_activity_tick' => 'السماح بنبضة تشغيل المهام المستحقة من التطبيق',
             ],
         ];
 

@@ -45,6 +45,24 @@ class RolePermissionMatrixTest extends TestCase
         }
     }
 
+    public function test_all_operational_roles_receive_only_the_activity_tick_capability(): void
+    {
+        foreach ([
+            RoleKey::NETWORK_OWNER,
+            RoleKey::NETWORK_USER,
+            RoleKey::NETWORK_ACCOUNTANT,
+            RoleKey::POS_AGENT,
+            RoleKey::POS_USER,
+            RoleKey::POS_ACCOUNTANT,
+        ] as $roleKey) {
+            $permissions = $this->permissionKeys($roleKey);
+
+            $this->assertContains('scheduled_tasks.run_activity_tick', $permissions, $roleKey->value);
+            $this->assertNotContains('scheduled_tasks.run_catchup', $permissions, $roleKey->value);
+            $this->assertNotContains('scheduled_tasks.view', $permissions, $roleKey->value);
+        }
+    }
+
     public function test_platform_super_admin_owns_network_wallet_treasury_operations(): void
     {
         $superAdminRole = Role::query()

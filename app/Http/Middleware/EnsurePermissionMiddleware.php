@@ -40,6 +40,22 @@ class EnsurePermissionMiddleware
             throw new AuthorizationException('الحساب غير نشط ولا يمكنه تنفيذ عمليات محمية.');
         }
 
+        if ($permission === 'scheduled_tasks.run_activity_tick') {
+            if ($this->tenantPermissions->allowsPlatform($user, 'scheduled_tasks.run_catchup')) {
+                $request->attributes->set('scheduled_task_catchup_mode', 'platform');
+
+                return $next($request);
+            }
+
+            if ($this->tenantPermissions->allowsAnyOperational($user, $permission)) {
+                $request->attributes->set('scheduled_task_catchup_mode', 'activity');
+
+                return $next($request);
+            }
+
+            throw new AuthorizationException('لا تملك صلاحية تشغيل نبضة المهام في مساحة العمل النشطة.');
+        }
+
         if ($this->tenantPermissions->allowsPlatform($user, $permission)) {
             return $next($request);
         }

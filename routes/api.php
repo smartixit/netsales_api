@@ -977,13 +977,17 @@ Route::prefix('v1')->group(function () {
         });
 
         // 25. سجلات ومحرك المهام المجدولة (Scheduled Tasks & Catch-up Engine)
-        Route::prefix('scheduled-tasks')->middleware('platform.user.scope')->group(function () {
-            Route::middleware(['throttle:api-read', 'permission:scheduled_tasks.view'])->group(function () {
+        Route::prefix('scheduled-tasks')->group(function () {
+            Route::middleware(['platform.user.scope', 'throttle:api-read', 'permission:scheduled_tasks.view'])->group(function () {
                 Route::get('/', [ScheduledTaskRunController::class, 'index'])->name('api.v1.scheduled_tasks.index');
                 Route::get('stats', [ScheduledTaskRunController::class, 'stats'])->name('api.v1.scheduled_tasks.stats');
             });
+
+            // The endpoint selects its execution mode from server-verified permissions:
+            // operational members receive only runActivityTick(); platform operators
+            // with run_catchup retain the administrative catch-up controls.
             Route::post('catchup', [ScheduledTaskRunController::class, 'catchup'])
-                ->middleware(['throttle:api-write', 'permission:scheduled_tasks.run_catchup'])
+                ->middleware(['throttle:api-write', 'permission:scheduled_tasks.run_activity_tick'])
                 ->name('api.v1.scheduled_tasks.catchup');
         });
 
