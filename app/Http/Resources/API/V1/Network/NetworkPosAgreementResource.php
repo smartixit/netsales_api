@@ -19,6 +19,7 @@ class NetworkPosAgreementResource extends JsonResource
             'starts_at' => $this->starts_at?->format('Y-m-d H:i:s'),
             'ends_at' => $this->ends_at?->format('Y-m-d H:i:s'),
             'status' => $this->status,
+            'validity_state' => $this->resolveValidityState(),
             'created_by' => $this->created_by,
             'activated_by' => $this->activated_by,
             'activated_at' => $this->activated_at?->format('Y-m-d H:i:s'),
