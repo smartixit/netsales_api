@@ -1,14 +1,14 @@
 <?php
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Enums\\RoleScope;
-use Database\\Seeders\\RoleSeeder;
-use Database\\Seeders\\UserSeeder;
-use Illuminate\\Foundation\\Testing\\DatabaseTransactions;
-use Illuminate\\Support\\Facades\\DB;
-use Illuminate\\Support\\Facades\\Hash;
-use Tests\\TestCase;
+use App\Enums\RoleScope;
+use Database\Seeders\RoleSeeder;
+use Database\Seeders\UserSeeder;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
 
 class UserSeederTest extends TestCase
 {
