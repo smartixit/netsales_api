@@ -778,6 +778,17 @@ class NetworkPosController extends BaseController
         return $this->successResponse('تم استرجاع العلاقات المؤرشفة.', NetworkPosResource::collection($links));
     }
 
+    public function trashedForPos(Request $request, int $posId): JsonResponse
+    {
+        $user = $this->currentUser();
+        if (! $user || ! $this->tenantPermissions->allowsPos($user, $posId, 'pos.view')) {
+            return $this->errorResponse('غير مصرح بعرض العلاقات المؤرشفة لنقطة البيع.', [], 403);
+        }
+
+        $links = $this->networkPosService->getTrashedForPos($posId, $request->only(['per_page', 'cursor']));
+        return $this->successResponse('تم استرجاع العلاقات المؤرشفة.', NetworkPosResource::collection($links));
+    }
+
     public function restoreLink(int $id): JsonResponse
     {
         $link = $this->networkPosService->findByIdWithTrashed($id);
@@ -802,7 +813,7 @@ class NetworkPosController extends BaseController
 
     public function agreements(\Illuminate\Http\Request $request, int $id): JsonResponse
     {
-        $link = $this->networkPosService->findById($id);
+        $link = $this->networkPosService->findByIdWithTrashed($id);
         if (! $link) return $this->errorResponse('العلاقة غير موجودة.', [], 404);
         $user = $this->currentUser();
         if ($user && ! Gate::forUser($user)->allows('viewAgreements', $link)) {
@@ -887,7 +898,7 @@ class NetworkPosController extends BaseController
 
     public function relationshipEvents(\Illuminate\Http\Request $request, int $id): JsonResponse
     {
-        $link = $this->networkPosService->findById($id);
+        $link = $this->networkPosService->findByIdWithTrashed($id);
         if (! $link) return $this->errorResponse('العلاقة غير موجودة.', [], 404);
         $user = $this->currentUser();
         if ($user && ! Gate::forUser($user)->allows('viewEvents', $link)) {
