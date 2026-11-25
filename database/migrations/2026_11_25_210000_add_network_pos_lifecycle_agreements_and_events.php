@@ -32,7 +32,7 @@ return new class extends Migration
             $table->dateTime('terminated_at')->nullable();
             $table->timestamps();
             $table->unique(['network_pos_id', 'version'], 'uq_network_pos_agreement_version');
-            $table->index(['network_pos_id', 'status'], 'idx_network_pos_agreement_status');
+            $table->index(['network_pos_id', 'status', 'ends_at'], 'idx_network_pos_agreement_expiry');
         });
 
         Schema::create('network_pos_events', function (Blueprint $table): void {
@@ -53,6 +53,7 @@ return new class extends Migration
     {
         Schema::dropIfExists('network_pos_events');
         Schema::dropIfExists('network_pos_agreements');
+        // The agreement table owns its indexes and is dropped above.
         Schema::table('network_pos', function (Blueprint $table): void {
             $table->dropIndex('idx_network_pos_network_deleted');
             $table->dropIndex('idx_network_pos_pos_deleted');
