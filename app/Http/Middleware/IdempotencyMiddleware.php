@@ -162,11 +162,18 @@ class IdempotencyMiddleware
      */
     protected function handleWithDatabaseService(Request $request, Closure $next, $user, string $idempotencyKey): Response
     {
+        $networkId = $user->networks()
+            ->where('status', 'ACTIVE')
+            ->value('network_id');
+        $posId = $user->pos()
+            ->where('status', 'ACTIVE')
+            ->value('pos_id');
+
         $tenantType = $request->header('X-Tenant-Type')
-            ?? ($user->network ? 'NETWORK' : ($user->pos ? 'POS' : 'PLATFORM'));
+            ?? ($networkId !== null ? 'NETWORK' : ($posId !== null ? 'POS' : 'PLATFORM'));
 
         $tenantId = (int) ($request->header('X-Tenant-Id')
-            ?? ($user->network?->network_id ?? ($user->pos?->pos_id ?? 0)));
+            ?? ($networkId ?? $posId ?? 0));
 
         $endpoint = $request->path();
         $payload = $request->all();
