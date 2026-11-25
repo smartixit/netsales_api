@@ -50,6 +50,7 @@ class UpdateNetworkRequest extends FormRequest
             'directorate_id' => [
                 'sometimes',
                 'required',
+                'required_with:governorate_id',
                 'integer',
                 Rule::exists('directorates', 'directorate_id')->where('governorate_id', $this->input('governorate_id') ?? DB::table('networks')->where('network_id', $networkId)->value('governorate_id'))->whereNull('deleted_at'),
             ],
