@@ -14,6 +14,11 @@ use App\Models\User;
 use App\Services\NetworkMembershipService;
 use App\Services\TenantPermissionService;
 use App\Services\SmartSchedulerCatchupService;
+use App\Services\ScheduledTaskRunService;
+use App\Http\Controllers\API\V1\ScheduledTaskRunController;
+use App\Http\Middleware\EnsurePermissionMiddleware;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -53,14 +58,14 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
 
         $this->assertSame('activity', $response->getData(true)['mode']);
 
-        $catchup = \\Mockery::mock(SmartSchedulerCatchupService::class);
+        $catchup = \Mockery::mock(SmartSchedulerCatchupService::class);
         $catchup->shouldReceive('runActivityTick')
             ->once()
             ->andReturn(['executed' => [], 'skipped' => [], 'server_time' => '2026-11-26 12:00:00']);
         $catchup->shouldNotReceive('runAllCatchupTasks');
 
         $controller = new ScheduledTaskRunController(
-            \\Mockery::mock(ScheduledTaskRunService::class),
+            \Mockery::mock(ScheduledTaskRunService::class),
             $catchup
         );
         $controllerResponse = $controller->catchup($request);
@@ -72,11 +77,11 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
     {
         $owner = $this->makeUserWithRole(RoleKey::NETWORK_OWNER);
 
-        $catchup = \\Mockery::mock(SmartSchedulerCatchupService::class);
+        $catchup = \Mockery::mock(SmartSchedulerCatchupService::class);
         $catchup->shouldNotReceive('runActivityTick');
         $catchup->shouldNotReceive('runAllCatchupTasks');
         $controller = new ScheduledTaskRunController(
-            \\Mockery::mock(ScheduledTaskRunService::class),
+            \Mockery::mock(ScheduledTaskRunService::class),
             $catchup
         );
 
@@ -126,7 +131,7 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
             app(TenantPermissionService::class)->allowsPlatform($admin, 'scheduled_tasks.run_catchup')
         );
 
-        $catchup = \\Mockery::mock(SmartSchedulerCatchupService::class);
+        $catchup = \Mockery::mock(SmartSchedulerCatchupService::class);
         $catchup->shouldReceive('runAllCatchupTasks')
             ->once()
             ->with(true, 'backup:auto')
@@ -134,7 +139,7 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
         $catchup->shouldNotReceive('runActivityTick');
 
         $controller = new ScheduledTaskRunController(
-            \\Mockery::mock(ScheduledTaskRunService::class),
+            \Mockery::mock(ScheduledTaskRunService::class),
             $catchup
         );
         $controllerResponse = $controller->catchup($request);
