@@ -46,10 +46,6 @@ class UserSeeder extends Seeder
         $adminPhone = config('netsales.platform_admin.phone');
         $adminPassword = config('netsales.platform_admin.password');
 
-        if (! is_string($adminPhone) || trim($adminPhone) === '' || ! is_string($adminPassword) || $adminPassword === '') {
-            return;
-        }
-
         DB::table('users')->updateOrInsert(
             ['user_phone_number' => $adminPhone],
             [

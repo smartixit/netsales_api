@@ -361,7 +361,7 @@ class NetworkService
                     userId: (int) $user->user_id,
                     type: NotificationType::NETWORK_APPROVED,
                     title: '✅ تمت الموافقة على طلب تسجيل الشبكة',
-                    message: "🎊 تهانينا! تمت الموافقة على طلب تسجيل شبكة ({$network->network_name}) وتفعيل حسابكم بنجاح. يمكنكم الآن تسجيل الدخول إلى النظام والبدء باستخدام خدمات NetSales. 🚀",
+                    message: "🎊 تهانينا! تمت الموافقة على طلب تسجيل ({$network->network_name}) وتفعيل حسابكم بنجاح. يمكنكم الآن تسجيل الدخول إلى النظام والبدء باستخدام خدمات NetSales. 🚀",
                     inApp: true,
                     push: true,
                     sms: true,
