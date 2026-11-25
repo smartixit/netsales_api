@@ -29,14 +29,26 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
     }
 
     /**
-     * Create a user while assigning the server-selected account scope before persistence.
+     * Create an operational user for a Network or POS membership context.
+     *
+     * Operational scope is stored on the membership record. The generated
+     * users.role_scope column is reserved for Platform identities.
      *
      * @param  array<string, mixed>  $data
      */
     public function createForScope(array $data, RoleScope $scope): User
     {
+        if ($scope === RoleScope::PLATFORM) {
+            throw new LogicException('Operational users cannot be created for the PLATFORM scope.');
+        }
+
+        if (($data['role_id'] ?? null) !== null) {
+            throw new LogicException('Operational users cannot be assigned a global role.');
+        }
+
+        unset($data['role_scope']);
+
         $user = new User($data);
-        $user->setAttribute('role_scope', $scope->value);
         $user->save();
 
         $this->recordAddition($user);
