@@ -1349,6 +1349,38 @@ class NetworkPosLinkingChallengeTest extends TestCase
         ]);
     }
 
+
+    public function test_relationship_status_changes_are_logged_once_for_single_and_bulk_updates(): void
+    {
+        $service = app(NetworkPosService::class);
+        $link = $service->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => true,
+        ]);
+
+        $service->update($link->network_pos_id, ['status' => true]);
+        $service->update($link->network_pos_id, ['status' => false]);
+
+        $this->assertSame(
+            1,
+            DB::table('network_pos_events')
+                ->where('network_pos_id', $link->network_pos_id)
+                ->where('event_type', 'DEACTIVATED')
+                ->count(),
+        );
+
+        $this->assertSame(1, $service->bulkToggleStatus([$link->network_pos_id], true));
+        $this->assertSame(
+            1,
+            DB::table('network_pos_events')
+                ->where('network_pos_id', $link->network_pos_id)
+                ->where('event_type', 'ACTIVATED')
+                ->count(),
+        );
+    }
+
+
     public function test_lifecycle_event_model_rejects_mutation_and_deletion(): void
     {
         $link = app(NetworkPosService::class)->create([
