@@ -39,7 +39,7 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
         $owner = $this->makeUserWithRole(RoleKey::NETWORK_OWNER);
         $headers = $this->createAuthenticatedSession($owner)['headers'];
 
-        $catchup = \\Mockery::mock(SmartSchedulerCatchupService::class);
+        $catchup = \Mockery::mock(SmartSchedulerCatchupService::class);
         $catchup->shouldReceive('runActivityTick')
             ->once()
             ->andReturn(['executed' => [], 'skipped' => [], 'server_time' => '2026-11-26 12:00:00']);
@@ -57,7 +57,7 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
         $owner = $this->makeUserWithRole(RoleKey::NETWORK_OWNER);
         $headers = $this->createAuthenticatedSession($owner)['headers'];
 
-        $catchup = \\Mockery::mock(SmartSchedulerCatchupService::class);
+        $catchup = \Mockery::mock(SmartSchedulerCatchupService::class);
         $catchup->shouldNotReceive('runActivityTick');
         $catchup->shouldNotReceive('runAllCatchupTasks');
         $this->app->instance(SmartSchedulerCatchupService::class, $catchup);
