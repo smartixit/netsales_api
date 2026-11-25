@@ -53,7 +53,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('network_pos_events');
         Schema::dropIfExists('network_pos_agreements');
-        // The agreement table owns its indexes and is dropped above.
         Schema::table('network_pos', function (Blueprint $table): void {
             $table->dropIndex('idx_network_pos_network_deleted');
             $table->dropIndex('idx_network_pos_pos_deleted');
