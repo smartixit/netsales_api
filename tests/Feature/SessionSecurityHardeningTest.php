@@ -184,6 +184,7 @@ class SessionSecurityHardeningTest extends TestCase
             'X-Bypass-Encryption' => 'true',
         ]);
         $stolenSessionFromOtherDevice->assertStatus(401);
+        $stolenSessionFromOtherDevice->assertJsonPath('code', 'SESSION_INVALID');
 
         // 3. محاولة استخدام نفس توكن الجلسة مع حذف ترويسة الجهاز تماماً للالتفاف يتم رفضها فوراً بـ 401
         $stolenSessionWithoutDeviceHeader = $this->getJson('/api/v1/auth/me', [
