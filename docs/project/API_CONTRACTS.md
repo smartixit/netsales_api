@@ -425,3 +425,26 @@ UI presentation must use the decimal string and nested currency metadata with th
 - `data` contains integer counts: `total`, `pending`, `approved`, `rejected`, `cancelled`.
 - List-only `status`, `search`, `cursor`, and `per_page` parameters are ignored by this summary endpoint.
 - The lifecycle has no `COMPLETED` status; `APPROVED` is displayed as `معتمدة`.
+
+
+## Scheduler Activity Tick and Session Rejection Codes
+
+### `POST /api/v1/scheduled-tasks/catchup`
+
+- The endpoint is protected by `session.auth`, write throttling, and a server-derived permission mode.
+- Operational Network/POS memberships with `scheduled_tasks.run_activity_tick` may invoke only the bounded `SmartSchedulerCatchupService::runActivityTick()` operation. It processes at most two due schedule slots and one queue item; the caller cannot select a task or force execution.
+- Operational requests that set `force=true` or provide a non-empty `task` are rejected with HTTP 422. The request body is never used to elevate an operational caller into administrative execution.
+- Platform callers retain full `runAllCatchupTasks(force, task)` behavior only when the authenticated Platform identity has `scheduled_tasks.run_catchup`. The Platform-only scope remains on the schedule listing and statistics routes; operational identities cannot access those administrative resources.
+- The operational permission is assigned to the six Network/POS system roles. It is not a substitute for `scheduled_tasks.run_catchup`, and does not grant schedule listing or statistics access.
+
+### Stable session-authentication error codes
+
+The `session.auth` middleware returns a stable top-level `code` and matching `X-Error-Code` header for credential failures:
+
+| HTTP | Code | Meaning | Client action |
+|---|---|---|---|
+| 401 | `SESSION_CREDENTIAL_MISSING` | No session credential was supplied | Treat as request/header configuration failure; do not destroy a locally active session automatically |
+| 401 | `SESSION_DEVICE_ID_MISSING` | Session credential supplied without a device identity | Treat as request/header configuration failure; do not destroy a locally active session automatically |
+| 401 | `SESSION_INVALID` | Supplied session is expired, revoked, unknown, or bound to a different device | Terminal for the matching local session generation |
+
+Unknown, expired, revoked, and device-mismatched tokens deliberately share `SESSION_INVALID` so the API does not disclose whether a presented token exists in persistent storage. Account, tenant, and device policy denials remain HTTP 403 and are not session-expiration signals.

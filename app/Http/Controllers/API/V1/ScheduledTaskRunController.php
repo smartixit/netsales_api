@@ -106,9 +106,30 @@ class ScheduledTaskRunController extends BaseController
     public function catchup(Request $request): JsonResponse
     {
         try {
+            $executionMode = $request->attributes->get('scheduled_task_catchup_mode');
+
+            if ($executionMode === 'activity') {
+                $force = filter_var($request->input('force', false), FILTER_VALIDATE_BOOLEAN);
+                $task = $request->input('task');
+
+                if ($force || (is_string($task) && trim($task) !== '')) {
+                    throw ValidationException::withMessages([
+                        'force' => ['نبضة التطبيق لا تسمح بفرض التشغيل أو تحديد مهمة إدارية.'],
+                        'task' => ['يُسمح للتطبيق بتشغيل الدورات المستحقة تلقائياً فقط.'],
+                    ]);
+                }
+
+                $result = $this->catchupService->runActivityTick();
+
+                return $this->successResponse('تم تنفيذ نبضة المهام المستحقة بنجاح.', $result);
+            }
+
+            if ($executionMode !== 'platform') {
+                return $this->errorResponse('غير مصرح بتشغيل محرك المهام.', [], 403);
+            }
+
             $force = filter_var($request->input('force', false), FILTER_VALIDATE_BOOLEAN);
             $task = $request->input('task');
-
             $result = $this->catchupService->runAllCatchupTasks($force, $task);
 
             return $this->successResponse('تم تشغيل محرك التعويض والاستدراك الذكي بنجاح.', $result);
