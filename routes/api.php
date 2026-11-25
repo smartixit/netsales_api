@@ -304,6 +304,7 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware(['throttle:api-read', 'permission:pos.view'])->group(function () {
+            Route::get('pos/{posId}/network-pos/trashed', [NetworkPosController::class, 'trashedForPos'])->whereNumber('posId')->name('api.v1.pos.networks.trashed');
             Route::get('pos/{id}/networks', [NetworkPosController::class, 'posNetworksList'])->whereNumber('id')->name('api.v1.pos.networks_list');
         });
 
