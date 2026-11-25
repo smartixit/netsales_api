@@ -260,6 +260,11 @@ Route::prefix('v1')->group(function () {
         // ==========================================
         // 4. إدارة نقاط البيع والوكلاء (POS Management)
         // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('network-pos/{id}/agreements', [NetworkPosController::class, 'agreements'])->whereNumber('id')->name('api.v1.network_pos.agreements.index');
+            Route::get('network-pos/{id}/events', [NetworkPosController::class, 'relationshipEvents'])->whereNumber('id')->name('api.v1.network_pos.events.index');
+        });
+
         Route::middleware(['throttle:api-read', 'permission:pos.view'])->group(function () {
             Route::get('pos', [PosController::class, 'index'])->name('api.v1.pos.index');
             Route::get('pos/trashed', [PosController::class, 'trashed'])->name('api.v1.pos.trashed');
@@ -296,8 +301,6 @@ Route::prefix('v1')->group(function () {
         // ==========================================
         Route::middleware(['throttle:api-read', 'permission:networks.view'])->group(function () {
             Route::get('networks/{networkId}/network-pos/trashed', [NetworkPosController::class, 'trashedForNetwork'])->whereNumber('networkId')->name('api.v1.networks.pos.trashed');
-            Route::get('network-pos/{id}/agreements', [NetworkPosController::class, 'agreements'])->whereNumber('id')->name('api.v1.network_pos.agreements.index');
-            Route::get('network-pos/{id}/events', [NetworkPosController::class, 'relationshipEvents'])->whereNumber('id')->name('api.v1.network_pos.events.index');
             Route::get('network-pos', [NetworkPosController::class, 'index'])->name('api.v1.network_pos.index');
             Route::get('network-pos/{id}', [NetworkPosController::class, 'show'])->whereNumber('id')->name('api.v1.network_pos.show');
             Route::get('networks/{id}/pos', [NetworkPosController::class, 'networkPosList'])->whereNumber('id')->name('api.v1.networks.pos_list');
