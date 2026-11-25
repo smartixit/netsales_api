@@ -23,7 +23,11 @@ interface NetworkPosRepositoryInterface extends BaseRepositoryInterface
     /**
      * البحث عن ارتباط محدد بين شبكة ونقطة بيع.
      */
-    public function findByNetworkAndPos(int $networkId, int $posId): ?NetworkPos;
+    public function findByNetworkAndPos(int $networkId, int $posId, bool $withTrashed = false): ?NetworkPos;
+
+    public function findByIdWithTrashed(int $id): ?NetworkPos;
+
+    public function getTrashedForNetwork(int $networkId, array $filters = []): Collection|CursorPaginator;
 
     /**
      * جلب نقاط البيع المرتبطة بشبكة محددة.
