@@ -62,6 +62,7 @@ class UpdatePosRequest extends FormRequest
             'directorate_id' => [
                 'sometimes',
                 'required',
+                'required_with:governorate_id',
                 'integer',
                 Rule::exists('directorates', 'directorate_id')->where('governorate_id', $this->input('governorate_id') ?? DB::table('pos')->where('pos_id', $posId)->value('governorate_id'))->whereNull('deleted_at'),
             ],
