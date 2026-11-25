@@ -1434,6 +1434,10 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ]);
         }
 
+        // The rejected update leaves the in-memory model dirty; reload the
+        // persisted immutable event before testing deletion.
+        $event->refresh();
+
         try {
             $event->delete();
             $this->fail('يجب منع حذف أحداث دورة الحياة.');
