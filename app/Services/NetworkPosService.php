@@ -12,6 +12,7 @@ use App\Interfaces\PosWalletRepositoryInterface;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\NetworkPosEvent;
+use App\Models\Pos;
 use App\Services\Billing\BillingEntitlementService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -236,8 +237,15 @@ class NetworkPosService
                 return null;
             }
 
-            $link->network?->ensureActive();
-            $link->pos?->ensureActive();
+            $network = Network::withTrashed()->find($link->network_id);
+            $pos = Pos::withTrashed()->find($link->pos_id);
+            if (! $network || $network->trashed() || ! $pos || $pos->trashed()) {
+                throw ValidationException::withMessages([
+                    'network_pos_id' => ['لا يمكن استعادة العلاقة لأن الشبكة أو نقطة البيع محذوفة.'],
+                ]);
+            }
+            $network->ensureActive();
+            $pos->ensureActive();
             $this->assertPosQuota((int) $link->network_id);
             $link->restore();
             $this->recordLifecycleEvent($link, 'RESTORED');
