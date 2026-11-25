@@ -31,6 +31,36 @@ return new class extends Migration
 
     public function down(): void
     {
+        $hasMultiplePosOwners = DB::table('pos')
+            ->select('owner_id')
+            ->groupBy('owner_id')
+            ->havingRaw('COUNT(*) > 1')
+            ->exists();
+
+        $hasOrphanedNetworkAudit = DB::table('network_membership_audit_logs as audit')
+            ->whereNotExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('network_users')
+                    ->whereColumn('network_users.network_id', 'audit.network_id')
+                    ->whereColumn('network_users.user_id', 'audit.user_id');
+            })
+            ->exists();
+
+        $hasOrphanedPosAudit = DB::table('pos_membership_audit_logs as audit')
+            ->whereNotExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('pos_users')
+                    ->whereColumn('pos_users.pos_id', 'audit.pos_id')
+                    ->whereColumn('pos_users.user_id', 'audit.user_id');
+            })
+            ->exists();
+
+        if ($hasMultiplePosOwners || $hasOrphanedNetworkAudit || $hasOrphanedPosAudit) {
+            throw new \\RuntimeException(
+                'Cannot safely roll back entity ownership and membership audit constraints: data now depends on the new schema.'
+            );
+        }
+
         Schema::table('pos_membership_audit_logs', function (Blueprint $table): void {
             $table->dropForeign(['pos_id']);
             $table->foreign(['pos_id', 'user_id'])
