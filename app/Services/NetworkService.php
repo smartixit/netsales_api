@@ -196,10 +196,9 @@ class NetworkService
                 'directorate_id' => $request->directorate_id !== null ? (int) $request->directorate_id : null,
                 'network_email' => $request->network_email,
                 'network_address' => $request->network_address,
-                'status' => $request->status,
             ], fn ($value) => $value !== null);
         } else {
-            $data = $request;
+            $data = array_intersect_key($request, array_flip(["network_name","governorate_id","directorate_id","network_email","network_address"]));
         }
 
         return DB::transaction(function () use ($network, $data, $logo) {
