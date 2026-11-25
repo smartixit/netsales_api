@@ -255,6 +255,11 @@ class NetworkPosService
         return $this->networkPosRepository->getTrashedForNetwork($networkId, $filters);
     }
 
+    public function getTrashedForPos(int $posId, array $filters = []): Collection|CursorPaginator
+    {
+        return $this->networkPosRepository->getTrashedForPos($posId, $filters);
+    }
+
     private function recordLifecycleEvent(NetworkPos $link, string $type, array $payload = []): void
     {
         NetworkPosEvent::query()->create([
