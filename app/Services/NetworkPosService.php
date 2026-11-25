@@ -107,8 +107,8 @@ class NetworkPosService
             $network->ensureActive();
 
             // 4. منع تكرار الارتباط قبل احتساب الحصة؛ الطلب المكرر لا يستهلك مورداً جديداً.
-            $existing = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId);
-            if ($existing) {
+            $existing = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId, true);
+            if ($existing && ! $existing->trashed()) {
                 throw ValidationException::withMessages([
                     'pos_id' => ['نقطة البيع هذه مرتبطة بالفعل بهذه الشبكة مسبقاً.'],
                 ]);
@@ -116,6 +116,14 @@ class NetworkPosService
 
             // 5. فحص الحصة قبل إنشاء ارتباط جديد فقط.
             $this->assertPosQuota($networkId);
+
+            if ($existing && $existing->trashed()) {
+                $existing->restore();
+                $existing->update(['status' => $status]);
+                $this->recordLifecycleEvent($existing, 'RESTORED', ['status' => $status]);
+
+                return $existing->load(['network', 'pos']);
+            }
 
             $networkPos = $this->networkPosRepository->create([
                 'network_id' => $networkId,
@@ -136,6 +144,8 @@ class NetworkPosService
                     'status' => true,
                 ]);
             }
+
+            $this->recordLifecycleEvent($networkPos, 'CREATED', ['status' => $status]);
 
             return $networkPos->load(['network', 'pos']);
         });
@@ -159,11 +169,15 @@ class NetworkPosService
             : (bool) $request['status'];
 
         return DB::transaction(function () use ($networkPos, $status) {
+            $previousStatus = (bool) $networkPos->status;
             $this->networkPosRepository->update($networkPos->network_pos_id, [
                 'status' => $status,
             ]);
 
             $networkPos->refresh();
+            if ($previousStatus !== $status) {
+                $this->recordLifecycleEvent($networkPos, $status ? 'ACTIVATED' : 'DEACTIVATED', ['status' => $status]);
+            }
 
             return $networkPos->load(['network', 'pos']);
         });
@@ -187,6 +201,7 @@ class NetworkPosService
             $this->networkPosRepository->update($networkPos->network_pos_id, [
                 'status' => $newStatus,
             ]);
+            $this->recordLifecycleEvent($networkPos, $newStatus ? 'ACTIVATED' : 'DEACTIVATED', ['status' => $newStatus]);
 
             $networkPos->refresh();
 
@@ -206,8 +221,43 @@ class NetworkPosService
         }
 
         return DB::transaction(function () use ($networkPos) {
-            return (bool) $this->networkPosRepository->delete($networkPos->network_pos_id);
+            $networkPos->delete();
+            $this->recordLifecycleEvent($networkPos, 'ARCHIVED');
+            return true;
         });
+    }
+
+    public function restore(int $id): ?NetworkPos
+    {
+        return DB::transaction(function () use ($id): ?NetworkPos {
+            $link = $this->networkPosRepository->findByIdWithTrashed($id);
+            if (! $link || ! $link->trashed()) {
+                return null;
+            }
+
+            $link->network?->ensureActive();
+            $link->pos?->ensureActive();
+            $this->assertPosQuota((int) $link->network_id);
+            $link->restore();
+            $this->recordLifecycleEvent($link, 'RESTORED');
+
+            return $link->load(['network', 'pos']);
+        });
+    }
+
+    public function getTrashedForNetwork(int $networkId, array $filters = []): Collection|CursorPaginator
+    {
+        return $this->networkPosRepository->getTrashedForNetwork($networkId, $filters);
+    }
+
+    private function recordLifecycleEvent(NetworkPos $link, string $type, array $payload = []): void
+    {
+        NetworkPosEvent::query()->create([
+            'network_pos_id' => $link->network_pos_id,
+            'actor_user_id' => auth()->user()?->user_id,
+            'event_type' => $type,
+            'payload' => $payload === [] ? null : $payload,
+        ]);
     }
 
     /**
