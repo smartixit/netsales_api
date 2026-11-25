@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\API\V1\Pos;
 
-use App\Enums\PosStatus;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -30,7 +29,7 @@ class StorePosRequest extends FormRequest
             'pos_name' => [
                 'required',
                 'string',
-                'max:100',
+                'max:50',
                 Rule::unique('pos', 'pos_name')->whereNull('deleted_at'),
             ],
             'pos_email' => [
@@ -62,10 +61,6 @@ class StorePosRequest extends FormRequest
                 'image',
                 'mimes:jpeg,png,jpg,webp',
                 'max:2048',
-            ],
-            'status' => [
-                'nullable',
-                Rule::enum(PosStatus::class),
             ],
         ];
     }
