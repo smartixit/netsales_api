@@ -127,7 +127,7 @@ class PosService
             ->first();
 
         if (! $ownerRole) {
-            throw new \\RuntimeException('تعذر العثور على دور وكيل نقطة البيع التشغيلي النشط.');
+            throw new \RuntimeException('تعذر العثور على دور وكيل نقطة البيع التشغيلي النشط.');
         }
 
         $data['owner_id'] = $owner->user_id;
