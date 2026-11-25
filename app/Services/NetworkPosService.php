@@ -305,7 +305,26 @@ class NetworkPosService
     public function bulkToggleStatus(array $ids, bool $status): int
     {
         return DB::transaction(function () use ($ids, $status) {
-            return $this->networkPosRepository->bulkToggleStatus($ids, $status);
+            $links = NetworkPos::query()
+                ->whereIn('network_pos_id', $ids)
+                ->lockForUpdate()
+                ->get();
+
+            $changed = 0;
+            foreach ($links as $link) {
+                if ((bool) $link->status === $status) {
+                    continue;
+                }
+                $link->update(['status' => $status]);
+                $this->recordLifecycleEvent(
+                    $link,
+                    $status ? 'ACTIVATED' : 'DEACTIVATED',
+                    ['status' => $status, 'source' => 'BULK'],
+                );
+                $changed++;
+            }
+
+            return $changed;
         });
     }
 
