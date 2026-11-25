@@ -11,20 +11,26 @@ use App\Http\Requests\API\V1\Network\PreviewNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\ResolveNetworkLinkablePosRequest;
 use App\Http\Requests\API\V1\Network\SearchNetworkLinkablePosRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkPosRequest;
+use App\Http\Requests\API\V1\Network\StoreNetworkPosAgreementRequest;
+use App\Http\Requests\API\V1\Network\UpdateNetworkPosAgreementRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeResource;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeStatusResource;
 use App\Http\Resources\API\V1\Network\NetworkLinkablePosResource;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingPreviewResource;
 use App\Http\Resources\API\V1\Network\NetworkPosResource;
+use App\Http\Resources\API\V1\Network\NetworkPosAgreementResource;
+use App\Http\Resources\API\V1\Network\NetworkPosEventResource;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\Pos;
 use App\Services\NetworkPosLinkingChallengeService;
 use App\Services\NetworkPosService;
+use App\Services\NetworkPosAgreementService;
 use App\Services\TenantPermissionService;
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
@@ -44,7 +50,7 @@ class NetworkPosController extends BaseController
         protected NetworkPosService $networkPosService,
         protected NetworkPosLinkingChallengeService $challengeService,
         protected TenantPermissionService $tenantPermissions,
-        protected \\App\\Services\\NetworkPosAgreementService $agreementService,
+        protected NetworkPosAgreementService $agreementService,
     ) {}
 
     /**
