@@ -20,6 +20,7 @@ enum ScheduledTaskType: string
     case SECURITY_LIFT_BANS = 'security_lift_bans';
     case SYSTEM_PRUNE_LOGS = 'system_prune_logs';
     case REPORTS_PURGE_EXPIRED_ARTIFACTS = 'reports_purge_expired_artifacts';
+    case NETWORK_POS_EXPIRE_AGREEMENTS = 'network_pos_expire_agreements';
 
     public static function values(): array
     {
@@ -47,6 +48,7 @@ enum ScheduledTaskType: string
             self::SECURITY_LIFT_BANS => 'رفع الحظر الأمني المنتهي تلقائياً عن المستخدمين والأجهزة',
             self::SYSTEM_PRUNE_LOGS => 'أرشفة وتنظيف سجلات النظام القديمة',
             self::REPORTS_PURGE_EXPIRED_ARTIFACTS => 'تنظيف ملفات التقارير المحمية المنتهية الصلاحية',
+            self::NETWORK_POS_EXPIRE_AGREEMENTS => 'إنهاء صلاحية اتفاقيات علاقات الشبكات ونقاط البيع',
         };
     }
 
@@ -66,6 +68,7 @@ enum ScheduledTaskType: string
             self::SECURITY_LIFT_BANS => 'security:lift-expired-bans',
             self::SYSTEM_PRUNE_LOGS => 'system:prune-logs',
             self::REPORTS_PURGE_EXPIRED_ARTIFACTS => 'reports:purge-expired-artifacts',
+            self::NETWORK_POS_EXPIRE_AGREEMENTS => 'network-pos:expire-agreements',
         };
     }
 
@@ -80,7 +83,8 @@ enum ScheduledTaskType: string
     public function schedule(): array
     {
         return match ($this) {
-            self::OUTBOX_PROCESS => ['kind' => 'every_minute'],
+            self::OUTBOX_PROCESS,
+            self::NETWORK_POS_EXPIRE_AGREEMENTS => ['kind' => 'every_minute'],
             self::BILLING_PROCESS_RENEWALS,
             self::BILLING_PROCESS_DUNNING => ['kind' => 'every_fifteen_minutes'],
             self::BILLING_RECOGNIZE_REVENUE => ['kind' => 'daily_at', 'time' => '01:05'],
