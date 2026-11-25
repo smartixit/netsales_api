@@ -31,6 +31,16 @@ class NetworkPosAgreement extends Model
         ];
     }
 
+    public function resolveValidityState(): string
+    {
+        if ($this->status === 'DRAFT') return 'DRAFT';
+        if ($this->status === 'TERMINATED') return 'TERMINATED';
+        if ($this->status === 'EXPIRED') return 'EXPIRED';
+        if ($this->starts_at && $this->starts_at->isFuture()) return 'SCHEDULED';
+        if ($this->ends_at && $this->ends_at->isPast()) return 'EXPIRED';
+        return 'EFFECTIVE';
+    }
+
     public function relationship(): BelongsTo
     {
         return $this->belongsTo(NetworkPos::class, 'network_pos_id', 'network_pos_id');
