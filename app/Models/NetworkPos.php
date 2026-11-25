@@ -5,12 +5,14 @@ namespace App\Models;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
 
 class NetworkPos extends Model
 {
-    use ExactDateSerialization;\n    use SoftDeletes;
+    use ExactDateSerialization;
+    use SoftDeletes;
 
     protected $table = 'network_pos';
 
@@ -46,7 +48,17 @@ class NetworkPos extends Model
         return $this->belongsTo(Pos::class, 'pos_id', 'pos_id');
     }
 
-    public function agreements()\n    {\n        return $this->hasMany(NetworkPosAgreement::class, 'network_pos_id', 'network_pos_id');\n    }\n\n    public function events()\n    {\n        return $this->hasMany(NetworkPosEvent::class, 'network_pos_id', 'network_pos_id')->orderByDesc('event_id');\n    }\n\n    // Scopes
+    public function agreements()
+    {
+        return $this->hasMany(NetworkPosAgreement::class, 'network_pos_id', 'network_pos_id');
+    }
+
+    public function events()
+    {
+        return $this->hasMany(NetworkPosEvent::class, 'network_pos_id', 'network_pos_id')->orderByDesc('event_id');
+    }
+
+    // Scopes
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', true);
