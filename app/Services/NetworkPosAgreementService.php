@@ -130,8 +130,8 @@ class NetworkPosAgreementService
         return DB::transaction(function () use ($linkId, $agreementId, $actorId): NetworkPosAgreement {
             NetworkPos::query()->lockForUpdate()->findOrFail($linkId);
             $agreement = NetworkPosAgreement::query()->where('network_pos_id', $linkId)->lockForUpdate()->findOrFail($agreementId);
-            if ($agreement->status !== 'ACTIVE') {
-                throw ValidationException::withMessages(['agreement' => ['لا يمكن إنهاء إلا اتفاقية نشطة.']]);
+            if ($agreement->status !== 'ACTIVE' || ($agreement->ends_at && $agreement->ends_at->lessThanOrEqualTo(now('Asia/Aden')))) {
+                throw ValidationException::withMessages(['agreement' => ['لا يمكن إنهاء إلا اتفاقية سارية حالياً.']]);
             }
             $agreement->update(['status' => 'TERMINATED', 'terminated_at' => now('Asia/Aden')]);
             $this->record($linkId, $actorId, 'AGREEMENT_TERMINATED', [
