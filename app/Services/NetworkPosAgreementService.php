@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\NetworkPos;
 use App\Models\NetworkPosAgreement;
 use App\Models\NetworkPosEvent;
-use App\Models\NetworkPosEvent;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Support\Facades\DB;
