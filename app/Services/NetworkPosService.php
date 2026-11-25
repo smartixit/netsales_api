@@ -11,6 +11,7 @@ use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\PosWalletRepositoryInterface;
 use App\Models\Network;
 use App\Models\NetworkPos;
+use App\Models\NetworkPosEvent;
 use App\Services\Billing\BillingEntitlementService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
