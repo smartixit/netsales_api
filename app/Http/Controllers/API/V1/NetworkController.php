@@ -139,7 +139,6 @@ class NetworkController extends BaseController
                         new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
                         new OA\Property(property: 'network_address', type: 'string'),
                         new OA\Property(property: 'network_logo', type: 'string', format: 'binary'),
-                        new OA\Property(property: 'status', type: 'string'),
                     ]
                 )
             )
@@ -186,7 +185,6 @@ class NetworkController extends BaseController
                         new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
                         new OA\Property(property: 'network_address', type: 'string'),
                         new OA\Property(property: 'network_logo', type: 'string', format: 'binary'),
-                        new OA\Property(property: 'status', type: 'string'),
                     ]
                 )
             )
