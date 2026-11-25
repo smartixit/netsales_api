@@ -1223,6 +1223,11 @@ class NetworkPosLinkingChallengeTest extends TestCase
         ]);
 
         $linkId = $link->network_pos_id;
+        DB::table('pos_wallets')
+            ->where('network_id', $this->network->network_id)
+            ->where('pos_id', $this->pos->pos_id)
+            ->update(['wallet_balance' => 123.45]);
+
         $this->assertTrue($service->delete($linkId));
         $archived = NetworkPos::withTrashed()->findOrFail($linkId);
         $this->assertTrue($archived->trashed());
@@ -1240,6 +1245,13 @@ class NetworkPosLinkingChallengeTest extends TestCase
         $this->assertNotNull($restored);
         $this->assertSame($linkId, $restored->network_pos_id);
         $this->assertFalse($restored->trashed());
+        $this->assertSame(
+            '123.45',
+            (string) DB::table('pos_wallets')
+                ->where('network_id', $this->network->network_id)
+                ->where('pos_id', $this->pos->pos_id)
+                ->value('wallet_balance'),
+        );
         $this->assertDatabaseHas('network_pos_events', [
             'network_pos_id' => $linkId,
             'event_type' => 'RESTORED',
