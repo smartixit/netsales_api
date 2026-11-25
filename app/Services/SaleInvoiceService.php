@@ -431,10 +431,10 @@ class SaleInvoiceService
                         type: NotificationType::WALLET_WITHDRAWAL,
                         push: true,
                         title: $isCashSale
-                            ? 'سداد فاتورة مبيعات كروت نقدية'
+                            ? '💚 سداد فاتورة مبيعات كروت نقدية'
                             : ($paidAmount > 0.001
-                                ? 'سداد فاتورة كروت بالبيع الآجل مدفوعة جزئياً'
-                                : 'سداد فاتورة كروت بالبيع الآجل لعدم كفاية الرصيد النقدي'),
+                                ? '💚 سداج فاتورة كروت بالبيع الآجل مدفوعة جزئياً'
+                                : '💚 سداد فاتورة كروت بالبيع الآجل لعدم كفاية الرصيد النقدي'),
                         message: $isCashSale
                             ? "سداد فاتورة مبيعات كروت نقدية (#{$invoice->invoice_uuid}) ناتجة عن الطلب (#{$request->request_uuid})"
                             : ($paidAmount > 0.001
@@ -449,10 +449,10 @@ class SaleInvoiceService
                         type: NotificationType::WALLET_DEPOSIT,
                         push: true,
                         title: $isCashSale
-                            ? 'تحصيل مبيعات كروت نقدية'
+                            ? '💚 تحصيل مبيعات كروت نقدية'
                             : ($paidAmount > 0.001
-                                ? 'تحصيل مبيعات كروت بالبيع الآجل'
-                                : 'تحصيل مبيعات كروت بالبيع الآجل'),
+                                ? '💚 تحصيل مبيعات كروت بالبيع الآجل'
+                                : '💚 تحصيل مبيعات كروت بالبيع الآجل'),
                         message: $isCashSale
                             ? "تحصيل مبيعات كروت نقدية (#{$invoice->invoice_uuid}) من نقطة بيع (#{$pos->pos_name}) ناتجة عن الطلب (#{$request->request_uuid})"
                             : ($paidAmount > 0.001
@@ -759,8 +759,8 @@ class SaleInvoiceService
                             type: NotificationType::WALLET_WITHDRAWAL,
                             push: true,
                             title: $paidAmount > 0.001
-                            ? 'سداد فاتورة مبيعات مباشرة مدفوعة جزئياً'
-                            : 'سداد فاتورة مبيعات مباشرة بالبيع الآجل',
+                            ? '💚 سداد فاتورة مبيعات مباشرة مدفوعة جزئياً'
+                            : '💚 سداد فاتورة مبيعات مباشرة بالبيع الآجل',
                             message: $paidAmount > 0.001
                             ? "سداد فاتورة مبيعات مباشرة مدفوعة جزئياً - إجمالي: ({$formattedTotalInvoiceAmount})، مسدد نقداً: ({$formattedPaidAmount})، متبقي آجل على المحفظة: ({$formattedRemainingAmount}) (رصيد مدين: {$formattedPosBalanceAfter})"
                             : "سداد فاتورة مبيعات مباشرة بالبيع الآجل - ذمم مدينة (رصيد مدين على الوكيل: {$formattedPosBalanceAfter})",
@@ -773,7 +773,7 @@ class SaleInvoiceService
                         userId: $networkRecipientId,
                         type: NotificationType::WALLET_DEPOSIT,
                         push: true,
-                        title: 'تحصيل فاتورة مبيعات مباشرة',
+                        title: '💚 تحصيل فاتورة مبيعات مباشرة',
                         message: "تحصيل فاتورة مبيعات مباشرة من نقطة بيع (#{$pos->pos_name}) - إجمالي: ({$formattedTotalInvoiceAmount})، نقد محصل: ({$formattedPaidAmount})، آجل متبقي: ({$formattedRemainingAmount})",
                     );
                 }
