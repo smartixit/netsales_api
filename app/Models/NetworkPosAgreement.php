@@ -36,7 +36,7 @@ class NetworkPosAgreement extends Model
         if ($this->status === 'DRAFT') return 'DRAFT';
         if ($this->status === 'TERMINATED') return 'TERMINATED';
         if ($this->status === 'EXPIRED') return 'EXPIRED';
-        if ($this->starts_at && $this->starts_at->isFuture()) return 'SCHEDULED';
+        if ($this->starts_at && $this->starts_at->greaterThan(now('Asia/Aden'))) return 'SCHEDULED';
         if ($this->ends_at && $this->ends_at->lessThanOrEqualTo(now('Asia/Aden'))) return 'EXPIRED';
         return 'EFFECTIVE';
     }
