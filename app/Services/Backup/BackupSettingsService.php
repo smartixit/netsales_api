@@ -3,12 +3,14 @@
 namespace App\Services\Backup;
 
 use App\Enums\SettingCategory;
+use App\Enums\ValueType;
 use App\Interfaces\BackupJobRepositoryInterface;
 use App\Interfaces\SystemSettingRepositoryInterface;
 use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
+use InvalidArgumentException;
 
 /**
  * خدمة إعدادات النسخ الاحتياطي:
@@ -73,11 +75,17 @@ class BackupSettingsService
     /**
      * كتابة أو تحديث إعداد.
      */
-    public function set(string $key, string $value, string $valueType = 'string', string $description = ''): void
+    public function set(string $key, string $value, ValueType|string $valueType = ValueType::TEXT, string $description = ''): void
     {
+        $resolvedValueType = $valueType instanceof ValueType
+            ? $valueType
+            : (ValueType::tryFrom(strtoupper(trim($valueType))) ?? (strtolower(trim($valueType)) === 'string'
+                ? ValueType::TEXT
+                : throw new InvalidArgumentException("Unsupported system setting value type [{$valueType}].")));
+
         $this->systemSettingRepository->updateOrCreateByKey($key, [
             'setting_value' => $value,
-            'setting_value_type' => $valueType,
+            'setting_value_type' => $resolvedValueType->value,
             'setting_category' => self::CATEGORY,
             'setting_desc' => $description,
         ]);
@@ -173,14 +181,14 @@ class BackupSettingsService
         $this->set(
             self::KEY_DRIVE_CONNECTION,
             Crypt::encryptString(json_encode($connection, JSON_UNESCAPED_UNICODE)),
-            'string',
+            ValueType::TEXT,
             'بيانات اتصال جوجل درايف المشفرة (refresh token)'
         );
     }
 
     public function clearDriveConnection(): void
     {
-        $this->set(self::KEY_DRIVE_CONNECTION, '', 'string', 'بيانات اتصال جوجل درايف المشفرة (refresh token)');
+        $this->set(self::KEY_DRIVE_CONNECTION, '', ValueType::TEXT, 'بيانات اتصال جوجل درايف المشفرة (refresh token)');
     }
 
     // ═══════════════ الحالة الداخلية (Runtime) ═══════════════
@@ -215,7 +223,7 @@ class BackupSettingsService
 
     public function setRuntime(array $runtime): void
     {
-        $this->set(self::KEY_RUNTIME, json_encode($runtime, JSON_UNESCAPED_UNICODE), 'string', 'حالة النسخ الاحتياطي الداخلية (مواعيد ونتائج)');
+        $this->set(self::KEY_RUNTIME, json_encode($runtime, JSON_UNESCAPED_UNICODE), ValueType::TEXT, 'حالة النسخ الاحتياطي الداخلية (مواعيد ونتائج)');
     }
 
     public function updateRuntime(array $patch): array
