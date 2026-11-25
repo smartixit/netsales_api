@@ -303,6 +303,10 @@ class VoucherPackageDiscountService
     public function forceDelete(int $id): bool
     {
         return DB::transaction(function () use ($id) {
+            $discount = $this->discountRepository->findTrashedById($id);
+            if ($discount) {
+                $this->recordRelationshipEvent($discount, 'DISCOUNT_FORCE_DELETED');
+            }
             return $this->discountRepository->forceDelete($id);
         });
     }
@@ -340,7 +344,12 @@ class VoucherPackageDiscountService
     public function bulkDelete(array $ids): int
     {
         return DB::transaction(function () use ($ids) {
-            return $this->discountRepository->bulkDelete($ids);
+            $discounts = VoucherPackageDiscount::query()->whereIn('discount_id', $ids)->get();
+            $deletedCount = $this->discountRepository->bulkDelete($ids);
+            foreach ($discounts as $discount) {
+                $this->recordRelationshipEvent($discount, 'DISCOUNT_ARCHIVED');
+            }
+            return $deletedCount;
         });
     }
 
@@ -379,7 +388,11 @@ class VoucherPackageDiscountService
             }
 
             try {
-                return $this->discountRepository->bulkRestore($ids);
+                $restoredCount = $this->discountRepository->bulkRestore($ids);
+                foreach ($trashed as $discount) {
+                    $this->recordRelationshipEvent($discount, 'DISCOUNT_RESTORED');
+                }
+                return $restoredCount;
             } catch (UniqueConstraintViolationException) {
                 throw ValidationException::withMessages([
                     'ids' => ['تعذر الاستعادة المجمعة لوجود تعارض فريد مع خصم نشط مسجل مسبقاً لنفس نقطة البيع والباقة.'],
@@ -396,6 +409,10 @@ class VoucherPackageDiscountService
     public function bulkForceDelete(array $ids): int
     {
         return DB::transaction(function () use ($ids) {
+            $discounts = VoucherPackageDiscount::onlyTrashed()->whereIn('discount_id', $ids)->get();
+            foreach ($discounts as $discount) {
+                $this->recordRelationshipEvent($discount, 'DISCOUNT_FORCE_DELETED');
+            }
             return $this->discountRepository->bulkForceDelete($ids);
         });
     }
