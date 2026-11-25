@@ -122,6 +122,16 @@ class NetworkPosRepository extends BaseRepository implements NetworkPosRepositor
         return $query->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
+    public function getTrashedForPos(int $posId, array $filters = []): Collection|CursorPaginator
+    {
+        $query = $this->model->newQuery()->onlyTrashed()->with(['network', 'pos'])
+            ->where('pos_id', $posId)
+            ->orderByDesc('network_pos_id');
+        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
+
+        return $query->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
+    }
+
     public function getPosForNetwork(int $networkId, array $filters = []): Collection|CursorPaginator
     {
         $filters['network_id'] = $networkId;
