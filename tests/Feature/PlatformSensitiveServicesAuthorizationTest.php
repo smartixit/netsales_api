@@ -39,7 +39,7 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
         $owner = $this->makeUserWithRole(RoleKey::NETWORK_OWNER);
         $headers = $this->createAuthenticatedSession($owner)['headers'];
 
-        $catchup = \Mockery::mock(SmartSchedulerCatchupService::class);
+        $catchup = \\Mockery::mock(SmartSchedulerCatchupService::class);
         $catchup->shouldReceive('runActivityTick')
             ->once()
             ->andReturn(['executed' => [], 'skipped' => [], 'server_time' => '2026-11-26 12:00:00']);
@@ -50,19 +50,37 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
             'force' => false,
             'trigger_source' => 'foreground_heartbeat',
         ], $headers)->assertOk();
+    }
 
-        $this->postJson('/api/v1/scheduled-tasks/catchup', [
+    public function test_operational_network_owner_cannot_force_or_select_administrative_tasks(): void
+    {
+        $owner = $this->makeUserWithRole(RoleKey::NETWORK_OWNER);
+        $headers = $this->createAuthenticatedSession($owner)['headers'];
+
+        $catchup = \\Mockery::mock(SmartSchedulerCatchupService::class);
+        $catchup->shouldNotReceive('runActivityTick');
+        $catchup->shouldNotReceive('runAllCatchupTasks');
+        $this->app->instance(SmartSchedulerCatchupService::class, $catchup);
+
+        $forced = $this->postJson('/api/v1/scheduled-tasks/catchup', [
             'force' => true,
-        ], $headers)->assertUnprocessable();
+        ], $headers);
+        $forced->assertUnprocessable();
 
-        $this->postJson('/api/v1/scheduled-tasks/catchup', [
+        $selected = $this->postJson('/api/v1/scheduled-tasks/catchup', [
             'task' => 'backup:auto',
-        ], $headers)->assertUnprocessable();
+        ], $headers);
+        $selected->assertUnprocessable();
     }
 
     public function test_platform_super_admin_retains_full_administrative_catchup(): void
     {
         $admin = $this->makeUserWithRole(RoleKey::SUPER_ADMIN);
+        $admin = User::query()->findOrFail($admin->user_id);
+        $this->assertTrue($admin->isSuperAdmin());
+        $this->assertTrue(
+            app(TenantPermissionService::class)->allowsPlatform($admin, 'scheduled_tasks.run_catchup')
+        );
         $headers = $this->createAuthenticatedSession($admin)['headers'];
 
         $catchup = \Mockery::mock(SmartSchedulerCatchupService::class);
