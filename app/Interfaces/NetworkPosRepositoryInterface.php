@@ -29,6 +29,8 @@ interface NetworkPosRepositoryInterface extends BaseRepositoryInterface
 
     public function getTrashedForNetwork(int $networkId, array $filters = []): Collection|CursorPaginator;
 
+    public function getTrashedForPos(int $posId, array $filters = []): Collection|CursorPaginator;
+
     /**
      * جلب نقاط البيع المرتبطة بشبكة محددة.
      *
