@@ -99,6 +99,24 @@ class SessionSecurityHardeningTest extends TestCase
         RateLimiter::clear('session_fail:127.0.0.1');
     }
 
+    public function test_missing_session_credentials_return_stable_codes_without_claiming_session_invalid(): void
+    {
+        $missingSession = $this->getJson('/api/v1/auth/me', [
+            'X-Bypass-Encryption' => 'true',
+        ]);
+
+        $missingSession->assertUnauthorized()
+            ->assertJsonPath('code', 'SESSION_CREDENTIAL_MISSING');
+
+        $missingDevice = $this->getJson('/api/v1/auth/me', [
+            'X-Session-Id' => 'syntactically-present-session-token',
+            'X-Bypass-Encryption' => 'true',
+        ]);
+
+        $missingDevice->assertUnauthorized()
+            ->assertJsonPath('code', 'SESSION_DEVICE_ID_MISSING');
+    }
+
     /**
      * اختبار: حجب واجهة Swagger تماماً (404) في بيئة الإنتاج.
      */
