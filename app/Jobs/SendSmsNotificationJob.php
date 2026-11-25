@@ -23,7 +23,7 @@ class SendSmsNotificationJob implements ShouldQueue
         public string|array $phoneNumbers,
         public string $message,
         public int $priority = 0,
-        public int $ttl = 604800,
+        public int $ttl = 1440,
         public ?int $recipientId = null,
         public SmsMessageType|string|null $messageType = null,
     ) {}

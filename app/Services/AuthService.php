@@ -116,7 +116,7 @@ class AuthService
 
             if ($user->role_scope === RoleScope::PLATFORM->value) {
                 throw ValidationException::withMessages([
-                    'user_phone_number' => ['عذراً، بيانات الاعتماد غير صحيحة.'],
+                    'user_phone_number' => ['عذراً، غير مسموح لك الدخول باستخدام هذا الحساب.'],
                 ]);
             }
 

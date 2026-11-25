@@ -135,7 +135,7 @@ class SMSGateService
         string|array $phoneNumbers,
         string $message,
         int $priority = 0,
-        int $ttl = 604800,
+        int $ttl = 1440,
         ?int $recipientId = null,
         bool $bypassPolicy = false,
         SmsMessageType|string|null $messageType = null
