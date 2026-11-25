@@ -245,6 +245,11 @@ class NetworkPosService
         });
     }
 
+    public function findByIdWithTrashed(int $id): ?NetworkPos
+    {
+        return $this->networkPosRepository->findByIdWithTrashed($id);
+    }
+
     public function getTrashedForNetwork(int $networkId, array $filters = []): Collection|CursorPaginator
     {
         return $this->networkPosRepository->getTrashedForNetwork($networkId, $filters);
