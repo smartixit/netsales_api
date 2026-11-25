@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\API\V1\Network;
 
-use App\Enums\NetworkStatus;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class UpdateNetworkRequest extends FormRequest
 {
@@ -36,7 +36,7 @@ class UpdateNetworkRequest extends FormRequest
                 'sometimes',
                 'required',
                 'string',
-                'max:100',
+                'max:50',
                 Rule::unique('networks', 'network_name')
                     ->ignore($networkId, 'network_id')
                     ->whereNull('deleted_at'),
@@ -51,7 +51,7 @@ class UpdateNetworkRequest extends FormRequest
                 'sometimes',
                 'required',
                 'integer',
-                Rule::exists('directorates', 'directorate_id')->whereNull('deleted_at'),
+                Rule::exists('directorates', 'directorate_id')->where('governorate_id', $this->input('governorate_id') ?? DB::table('networks')->where('network_id', $networkId)->value('governorate_id'))->whereNull('deleted_at'),
             ],
             'network_address' => [
                 'nullable',
@@ -63,10 +63,6 @@ class UpdateNetworkRequest extends FormRequest
                 'image',
                 'mimes:jpeg,png,jpg,webp',
                 'max:2048',
-            ],
-            'status' => [
-                'sometimes',
-                Rule::enum(NetworkStatus::class),
             ],
         ];
     }
