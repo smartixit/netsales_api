@@ -182,6 +182,7 @@ class RolePermissionSeeder extends Seeder
                     'support.restore',
                     'support.force_delete',
                     'notifications.view',
+                    'scheduled_tasks.run_activity_tick',
                 ],
             ],
 
@@ -199,6 +200,7 @@ class RolePermissionSeeder extends Seeder
                     'support.create',
                     'support.reply',
                     'notifications.view',
+                    'scheduled_tasks.run_activity_tick',
                 ],
             ],
 
@@ -233,6 +235,7 @@ class RolePermissionSeeder extends Seeder
                     'support.create',
                     'support.reply',
                     'notifications.view',
+                    'scheduled_tasks.run_activity_tick',
                 ],
             ],
 
@@ -276,6 +279,7 @@ class RolePermissionSeeder extends Seeder
                     'support.create',
                     'support.reply',
                     'notifications.view',
+                    'scheduled_tasks.run_activity_tick',
                 ],
             ],
 
@@ -297,6 +301,7 @@ class RolePermissionSeeder extends Seeder
                     'support.create',
                     'support.reply',
                     'notifications.view',
+                    'scheduled_tasks.run_activity_tick',
                 ],
             ],
 
@@ -322,6 +327,7 @@ class RolePermissionSeeder extends Seeder
                     'support.create',
                     'support.reply',
                     'notifications.view',
+                    'scheduled_tasks.run_activity_tick',
                 ],
             ],
         ];
