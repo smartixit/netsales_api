@@ -226,7 +226,7 @@ Route::prefix('v1')->group(function () {
             [NetworkPosController::class, 'challengeStatus']
         )->whereUuid('uuid')->name('api.v1.network_pos.challenges.status');
         Route::middleware('throttle:api-write')->group(function () {
-            Route::post('networks', [NetworkController::class, 'store'])->name('api.v1.networks.store')->middleware('permission:networks.create');
+            Route::post('networks', [NetworkController::class, 'store'])->name('api.v1.networks.store')->middleware(['operational.scope', 'permission:networks.create']);
             Route::put('networks/{id}', [NetworkController::class, 'update'])->whereNumber('id')->name('api.v1.networks.update')->middleware('permission:networks.edit');
             Route::delete('networks/{id}', [NetworkController::class, 'destroy'])->whereNumber('id')->name('api.v1.networks.destroy')->middleware('permission:networks.delete');
             Route::post('networks/batch-delete', [NetworkController::class, 'batchDelete'])->name('api.v1.networks.batch_delete')->middleware('permission:networks.delete');
@@ -267,7 +267,7 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('throttle:api-write')->group(function () {
-            Route::post('pos', [PosController::class, 'store'])->name('api.v1.pos.store')->middleware('permission:pos.create');
+            Route::post('pos', [PosController::class, 'store'])->name('api.v1.pos.store')->middleware(['operational.scope', 'permission:pos.create']);
             Route::put('pos/{id}', [PosController::class, 'update'])->whereNumber('id')->name('api.v1.pos.update')->middleware('permission:pos.edit');
             Route::delete('pos/{id}', [PosController::class, 'destroy'])->whereNumber('id')->name('api.v1.pos.destroy')->middleware('permission:pos.delete');
             Route::post('pos/batch-delete', [PosController::class, 'batchDelete'])->name('api.v1.pos.batch_delete')->middleware('permission:pos.delete');
