@@ -91,21 +91,7 @@ class NetworkPosAgreementService
             if ($agreement->ends_at && $agreement->ends_at->lessThanOrEqualTo(now('Asia/Aden'))) {
                 throw ValidationException::withMessages(['ends_at' => ['انتهت مدة الاتفاقية ولا يمكن اعتمادها.']]);
             }
-            $expiredAgreements = NetworkPosAgreement::query()
-                ->where('network_pos_id', $linkId)
-                ->where('status', 'ACTIVE')
-                ->whereNotNull('ends_at')
-                ->where('ends_at', '<=', now('Asia/Aden'))
-                ->lockForUpdate()
-                ->get();
-
-            foreach ($expiredAgreements as $expiredAgreement) {
-                $expiredAgreement->update(['status' => 'EXPIRED']);
-                $this->record($linkId, $actorId, 'AGREEMENT_EXPIRED', [
-                    'agreement_id' => $expiredAgreement->agreement_id,
-                    'version' => $expiredAgreement->version,
-                ]);
-            }
+            $this->expireDueAgreementsForLink($linkId, $actorId, now('Asia/Aden'));
 
             $hasActive = NetworkPosAgreement::query()->where('network_pos_id', $linkId)->where('status', 'ACTIVE')->exists();
             if ($hasActive) {
@@ -123,6 +109,60 @@ class NetworkPosAgreementService
 
             return $agreement->refresh();
         });
+    }
+
+    /**
+     * Materialize elapsed agreement end dates and append their lifecycle events.
+     * Locks relationship rows before agreement rows to preserve a stable lock order.
+     */
+    public function expireDueAgreements(int $limit = 100): int
+    {
+        return DB::transaction(function () use ($limit): int {
+            $now = now('Asia/Aden');
+            $links = NetworkPos::withTrashed()
+                ->whereHas('agreements', function ($query) use ($now): void {
+                    $query->where('status', 'ACTIVE')
+                        ->whereNotNull('ends_at')
+                        ->where('ends_at', '<=', $now);
+                })
+                ->orderBy('network_pos_id')
+                ->limit(min(max($limit, 1), 500))
+                ->lockForUpdate()
+                ->get(['network_pos_id']);
+
+            $expiredCount = 0;
+            foreach ($links as $link) {
+                $expiredCount += $this->expireDueAgreementsForLink(
+                    (int) $link->network_pos_id,
+                    null,
+                    $now,
+                );
+            }
+
+            return $expiredCount;
+        });
+    }
+
+    private function expireDueAgreementsForLink(int $linkId, ?int $actorId, Carbon $now): int
+    {
+        $agreements = NetworkPosAgreement::query()
+            ->where('network_pos_id', $linkId)
+            ->where('status', 'ACTIVE')
+            ->whereNotNull('ends_at')
+            ->where('ends_at', '<=', $now)
+            ->orderBy('agreement_id')
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($agreements as $agreement) {
+            $agreement->update(['status' => 'EXPIRED']);
+            $this->record($linkId, $actorId, 'AGREEMENT_EXPIRED', [
+                'agreement_id' => $agreement->agreement_id,
+                'version' => $agreement->version,
+            ]);
+        }
+
+        return $agreements->count();
     }
 
     public function terminate(int $linkId, int $agreementId, ?int $actorId): NetworkPosAgreement
