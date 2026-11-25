@@ -60,6 +60,25 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
         ], $headers)->assertUnprocessable();
     }
 
+    public function test_platform_super_admin_retains_full_administrative_catchup(): void
+    {
+        $admin = $this->makeUserWithRole(RoleKey::SUPER_ADMIN);
+        $headers = $this->createAuthenticatedSession($admin)['headers'];
+
+        $catchup = \\Mockery::mock(SmartSchedulerCatchupService::class);
+        $catchup->shouldReceive('runAllCatchupTasks')
+            ->once()
+            ->with(true, 'backup:auto')
+            ->andReturn(['executed' => [], 'skipped' => [], 'server_time' => '2026-11-26 12:00:00']);
+        $catchup->shouldNotReceive('runActivityTick');
+        $this->app->instance(SmartSchedulerCatchupService::class, $catchup);
+
+        $this->postJson('/api/v1/scheduled-tasks/catchup', [
+            'force' => true,
+            'task' => 'backup:auto',
+        ], $headers)->assertOk();
+    }
+
     public function test_platform_accountant_cannot_change_global_sms_or_backup_configuration(): void
     {
         $accountant = $this->makeUserWithRole(RoleKey::ACCOUNTANT);
