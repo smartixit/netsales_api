@@ -50,7 +50,7 @@ class SessionAuthMiddleware
             'message' => $message,
             'data' => (object) [],
             'errors' => [],
-        ], 401);
+        ], 401)->header('X-Error-Code', $code);
     }
 
     /**
