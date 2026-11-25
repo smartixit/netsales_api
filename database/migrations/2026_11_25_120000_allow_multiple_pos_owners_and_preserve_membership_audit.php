@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -56,7 +57,7 @@ return new class extends Migration
             ->exists();
 
         if ($hasMultiplePosOwners || $hasOrphanedNetworkAudit || $hasOrphanedPosAudit) {
-            throw new \\RuntimeException(
+            throw new \RuntimeException(
                 'Cannot safely roll back entity ownership and membership audit constraints: data now depends on the new schema.'
             );
         }
