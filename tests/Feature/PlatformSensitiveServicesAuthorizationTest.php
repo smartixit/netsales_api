@@ -37,40 +37,68 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
     public function test_operational_network_owner_can_run_only_the_bounded_activity_tick(): void
     {
         $owner = $this->makeUserWithRole(RoleKey::NETWORK_OWNER);
-        $headers = $this->createAuthenticatedSession($owner)['headers'];
+        $request = Request::create('/api/v1/scheduled-tasks/catchup', 'POST', [
+            'force' => false,
+            'trigger_source' => 'foreground_heartbeat',
+        ]);
+        $request->setUserResolver(fn () => $owner);
 
-        $catchup = \Mockery::mock(SmartSchedulerCatchupService::class);
+        $response = app(EnsurePermissionMiddleware::class)->handle(
+            $request,
+            fn (Request $request) => response()->json([
+                'mode' => $request->attributes->get('scheduled_task_catchup_mode'),
+            ]),
+            'scheduled_tasks.run_activity_tick'
+        );
+
+        $this->assertSame('activity', $response->getData(true)['mode']);
+
+        $catchup = \\Mockery::mock(SmartSchedulerCatchupService::class);
         $catchup->shouldReceive('runActivityTick')
             ->once()
             ->andReturn(['executed' => [], 'skipped' => [], 'server_time' => '2026-11-26 12:00:00']);
         $catchup->shouldNotReceive('runAllCatchupTasks');
-        $this->app->instance(SmartSchedulerCatchupService::class, $catchup);
 
-        $this->postJson('/api/v1/scheduled-tasks/catchup', [
-            'force' => false,
-            'trigger_source' => 'foreground_heartbeat',
-        ], $headers)->assertOk();
+        $controller = new ScheduledTaskRunController(
+            \\Mockery::mock(ScheduledTaskRunService::class),
+            $catchup
+        );
+        $controllerResponse = $controller->catchup($request);
+
+        $this->assertSame(200, $controllerResponse->getStatusCode());
     }
 
     public function test_operational_network_owner_cannot_force_or_select_administrative_tasks(): void
     {
         $owner = $this->makeUserWithRole(RoleKey::NETWORK_OWNER);
-        $headers = $this->createAuthenticatedSession($owner)['headers'];
 
-        $catchup = \Mockery::mock(SmartSchedulerCatchupService::class);
+        $catchup = \\Mockery::mock(SmartSchedulerCatchupService::class);
         $catchup->shouldNotReceive('runActivityTick');
         $catchup->shouldNotReceive('runAllCatchupTasks');
-        $this->app->instance(SmartSchedulerCatchupService::class, $catchup);
+        $controller = new ScheduledTaskRunController(
+            \\Mockery::mock(ScheduledTaskRunService::class),
+            $catchup
+        );
 
-        $forced = $this->postJson('/api/v1/scheduled-tasks/catchup', [
+        $forcedRequest = Request::create('/api/v1/scheduled-tasks/catchup', 'POST', [
             'force' => true,
-        ], $headers);
-        $forced->assertUnprocessable();
+        ]);
+        $forcedRequest->attributes->set('scheduled_task_catchup_mode', 'activity');
+        $forcedResponse = $controller->catchup($forcedRequest);
+        $this->assertSame(422, $forcedResponse->getStatusCode());
 
-        $selected = $this->postJson('/api/v1/scheduled-tasks/catchup', [
+        $selectedRequest = Request::create('/api/v1/scheduled-tasks/catchup', 'POST', [
             'task' => 'backup:auto',
-        ], $headers);
-        $selected->assertUnprocessable();
+        ]);
+        $selectedRequest->attributes->set('scheduled_task_catchup_mode', 'activity');
+        $selectedResponse = $controller->catchup($selectedRequest);
+        $this->assertSame(422, $selectedResponse->getStatusCode());
+
+        $route = Route::getRoutes()->getByName('api.v1.scheduled_tasks.catchup');
+        $this->assertNotNull($route);
+        $middleware = $route->gatherMiddleware();
+        $this->assertContains('permission:scheduled_tasks.run_activity_tick', $middleware);
+        $this->assertNotContains('platform.user.scope', $middleware);
     }
 
     public function test_platform_super_admin_retains_full_administrative_catchup(): void
@@ -78,23 +106,40 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
         $admin = $this->makeUserWithRole(RoleKey::SUPER_ADMIN);
         $admin = User::query()->findOrFail($admin->user_id);
         $this->assertTrue($admin->isSuperAdmin());
+
+        $request = Request::create('/api/v1/scheduled-tasks/catchup', 'POST', [
+            'force' => true,
+            'task' => 'backup:auto',
+        ]);
+        $request->setUserResolver(fn () => $admin);
+
+        $response = app(EnsurePermissionMiddleware::class)->handle(
+            $request,
+            fn (Request $request) => response()->json([
+                'mode' => $request->attributes->get('scheduled_task_catchup_mode'),
+            ]),
+            'scheduled_tasks.run_activity_tick'
+        );
+
+        $this->assertSame('platform', $response->getData(true)['mode']);
         $this->assertTrue(
             app(TenantPermissionService::class)->allowsPlatform($admin, 'scheduled_tasks.run_catchup')
         );
-        $headers = $this->createAuthenticatedSession($admin)['headers'];
 
-        $catchup = \Mockery::mock(SmartSchedulerCatchupService::class);
+        $catchup = \\Mockery::mock(SmartSchedulerCatchupService::class);
         $catchup->shouldReceive('runAllCatchupTasks')
             ->once()
             ->with(true, 'backup:auto')
             ->andReturn(['executed' => [], 'skipped' => [], 'server_time' => '2026-11-26 12:00:00']);
         $catchup->shouldNotReceive('runActivityTick');
-        $this->app->instance(SmartSchedulerCatchupService::class, $catchup);
 
-        $this->postJson('/api/v1/scheduled-tasks/catchup', [
-            'force' => true,
-            'task' => 'backup:auto',
-        ], $headers)->assertOk();
+        $controller = new ScheduledTaskRunController(
+            \\Mockery::mock(ScheduledTaskRunService::class),
+            $catchup
+        );
+        $controllerResponse = $controller->catchup($request);
+
+        $this->assertSame(200, $controllerResponse->getStatusCode());
     }
 
     public function test_platform_accountant_cannot_change_global_sms_or_backup_configuration(): void
