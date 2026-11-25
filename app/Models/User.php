@@ -88,9 +88,9 @@ class User extends Authenticatable
         return $this->hasMany(NetworkUser::class, 'user_id', 'user_id');
     }
 
-    public function pos(): HasOne
+    public function pos(): HasMany
     {
-        return $this->hasOne(Pos::class, 'owner_id', 'user_id');
+        return $this->hasMany(Pos::class, 'owner_id', 'user_id');
     }
 
     public function posUsers(): HasMany

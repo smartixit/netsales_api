@@ -149,7 +149,12 @@ class SessionAuthMiddleware
                 };
             }
         } elseif ($user->hasRole(RoleKey::POS_AGENT)) {
-            $pos = $user->pos;
+            // A user may own multiple POS entities. Prefer an active one for
+            // the account-level gate; tenant-specific access remains enforced
+            // by the scoped membership/authorization layer for each request.
+            $pos = $user->pos()
+                ->where('status', PosStatus::ACTIVE->value)
+                ->first() ?? $user->pos()->first();
 
             if (! $pos) {
                 SystemLoggerService::warning('POS_NOT_FOUND', ['owner_id' => $user->user_id], $user->user_id);

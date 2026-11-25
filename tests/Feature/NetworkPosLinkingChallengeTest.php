@@ -18,6 +18,8 @@ use App\Models\Pos;
 use App\Models\PosUser;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\NetworkPosService;
+use App\Services\NetworkPosAgreementService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\CreatesActiveBillingSubscription;
@@ -1208,6 +1210,242 @@ class NetworkPosLinkingChallengeTest extends TestCase
         );
         if ($statusResponse->status() === 422) {
             $statusResponse->assertJsonValidationErrors(['challenge_uuid']);
+        }
+    }
+
+    public function test_relationship_archive_restore_preserves_identity_and_event_history(): void
+    {
+        $service = app(NetworkPosService::class);
+        $link = $service->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => true,
+        ]);
+
+        $linkId = $link->network_pos_id;
+        DB::table('pos_wallets')
+            ->where('network_id', $this->network->network_id)
+            ->where('pos_id', $this->pos->pos_id)
+            ->update(['wallet_balance' => 123.45]);
+
+        $this->assertTrue($service->delete($linkId));
+        $archived = NetworkPos::withTrashed()->findOrFail($linkId);
+        $this->assertTrue($archived->trashed());
+
+        $this->assertDatabaseHas('network_pos_events', [
+            'network_pos_id' => $linkId,
+            'event_type' => 'CREATED',
+        ]);
+        $this->assertDatabaseHas('network_pos_events', [
+            'network_pos_id' => $linkId,
+            'event_type' => 'ARCHIVED',
+        ]);
+
+        $restored = $service->restore($linkId);
+        $this->assertNotNull($restored);
+        $this->assertSame($linkId, $restored->network_pos_id);
+        $this->assertFalse($restored->trashed());
+        $this->assertSame(
+            '123.45',
+            (string) DB::table('pos_wallets')
+                ->where('network_id', $this->network->network_id)
+                ->where('pos_id', $this->pos->pos_id)
+                ->value('wallet_balance'),
+        );
+        $this->assertDatabaseHas('network_pos_events', [
+            'network_pos_id' => $linkId,
+            'event_type' => 'RESTORED',
+        ]);
+    }
+
+    public function test_agreement_versions_allow_only_one_active_revision(): void
+    {
+        $link = app(NetworkPosService::class)->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => true,
+        ]);
+        $service = app(NetworkPosAgreementService::class);
+        $first = $service->createDraft($link->network_pos_id, [
+            'title' => 'اتفاقية التوريد الأولى',
+            'reference' => 'AGR-001',
+            'terms' => 'شروط تجريبية للاختبار',
+            'starts_at' => now('Asia/Aden')->subMinute(),
+            'ends_at' => now('Asia/Aden')->addDay(),
+        ], $this->networkOwner->user_id);
+
+        $first = $service->activate($link->network_pos_id, $first->agreement_id, $this->networkOwner->user_id);
+        $this->assertSame('ACTIVE', $first->status);
+
+        $second = $service->createDraft($link->network_pos_id, [
+            'title' => 'اتفاقية التوريد الثانية',
+            'terms' => 'إصدار بديل',
+            'starts_at' => now('Asia/Aden')->subMinute(),
+        ], $this->networkOwner->user_id);
+
+        try {
+            $service->activate($link->network_pos_id, $second->agreement_id, $this->networkOwner->user_id);
+            $this->fail('يجب منع وجود اتفاقيتين نشطتين للعلاقة نفسها.');
+        } catch (\Illuminate\Validation\ValidationException) {
+            $this->assertSame('DRAFT', $second->fresh()->status);
+        }
+
+        $service->terminate($link->network_pos_id, $first->agreement_id, $this->networkOwner->user_id);
+        $activatedSecond = $service->activate($link->network_pos_id, $second->agreement_id, $this->networkOwner->user_id);
+        $this->assertSame('ACTIVE', $activatedSecond->status);
+        $this->assertDatabaseHas('network_pos_events', [
+            'network_pos_id' => $link->network_pos_id,
+            'event_type' => 'AGREEMENT_ACTIVATED',
+        ]);
+    }
+
+
+    public function test_expired_active_agreement_is_transitioned_before_a_new_revision_is_activated(): void
+    {
+        $link = app(NetworkPosService::class)->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => true,
+        ]);
+        $service = app(NetworkPosAgreementService::class);
+
+        $expired = $service->createDraft($link->network_pos_id, [
+            'title' => 'اتفاقية منتهية',
+            'terms' => 'اتفاقية انتهى نطاقها الزمني',
+            'starts_at' => now('Asia/Aden')->subDays(3),
+            'ends_at' => now('Asia/Aden')->subMinute(),
+        ], $this->networkOwner->user_id);
+
+        // Make it ACTIVE as historical data can already contain an agreement whose
+        // end date passed before the expiry transition was evaluated.
+        DB::table('network_pos_agreements')
+            ->where('agreement_id', $expired->agreement_id)
+            ->update(['status' => 'ACTIVE']);
+
+        try {
+            $service->terminate($link->network_pos_id, $expired->agreement_id, $this->networkOwner->user_id);
+            $this->fail('لا يجوز إنهاء اتفاقية تجاوزت تاريخ انتهاء سريانها.');
+        } catch (\Illuminate\Validation\ValidationException) {
+            $this->assertSame('ACTIVE', $expired->fresh()->status);
+        }
+
+        $replacement = $service->createDraft($link->network_pos_id, [
+            'title' => 'اتفاقية بديلة',
+            'terms' => 'الإصدار الجديد',
+            'starts_at' => now('Asia/Aden')->subMinute(),
+        ], $this->networkOwner->user_id);
+
+        $activated = $service->activate(
+            $link->network_pos_id,
+            $replacement->agreement_id,
+            $this->networkOwner->user_id,
+        );
+
+        $this->assertSame('EXPIRED', $expired->fresh()->status);
+        $this->assertSame('ACTIVE', $activated->status);
+        $this->assertDatabaseHas('network_pos_events', [
+            'network_pos_id' => $link->network_pos_id,
+            'event_type' => 'AGREEMENT_EXPIRED',
+        ]);
+    }
+
+
+
+    public function test_scheduler_expires_due_agreements_and_records_system_actor(): void
+    {
+        $link = app(NetworkPosService::class)->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => true,
+        ]);
+        $service = app(NetworkPosAgreementService::class);
+        $agreement = $service->createDraft($link->network_pos_id, [
+            'title' => 'اتفاقية مستحقة الانتهاء',
+            'terms' => 'اختبار الانتقال الآلي إلى منتهية الصلاحية',
+            'starts_at' => now('Asia/Aden')->subDays(2),
+            'ends_at' => now('Asia/Aden')->subMinute(),
+        ], $this->networkOwner->user_id);
+
+        DB::table('network_pos_agreements')
+            ->where('agreement_id', $agreement->agreement_id)
+            ->update(['status' => 'ACTIVE']);
+
+        $this->artisan('network-pos:expire-agreements', ['--limit' => 10])->assertExitCode(0);
+        $this->assertSame('EXPIRED', $agreement->fresh()->status);
+        $this->assertDatabaseHas('network_pos_events', [
+            'network_pos_id' => $link->network_pos_id,
+            'actor_user_id' => null,
+            'event_type' => 'AGREEMENT_EXPIRED',
+        ]);
+        $this->assertSame(0, $service->expireDueAgreements(10));
+    }
+
+
+    public function test_relationship_status_changes_are_logged_once_for_single_and_bulk_updates(): void
+    {
+        $service = app(NetworkPosService::class);
+        $link = $service->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => true,
+        ]);
+
+        $service->update($link->network_pos_id, ['status' => true]);
+        $service->update($link->network_pos_id, ['status' => false]);
+
+        $this->assertSame(
+            1,
+            DB::table('network_pos_events')
+                ->where('network_pos_id', $link->network_pos_id)
+                ->where('event_type', 'DEACTIVATED')
+                ->count(),
+        );
+
+        $this->assertSame(1, $service->bulkToggleStatus([$link->network_pos_id], true));
+        $this->assertSame(
+            1,
+            DB::table('network_pos_events')
+                ->where('network_pos_id', $link->network_pos_id)
+                ->where('event_type', 'ACTIVATED')
+                ->count(),
+        );
+    }
+
+
+    public function test_lifecycle_event_model_rejects_mutation_and_deletion(): void
+    {
+        $link = app(NetworkPosService::class)->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => true,
+        ]);
+
+        $event = \App\Models\NetworkPosEvent::query()
+            ->where('network_pos_id', $link->network_pos_id)
+            ->firstOrFail();
+
+        try {
+            $event->update(['event_type' => 'TAMPERED']);
+            $this->fail('يجب منع تعديل أحداث دورة الحياة.');
+        } catch (\LogicException) {
+            $this->assertDatabaseMissing('network_pos_events', [
+                'event_id' => $event->event_id,
+                'event_type' => 'TAMPERED',
+            ]);
+        }
+
+        // The rejected update leaves the in-memory model dirty; reload the
+        // persisted immutable event before testing deletion.
+        $event->refresh();
+
+        try {
+            $event->delete();
+            $this->fail('يجب منع حذف أحداث دورة الحياة.');
+        } catch (\LogicException) {
+            $this->assertDatabaseHas('network_pos_events', [
+                'event_id' => $event->event_id,
+                'event_type' => $event->event_type,
+            ]);
         }
     }
 

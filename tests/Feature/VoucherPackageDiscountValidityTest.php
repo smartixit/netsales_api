@@ -1254,4 +1254,26 @@ class VoucherPackageDiscountValidityTest extends TestCase
         $this->assertCount(1, $inactiveLifecycle->json('data'));
         $inactiveLifecycle->assertJsonPath('data.0.validity_state', 'DISABLED');
     }
+    public function test_creating_relationship_discount_appends_relationship_event(): void
+    {
+        $discount = $this->discountService->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'package_id' => $this->package->package_id,
+            'discount_cash' => 5,
+            'discount_credit' => 7,
+            'status' => true,
+        ], $this->user->user_id);
+
+        $link = NetworkPos::query()
+            ->where('network_id', $this->network->network_id)
+            ->where('pos_id', $this->pos->pos_id)
+            ->firstOrFail();
+
+        $this->assertDatabaseHas('network_pos_events', [
+            'network_pos_id' => $link->network_pos_id,
+            'event_type' => 'DISCOUNT_CREATED',
+        ]);
+    }
+
 }

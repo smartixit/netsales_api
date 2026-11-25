@@ -5,12 +5,15 @@ namespace App\Models;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 
 class NetworkPos extends Model
 {
     use ExactDateSerialization;
+    use SoftDeletes;
 
     protected $table = 'network_pos';
 
@@ -44,6 +47,16 @@ class NetworkPos extends Model
     public function pos(): BelongsTo
     {
         return $this->belongsTo(Pos::class, 'pos_id', 'pos_id');
+    }
+
+    public function agreements(): HasMany
+    {
+        return $this->hasMany(NetworkPosAgreement::class, 'network_pos_id', 'network_pos_id');
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(NetworkPosEvent::class, 'network_pos_id', 'network_pos_id')->orderByDesc('event_id');
     }
 
     // Scopes

@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\API\V1\Network;
 
-use App\Enums\NetworkStatus;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -29,7 +28,7 @@ class StoreNetworkRequest extends FormRequest
             'network_name' => [
                 'required',
                 'string',
-                'max:100',
+                'max:50',
                 Rule::unique('networks', 'network_name')->whereNull('deleted_at'),
             ],
             'governorate_id' => [
@@ -54,10 +53,6 @@ class StoreNetworkRequest extends FormRequest
                 'image',
                 'mimes:jpeg,png,jpg,webp',
                 'max:2048',
-            ],
-            'status' => [
-                'nullable',
-                Rule::enum(NetworkStatus::class),
             ],
         ];
     }

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\NotificationType;
 use App\Enums\PosStatus;
+use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\SmsMessageType;
 use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
@@ -15,6 +17,9 @@ use App\Interfaces\PosWalletRepositoryInterface;
 use App\Interfaces\UserDeviceRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Models\Pos;
+use App\Models\PosUser;
+use App\Models\PosMembershipAuditLog;
+use App\Models\Role;
 use App\Services\Support\FileUploadService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -74,24 +79,30 @@ class PosService
     {
         if ($request instanceof StorePosRequest) {
             $logo = $request->file('pos_profile_logo') ?? $request->file('logo');
-            $data = [
-                'pos_name' => (string) $request->pos_name,
-                'governorate_id' => (int) $request->governorate_id,
-                'directorate_id' => (int) $request->directorate_id,
-                'pos_email' => $request->pos_email,
-                'pos_address' => $request->pos_address,
-                'status' => $request->status ?? PosStatus::ACTIVE,
-            ];
+            $data = $request->safe()->only([
+                'pos_name',
+                'governorate_id',
+                'directorate_id',
+                'pos_email',
+                'pos_address',
+            ]);
         } else {
-            $data = $request;
+            $data = array_intersect_key($request, array_flip([
+                'pos_name',
+                'governorate_id',
+                'directorate_id',
+                'pos_email',
+                'pos_address',
+            ]));
         }
 
-        $resolvedOwnerId = $ownerId ?? ($data['owner_id'] ?? (auth()->id() ? (int) auth()->id() : null));
+        $resolvedOwnerId = $ownerId ?? (auth()->id() ? (int) auth()->id() : null);
         if (! $resolvedOwnerId) {
             throw ValidationException::withMessages([
-                'owner_id' => ['تعذر تحديد مالك نقطة البيع من الجلسة أو الطلب.'],
+                'owner_id' => ['تعذر تحديد مالك نقطة البيع من المستخدم المصادق عليه.'],
             ]);
         }
+
         $owner = $this->userRepository->findById($resolvedOwnerId);
         if (! $owner) {
             throw ValidationException::withMessages([
@@ -100,16 +111,57 @@ class PosService
         }
         $owner->ensureActive();
 
+        $ownerScope = $owner->role_scope instanceof RoleScope
+            ? $owner->role_scope->value
+            : $owner->role_scope;
+        if ($ownerScope === RoleScope::PLATFORM->value) {
+            throw ValidationException::withMessages([
+                'owner_id' => ['حسابات المنصة لا يمكنها امتلاك كيانات تشغيلية عبر هذا المسار.'],
+            ]);
+        }
+
+        $ownerRole = Role::query()
+            ->byKey(RoleKey::POS_AGENT)
+            ->where('scope', RoleScope::POS->value)
+            ->active()
+            ->first();
+
+        if (! $ownerRole) {
+            throw new \RuntimeException('تعذر العثور على دور وكيل نقطة البيع التشغيلي النشط.');
+        }
+
         $data['owner_id'] = $owner->user_id;
         $data['pos_phone_number'] = (string) $owner->user_phone_number;
-        // unset($data['pos_holder_name']);
+        $data['status'] = PosStatus::PENDING;
 
-        return DB::transaction(function () use ($data, $logo) {
+        return DB::transaction(function () use ($data, $logo, $owner, $ownerRole): Pos {
             if ($logo) {
                 $data['pos_profile_logo'] = $this->fileUploadService->uploadFile($logo, 'pos/logos');
             }
 
             $pos = $this->posRepository->create($data);
+
+            $membership = PosUser::query()->create([
+                'pos_id' => $pos->pos_id,
+                'user_id' => $owner->user_id,
+                'role_id' => $ownerRole->role_id,
+                'status' => 'ACTIVE',
+                'last_event_seq' => 1,
+            ]);
+
+            PosMembershipAuditLog::query()->create([
+                'pos_id' => $pos->pos_id,
+                'user_id' => $owner->user_id,
+                'event_seq' => 1,
+                'action' => 'OWNER_ASSIGNED',
+                'actor_id' => $owner->user_id,
+                'old_state' => null,
+                'new_state' => [
+                    'role_id' => $membership->role_id,
+                    'status' => $membership->status,
+                ],
+                'created_at' => now('Asia/Aden'),
+            ]);
 
             return $pos->load(['governorate', 'directorate', 'owner']);
         });
@@ -136,10 +188,9 @@ class PosService
                 'directorate_id' => $request->directorate_id !== null ? (int) $request->directorate_id : null,
                 'pos_email' => $request->pos_email,
                 'pos_address' => $request->pos_address,
-                'status' => $request->status,
             ], fn ($value) => $value !== null);
         } else {
-            $data = $request;
+            $data = array_intersect_key($request, array_flip(["pos_name","governorate_id","directorate_id","pos_email","pos_address"]));
         }
 
         return DB::transaction(function () use ($pos, $data, $logo) {

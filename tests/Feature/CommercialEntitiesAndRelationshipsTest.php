@@ -67,7 +67,8 @@ class CommercialEntitiesAndRelationshipsTest extends TestCase
         }
 
         $gov = Governorate::first() ?? Governorate::create(['governorate_name' => 'Sanaa']);
-        $dir = Directorate::first() ?? Directorate::create(['governorate_id' => $gov->governorate_id, 'directorate_name' => 'Main']);
+        $dir = Directorate::where('governorate_id', $gov->governorate_id)->first()
+            ?? Directorate::create(['governorate_id' => $gov->governorate_id, 'directorate_name' => 'Main']);
 
         // 1. Super Admin
         $this->superAdmin = User::whereHas('role', function ($q) {
@@ -473,7 +474,7 @@ class CommercialEntitiesAndRelationshipsTest extends TestCase
         $response = $this->withHeaders($session['headers'])->deleteJson("/api/v1/network-pos/{$this->linkA->network_pos_id}");
 
         $response->assertStatus(200);
-        $this->assertDatabaseMissing('network_pos', [
+        $this->assertSoftDeleted('network_pos', [
             'network_pos_id' => $this->linkA->network_pos_id,
         ]);
     }

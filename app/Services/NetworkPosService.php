@@ -11,6 +11,8 @@ use App\Interfaces\PosRepositoryInterface;
 use App\Interfaces\PosWalletRepositoryInterface;
 use App\Models\Network;
 use App\Models\NetworkPos;
+use App\Models\NetworkPosEvent;
+use App\Models\Pos;
 use App\Services\Billing\BillingEntitlementService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -107,8 +109,8 @@ class NetworkPosService
             $network->ensureActive();
 
             // 4. منع تكرار الارتباط قبل احتساب الحصة؛ الطلب المكرر لا يستهلك مورداً جديداً.
-            $existing = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId);
-            if ($existing) {
+            $existing = $this->networkPosRepository->findByNetworkAndPos($networkId, $posId, true);
+            if ($existing && ! $existing->trashed()) {
                 throw ValidationException::withMessages([
                     'pos_id' => ['نقطة البيع هذه مرتبطة بالفعل بهذه الشبكة مسبقاً.'],
                 ]);
@@ -117,25 +119,24 @@ class NetworkPosService
             // 5. فحص الحصة قبل إنشاء ارتباط جديد فقط.
             $this->assertPosQuota($networkId);
 
+            if ($existing && $existing->trashed()) {
+                $existing->restore();
+                $existing->update(['status' => $status]);
+                $this->ensureRelationshipWallet($networkId, $posId);
+                $this->recordLifecycleEvent($existing, 'RESTORED', ['status' => $status]);
+
+                return $existing->load(['network', 'pos']);
+            }
+
             $networkPos = $this->networkPosRepository->create([
                 'network_id' => $networkId,
                 'pos_id' => $posId,
                 'status' => $status,
             ]);
 
-            // إنشاء محفظة مالية لنقطة البيع لدى هذه الشبكة برصيد 0.00 تلقائياً إذا لم تكن موجودة مسبقاً
-            $wallet = $this->posWalletRepository->findByNetworkAndPos($networkId, $posId);
-            if (! $wallet) {
-                $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId);
-                $this->posWalletRepository->create([
-                    'network_id' => $networkId,
-                    'pos_id' => $posId,
-                    'wallet_balance' => 0.00,
-                    'opening_balance_source' => 'INITIAL',
-                    'currency_code' => $networkWallet?->currency_code ?: 'YER',
-                    'status' => true,
-                ]);
-            }
+            $this->ensureRelationshipWallet($networkId, $posId);
+
+            $this->recordLifecycleEvent($networkPos, 'CREATED', ['status' => $status]);
 
             return $networkPos->load(['network', 'pos']);
         });
@@ -146,27 +147,27 @@ class NetworkPosService
      */
     public function update(int $id, UpdateNetworkPosRequest|array $request): NetworkPos
     {
+        $status = $request instanceof UpdateNetworkPosRequest
+            ? $request->getStatus()
+            : (bool) $request['status'];
+
         try {
-            $networkPos = $this->networkPosRepository->findById($id);
+            return DB::transaction(function () use ($id, $status) {
+                $networkPos = NetworkPos::query()->lockForUpdate()->findOrFail($id);
+                $previousStatus = (bool) $networkPos->status;
+                $networkPos->update(['status' => $status]);
+
+                if ($previousStatus !== $status) {
+                    $this->recordLifecycleEvent($networkPos, $status ? 'ACTIVATED' : 'DEACTIVATED', ['status' => $status]);
+                }
+
+                return $networkPos->load(['network', 'pos']);
+            });
         } catch (ModelNotFoundException) {
             throw ValidationException::withMessages([
                 'network_pos_id' => ['سجل الارتباط المحدد غير موجود.'],
             ]);
         }
-
-        $status = $request instanceof UpdateNetworkPosRequest
-            ? $request->getStatus()
-            : (bool) $request['status'];
-
-        return DB::transaction(function () use ($networkPos, $status) {
-            $this->networkPosRepository->update($networkPos->network_pos_id, [
-                'status' => $status,
-            ]);
-
-            $networkPos->refresh();
-
-            return $networkPos->load(['network', 'pos']);
-        });
     }
 
     /**
@@ -175,23 +176,19 @@ class NetworkPosService
     public function toggleStatus(int $id): NetworkPos
     {
         try {
-            $networkPos = $this->networkPosRepository->findById($id);
+            return DB::transaction(function () use ($id) {
+                $networkPos = NetworkPos::query()->lockForUpdate()->findOrFail($id);
+                $newStatus = ! $networkPos->isActive();
+                $networkPos->update(['status' => $newStatus]);
+                $this->recordLifecycleEvent($networkPos, $newStatus ? 'ACTIVATED' : 'DEACTIVATED', ['status' => $newStatus]);
+
+                return $networkPos->load(['network', 'pos']);
+            });
         } catch (ModelNotFoundException) {
             throw ValidationException::withMessages([
                 'network_pos_id' => ['سجل الارتباط المحدد غير موجود.'],
             ]);
         }
-
-        return DB::transaction(function () use ($networkPos) {
-            $newStatus = ! $networkPos->isActive();
-            $this->networkPosRepository->update($networkPos->network_pos_id, [
-                'status' => $newStatus,
-            ]);
-
-            $networkPos->refresh();
-
-            return $networkPos->load(['network', 'pos']);
-        });
     }
 
     /**
@@ -199,15 +196,85 @@ class NetworkPosService
      */
     public function delete(int $id): bool
     {
-        try {
-            $networkPos = $this->networkPosRepository->findById($id);
-        } catch (ModelNotFoundException) {
-            return false;
+        return DB::transaction(function () use ($id): bool {
+            $networkPos = NetworkPos::query()->lockForUpdate()->find($id);
+            if (! $networkPos) {
+                return false;
+            }
+
+            $networkPos->delete();
+            $this->recordLifecycleEvent($networkPos, 'ARCHIVED');
+
+            return true;
+        });
+    }
+
+    public function restore(int $id): ?NetworkPos
+    {
+        return DB::transaction(function () use ($id): ?NetworkPos {
+            $link = NetworkPos::withTrashed()->lockForUpdate()->find($id);
+            if (! $link || ! $link->trashed()) {
+                return null;
+            }
+
+            $network = Network::withTrashed()->find($link->network_id);
+            $pos = Pos::withTrashed()->find($link->pos_id);
+            if (! $network || $network->trashed() || ! $pos || $pos->trashed()) {
+                throw ValidationException::withMessages([
+                    'network_pos_id' => ['لا يمكن استعادة العلاقة لأن الشبكة أو نقطة البيع محذوفة.'],
+                ]);
+            }
+            $network->ensureActive();
+            $pos->ensureActive();
+            $this->assertPosQuota((int) $link->network_id);
+            $link->restore();
+            $this->recordLifecycleEvent($link, 'RESTORED');
+
+            return $link->load(['network', 'pos']);
+        });
+    }
+
+    public function findByIdWithTrashed(int $id): ?NetworkPos
+    {
+        return $this->networkPosRepository->findByIdWithTrashed($id);
+    }
+
+    public function getTrashedForNetwork(int $networkId, array $filters = []): Collection|CursorPaginator
+    {
+        return $this->networkPosRepository->getTrashedForNetwork($networkId, $filters);
+    }
+
+    public function getTrashedForPos(int $posId, array $filters = []): Collection|CursorPaginator
+    {
+        return $this->networkPosRepository->getTrashedForPos($posId, $filters);
+    }
+
+    private function ensureRelationshipWallet(int $networkId, int $posId): void
+    {
+        // Preserve an existing wallet and its complete financial history; initialize only if absent.
+        if ($this->posWalletRepository->findByNetworkAndPos($networkId, $posId)) {
+            return;
         }
 
-        return DB::transaction(function () use ($networkPos) {
-            return (bool) $this->networkPosRepository->delete($networkPos->network_pos_id);
-        });
+        $networkWallet = $this->networkWalletRepository->findByNetworkId($networkId);
+        $this->posWalletRepository->create([
+            'network_id' => $networkId,
+            'pos_id' => $posId,
+            'wallet_balance' => 0.00,
+            'opening_balance_source' => 'INITIAL',
+            'currency_code' => $networkWallet?->currency_code ?: 'YER',
+            'status' => true,
+        ]);
+    }
+
+    private function recordLifecycleEvent(NetworkPos $link, string $type, array $payload = []): void
+    {
+        NetworkPosEvent::query()->create([
+            'network_pos_id' => $link->network_pos_id,
+            'actor_user_id' => auth()->user()?->user_id,
+            'event_type' => $type,
+            'payload' => $payload === [] ? null : $payload,
+        ]);
     }
 
     /**
@@ -218,7 +285,13 @@ class NetworkPosService
     public function bulkDelete(array $ids): int
     {
         return DB::transaction(function () use ($ids) {
-            return $this->networkPosRepository->bulkDelete($ids);
+            $links = NetworkPos::query()->whereIn('network_pos_id', $ids)->lockForUpdate()->get();
+            foreach ($links as $link) {
+                $link->delete();
+                $this->recordLifecycleEvent($link, 'ARCHIVED');
+            }
+
+            return $links->count();
         });
     }
 
@@ -230,7 +303,26 @@ class NetworkPosService
     public function bulkToggleStatus(array $ids, bool $status): int
     {
         return DB::transaction(function () use ($ids, $status) {
-            return $this->networkPosRepository->bulkToggleStatus($ids, $status);
+            $links = NetworkPos::query()
+                ->whereIn('network_pos_id', $ids)
+                ->lockForUpdate()
+                ->get();
+
+            $changed = 0;
+            foreach ($links as $link) {
+                if ((bool) $link->status === $status) {
+                    continue;
+                }
+                $link->update(['status' => $status]);
+                $this->recordLifecycleEvent(
+                    $link,
+                    $status ? 'ACTIVATED' : 'DEACTIVATED',
+                    ['status' => $status, 'source' => 'BULK'],
+                );
+                $changed++;
+            }
+
+            return $changed;
         });
     }
 

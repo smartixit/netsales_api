@@ -11,20 +11,26 @@ use App\Http\Requests\API\V1\Network\PreviewNetworkPosLinkingChallengeRequest;
 use App\Http\Requests\API\V1\Network\ResolveNetworkLinkablePosRequest;
 use App\Http\Requests\API\V1\Network\SearchNetworkLinkablePosRequest;
 use App\Http\Requests\API\V1\Network\StoreNetworkPosRequest;
+use App\Http\Requests\API\V1\Network\StoreNetworkPosAgreementRequest;
+use App\Http\Requests\API\V1\Network\UpdateNetworkPosAgreementRequest;
 use App\Http\Requests\API\V1\Network\UpdateNetworkPosRequest;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeResource;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingChallengeStatusResource;
 use App\Http\Resources\API\V1\Network\NetworkLinkablePosResource;
 use App\Http\Resources\API\V1\Network\NetworkPosLinkingPreviewResource;
 use App\Http\Resources\API\V1\Network\NetworkPosResource;
+use App\Http\Resources\API\V1\Network\NetworkPosAgreementResource;
+use App\Http\Resources\API\V1\Network\NetworkPosEventResource;
 use App\Models\Network;
 use App\Models\NetworkPos;
 use App\Models\Pos;
 use App\Services\NetworkPosLinkingChallengeService;
 use App\Services\NetworkPosService;
+use App\Services\NetworkPosAgreementService;
 use App\Services\TenantPermissionService;
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
@@ -44,6 +50,7 @@ class NetworkPosController extends BaseController
         protected NetworkPosService $networkPosService,
         protected NetworkPosLinkingChallengeService $challengeService,
         protected TenantPermissionService $tenantPermissions,
+        protected NetworkPosAgreementService $agreementService,
     ) {}
 
     /**
@@ -758,5 +765,147 @@ class NetworkPosController extends BaseController
         } catch (Exception $e) {
             return $this->errorResponse('فشل إلغاء دعوة الربط: '.$e->getMessage(), [], 422);
         }
+    }
+
+    public function trashedForNetwork(\Illuminate\Http\Request $request, int $networkId): JsonResponse
+    {
+        $user = $this->currentUser();
+        if (! $user || ! $this->tenantPermissions->allowsNetwork($user, $networkId, 'networks.view')) {
+            return $this->errorResponse('غير مصرح بعرض العلاقات المؤرشفة لهذه الشبكة.', [], 403);
+        }
+
+        $links = $this->networkPosService->getTrashedForNetwork($networkId, $request->only(['per_page', 'cursor']));
+        return $this->successResponse('تم استرجاع العلاقات المؤرشفة.', NetworkPosResource::collection($links));
+    }
+
+    public function trashedForPos(Request $request, int $posId): JsonResponse
+    {
+        $user = $this->currentUser();
+        if (! $user || ! $this->tenantPermissions->allowsPos($user, $posId, 'pos.view')) {
+            return $this->errorResponse('غير مصرح بعرض العلاقات المؤرشفة لنقطة البيع.', [], 403);
+        }
+
+        $links = $this->networkPosService->getTrashedForPos($posId, $request->only(['per_page', 'cursor']));
+        return $this->successResponse('تم استرجاع العلاقات المؤرشفة.', NetworkPosResource::collection($links));
+    }
+
+    public function restoreLink(int $id): JsonResponse
+    {
+        $link = $this->networkPosService->findByIdWithTrashed($id);
+        if (! $link || ! $link->trashed()) {
+            return $this->errorResponse('العلاقة المؤرشفة غير موجودة.', [], 404);
+        }
+        $user = $this->currentUser();
+        if ($user && ! Gate::forUser($user)->allows('restore', $link)) {
+            return $this->errorResponse('غير مصرح باستعادة هذه العلاقة.', [], 403);
+        }
+        try {
+            $restored = $this->networkPosService->restore($id);
+            return $restored
+                ? $this->successResponse('تمت استعادة العلاقة بنجاح.', new NetworkPosResource($restored))
+                : $this->errorResponse('تعذرت استعادة العلاقة.', [], 409);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذرت استعادة العلاقة.', [], 422);
+        }
+    }
+
+    public function agreements(\Illuminate\Http\Request $request, int $id): JsonResponse
+    {
+        $link = $this->networkPosService->findByIdWithTrashed($id);
+        if (! $link) return $this->errorResponse('العلاقة غير موجودة.', [], 404);
+        $user = $this->currentUser();
+        if ($user && ! Gate::forUser($user)->allows('viewAgreements', $link)) {
+            return $this->errorResponse('غير مصرح بعرض اتفاقيات العلاقة.', [], 403);
+        }
+        return $this->successResponse('تم استرجاع اتفاقيات العلاقة.', NetworkPosAgreementResource::collection(
+            $this->agreementService->agreements($id, $request->only(['per_page', 'cursor']))
+        ));
+    }
+
+    public function storeAgreement(StoreNetworkPosAgreementRequest $request, int $id): JsonResponse
+    {
+        $link = $this->networkPosService->findById($id);
+        if (! $link) return $this->errorResponse('العلاقة غير موجودة.', [], 404);
+        $user = $this->currentUser();
+        if ($user && ! Gate::forUser($user)->allows('manageAgreements', $link)) {
+            return $this->errorResponse('غير مصرح بإدارة اتفاقيات العلاقة.', [], 403);
+        }
+        try {
+            $agreement = $this->agreementService->createDraft($id, $request->validated(), $user?->user_id);
+            return $this->successResponse('تم إنشاء مسودة الاتفاقية.', new NetworkPosAgreementResource($agreement), 201);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر إنشاء مسودة الاتفاقية.', [], 422);
+        }
+    }
+
+    public function updateAgreement(UpdateNetworkPosAgreementRequest $request, int $id, int $agreementId): JsonResponse
+    {
+        $link = $this->networkPosService->findById($id);
+        if (! $link) return $this->errorResponse('العلاقة غير موجودة.', [], 404);
+        $user = $this->currentUser();
+        if ($user && ! Gate::forUser($user)->allows('manageAgreements', $link)) {
+            return $this->errorResponse('غير مصرح بتعديل الاتفاقية.', [], 403);
+        }
+        try {
+            $agreement = $this->agreementService->updateDraft($id, $agreementId, $request->validated(), $user?->user_id);
+            return $this->successResponse('تم تحديث مسودة الاتفاقية.', new NetworkPosAgreementResource($agreement));
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر تحديث مسودة الاتفاقية.', [], 422);
+        }
+    }
+
+    public function activateAgreement(int $id, int $agreementId): JsonResponse
+    {
+        $link = $this->networkPosService->findById($id);
+        if (! $link) return $this->errorResponse('العلاقة غير موجودة.', [], 404);
+        $user = $this->currentUser();
+        if ($user && ! Gate::forUser($user)->allows('activateAgreement', $link)) {
+            return $this->errorResponse('غير مصرح باعتماد الاتفاقية.', [], 403);
+        }
+        try {
+            $agreement = $this->agreementService->activate($id, $agreementId, $user?->user_id);
+            return $this->successResponse('تم اعتماد الاتفاقية.', new NetworkPosAgreementResource($agreement));
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر اعتماد الاتفاقية.', [], 422);
+        }
+    }
+
+    public function terminateAgreement(int $id, int $agreementId): JsonResponse
+    {
+        $link = $this->networkPosService->findById($id);
+        if (! $link) return $this->errorResponse('العلاقة غير موجودة.', [], 404);
+        $user = $this->currentUser();
+        if ($user && ! Gate::forUser($user)->allows('terminateAgreement', $link)) {
+            return $this->errorResponse('غير مصرح بإنهاء الاتفاقية.', [], 403);
+        }
+        try {
+            $agreement = $this->agreementService->terminate($id, $agreementId, $user?->user_id);
+            return $this->successResponse('تم إنهاء الاتفاقية.', new NetworkPosAgreementResource($agreement));
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('تعذر إنهاء الاتفاقية.', [], 422);
+        }
+    }
+
+    public function relationshipEvents(\Illuminate\Http\Request $request, int $id): JsonResponse
+    {
+        $link = $this->networkPosService->findByIdWithTrashed($id);
+        if (! $link) return $this->errorResponse('العلاقة غير موجودة.', [], 404);
+        $user = $this->currentUser();
+        if ($user && ! Gate::forUser($user)->allows('viewEvents', $link)) {
+            return $this->errorResponse('غير مصرح بعرض سجل أحداث العلاقة.', [], 403);
+        }
+        return $this->successResponse('تم استرجاع سجل أحداث العلاقة.', NetworkPosEventResource::collection(
+            $this->agreementService->events($id, $request->only(['per_page', 'cursor']))
+        ));
     }
 }

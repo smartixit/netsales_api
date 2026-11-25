@@ -11,6 +11,7 @@ use App\Interfaces\VoucherPackageDiscountRepositoryInterface;
 use App\Interfaces\VoucherPackageRepositoryInterface;
 use App\Models\VoucherPackage;
 use App\Models\VoucherPackageDiscount;
+use App\Models\NetworkPosEvent;
 use App\Services\Billing\Money;
 use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -160,6 +161,8 @@ class VoucherPackageDiscountService
                     'discount_end_date' => $discountEndDate,
                 ]);
 
+                $this->recordRelationshipEvent($discount, 'DISCOUNT_CREATED');
+
                 return $discount->load(['network', 'pos', 'voucherPackage']);
             } catch (UniqueConstraintViolationException) {
                 throw ValidationException::withMessages([
@@ -224,6 +227,7 @@ class VoucherPackageDiscountService
         return DB::transaction(function () use ($discount, $data) {
             $this->discountRepository->update($discount->discount_id, $data);
             $discount->refresh();
+            $this->recordRelationshipEvent($discount, 'DISCOUNT_UPDATED', ['changed_fields' => array_keys($data)]);
 
             return $discount->load(['network', 'pos', 'voucherPackage']);
         });
@@ -241,7 +245,11 @@ class VoucherPackageDiscountService
         }
 
         return DB::transaction(function () use ($discount) {
-            return (bool) $this->discountRepository->delete($discount->discount_id);
+            $deleted = (bool) $this->discountRepository->delete($discount->discount_id);
+            if ($deleted) {
+                $this->recordRelationshipEvent($discount, 'DISCOUNT_ARCHIVED');
+            }
+            return $deleted;
         });
     }
 
@@ -276,7 +284,11 @@ class VoucherPackageDiscountService
             }
 
             try {
-                return $this->discountRepository->restore($id);
+                $restored = $this->discountRepository->restore($id);
+                if ($restored) {
+                    $this->recordRelationshipEvent($discount, 'DISCOUNT_RESTORED');
+                }
+                return $restored;
             } catch (UniqueConstraintViolationException) {
                 throw ValidationException::withMessages([
                     'discount' => ['لا يمكن استعادة هذا الخصم لوجود خصم نشط مسجل مسبقاً لنفس نقطة البيع والباقة.'],
@@ -291,8 +303,37 @@ class VoucherPackageDiscountService
     public function forceDelete(int $id): bool
     {
         return DB::transaction(function () use ($id) {
+            $discount = $this->discountRepository->findTrashedById($id);
+            if ($discount) {
+                $this->recordRelationshipEvent($discount, 'DISCOUNT_FORCE_DELETED');
+            }
             return $this->discountRepository->forceDelete($id);
         });
+    }
+
+    private function recordRelationshipEvent(
+        VoucherPackageDiscount $discount,
+        string $eventType,
+        array $payload = [],
+    ): void {
+        $link = $this->networkPosRepository->findByNetworkAndPos(
+            (int) $discount->network_id,
+            (int) $discount->pos_id,
+            true,
+        );
+        if (! $link) {
+            return;
+        }
+
+        NetworkPosEvent::query()->create([
+            'network_pos_id' => $link->network_pos_id,
+            'actor_user_id' => auth()->user()?->user_id,
+            'event_type' => $eventType,
+            'payload' => array_merge([
+                'discount_id' => $discount->discount_id,
+                'package_id' => $discount->package_id,
+            ], $payload),
+        ]);
     }
 
     /**
@@ -303,7 +344,12 @@ class VoucherPackageDiscountService
     public function bulkDelete(array $ids): int
     {
         return DB::transaction(function () use ($ids) {
-            return $this->discountRepository->bulkDelete($ids);
+            $discounts = VoucherPackageDiscount::query()->whereIn('discount_id', $ids)->get();
+            $deletedCount = $this->discountRepository->bulkDelete($ids);
+            foreach ($discounts as $discount) {
+                $this->recordRelationshipEvent($discount, 'DISCOUNT_ARCHIVED');
+            }
+            return $deletedCount;
         });
     }
 
@@ -342,7 +388,11 @@ class VoucherPackageDiscountService
             }
 
             try {
-                return $this->discountRepository->bulkRestore($ids);
+                $restoredCount = $this->discountRepository->bulkRestore($ids);
+                foreach ($trashed as $discount) {
+                    $this->recordRelationshipEvent($discount, 'DISCOUNT_RESTORED');
+                }
+                return $restoredCount;
             } catch (UniqueConstraintViolationException) {
                 throw ValidationException::withMessages([
                     'ids' => ['تعذر الاستعادة المجمعة لوجود تعارض فريد مع خصم نشط مسجل مسبقاً لنفس نقطة البيع والباقة.'],
@@ -359,6 +409,10 @@ class VoucherPackageDiscountService
     public function bulkForceDelete(array $ids): int
     {
         return DB::transaction(function () use ($ids) {
+            $discounts = VoucherPackageDiscount::onlyTrashed()->whereIn('discount_id', $ids)->get();
+            foreach ($discounts as $discount) {
+                $this->recordRelationshipEvent($discount, 'DISCOUNT_FORCE_DELETED');
+            }
             return $this->discountRepository->bulkForceDelete($ids);
         });
     }
@@ -383,6 +437,7 @@ class VoucherPackageDiscountService
             ]);
 
             $discount->refresh();
+            $this->recordRelationshipEvent($discount, $newStatus ? 'DISCOUNT_ACTIVATED' : 'DISCOUNT_DEACTIVATED');
 
             return $discount->load(['network', 'pos', 'voucherPackage']);
         });

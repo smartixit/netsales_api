@@ -91,9 +91,14 @@ class NetworkPosRepository extends BaseRepository implements NetworkPosRepositor
     /**
      * البحث عن ارتباط محدد بين شبكة ونقطة بيع.
      */
-    public function findByNetworkAndPos(int $networkId, int $posId): ?NetworkPos
+    public function findByNetworkAndPos(int $networkId, int $posId, bool $withTrashed = false): ?NetworkPos
     {
-        return $this->model->newQuery()
+        $query = $this->model->newQuery();
+        if ($withTrashed) {
+            $query->withTrashed();
+        }
+
+        return $query
             ->forNetwork($networkId)
             ->forPos($posId)
             ->first();
@@ -102,6 +107,31 @@ class NetworkPosRepository extends BaseRepository implements NetworkPosRepositor
     /**
      * جلب نقاط البيع المرتبطة بشبكة محددة.
      */
+    public function findByIdWithTrashed(int $id): ?NetworkPos
+    {
+        return $this->model->newQuery()->withTrashed()->find($id);
+    }
+
+    public function getTrashedForNetwork(int $networkId, array $filters = []): Collection|CursorPaginator
+    {
+        $query = $this->model->newQuery()->onlyTrashed()->with(['network', 'pos'])
+            ->where('network_id', $networkId)
+            ->orderByDesc('network_pos_id');
+        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
+
+        return $query->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
+    }
+
+    public function getTrashedForPos(int $posId, array $filters = []): Collection|CursorPaginator
+    {
+        $query = $this->model->newQuery()->onlyTrashed()->with(['network', 'pos'])
+            ->where('pos_id', $posId)
+            ->orderByDesc('network_pos_id');
+        $perPage = min(max(1, (int) ($filters['per_page'] ?? 15)), 50);
+
+        return $query->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
+    }
+
     public function getPosForNetwork(int $networkId, array $filters = []): Collection|CursorPaginator
     {
         $filters['network_id'] = $networkId;

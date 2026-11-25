@@ -226,7 +226,7 @@ Route::prefix('v1')->group(function () {
             [NetworkPosController::class, 'challengeStatus']
         )->whereUuid('uuid')->name('api.v1.network_pos.challenges.status');
         Route::middleware('throttle:api-write')->group(function () {
-            Route::post('networks', [NetworkController::class, 'store'])->name('api.v1.networks.store')->middleware('permission:networks.create');
+            Route::post('networks', [NetworkController::class, 'store'])->name('api.v1.networks.store')->middleware(['operational.scope', 'permission:networks.create']);
             Route::put('networks/{id}', [NetworkController::class, 'update'])->whereNumber('id')->name('api.v1.networks.update')->middleware('permission:networks.edit');
             Route::delete('networks/{id}', [NetworkController::class, 'destroy'])->whereNumber('id')->name('api.v1.networks.destroy')->middleware('permission:networks.delete');
             Route::post('networks/batch-delete', [NetworkController::class, 'batchDelete'])->name('api.v1.networks.batch_delete')->middleware('permission:networks.delete');
@@ -260,6 +260,11 @@ Route::prefix('v1')->group(function () {
         // ==========================================
         // 4. إدارة نقاط البيع والوكلاء (POS Management)
         // ==========================================
+        Route::middleware('throttle:api-read')->group(function () {
+            Route::get('network-pos/{id}/agreements', [NetworkPosController::class, 'agreements'])->whereNumber('id')->name('api.v1.network_pos.agreements.index');
+            Route::get('network-pos/{id}/events', [NetworkPosController::class, 'relationshipEvents'])->whereNumber('id')->name('api.v1.network_pos.events.index');
+        });
+
         Route::middleware(['throttle:api-read', 'permission:pos.view'])->group(function () {
             Route::get('pos', [PosController::class, 'index'])->name('api.v1.pos.index');
             Route::get('pos/trashed', [PosController::class, 'trashed'])->name('api.v1.pos.trashed');
@@ -267,7 +272,7 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('throttle:api-write')->group(function () {
-            Route::post('pos', [PosController::class, 'store'])->name('api.v1.pos.store')->middleware('permission:pos.create');
+            Route::post('pos', [PosController::class, 'store'])->name('api.v1.pos.store')->middleware(['operational.scope', 'permission:pos.create']);
             Route::put('pos/{id}', [PosController::class, 'update'])->whereNumber('id')->name('api.v1.pos.update')->middleware('permission:pos.edit');
             Route::delete('pos/{id}', [PosController::class, 'destroy'])->whereNumber('id')->name('api.v1.pos.destroy')->middleware('permission:pos.delete');
             Route::post('pos/batch-delete', [PosController::class, 'batchDelete'])->name('api.v1.pos.batch_delete')->middleware('permission:pos.delete');
@@ -295,16 +300,23 @@ Route::prefix('v1')->group(function () {
         // 5. ربط نقاط البيع بمزودي الشبكات (Network POS Links)
         // ==========================================
         Route::middleware(['throttle:api-read', 'permission:networks.view'])->group(function () {
+            Route::get('networks/{networkId}/network-pos/trashed', [NetworkPosController::class, 'trashedForNetwork'])->whereNumber('networkId')->name('api.v1.networks.pos.trashed');
             Route::get('network-pos', [NetworkPosController::class, 'index'])->name('api.v1.network_pos.index');
             Route::get('network-pos/{id}', [NetworkPosController::class, 'show'])->whereNumber('id')->name('api.v1.network_pos.show');
             Route::get('networks/{id}/pos', [NetworkPosController::class, 'networkPosList'])->whereNumber('id')->name('api.v1.networks.pos_list');
         });
 
         Route::middleware(['throttle:api-read', 'permission:pos.view'])->group(function () {
+            Route::get('pos/{posId}/network-pos/trashed', [NetworkPosController::class, 'trashedForPos'])->whereNumber('posId')->name('api.v1.pos.networks.trashed');
             Route::get('pos/{id}/networks', [NetworkPosController::class, 'posNetworksList'])->whereNumber('id')->name('api.v1.pos.networks_list');
         });
 
         Route::middleware('throttle:api-write')->group(function () {
+            Route::post('network-pos/{id}/restore', [NetworkPosController::class, 'restoreLink'])->whereNumber('id')->name('api.v1.network_pos.restore');
+            Route::post('network-pos/{id}/agreements', [NetworkPosController::class, 'storeAgreement'])->whereNumber('id')->name('api.v1.network_pos.agreements.store');
+            Route::put('network-pos/{id}/agreements/{agreementId}', [NetworkPosController::class, 'updateAgreement'])->whereNumber('id')->whereNumber('agreementId')->name('api.v1.network_pos.agreements.update');
+            Route::post('network-pos/{id}/agreements/{agreementId}/activate', [NetworkPosController::class, 'activateAgreement'])->whereNumber('id')->whereNumber('agreementId')->name('api.v1.network_pos.agreements.activate');
+            Route::post('network-pos/{id}/agreements/{agreementId}/terminate', [NetworkPosController::class, 'terminateAgreement'])->whereNumber('id')->whereNumber('agreementId')->name('api.v1.network_pos.agreements.terminate');
             Route::post('network-pos', [NetworkPosController::class, 'store'])->name('api.v1.network_pos.store')->middleware('permission:networks.create_pos_link');
             Route::put('network-pos/{id}', [NetworkPosController::class, 'update'])->whereNumber('id')->name('api.v1.network_pos.update')->middleware('permission:networks.update_pos_link');
             Route::delete('network-pos/{id}', [NetworkPosController::class, 'destroy'])->whereNumber('id')->name('api.v1.network_pos.destroy')->middleware('permission:networks.delete_pos_link');

@@ -27,14 +27,12 @@ class RolePermissionSeeder extends Seeder
      * @var list<string>
      */
     public const INTENTIONALLY_UNGRANTED_PERMISSION_KEYS = [
-        'networks.create',
         'networks.delete',
         'networks.restore',
         'networks.force_delete',
         'network_wallets.delete',
         'network_wallets.restore',
         'network_wallets.force_delete',
-        'pos.create',
         'pos.delete',
         'pos.restore',
         'pos.force_delete',
@@ -102,6 +100,7 @@ class RolePermissionSeeder extends Seeder
             RoleKey::NETWORK_OWNER->value => [
                 'scope' => RoleScope::NETWORK->value,
                 'permissions' => [
+                    'networks.create',
                     'networks.view',
                     'network_members.view',
                     'network_members.create',
@@ -115,6 +114,10 @@ class RolePermissionSeeder extends Seeder
                     'networks.toggle_pos_link',
                     'networks.create_link_challenge',
                     'networks.revoke_link_challenge',
+                    'networks.view_pos_agreements',
+                    'networks.manage_pos_agreements',
+                    'networks.view_pos_link_events',
+                    'networks.restore_pos_link',
                     'pos.view',
                     'network_wallets.view',
                     'network_wallets.report',
@@ -204,6 +207,8 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'networks.view',
                     'pos.view',
+                    'networks.view_pos_agreements',
+                    'networks.view_pos_link_events',
                     'network_wallets.view',
                     'network_wallets.report',
                     'network_wallets.export',
@@ -234,6 +239,7 @@ class RolePermissionSeeder extends Seeder
             RoleKey::POS_AGENT->value => [
                 'scope' => RoleScope::POS->value,
                 'permissions' => [
+                    'pos.create',
                     'pos.view',
                     'pos_members.view',
                     'pos_members.create',
@@ -243,6 +249,10 @@ class RolePermissionSeeder extends Seeder
                     'pos.edit',
                     'pos.preview_link_challenge',
                     'pos.confirm_link_challenge',
+                    'pos.view_network_agreements',
+                    'pos.manage_network_agreements',
+                    'pos.view_network_link_events',
+                    'pos.restore_network_link',
                     'networks.view',
                     'pos_wallets.view',
                     'pos_wallets.report',
@@ -295,6 +305,8 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'pos.view',
                     'networks.view',
+                    'pos.view_network_agreements',
+                    'pos.view_network_link_events',
                     'pos_wallets.view',
                     'pos_wallets.report',
                     'pos_wallets.export',
