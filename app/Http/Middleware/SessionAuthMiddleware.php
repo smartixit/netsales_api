@@ -39,21 +39,6 @@ class SessionAuthMiddleware
     ) {}
 
     /**
-     * Return a stable machine-readable authentication failure without exposing
-     * whether a presented session token exists in persistent storage.
-     */
-    private function sessionAuthenticationError(string $code, string $message): \Illuminate\Http\JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'code' => $code,
-            'message' => $message,
-            'data' => (object) [],
-            'errors' => [],
-        ], 401)->header('X-Error-Code', $code);
-    }
-
-    /**
      * معالجة الطلب الوارد والتحقق من مصادقة الجلسة.
      */
     public function handle(Request $request, Closure $next)
