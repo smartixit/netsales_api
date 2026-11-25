@@ -15,7 +15,7 @@ class StoreNetworkPosAgreementRequest extends FormRequest
             'reference' => ['nullable', 'string', 'max:100'],
             'terms' => ['required', 'string', 'max:50000'],
             'starts_at' => ['nullable', 'date'],
-            'ends_at' => ['nullable', 'date', 'after:starts_at'],
+            'ends_at' => ['nullable', 'date'],
         ];
     }
 }
