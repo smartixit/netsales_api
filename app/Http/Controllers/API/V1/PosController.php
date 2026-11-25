@@ -141,7 +141,6 @@ class PosController extends BaseController
                         new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
                         new OA\Property(property: 'pos_address', type: 'string'),
                         new OA\Property(property: 'pos_profile_logo', type: 'string', format: 'binary'),
-                        new OA\Property(property: 'status', type: 'string'),
                     ]
                 )
             )
@@ -189,7 +188,6 @@ class PosController extends BaseController
                         new OA\Property(property: 'directorate_id', type: 'integer', example: 1),
                         new OA\Property(property: 'pos_address', type: 'string'),
                         new OA\Property(property: 'pos_profile_logo', type: 'string', format: 'binary'),
-                        new OA\Property(property: 'status', type: 'string'),
                     ]
                 )
             )
