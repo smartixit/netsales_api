@@ -1350,6 +1350,37 @@ class NetworkPosLinkingChallengeTest extends TestCase
     }
 
 
+
+    public function test_scheduler_expires_due_agreements_and_records_system_actor(): void
+    {
+        $link = app(NetworkPosService::class)->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => true,
+        ]);
+        $service = app(NetworkPosAgreementService::class);
+        $agreement = $service->createDraft($link->network_pos_id, [
+            'title' => 'اتفاقية مستحقة الانتهاء',
+            'terms' => 'اختبار الانتقال الآلي إلى منتهية الصلاحية',
+            'starts_at' => now('Asia/Aden')->subDays(2),
+            'ends_at' => now('Asia/Aden')->subMinute(),
+        ], $this->networkOwner->user_id);
+
+        DB::table('network_pos_agreements')
+            ->where('agreement_id', $agreement->agreement_id)
+            ->update(['status' => 'ACTIVE']);
+
+        $this->assertSame(1, $service->expireDueAgreements(10));
+        $this->assertSame('EXPIRED', $agreement->fresh()->status);
+        $this->assertDatabaseHas('network_pos_events', [
+            'network_pos_id' => $link->network_pos_id,
+            'actor_user_id' => null,
+            'event_type' => 'AGREEMENT_EXPIRED',
+        ]);
+        $this->assertSame(0, $service->expireDueAgreements(10));
+    }
+
+
     public function test_relationship_status_changes_are_logged_once_for_single_and_bulk_updates(): void
     {
         $service = app(NetworkPosService::class);
