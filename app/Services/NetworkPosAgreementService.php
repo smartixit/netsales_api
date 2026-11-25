@@ -92,6 +92,22 @@ class NetworkPosAgreementService
             if ($agreement->ends_at && $agreement->ends_at->isPast()) {
                 throw ValidationException::withMessages(['ends_at' => ['انتهت مدة الاتفاقية ولا يمكن اعتمادها.']]);
             }
+            $expiredAgreements = NetworkPosAgreement::query()
+                ->where('network_pos_id', $linkId)
+                ->where('status', 'ACTIVE')
+                ->whereNotNull('ends_at')
+                ->where('ends_at', '<=', now('Asia/Aden'))
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($expiredAgreements as $expiredAgreement) {
+                $expiredAgreement->update(['status' => 'EXPIRED']);
+                $this->record($linkId, $actorId, 'AGREEMENT_EXPIRED', [
+                    'agreement_id' => $expiredAgreement->agreement_id,
+                    'version' => $expiredAgreement->version,
+                ]);
+            }
+
             $hasActive = NetworkPosAgreement::query()->where('network_pos_id', $linkId)->where('status', 'ACTIVE')->exists();
             if ($hasActive) {
                 throw ValidationException::withMessages(['agreement' => ['توجد اتفاقية نشطة بالفعل. أنهِ الاتفاقية الحالية قبل اعتماد إصدار جديد.']]);
