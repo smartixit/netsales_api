@@ -33,6 +33,32 @@ class PlatformSensitiveServicesAuthorizationTest extends TestCase
         $this->postJson('/api/v1/scheduled-tasks/catchup', [], $headers)->assertForbidden();
     }
 
+    public function test_operational_network_owner_can_run_only_the_bounded_activity_tick(): void
+    {
+        $owner = $this->makeUserWithRole(RoleKey::NETWORK_OWNER);
+        $headers = $this->createAuthenticatedSession($owner)['headers'];
+
+        $catchup = \\Mockery::mock(SmartSchedulerCatchupService::class);
+        $catchup->shouldReceive('runActivityTick')
+            ->once()
+            ->andReturn(['executed' => [], 'skipped' => [], 'server_time' => '2026-11-26 12:00:00']);
+        $catchup->shouldNotReceive('runAllCatchupTasks');
+        $this->app->instance(SmartSchedulerCatchupService::class, $catchup);
+
+        $this->postJson('/api/v1/scheduled-tasks/catchup', [
+            'force' => false,
+            'trigger_source' => 'foreground_heartbeat',
+        ], $headers)->assertOk();
+
+        $this->postJson('/api/v1/scheduled-tasks/catchup', [
+            'force' => true,
+        ], $headers)->assertUnprocessable();
+
+        $this->postJson('/api/v1/scheduled-tasks/catchup', [
+            'task' => 'backup:auto',
+        ], $headers)->assertUnprocessable();
+    }
+
     public function test_platform_accountant_cannot_change_global_sms_or_backup_configuration(): void
     {
         $accountant = $this->makeUserWithRole(RoleKey::ACCOUNTANT);
