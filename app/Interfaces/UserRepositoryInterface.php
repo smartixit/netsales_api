@@ -19,7 +19,8 @@ use Illuminate\Database\Eloquent\Collection;
 interface UserRepositoryInterface extends BaseRepositoryInterface
 {
     /**
-     * Create a user with its authoritative account scope assigned before persistence.
+     * Create an operational user for a Network or POS membership context.
+     * The scope is persisted through the membership record, not users.role_scope.
      *
      * @param  array<string, mixed>  $data
      */

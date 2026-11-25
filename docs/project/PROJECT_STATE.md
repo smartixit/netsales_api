@@ -1,6 +1,6 @@
 # NetSales — Current Project State & Authorization Snapshot
 
-**Last Updated Date:** 2026-11-22  
+**Last Updated Date:** 2026-11-25  
 **Active Working Tree Status:** Billing self-service/search pagination, subscription and Billing Reports integration, Operational Reports scope isolation, and official-document source hardening — implementation work continues; final validation remains pending  
 **Canonical Repository:** `smartixit/netsales_api`  
 **Client Repository:** `smartixit/netsales`  
@@ -34,6 +34,14 @@
 
 ### Next authorized stage
 Current authorized task: remove POS Repayment collection workflows only from Flutter and Laravel while preserving CREDIT invoice/procurement behavior, initial partial payments, credit limits, invoice receivables, and receivables aging. Do not start Phase 2. Each phase starts from the current `main`, has its own branch and PR, and requires exact-head CI before merge.
+
+---
+
+## 2026-11-25 — Generated `users.role_scope` Registration Hotfix
+- API PR #42 (`fix/generated-role-scope-registration`) removes the invalid attempt to assign the stored generated `users.role_scope` column during Network/POS user creation.
+- Operational role scope remains represented by `network_users` / `pos_users` membership records; `users.role_scope` remains database-derived for Platform identities from `role_id`.
+- Added regression coverage for NETWORK and POS persistence and rejection of invalid PLATFORM/global-role use through `createForScope()`.
+- Status: source change committed; PHPUnit/Pint and exact-head CI are pending. Do not merge until the exact PR head passes.
 
 ---
 
