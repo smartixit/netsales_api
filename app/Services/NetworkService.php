@@ -135,7 +135,7 @@ class NetworkService
             ->first();
 
         if (! $ownerRole) {
-            throw new \\RuntimeException('تعذر العثور على دور مالك الشبكة التشغيلي النشط.');
+            throw new \RuntimeException('تعذر العثور على دور مالك الشبكة التشغيلي النشط.');
         }
 
         $data['owner_id'] = $owner->user_id;
