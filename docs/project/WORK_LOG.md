@@ -1261,3 +1261,16 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Contract documentation:** Updated Laravel `API_CONTRACTS.md` and Flutter `shared-contract-reference.md` with route authorization, search/pagination parameters, candidate exclusions, minimal response shape, and client behavior.
 - **Tests added/updated:** Laravel feature coverage for eligible search, already-linked exclusion, pending-invitation exclusion, duplicate challenge rejection, unauthorized search, cursor pagination, whitespace-only/short-term validation, and literal wildcard handling; Flutter controller and repository pagination coverage for candidate search/selection.
 - **Verification boundary:** Source changes have been committed to coordinated feature branches. No local PHP/Pint/PHPUnit or Dart format/analyze/Flutter tests were run in this environment. Exact-head GitHub Actions checks are required before merge; both PRs must remain unmerged until those checks pass and the diffs are reviewed.
+
+
+## [2026-11-25] Task: Fix generated role_scope write during Network/POS registration
+- **Authorized Scope:** User requested correction of the Network registration SQLSTATE 1906 failure.
+- **Root Cause:** `UserRepository::createForScope()` assigned `NETWORK` / `POS` directly to `users.role_scope`, although migration `2026_11_01_000003_update_users_role_id_nullable_and_scope_constraint.php` defines it as a stored generated column derived from `role_id`.
+- **Files Changed:**
+  - `app/Repositories/UserRepository.php`: Removed generated-column assignment; reject PLATFORM scope and non-null global role IDs for this operational-only creation path.
+  - `app/Interfaces/UserRepositoryInterface.php`: Clarified operational membership scope contract.
+  - `tests/Feature/Repositories/UserRepositoryTest.php`: Added NETWORK/POS persistence regression cases and invalid-scope guards.
+  - `docs/project/PROJECT_STATE.md`: Recorded fix and verification boundary.
+- **Branch / PR:** `fix/generated-role-scope-registration`, PR #42.
+- **Commits:** `bc269d2`, `0b123fb`, `27b879e`, `f032dfac` (repository hotfix HEAD at the time of this entry; subsequent documentation/test commits may advance it).
+- **Verification:** Reviewed schema, registration flow, repository implementation, and PR patch. No local PHP runtime/PHPUnit/Pint execution was available. GitHub Actions had not produced an exact-head run at the time of inspection; combined commit status was empty. Merge is blocked pending exact-head CI.
