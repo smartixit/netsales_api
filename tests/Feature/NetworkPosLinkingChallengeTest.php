@@ -1325,7 +1325,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
         try {
             $service->terminate($link->network_pos_id, $expired->agreement_id, $this->networkOwner->user_id);
             $this->fail('لا يجوز إنهاء اتفاقية تجاوزت تاريخ انتهاء سريانها.');
-        } catch (\\Illuminate\\Validation\\ValidationException) {
+        } catch (\Illuminate\Validation\ValidationException) {
             $this->assertSame('ACTIVE', $expired->fresh()->status);
         }
 
@@ -1389,14 +1389,14 @@ class NetworkPosLinkingChallengeTest extends TestCase
             'status' => true,
         ]);
 
-        $event = \\App\\Models\\NetworkPosEvent::query()
+        $event = \App\Models\NetworkPosEvent::query()
             ->where('network_pos_id', $link->network_pos_id)
             ->firstOrFail();
 
         try {
             $event->update(['event_type' => 'TAMPERED']);
             $this->fail('يجب منع تعديل أحداث دورة الحياة.');
-        } catch (\\LogicException) {
+        } catch (\LogicException) {
             $this->assertDatabaseMissing('network_pos_events', [
                 'event_id' => $event->event_id,
                 'event_type' => 'TAMPERED',
@@ -1406,7 +1406,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
         try {
             $event->delete();
             $this->fail('يجب منع حذف أحداث دورة الحياة.');
-        } catch (\\LogicException) {
+        } catch (\LogicException) {
             $this->assertDatabaseHas('network_pos_events', [
                 'event_id' => $event->event_id,
                 'event_type' => $event->event_type,
