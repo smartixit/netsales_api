@@ -188,10 +188,9 @@ class PosService
                 'directorate_id' => $request->directorate_id !== null ? (int) $request->directorate_id : null,
                 'pos_email' => $request->pos_email,
                 'pos_address' => $request->pos_address,
-                'status' => $request->status,
             ], fn ($value) => $value !== null);
         } else {
-            $data = $request;
+            $data = array_intersect_key($request, array_flip(["pos_name","governorate_id","directorate_id","pos_email","pos_address"]));
         }
 
         return DB::transaction(function () use ($pos, $data, $logo) {
