@@ -31,7 +31,7 @@ class BillingOutboxNotificationDispatcherTest extends TestCase
                 'user_id' => (int) $user->user_id,
                 'notification_type' => NotificationType::BILLING_INVOICE_ISSUED->value,
                 'title' => '🧾 تم إصدار فاتورة اشتراك جديدة',
-                'message' => 'تم إصدار الفاتورة INV-TEST-77 ويمكنك مراجعة تفاصيلها.',
+                'message' => '🧾 تم إصدار الفاتورة INV-TEST-77 ويمكنك مراجعة تفاصيلها.',
                 'entity_type' => 'BILLING_INVOICE',
                 'entity_id' => 77,
                 'extra_data' => ['invoice_id' => 77],
@@ -53,6 +53,8 @@ class BillingOutboxNotificationDispatcherTest extends TestCase
             ->where('notification_type', NotificationType::BILLING_INVOICE_ISSUED->value)
             ->where('notification_title', '🧾 تم إصدار فاتورة اشتراك جديدة')
             ->firstOrFail();
+
+        $this->assertStringStartsWith('🧾', (string) $notification->notification_message);
 
         $this->assertSame(1, Notification::query()
             ->where('user_id', $user->user_id)
