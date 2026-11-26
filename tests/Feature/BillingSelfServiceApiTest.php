@@ -53,8 +53,8 @@ class BillingSelfServiceApiTest extends TestCase
             ->where('role_key', RoleKey::NETWORK_OWNER->value)
             ->firstOrFail();
 
-        $this->networkOwner = $this->createNetworkOwner('Billing API Owner');
-        $this->otherNetworkOwner = $this->createNetworkOwner('Billing API Other Owner');
+        $this->networkOwner = $this->createNetworkOwner($networkOwnerRole, 'Billing API Owner');
+        $this->otherNetworkOwner = $this->createNetworkOwner($networkOwnerRole, 'Billing API Other Owner');
 
         $this->network = $this->createNetworkFor($this->networkOwner, 'Billing API Network');
         $this->otherNetwork = $this->createNetworkFor($this->otherNetworkOwner, 'Billing API Other Network');
@@ -227,10 +227,10 @@ class BillingSelfServiceApiTest extends TestCase
         $this->assertSame(1000, $this->invoice->remaining_minor);
     }
 
-    private function createNetworkOwner(string $name): User
+    private function createNetworkOwner(Role $role, string $name): User
     {
         return $this->createUserWithScope(RoleScope::NETWORK, [
-            'role_id' => null,
+            'role_id' => $role->role_id,
             'user_full_name' => $name.' '.Str::random(6),
             'user_phone_number' => '77'.random_int(10000000, 99999999),
             'user_email' => Str::uuid().'@netsales.local',
