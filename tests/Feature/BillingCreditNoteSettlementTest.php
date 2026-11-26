@@ -420,6 +420,9 @@ class BillingCreditNoteSettlementTest extends TestCase
             ->update(['owner_id' => 0]);
 
         $idempotencyKey = 'refund-missing-owner-'.Str::uuid();
+        $refundLedgerCountBefore = LedgerJournalEntry::query()
+            ->where('source_type', 'BILLING_REFUND')
+            ->count();
 
         try {
             app(BillingRefundService::class)->refund(
@@ -433,14 +436,16 @@ class BillingCreditNoteSettlementTest extends TestCase
             );
 
             $this->fail('A refund must not complete without a valid network-owner outbox event.');
-        } catch (\\LogicException $exception) {
+        } catch (\LogicException $exception) {
             $this->assertSame('تعذر تحديد مالك الشبكة لتسجيل إشعار الاسترداد المالي.', $exception->getMessage());
         }
 
         $this->assertDatabaseMissing('billing_refunds', ['idempotency_key' => $idempotencyKey]);
-        $this->assertDatabaseMissing('ledger_journal_entries', [
-            'source_type' => 'BILLING_REFUND',
-        ]);
+        $this->assertSame(
+            $refundLedgerCountBefore,
+            LedgerJournalEntry::query()->where('source_type', 'BILLING_REFUND')->count(),
+            'A failed refund must not leave a financial ledger entry.'
+        );
 
         $payment->refresh();
         $note->refresh();
