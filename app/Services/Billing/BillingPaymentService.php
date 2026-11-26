@@ -303,7 +303,7 @@ class BillingPaymentService
                     $dunning->scheduleSubscriptionAlerts($subscription);
 
                     $subscription->loadMissing('billingAccount.network');
-                    $subscriptionOwnerId = $subscription->billingAccount?->network?->owner_id;
+                    $subscriptionOwnerId = $subscription->billingAccount->network->owner_id;
                     if ($subscriptionOwnerId) {
                         $outbox->record('BILLING_SUBSCRIPTION', (int) $subscription->billing_subscription_id, 'billing.lifecycle', [
                             'user_id' => (int) $subscriptionOwnerId,
@@ -337,7 +337,7 @@ class BillingPaymentService
                 }
             }
 
-            $ownerId = $invoice->billingAccount?->network?->owner_id;
+            $ownerId = $invoice->billingAccount->network->owner_id;
             if ($ownerId) {
                 $outbox->record('BILLING_PAYMENT', (int) $payment->payment_id, 'billing.lifecycle', [
                     'user_id' => (int) $ownerId,
@@ -379,7 +379,7 @@ class BillingPaymentService
             $payment->save();
 
             $payment->loadMissing('invoice.billingAccount.network');
-            $ownerId = $payment->invoice?->billingAccount?->network?->owner_id;
+            $ownerId = $payment->invoice?->billingAccount->network->owner_id;
             if ($ownerId) {
                 app(OutboxService::class)->record('BILLING_PAYMENT', (int) $payment->payment_id, 'billing.lifecycle', [
                     'user_id' => (int) $ownerId,
