@@ -22,8 +22,8 @@ use LogicException;
  * @property BillingInvoiceStatus $status
  * @property Carbon|null $period_start
  * @property Carbon|null $period_end
- * @property Carbon $issued_on
- * @property Carbon $due_on
+ * @property Carbon|null $issued_on
+ * @property Carbon|null $due_on
  * @property int $subtotal_minor
  * @property int $discount_minor
  * @property int $tax_minor
