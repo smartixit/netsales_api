@@ -380,6 +380,76 @@ class BillingCreditNoteSettlementTest extends TestCase
     }
 
 
+    public function test_refund_rolls_back_when_network_owner_cannot_be_notified(): void
+    {
+        $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
+
+        $method = BillingPaymentMethod::query()->where('method_key', 'CASH')->firstOrFail();
+        $treasury = TreasuryAccount::query()->create([
+            'account_code' => 'TR-ROLLBACK-'.Str::upper(Str::random(10)),
+            'name' => 'Refund Rollback Treasury',
+            'account_type' => 'CASH',
+            'currency_id' => $this->currency->currency_id,
+            'status' => 'ACTIVE',
+        ]);
+
+        $paymentService = app(BillingPaymentService::class);
+        $payment = $paymentService->recordManualPayment(
+            (int) $this->invoice->invoice_id,
+            (int) $method->payment_method_id,
+            1000,
+            'refund-rollback-payment-'.Str::uuid(),
+            $this->actor
+        );
+        $payment = $paymentService->verify(
+            (int) $payment->payment_id,
+            (int) $treasury->treasury_account_id,
+            $this->actor
+        );
+
+        $note = app(BillingCreditNoteService::class)->issue(
+            (int) $this->invoice->invoice_id,
+            [['invoice_line_id' => $this->line->invoice_line_id, 'amount_minor' => 1000]],
+            'اختبار منع إتمام الاسترداد دون مالك صالح للإشعار',
+            'refund-rollback-credit-note-'.Str::uuid(),
+            $this->actor
+        );
+
+        DB::table('networks')
+            ->where('network_id', $this->account->network_id)
+            ->update(['owner_id' => 0]);
+
+        $idempotencyKey = 'refund-missing-owner-'.Str::uuid();
+
+        try {
+            app(BillingRefundService::class)->refund(
+                (int) $payment->payment_id,
+                (int) $note->credit_note_id,
+                (int) $treasury->treasury_account_id,
+                1000,
+                'يجب إلغاء العملية عند غياب مالك صالح',
+                $idempotencyKey,
+                $this->actor
+            );
+
+            $this->fail('A refund must not complete without a valid network-owner outbox event.');
+        } catch (\\LogicException $exception) {
+            $this->assertSame('تعذر تحديد مالك الشبكة لتسجيل إشعار الاسترداد المالي.', $exception->getMessage());
+        }
+
+        $this->assertDatabaseMissing('billing_refunds', ['idempotency_key' => $idempotencyKey]);
+        $this->assertDatabaseMissing('ledger_journal_entries', [
+            'source_type' => 'BILLING_REFUND',
+        ]);
+
+        $payment->refresh();
+        $note->refresh();
+        $this->assertSame('VERIFIED', $payment->status->value);
+        $this->assertSame('ISSUED', $note->status);
+        $this->assertSame(0, (int) $note->refunded_minor);
+    }
+
+
     public function test_pending_payment_requests_are_reflected_in_invoice_list_and_detail_availability(): void
     {
         $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
