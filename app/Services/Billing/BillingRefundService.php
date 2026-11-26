@@ -173,14 +173,17 @@ class BillingRefundService
                 : BillingPaymentStatus::PARTIALLY_REFUNDED;
             $payment->save();
 
-            $invoice = BillingInvoice::query()->findOrFail((int) $invoice->invoice_id);
-            $ownerId = DB::table('billing_accounts')
-                ->join('networks', 'networks.network_id', '=', 'billing_accounts.network_id')
-                ->where('billing_accounts.billing_account_id', $invoice->billing_account_id)
-                ->value('networks.owner_id');
+            $invoice = BillingInvoice::query()
+                ->with('billingAccount.network')
+                ->findOrFail((int) $invoice->invoice_id);
+            $ownerId = $invoice->billingAccount?->network?->owner_id;
 
-            if ($ownerId !== null && (int) $ownerId > 0) {
-                app(\App\Services\OutboxService::class)->record('BILLING_REFUND', (int) $refund->refund_id, 'billing.lifecycle', [
+            // A completed refund must never commit without its transactional owner notification.
+            if ($ownerId === null || (int) $ownerId <= 0) {
+                throw new \LogicException('تعذر تحديد مالك الشبكة لتسجيل إشعار الاسترداد المالي.');
+            }
+
+            app(\App\Services\OutboxService::class)->record('BILLING_REFUND', (int) $refund->refund_id, 'billing.lifecycle', [
                     'user_id' => (int) $ownerId,
                     'notification_type' => 'BILLING_REFUND_COMPLETED',
                     'title' => '💸 تم تنفيذ الاسترداد المالي',
