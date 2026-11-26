@@ -194,7 +194,7 @@ class SessionSecurityHardeningTest extends TestCase
      */
     public function test_otp_2fa_verification_is_strictly_bound_to_initiating_device(): void
     {
-        $user = $this->authenticatedFixtureUser();
+        $user = $this->authenticatedFixtureUser(twoFactorEnabled: true);
 
         // إزالة الأجهزة السابقة لضمان طلب 2FA كجهاز جديد
         UserDevice::where('user_id', $user->user_id)->delete();
@@ -341,7 +341,7 @@ class SessionSecurityHardeningTest extends TestCase
         $user->refresh();
         $this->assertFalse($user->must_change_password);
     }
-    private function authenticatedFixtureUser(): User
+    private function authenticatedFixtureUser(bool $twoFactorEnabled = false): User
     {
         $role = Role::query()
             ->where('role_key', RoleKey::SUPER_ADMIN->value)
@@ -353,7 +353,7 @@ class SessionSecurityHardeningTest extends TestCase
             'user_phone_number' => '772'.random_int(100000, 999999),
             'user_email' => 'session-security-'.bin2hex(random_bytes(6)).'@example.test',
             'user_password' => Hash::make('Hh$2002Hh'),
-            'user_2fa_enabled' => false,
+            'user_2fa_enabled' => $twoFactorEnabled,
             'status' => UserStatus::ACTIVE,
         ]);
     }
