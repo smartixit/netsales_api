@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Enums\BillingInvoiceStatus;
 use App\Enums\NetworkStatus;
+use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Http\Resources\API\V1\Billing\BillingInvoiceResource;
 use App\Models\BillingAccount;
 use App\Models\BillingInvoice;
@@ -17,6 +19,7 @@ use App\Models\LedgerJournalEntry;
 use App\Models\OutboxMessage;
 use App\Models\LedgerJournalLine;
 use App\Models\Network;
+use App\Models\Role;
 use App\Models\TreasuryAccount;
 use App\Models\User;
 use App\Services\Billing\BillingCreditNoteService;
@@ -38,6 +41,8 @@ class BillingCreditNoteSettlementTest extends TestCase
 
     private User $actor;
 
+    private User $networkOwner;
+
     private Currency $currency;
 
     private BillingAccount $account;
@@ -58,11 +63,24 @@ class BillingCreditNoteSettlementTest extends TestCase
             ->firstOrFail();
         $this->currency = Currency::query()->where('code', 'YER')->firstOrFail();
 
+        $networkOwnerRole = Role::query()
+            ->where('role_key', RoleKey::NETWORK_OWNER->value)
+            ->firstOrFail();
+        $networkOwnerPhone = '74'.random_int(10000000, 99999999);
+        $this->networkOwner = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => $networkOwnerRole->role_id,
+            'user_full_name' => 'Credit Note Network Owner '.Str::random(6),
+            'user_phone_number' => $networkOwnerPhone,
+            'user_email' => Str::lower(Str::random(12)).'@credit-note.test',
+            'user_password' => bcrypt('Secret@123'),
+            'status' => 'ACTIVE',
+        ]);
+
         $network = Network::query()->create([
-            'owner_id' => $this->actor->user_id,
+            'owner_id' => $this->networkOwner->user_id,
             'network_uuid' => (string) Str::uuid(),
             'network_name' => 'Credit Note Test '.uniqid(),
-            'network_phone_number' => '73'.random_int(1000000, 9999999),
+            'network_phone_number' => $networkOwnerPhone,
             'governorate_id' => 1,
             'directorate_id' => 1,
             'status' => NetworkStatus::ACTIVE,
