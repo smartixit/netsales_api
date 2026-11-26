@@ -43,6 +43,7 @@ use LogicException;
  * @property-read BillingSubscription|null $subscription
  * @property-read Collection<int, BillingInvoiceLine> $lines
  * @property-read Collection<int, BillingPayment> $payments
+ * @property-read Collection<int, BillingCreditNote> $creditNotes
  */
 class BillingInvoice extends Model
 {
