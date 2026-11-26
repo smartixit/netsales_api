@@ -125,6 +125,54 @@ class BillingCreditNoteSettlementTest extends TestCase
         $this->assertLedgerAmount($entry, '1100', 'credit_minor', 800);
     }
 
+    public function test_partially_credited_invoice_accepts_and_verifies_remaining_payment(): void
+    {
+        $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
+
+        app(BillingCreditNoteService::class)->issue(
+            (int) $this->invoice->invoice_id,
+            [['invoice_line_id' => $this->line->invoice_line_id, 'amount_minor' => 800]],
+            'تخفيض جزئي قبل استكمال السداد',
+            'credit-note-before-settlement-'.Str::uuid(),
+            $this->actor
+        );
+
+        $this->invoice->refresh();
+        $this->assertSame(BillingInvoiceStatus::PARTIALLY_CREDITED, $this->invoice->status);
+        $this->assertSame(200, $this->invoice->remaining_minor);
+
+        $method = BillingPaymentMethod::query()->where('method_key', 'CASH')->firstOrFail();
+        $treasury = TreasuryAccount::query()->create([
+            'account_code' => 'TR-CREDIT-'.Str::upper(Str::random(10)),
+            'name' => 'Partially Credited Invoice Treasury',
+            'account_type' => 'CASH',
+            'currency_id' => $this->currency->currency_id,
+            'status' => 'ACTIVE',
+        ]);
+
+        $payments = app(BillingPaymentService::class);
+        $payment = $payments->recordManualPayment(
+            (int) $this->invoice->invoice_id,
+            (int) $method->payment_method_id,
+            200,
+            'partial-credit-payment-'.Str::uuid(),
+            $this->actor
+        );
+
+        $verified = $payments->verify(
+            (int) $payment->payment_id,
+            (int) $treasury->treasury_account_id,
+            $this->actor
+        );
+
+        $this->assertSame('VERIFIED', $verified->status->value);
+        $this->invoice->refresh();
+        $this->assertSame(200, $this->invoice->paid_minor);
+        $this->assertSame(800, $this->invoice->credited_minor);
+        $this->assertSame(0, $this->invoice->remaining_minor);
+        $this->assertSame(BillingInvoiceStatus::PAID, $this->invoice->status);
+    }
+
     public function test_credit_note_keeps_initial_revenue_schedule_held_until_payment(): void
     {
         $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
