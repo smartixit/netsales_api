@@ -207,6 +207,20 @@ class BillingSubscriptionService
                 $subscription->save();
                 $this->dunning->scheduleSubscriptionAlerts($subscription);
 
+                $subscription->loadMissing('billingAccount.network');
+                $ownerId = $subscription->billingAccount->network->owner_id;
+                if ($ownerId) {
+                    app(\App\Services\OutboxService::class)->record('BILLING_SUBSCRIPTION', (int) $subscription->billing_subscription_id, 'billing.lifecycle', [
+                        'user_id' => (int) $ownerId,
+                        'notification_type' => 'BILLING_SUBSCRIPTION_ACTIVATED',
+                        'title' => '🎉 تم تفعيل اشتراكك بنجاح',
+                        'message' => 'تم تفعيل اشتراكك دون الحاجة إلى سداد مبلغ. أصبحت مزايا الخطة متاحة لشبكتك.',
+                        'entity_type' => 'BILLING_SUBSCRIPTION',
+                        'entity_id' => (int) $subscription->billing_subscription_id,
+                        'extra_data' => ['billing_subscription_id' => (int) $subscription->billing_subscription_id, 'invoice_id' => (int) $invoice->invoice_id],
+                    ]);
+                }
+
                 $subscription->events()->create([
                     'event_type' => 'ZERO_VALUE_SUBSCRIPTION_ACTIVATED',
                     'from_status' => BillingSubscriptionStatus::INCOMPLETE->value,
