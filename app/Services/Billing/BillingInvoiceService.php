@@ -345,7 +345,7 @@ class BillingInvoiceService
             }
 
             $invoice->loadMissing('billingAccount.network');
-            $ownerId = $invoice->billingAccount?->network?->owner_id;
+            $ownerId = $invoice->billingAccount->network->owner_id;
             if ($ownerId) {
                 app(\App\Services\OutboxService::class)->record('BILLING_INVOICE', (int) $invoice->invoice_id, 'billing.lifecycle', [
                     'user_id' => (int) $ownerId,
