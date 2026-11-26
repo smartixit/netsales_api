@@ -28,6 +28,7 @@ use App\Services\Billing\BillingRefundService;
 use App\Services\Billing\BillingSelfService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
