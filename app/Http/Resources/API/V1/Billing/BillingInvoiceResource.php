@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\API\V1\Billing;
 
+use App\Enums\BillingInvoiceStatus;
 use App\Services\Billing\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -13,6 +14,14 @@ class BillingInvoiceResource extends JsonResource
         $currency = $this->currency;
         $places = (int) ($currency?->decimal_places ?? 2);
         $code = (string) ($currency?->code ?? 'XXX');
+        $pendingPaymentMinor = (int) ($this->pending_payment_minor ?? 0);
+        $remainingMinor = (int) $this->remaining_minor;
+        $availableToSubmitMinor = max(0, $remainingMinor - $pendingPaymentMinor);
+        $canSubmitPayment = in_array($this->status, [
+            BillingInvoiceStatus::OPEN,
+            BillingInvoiceStatus::PARTIALLY_PAID,
+            BillingInvoiceStatus::PARTIALLY_CREDITED,
+        ], true) && $availableToSubmitMinor > 0;
 
         return [
             'invoice_id' => $this->invoice_id,
@@ -40,6 +49,11 @@ class BillingInvoiceResource extends JsonResource
             'paid' => (new Money((int) $this->paid_minor, $code))->toDecimalString($places),
             'remaining_minor' => (int) $this->remaining_minor,
             'remaining' => (new Money((int) $this->remaining_minor, $code))->toDecimalString($places),
+            'pending_payment_minor' => $pendingPaymentMinor,
+            'pending_payment' => (new Money($pendingPaymentMinor, $code))->toDecimalString($places),
+            'available_to_submit_minor' => $availableToSubmitMinor,
+            'available_to_submit' => (new Money($availableToSubmitMinor, $code))->toDecimalString($places),
+            'can_submit_payment' => $canSubmitPayment,
             'customer_snapshot' => $this->customer_snapshot,
             'pricing_snapshot' => $this->pricing_snapshot,
             'memo' => $this->memo,
