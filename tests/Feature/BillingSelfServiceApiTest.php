@@ -233,7 +233,7 @@ class BillingSelfServiceApiTest extends TestCase
             'role_id' => $role->role_id,
             'user_full_name' => $name.' '.Str::random(6),
             'user_phone_number' => '77'.random_int(10000000, 99999999),
-            'user_email' => Str::uuid().'@netsales.local',
+            'user_email' => Str::lower(Str::random(12)).'@ns.test',
             'user_password' => bcrypt('Secret@123'),
             'status' => UserStatus::ACTIVE,
         ]);
