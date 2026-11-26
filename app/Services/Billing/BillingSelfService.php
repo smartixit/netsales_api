@@ -131,7 +131,7 @@ class BillingSelfService
     public function invoice(int $invoiceId, User $actor): BillingInvoice
     {
         $invoice = BillingInvoice::query()
-            ->with(['billingAccount', 'currency', 'lines.currency', 'subscription.plan'])
+            ->with(['billingAccount', 'currency', 'lines.currency', 'subscription.plan', 'creditNotes'])
             ->withSum(['payments as pending_payment_minor' => fn ($payments) => $payments
                 ->where('status', BillingPaymentStatus::PENDING_REVIEW->value)], 'amount_minor')
             ->findOrFail($invoiceId);
