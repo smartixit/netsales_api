@@ -327,6 +327,57 @@ class BillingSelfServiceApiTest extends TestCase
         $this->assertTrue(\App\Enums\NotificationType::BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED->requiresEntityId());
     }
 
+    public function test_network_owner_can_schedule_cancellation_after_verified_activation_through_api(): void
+    {
+        $platformActor = User::query()->whereHas('role', fn ($query) => $query->where('role_key', RoleKey::SUPER_ADMIN->value))->firstOrFail();
+        $dunning = BillingDunningPolicyVersion::query()->where('status', 'DRAFT')->whereHas('policy', fn ($query) => $query->where('policy_key', 'platform-default'))->firstOrFail();
+        app(BillingPolicyManagementService::class)->publishDunningVersion((int) $dunning->dunning_policy_version_id, $platformActor);
+        $plan = BillingPlanVersion::query()->where('status', 'DRAFT')->whereHas('plan', fn ($query) => $query->where('plan_key', 'starter'))->firstOrFail();
+        $price = BillingPrice::query()->where('plan_version_id', $plan->plan_version_id)->where('currency_id', $this->currency->currency_id)->where('billing_interval', 'MONTH')->where('is_active', true)->firstOrFail();
+        app(BillingCatalogService::class)->publishVersion((int) $plan->plan_version_id, (int) $platformActor->user_id);
+
+        $purchase = $this->withHeaders($this->ownerHeaders)->postJson('/api/v1/billing/accounts/'.$this->account->billing_account_id.'/subscriptions', ['price_id' => $price->price_id]);
+        $purchase->assertCreated()->assertJsonPath('data.subscription.status', 'INCOMPLETE')->assertJsonPath('data.invoice.status', 'OPEN');
+        $subscriptionId = (int) $purchase->json('data.subscription.billing_subscription_id');
+        $invoiceId = (int) $purchase->json('data.invoice.invoice_id');
+        $total = (int) $purchase->json('data.invoice.total_minor');
+        $this->assertGreaterThan(0, $total);
+
+        $method = BillingPaymentMethod::query()->where('method_key', 'CASH')->firstOrFail();
+        $payment = $this->withHeaders($this->ownerHeaders)->postJson('/api/v1/billing/invoices/'.$invoiceId.'/payments', [
+            'payment_method_id' => $method->payment_method_id,
+            'amount_minor' => $total,
+            'idempotency_key' => 'billing-cancel-lifecycle-'.Str::uuid(),
+        ]);
+        $payment->assertCreated()->assertJsonPath('data.status', 'PENDING_REVIEW');
+
+        $treasury = \App\Models\TreasuryAccount::query()->create([
+            'account_code' => 'TR-CANCEL-'.Str::upper(Str::random(10)),
+            'name' => 'Billing Cancellation Treasury',
+            'account_type' => 'CASH',
+            'currency_id' => $this->currency->currency_id,
+            'status' => 'ACTIVE',
+        ]);
+        app(\App\Services\Billing\BillingLedgerChartService::class)->ensureTreasuryAccount($treasury);
+        $platformHeaders = $this->createAuthenticatedSession($platformActor)['headers'];
+        $this->withHeaders($platformHeaders)->postJson('/api/v1/platform/billing/payments/'.$payment->json('data.payment_id').'/verify', [
+            'treasury_account_id' => $treasury->treasury_account_id,
+        ])->assertOk()->assertJsonPath('data.status', 'VERIFIED');
+
+        $this->assertNotNull(app(BillingEntitlementService::class)->activeSubscriptionForAccount((int) $this->account->billing_account_id));
+        $cancel = $this->withHeaders($this->ownerHeaders)->postJson('/api/v1/billing/subscriptions/'.$subscriptionId.'/cancel', ['at_period_end' => true]);
+        $cancel->assertOk()->assertJsonPath('data.status', 'ACTIVE')->assertJsonPath('data.cancel_at_period_end', true);
+        $this->assertNotNull(app(BillingEntitlementService::class)->activeSubscriptionForAccount((int) $this->account->billing_account_id));
+
+        $outbox = \DB::table('outbox_messages')->where('aggregate_type', 'BILLING_SUBSCRIPTION')->where('aggregate_id', $subscriptionId)->where('event_type', 'billing.lifecycle')->orderByDesc('created_at')->first();
+        $this->assertNotNull($outbox);
+        $payload = json_decode((string) $outbox->payload, true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame('BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED', $payload['notification_type']);
+        $this->assertSame((int) $this->networkOwner->user_id, $payload['user_id']);
+        $this->assertStringStartsWith('📅', $payload['title']);
+        $this->assertStringStartsWith('📅', $payload['message']);
+    }
+
     private function createNetworkOwner(string $name): User
     {
         return $this->createUserWithScope(RoleScope::NETWORK, [

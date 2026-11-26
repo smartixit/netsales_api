@@ -559,6 +559,78 @@ class BillingCreditNoteSettlementTest extends TestCase
         );
     }
 
+    public function test_platform_api_credit_note_and_refund_are_idempotent_and_reconciled(): void
+    {
+        $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
+        BillingRevenueRecognitionSchedule::query()->create([
+            'invoice_id' => $this->invoice->invoice_id,
+            'invoice_line_id' => $this->line->invoice_line_id,
+            'currency_id' => $this->currency->currency_id,
+            'revenue_account_code' => '4100',
+            'total_minor' => 1000,
+            'recognized_minor' => 0,
+            'service_start_on' => '2026-01-01',
+            'service_end_on' => '2026-01-10',
+            'status' => 'PENDING',
+        ]);
+        $method = BillingPaymentMethod::query()->where('method_key', 'CASH')->firstOrFail();
+        $treasury = TreasuryAccount::query()->create([
+            'account_code' => 'TR-API-'.Str::upper(Str::random(10)),
+            'name' => 'Billing API Refund Treasury',
+            'account_type' => 'CASH',
+            'currency_id' => $this->currency->currency_id,
+            'status' => 'ACTIVE',
+        ]);
+        app(BillingLedgerChartService::class)->ensureTreasuryAccount($treasury);
+        $paymentService = app(BillingPaymentService::class);
+        $payment = $paymentService->recordManualPayment((int) $this->invoice->invoice_id, (int) $method->payment_method_id, 1000, 'billing-api-refund-payment-'.Str::uuid(), $this->actor);
+        $payment = $paymentService->verify((int) $payment->payment_id, (int) $treasury->treasury_account_id, $this->actor);
+        $this->assertSame('VERIFIED', $payment->status->value);
+        $this->assertSame(BillingInvoiceStatus::PAID, $this->invoice->fresh()->status);
+
+        $headers = $this->createAuthenticatedSession($this->actor)['headers'];
+        $creditPayload = [
+            'lines' => [['invoice_line_id' => (int) $this->line->invoice_line_id, 'amount_minor' => 1000]],
+            'reason' => 'Full service cancellation and customer refund',
+            'idempotency_key' => 'billing-api-credit-note-'.Str::uuid(),
+        ];
+        $credit = $this->withHeaders($headers)->postJson('/api/v1/platform/billing/invoices/'.$this->invoice->invoice_id.'/credit-notes', $creditPayload);
+        $credit->assertCreated()->assertJsonPath('success', true)->assertJsonPath('data.total_minor', 1000)->assertJsonPath('data.refundable_minor', 1000);
+        $creditId = (int) $credit->json('data.credit_note_id');
+        $this->withHeaders($headers)->postJson('/api/v1/platform/billing/invoices/'.$this->invoice->invoice_id.'/credit-notes', $creditPayload)
+            ->assertCreated()->assertJsonPath('data.credit_note_id', $creditId);
+
+        $refundPayload = [
+            'credit_note_id' => $creditId,
+            'treasury_account_id' => (int) $treasury->treasury_account_id,
+            'amount_minor' => 1000,
+            'reason' => 'Full customer refund through Billing API',
+            'idempotency_key' => 'billing-api-refund-'.Str::uuid(),
+        ];
+        $refund = $this->withHeaders($headers)->postJson('/api/v1/platform/billing/payments/'.$payment->payment_id.'/refunds', $refundPayload);
+        $refund->assertCreated()->assertJsonPath('success', true)->assertJsonPath('data.amount_minor', 1000)->assertJsonPath('data.status', 'COMPLETED');
+        $refundId = (int) $refund->json('data.refund_id');
+        $this->withHeaders($headers)->postJson('/api/v1/platform/billing/payments/'.$payment->payment_id.'/refunds', $refundPayload)
+            ->assertCreated()->assertJsonPath('data.refund_id', $refundId);
+
+        $this->assertSame(1, DB::table('billing_refunds')->where('idempotency_key', $refundPayload['idempotency_key'])->count());
+        $this->assertSame(1, LedgerJournalEntry::query()->where('source_type', 'BILLING_REFUND')->where('source_id', $refundId)->count());
+        $outbox = OutboxMessage::query()->where('aggregate_type', 'BILLING_REFUND')->where('aggregate_id', $refundId)->where('event_type', 'billing.lifecycle')->firstOrFail();
+        $payload = (array) $outbox->payload;
+        $this->assertSame('BILLING_REFUND_COMPLETED', $payload['notification_type']);
+        $this->assertStringStartsWith('💸', $payload['title']);
+        $this->assertStringStartsWith('💸', $payload['message']);
+
+        $this->invoice->refresh();
+        $this->assertSame(1000, (int) $this->invoice->paid_minor);
+        $this->assertSame(1000, (int) $this->invoice->credited_minor);
+        $this->assertSame(0, (int) $this->invoice->remaining_minor);
+        $report = app(BillingReconciliationService::class)->report((int) $this->currency->currency_id);
+        $currency = ((array) $report['currencies'])[0] ?? null;
+        $this->assertIsArray($currency);
+        $this->assertSame('MATCH', $currency['status'], json_encode($currency, JSON_THROW_ON_ERROR));
+    }
+
     public function test_payment_methods_requiring_proof_reject_a_payment_without_proof(): void
     {
         $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
