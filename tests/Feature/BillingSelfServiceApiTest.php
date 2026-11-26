@@ -9,6 +9,7 @@ use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Models\BillingAccount;
 use App\Models\BillingDunningPolicyVersion;
+use App\Models\BillingTrialPolicyVersion;
 use App\Models\BillingPlanVersion;
 use App\Models\BillingPrice;
 use App\Models\BillingInvoice;
@@ -277,6 +278,17 @@ class BillingSelfServiceApiTest extends TestCase
             ->whereHas('plan', fn ($query) => $query->where('plan_key', 'starter'))
             ->firstOrFail();
 
+        if ($planVersion->trial_policy_version_id) {
+            $trialVersion = BillingTrialPolicyVersion::query()
+                ->findOrFail($planVersion->trial_policy_version_id);
+            if ($trialVersion->status === 'DRAFT') {
+                app(BillingPolicyManagementService::class)->publishTrialVersion(
+                    (int) $trialVersion->trial_policy_version_id,
+                    $platformActor
+                );
+            }
+        }
+
         $price = BillingPrice::query()
             ->where('plan_version_id', $planVersion->plan_version_id)
             ->where('currency_id', $this->currency->currency_id)
@@ -337,6 +349,12 @@ class BillingSelfServiceApiTest extends TestCase
         $dunning = BillingDunningPolicyVersion::query()->where('status', 'DRAFT')->whereHas('policy', fn ($query) => $query->where('policy_key', 'platform-default'))->firstOrFail();
         app(BillingPolicyManagementService::class)->publishDunningVersion((int) $dunning->dunning_policy_version_id, $platformActor);
         $plan = BillingPlanVersion::query()->where('status', 'DRAFT')->whereHas('plan', fn ($query) => $query->where('plan_key', 'starter'))->firstOrFail();
+        if ($plan->trial_policy_version_id) {
+            $trialVersion = BillingTrialPolicyVersion::query()->findOrFail($plan->trial_policy_version_id);
+            if ($trialVersion->status === 'DRAFT') {
+                app(BillingPolicyManagementService::class)->publishTrialVersion((int) $trialVersion->trial_policy_version_id, $platformActor);
+            }
+        }
         $price = BillingPrice::query()->where('plan_version_id', $plan->plan_version_id)->where('currency_id', $this->currency->currency_id)->where('billing_interval', 'MONTH')->where('is_active', true)->firstOrFail();
         app(BillingCatalogService::class)->publishVersion((int) $plan->plan_version_id, (int) $platformActor->user_id);
 
