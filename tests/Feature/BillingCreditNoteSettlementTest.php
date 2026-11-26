@@ -433,7 +433,7 @@ class BillingCreditNoteSettlementTest extends TestCase
             );
 
             $this->fail('A refund must not complete without a valid network-owner outbox event.');
-        } catch (\\LogicException $exception) {
+        } catch (\LogicException $exception) {
             $this->assertSame('تعذر تحديد مالك الشبكة لتسجيل إشعار الاسترداد المالي.', $exception->getMessage());
         }
 
