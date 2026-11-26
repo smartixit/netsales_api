@@ -230,7 +230,7 @@ class BillingSelfServiceApiTest extends TestCase
     private function createNetworkOwner(Role $role, string $name): User
     {
         return $this->createUserWithScope(RoleScope::NETWORK, [
-            'role_id' => $role->role_id,
+            'role_id' => null,
             'user_full_name' => $name.' '.Str::random(6),
             'user_phone_number' => '77'.random_int(10000000, 99999999),
             'user_email' => Str::lower(Str::random(12)).'@ns.test',
