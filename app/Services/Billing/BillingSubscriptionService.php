@@ -321,6 +321,21 @@ class BillingSubscriptionService
             }
 
             $subscription->save();
+            $subscription->loadMissing('billingAccount.network');
+            $ownerId = $subscription->billingAccount?->network?->owner_id;
+            if ($ownerId) {
+                app(\App\Services\OutboxService::class)->record('BILLING_SUBSCRIPTION', (int) $subscription->billing_subscription_id, 'billing.lifecycle', [
+                    'user_id' => (int) $ownerId,
+                    'notification_type' => 'BILLING_SUBSCRIPTION_CANCELED',
+                    'title' => '↩️ تم تسجيل طلب إلغاء الاشتراك',
+                    'message' => $atPeriodEnd
+                        ? 'تم جدولة إلغاء اشتراكك في نهاية فترة الخدمة الحالية.'
+                        : 'تم إلغاء اشتراكك وإيقاف الاستحقاقات المرتبطة به.',
+                    'entity_type' => 'BILLING_SUBSCRIPTION',
+                    'entity_id' => (int) $subscription->billing_subscription_id,
+                    'extra_data' => ['billing_subscription_id' => (int) $subscription->billing_subscription_id, 'cancel_at_period_end' => $atPeriodEnd],
+                ]);
+            }
             $subscription->events()->create([
                 'event_type' => $eventType,
                 'from_status' => $oldStatus,
