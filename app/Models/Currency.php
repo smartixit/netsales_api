@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $currency_id
  * @property string $code
  * @property string $name
+ * @property string|null $numeric_code
+ * @property string|null $native_name
+ * @property string|null $symbol
  * @property int $decimal_places
  * @property bool $is_active
  */
