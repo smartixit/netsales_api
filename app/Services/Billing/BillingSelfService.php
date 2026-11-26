@@ -103,8 +103,6 @@ class BillingSelfService
 
         $query = BillingInvoice::query()
             ->with(['currency', 'lines.currency', 'subscription.plan'])
-            ->withSum(['payments as pending_payment_minor' => fn ($payments) => $payments
-                ->where('status', BillingPaymentStatus::PENDING_REVIEW->value)], 'amount_minor')
             ->where('billing_account_id', $accountId);
 
         if (! empty($filters['status'])) {
@@ -125,7 +123,17 @@ class BillingSelfService
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
-        return $query->orderByDesc('invoice_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
+        $invoices = $query->orderByDesc('invoice_id')
+            ->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
+
+        // CursorPaginator applies its requested projection during retrieval; attach
+        // the server-side aggregate to the hydrated page without losing it to SELECT *.
+        $invoices->getCollection()->loadSum([
+            'payments as pending_payment_minor' => fn ($payments) => $payments
+                ->where('status', BillingPaymentStatus::PENDING_REVIEW->value),
+        ], 'amount_minor');
+
+        return $invoices;
     }
 
     public function invoice(int $invoiceId, User $actor): BillingInvoice
