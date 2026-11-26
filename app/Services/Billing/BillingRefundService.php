@@ -180,7 +180,7 @@ class BillingRefundService
                     'user_id' => (int) $ownerId,
                     'notification_type' => 'BILLING_REFUND_COMPLETED',
                     'title' => '💸 تم تنفيذ الاسترداد المالي',
-                    'message' => 'تم تنفيذ الاسترداد المالي المرتبط بالفاتورة '.$invoice->invoice_number.' وتحديث سجلها المالي.',
+                    'message' => '💸 تم تنفيذ الاسترداد المالي المرتبط بالفاتورة '.$invoice->invoice_number.' وتحديث سجلها المالي.',
                     'entity_type' => 'BILLING_INVOICE',
                     'entity_id' => (int) $invoice->invoice_id,
                     'extra_data' => ['invoice_id' => (int) $invoice->invoice_id, 'refund_id' => (int) $refund->refund_id],
