@@ -226,6 +226,25 @@ class BillingSelfServiceApiTest extends TestCase
         $this->assertSame(1000, $this->invoice->remaining_minor);
     }
 
+    public function test_statement_is_scoped_to_owner_and_keeps_currency_balances_separate(): void
+    {
+        $response = $this->withHeaders($this->ownerHeaders)
+            ->getJson('/api/v1/billing/accounts/'.$this->account->billing_account_id.'/statement?from='.now('Asia/Aden')->toDateString().'&to='.now('Asia/Aden')->toDateString());
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.billing_account_id', $this->account->billing_account_id)
+            ->assertJsonPath('data.currency_aggregation', 'SEPARATE_ONLY_NO_CROSS_CURRENCY_TOTAL')
+            ->assertJsonPath('data.balances_by_currency.0.currency.currency_id', $this->currency->currency_id)
+            ->assertJsonPath('data.balances_by_currency.0.invoiced_minor', 1000)
+            ->assertJsonPath('data.balances_by_currency.0.closing_receivable_minor', 1000);
+
+        $crossNetwork = $this->withHeaders($this->otherOwnerHeaders)
+            ->getJson('/api/v1/billing/accounts/'.$this->account->billing_account_id.'/statement');
+
+        $crossNetwork->assertForbidden();
+    }
+
     private function createNetworkOwner(string $name): User
     {
         return $this->createUserWithScope(RoleScope::NETWORK, [
