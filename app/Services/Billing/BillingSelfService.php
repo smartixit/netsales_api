@@ -130,8 +130,12 @@ class BillingSelfService
                 ->where('billing_payments.status', BillingPaymentStatus::PENDING_REVIEW->value),
         ]);
 
+        // Preserve the aggregate select when CursorPaginator hydrates the page.
+        // Passing ['*'] here replaces the explicitly selected computed column.
+        $columns = $query->getQuery()->columns ?? ['*'];
+
         return $query->orderByDesc('invoice_id')
-            ->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
+            ->cursorPaginate($perPage, $columns, 'cursor', $filters['cursor'] ?? null);
     }
 
     public function invoice(int $invoiceId, User $actor): BillingInvoice
