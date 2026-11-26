@@ -46,20 +46,24 @@ class UserSeeder extends Seeder
         $adminPhone = config('netsales.platform_admin.phone');
         $adminPassword = config('netsales.platform_admin.password');
 
-        DB::table('users')->updateOrInsert(
-            ['user_phone_number' => $adminPhone],
-            [
-                'role_id' => $superAdminRole->role_id,
-                'user_full_name' => (string) config('netsales.platform_admin.name'),
-                'user_password' => Hash::make($adminPassword),
-                'user_email' => config('netsales.platform_admin.email'),
-                'user_profile_logo' => null,
-                'user_2fa_enabled' => false,
-                'user_login_attempts' => 0,
-                'status' => 'ACTIVE',
-                'updated_at' => now('Asia/Aden'),
-                'created_at' => now('Asia/Aden'),
-            ]
-        );
+        // Never create or overwrite a platform administrator without an explicitly configured password.
+        if (is_string($adminPhone) && trim($adminPhone) !== ''
+            && is_string($adminPassword) && trim($adminPassword) !== '') {
+            DB::table('users')->updateOrInsert(
+                ['user_phone_number' => $adminPhone],
+                [
+                    'role_id' => $superAdminRole->role_id,
+                    'user_full_name' => (string) config('netsales.platform_admin.name'),
+                    'user_password' => Hash::make($adminPassword),
+                    'user_email' => config('netsales.platform_admin.email'),
+                    'user_profile_logo' => null,
+                    'user_2fa_enabled' => false,
+                    'user_login_attempts' => 0,
+                    'status' => 'ACTIVE',
+                    'updated_at' => now('Asia/Aden'),
+                    'created_at' => now('Asia/Aden'),
+                ]
+            );
+        }
     }
 }
