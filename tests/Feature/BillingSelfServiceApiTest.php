@@ -15,6 +15,7 @@ use App\Models\BillingPaymentMethod;
 use App\Models\Currency;
 use App\Models\Network;
 use App\Models\NetworkUser;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
