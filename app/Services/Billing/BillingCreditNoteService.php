@@ -396,7 +396,7 @@ class BillingCreditNoteService
             $invoice->save();
 
             $invoice->loadMissing('billingAccount.network');
-            $ownerId = $invoice->billingAccount?->network?->owner_id;
+            $ownerId = $invoice->billingAccount->network->owner_id;
             if ($ownerId) {
                 app(\App\Services\OutboxService::class)->record('BILLING_CREDIT_NOTE', (int) $note->credit_note_id, 'billing.lifecycle', [
                     'user_id' => (int) $ownerId,
