@@ -173,13 +173,19 @@ class BillingRefundService
                 : BillingPaymentStatus::PARTIALLY_REFUNDED;
             $payment->save();
 
-            $invoice = BillingInvoice::query()
-                ->with('billingAccount.network')
-                ->findOrFail((int) $invoice->invoice_id);
-            $ownerId = $invoice->billingAccount?->network?->owner_id;
+            // Resolve the account owner through the persisted account -> network foreign-key
+            // chain. This avoids relying on an optionally loaded Eloquent relationship and
+            // keeps notification ownership tied to the invoice's immutable billing account.
+            $ownerId = filter_var(
+                DB::table('billing_accounts')
+                    ->join('networks', 'networks.network_id', '=', 'billing_accounts.network_id')
+                    ->where('billing_accounts.billing_account_id', (int) $invoice->billing_account_id)
+                    ->value('networks.owner_id'),
+                FILTER_VALIDATE_INT
+            );
 
             // A completed refund must never commit without its transactional owner notification.
-            if ($ownerId === null || (int) $ownerId <= 0) {
+            if ($ownerId === false || $ownerId <= 0) {
                 throw new \LogicException('تعذر تحديد مالك الشبكة لتسجيل إشعار الاسترداد المالي.');
             }
 
