@@ -128,6 +128,18 @@ class BillingCreditNoteSettlementTest extends TestCase
     public function test_partially_credited_invoice_accepts_and_verifies_remaining_payment(): void
     {
         $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
+        BillingRevenueRecognitionSchedule::query()->create([
+            'invoice_id' => $this->invoice->invoice_id,
+            'invoice_line_id' => $this->line->invoice_line_id,
+            'currency_id' => $this->currency->currency_id,
+            'revenue_account_code' => '4100',
+            'total_minor' => 1000,
+            'recognized_minor' => 300,
+            'service_start_on' => '2026-01-01',
+            'service_end_on' => '2026-01-10',
+            'last_recognized_on' => '2026-01-03',
+            'status' => 'ACTIVE',
+        ]);
 
         app(BillingCreditNoteService::class)->issue(
             (int) $this->invoice->invoice_id,
