@@ -3,6 +3,7 @@
 namespace App\Http\Resources\API\V1\Billing;
 
 use App\Enums\BillingInvoiceStatus;
+use App\Models\BillingCreditNote;
 use App\Models\BillingInvoice;
 use App\Services\Billing\Money;
 use Illuminate\Http\Request;
@@ -43,8 +44,8 @@ class BillingInvoiceResource extends JsonResource
             'currency' => new CurrencyResource($currency),
             'period_start' => $this->period_start?->toDateString(),
             'period_end' => $this->period_end?->toDateString(),
-            'issued_on' => $this->issued_on?->toDateString(),
-            'due_on' => $this->due_on?->toDateString(),
+            'issued_on' => $this->issued_on->toDateString(),
+            'due_on' => $this->due_on->toDateString(),
             'subtotal_minor' => (int) $this->subtotal_minor,
             'subtotal' => (new Money((int) $this->subtotal_minor, $code))->toDecimalString($places),
             'discount_minor' => (int) $this->discount_minor,
@@ -72,7 +73,7 @@ class BillingInvoiceResource extends JsonResource
             'pricing_snapshot' => $this->pricing_snapshot,
             'memo' => $this->memo,
             'lines' => BillingInvoiceLineResource::collection($this->whenLoaded('lines')),
-            'credit_notes' => $this->whenLoaded('creditNotes', fn () => $this->creditNotes->map(fn ($note) => [
+            'credit_notes' => $this->whenLoaded('creditNotes', fn () => $this->creditNotes->map(fn (BillingCreditNote $note): array => [
                 'credit_note_id' => $note->credit_note_id,
                 'credit_note_number' => $note->credit_note_number,
                 'status' => $note->status,
