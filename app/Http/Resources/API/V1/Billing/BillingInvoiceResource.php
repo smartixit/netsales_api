@@ -14,10 +14,14 @@ class BillingInvoiceResource extends JsonResource
         $currency = $this->currency;
         $places = (int) ($currency?->decimal_places ?? 2);
         $code = (string) ($currency?->code ?? 'XXX');
-        $pendingPaymentMinor = (int) ($this->pending_payment_minor ?? 0);
+        $invoiceAttributes = $this->resource->getAttributes();
+        $hasPendingPaymentAggregate = array_key_exists('pending_payment_minor', $invoiceAttributes);
+        $pendingPaymentMinor = (int) ($invoiceAttributes['pending_payment_minor'] ?? 0);
         $remainingMinor = (int) $this->remaining_minor;
-        $availableToSubmitMinor = max(0, $remainingMinor - $pendingPaymentMinor);
-        $canSubmitPayment = in_array($this->status, [
+        $availableToSubmitMinor = $hasPendingPaymentAggregate
+            ? max(0, $remainingMinor - $pendingPaymentMinor)
+            : 0;
+        $canSubmitPayment = $hasPendingPaymentAggregate && in_array($this->status, [
             BillingInvoiceStatus::OPEN,
             BillingInvoiceStatus::PARTIALLY_PAID,
             BillingInvoiceStatus::PARTIALLY_CREDITED,
@@ -50,10 +54,14 @@ class BillingInvoiceResource extends JsonResource
             'credited' => (new Money((int) $this->credited_minor, $code))->toDecimalString($places),
             'remaining_minor' => (int) $this->remaining_minor,
             'remaining' => (new Money((int) $this->remaining_minor, $code))->toDecimalString($places),
-            'pending_payment_minor' => $pendingPaymentMinor,
-            'pending_payment' => (new Money($pendingPaymentMinor, $code))->toDecimalString($places),
-            'available_to_submit_minor' => $availableToSubmitMinor,
-            'available_to_submit' => (new Money($availableToSubmitMinor, $code))->toDecimalString($places),
+            'pending_payment_minor' => $hasPendingPaymentAggregate ? $pendingPaymentMinor : null,
+            'pending_payment' => $hasPendingPaymentAggregate
+                ? (new Money($pendingPaymentMinor, $code))->toDecimalString($places)
+                : null,
+            'available_to_submit_minor' => $hasPendingPaymentAggregate ? $availableToSubmitMinor : null,
+            'available_to_submit' => $hasPendingPaymentAggregate
+                ? (new Money($availableToSubmitMinor, $code))->toDecimalString($places)
+                : null,
             'can_submit_payment' => $canSubmitPayment,
             'customer_snapshot' => $this->customer_snapshot,
             'pricing_snapshot' => $this->pricing_snapshot,
