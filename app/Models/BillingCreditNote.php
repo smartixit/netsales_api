@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
  * @property int $credit_note_id
+ * @property string $credit_note_number
+ * @property Carbon|null $issued_at
  * @property int $invoice_id
  * @property int $billing_account_id
  * @property int $currency_id
