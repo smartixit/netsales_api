@@ -16,6 +16,8 @@ use App\Models\LedgerJournalLine;
 use App\Models\Network;
 use App\Models\TreasuryAccount;
 use App\Models\User;
+use App\Services\Billing\BillingSelfService;
+use Illuminate\Validation\ValidationException;
 use App\Services\Billing\BillingCreditNoteService;
 use App\Services\Billing\BillingLedgerChartService;
 use App\Services\Billing\BillingLedgerService;
@@ -337,6 +339,235 @@ class BillingCreditNoteSettlementTest extends TestCase
             $checks
         ));
         $this->assertSame(0, $totalDifference);
+    }
+
+
+    public function test_pending_payment_requests_are_reflected_in_invoice_list_and_detail_availability(): void
+    {
+        $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
+
+        $method = BillingPaymentMethod::query()->where('method_key', 'CASH')->firstOrFail();
+        $payments = app(BillingPaymentService::class);
+
+        foreach ([250, 300] as $index => $amount) {
+            $payments->recordManualPayment(
+                (int) $this->invoice->invoice_id,
+                (int) $method->payment_method_id,
+                $amount,
+                'pending-exposure-'.$index.'-'.Str::uuid(),
+                $this->actor
+            );
+        }
+
+        $this->invoice->refresh();
+        $this->assertSame(0, $this->invoice->paid_minor);
+        $this->assertSame(1000, $this->invoice->remaining_minor);
+
+        $selfService = app(BillingSelfService::class);
+        $listedInvoice = $selfService
+            ->invoices((int) $this->account->billing_account_id, [], $this->actor)
+            ->items()[0];
+        $listed = (new BillingInvoiceResource($listedInvoice))->resolve(request());
+
+        $this->assertSame(550, $listed['pending_payment_minor']);
+        $this->assertSame(450, $listed['available_to_submit_minor']);
+        $this->assertTrue($listed['can_submit_payment']);
+
+        $payments->recordManualPayment(
+            (int) $this->invoice->invoice_id,
+            (int) $method->payment_method_id,
+            450,
+            'pending-exposure-final-'.Str::uuid(),
+            $this->actor
+        );
+
+        $detail = $selfService->invoice((int) $this->invoice->invoice_id, $this->actor);
+        $detailData = (new BillingInvoiceResource($detail))->resolve(request());
+
+        $this->assertSame(1000, $detailData['pending_payment_minor']);
+        $this->assertSame(0, $detailData['available_to_submit_minor']);
+        $this->assertFalse($detailData['can_submit_payment']);
+        $this->assertSame(0, $detailData['paid_minor']);
+        $this->assertSame(1000, $detailData['remaining_minor']);
+
+        $this->expectException(ValidationException::class);
+        $payments->recordManualPayment(
+            (int) $this->invoice->invoice_id,
+            (int) $method->payment_method_id,
+            1,
+            'pending-exposure-over-limit-'.Str::uuid(),
+            $this->actor
+        );
+    }
+
+    public function test_verifying_one_pending_payment_preserves_other_reservations_and_is_idempotent(): void
+    {
+        $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
+
+        $method = BillingPaymentMethod::query()->where('method_key', 'CASH')->firstOrFail();
+        $payments = app(BillingPaymentService::class);
+        $first = $payments->recordManualPayment(
+            (int) $this->invoice->invoice_id,
+            (int) $method->payment_method_id,
+            200,
+            'verified-pending-first-'.Str::uuid(),
+            $this->actor
+        );
+        $second = $payments->recordManualPayment(
+            (int) $this->invoice->invoice_id,
+            (int) $method->payment_method_id,
+            300,
+            'verified-pending-second-'.Str::uuid(),
+            $this->actor
+        );
+
+        $treasury = TreasuryAccount::query()->create([
+            'account_code' => 'TR-PENDING-'.Str::upper(Str::random(10)),
+            'name' => 'Pending Reservation Treasury',
+            'account_type' => 'CASH',
+            'currency_id' => $this->currency->currency_id,
+            'status' => 'ACTIVE',
+        ]);
+
+        $verified = $payments->verify(
+            (int) $first->payment_id,
+            (int) $treasury->treasury_account_id,
+            $this->actor
+        );
+        $payments->verify(
+            (int) $first->payment_id,
+            (int) $treasury->treasury_account_id,
+            $this->actor
+        );
+
+        $this->invoice->refresh();
+        $this->assertSame(200, $this->invoice->paid_minor);
+        $this->assertSame(800, $this->invoice->remaining_minor);
+        $this->assertSame('VERIFIED', $verified->status->value);
+
+        $detail = app(BillingSelfService::class)->invoice((int) $this->invoice->invoice_id, $this->actor);
+        $data = (new BillingInvoiceResource($detail))->resolve(request());
+        $this->assertSame(300, $data['pending_payment_minor']);
+        $this->assertSame(500, $data['available_to_submit_minor']);
+        $this->assertTrue($data['can_submit_payment']);
+
+        $payments->verify(
+            (int) $second->payment_id,
+            (int) $treasury->treasury_account_id,
+            $this->actor
+        );
+
+        $this->invoice->refresh();
+        $this->assertSame(500, $this->invoice->paid_minor);
+        $this->assertSame(500, $this->invoice->remaining_minor);
+        $this->assertSame(BillingInvoiceStatus::PARTIALLY_PAID, $this->invoice->status);
+
+        $firstEntries = LedgerJournalEntry::query()
+            ->where('source_type', 'BILLING_PAYMENT')
+            ->where('source_id', $first->payment_id)
+            ->with('lines.account')
+            ->get();
+        $this->assertCount(1, $firstEntries);
+        $this->assertLedgerEntryBalanced($firstEntries->first());
+    }
+
+    public function test_rejecting_a_pending_payment_releases_its_reserved_invoice_amount(): void
+    {
+        $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
+
+        $method = BillingPaymentMethod::query()->where('method_key', 'CASH')->firstOrFail();
+        $payment = app(BillingPaymentService::class)->recordManualPayment(
+            (int) $this->invoice->invoice_id,
+            (int) $method->payment_method_id,
+            700,
+            'rejected-reservation-'.Str::uuid(),
+            $this->actor
+        );
+
+        $rejected = app(BillingPaymentService::class)->reject(
+            (int) $payment->payment_id,
+            $this->actor,
+            'إثبات الدفع غير مطابق.'
+        );
+
+        $this->assertSame('REJECTED', $rejected->status->value);
+
+        $detail = app(BillingSelfService::class)->invoice((int) $this->invoice->invoice_id, $this->actor);
+        $data = (new BillingInvoiceResource($detail))->resolve(request());
+
+        $this->assertSame(0, $data['pending_payment_minor']);
+        $this->assertSame(1000, $data['available_to_submit_minor']);
+        $this->assertTrue($data['can_submit_payment']);
+        $this->assertSame(0, $data['paid_minor']);
+        $this->assertSame(1000, $data['remaining_minor']);
+
+        $this->assertDatabaseMissing('ledger_journal_entries', [
+            'source_type' => 'BILLING_PAYMENT',
+            'source_id' => $payment->payment_id,
+        ]);
+    }
+
+    public function test_payment_idempotency_replays_the_same_record_and_rejects_changed_payloads(): void
+    {
+        $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
+
+        $method = BillingPaymentMethod::query()->where('method_key', 'CASH')->firstOrFail();
+        $key = 'payment-idempotency-'.Str::uuid();
+        $payments = app(BillingPaymentService::class);
+
+        $first = $payments->recordManualPayment(
+            (int) $this->invoice->invoice_id,
+            (int) $method->payment_method_id,
+            400,
+            $key,
+            $this->actor
+        );
+        $replayed = $payments->recordManualPayment(
+            (int) $this->invoice->invoice_id,
+            (int) $method->payment_method_id,
+            400,
+            $key,
+            $this->actor
+        );
+
+        $this->assertSame($first->payment_id, $replayed->payment_id);
+        $this->assertSame(
+            1,
+            \\App\\Models\\BillingPayment::query()
+                ->where('invoice_id', $this->invoice->invoice_id)
+                ->count()
+        );
+
+        $this->expectException(ValidationException::class);
+        $payments->recordManualPayment(
+            (int) $this->invoice->invoice_id,
+            (int) $method->payment_method_id,
+            401,
+            $key,
+            $this->actor
+        );
+    }
+
+    public function test_payment_methods_requiring_proof_reject_a_payment_without_proof(): void
+    {
+        $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
+
+        $method = BillingPaymentMethod::query()
+            ->where('is_active', true)
+            ->where('requires_proof', true)
+            ->whereHas('currencies', fn ($query) => $query
+                ->where('currencies.currency_id', $this->currency->currency_id)
+                ->where('billing_payment_method_currencies.is_active', true))
+            ->firstOrFail();
+
+        $this->expectException(ValidationException::class);
+        app(BillingPaymentService::class)->recordManualPayment(
+            (int) $this->invoice->invoice_id,
+            (int) $method->payment_method_id,
+            500,
+            'payment-proof-required-'.Str::uuid(),
+            $this->actor
+        );
     }
 
     private function createInvoiceLine(string $type, int $subtotal, int $tax, int $total): void
