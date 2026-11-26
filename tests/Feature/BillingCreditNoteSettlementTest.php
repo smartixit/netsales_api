@@ -14,6 +14,7 @@ use App\Models\BillingRevenueRecognitionSchedule;
 use App\Models\Currency;
 use App\Models\LedgerAccount;
 use App\Models\LedgerJournalEntry;
+use App\Models\OutboxMessage;
 use App\Models\LedgerJournalLine;
 use App\Models\Network;
 use App\Models\TreasuryAccount;
@@ -317,6 +318,16 @@ class BillingCreditNoteSettlementTest extends TestCase
         $note->refresh();
         $this->assertSame('REFUNDED', $payment->status->value);
         $this->assertSame('REFUNDED', $note->status);
+
+        $refundOutbox = OutboxMessage::query()
+            ->where('aggregate_type', 'BILLING_REFUND')
+            ->where('aggregate_id', $refund->refund_id)
+            ->where('event_type', 'billing.lifecycle')
+            ->firstOrFail();
+        $refundPayload = (array) $refundOutbox->payload;
+        $this->assertSame('BILLING_REFUND_COMPLETED', $refundPayload['notification_type']);
+        $this->assertStringStartsWith('💸', $refundPayload['title']);
+        $this->assertStringStartsWith('💸', $refundPayload['message']);
 
         $refundEntry = LedgerJournalEntry::query()
             ->where('source_type', 'BILLING_REFUND')
