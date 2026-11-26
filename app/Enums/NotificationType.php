@@ -52,6 +52,7 @@ enum NotificationType: string
     case BILLING_PAYMENT_REJECTED = 'BILLING_PAYMENT_REJECTED';
     case BILLING_SUBSCRIPTION_ACTIVATED = 'BILLING_SUBSCRIPTION_ACTIVATED';
     case BILLING_SUBSCRIPTION_CANCELED = 'BILLING_SUBSCRIPTION_CANCELED';
+    case BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED = 'BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED';
     case BILLING_CREDIT_NOTE_ISSUED = 'BILLING_CREDIT_NOTE_ISSUED';
     case BILLING_REFUND_COMPLETED = 'BILLING_REFUND_COMPLETED';
 
@@ -106,6 +107,7 @@ enum NotificationType: string
             self::BILLING_PAYMENT_REJECTED => 'رفض دفعة الفاتورة',
             self::BILLING_SUBSCRIPTION_ACTIVATED => 'تفعيل الاشتراك',
             self::BILLING_SUBSCRIPTION_CANCELED => 'إلغاء الاشتراك',
+            self::BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED => 'جدولة إلغاء الاشتراك',
             self::BILLING_CREDIT_NOTE_ISSUED => 'إصدار إشعار دائن',
             self::BILLING_REFUND_COMPLETED => 'تنفيذ استرداد مالي',
         };
@@ -130,6 +132,7 @@ enum NotificationType: string
             self::BILLING_PAYMENT_REJECTED,
             self::BILLING_SUBSCRIPTION_ACTIVATED,
             self::BILLING_SUBSCRIPTION_CANCELED,
+            self::BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED,
             self::BILLING_CREDIT_NOTE_ISSUED,
             self::BILLING_REFUND_COMPLETED => 'FINANCIAL',
 
