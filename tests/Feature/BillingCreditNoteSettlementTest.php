@@ -378,6 +378,17 @@ class BillingCreditNoteSettlementTest extends TestCase
     public function test_refund_rolls_back_when_network_owner_cannot_be_notified(): void
     {
         $this->createInvoiceLine('SUBSCRIPTION', 1000, 0, 1000);
+        BillingRevenueRecognitionSchedule::query()->create([
+            'invoice_id' => $this->invoice->invoice_id,
+            'invoice_line_id' => $this->line->invoice_line_id,
+            'currency_id' => $this->currency->currency_id,
+            'revenue_account_code' => '4100',
+            'total_minor' => 1000,
+            'recognized_minor' => 0,
+            'service_start_on' => '2026-01-01',
+            'service_end_on' => '2026-01-10',
+            'status' => 'PENDING',
+        ]);
 
         $method = BillingPaymentMethod::query()->where('method_key', 'CASH')->firstOrFail();
         $treasury = TreasuryAccount::query()->create([
@@ -473,7 +484,7 @@ class BillingCreditNoteSettlementTest extends TestCase
 
         $selfService = app(BillingSelfService::class);
         $listedInvoice = $selfService
-            ->invoices((int) $this->account->billing_account_id, [], $this->actor)
+            ->invoices((int) $this->account->billing_account_id, [], $this->networkOwner)
             ->items()[0];
         $listed = (new BillingInvoiceResource($listedInvoice))->resolve(request());
 
@@ -489,7 +500,7 @@ class BillingCreditNoteSettlementTest extends TestCase
             $this->actor
         );
 
-        $detail = $selfService->invoice((int) $this->invoice->invoice_id, $this->actor);
+        $detail = $selfService->invoice((int) $this->invoice->invoice_id, $this->networkOwner);
         $detailData = (new BillingInvoiceResource($detail))->resolve(request());
 
         $this->assertSame(1000, $detailData['pending_payment_minor']);
