@@ -351,7 +351,7 @@ class BillingInvoiceService
                     'user_id' => (int) $ownerId,
                     'notification_type' => 'BILLING_INVOICE_ISSUED',
                     'title' => '🧾 تم إصدار فاتورة اشتراك جديدة',
-                    'message' => 'تم إصدار الفاتورة '.$invoice->invoice_number.'. يمكنك مراجعة تفاصيلها ومبلغها المستحق من قسم الفوترة.',
+                    'message' => '🧾 تم إصدار الفاتورة '.$invoice->invoice_number.'. يمكنك مراجعة تفاصيلها ومبلغها المستحق من قسم الفوترة.',
                     'entity_type' => 'BILLING_INVOICE',
                     'entity_id' => (int) $invoice->invoice_id,
                     'extra_data' => ['invoice_id' => (int) $invoice->invoice_id],
