@@ -325,6 +325,7 @@ class BillingCreditNoteSettlementTest extends TestCase
             ->where('aggregate_id', $refund->refund_id)
             ->where('event_type', 'billing.lifecycle')
             ->firstOrFail();
+        /** @var array<string, mixed> $refundPayload */
         $refundPayload = (array) $refundOutbox->payload;
         $this->assertSame('BILLING_REFUND_COMPLETED', $refundPayload['notification_type']);
         $this->assertStringStartsWith('💸', $refundPayload['title']);
@@ -617,6 +618,7 @@ class BillingCreditNoteSettlementTest extends TestCase
         $this->assertSame(1, DB::table('billing_refunds')->where('idempotency_key', $refundPayload['idempotency_key'])->count());
         $this->assertSame(1, LedgerJournalEntry::query()->where('source_type', 'BILLING_REFUND')->where('source_id', $refundId)->count());
         $outbox = OutboxMessage::query()->where('aggregate_type', 'BILLING_REFUND')->where('aggregate_id', $refundId)->where('event_type', 'billing.lifecycle')->firstOrFail();
+        /** @var array<string, mixed> $payload */
         $payload = (array) $outbox->payload;
         $this->assertSame('BILLING_REFUND_COMPLETED', $payload['notification_type']);
         $this->assertStringStartsWith('💸', $payload['title']);
