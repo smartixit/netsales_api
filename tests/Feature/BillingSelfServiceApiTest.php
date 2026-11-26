@@ -8,6 +8,9 @@ use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Models\BillingAccount;
+use App\Models\BillingDunningPolicyVersion;
+use App\Models\BillingPlanVersion;
+use App\Models\BillingPrice;
 use App\Models\BillingInvoice;
 use App\Models\BillingInvoiceLine;
 use App\Models\BillingPayment;
@@ -15,6 +18,8 @@ use App\Models\BillingPaymentMethod;
 use App\Models\Currency;
 use App\Models\Network;
 use App\Models\NetworkUser;
+use App\Services\Billing\BillingCatalogService;
+use App\Services\Billing\BillingPolicyManagementService;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -244,6 +249,80 @@ class BillingSelfServiceApiTest extends TestCase
             ->getJson('/api/v1/billing/accounts/'.$this->account->billing_account_id.'/statement');
 
         $crossNetwork->assertForbidden();
+    }
+
+    public function test_network_owner_can_purchase_subscription_and_cancel_it_through_api(): void
+    {
+        $platformActor = User::query()
+            ->whereHas('role', fn ($query) => $query->where('role_key', RoleKey::SUPER_ADMIN->value))
+            ->firstOrFail();
+
+        $dunningVersion = BillingDunningPolicyVersion::query()
+            ->where('status', 'DRAFT')
+            ->whereHas('policy', fn ($query) => $query->where('policy_key', 'platform-default'))
+            ->firstOrFail();
+
+        app(BillingPolicyManagementService::class)->publishDunningVersion(
+            (int) $dunningVersion->dunning_policy_version_id,
+            $platformActor
+        );
+
+        $planVersion = BillingPlanVersion::query()
+            ->where('status', 'DRAFT')
+            ->whereHas('plan', fn ($query) => $query->where('plan_key', 'starter'))
+            ->firstOrFail();
+
+        $price = BillingPrice::query()
+            ->where('plan_version_id', $planVersion->plan_version_id)
+            ->where('currency_id', $this->currency->currency_id)
+            ->where('billing_interval', 'MONTH')
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        app(BillingCatalogService::class)->publishVersion(
+            (int) $planVersion->plan_version_id,
+            (int) $platformActor->user_id
+        );
+
+        $purchase = $this->withHeaders($this->ownerHeaders)
+            ->postJson('/api/v1/billing/accounts/'.$this->account->billing_account_id.'/subscriptions', [
+                'price_id' => $price->price_id,
+            ]);
+
+        $purchase->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.subscription.status', 'INCOMPLETE')
+            ->assertJsonPath('data.invoice.status', 'OPEN');
+
+        $subscriptionId = (int) $purchase->json('data.subscription.billing_subscription_id');
+        $this->assertGreaterThan(0, $subscriptionId);
+
+        $this->assertDatabaseMissing('billing_entitlements', [
+            'billing_account_id' => $this->account->billing_account_id,
+            'is_active' => true,
+        ]);
+
+        $cancel = $this->withHeaders($this->ownerHeaders)
+            ->postJson('/api/v1/billing/subscriptions/'.$subscriptionId.'/cancel', [
+                'at_period_end' => false,
+            ]);
+
+        $cancel->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.status', 'CANCELED');
+
+        $outbox = \DB::table('outbox_messages')
+            ->where('aggregate_type', 'BILLING_SUBSCRIPTION')
+            ->where('aggregate_id', $subscriptionId)
+            ->where('event_type', 'billing.lifecycle')
+            ->orderByDesc('created_at')
+            ->first();
+
+        $this->assertNotNull($outbox);
+        $payload = json_decode((string) $outbox->payload, true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame((int) $this->networkOwner->user_id, $payload['user_id']);
+        $this->assertSame('BILLING_SUBSCRIPTION_CANCELED', $payload['notification_type']);
+        $this->assertStringStartsWith('↩️', $payload['title']);
     }
 
     private function createNetworkOwner(string $name): User
