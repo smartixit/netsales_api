@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Enums\BillingInvoiceStatus;
 use App\Enums\NetworkStatus;
-use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Http\Resources\API\V1\Billing\BillingInvoiceResource;
 use App\Models\BillingAccount;
@@ -19,7 +18,6 @@ use App\Models\LedgerJournalEntry;
 use App\Models\OutboxMessage;
 use App\Models\LedgerJournalLine;
 use App\Models\Network;
-use App\Models\Role;
 use App\Models\TreasuryAccount;
 use App\Models\User;
 use App\Services\Billing\BillingCreditNoteService;
@@ -63,12 +61,9 @@ class BillingCreditNoteSettlementTest extends TestCase
             ->firstOrFail();
         $this->currency = Currency::query()->where('code', 'YER')->firstOrFail();
 
-        $networkOwnerRole = Role::query()
-            ->where('role_key', RoleKey::NETWORK_OWNER->value)
-            ->firstOrFail();
         $networkOwnerPhone = '74'.random_int(10000000, 99999999);
         $this->networkOwner = $this->createUserWithScope(RoleScope::NETWORK, [
-            'role_id' => $networkOwnerRole->role_id,
+            'role_id' => null,
             'user_full_name' => 'Credit Note Network Owner '.Str::random(6),
             'user_phone_number' => $networkOwnerPhone,
             'user_email' => Str::lower(Str::random(12)).'@credit-note.test',
