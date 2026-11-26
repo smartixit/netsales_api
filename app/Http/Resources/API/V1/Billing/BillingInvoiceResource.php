@@ -47,6 +47,7 @@ class BillingInvoiceResource extends JsonResource
             'paid_minor' => (int) $this->paid_minor,
             'credited_minor' => (int) $this->credited_minor,
             'paid' => (new Money((int) $this->paid_minor, $code))->toDecimalString($places),
+            'credited' => (new Money((int) $this->credited_minor, $code))->toDecimalString($places),
             'remaining_minor' => (int) $this->remaining_minor,
             'remaining' => (new Money((int) $this->remaining_minor, $code))->toDecimalString($places),
             'pending_payment_minor' => $pendingPaymentMinor,
