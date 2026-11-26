@@ -20,6 +20,7 @@ class BillingOutboxNotificationDispatcher
         [$userId, $type, $title, $body, $extra] = match ($message->event_type) {
             'billing.invoice.payment_reminder' => $this->invoiceReminder($payload),
             'billing.subscription.renewal_reminder' => $this->renewalReminder($payload),
+            'billing.lifecycle' => $this->lifecycleNotification($payload),
             default => [null, null, null, null, []],
         };
 
@@ -64,6 +65,32 @@ class BillingOutboxNotificationDispatcher
 
             return true;
         }, 3);
+    }
+
+    private function lifecycleNotification(array $payload): array
+    {
+        $type = NotificationType::tryFrom((string) ($payload['notification_type'] ?? ''));
+        $userId = (int) ($payload['user_id'] ?? 0);
+        $title = trim((string) ($payload['title'] ?? ''));
+        $body = trim((string) ($payload['message'] ?? ''));
+        $entityType = (string) ($payload['entity_type'] ?? '');
+        $entityId = (int) ($payload['entity_id'] ?? 0);
+
+        if (! $type || ! str_starts_with($type->value, 'BILLING_') || $userId <= 0
+            || $title === '' || $body === '' || $entityType === '' || $entityId <= 0) {
+            return [null, null, null, null, []];
+        }
+
+        return [
+            $userId,
+            $type,
+            $title,
+            $body,
+            array_merge((array) ($payload['extra_data'] ?? []), [
+                'entity_type' => $entityType,
+                'entity_id' => $entityId,
+            ]),
+        ];
     }
 
     private function invoiceReminder(array $payload): array
