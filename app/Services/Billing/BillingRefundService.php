@@ -173,6 +173,20 @@ class BillingRefundService
                 : BillingPaymentStatus::PARTIALLY_REFUNDED;
             $payment->save();
 
+            $invoice = BillingInvoice::query()->with('billingAccount.network')->find((int) $invoice->invoice_id);
+            $ownerId = $invoice?->billingAccount?->network?->owner_id;
+            if ($ownerId) {
+                app(\App\Services\OutboxService::class)->record('BILLING_REFUND', (int) $refund->refund_id, 'billing.lifecycle', [
+                    'user_id' => (int) $ownerId,
+                    'notification_type' => 'BILLING_REFUND_COMPLETED',
+                    'title' => '💸 تم تنفيذ الاسترداد المالي',
+                    'message' => 'تم تنفيذ استرداد مبلغ '.$amountMinor.' من الفاتورة '.$invoice->invoice_number.'.',
+                    'entity_type' => 'BILLING_INVOICE',
+                    'entity_id' => (int) $invoice->invoice_id,
+                    'extra_data' => ['invoice_id' => (int) $invoice->invoice_id, 'refund_id' => (int) $refund->refund_id],
+                ]);
+            }
+
             return $refund->load(['payment', 'currency', 'creditNote', 'treasuryAccount']);
         }, 3);
     }
