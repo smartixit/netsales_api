@@ -323,6 +323,8 @@ class BillingSelfServiceApiTest extends TestCase
         $this->assertSame((int) $this->networkOwner->user_id, $payload['user_id']);
         $this->assertSame('BILLING_SUBSCRIPTION_CANCELED', $payload['notification_type']);
         $this->assertStringStartsWith('↩️', $payload['title']);
+        $this->assertStringStartsWith('↩️', $payload['message']);
+        $this->assertTrue(\App\Enums\NotificationType::BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED->requiresEntityId());
     }
 
     private function createNetworkOwner(string $name): User
