@@ -19,6 +19,7 @@ use App\Models\Currency;
 use App\Models\Network;
 use App\Models\NetworkUser;
 use App\Services\Billing\BillingCatalogService;
+use App\Services\Billing\BillingEntitlementService;
 use App\Services\Billing\BillingPolicyManagementService;
 use App\Models\Role;
 use App\Models\User;
@@ -297,10 +298,9 @@ class BillingSelfServiceApiTest extends TestCase
         $subscriptionId = (int) $purchase->json('data.subscription.billing_subscription_id');
         $this->assertGreaterThan(0, $subscriptionId);
 
-        $this->assertDatabaseMissing('billing_entitlements', [
-            'billing_account_id' => $this->account->billing_account_id,
-            'is_active' => true,
-        ]);
+        $this->assertNull(app(BillingEntitlementService::class)->activeSubscriptionForAccount(
+            (int) $this->account->billing_account_id
+        ));
 
         $cancel = $this->withHeaders($this->ownerHeaders)
             ->postJson('/api/v1/billing/subscriptions/'.$subscriptionId.'/cancel', [
