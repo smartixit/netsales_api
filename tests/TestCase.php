@@ -42,6 +42,7 @@ abstract class TestCase extends BaseTestCase
     {
         unset($attributes['role_scope']);
         $user = new User($attributes);
+        $user->forceFill(['role_scope' => $scope->value]);
         $user->save();
 
         return $user;
