@@ -8,6 +8,7 @@ use App\Http\Resources\API\V1\Billing\BillingInvoiceResource;
 use App\Models\BillingAccount;
 use App\Models\BillingInvoice;
 use App\Models\BillingInvoiceLine;
+use App\Models\BillingPayment;
 use App\Models\BillingPaymentMethod;
 use App\Models\BillingRevenueRecognitionSchedule;
 use App\Models\Currency;
@@ -532,7 +533,7 @@ class BillingCreditNoteSettlementTest extends TestCase
         $this->assertSame($first->payment_id, $replayed->payment_id);
         $this->assertSame(
             1,
-            \\App\\Models\\BillingPayment::query()
+            BillingPayment::query()
                 ->where('invoice_id', $this->invoice->invoice_id)
                 ->count()
         );
