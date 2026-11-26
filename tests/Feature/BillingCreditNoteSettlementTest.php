@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\BillingInvoiceStatus;
 use App\Enums\NetworkStatus;
+use App\Http\Resources\API\V1\Billing\BillingInvoiceResource;
 use App\Models\BillingAccount;
 use App\Models\BillingInvoice;
 use App\Models\BillingInvoiceLine;
@@ -25,7 +26,9 @@ use App\Services\Billing\BillingLedgerService;
 use App\Services\Billing\BillingPaymentService;
 use App\Services\Billing\BillingReconciliationService;
 use App\Services\Billing\BillingRefundService;
+use App\Services\Billing\BillingSelfService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -463,13 +466,11 @@ class BillingCreditNoteSettlementTest extends TestCase
         $this->assertSame(500, $this->invoice->remaining_minor);
         $this->assertSame(BillingInvoiceStatus::PARTIALLY_PAID, $this->invoice->status);
 
-        $firstEntries = LedgerJournalEntry::query()
+        $firstEntryQuery = LedgerJournalEntry::query()
             ->where('source_type', 'BILLING_PAYMENT')
-            ->where('source_id', $first->payment_id)
-            ->with('lines.account')
-            ->get();
-        $this->assertCount(1, $firstEntries);
-        $this->assertLedgerEntryBalanced($firstEntries->first());
+            ->where('source_id', $first->payment_id);
+        $this->assertSame(1, $firstEntryQuery->count());
+        $this->assertLedgerEntryBalanced($firstEntryQuery->with('lines.account')->firstOrFail());
     }
 
     public function test_rejecting_a_pending_payment_releases_its_reserved_invoice_amount(): void
