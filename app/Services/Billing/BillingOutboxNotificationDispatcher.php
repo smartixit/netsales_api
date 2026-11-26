@@ -20,6 +20,7 @@ class BillingOutboxNotificationDispatcher
         [$userId, $type, $title, $body, $extra] = match ($message->event_type) {
             'billing.invoice.payment_reminder' => $this->invoiceReminder($payload),
             'billing.subscription.renewal_reminder' => $this->renewalReminder($payload),
+            'billing.lifecycle' => $this->lifecycleNotification($payload),
             default => [null, null, null, null, []],
         };
 
@@ -66,6 +67,32 @@ class BillingOutboxNotificationDispatcher
         }, 3);
     }
 
+    private function lifecycleNotification(array $payload): array
+    {
+        $type = NotificationType::tryFrom((string) ($payload['notification_type'] ?? ''));
+        $userId = (int) ($payload['user_id'] ?? 0);
+        $title = trim((string) ($payload['title'] ?? ''));
+        $body = trim((string) ($payload['message'] ?? ''));
+        $entityType = (string) ($payload['entity_type'] ?? '');
+        $entityId = (int) ($payload['entity_id'] ?? 0);
+
+        if (! $type || ! str_starts_with($type->value, 'BILLING_') || $userId <= 0
+            || $title === '' || $body === '' || $entityType === '' || $entityId <= 0) {
+            return [null, null, null, null, []];
+        }
+
+        return [
+            $userId,
+            $type,
+            $title,
+            $body,
+            array_merge((array) ($payload['extra_data'] ?? []), [
+                'entity_type' => $entityType,
+                'entity_id' => $entityId,
+            ]),
+        ];
+    }
+
     private function invoiceReminder(array $payload): array
     {
         $invoice = BillingInvoice::query()
@@ -80,8 +107,8 @@ class BillingOutboxNotificationDispatcher
         return [
             (int) $ownerId,
             NotificationType::BILLING_INVOICE_PAYMENT_REMINDER,
-            'تذكير بسداد فاتورة الاشتراك',
-            'الفاتورة '.$invoice->invoice_number.' ما زالت مستحقة. يرجى مراجعة تفاصيل الفاتورة وإتمام السداد.',
+            '🧾 تذكير بسداد فاتورة الاشتراك',
+            '⏳ الفاتورة '.$invoice->invoice_number.' ما زالت مستحقة. يرجى مراجعة تفاصيل الفاتورة وإتمام السداد.',
             ['entity_type' => 'BILLING_INVOICE', 'entity_id' => $invoice->invoice_id, 'invoice_id' => $invoice->invoice_id],
         ];
     }
@@ -102,10 +129,10 @@ class BillingOutboxNotificationDispatcher
         return [
             (int) $ownerId,
             NotificationType::BILLING_SUBSCRIPTION_RENEWAL_REMINDER,
-            'اقتراب موعد تجديد الاشتراك',
+            '🔔 اقتراب موعد تجديد الاشتراك',
             $days === 0
-                ? 'تنتهي فترة اشتراكك اليوم. يرجى مراجعة خيارات التجديد.'
-                : 'يتبقى '.$days.' يوم على انتهاء فترة اشتراكك.',
+                ? '⏳ تنتهي فترة اشتراكك اليوم. يرجى مراجعة خيارات التجديد.'
+                : '⏳ يتبقى '.$days.' يوم على انتهاء فترة اشتراكك.',
             ['entity_type' => 'BILLING_SUBSCRIPTION', 'entity_id' => $subscription->billing_subscription_id, 'billing_subscription_id' => $subscription->billing_subscription_id],
         ];
     }

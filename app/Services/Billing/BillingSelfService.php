@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Enums\BillingPaymentStatus;
 use App\Models\BillingAccount;
 use App\Models\BillingAccountContact;
 use App\Models\BillingCreditNote;
@@ -122,13 +123,23 @@ class BillingSelfService
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 50);
 
-        return $query->orderByDesc('invoice_id')->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
+        $query->addSelect([
+            'pending_payment_minor' => BillingPayment::query()
+                ->selectRaw('COALESCE(SUM(billing_payments.amount_minor), 0)')
+                ->whereColumn('billing_payments.invoice_id', 'billing_invoices.invoice_id')
+                ->where('billing_payments.status', BillingPaymentStatus::PENDING_REVIEW->value),
+        ]);
+
+        return $query->orderByDesc('invoice_id')
+            ->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
     public function invoice(int $invoiceId, User $actor): BillingInvoice
     {
         $invoice = BillingInvoice::query()
-            ->with(['billingAccount', 'currency', 'lines.currency', 'subscription.plan'])
+            ->with(['billingAccount', 'currency', 'lines.currency', 'subscription.plan', 'creditNotes'])
+            ->withSum(['payments as pending_payment_minor' => fn ($payments) => $payments
+                ->where('status', BillingPaymentStatus::PENDING_REVIEW->value)], 'amount_minor')
             ->findOrFail($invoiceId);
 
         $this->authorization->assertBillingAccountAccess($actor, $invoice->billingAccount);
