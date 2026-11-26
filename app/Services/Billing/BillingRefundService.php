@@ -192,7 +192,6 @@ class BillingRefundService
                     'entity_id' => (int) $invoice->invoice_id,
                     'extra_data' => ['invoice_id' => (int) $invoice->invoice_id, 'refund_id' => (int) $refund->refund_id],
                 ]);
-            }
 
             return $refund->load(['payment', 'currency', 'creditNote', 'treasuryAccount']);
         }, 3);
