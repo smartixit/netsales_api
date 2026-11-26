@@ -9,6 +9,7 @@ use App\Enums\RoleScope;
 use App\Enums\UserStatus;
 use App\Models\BillingAccount;
 use App\Models\BillingDunningPolicyVersion;
+use App\Models\BillingTrialPolicy;
 use App\Models\BillingPlanVersion;
 use App\Models\BillingPrice;
 use App\Models\BillingInvoice;
@@ -179,9 +180,10 @@ class BillingSelfServiceApiTest extends TestCase
         $listResponse
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.data.0.pending_payment_minor', 600)
-            ->assertJsonPath('data.data.0.available_to_submit_minor', 400)
-            ->assertJsonPath('data.data.0.can_submit_payment', true);
+            ->assertJsonPath('data.0.invoice_id', $this->invoice->invoice_id)
+            ->assertJsonPath('data.0.pending_payment_minor', 600)
+            ->assertJsonPath('data.0.available_to_submit_minor', 400)
+            ->assertJsonPath('data.0.can_submit_payment', true);
 
         $overLimitResponse = $this->withHeaders($this->ownerHeaders)
             ->postJson('/api/v1/billing/invoices/'.$this->invoice->invoice_id.'/payments', [
@@ -277,12 +279,13 @@ class BillingSelfServiceApiTest extends TestCase
             ->whereHas('plan', fn ($query) => $query->where('plan_key', 'starter'))
             ->firstOrFail();
 
-        // These API lifecycle tests exercise paid subscriptions, not trial activation.
-        // Detach the optional trial policy while the plan version is still a draft.
-        if ($planVersion->trial_policy_version_id !== null) {
-            $planVersion->trial_policy_version_id = null;
-            $planVersion->save();
-        }
+        // This scenario verifies a paid invoice. Disable only the default trial
+        // fallback inside this transaction, and detach optional draft plan policy.
+        $planVersion->trial_policy_version_id = null;
+        $planVersion->save();
+        BillingTrialPolicy::query()
+            ->where('policy_key', 'platform-default')
+            ->update(['is_active' => false]);
 
         $price = BillingPrice::query()
             ->where('plan_version_id', $planVersion->plan_version_id)
@@ -290,6 +293,8 @@ class BillingSelfServiceApiTest extends TestCase
             ->where('billing_interval', 'MONTH')
             ->where('is_active', true)
             ->firstOrFail();
+        $price->trial_policy_version_id = null;
+        $price->save();
 
         app(BillingCatalogService::class)->publishVersion(
             (int) $planVersion->plan_version_id,
@@ -326,7 +331,7 @@ class BillingSelfServiceApiTest extends TestCase
             ->where('aggregate_type', 'BILLING_SUBSCRIPTION')
             ->where('aggregate_id', $subscriptionId)
             ->where('event_type', 'billing.lifecycle')
-            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->first();
 
         $this->assertNotNull($outbox);
@@ -344,12 +349,13 @@ class BillingSelfServiceApiTest extends TestCase
         $dunning = BillingDunningPolicyVersion::query()->where('status', 'DRAFT')->whereHas('policy', fn ($query) => $query->where('policy_key', 'platform-default'))->firstOrFail();
         app(BillingPolicyManagementService::class)->publishDunningVersion((int) $dunning->dunning_policy_version_id, $platformActor);
         $plan = BillingPlanVersion::query()->where('status', 'DRAFT')->whereHas('plan', fn ($query) => $query->where('plan_key', 'starter'))->firstOrFail();
-        // Keep this fixture focused on paid subscription activation.
-        if ($plan->trial_policy_version_id !== null) {
-            $plan->trial_policy_version_id = null;
-            $plan->save();
-        }
+        // This scenario also requires a paid subscription rather than a trial.
+        $plan->trial_policy_version_id = null;
+        $plan->save();
+        BillingTrialPolicy::query()->where('policy_key', 'platform-default')->update(['is_active' => false]);
         $price = BillingPrice::query()->where('plan_version_id', $plan->plan_version_id)->where('currency_id', $this->currency->currency_id)->where('billing_interval', 'MONTH')->where('is_active', true)->firstOrFail();
+        $price->trial_policy_version_id = null;
+        $price->save();
         app(BillingCatalogService::class)->publishVersion((int) $plan->plan_version_id, (int) $platformActor->user_id);
 
         $purchase = $this->withHeaders($this->ownerHeaders)->postJson('/api/v1/billing/accounts/'.$this->account->billing_account_id.'/subscriptions', ['price_id' => $price->price_id]);
@@ -385,7 +391,7 @@ class BillingSelfServiceApiTest extends TestCase
         $cancel->assertOk()->assertJsonPath('data.status', 'ACTIVE')->assertJsonPath('data.cancel_at_period_end', true);
         $this->assertNotNull(app(BillingEntitlementService::class)->activeSubscriptionForAccount((int) $this->account->billing_account_id));
 
-        $outbox = \DB::table('outbox_messages')->where('aggregate_type', 'BILLING_SUBSCRIPTION')->where('aggregate_id', $subscriptionId)->where('event_type', 'billing.lifecycle')->orderByDesc('created_at')->first();
+        $outbox = \DB::table('outbox_messages')->where('aggregate_type', 'BILLING_SUBSCRIPTION')->where('aggregate_id', $subscriptionId)->where('event_type', 'billing.lifecycle')->orderByDesc('id')->first();
         $this->assertNotNull($outbox);
         $payload = json_decode((string) $outbox->payload, true, 512, JSON_THROW_ON_ERROR);
         $this->assertSame('BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED', $payload['notification_type']);

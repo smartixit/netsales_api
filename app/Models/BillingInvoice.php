@@ -22,8 +22,8 @@ use LogicException;
  * @property BillingInvoiceStatus $status
  * @property Carbon|null $period_start
  * @property Carbon|null $period_end
- * @property Carbon $issued_on
- * @property Carbon $due_on
+ * @property Carbon|null $issued_on
+ * @property Carbon|null $due_on
  * @property int $subtotal_minor
  * @property int $discount_minor
  * @property int $tax_minor
@@ -43,6 +43,7 @@ use LogicException;
  * @property-read BillingSubscription|null $subscription
  * @property-read Collection<int, BillingInvoiceLine> $lines
  * @property-read Collection<int, BillingPayment> $payments
+ * @property-read Collection<int, BillingCreditNote> $creditNotes
  */
 class BillingInvoice extends Model
 {

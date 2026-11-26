@@ -148,7 +148,7 @@ class BillingFinanceController extends BaseController
                 'to_status' => $event->to_status,
                 'payload' => $event->payload,
                 'actor_id' => $event->actor_id,
-                'occurred_at' => $event->occurred_at?->toDateTimeString(),
+                'occurred_at' => $event->occurred_at->toDateTimeString(),
             ]),
         ]);
     }

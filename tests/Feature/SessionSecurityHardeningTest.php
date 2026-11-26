@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\DeviceType;
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
 use App\Models\Otp;
@@ -24,10 +25,7 @@ class SessionSecurityHardeningTest extends TestCase
      */
     public function test_login_returns_64_character_cryptographically_secure_session_token(): void
     {
-        $user = User::where('user_phone_number', '772957881')->first();
-        if (! $user) {
-            $this->markTestSkipped('User 772957881 not found');
-        }
+        $user = $this->authenticatedFixtureUser();
 
         $device = UserDevice::where('user_id', $user->user_id)->where('status', 'ACTIVE')->first();
         $deviceUuid = $device ? $device->device_uuid : 'TEST-DEVICE-UUID';
@@ -138,10 +136,7 @@ class SessionSecurityHardeningTest extends TestCase
      */
     public function test_using_session_token_from_a_different_device_is_rejected(): void
     {
-        $user = User::where('user_phone_number', '772957881')->first();
-        if (! $user) {
-            $this->markTestSkipped('User 772957881 not found');
-        }
+        $user = $this->authenticatedFixtureUser();
 
         $validDeviceUuid = 'ORIGINAL-AUTHENTICATED-DEVICE-UUID';
         $userDevice = UserDevice::where('user_id', $user->user_id)->where('device_uuid', $validDeviceUuid)->first();
@@ -199,10 +194,7 @@ class SessionSecurityHardeningTest extends TestCase
      */
     public function test_otp_2fa_verification_is_strictly_bound_to_initiating_device(): void
     {
-        $user = User::where('user_phone_number', '772957881')->first();
-        if (! $user) {
-            $this->markTestSkipped('User 772957881 not found');
-        }
+        $user = $this->authenticatedFixtureUser(twoFactorEnabled: true);
 
         // إزالة الأجهزة السابقة لضمان طلب 2FA كجهاز جديد
         UserDevice::where('user_id', $user->user_id)->delete();
@@ -348,5 +340,21 @@ class SessionSecurityHardeningTest extends TestCase
         $updateResp->assertStatus(200);
         $user->refresh();
         $this->assertFalse($user->must_change_password);
+    }
+    private function authenticatedFixtureUser(bool $twoFactorEnabled = false): User
+    {
+        $role = Role::query()
+            ->where('role_key', RoleKey::SUPER_ADMIN->value)
+            ->firstOrFail();
+
+        return $this->createUserWithScope(RoleScope::PLATFORM, [
+            'role_id' => $role->role_id,
+            'user_full_name' => 'Session Security Fixture',
+            'user_phone_number' => '772'.random_int(100000, 999999),
+            'user_email' => 'session-security-'.bin2hex(random_bytes(6)).'@example.test',
+            'user_password' => Hash::make('Hh$2002Hh'),
+            'user_2fa_enabled' => $twoFactorEnabled,
+            'status' => UserStatus::ACTIVE,
+        ]);
     }
 }

@@ -41,6 +41,13 @@ abstract class TestCase extends BaseTestCase
     protected function createUserWithScope(RoleScope $scope, array $attributes): User
     {
         unset($attributes['role_scope']);
+
+        // role_scope is a generated column: PLATFORM is derived from role_id,
+        // while NETWORK/POS identities are tenant-owned and must not carry a platform role.
+        if ($scope !== RoleScope::PLATFORM) {
+            $attributes['role_id'] = null;
+        }
+
         $user = new User($attributes);
         $user->save();
 

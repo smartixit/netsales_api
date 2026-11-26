@@ -173,6 +173,32 @@ class BillingRefundService
                 : BillingPaymentStatus::PARTIALLY_REFUNDED;
             $payment->save();
 
+            // Resolve the account owner through the persisted account -> network foreign-key
+            // chain. This avoids relying on an optionally loaded Eloquent relationship and
+            // keeps notification ownership tied to the invoice's immutable billing account.
+            $ownerId = filter_var(
+                DB::table('billing_accounts')
+                    ->join('networks', 'networks.network_id', '=', 'billing_accounts.network_id')
+                    ->where('billing_accounts.billing_account_id', (int) $invoice->billing_account_id)
+                    ->value('networks.owner_id'),
+                FILTER_VALIDATE_INT
+            );
+
+            // A completed refund must never commit without its transactional owner notification.
+            if ($ownerId === false || $ownerId <= 0) {
+                throw new \LogicException('تعذر تحديد مالك الشبكة لتسجيل إشعار الاسترداد المالي.');
+            }
+
+            app(\App\Services\OutboxService::class)->record('BILLING_REFUND', (int) $refund->refund_id, 'billing.lifecycle', [
+                    'user_id' => (int) $ownerId,
+                    'notification_type' => 'BILLING_REFUND_COMPLETED',
+                    'title' => '💸 تم تنفيذ الاسترداد المالي',
+                    'message' => '💸 تم تنفيذ الاسترداد المالي المرتبط بالفاتورة '.$invoice->invoice_number.' وتحديث سجلها المالي.',
+                    'entity_type' => 'BILLING_INVOICE',
+                    'entity_id' => (int) $invoice->invoice_id,
+                    'extra_data' => ['invoice_id' => (int) $invoice->invoice_id, 'refund_id' => (int) $refund->refund_id],
+                ]);
+
             return $refund->load(['payment', 'currency', 'creditNote', 'treasuryAccount']);
         }, 3);
     }

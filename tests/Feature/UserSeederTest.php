@@ -51,19 +51,30 @@ class UserSeederTest extends TestCase
         );
     }
 
-    public function test_platform_admin_is_not_created_without_a_configured_password(): void
+    public function test_platform_admin_is_not_created_or_overwritten_without_a_configured_password(): void
     {
+        $unconfiguredPhone = '773009998';
         config([
-            'netsales.platform_admin.phone' => '772957881',
-            'netsales.platform_admin.email' => 'alzuraikyhussam@gmail.com',
+            'netsales.platform_admin.phone' => $unconfiguredPhone,
+            'netsales.platform_admin.email' => 'platform-admin-no-password@example.test',
             'netsales.platform_admin.password' => null,
         ]);
+
+        $existingBefore = DB::table('users')
+            ->where('user_phone_number', $unconfiguredPhone)
+            ->first();
 
         app(RoleSeeder::class)->run();
         app(UserSeeder::class)->run();
 
-        $this->assertDatabaseMissing('users', [
-            'user_phone_number' => '772957881',
-        ]);
+        $existingAfter = DB::table('users')
+            ->where('user_phone_number', $unconfiguredPhone)
+            ->first();
+
+        $this->assertSame(
+            $existingBefore === null ? null : (array) $existingBefore,
+            $existingAfter === null ? null : (array) $existingAfter,
+            'A missing platform-admin password must neither create nor overwrite an account.'
+        );
     }
 }

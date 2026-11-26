@@ -10,6 +10,7 @@ use App\Models\BillingAccount;
 use App\Models\BillingInvoice;
 use App\Models\BillingPrice;
 use App\Models\BillingSubscription;
+use App\Models\BillingSubscriptionAlert;
 use App\Models\BillingSubscriptionEvent;
 use App\Models\BillingTrialPolicyVersion;
 use App\Models\Network;
@@ -207,6 +208,20 @@ class BillingSubscriptionService
                 $subscription->save();
                 $this->dunning->scheduleSubscriptionAlerts($subscription);
 
+                $subscription->loadMissing('billingAccount.network');
+                $ownerId = $subscription->billingAccount->network->owner_id;
+                if ($ownerId) {
+                    app(\App\Services\OutboxService::class)->record('BILLING_SUBSCRIPTION', (int) $subscription->billing_subscription_id, 'billing.lifecycle', [
+                        'user_id' => (int) $ownerId,
+                        'notification_type' => 'BILLING_SUBSCRIPTION_ACTIVATED',
+                        'title' => '🎉 تم تفعيل اشتراكك بنجاح',
+                        'message' => '🎉 تم تفعيل اشتراكك دون الحاجة إلى سداد مبلغ. أصبحت مزايا الخطة متاحة لشبكتك.',
+                        'entity_type' => 'BILLING_SUBSCRIPTION',
+                        'entity_id' => (int) $subscription->billing_subscription_id,
+                        'extra_data' => ['billing_subscription_id' => (int) $subscription->billing_subscription_id, 'invoice_id' => (int) $invoice->invoice_id],
+                    ]);
+                }
+
                 $subscription->events()->create([
                     'event_type' => 'ZERO_VALUE_SUBSCRIPTION_ACTIVATED',
                     'from_status' => BillingSubscriptionStatus::INCOMPLETE->value,
@@ -321,6 +336,21 @@ class BillingSubscriptionService
             }
 
             $subscription->save();
+            $subscription->loadMissing('billingAccount.network');
+            $ownerId = $subscription->billingAccount->network->owner_id;
+            if ($ownerId) {
+                app(\App\Services\OutboxService::class)->record('BILLING_SUBSCRIPTION', (int) $subscription->billing_subscription_id, 'billing.lifecycle', [
+                    'user_id' => (int) $ownerId,
+                    'notification_type' => $atPeriodEnd ? 'BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED' : 'BILLING_SUBSCRIPTION_CANCELED',
+                    'title' => $atPeriodEnd ? '📅 تم جدولة إلغاء الاشتراك' : '↩️ تم إلغاء الاشتراك',
+                    'message' => $atPeriodEnd
+                        ? '📅 تم جدولة إلغاء اشتراكك في نهاية فترة الخدمة الحالية.'
+                        : '↩️ تم إلغاء اشتراكك وإيقاف الاستحقاقات المرتبطة به.',
+                    'entity_type' => 'BILLING_SUBSCRIPTION',
+                    'entity_id' => (int) $subscription->billing_subscription_id,
+                    'extra_data' => ['billing_subscription_id' => (int) $subscription->billing_subscription_id, 'cancel_at_period_end' => $atPeriodEnd],
+                ]);
+            }
             $subscription->events()->create([
                 'event_type' => $eventType,
                 'from_status' => $oldStatus,

@@ -48,11 +48,13 @@ class BillingCreditNoteLine extends Model
         static::deleting($assertDraft);
     }
 
+    /** @return BelongsTo<BillingCreditNote, $this> */
     public function creditNote(): BelongsTo
     {
         return $this->belongsTo(BillingCreditNote::class, 'credit_note_id', 'credit_note_id');
     }
 
+    /** @return BelongsTo<BillingInvoiceLine, $this> */
     public function invoiceLine(): BelongsTo
     {
         return $this->belongsTo(BillingInvoiceLine::class, 'invoice_line_id', 'invoice_line_id');

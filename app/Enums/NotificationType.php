@@ -47,6 +47,14 @@ enum NotificationType: string
     case GENERAL_INFO = 'GENERAL_INFO';
     case BILLING_INVOICE_PAYMENT_REMINDER = 'BILLING_INVOICE_PAYMENT_REMINDER';
     case BILLING_SUBSCRIPTION_RENEWAL_REMINDER = 'BILLING_SUBSCRIPTION_RENEWAL_REMINDER';
+    case BILLING_INVOICE_ISSUED = 'BILLING_INVOICE_ISSUED';
+    case BILLING_PAYMENT_VERIFIED = 'BILLING_PAYMENT_VERIFIED';
+    case BILLING_PAYMENT_REJECTED = 'BILLING_PAYMENT_REJECTED';
+    case BILLING_SUBSCRIPTION_ACTIVATED = 'BILLING_SUBSCRIPTION_ACTIVATED';
+    case BILLING_SUBSCRIPTION_CANCELED = 'BILLING_SUBSCRIPTION_CANCELED';
+    case BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED = 'BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED';
+    case BILLING_CREDIT_NOTE_ISSUED = 'BILLING_CREDIT_NOTE_ISSUED';
+    case BILLING_REFUND_COMPLETED = 'BILLING_REFUND_COMPLETED';
 
     public static function values(): array
     {
@@ -94,6 +102,14 @@ enum NotificationType: string
             self::GENERAL_INFO => 'إشعار توجيهي عام',
             self::BILLING_INVOICE_PAYMENT_REMINDER => 'تذكير بسداد فاتورة الاشتراك',
             self::BILLING_SUBSCRIPTION_RENEWAL_REMINDER => 'تنبيه تجديد الاشتراك',
+            self::BILLING_INVOICE_ISSUED => 'فاتورة اشتراك جديدة',
+            self::BILLING_PAYMENT_VERIFIED => 'تأكيد سداد الفاتورة',
+            self::BILLING_PAYMENT_REJECTED => 'رفض دفعة الفاتورة',
+            self::BILLING_SUBSCRIPTION_ACTIVATED => 'تفعيل الاشتراك',
+            self::BILLING_SUBSCRIPTION_CANCELED => 'إلغاء الاشتراك',
+            self::BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED => 'جدولة إلغاء الاشتراك',
+            self::BILLING_CREDIT_NOTE_ISSUED => 'إصدار إشعار دائن',
+            self::BILLING_REFUND_COMPLETED => 'تنفيذ استرداد مالي',
         };
     }
 
@@ -110,7 +126,15 @@ enum NotificationType: string
             self::WALLET_WITHDRAWAL,
             self::WALLET_TRANSFER,
             self::BILLING_INVOICE_PAYMENT_REMINDER,
-            self::BILLING_SUBSCRIPTION_RENEWAL_REMINDER => 'FINANCIAL',
+            self::BILLING_SUBSCRIPTION_RENEWAL_REMINDER,
+            self::BILLING_INVOICE_ISSUED,
+            self::BILLING_PAYMENT_VERIFIED,
+            self::BILLING_PAYMENT_REJECTED,
+            self::BILLING_SUBSCRIPTION_ACTIVATED,
+            self::BILLING_SUBSCRIPTION_CANCELED,
+            self::BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED,
+            self::BILLING_CREDIT_NOTE_ISSUED,
+            self::BILLING_REFUND_COMPLETED => 'FINANCIAL',
 
             self::VOUCHER_REQUEST_CREATED,
             self::VOUCHER_REQUEST_APPROVED,
@@ -158,7 +182,15 @@ enum NotificationType: string
             self::POS_APPROVED,
             self::POS_REJECTED,
             self::BILLING_INVOICE_PAYMENT_REMINDER,
-            self::BILLING_SUBSCRIPTION_RENEWAL_REMINDER => true,
+            self::BILLING_SUBSCRIPTION_RENEWAL_REMINDER,
+            self::BILLING_INVOICE_ISSUED,
+            self::BILLING_PAYMENT_VERIFIED,
+            self::BILLING_PAYMENT_REJECTED,
+            self::BILLING_SUBSCRIPTION_ACTIVATED,
+            self::BILLING_SUBSCRIPTION_CANCELED,
+            self::BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED,
+            self::BILLING_CREDIT_NOTE_ISSUED,
+            self::BILLING_REFUND_COMPLETED => true,
             default => false,
         };
     }

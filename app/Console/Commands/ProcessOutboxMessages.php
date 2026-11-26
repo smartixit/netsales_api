@@ -33,6 +33,7 @@ class ProcessOutboxMessages extends Command
         $billingEventTypes = [
             'billing.invoice.payment_reminder',
             'billing.subscription.renewal_reminder',
+            'billing.lifecycle',
         ];
 
         foreach ($messages as $message) {
