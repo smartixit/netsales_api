@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\DeviceType;
 use App\Enums\RoleKey;
+use App\Enums\RoleScope;
 use App\Enums\UserDeviceStatus;
 use App\Enums\UserStatus;
 use App\Models\Otp;
@@ -342,15 +343,18 @@ class SessionSecurityHardeningTest extends TestCase
     }
     private function authenticatedFixtureUser(): User
     {
-        $user = User::query()
-            ->where('user_phone_number', '772957881')
+        $role = Role::query()
+            ->where('role_key', RoleKey::SUPER_ADMIN->value)
             ->firstOrFail();
 
-        // CI's database seeder owns the identity, not this test's known fixture password.
-        // DatabaseTransactions restores the original hash after each test.
-        $user->forceFill(['user_password' => Hash::make('Hh$2002Hh')]);
-        $user->save();
-
-        return $user;
+        return $this->createUserWithScope(RoleScope::PLATFORM, [
+            'role_id' => $role->role_id,
+            'user_full_name' => 'Session Security Fixture',
+            'user_phone_number' => '772'.random_int(100000, 999999),
+            'user_email' => 'session-security-'.bin2hex(random_bytes(6)).'@example.test',
+            'user_password' => Hash::make('Hh$2002Hh'),
+            'user_2fa_enabled' => false,
+            'status' => UserStatus::ACTIVE,
+        ]);
     }
 }
