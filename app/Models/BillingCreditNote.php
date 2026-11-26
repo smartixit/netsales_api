@@ -28,6 +28,7 @@ use LogicException;
  * @property-read BillingInvoice $invoice
  * @property-read Currency $currency
  * @property-read Collection<int, BillingCreditNoteLine> $lines
+ * @property-read Collection<int, BillingRefund> $refunds
  */
 class BillingCreditNote extends Model
 {
@@ -99,26 +100,31 @@ class BillingCreditNote extends Model
         });
     }
 
+    /** @return BelongsTo<BillingInvoice, $this> */
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(BillingInvoice::class, 'invoice_id', 'invoice_id');
     }
 
+    /** @return BelongsTo<BillingAccount, $this> */
     public function billingAccount(): BelongsTo
     {
         return $this->belongsTo(BillingAccount::class, 'billing_account_id', 'billing_account_id');
     }
 
+    /** @return BelongsTo<Currency, $this> */
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_id', 'currency_id');
     }
 
+    /** @return HasMany<BillingCreditNoteLine, $this> */
     public function lines(): HasMany
     {
         return $this->hasMany(BillingCreditNoteLine::class, 'credit_note_id', 'credit_note_id');
     }
 
+    /** @return HasMany<BillingRefund, $this> */
     public function refunds(): HasMany
     {
         return $this->hasMany(BillingRefund::class, 'credit_note_id', 'credit_note_id');
