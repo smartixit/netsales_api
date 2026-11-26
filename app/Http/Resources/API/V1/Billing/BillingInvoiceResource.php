@@ -3,17 +3,22 @@
 namespace App\Http\Resources\API\V1\Billing;
 
 use App\Enums\BillingInvoiceStatus;
+use App\Models\BillingInvoice;
 use App\Services\Billing\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin BillingInvoice
+ */
 class BillingInvoiceResource extends JsonResource
 {
+    /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
         $currency = $this->currency;
-        $places = (int) ($currency?->decimal_places ?? 2);
-        $code = (string) ($currency?->code ?? 'XXX');
+        $places = (int) $currency->decimal_places;
+        $code = $currency->code;
         $invoiceAttributes = $this->resource->getAttributes();
         $hasPendingPaymentAggregate = array_key_exists('pending_payment_minor', $invoiceAttributes);
         $pendingPaymentMinor = (int) ($invoiceAttributes['pending_payment_minor'] ?? 0);
@@ -33,8 +38,8 @@ class BillingInvoiceResource extends JsonResource
             'billing_account_id' => $this->billing_account_id,
             'billing_subscription_id' => $this->billing_subscription_id,
             'invoice_type' => $this->invoice_type,
-            'status' => $this->status?->value,
-            'status_label' => $this->status?->label(),
+            'status' => $this->status->value,
+            'status_label' => $this->status->label(),
             'currency' => new CurrencyResource($currency),
             'period_start' => $this->period_start?->toDateString(),
             'period_end' => $this->period_end?->toDateString(),
