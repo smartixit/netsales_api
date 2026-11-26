@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Enums\NotificationType;
+use App\Enums\RoleScope;
+use App\Enums\UserStatus;
 use App\Jobs\SendFcmNotificationJob;
 use App\Models\Notification;
 use App\Models\OutboxMessage;
@@ -21,7 +23,14 @@ class BillingOutboxNotificationDispatcherTest extends TestCase
     {
         Queue::fake();
 
-        $user = User::query()->where('user_id', '>', 0)->firstOrFail();
+        $user = $this->createUserWithScope(RoleScope::NETWORK, [
+            'role_id' => null,
+            'user_full_name' => 'Billing Outbox Notification Recipient',
+            'user_phone_number' => '77'.random_int(10000000, 99999999),
+            'user_email' => 'billing-outbox-'.Str::lower(Str::random(10)).'@example.test',
+            'user_password' => bcrypt('Secret@123'),
+            'status' => UserStatus::ACTIVE,
+        ]);
         $message = OutboxMessage::query()->create([
             'message_uuid' => (string) Str::uuid(),
             'aggregate_type' => 'BILLING_INVOICE',
