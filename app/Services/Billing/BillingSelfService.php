@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Enums\BillingPaymentStatus;
 use App\Models\BillingAccount;
 use App\Models\BillingAccountContact;
 use App\Models\BillingCreditNote;
@@ -102,6 +103,8 @@ class BillingSelfService
 
         $query = BillingInvoice::query()
             ->with(['currency', 'lines.currency', 'subscription.plan'])
+            ->withSum(['payments as pending_payment_minor' => fn ($payments) => $payments
+                ->where('status', BillingPaymentStatus::PENDING_REVIEW->value)], 'amount_minor')
             ->where('billing_account_id', $accountId);
 
         if (! empty($filters['status'])) {
@@ -129,6 +132,8 @@ class BillingSelfService
     {
         $invoice = BillingInvoice::query()
             ->with(['billingAccount', 'currency', 'lines.currency', 'subscription.plan'])
+            ->withSum(['payments as pending_payment_minor' => fn ($payments) => $payments
+                ->where('status', BillingPaymentStatus::PENDING_REVIEW->value)], 'amount_minor')
             ->findOrFail($invoiceId);
 
         $this->authorization->assertBillingAccountAccess($actor, $invoice->billingAccount);
