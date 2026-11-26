@@ -13,6 +13,7 @@ use App\Models\BillingSubscription;
 use App\Models\BillingSubscriptionEvent;
 use App\Models\TreasuryAccount;
 use App\Models\User;
+use App\Services\OutboxService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -24,7 +25,8 @@ class BillingPaymentService
         private BillingLedgerService $ledger,
         private BillingLedgerChartService $chart,
         private BillingAuthorizationService $authorization,
-        private BillingDunningService $dunning
+        private BillingDunningService $dunning,
+        private OutboxService $outbox
     ) {}
 
     /**
@@ -140,8 +142,9 @@ class BillingPaymentService
         $ledger = $this->ledger;
         $chart = $this->chart;
         $dunning = $this->dunning;
+        $outbox = $this->outbox;
 
-        return DB::transaction(function () use ($paymentId, $treasuryAccountId, $reviewer, $note, $ledger, $chart, $dunning): BillingPayment {
+        return DB::transaction(function () use ($paymentId, $treasuryAccountId, $reviewer, $note, $ledger, $chart, $dunning, $outbox): BillingPayment {
             // Keep the global billing lock order consistent: Invoice -> Payment -> Treasury.
             // The payment's invoice_id is immutable after creation, so the initial read only locates its parent.
             $paymentInvoiceId = BillingPayment::query()
@@ -320,6 +323,19 @@ class BillingPaymentService
                 }
             }
 
+            $ownerId = $invoice->billingAccount?->network?->owner_id;
+            if ($ownerId) {
+                $outbox->record('BILLING_PAYMENT', (int) $payment->payment_id, 'billing.lifecycle', [
+                    'user_id' => (int) $ownerId,
+                    'notification_type' => 'BILLING_PAYMENT_VERIFIED',
+                    'title' => '✅ تم اعتماد دفعتك بنجاح',
+                    'message' => 'تم اعتماد دفعتك للفاتورة '.$invoice->invoice_number.' وتحديث رصيدها المستحق.',
+                    'entity_type' => 'BILLING_INVOICE',
+                    'entity_id' => (int) $invoice->invoice_id,
+                    'extra_data' => ['invoice_id' => (int) $invoice->invoice_id, 'payment_id' => (int) $payment->payment_id],
+                ]);
+            }
+
             if ($payment->payment_intent_id) {
                 BillingPaymentIntent::query()
                     ->whereKey($payment->payment_intent_id)
@@ -347,6 +363,20 @@ class BillingPaymentService
             $payment->verified_at = now('Asia/Aden');
             $payment->review_note = $reason;
             $payment->save();
+
+            $payment->loadMissing('invoice.billingAccount.network');
+            $ownerId = $payment->invoice?->billingAccount?->network?->owner_id;
+            if ($ownerId) {
+                app(OutboxService::class)->record('BILLING_PAYMENT', (int) $payment->payment_id, 'billing.lifecycle', [
+                    'user_id' => (int) $ownerId,
+                    'notification_type' => 'BILLING_PAYMENT_REJECTED',
+                    'title' => '⚠️ تعذر اعتماد دفعتك',
+                    'message' => 'تم رفض الدفعة للفاتورة '.$payment->invoice->invoice_number.'. يرجى مراجعة سبب الرفض والتواصل مع الدعم عند الحاجة.',
+                    'entity_type' => 'BILLING_INVOICE',
+                    'entity_id' => (int) $payment->invoice_id,
+                    'extra_data' => ['invoice_id' => (int) $payment->invoice_id, 'payment_id' => (int) $payment->payment_id],
+                ]);
+            }
 
             return $payment->refresh()->load(['invoice', 'currency', 'paymentMethod', 'proofs']);
         }, 3);
