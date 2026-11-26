@@ -327,6 +327,11 @@ class BillingCreditNoteSettlementTest extends TestCase
             ->firstOrFail();
         /** @var array<string, mixed> $refundPayload */
         $refundPayload = (array) $refundOutbox->payload;
+        $networkOwnerId = DB::table('billing_accounts')
+            ->join('networks', 'networks.network_id', '=', 'billing_accounts.network_id')
+            ->where('billing_accounts.billing_account_id', $this->account->billing_account_id)
+            ->value('networks.owner_id');
+        $this->assertSame((int) $networkOwnerId, (int) $refundPayload['user_id']);
         $this->assertSame('BILLING_REFUND_COMPLETED', $refundPayload['notification_type']);
         $this->assertStringStartsWith('💸', $refundPayload['title']);
         $this->assertStringStartsWith('💸', $refundPayload['message']);
