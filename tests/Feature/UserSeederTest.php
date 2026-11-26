@@ -53,9 +53,11 @@ class UserSeederTest extends TestCase
 
     public function test_platform_admin_is_not_created_without_a_configured_password(): void
     {
+        // Use an identity that is not created by migrate:fresh --seed.
+        $unconfiguredPhone = '773009998';
         config([
-            'netsales.platform_admin.phone' => '772957881',
-            'netsales.platform_admin.email' => 'alzuraikyhussam@gmail.com',
+            'netsales.platform_admin.phone' => $unconfiguredPhone,
+            'netsales.platform_admin.email' => 'platform-admin-no-password@example.test',
             'netsales.platform_admin.password' => null,
         ]);
 
@@ -63,7 +65,7 @@ class UserSeederTest extends TestCase
         app(UserSeeder::class)->run();
 
         $this->assertDatabaseMissing('users', [
-            'user_phone_number' => '772957881',
+            'user_phone_number' => $unconfiguredPhone,
         ]);
     }
 }
