@@ -402,7 +402,7 @@ class BillingCreditNoteService
                     'user_id' => (int) $ownerId,
                     'notification_type' => 'BILLING_CREDIT_NOTE_ISSUED',
                     'title' => '🧾 تم إصدار إشعار دائن',
-                    'message' => 'تم إصدار إشعار دائن للفاتورة '.$invoice->invoice_number.' وتحديث الرصيد المستحق.',
+                    'message' => '🧾 تم إصدار إشعار دائن للفاتورة '.$invoice->invoice_number.' وتحديث الرصيد المستحق.',
                     'entity_type' => 'BILLING_INVOICE',
                     'entity_id' => (int) $invoice->invoice_id,
                     'extra_data' => ['invoice_id' => (int) $invoice->invoice_id, 'credit_note_id' => (int) $note->credit_note_id],
