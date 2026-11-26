@@ -188,6 +188,7 @@ enum NotificationType: string
             self::BILLING_PAYMENT_REJECTED,
             self::BILLING_SUBSCRIPTION_ACTIVATED,
             self::BILLING_SUBSCRIPTION_CANCELED,
+            self::BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED,
             self::BILLING_CREDIT_NOTE_ISSUED,
             self::BILLING_REFUND_COMPLETED => true,
             default => false,
