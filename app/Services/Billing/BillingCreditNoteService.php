@@ -395,6 +395,20 @@ class BillingCreditNoteService
             $invoice->memo = trim(($invoice->memo ?? '')."\nإشعار دائن {$note->credit_note_number}: {$amountMinor} بوحدة العملة الصغرى.");
             $invoice->save();
 
+            $invoice->loadMissing('billingAccount.network');
+            $ownerId = $invoice->billingAccount?->network?->owner_id;
+            if ($ownerId) {
+                app(\App\Services\OutboxService::class)->record('BILLING_CREDIT_NOTE', (int) $note->credit_note_id, 'billing.lifecycle', [
+                    'user_id' => (int) $ownerId,
+                    'notification_type' => 'BILLING_CREDIT_NOTE_ISSUED',
+                    'title' => '🧾 تم إصدار إشعار دائن',
+                    'message' => 'تم إصدار إشعار دائن للفاتورة '.$invoice->invoice_number.' وتحديث الرصيد المستحق.',
+                    'entity_type' => 'BILLING_INVOICE',
+                    'entity_id' => (int) $invoice->invoice_id,
+                    'extra_data' => ['invoice_id' => (int) $invoice->invoice_id, 'credit_note_id' => (int) $note->credit_note_id],
+                ]);
+            }
+
             return $note->refresh()->load(['invoice', 'currency', 'lines.invoiceLine']);
         }, 3);
     }
