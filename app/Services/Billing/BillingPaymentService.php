@@ -170,7 +170,7 @@ class BillingPaymentService
                 throw ValidationException::withMessages(['payment_id' => ['لا يمكن اعتماد دفعة ليست قيد المراجعة.']]);
             }
 
-            if (! in_array($invoice->status, [BillingInvoiceStatus::OPEN, BillingInvoiceStatus::PARTIALLY_PAID], true)
+            if (! in_array($invoice->status, [BillingInvoiceStatus::OPEN, BillingInvoiceStatus::PARTIALLY_PAID, BillingInvoiceStatus::PARTIALLY_CREDITED], true)
                 || (int) $invoice->remaining_minor < (int) $payment->amount_minor) {
                 throw ValidationException::withMessages(['invoice_id' => ['لم تعد الفاتورة تسمح بهذه الدفعة أو تغير المبلغ المتبقي.']]);
             }
