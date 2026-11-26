@@ -326,8 +326,8 @@ class BillingSubscriptionService
             if ($ownerId) {
                 app(\App\Services\OutboxService::class)->record('BILLING_SUBSCRIPTION', (int) $subscription->billing_subscription_id, 'billing.lifecycle', [
                     'user_id' => (int) $ownerId,
-                    'notification_type' => 'BILLING_SUBSCRIPTION_CANCELED',
-                    'title' => '↩️ تم تسجيل طلب إلغاء الاشتراك',
+                    'notification_type' => $atPeriodEnd ? 'BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED' : 'BILLING_SUBSCRIPTION_CANCELED',
+                    'title' => $atPeriodEnd ? '📅 تم جدولة إلغاء الاشتراك' : '↩️ تم إلغاء الاشتراك',
                     'message' => $atPeriodEnd
                         ? 'تم جدولة إلغاء اشتراكك في نهاية فترة الخدمة الحالية.'
                         : 'تم إلغاء اشتراكك وإيقاف الاستحقاقات المرتبطة به.',
