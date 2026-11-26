@@ -174,7 +174,7 @@ class BillingRefundService
             $payment->save();
 
             $invoice = BillingInvoice::query()->with('billingAccount.network')->find((int) $invoice->invoice_id);
-            $ownerId = $invoice?->billingAccount?->network?->owner_id;
+            $ownerId = $invoice?->billingAccount->network->owner_id;
             if ($ownerId) {
                 app(\App\Services\OutboxService::class)->record('BILLING_REFUND', (int) $refund->refund_id, 'billing.lifecycle', [
                     'user_id' => (int) $ownerId,
