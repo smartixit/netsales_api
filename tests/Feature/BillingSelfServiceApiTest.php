@@ -99,7 +99,7 @@ class BillingSelfServiceApiTest extends TestCase
             'billing_account_id' => $this->account->billing_account_id,
             'currency_id' => $this->currency->currency_id,
             'invoice_type' => 'STANDARD',
-            'status' => BillingInvoiceStatus::OPEN,
+            'status' => BillingInvoiceStatus::DRAFT,
             'period_start' => now('Asia/Aden')->startOfMonth()->toDateString(),
             'period_end' => now('Asia/Aden')->endOfMonth()->toDateString(),
             'issued_on' => now('Asia/Aden')->toDateString(),
@@ -130,6 +130,10 @@ class BillingSelfServiceApiTest extends TestCase
             'total_minor' => 1000,
             'source_snapshot' => ['billing_interval' => 'MONTH', 'interval_count' => 1],
         ]);
+
+        $this->invoice->status = BillingInvoiceStatus::OPEN;
+        $this->invoice->finalized_at = now('Asia/Aden');
+        $this->invoice->save();
     }
 
     public function test_network_owner_can_submit_payment_and_read_server_calculated_invoice_balances(): void
