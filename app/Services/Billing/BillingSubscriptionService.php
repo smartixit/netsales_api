@@ -322,7 +322,7 @@ class BillingSubscriptionService
 
             $subscription->save();
             $subscription->loadMissing('billingAccount.network');
-            $ownerId = $subscription->billingAccount?->network?->owner_id;
+            $ownerId = $subscription->billingAccount->network->owner_id;
             if ($ownerId) {
                 app(\App\Services\OutboxService::class)->record('BILLING_SUBSCRIPTION', (int) $subscription->billing_subscription_id, 'billing.lifecycle', [
                     'user_id' => (int) $ownerId,
