@@ -26,6 +26,10 @@ class BillingInvoiceLineResource extends JsonResource
             'discount_minor' => (int) $this->discount_minor,
             'tax_minor' => (int) $this->tax_minor,
             'total_minor' => (int) $this->total_minor,
+            'subtotal' => (new Money((int) $this->subtotal_minor, $code))->toDecimalString($places),
+            'discount' => (new Money((int) $this->discount_minor, $code))->toDecimalString($places),
+            'tax' => (new Money((int) $this->tax_minor, $code))->toDecimalString($places),
+            'total' => (new Money((int) $this->total_minor, $code))->toDecimalString($places),
             'source_snapshot' => $this->source_snapshot,
         ];
     }
