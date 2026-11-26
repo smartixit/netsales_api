@@ -107,8 +107,8 @@ class BillingOutboxNotificationDispatcher
         return [
             (int) $ownerId,
             NotificationType::BILLING_INVOICE_PAYMENT_REMINDER,
-            'تذكير بسداد فاتورة الاشتراك',
-            'الفاتورة '.$invoice->invoice_number.' ما زالت مستحقة. يرجى مراجعة تفاصيل الفاتورة وإتمام السداد.',
+            '🧾 تذكير بسداد فاتورة الاشتراك',
+            '⏳ الفاتورة '.$invoice->invoice_number.' ما زالت مستحقة. يرجى مراجعة تفاصيل الفاتورة وإتمام السداد.',
             ['entity_type' => 'BILLING_INVOICE', 'entity_id' => $invoice->invoice_id, 'invoice_id' => $invoice->invoice_id],
         ];
     }
@@ -129,10 +129,10 @@ class BillingOutboxNotificationDispatcher
         return [
             (int) $ownerId,
             NotificationType::BILLING_SUBSCRIPTION_RENEWAL_REMINDER,
-            'اقتراب موعد تجديد الاشتراك',
+            '🔔 اقتراب موعد تجديد الاشتراك',
             $days === 0
-                ? 'تنتهي فترة اشتراكك اليوم. يرجى مراجعة خيارات التجديد.'
-                : 'يتبقى '.$days.' يوم على انتهاء فترة اشتراكك.',
+                ? '⏳ تنتهي فترة اشتراكك اليوم. يرجى مراجعة خيارات التجديد.'
+                : '⏳ يتبقى '.$days.' يوم على انتهاء فترة اشتراكك.',
             ['entity_type' => 'BILLING_SUBSCRIPTION', 'entity_id' => $subscription->billing_subscription_id, 'billing_subscription_id' => $subscription->billing_subscription_id],
         ];
     }
