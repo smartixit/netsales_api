@@ -180,9 +180,10 @@ class BillingSelfServiceApiTest extends TestCase
         $listResponse
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.data.0.pending_payment_minor', 600)
-            ->assertJsonPath('data.data.0.available_to_submit_minor', 400)
-            ->assertJsonPath('data.data.0.can_submit_payment', true);
+            ->assertJsonPath('data.0.invoice_id', $this->invoice->invoice_id)
+            ->assertJsonPath('data.0.pending_payment_minor', 600)
+            ->assertJsonPath('data.0.available_to_submit_minor', 400)
+            ->assertJsonPath('data.0.can_submit_payment', true);
 
         $overLimitResponse = $this->withHeaders($this->ownerHeaders)
             ->postJson('/api/v1/billing/invoices/'.$this->invoice->invoice_id.'/payments', [
@@ -330,7 +331,7 @@ class BillingSelfServiceApiTest extends TestCase
             ->where('aggregate_type', 'BILLING_SUBSCRIPTION')
             ->where('aggregate_id', $subscriptionId)
             ->where('event_type', 'billing.lifecycle')
-            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->first();
 
         $this->assertNotNull($outbox);
@@ -390,7 +391,7 @@ class BillingSelfServiceApiTest extends TestCase
         $cancel->assertOk()->assertJsonPath('data.status', 'ACTIVE')->assertJsonPath('data.cancel_at_period_end', true);
         $this->assertNotNull(app(BillingEntitlementService::class)->activeSubscriptionForAccount((int) $this->account->billing_account_id));
 
-        $outbox = \DB::table('outbox_messages')->where('aggregate_type', 'BILLING_SUBSCRIPTION')->where('aggregate_id', $subscriptionId)->where('event_type', 'billing.lifecycle')->orderByDesc('created_at')->first();
+        $outbox = \DB::table('outbox_messages')->where('aggregate_type', 'BILLING_SUBSCRIPTION')->where('aggregate_id', $subscriptionId)->where('event_type', 'billing.lifecycle')->orderByDesc('id')->first();
         $this->assertNotNull($outbox);
         $payload = json_decode((string) $outbox->payload, true, 512, JSON_THROW_ON_ERROR);
         $this->assertSame('BILLING_SUBSCRIPTION_CANCELLATION_SCHEDULED', $payload['notification_type']);
