@@ -24,10 +24,7 @@ class SessionSecurityHardeningTest extends TestCase
      */
     public function test_login_returns_64_character_cryptographically_secure_session_token(): void
     {
-        $user = User::where('user_phone_number', '772957881')->first();
-        if (! $user) {
-            $this->markTestSkipped('User 772957881 not found');
-        }
+        $user = $this->authenticatedFixtureUser();
 
         $device = UserDevice::where('user_id', $user->user_id)->where('status', 'ACTIVE')->first();
         $deviceUuid = $device ? $device->device_uuid : 'TEST-DEVICE-UUID';
@@ -138,10 +135,7 @@ class SessionSecurityHardeningTest extends TestCase
      */
     public function test_using_session_token_from_a_different_device_is_rejected(): void
     {
-        $user = User::where('user_phone_number', '772957881')->first();
-        if (! $user) {
-            $this->markTestSkipped('User 772957881 not found');
-        }
+        $user = $this->authenticatedFixtureUser();
 
         $validDeviceUuid = 'ORIGINAL-AUTHENTICATED-DEVICE-UUID';
         $userDevice = UserDevice::where('user_id', $user->user_id)->where('device_uuid', $validDeviceUuid)->first();
@@ -199,10 +193,7 @@ class SessionSecurityHardeningTest extends TestCase
      */
     public function test_otp_2fa_verification_is_strictly_bound_to_initiating_device(): void
     {
-        $user = User::where('user_phone_number', '772957881')->first();
-        if (! $user) {
-            $this->markTestSkipped('User 772957881 not found');
-        }
+        $user = $this->authenticatedFixtureUser();
 
         // إزالة الأجهزة السابقة لضمان طلب 2FA كجهاز جديد
         UserDevice::where('user_id', $user->user_id)->delete();
@@ -348,5 +339,18 @@ class SessionSecurityHardeningTest extends TestCase
         $updateResp->assertStatus(200);
         $user->refresh();
         $this->assertFalse($user->must_change_password);
+    }
+    private function authenticatedFixtureUser(): User
+    {
+        $user = User::query()
+            ->where('user_phone_number', '772957881')
+            ->firstOrFail();
+
+        // CI's database seeder owns the identity, not this test's known fixture password.
+        // DatabaseTransactions restores the original hash after each test.
+        $user->forceFill(['user_password' => Hash::make('Hh$2002Hh')]);
+        $user->save();
+
+        return $user;
     }
 }
