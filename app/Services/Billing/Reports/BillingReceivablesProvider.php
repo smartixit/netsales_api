@@ -11,7 +11,8 @@ final class BillingReceivablesProvider extends ConfiguredBillingReportProvider
     {
         $q = DB::table('billing_invoices as i')->join('currencies as c', 'c.currency_id', '=', 'i.currency_id')
             ->whereIn('i.status', ['OPEN', 'PARTIALLY_PAID', 'PARTIALLY_CREDITED'])
-            ->where('i.remaining_minor', '>', 0);
+            ->where('i.remaining_minor', '>', 0)
+            ->whereNotNull('i.issued_on');
         if ($networkId !== null) {
             $q->whereIn('i.billing_account_id', DB::table('billing_accounts')->select('billing_account_id')->where('network_id', $networkId));
         }

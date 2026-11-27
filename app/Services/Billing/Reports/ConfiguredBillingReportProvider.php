@@ -148,7 +148,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         $query->select($this->config['select']);
 
         return $query
-            ->orderByDesc($this->config['date'])
+            ->orderByDesc($this->config['sort'] ?? $this->config['date'])
             ->orderByDesc($this->config['key_column'])
             ->cursorPaginate(min(max((int) ($filters['per_page'] ?? 25), 1), 100), ['*'], 'cursor', $filters['cursor'] ?? null);
     }
@@ -249,7 +249,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         $query = $this->query($networkId, $filters);
         $query->select($this->config['select']);
 
-        return $query->orderByDesc($this->config['date'])
+        return $query->orderByDesc($this->config['sort'] ?? $this->config['date'])
             ->orderByDesc($this->config['key_column'])
             ->cursor();
     }
