@@ -4,10 +4,12 @@ namespace App\Http\Controllers\API\V1\Billing;
 
 use App\Http\Controllers\API\V1\BaseController;
 use App\Services\Billing\BillingAuthorizationService;
+use App\Services\Billing\Reports\BillingReportProvider;
 use App\Services\Billing\Reports\BillingReportProviderRegistry;
 use App\Support\CsvValueSanitizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class BillingReportController extends BaseController
 {
@@ -17,9 +19,12 @@ class BillingReportController extends BaseController
     ) {}
 
     /** @return array<string, mixed> */
-    private function filters(Request $request): array
+    /**
+     * @return array<string, mixed>
+     */
+    private function filters(Request $request, BillingReportProvider $provider): array
     {
-        return $request->validate([
+        $filters = $request->validate([
             'from_date' => ['nullable', 'date_format:Y-m-d'],
             'to_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from_date'],
             'status' => ['nullable', 'string', 'max:40'],
@@ -27,6 +32,21 @@ class BillingReportController extends BaseController
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
             'cursor' => ['nullable', 'string', 'max:2048'],
         ]);
+
+        $supported = array_column($provider->definition()['filters'] ?? [], 'id');
+        $unsupported = array_diff(
+            array_intersect(array_keys($filters), ['from_date', 'to_date', 'status', 'search']),
+            $supported
+        );
+        $errors = [];
+        foreach ($unsupported as $filter) {
+            $errors[$filter] = ['هذا المرشح غير مدعوم لنوع التقرير المحدد.'];
+        }
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        return $filters;
     }
 
     public function networkCatalog(int $networkId): JsonResponse
@@ -43,14 +63,19 @@ class BillingReportController extends BaseController
     {
         $this->authorization->assertNetworkOwner($this->requireCurrentUser(), $networkId);
 
-        return $this->successResponse('بيانات تقرير فوترة الشبكة.', $this->providers->get($reportType)->build($networkId, $this->filters($request)));
+        $provider = $this->providers->get($reportType);
+
+        return $this->successResponse(
+            'بيانات تقرير فوترة الشبكة.',
+            $provider->build($networkId, $this->filters($request, $provider))
+        );
     }
 
     public function networkSummary(Request $request, int $networkId, string $reportType): JsonResponse
     {
         $this->authorization->assertNetworkOwner($this->requireCurrentUser(), $networkId);
         $provider = $this->providers->get($reportType);
-        $filters = $this->filters($request);
+        $filters = $this->filters($request, $provider);
         $summary = $provider->summary($networkId, $filters);
 
         return $this->successResponse('ملخص تقرير فوترة الشبكة.', [
@@ -73,7 +98,12 @@ class BillingReportController extends BaseController
     {
         $this->authorization->assertPlatform($this->requireCurrentUser());
 
-        return $this->successResponse('بيانات تقرير فوترة المنصة.', $this->providers->get($reportType)->build(null, $this->filters($request)));
+        $provider = $this->providers->get($reportType);
+
+        return $this->successResponse(
+            'بيانات تقرير فوترة المنصة.',
+            $provider->build(null, $this->filters($request, $provider))
+        );
     }
 
     /** @param array<string, mixed> $filters */
@@ -108,21 +138,21 @@ class BillingReportController extends BaseController
     {
         $this->authorization->assertNetworkOwner($this->requireCurrentUser(), $networkId);
 
-        return $this->csvResponse($reportType, $networkId, $this->filters($request));
+        return $this->csvResponse($reportType, $networkId, $this->filters($request, $this->providers->get($reportType)));
     }
 
     public function platformExportCsv(Request $request, string $reportType): mixed
     {
         $this->authorization->assertPlatform($this->requireCurrentUser());
 
-        return $this->csvResponse($reportType, null, $this->filters($request));
+        return $this->csvResponse($reportType, null, $this->filters($request, $this->providers->get($reportType)));
     }
 
     public function platformSummary(Request $request, string $reportType): JsonResponse
     {
         $this->authorization->assertPlatform($this->requireCurrentUser());
         $provider = $this->providers->get($reportType);
-        $filters = $this->filters($request);
+        $filters = $this->filters($request, $provider);
         $summary = $provider->summary(null, $filters);
 
         return $this->successResponse('ملخص تقرير فوترة المنصة.', [
