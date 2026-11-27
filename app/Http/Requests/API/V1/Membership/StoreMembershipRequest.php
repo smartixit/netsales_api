@@ -1,8 +1,8 @@
 <?php
 
-namespace App\\Http\\Requests\\API\\V1\\Membership;
+namespace App\Http\Requests\API\V1\Membership;
 
-use Illuminate\\Foundation\\Http\\FormRequest;
+use Illuminate\Foundation\Http\FormRequest;
 
 class StoreMembershipRequest extends FormRequest
 {
