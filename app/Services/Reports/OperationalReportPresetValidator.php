@@ -168,11 +168,21 @@ final class OperationalReportPresetValidator
                 $version['minor'] ?? -1,
                 $version['patch'] ?? -1,
             ]);
-            /** @var list<array{id: string, version: string}> $templateDefinitions */
-            $templateDefinitions = $definition['templates'] ?? [];
-            $allowed = collect($templateDefinitions)->contains(
-                fn (array $item): bool => ($item['id'] ?? '').'@'.(string) ($item['version'] ?? '') === $key
-            );
+            $allowed = false;
+            foreach (($definition['templates'] ?? []) as $item) {
+                if (! is_array($item)
+                    || ! isset($item['id'], $item['version'])
+                    || ! is_string($item['id'])
+                    || ! is_string($item['version'])) {
+                    continue;
+                }
+
+                if ($item['id'].'@'.$item['version'] === $key) {
+                    $allowed = true;
+
+                    break;
+                }
+            }
             if (! $allowed) {
                 $errors->add('presentation.template', 'قالب المستند المحدد غير معتمد لهذا التقرير.');
             }
