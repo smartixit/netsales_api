@@ -7,6 +7,7 @@ use App\Enums\RoleScope;
 use App\Models\Network;
 use App\Models\NetworkMembershipAuditLog;
 use App\Models\NetworkUser;
+use App\Repositories\NetworkMembershipRepository;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\Billing\BillingEntitlementService;
@@ -22,7 +23,8 @@ class NetworkMembershipService
 {
     public function __construct(
         private BillingEntitlementService $billingEntitlements,
-        private TenantPermissionService $tenantPermissions
+        private TenantPermissionService $tenantPermissions,
+        private NetworkMembershipRepository $membershipRepository
     ) {}
 
     /**
@@ -33,48 +35,23 @@ class NetworkMembershipService
         $this->authorizeActor($networkId, $actorId, 'network_members.view');
 
         $ownerId = (int) Network::query()->whereKey($networkId)->value('owner_id');
-        $query = NetworkUser::query()
-            ->where('network_id', $networkId)
-            ->with(['user', 'role']);
+        $members = $this->membershipRepository->getMembersForNetwork($networkId, $filters);
 
-        if (! empty($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-
-        if (! empty($filters['search'])) {
-            $search = trim($filters['search']);
-            $query->where(function ($membershipQuery) use ($search): void {
-                $membershipQuery
-                    ->whereHas('user', function ($userQuery) use ($search): void {
-                        $userQuery
-                            ->where('user_full_name', 'like', "%{$search}%")
-                            ->orWhere('user_phone_number', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('role', function ($roleQuery) use ($search): void {
-                        $roleQuery
-                            ->where('role_name', 'like', "%{$search}%")
-                            ->orWhere('role_key', 'like', "%{$search}%");
-                    });
-
-                if (ctype_digit($search)) {
-                    $membershipQuery
-                        ->orWhere('id', (int) $search)
-                        ->orWhere('user_id', (int) $search);
-                }
-            });
-        }
-
-        $perPage = min(max(1, (int) ($filters['per_page'] ?? 20)), 50);
-
-        $paginator = $query
-            ->orderBy('id', 'asc')
-            ->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
-
-        foreach ($paginator->items() as $member) {
+        foreach ($members->items() as $member) {
             $member->setAttribute('is_owner', (int) $member->user_id === $ownerId);
         }
 
-        return $paginator;
+        return $members;
+    }
+
+    /**
+     * @return array{total:int,active:int,suspended:int,invited:int}
+     */
+    public function getMembersSummary(int $networkId, int $actorId): array
+    {
+        $this->authorizeActor($networkId, $actorId, 'network_members.view');
+
+        return $this->membershipRepository->getSummaryForNetwork($networkId);
     }
 
     /**

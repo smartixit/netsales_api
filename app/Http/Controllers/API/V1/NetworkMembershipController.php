@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Http\Requests\API\V1\Membership\IndexMembershipRequest;
+use App\Http\Resources\API\V1\Membership\WorkspaceMembershipResource;
 use App\Http\Requests\API\V1\Membership\RemoveMembershipRequest;
 use App\Http\Requests\API\V1\Membership\StoreMembershipRequest;
 use App\Http\Requests\API\V1\Membership\UpdateMembershipRoleRequest;
@@ -32,7 +33,7 @@ class NetworkMembershipController extends BaseController
 
             return $this->successResponse(
                 'تم استرجاع قائمة أعضاء وموظفي الشبكة بنجاح.',
-                $members,
+                WorkspaceMembershipResource::collection($members),
                 200,
                 ['summary' => $summary]
             );

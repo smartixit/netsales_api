@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\API\V1\Membership;
 
+use App\Enums\MembershipStatus;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class IndexMembershipRequest extends FormRequest
 {
@@ -18,7 +20,7 @@ class IndexMembershipRequest extends FormRequest
     {
         return [
             'search' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'status' => ['sometimes', 'nullable', 'string', 'in:ACTIVE,SUSPENDED,INVITED'],
+            'status' => ['sometimes', 'nullable', Rule::enum(MembershipStatus::class)],
             'cursor' => ['sometimes', 'nullable', 'string', 'max:2048'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
         ];
