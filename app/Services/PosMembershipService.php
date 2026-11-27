@@ -29,6 +29,10 @@ class PosMembershipService
     /**
      * جلب قائمة موظفي وعضويات نقطة البيع.
      */
+    /**
+     * @param array<string, mixed> $filters
+     * @return CursorPaginator<int, PosUser>
+     */
     public function getMembers(int $posId, int $actorId, array $filters = []): CursorPaginator
     {
         $this->authorizeActor($posId, $actorId, 'pos_members.view');
@@ -56,6 +60,7 @@ class PosMembershipService
     /**
      * جلب الأدوار التشغيلية المسموح بإسنادها داخل نطاق نقطة البيع.
      */
+    /** @return Collection<int, Role> */
     public function getAssignableRoles(int $posId, int $actorId): Collection
     {
         $this->authorizeActor($posId, $actorId, 'pos_members.view');
@@ -134,7 +139,7 @@ class PosMembershipService
                 'old_state' => null,
                 'new_state' => [
                     'role_id' => $roleId,
-                    'status' => $member->status,
+                    'status' => $member->status->value,
                     'reason' => 'إضافة عضوية بنقطة البيع بواسطة الوكيل',
                 ],
                 'created_at' => now('Asia/Aden'),
@@ -218,9 +223,7 @@ class PosMembershipService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $oldStatus = $member->status instanceof MembershipStatus
-                ? $member->status->value
-                : (string) $member->status;
+            $oldStatus = $member->status->value;
             if ($oldStatus === $newStatus) {
                 return $member->load(['user', 'role']);
             }
