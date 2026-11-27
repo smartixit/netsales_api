@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class ConfiguredBillingReportProvider implements BillingReportProvider
 {
+    /** @param array<string, mixed> $config */
     public function __construct(protected readonly array $config) {}
 
     public function key(): string
@@ -15,6 +16,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         return $this->config['key'];
     }
 
+    /** @return array<string, mixed> */
     public function definition(): array
     {
         return [
@@ -59,7 +61,8 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
      * Apply the same configured free-text search to specialized summary queries.
      * The caller supplies aliases matching its own query shape.
      *
-     * @param  array<int, string>  $columns
+     * @param array<string, mixed> $filters
+     * @param list<string> $columns
      */
     protected function applySearchColumns(
         Builder $query,
@@ -81,6 +84,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         });
     }
 
+    /** @param array<string, mixed> $filters */
     private function query(?int $networkId, array $filters): Builder
     {
         $query = DB::table($this->config['table'].' as r');
@@ -137,6 +141,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         return $query;
     }
 
+    /** @param array<string, mixed> $filters @return CursorPaginator<int, object> */
     public function build(?int $networkId, array $filters): CursorPaginator
     {
         $query = $this->query($networkId, $filters);
@@ -148,6 +153,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             ->cursorPaginate(min(max((int) ($filters['per_page'] ?? 25), 1), 100), ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
+    /** @param array<string, mixed> $summary @return list<array<string, mixed>> */
     public function charts(array $summary): array
     {
         $pie = static function (string $id, string $title, array $items, string $labelKey, string $valueKey): array {
@@ -237,6 +243,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         };
     }
 
+    /** @param array<string, mixed> $filters @return iterable<object> */
     public function exportRows(?int $networkId, array $filters): iterable
     {
         $query = $this->query($networkId, $filters);
@@ -247,6 +254,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             ->cursor();
     }
 
+    /** @param array<string, mixed> $filters @return array<string, mixed> */
     public function summary(?int $networkId, array $filters): array
     {
         $query = $this->query($networkId, $filters);

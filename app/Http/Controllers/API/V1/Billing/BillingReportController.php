@@ -16,6 +16,7 @@ class BillingReportController extends BaseController
         private BillingReportProviderRegistry $providers
     ) {}
 
+    /** @return array<string, mixed> */
     private function filters(Request $request): array
     {
         return $request->validate([
@@ -75,6 +76,7 @@ class BillingReportController extends BaseController
         return $this->successResponse('بيانات تقرير فوترة المنصة.', $this->providers->get($reportType)->build(null, $this->filters($request)));
     }
 
+    /** @param array<string, mixed> $filters */
     private function csvResponse(string $reportType, ?int $networkId, array $filters): mixed
     {
         $provider = $this->providers->get($reportType);

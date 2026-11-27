@@ -115,6 +115,7 @@ final class BillingReportProviderRegistry
         return $this->providers[$key] ?? throw ValidationException::withMessages(['report_type' => ['تقرير الفوترة المطلوب غير معروف.']]);
     }
 
+    /** @return list<BillingReportProvider> */
     public function all(): array
     {
         return array_values($this->providers);

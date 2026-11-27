@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 final class BillingReceivablesProvider extends ConfiguredBillingReportProvider
 {
+    /** @param array<string, mixed> $filters @return array<string, mixed> */
     public function summary(?int $networkId, array $filters): array
     {
         $q = DB::table('billing_invoices as i')->join('currencies as c', 'c.currency_id', '=', 'i.currency_id')
