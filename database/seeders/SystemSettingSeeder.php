@@ -225,7 +225,7 @@ class SystemSettingSeeder extends Seeder
                 'setting_category' => 'SECURITY',
                 'setting_key' => 'max_daily_reset_password_requests',
                 'setting_value_type' => 'INTEGER',
-                'setting_value' => '1',
+                'setting_value' => '3',
                 'setting_desc' => 'أقصى عدد مسموح يومياً لطلبات استعادة كلمة المرور لكل مستخدم',
             ],
             [
