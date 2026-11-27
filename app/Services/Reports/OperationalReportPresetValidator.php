@@ -48,7 +48,7 @@ final class OperationalReportPresetValidator
             'single_choice' => 'choice',
             'multi_choice' => 'choices',
         ];
-        /** @var list<array<string, mixed>> $filterDefinitionRows */
+        /** @var list<array{id: string, kind?: string}> $filterDefinitionRows */
         $filterDefinitionRows = $definition['filters'] ?? [];
         $filterDefinitions = collect($filterDefinitionRows)->keyBy('id');
 
@@ -121,7 +121,7 @@ final class OperationalReportPresetValidator
             }
         }
 
-        /** @var list<array<string, mixed>> $columnDefinitions */
+        /** @var list<array{id: string, sortable?: bool, groupable?: bool, hideable?: bool, visible_by_default?: bool}> $columnDefinitions */
         $columnDefinitions = $definition['columns'] ?? [];
         $columns = collect($columnDefinitions)->keyBy('id');
         $visible = $presentation['visible_column_ids'] ?? [];
@@ -168,7 +168,7 @@ final class OperationalReportPresetValidator
                 $version['minor'] ?? -1,
                 $version['patch'] ?? -1,
             ]);
-            /** @var list<array<string, mixed>> $templateDefinitions */
+            /** @var list<array{id: string, version: string}> $templateDefinitions */
             $templateDefinitions = $definition['templates'] ?? [];
             $allowed = collect($templateDefinitions)->contains(
                 fn (array $item): bool => ($item['id'] ?? '').'@'.(string) ($item['version'] ?? '') === $key
