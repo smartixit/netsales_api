@@ -17,6 +17,10 @@ class NetworkMembershipRepository extends BaseRepository
         parent::__construct($model);
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     * @return CursorPaginator<int, NetworkUser>
+     */
     public function getMembersForNetwork(int $networkId, array $filters = []): CursorPaginator
     {
         $result = $this->getFiltered(
@@ -52,6 +56,10 @@ class NetworkMembershipRepository extends BaseRepository
         ];
     }
 
+    /**
+     * @param Builder<NetworkUser> $query
+     * @param array<string, mixed> $filters
+     */
     protected function applyFilters(Builder $query, array $filters): void
     {
         parent::applyFilters($query, $filters);
