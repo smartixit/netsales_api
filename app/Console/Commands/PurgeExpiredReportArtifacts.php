@@ -56,7 +56,8 @@ class PurgeExpiredReportArtifacts extends Command
             ->chunkById(100, function ($runs) use (&$purged, &$failed): void {
                 foreach ($runs as $run) {
                     $path = $run->artifact_path;
-                    if ($path !== null && ! Storage::disk('protected')->delete($path)) {
+                    $disk = Storage::disk('protected');
+                    if ($path !== null && $disk->exists($path) && ! $disk->delete($path)) {
                         $failed++;
                         Log::warning('Could not delete expired report artifact.', [
                             'report_run_id' => $run->report_run_id,
