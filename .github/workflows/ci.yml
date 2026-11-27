@@ -103,7 +103,7 @@ jobs:
       - name: Update vulnerable Composer packages
         run: >-
           composer update league/commonmark symfony/http-foundation symfony/http-kernel
-          symfony/mime symfony/routing symfony/yaml
+          symfony/mailer symfony/mime symfony/routing symfony/yaml
           --with-all-dependencies --no-interaction --prefer-dist --no-progress
 
       - name: Generate application key for tests
