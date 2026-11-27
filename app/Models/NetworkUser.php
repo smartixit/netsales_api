@@ -33,21 +33,25 @@ class NetworkUser extends Model
         ];
     }
 
+    /** @return BelongsTo<Network, $this> */
     public function network(): BelongsTo
     {
         return $this->belongsTo(Network::class, 'network_id', 'network_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
+    /** @return BelongsTo<Role, $this> */
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id', 'role_id');
     }
 
+    /** @return HasMany<NetworkMembershipAuditLog, $this> */
     public function auditLogs(): HasMany
     {
         return $this->hasMany(NetworkMembershipAuditLog::class, 'network_id', 'network_id')
