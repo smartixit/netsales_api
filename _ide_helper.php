@@ -5,7 +5,7 @@
 
 /**
  * A helper file for Laravel, to provide autocomplete information to your IDE
- * Generated for Laravel 12.69.2.
+ * Generated for Laravel 12.71.0.
  *
  * This file should not be included in your code, only analyzed by your IDE!
  *
@@ -2116,6 +2116,19 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
+         * Get the registered command instance with the given name, if any.
+         *
+         * @param string $name
+         * @return \Symfony\Component\Console\Command\Command|null
+         * @static
+         */
+        public static function findCommand($name)
+        {
+            /** @var \Illuminate\Foundation\Console\Kernel $instance */
+            return $instance->findCommand($name);
+        }
+
+        /**
          * Get all of the commands registered with the console.
          *
          * @return array
@@ -3350,6 +3363,19 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
+         * Get the path to the compiled version of a view.
+         *
+         * @param string $path
+         * @return string
+         * @static
+         */
+        public static function getCompiledPath($path)
+        {
+            /** @var \Illuminate\View\Compilers\BladeCompiler $instance */
+            return $instance->getCompiledPath($path);
+        }
+
+        /**
          * Execute the given callback using a custom echo format.
          *
          * @param string $format
@@ -3410,20 +3436,6 @@ namespace Illuminate\Support\Facades {
         {
             /** @var \Illuminate\View\Compilers\BladeCompiler $instance */
             $instance->withoutComponentTags();
-        }
-
-        /**
-         * Get the path to the compiled version of a view.
-         *
-         * @param string $path
-         * @return string
-         * @static
-         */
-        public static function getCompiledPath($path)
-        {
-            //Method inherited from \Illuminate\View\Compilers\Compiler 
-            /** @var \Illuminate\View\Compilers\BladeCompiler $instance */
-            return $instance->getCompiledPath($path);
         }
 
         /**
@@ -14954,7 +14966,7 @@ namespace Illuminate\Support\Facades {
          *
          * You should only list the reverse proxies that you manage directly.
          *
-         * @param array $proxies A list of trusted proxies, the string 'REMOTE_ADDR' will be replaced with $_SERVER['REMOTE_ADDR'] and 'PRIVATE_SUBNETS' by IpUtils::PRIVATE_SUBNETS
+         * @param array $proxies A list of trusted proxies, the string 'REMOTE_ADDR' will be replaced with $_SERVER['REMOTE_ADDR'], and 'private_ranges' or 'PRIVATE_SUBNETS' by IpUtils::PRIVATE_RANGES
          * @param int-mask-of<Request::HEADER_*> $trustedHeaderSet A bit field to set which headers to trust from your proxies
          * @static
          */

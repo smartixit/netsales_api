@@ -2,8 +2,13 @@
 
 namespace App\Http\Resources\API\V1\Billing;
 
+use App\Models\CurrencyExchangeRate;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+
+/**
+ * @mixin CurrencyExchangeRate
+ */
 
 class CurrencyExchangeRateResource extends JsonResource
 {

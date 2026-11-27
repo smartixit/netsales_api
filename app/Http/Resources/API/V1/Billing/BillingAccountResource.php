@@ -2,8 +2,13 @@
 
 namespace App\Http\Resources\API\V1\Billing;
 
+use App\Models\BillingAccount;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+
+/**
+ * @mixin BillingAccount
+ */
 
 class BillingAccountResource extends JsonResource
 {
