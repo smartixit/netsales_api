@@ -123,19 +123,31 @@ final class OperationalReportPresetValidator
 
         /** @var list<array{id: string, sortable?: bool, groupable?: bool, hideable?: bool, visible_by_default?: bool}> $columnDefinitions */
         $columnDefinitions = $definition['columns'] ?? [];
-        $columns = collect($columnDefinitions)->keyBy('id');
+        /** @var array<string, array{id: string, sortable?: bool, groupable?: bool, hideable?: bool, visible_by_default?: bool}> $columns */
+        $columns = [];
+        foreach ($columnDefinitions as $column) {
+            $columns[$column['id']] = $column;
+        }
+
         $visible = $presentation['visible_column_ids'] ?? [];
         if (count($visible) !== count(array_unique($visible))) {
             $errors->add('presentation.visible_column_ids', 'لا يمكن تكرار العمود في الإعدادات المحفوظة.');
         }
         foreach ($visible as $id) {
-            if (! $columns->has($id)) {
+            if (! isset($columns[$id])) {
                 $errors->add('presentation.visible_column_ids', 'يتضمن الإعداد عموداً غير معرف في التقرير.');
             }
         }
-        $effectiveVisible = $visible === []
-            ? collect($definition['columns'] ?? [])->filter(fn (array $column) => ($column['visible_by_default'] ?? true) === true)->pluck('id')->all()
-            : $visible;
+
+        $effectiveVisible = $visible;
+        if ($effectiveVisible === []) {
+            foreach ($columnDefinitions as $column) {
+                if (($column['visible_by_default'] ?? true) === true) {
+                    $effectiveVisible[] = $column['id'];
+                }
+            }
+        }
+
         foreach ($columns as $id => $column) {
             if (($column['hideable'] ?? true) === false && ! in_array($id, $effectiveVisible, true)) {
                 $errors->add('presentation.visible_column_ids', 'يتضمن الإعداد إخفاء عمود إلزامي.');
@@ -150,13 +162,13 @@ final class OperationalReportPresetValidator
                 $errors->add('presentation.sorts', 'لا يمكن تكرار عمود الترتيب.');
             }
             $seenSorts[$id] = true;
-            if (! $columns->has($id) || ! ($columns[$id]['sortable'] ?? false)) {
+            if (! isset($columns[$id]) || ! ($columns[$id]['sortable'] ?? false)) {
                 $errors->add('presentation.sorts', 'يتضمن الإعداد ترتيباً حسب عمود غير مسموح.');
             }
         }
 
         $groupBy = $presentation['group_by_field_id'] ?? null;
-        if ($groupBy !== null && (! $columns->has($groupBy) || ! ($columns[$groupBy]['groupable'] ?? false))) {
+        if ($groupBy !== null && (! isset($columns[$groupBy]) || ! ($columns[$groupBy]['groupable'] ?? false))) {
             $errors->add('presentation.group_by_field_id', 'عمود التجميع غير متاح لهذا التقرير.');
         }
 
