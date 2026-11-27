@@ -472,14 +472,14 @@ class SystemSettingSeeder extends Seeder
                 'setting_category' => 'BACKUP',
                 'setting_key' => 'google_drive_client_id',
                 'setting_value_type' => 'TEXT',
-                'setting_value' => '',
+                'setting_value' => '1378927188-3er7ai1i2pjpkhc2bp1houarkkaaradt.apps.googleusercontent.com',
                 'setting_desc' => 'معرّف العميل Google OAuth Client ID لحساب Google Drive',
             ],
             [
                 'setting_category' => 'BACKUP',
                 'setting_key' => 'google_drive_client_secret',
                 'setting_value_type' => 'TEXT',
-                'setting_value' => '',
+                'setting_value' => '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',
                 'setting_desc' => 'المفتاح السري Google OAuth Client Secret لحساب Google Drive',
             ],
             [
