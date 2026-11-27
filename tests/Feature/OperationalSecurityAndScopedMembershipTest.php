@@ -753,6 +753,61 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
         );
     }
 
+    public function test_membership_form_requests_reject_invalid_inputs_for_both_tenant_scopes(): void
+    {
+        $networkAuth = $this->createAuthenticatedSession($this->networkOwner);
+        $networkBase = "/api/v1/networks/{$this->networkA->network_id}/members";
+
+        $this->withHeaders($networkAuth['headers'])
+            ->postJson($networkBase, [
+                'user_phone_number' => '',
+                'role_id' => 0,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['user_phone_number', 'role_id']);
+
+        $this->withHeaders($networkAuth['headers'])
+            ->putJson("{$networkBase}/{$this->posOwner->user_id}/role", ['role_id' => 0])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['role_id']);
+
+        $this->withHeaders($networkAuth['headers'])
+            ->putJson("{$networkBase}/{$this->posOwner->user_id}/status", ['status' => 'UNKNOWN'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+
+        $this->withHeaders($networkAuth['headers'])
+            ->deleteJson("{$networkBase}/{$this->posOwner->user_id}", ['reason' => str_repeat('x', 256)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['reason']);
+
+        $posAuth = $this->createAuthenticatedSession($this->posOwner);
+        $posBase = "/api/v1/pos/{$this->posA->pos_id}/members";
+
+        $this->withHeaders($posAuth['headers'])
+            ->postJson($posBase, [
+                'user_phone_number' => '',
+                'role_id' => 0,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['user_phone_number', 'role_id']);
+
+        $this->withHeaders($posAuth['headers'])
+            ->putJson("{$posBase}/{$this->networkOwner->user_id}/role", ['role_id' => 0])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['role_id']);
+
+        $this->withHeaders($posAuth['headers'])
+            ->putJson("{$posBase}/{$this->networkOwner->user_id}/status", ['status' => 'UNKNOWN'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+
+        $this->withHeaders($posAuth['headers'])
+            ->deleteJson("{$posBase}/{$this->networkOwner->user_id}", ['reason' => str_repeat('x', 256)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['reason']);
+    }
+
     public function test_force_delete_never_deletes_a_live_request(): void
     {
         $request = VoucherRequest::query()->create([
