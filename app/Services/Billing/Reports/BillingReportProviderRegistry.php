@@ -47,21 +47,7 @@ final class BillingReportProviderRegistry
         $this->providers = [];
         foreach ($configs as $c) {
             [$key,$label,$description,$table,$scopeColumn,$scopeKind,$date,$keyColumn,$select,$search,$joins,$amount,$currency,$where] = $c;
-            $providerClass = match ($key) {
-                'subscriptions' => BillingSubscriptionsProvider::class,
-                'trials' => BillingTrialsProvider::class,
-                'trial_conversion' => BillingTrialConversionProvider::class,
-                'renewals' => BillingRenewalsProvider::class,
-                'plan_performance' => BillingPlanPerformanceProvider::class,
-                'invoices' => BillingInvoicesProvider::class,
-                'collections' => BillingCollectionsProvider::class,
-                'receivables' => BillingReceivablesProvider::class,
-                'usage' => BillingUsageProvider::class,
-                'dunning' => BillingDunningProvider::class,
-                'refunds' => BillingRefundsProvider::class,
-                'revenue_recognition' => BillingRevenueRecognitionProvider::class,
-                default => ConfiguredBillingReportProvider::class,
-            };
+            $providerClass = $this->providerClassFor($key);
             $this->providers[$key] = new $providerClass([
                 'key' => $key, 'label' => $label, 'description' => $description, 'table' => $table,
                 'scope' => ['kind' => $scopeKind, 'column' => $scopeColumn],
@@ -126,6 +112,25 @@ final class BillingReportProviderRegistry
                 }, explode(',', $select)),
             ]);
         }
+    }
+
+    private function providerClassFor(string $key): string
+    {
+        return match ($key) {
+            'subscriptions' => BillingSubscriptionsProvider::class,
+            'trials' => BillingTrialsProvider::class,
+            'trial_conversion' => BillingTrialConversionProvider::class,
+            'renewals' => BillingRenewalsProvider::class,
+            'plan_performance' => BillingPlanPerformanceProvider::class,
+            'invoices' => BillingInvoicesProvider::class,
+            'collections' => BillingCollectionsProvider::class,
+            'receivables' => BillingReceivablesProvider::class,
+            'usage' => BillingUsageProvider::class,
+            'dunning' => BillingDunningProvider::class,
+            'refunds' => BillingRefundsProvider::class,
+            'revenue_recognition' => BillingRevenueRecognitionProvider::class,
+            default => ConfiguredBillingReportProvider::class,
+        };
     }
 
     public function get(string $key): BillingReportProvider
