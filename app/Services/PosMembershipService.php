@@ -64,13 +64,15 @@ class PosMembershipService
 
         $perPage = min(max(1, (int) ($filters['per_page'] ?? 20)), 50);
 
-        return $query
+        $paginator = $query
             ->orderBy('id', 'asc')
-            ->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null)
-            ->through(fn (PosUser $member) => $member->setAttribute(
-                'is_owner',
-                (int) $member->user_id === $ownerId
-            ));
+            ->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null);
+
+        foreach ($paginator->items() as $member) {
+            $member->setAttribute('is_owner', (int) $member->user_id === $ownerId);
+        }
+
+        return $paginator;
     }
 
     /**
