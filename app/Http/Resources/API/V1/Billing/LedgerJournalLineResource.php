@@ -2,9 +2,14 @@
 
 namespace App\Http\Resources\API\V1\Billing;
 
+use App\Models\LedgerJournalLine;
 use App\Services\Billing\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+
+/**
+ * @mixin LedgerJournalLine
+ */
 
 class LedgerJournalLineResource extends JsonResource
 {

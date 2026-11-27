@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Http\Requests\API\V1\Auth\GetUserSessionsRequest;
 use App\Http\Requests\API\V1\Auth\LoginRequest;
 use App\Http\Requests\API\V1\Auth\RegisterNetworkRequest;
 use App\Http\Requests\API\V1\Auth\RegisterPosRequest;
@@ -15,6 +16,7 @@ use App\Http\Resources\API\V1\Network\NetworkResource;
 use App\Http\Resources\API\V1\Pos\PosResource;
 use App\Http\Resources\API\V1\User\UserDeviceResource;
 use App\Http\Resources\API\V1\User\UserResource;
+use App\Http\Resources\API\V1\User\UserSessionResource;
 use App\Services\AuthService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -722,6 +724,102 @@ class AuthController extends BaseController
         }
 
         return $this->successResponse('تم فصل الجهاز وإلغاء إقرانه بنجاح.');
+    }
+
+    /**
+     * جلب جلسات تسجيل الدخول الخاصة بالمستخدم المصادق عليه.
+     */
+    #[OA\Get(
+        path: '/api/v1/auth/sessions',
+        summary: 'استعراض جلسات تسجيل الدخول للمستخدم الحالي',
+        description: 'يجلب قائمة جلسات تسجيل الدخول الخاصة بالمستخدم مع دعم التصفية بالحالة والبحث بعنوان IP أو معلومات الجهاز.',
+        security: [['sessionAuth' => []]],
+        tags: ['Auth'],
+        parameters: [
+            new OA\Parameter(
+                name: 'status',
+                in: 'query',
+                required: false,
+                description: 'تصفية حسب حالة الجلسة (ACTIVE, EXPIRED, REVOKED)',
+                schema: new OA\Schema(type: 'string', enum: ['ACTIVE', 'EXPIRED', 'REVOKED'])
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                required: false,
+                description: 'بحث بعنوان IP أو User Agent أو معرف الجهاز',
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'تم جلب قائمة الجلسات بنجاح'),
+            new OA\Response(response: 401, description: 'غير مصادق عليه'),
+            new OA\Response(response: 422, description: 'بيانات تصفية غير صالحة'),
+        ]
+    )]
+    public function getSessions(GetUserSessionsRequest $request): JsonResponse
+    {
+        $user = $this->currentUser();
+        if (! $user) {
+            return $this->errorResponse('غير مصادق عليه.', [], 401);
+        }
+
+        $sessions = $this->authService->getUserSessions(
+            $user,
+            $request->selectedStatus(),
+            $request->searchTerm()
+        );
+
+        return $this->successResponse(
+            'تم جلب قائمة الجلسات بنجاح.',
+            UserSessionResource::collection($sessions)
+        );
+    }
+
+    /**
+     * إنهاء جلسة محددة للمستخدم المصادق عليه.
+     */
+    #[OA\Delete(
+        path: '/api/v1/auth/sessions/{id}',
+        summary: 'إنهاء جلسة محددة للمستخدم الحالي',
+        security: [['sessionAuth' => []]],
+        tags: ['Auth'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'معرف الجلسة المراد إنهاؤها',
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'تم إنهاء الجلسة بنجاح'),
+            new OA\Response(response: 401, description: 'غير مصادق عليه'),
+            new OA\Response(response: 404, description: 'لم يتم العثور على الجلسة أو أنها منتهية مسبقاً'),
+            new OA\Response(response: 422, description: 'لا يمكن إنهاء الجلسة الحالية من هذا المسار'),
+        ]
+    )]
+    public function terminateSession(Request $request, int $id): JsonResponse
+    {
+        $user = $this->currentUser();
+        $currentSessionId = (int) $request->attributes->get('session_id');
+
+        if (! $user || ! $currentSessionId) {
+            return $this->errorResponse('غير مصادق عليه.', [], 401);
+        }
+
+        try {
+            $terminated = $this->authService->terminateUserSession($user, $id, $currentSessionId);
+
+            if (! $terminated) {
+                return $this->errorResponse('لم يتم العثور على الجلسة أو أنها منتهية مسبقاً.', [], 404);
+            }
+
+            return $this->successResponse('تم إنهاء الجلسة بنجاح.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        }
     }
 
     public function healthCheck(Request $request)

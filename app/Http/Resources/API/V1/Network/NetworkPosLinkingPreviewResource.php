@@ -2,8 +2,13 @@
 
 namespace App\Http\Resources\API\V1\Network;
 
+use App\Models\NetworkPosLinkingChallenge;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+
+/**
+ * @mixin NetworkPosLinkingChallenge
+ */
 
 class NetworkPosLinkingPreviewResource extends JsonResource
 {

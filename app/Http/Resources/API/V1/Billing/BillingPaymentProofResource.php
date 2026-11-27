@@ -2,9 +2,14 @@
 
 namespace App\Http\Resources\API\V1\Billing;
 
+use App\Models\BillingPaymentProof;
 use App\Services\Support\FileUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+
+/**
+ * @mixin BillingPaymentProof
+ */
 
 class BillingPaymentProofResource extends JsonResource
 {
