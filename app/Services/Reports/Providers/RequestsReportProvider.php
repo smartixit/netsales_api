@@ -6,7 +6,7 @@ use App\Enums\OperationalReportType;
 use App\Models\Request as SupplyRequest;
 use App\Models\User;
 use App\Services\Reports\AbstractOperationalReportProvider;
-use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
 
 final class RequestsReportProvider extends AbstractOperationalReportProvider

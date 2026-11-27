@@ -7,7 +7,7 @@ use App\Models\NetworkWallet;
 use App\Models\NetworkWalletLog;
 use App\Models\User;
 use App\Services\Reports\AbstractOperationalReportProvider;
-use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
 
 final class NetworkWalletReportProvider extends AbstractOperationalReportProvider

@@ -7,6 +7,7 @@ use App\Models\OperationalReportExport;
 use App\Models\User;
 use App\Services\OperationalReportAuthorizationService;
 use App\Services\Reports\OperationalReportProviderRegistry;
+use App\Support\CsvValueSanitizer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -91,7 +92,22 @@ final class GenerateOperationalReportExport implements ShouldQueue
             }
 
             $recordCount = 0;
+            $pageCount = 0;
+            $seenCursors = [];
             do {
+                $cursor = $filters['cursor'];
+                if ($cursor !== null && isset($seenCursors[$cursor])) {
+                    throw new \RuntimeException('REPORT_EXPORT_CURSOR_CYCLE');
+                }
+                if ($cursor !== null) {
+                    $seenCursors[$cursor] = true;
+                }
+
+                $pageCount++;
+                if ($pageCount > 500) {
+                    throw new \RuntimeException('REPORT_EXPORT_PAGE_LIMIT_EXCEEDED');
+                }
+
                 $page = $provider->build($user, $networkId, $posId, $filters);
                 foreach ($page->items() as $row) {
                     $recordCount++;
@@ -108,7 +124,12 @@ final class GenerateOperationalReportExport implements ShouldQueue
                         throw new \RuntimeException('REPORT_EXPORT_STREAM_WRITE_FAILED');
                     }
                 }
-                $filters['cursor'] = $page->nextCursor()?->encode();
+                $nextCursor = $page->nextCursor()?->encode();
+                if ($nextCursor !== null &&
+                    ($nextCursor === $cursor || isset($seenCursors[$nextCursor]))) {
+                    throw new \RuntimeException('REPORT_EXPORT_CURSOR_CYCLE');
+                }
+                $filters['cursor'] = $nextCursor;
             } while ($filters['cursor'] !== null);
 
             $stream = fopen('php://temp/maxmemory:2097152', 'w+b');
@@ -135,9 +156,9 @@ final class GenerateOperationalReportExport implements ShouldQueue
                 $values = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
                 $csvRow = [];
                 foreach (array_keys($columns) as $field) {
-                    $csvRow[] = $this->safeCsvValue($values[$field] ?? null);
+                    $csvRow[] = CsvValueSanitizer::sanitize($values[$field] ?? null);
                 }
-                if (fputcsv($stream, $csvRow) === false) {
+                if (fputcsv($stream, $csvRow) < 1) {
                     fclose($rowStream);
                     fclose($stream);
                     throw new \RuntimeException('REPORT_EXPORT_CSV_ROW_FAILED');
@@ -148,10 +169,6 @@ final class GenerateOperationalReportExport implements ShouldQueue
             rewind($stream);
             $hashContext = hash_init('sha256');
             $artifactSize = hash_update_stream($hashContext, $stream);
-            if ($artifactSize === false) {
-                fclose($stream);
-                throw new \RuntimeException('REPORT_EXPORT_STREAM_READ_FAILED');
-            }
             $artifactHash = hash_final($hashContext);
 
             rewind($stream);
@@ -241,12 +258,4 @@ final class GenerateOperationalReportExport implements ShouldQueue
         return preg_match('/^[A-Z0-9_]+$/', $message) === 1 ? $message : 'REPORT_EXPORT_FAILED';
     }
 
-    private function safeCsvValue(mixed $value): mixed
-    {
-        if (! is_string($value) || $value === '' || is_numeric($value)) {
-            return $value;
-        }
-
-        return preg_match('/^[\x00-\x20]*[=+\-@]/', $value) === 1 ? "'".$value : $value;
-    }
 }

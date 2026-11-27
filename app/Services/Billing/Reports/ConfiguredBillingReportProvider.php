@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class ConfiguredBillingReportProvider implements BillingReportProvider
 {
+    /** @param array<string, mixed> $config */
     public function __construct(protected readonly array $config) {}
 
     public function key(): string
@@ -15,6 +16,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         return $this->config['key'];
     }
 
+    /** @return array<string, mixed> */
     public function definition(): array
     {
         return [
@@ -59,7 +61,8 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
      * Apply the same configured free-text search to specialized summary queries.
      * The caller supplies aliases matching its own query shape.
      *
-     * @param  array<int, string>  $columns
+     * @param array<string, mixed> $filters
+     * @param list<string> $columns
      */
     protected function applySearchColumns(
         Builder $query,
@@ -81,6 +84,7 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         });
     }
 
+    /** @param array<string, mixed> $filters */
     private function query(?int $networkId, array $filters): Builder
     {
         $query = DB::table($this->config['table'].' as r');
@@ -137,17 +141,56 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         return $query;
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     * @return CursorPaginator<int, object>
+     */
     public function build(?int $networkId, array $filters): CursorPaginator
     {
         $query = $this->query($networkId, $filters);
         $query->select($this->config['select']);
 
-        return $query
-            ->orderByDesc($this->config['date'])
-            ->orderByDesc($this->config['key_column'])
-            ->cursorPaginate(min(max((int) ($filters['per_page'] ?? 25), 1), 100), ['*'], 'cursor', $filters['cursor'] ?? null);
+        $sortColumn = $this->config['sort'] ?? $this->config['date'];
+        $query->orderByDesc($sortColumn);
+        if ($sortColumn !== $this->config['key_column']) {
+            $query->orderByDesc($this->config['key_column']);
+        }
+
+        return $query->cursorPaginate(
+            min(max((int) ($filters['per_page'] ?? 25), 1), 100),
+            ['*'],
+            'cursor',
+            $filters['cursor'] ?? null
+        );
     }
 
+    /**
+     * @param array<string, mixed> $summary
+     * @return list<array<string, mixed>>
+     */
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function summaryRows(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $rows = [];
+        foreach ($value as $row) {
+            if (is_array($row)) {
+                $rows[] = $row;
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param array<string, mixed> $summary
+     * @return list<array<string, mixed>>
+     */
     public function charts(array $summary): array
     {
         $pie = static function (string $id, string $title, array $items, string $labelKey, string $valueKey): array {
@@ -183,14 +226,14 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
                 ], $summary['eligible_by_policy_plan_price'] ?? []),
             ]]),
             'renewals' => [$pie('renewal_outcomes', 'نتائج أحداث التجديد', $summary['event_distribution'] ?? [], 'event_type', 'count')],
-            'plan_performance' => collect($summary['mrr_arr_by_plan_and_currency'] ?? [])->groupBy('currency_code')->map(
+            'plan_performance' => collect($this->summaryRows($summary['mrr_arr_by_plan_and_currency'] ?? []))->groupBy('currency_code')->map(
                 fn ($items, $currency): array => $bar('mrr_arr_'.$currency, 'الإيراد الشهري والسنوي حسب الخطة', (string) $currency, $items->map(static fn ($item): array => [
                     'label' => $item['plan_name'], 'mrr' => (int) $item['mrr_minor'], 'arr' => (int) $item['arr_minor'],
                 ])->values()->all(), [['key' => 'mrr', 'label' => 'MRR'], ['key' => 'arr', 'label' => 'ARR']])
             )->values()->all(),
             'invoices' => array_merge(
                 [$pie('invoice_status_distribution', 'توزيع حالات الفواتير', $summary['status_distribution'] ?? [], 'status', 'count')],
-                collect($summary['amounts_by_currency'] ?? [])->map(
+                collect($this->summaryRows($summary['amounts_by_currency'] ?? []))->map(
                     fn ($item): array => $bar('invoice_amounts_'.$item['currency_code'], 'الفواتير والرصيد المستحق', (string) $item['currency_code'], [[
                         'label' => 'الفواتير', 'invoiced' => (int) $item['invoiced_minor'],
                         'credited' => (int) $item['credited_minor'], 'outstanding' => (int) $item['outstanding_minor'],
@@ -199,35 +242,36 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             ),
             'collections' => array_merge(
                 [$pie('collection_status_distribution', 'حالات التحصيل', $summary['collection_statuses'] ?? [], 'status', 'count')],
-                collect($summary['collections_by_currency'] ?? [])->map(
+                collect($this->summaryRows($summary['collections_by_currency'] ?? []))->map(
                     fn ($item): array => $bar('collections_'.$item['currency_code'], 'إجمالي وصافي التحصيل', (string) $item['currency_code'], [[
                         'label' => 'التحصيل', 'gross' => (int) $item['gross_collected_minor'],
                         'refunded' => (int) $item['refunded_minor'], 'net' => (int) $item['net_collected_minor'],
                     ]], [['key' => 'gross', 'label' => 'إجمالي التحصيل'], ['key' => 'refunded', 'label' => 'المسترد'], ['key' => 'net', 'label' => 'الصافي']])
                 )->all()
             ),
-            'receivables' => collect($summary['aging_by_currency'] ?? [])->map(
+            'receivables' => collect($this->summaryRows($summary['aging_by_currency'] ?? []))->map(
                 fn ($item): array => $bar('receivables_aging_'.$item['currency_code'], 'أعمار الذمم المدينة', (string) $item['currency_code'], [[
                     'label' => 'الذمم المستحقة',
+                    'undated' => (int) $item['undated_minor'],
                     'current' => (int) $item['current_minor'],
                     'days_1_30' => (int) $item['days_1_30_minor'],
                     'days_31_60' => (int) $item['days_31_60_minor'],
                     'days_61_90' => (int) $item['days_61_90_minor'],
                     'over_90' => (int) $item['over_90_minor'],
-                ]], [['key' => 'current', 'label' => 'غير متأخر'], ['key' => 'days_1_30', 'label' => '1–30'], ['key' => 'days_31_60', 'label' => '31–60'], ['key' => 'days_61_90', 'label' => '61–90'], ['key' => 'over_90', 'label' => '+90']])
+                ]], [['key' => 'undated', 'label' => 'تاريخ الاستحقاق غير محدد'], ['key' => 'current', 'label' => 'غير متأخر'], ['key' => 'days_1_30', 'label' => '1–30'], ['key' => 'days_31_60', 'label' => '31–60'], ['key' => 'days_61_90', 'label' => '61–90'], ['key' => 'over_90', 'label' => '+90']])
             )->values()->all(),
-            'usage' => collect($summary['amounts_by_currency'] ?? [])->map(
+            'usage' => collect($this->summaryRows($summary['amounts_by_currency'] ?? []))->map(
                 fn ($item): array => $bar('usage_amount_'.$item['currency_code'], 'قيمة الاستخدام', (string) $item['currency_code'], [[
                     'label' => 'الاستخدام', 'amount' => (int) $item['amount_minor'],
                 ]], [['key' => 'amount', 'label' => 'قيمة الاستخدام']])
             )->values()->all(),
             'dunning' => [$pie('dunning_outcomes', 'نتائج محاولات التحصيل', $summary['status_distribution'] ?? [], 'status', 'count')],
-            'refunds' => collect($summary['amounts_by_currency'] ?? [])->map(
+            'refunds' => collect($this->summaryRows($summary['amounts_by_currency'] ?? []))->map(
                 fn ($item): array => $bar('refunds_'.$item['currency_code'], 'مبالغ الاسترداد', (string) $item['currency_code'], [[
                     'label' => 'الاستردادات', 'amount' => (int) $item['amount_minor'],
                 ]], [['key' => 'amount', 'label' => 'المبلغ المسترد']])
             )->values()->all(),
-            'revenue_recognition' => collect($summary['revenue_by_currency'] ?? [])->map(
+            'revenue_recognition' => collect($this->summaryRows($summary['revenue_by_currency'] ?? []))->map(
                 fn ($item): array => $bar('revenue_'.$item['currency_code'], 'الإيراد المعترف به والمؤجل', (string) $item['currency_code'], [[
                     'label' => 'الإيراد', 'recognized' => (int) $item['recognized_in_period_minor'], 'deferred' => (int) $item['deferred_revenue_minor'],
                 ]], [['key' => 'recognized', 'label' => 'معترف به'], ['key' => 'deferred', 'label' => 'مؤجل']])
@@ -236,16 +280,28 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         };
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     * @return iterable<object>
+     */
     public function exportRows(?int $networkId, array $filters): iterable
     {
         $query = $this->query($networkId, $filters);
         $query->select($this->config['select']);
 
-        return $query->orderByDesc($this->config['date'])
-            ->orderByDesc($this->config['key_column'])
-            ->cursor();
+        $sortColumn = $this->config['sort'] ?? $this->config['date'];
+        $query->orderByDesc($sortColumn);
+        if ($sortColumn !== $this->config['key_column']) {
+            $query->orderByDesc($this->config['key_column']);
+        }
+
+        return $query->cursor();
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     * @return array<string, mixed>
+     */
     public function summary(?int $networkId, array $filters): array
     {
         $query = $this->query($networkId, $filters);

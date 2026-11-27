@@ -103,7 +103,7 @@ jobs:
       - name: Update vulnerable Composer packages
         run: >-
           composer update league/commonmark symfony/http-foundation symfony/http-kernel
-          symfony/mime symfony/routing symfony/yaml
+          symfony/mailer symfony/mime symfony/routing symfony/yaml
           --with-all-dependencies --no-interaction --prefer-dist --no-progress
 
       - name: Generate application key for tests
@@ -172,6 +172,24 @@ jobs:
           app/Services/Billing/BillingPolicyManagementService.php
           app/Services/Billing/BillingCatalogService.php
           app/Console/Commands/PurgeExpiredReportArtifacts.php
+          app/Http/Controllers/API/V1/OperationalReportController.php
+          app/Http/Controllers/API/V1/Billing/BillingReportController.php
+          app/Jobs/GenerateOperationalReportExport.php
+          app/Services/OperationalReportAuthorizationService.php
+          app/Services/Reports/OperationalReportPresetValidator.php
+          app/Services/Reports/OperationalReportFilterValidator.php
+          app/Services/Reports/OperationalReportProviderRegistry.php
+          app/Services/Reports/AbstractOperationalReportProvider.php
+          app/Services/Billing/Reports/BillingReportProvider.php
+          app/Services/Billing/Reports/ConfiguredBillingReportProvider.php
+          app/Services/Billing/Reports/BillingReportProviderRegistry.php
+          app/Services/Billing/Reports/BillingReceivablesProvider.php
+          app/Services/Billing/Reports/BillingInvoicesProvider.php
+          app/Support/CsvValueSanitizer.php
+          tests/Feature/BillingReceivablesReportTest.php
+          tests/Feature/BillingCollectionsReportTest.php
+          tests/Unit/OperationalReportPresetRequestTest.php
+          tests/Unit/CsvValueSanitizerTest.php
           app/Http/Controllers/API/V1/Reporting/ReportController.php
           app/Http/Resources/API/V1/Reporting/ReportRunResource.php
           app/Jobs/BuildReportRunJob.php

@@ -164,6 +164,6 @@ final class OperationalReportFilterValidator
             return false;
         }
 
-        return $date !== false && $date->format('Y-m-d') === $value;
+        return $date !== null && $date->format('Y-m-d') === $value;
     }
 }

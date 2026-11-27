@@ -6,7 +6,26 @@ use App\Enums\OperationalReportExportStatus;
 use App\Enums\OperationalReportType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $report_export_id
+ * @property string $export_uuid
+ * @property int $network_id
+ * @property int|null $pos_id
+ * @property int $requested_by
+ * @property OperationalReportType $report_type
+ * @property array<string, mixed> $filters
+ * @property OperationalReportExportStatus $status
+ * @property string|null $artifact_path
+ * @property string|null $artifact_sha256
+ * @property int|null $artifact_size
+ * @property int $record_count
+ * @property string|null $failure_code
+ * @property Carbon|null $started_at
+ * @property Carbon|null $completed_at
+ * @property Carbon|null $expires_at
+ */
 class OperationalReportExport extends Model
 {
     protected $table = 'operational_report_exports';
@@ -48,16 +67,19 @@ class OperationalReportExport extends Model
         ];
     }
 
+    /** @return BelongsTo<Network, $this> */
     public function network(): BelongsTo
     {
         return $this->belongsTo(Network::class, 'network_id', 'network_id');
     }
 
+    /** @return BelongsTo<Pos, $this> */
     public function pos(): BelongsTo
     {
         return $this->belongsTo(Pos::class, 'pos_id', 'pos_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function requestedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by', 'user_id');

@@ -11,14 +11,32 @@ final class BillingReportProviderRegistry
 
     public function __construct()
     {
+        /**
+         * @var list<array{
+         *     0: string,
+         *     1: string,
+         *     2: string,
+         *     3: string,
+         *     4: string,
+         *     5: string,
+         *     6: string,
+         *     7: string,
+         *     8: string,
+         *     9: list<string>,
+         *     10: list<array{string, string, string, string}>|null,
+         *     11: string|null,
+         *     12: string|null,
+         *     13: list<array{string, string, mixed}>
+         * }> $configs
+         */
         $configs = [
             ['subscriptions', 'الاشتراكات', 'دورة حياة الاشتراكات وحالاتها', 'billing_subscriptions', 'r.billing_account_id', 'account', 'created_at', 'billing_subscription_id', 'r.billing_subscription_id,r.billing_account_id,r.plan_id,r.plan_version_id,r.price_id,r.currency_id,r.status,r.current_period_start,r.current_period_end,r.trial_start,r.trial_end,r.cancel_at_period_end,r.created_at', ['r.status', 'r.billing_subscription_id'], null, null, null, [['r.deleted_at', 'is null', null]]],
             ['trials', 'التجارب', 'حجوزات التجارب وحالات اعتمادها وبدئها وانتهائها', 'billing_trial_redemptions', 'r.billing_account_id', 'account', 'r.reserved_at', 'r.trial_redemption_id', 'r.trial_redemption_id,r.billing_account_id,r.billing_subscription_id,r.trial_policy_id,r.trial_policy_version_id,r.status,r.redemption_scope,r.reserved_at,r.started_at,r.completed_at', ['r.status', 'r.trial_redemption_id'], [['billing_subscriptions as s', 's.billing_subscription_id', '=', 'r.billing_subscription_id']], null, null, [['s.deleted_at', 'is null', null]]],
             ['trial_conversion', 'تحويل التجارب', 'تحويل التجارب إلى اشتراكات مدفوعة بعد اعتماد التحصيل', 'billing_trial_redemptions', 'r.billing_account_id', 'account', 'r.reserved_at', 'r.trial_redemption_id', 'r.trial_redemption_id,r.billing_subscription_id,r.status as redemption_status,r.started_at,r.completed_at,s.status as subscription_status,s.current_period_start,s.current_period_end', ['r.status', 's.status', 'r.trial_redemption_id'], [['billing_subscriptions as s', 's.billing_subscription_id', '=', 'r.billing_subscription_id']], null, null, [['s.deleted_at', 'is null', null]]],
             ['renewals', 'التجديدات', 'أحداث تجديد الاشتراك والفواتير المرتبطة بها', 'billing_subscription_events', 'ba.network_id', 'joined', 'r.occurred_at', 'r.event_id', 'r.event_id,r.billing_subscription_id,r.event_type,r.from_status,r.to_status,r.payload,r.occurred_at', ['r.event_type', 'r.billing_subscription_id'], [['billing_subscriptions as s', 's.billing_subscription_id', '=', 'r.billing_subscription_id'], ['billing_accounts as ba', 'ba.billing_account_id', '=', 's.billing_account_id']], null, null, [['r.event_type', 'in', ['RENEWAL_INVOICE_ISSUED', 'ZERO_VALUE_RENEWAL_SETTLED', 'TRIAL_CONVERSION_INVOICE_ISSUED', 'TRIAL_CONVERTED_TO_FREE_PLAN', 'SUBSCRIPTION_CANCELED_AT_PERIOD_END', 'TRIAL_EXPIRED_WITHOUT_CONVERSION']]]],
-            ['invoices', 'الفواتير', 'فواتير الاشتراكات ومبالغها وأرصدتها', 'billing_invoices', 'r.billing_account_id', 'account', 'r.created_at', 'r.invoice_id', 'r.invoice_id,r.invoice_number,r.billing_account_id,r.billing_subscription_id,r.currency_id,r.status,r.invoice_type,r.issued_on,r.due_on,r.total_minor,r.paid_minor,r.credited_minor,r.remaining_minor', ['r.invoice_number', 'r.status'], null, null, null, [['r.status', '!=', 'DRAFT'], ['r.status', '!=', 'VOID']]],
+            ['invoices', 'الفواتير', 'فواتير الاشتراكات ومبالغها وأرصدتها', 'billing_invoices', 'r.billing_account_id', 'account', 'r.issued_on', 'r.invoice_id', 'r.invoice_id,r.invoice_number,r.billing_account_id,r.billing_subscription_id,r.currency_id,r.status,r.invoice_type,r.issued_on,r.due_on,r.total_minor,r.paid_minor,r.credited_minor,r.remaining_minor', ['r.invoice_number', 'r.status'], null, null, null, [['r.status', '!=', 'DRAFT'], ['r.status', '!=', 'VOID'], ['r.issued_on', 'is not null', null]]],
             ['collections', 'التحصيلات', 'سجل المدفوعات وحالات اعتمادها ومراجعها', 'billing_payments', 'r.billing_account_id', 'account', 'r.received_at', 'r.payment_id', 'r.payment_id,r.payment_reference,r.invoice_id,r.billing_account_id,r.currency_id,r.payment_method_id,r.amount_minor,r.status,r.received_at,r.verified_at', ['r.payment_reference', 'r.external_reference', 'r.status'], null, null, null, []],
-            ['receivables', 'الذمم المدينة', 'الفواتير ذات المبالغ المستحقة والمتأخرة', 'billing_invoices', 'r.billing_account_id', 'account', 'r.due_on', 'r.invoice_id', 'r.invoice_id,r.invoice_number,r.billing_account_id,r.billing_subscription_id,r.currency_id,r.status,r.due_on,r.total_minor,r.paid_minor,r.credited_minor,r.remaining_minor', ['r.invoice_number', 'r.status'], null, 'r.remaining_minor', 'r.currency_id', [['r.remaining_minor', '>', 0], ['r.status', '!=', 'DRAFT'], ['r.status', '!=', 'VOID']]],
+            ['receivables', 'الذمم المدينة', 'الفواتير ذات المبالغ المستحقة والمتأخرة', 'billing_invoices', 'r.billing_account_id', 'account', 'r.due_on', 'r.invoice_id', 'r.invoice_id,r.invoice_number,r.billing_account_id,r.billing_subscription_id,r.currency_id,r.status,r.issued_on,r.due_on,r.total_minor,r.paid_minor,r.credited_minor,r.remaining_minor', ['r.invoice_number', 'r.status'], null, 'r.remaining_minor', 'r.currency_id', [['r.remaining_minor', '>', 0], ['r.status', 'in', ['OPEN', 'PARTIALLY_PAID', 'PARTIALLY_CREDITED']], ['r.issued_on', 'is not null', null]]],
             ['usage', 'الاستخدام', 'تجميعات عدادات الاستخدام حسب فترة الاشتراك', 'billing_usage_aggregates', 'ba.network_id', 'joined', 'r.period_start', 'r.usage_aggregate_id', 'r.usage_aggregate_id,r.billing_subscription_id,r.meter_id,r.currency_id,r.period_start,r.period_end,r.quantity,r.amount_minor,r.last_event_at', ['r.billing_subscription_id'], [['billing_subscriptions as s', 's.billing_subscription_id', '=', 'r.billing_subscription_id'], ['billing_accounts as ba', 'ba.billing_account_id', '=', 's.billing_account_id']], 'r.amount_minor', 'r.currency_id', [['s.deleted_at', 'is null', null]]],
             ['dunning', 'التعثر والتحصيل الآلي', 'محاولات التذكير والتحصيل ومعالجة التأخر', 'billing_dunning_attempts', 'ba.network_id', 'joined', 'r.scheduled_at', 'r.dunning_attempt_id', 'r.dunning_attempt_id,r.invoice_id,r.attempt_number,r.status,r.channel,r.scheduled_at,r.attempted_at,r.result_message', ['r.result_message', 'r.status'], [['billing_invoices as i', 'i.invoice_id', '=', 'r.invoice_id'], ['billing_accounts as ba', 'ba.billing_account_id', '=', 'i.billing_account_id']], null, null, []],
             ['refunds', 'الاستردادات', 'الاستردادات المكتملة ومبالغها حسب العملة', 'billing_refunds', 'ba.network_id', 'joined', 'r.created_at', 'r.refund_id', 'r.refund_id,r.refund_reference,r.payment_id,r.credit_note_id,r.currency_id,r.amount_minor,r.status,r.reason,r.processed_at', ['r.refund_reference', 'r.reason', 'r.status'], [['billing_payments as p', 'p.payment_id', '=', 'r.payment_id'], ['billing_accounts as ba', 'ba.billing_account_id', '=', 'p.billing_account_id']], 'r.amount_minor', 'r.currency_id', [['r.status', '=', 'COMPLETED']]],
@@ -29,25 +47,11 @@ final class BillingReportProviderRegistry
         $this->providers = [];
         foreach ($configs as $c) {
             [$key,$label,$description,$table,$scopeColumn,$scopeKind,$date,$keyColumn,$select,$search,$joins,$amount,$currency,$where] = $c;
-            $providerClass = match ($key) {
-                'subscriptions' => BillingSubscriptionsProvider::class,
-                'trials' => BillingTrialsProvider::class,
-                'trial_conversion' => BillingTrialConversionProvider::class,
-                'renewals' => BillingRenewalsProvider::class,
-                'plan_performance' => BillingPlanPerformanceProvider::class,
-                'invoices' => BillingInvoicesProvider::class,
-                'collections' => BillingCollectionsProvider::class,
-                'receivables' => BillingReceivablesProvider::class,
-                'usage' => BillingUsageProvider::class,
-                'dunning' => BillingDunningProvider::class,
-                'refunds' => BillingRefundsProvider::class,
-                'revenue_recognition' => BillingRevenueRecognitionProvider::class,
-                default => ConfiguredBillingReportProvider::class,
-            };
+            $providerClass = $this->providerClassFor($key);
             $this->providers[$key] = new $providerClass([
                 'key' => $key, 'label' => $label, 'description' => $description, 'table' => $table,
                 'scope' => ['kind' => $scopeKind, 'column' => $scopeColumn],
-                'date' => $date, 'key_column' => $keyColumn, 'select' => explode(',', $select),
+                'date' => $date, 'sort' => match ($key) { 'receivables' => 'r.issued_on', 'collections' => 'r.payment_id', default => $date }, 'key_column' => $keyColumn, 'select' => explode(',', $select),
                 'search' => $search, 'joins' => $joins ?? [],
                 'amount' => $amount, 'currency' => $currency, 'where' => $where,
                 'status' => str_contains($select, 'r.status') ? 'r.status' : null,
@@ -73,7 +77,7 @@ final class BillingReportProviderRegistry
                     'plan_performance' => ['active_subscriptions', 'mrr_minor', 'arr_minor'],
                     'invoices' => ['record_count', 'invoiced_minor', 'credited_minor', 'outstanding_minor'],
                     'collections' => ['record_count', 'gross_collected_minor', 'refunded_minor', 'net_collected_minor'],
-                    'receivables' => ['record_count', 'current_minor', 'days_1_30_minor', 'days_31_60_minor', 'days_61_90_minor', 'over_90_minor'],
+                    'receivables' => ['record_count', 'undated_minor', 'current_minor', 'days_1_30_minor', 'days_31_60_minor', 'days_61_90_minor', 'over_90_minor'],
                     'usage' => ['record_count', 'quantity', 'amount_minor'],
                     'dunning' => ['attempts', 'queued_reminders', 'pending_attempts', 'cancelled_attempts', 'recovered_invoices', 'recovery_rate_percent'],
                     'refunds' => ['record_count', 'amount_minor'],
@@ -110,11 +114,31 @@ final class BillingReportProviderRegistry
         }
     }
 
+    private function providerClassFor(string $key): string
+    {
+        return match ($key) {
+            'subscriptions' => BillingSubscriptionsProvider::class,
+            'trials' => BillingTrialsProvider::class,
+            'trial_conversion' => BillingTrialConversionProvider::class,
+            'renewals' => BillingRenewalsProvider::class,
+            'plan_performance' => BillingPlanPerformanceProvider::class,
+            'invoices' => BillingInvoicesProvider::class,
+            'collections' => BillingCollectionsProvider::class,
+            'receivables' => BillingReceivablesProvider::class,
+            'usage' => BillingUsageProvider::class,
+            'dunning' => BillingDunningProvider::class,
+            'refunds' => BillingRefundsProvider::class,
+            'revenue_recognition' => BillingRevenueRecognitionProvider::class,
+            default => ConfiguredBillingReportProvider::class,
+        };
+    }
+
     public function get(string $key): BillingReportProvider
     {
         return $this->providers[$key] ?? throw ValidationException::withMessages(['report_type' => ['تقرير الفوترة المطلوب غير معروف.']]);
     }
 
+    /** @return list<BillingReportProvider> */
     public function all(): array
     {
         return array_values($this->providers);

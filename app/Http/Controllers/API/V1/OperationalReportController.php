@@ -10,14 +10,17 @@ use App\Http\Requests\API\V1\Reports\StoreOperationalReportPresetRequest;
 use App\Jobs\GenerateOperationalReportExport;
 use App\Models\OperationalReportExport;
 use App\Models\OperationalReportPreset;
+use App\Models\User;
 use App\Services\OperationalReportAuthorizationService;
 use App\Services\Reports\OperationalReportFilterValidator;
 use App\Services\Reports\OperationalReportPresetValidator;
 use App\Services\Reports\OperationalReportProviderRegistry;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\Str;
@@ -185,6 +188,7 @@ class OperationalReportController extends BaseController
         $type = OperationalReportType::from($data['report_type']);
         $networkId = (int) $data['network_id'];
         $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
+        $userId = (int) $request->user()->user_id;
         $this->authorization->authorize($request->user(), $type, $networkId, $posId);
 
         $errors = $this->presetValidator->validate(
@@ -199,42 +203,71 @@ class OperationalReportController extends BaseController
         }
 
         $scopeKey = $posId === null ? 'network' : 'pos:'.$posId;
-        $existingCount = OperationalReportPreset::query()
-            ->where('user_id', $request->user()->user_id)
-            ->where('network_id', $networkId)
-            ->where('scope_key', $scopeKey)
-            ->where('report_type', $type)
-            ->count();
-        if ($existingCount >= 100) {
-            throw ValidationException::withMessages([
-                'name' => ['وصلت إلى الحد الأقصى وهو 100 إعداد محفوظ لهذا التقرير ضمن نطاق العمل الحالي.'],
-            ]);
-        }
-        $duplicateName = OperationalReportPreset::query()
-            ->where('user_id', $request->user()->user_id)
-            ->where('network_id', $networkId)
-            ->where('scope_key', $scopeKey)
-            ->where('report_type', $type)
-            ->where('name', trim($data['name']))
-            ->exists();
-        if ($duplicateName) {
+
+        try {
+            $preset = DB::transaction(function () use (
+                $data,
+                $type,
+                $networkId,
+                $posId,
+                $userId,
+                $scopeKey
+            ): OperationalReportPreset {
+                // Serialize writes for one owner so the 100-preset limit and
+                // friendly-name check remain correct under concurrent requests.
+                User::query()->where('user_id', $userId)->lockForUpdate()->firstOrFail();
+
+                $existingCount = OperationalReportPreset::query()
+                    ->where('user_id', $userId)
+                    ->where('network_id', $networkId)
+                    ->where('scope_key', $scopeKey)
+                    ->where('report_type', $type)
+                    ->count();
+
+                if ($existingCount >= 100) {
+                    throw ValidationException::withMessages([
+                        'name' => ['وصلت إلى الحد الأقصى وهو 100 إعداد محفوظ لهذا التقرير ضمن نطاق العمل الحالي.'],
+                    ]);
+                }
+
+                $name = trim($data['name']);
+                $duplicateName = OperationalReportPreset::query()
+                    ->where('user_id', $userId)
+                    ->where('network_id', $networkId)
+                    ->where('scope_key', $scopeKey)
+                    ->where('report_type', $type)
+                    ->where('name', $name)
+                    ->exists();
+
+                if ($duplicateName) {
+                    throw ValidationException::withMessages([
+                        'name' => ['يوجد إعداد محفوظ بهذا الاسم ضمن نطاق العمل الحالي.'],
+                    ]);
+                }
+
+                return OperationalReportPreset::query()->create([
+                    'preset_uuid' => (string) Str::uuid(),
+                    'user_id' => $userId,
+                    'network_id' => $networkId,
+                    'pos_id' => $posId,
+                    'scope_key' => $scopeKey,
+                    'report_type' => $type,
+                    'name' => $name,
+                    'report_schema_version' => (int) $data['report_schema_version'],
+                    'preset_schema_version' => 1,
+                    'criteria' => $data['criteria'],
+                    'presentation' => $data['presentation'],
+                ]);
+            });
+        } catch (QueryException $exception) {
+            if (! $this->isPresetNameConflict($exception)) {
+                throw $exception;
+            }
+
             throw ValidationException::withMessages([
                 'name' => ['يوجد إعداد محفوظ بهذا الاسم ضمن نطاق العمل الحالي.'],
             ]);
         }
-        $preset = OperationalReportPreset::query()->create([
-            'preset_uuid' => (string) Str::uuid(),
-            'user_id' => $request->user()->user_id,
-            'network_id' => $networkId,
-            'pos_id' => $posId,
-            'scope_key' => $scopeKey,
-            'report_type' => $type,
-            'name' => trim($data['name']),
-            'report_schema_version' => (int) $data['report_schema_version'],
-            'preset_schema_version' => 1,
-            'criteria' => $data['criteria'],
-            'presentation' => $data['presentation'],
-        ]);
 
         return $this->successResponse('تم حفظ إعداد التقرير.', $this->serializePreset($preset), 201);
     }
@@ -245,15 +278,8 @@ class OperationalReportController extends BaseController
         $type = OperationalReportType::from($data['report_type']);
         $networkId = (int) $data['network_id'];
         $posId = isset($data['pos_id']) ? (int) $data['pos_id'] : null;
+        $userId = (int) $request->user()->user_id;
         $this->authorization->authorize($request->user(), $type, $networkId, $posId);
-
-        $preset = OperationalReportPreset::query()
-            ->where('preset_uuid', $presetUuid)
-            ->where('user_id', $request->user()->user_id)
-            ->where('network_id', $networkId)
-            ->where('scope_key', $posId === null ? 'network' : 'pos:'.$posId)
-            ->where('report_type', $type)
-            ->firstOrFail();
 
         $errors = $this->presetValidator->validate(
             $type->value,
@@ -266,29 +292,66 @@ class OperationalReportController extends BaseController
             throw ValidationException::withMessages($errors);
         }
 
-        $duplicateName = OperationalReportPreset::query()
-            ->where('user_id', $request->user()->user_id)
-            ->where('network_id', $networkId)
-            ->where('scope_key', $posId === null ? 'network' : 'pos:'.$posId)
-            ->where('report_type', $type)
-            ->where('name', trim($data['name']))
-            ->where('report_preset_id', '!=', $preset->report_preset_id)
-            ->exists();
-        if ($duplicateName) {
+        $scopeKey = $posId === null ? 'network' : 'pos:'.$posId;
+
+        try {
+            $preset = DB::transaction(function () use (
+                $data,
+                $type,
+                $networkId,
+                $posId,
+                $userId,
+                $scopeKey,
+                $presetUuid
+            ): OperationalReportPreset {
+                User::query()->where('user_id', $userId)->lockForUpdate()->firstOrFail();
+
+                $preset = OperationalReportPreset::query()
+                    ->where('preset_uuid', $presetUuid)
+                    ->where('user_id', $userId)
+                    ->where('network_id', $networkId)
+                    ->where('scope_key', $scopeKey)
+                    ->where('report_type', $type)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $name = trim($data['name']);
+                $duplicateName = OperationalReportPreset::query()
+                    ->where('user_id', $userId)
+                    ->where('network_id', $networkId)
+                    ->where('scope_key', $scopeKey)
+                    ->where('report_type', $type)
+                    ->where('name', $name)
+                    ->where('report_preset_id', '!=', $preset->report_preset_id)
+                    ->exists();
+
+                if ($duplicateName) {
+                    throw ValidationException::withMessages([
+                        'name' => ['يوجد إعداد محفوظ بهذا الاسم ضمن نطاق العمل الحالي.'],
+                    ]);
+                }
+
+                $preset->fill([
+                    'name' => $name,
+                    'report_schema_version' => (int) $data['report_schema_version'],
+                    'preset_schema_version' => 1,
+                    'criteria' => $data['criteria'],
+                    'presentation' => $data['presentation'],
+                ])->save();
+
+                return $preset->refresh();
+            });
+        } catch (QueryException $exception) {
+            if (! $this->isPresetNameConflict($exception)) {
+                throw $exception;
+            }
+
             throw ValidationException::withMessages([
                 'name' => ['يوجد إعداد محفوظ بهذا الاسم ضمن نطاق العمل الحالي.'],
             ]);
         }
 
-        $preset->fill([
-            'name' => trim($data['name']),
-            'report_schema_version' => (int) $data['report_schema_version'],
-            'preset_schema_version' => 1,
-            'criteria' => $data['criteria'],
-            'presentation' => $data['presentation'],
-        ])->save();
-
-        return $this->successResponse('تم تحديث إعداد التقرير.', $this->serializePreset($preset->refresh()));
+        return $this->successResponse('تم تحديث إعداد التقرير.', $this->serializePreset($preset));
     }
 
     public function destroyPreset(Request $request, string $presetUuid): JsonResponse
@@ -315,6 +378,19 @@ class OperationalReportController extends BaseController
         return $this->successResponse('تم حذف إعداد التقرير.');
     }
 
+    private function isPresetNameConflict(QueryException $exception): bool
+    {
+        $message = strtolower($exception->getMessage());
+
+        return str_contains($message, 'operational_report_presets_scope_name_unique')
+            || (
+                str_contains($message, 'unique constraint failed: operational_report_presets.user_id')
+                && str_contains($message, 'operational_report_presets.report_type')
+                && str_contains($message, 'operational_report_presets.name')
+            );
+    }
+
+    /** @return array<string, mixed> */
     private function serializePreset(OperationalReportPreset $preset): array
     {
         return [
@@ -328,6 +404,7 @@ class OperationalReportController extends BaseController
         ];
     }
 
+    /** @param array<string, mixed> $filters */
     private function validateProviderFilters(OperationalReportType $type, ?int $posId, array $filters): void
     {
         $errors = new MessageBag;

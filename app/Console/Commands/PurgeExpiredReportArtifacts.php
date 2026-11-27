@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\OperationalReportExportStatus;
+use App\Models\OperationalReportExport;
 use App\Models\ReportRun;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +20,34 @@ class PurgeExpiredReportArtifacts extends Command
         $purged = 0;
         $failed = 0;
 
+        OperationalReportExport::query()
+            ->whereNotNull('artifact_path')
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', now('Asia/Aden'))
+            ->orderBy('report_export_id')
+            ->chunkById(100, function ($exports) use (&$purged, &$failed): void {
+                foreach ($exports as $export) {
+                    $path = $export->artifact_path;
+                    $disk = Storage::disk('protected');
+                    if ($path !== null && $disk->exists($path) && ! $disk->delete($path)) {
+                        $failed++;
+                        Log::warning('Could not delete expired operational report artifact.', [
+                            'report_export_id' => $export->report_export_id,
+                            'artifact_path' => $path,
+                        ]);
+
+                        continue;
+                    }
+
+                    $export->forceFill([
+                        'status' => OperationalReportExportStatus::EXPIRED,
+                        'artifact_path' => null,
+                    ])->save();
+
+                    $purged++;
+                }
+            }, 'report_export_id');
+
         ReportRun::query()
             ->whereNotNull('artifact_path')
             ->whereNotNull('expires_at')
@@ -26,7 +56,8 @@ class PurgeExpiredReportArtifacts extends Command
             ->chunkById(100, function ($runs) use (&$purged, &$failed): void {
                 foreach ($runs as $run) {
                     $path = $run->artifact_path;
-                    if ($path !== null && ! Storage::disk('protected')->delete($path)) {
+                    $disk = Storage::disk('protected');
+                    if ($path !== null && $disk->exists($path) && ! $disk->delete($path)) {
                         $failed++;
                         Log::warning('Could not delete expired report artifact.', [
                             'report_run_id' => $run->report_run_id,

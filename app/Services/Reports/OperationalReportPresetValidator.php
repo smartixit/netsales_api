@@ -11,6 +11,11 @@ final class OperationalReportPresetValidator
         private readonly OperationalReportFilterValidator $filters
     ) {}
 
+    /**
+     * @param array<string, mixed> $criteria
+     * @param array<string, mixed> $presentation
+     * @return array<string, array<int, string>>
+     */
     public function validate(
         string $reportType,
         ?int $posId,
@@ -43,7 +48,9 @@ final class OperationalReportPresetValidator
             'single_choice' => 'choice',
             'multi_choice' => 'choices',
         ];
-        $filterDefinitions = collect($definition['filters'] ?? [])->keyBy('id');
+        /** @var list<array{id: string, kind?: string}> $filterDefinitionRows */
+        $filterDefinitionRows = $definition['filters'] ?? [];
+        $filterDefinitions = collect($filterDefinitionRows)->keyBy('id');
 
         foreach ($typedFilters as $filterId => $typedValue) {
             if (! is_array($typedValue)
@@ -55,7 +62,15 @@ final class OperationalReportPresetValidator
                 continue;
             }
 
+            $filterType = $typedValue['type'];
+            if (! is_string($filterType)) {
+                $errors->add('criteria.filters.'.$filterId.'.type', 'نوع القيمة المحفوظة غير صالح.');
+
+                continue;
+            }
+
             $filterDefinition = $filterDefinitions->get($filterId);
+            /** @var string|null $expectedType */
             $expectedType = $filterDefinition === null
                 ? null
                 : ($expectedTypes[$filterDefinition['kind'] ?? ''] ?? null);
@@ -87,7 +102,7 @@ final class OperationalReportPresetValidator
                 continue;
             }
 
-            $rawFilters[$filterId] = match ($typedValue['type']) {
+            $rawFilters[$filterId] = match ($filterType) {
                 'text', 'integer', 'decimal', 'boolean', 'choice', 'choices' => $value,
                 'date' => is_string($value) ? substr($value, 0, 10) : $value,
                 'date_range' => is_array($value) ? [
@@ -106,19 +121,33 @@ final class OperationalReportPresetValidator
             }
         }
 
-        $columns = collect($definition['columns'] ?? [])->keyBy('id');
+        /** @var list<array{id: string, sortable?: bool, groupable?: bool, hideable?: bool, visible_by_default?: bool}> $columnDefinitions */
+        $columnDefinitions = $definition['columns'] ?? [];
+        /** @var array<string, array{id: string, sortable?: bool, groupable?: bool, hideable?: bool, visible_by_default?: bool}> $columns */
+        $columns = [];
+        foreach ($columnDefinitions as $column) {
+            $columns[$column['id']] = $column;
+        }
+
         $visible = $presentation['visible_column_ids'] ?? [];
         if (count($visible) !== count(array_unique($visible))) {
             $errors->add('presentation.visible_column_ids', 'لا يمكن تكرار العمود في الإعدادات المحفوظة.');
         }
         foreach ($visible as $id) {
-            if (! $columns->has($id)) {
+            if (! isset($columns[$id])) {
                 $errors->add('presentation.visible_column_ids', 'يتضمن الإعداد عموداً غير معرف في التقرير.');
             }
         }
-        $effectiveVisible = $visible === []
-            ? collect($definition['columns'] ?? [])->filter(fn (array $column) => ($column['visible_by_default'] ?? true) === true)->pluck('id')->all()
-            : $visible;
+
+        $effectiveVisible = $visible;
+        if ($effectiveVisible === []) {
+            foreach ($columnDefinitions as $column) {
+                if (($column['visible_by_default'] ?? true) === true) {
+                    $effectiveVisible[] = $column['id'];
+                }
+            }
+        }
+
         foreach ($columns as $id => $column) {
             if (($column['hideable'] ?? true) === false && ! in_array($id, $effectiveVisible, true)) {
                 $errors->add('presentation.visible_column_ids', 'يتضمن الإعداد إخفاء عمود إلزامي.');
@@ -133,13 +162,13 @@ final class OperationalReportPresetValidator
                 $errors->add('presentation.sorts', 'لا يمكن تكرار عمود الترتيب.');
             }
             $seenSorts[$id] = true;
-            if (! $columns->has($id) || ! ($columns[$id]['sortable'] ?? false)) {
+            if (! isset($columns[$id]) || ! ($columns[$id]['sortable'] ?? false)) {
                 $errors->add('presentation.sorts', 'يتضمن الإعداد ترتيباً حسب عمود غير مسموح.');
             }
         }
 
         $groupBy = $presentation['group_by_field_id'] ?? null;
-        if ($groupBy !== null && (! $columns->has($groupBy) || ! ($columns[$groupBy]['groupable'] ?? false))) {
+        if ($groupBy !== null && (! isset($columns[$groupBy]) || ! ($columns[$groupBy]['groupable'] ?? false))) {
             $errors->add('presentation.group_by_field_id', 'عمود التجميع غير متاح لهذا التقرير.');
         }
 
@@ -151,14 +180,27 @@ final class OperationalReportPresetValidator
                 $version['minor'] ?? -1,
                 $version['patch'] ?? -1,
             ]);
-            $allowed = collect($definition['templates'] ?? [])->contains(
-                fn (array $item): bool => ($item['id'] ?? '').'@'.(string) ($item['version'] ?? '') === $key
-            );
+            $allowed = false;
+            foreach (($definition['templates'] ?? []) as $item) {
+                if (! is_array($item)
+                    || ! isset($item['id'], $item['version'])
+                    || ! is_string($item['id'])
+                    || ! is_string($item['version'])) {
+                    continue;
+                }
+
+                if ($item['id'].'@'.$item['version'] === $key) {
+                    $allowed = true;
+
+                    break;
+                }
+            }
             if (! $allowed) {
                 $errors->add('presentation.template', 'قالب المستند المحدد غير معتمد لهذا التقرير.');
             }
         }
 
+        /** @var list<string> $locales */
         $locales = $definition['supported_locale_tags'] ?? [];
         $locale = $presentation['language_tag'] ?? null;
         if ($locale !== null && ! collect($locales)->contains(
