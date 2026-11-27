@@ -11,24 +11,6 @@ final class BillingReportProviderRegistry
 
     public function __construct()
     {
-        /**
-         * @var list<array{
-         *     0: string,
-         *     1: string,
-         *     2: string,
-         *     3: string,
-         *     4: string,
-         *     5: string,
-         *     6: string,
-         *     7: string,
-         *     8: string,
-         *     9: list<string>,
-         *     10: list<array{string, string, string, string}>|null,
-         *     11: string|null,
-         *     12: string|null,
-         *     13: list<array{string, string, mixed}>
-         * }> $configs
-         */
         $configs = [
             ['subscriptions', 'الاشتراكات', 'دورة حياة الاشتراكات وحالاتها', 'billing_subscriptions', 'r.billing_account_id', 'account', 'created_at', 'billing_subscription_id', 'r.billing_subscription_id,r.billing_account_id,r.plan_id,r.plan_version_id,r.price_id,r.currency_id,r.status,r.current_period_start,r.current_period_end,r.trial_start,r.trial_end,r.cancel_at_period_end,r.created_at', ['r.status', 'r.billing_subscription_id'], null, null, null, [['r.deleted_at', 'is null', null]]],
             ['trials', 'التجارب', 'حجوزات التجارب وحالات اعتمادها وبدئها وانتهائها', 'billing_trial_redemptions', 'r.billing_account_id', 'account', 'r.reserved_at', 'r.trial_redemption_id', 'r.trial_redemption_id,r.billing_account_id,r.billing_subscription_id,r.trial_policy_id,r.trial_policy_version_id,r.status,r.redemption_scope,r.reserved_at,r.started_at,r.completed_at', ['r.status', 'r.trial_redemption_id'], [['billing_subscriptions as s', 's.billing_subscription_id', '=', 'r.billing_subscription_id']], null, null, [['s.deleted_at', 'is null', null]]],
@@ -43,8 +25,6 @@ final class BillingReportProviderRegistry
             ['revenue_recognition', 'الاعتراف بالإيراد', 'قيود الاعتراف بالإيراد ومواعيدها ومبالغها', 'billing_revenue_recognition_entries', 'ba.network_id', 'joined', 'r.recognized_through', 'r.revenue_recognition_entry_id', 'r.revenue_recognition_entry_id,r.revenue_schedule_id,r.journal_entry_id,r.recognized_through,r.amount_minor', ['r.idempotency_key'], [['billing_revenue_recognition_schedules as s', 's.revenue_schedule_id', '=', 'r.revenue_schedule_id'], ['billing_invoices as i', 'i.invoice_id', '=', 's.invoice_id'], ['billing_accounts as ba', 'ba.billing_account_id', '=', 'i.billing_account_id']], 'r.amount_minor', 's.currency_id', []],
             ['plan_performance', 'أداء الخطط', 'أداء الخطط والاشتراكات النشطة والقيمة الشهرية والسنوية المكافئة', 'billing_subscriptions', 'ba.network_id', 'joined', 'r.created_at', 'r.billing_subscription_id', 'r.billing_subscription_id,r.billing_account_id,r.plan_id,p.plan_key,p.name as plan_name,r.price_id,bp.billing_interval,bp.interval_count,bp.unit_amount_minor,r.quantity,r.currency_id,r.status,r.current_period_start,r.current_period_end', ['p.name', 'p.plan_key', 'r.status'], [['billing_plans as p', 'p.plan_id', '=', 'r.plan_id'], ['billing_prices as bp', 'bp.price_id', '=', 'r.price_id'], ['billing_accounts as ba', 'ba.billing_account_id', '=', 'r.billing_account_id']], null, null, [['r.status', '=', 'ACTIVE'], ['bp.billing_interval', '!=', 'ONE_TIME'], ['r.deleted_at', 'is null', null]]],
         ];
-
-
 
         $this->providers = [];
         foreach ($configs as $c) {
