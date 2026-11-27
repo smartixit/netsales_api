@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\MembershipStatus;
 use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Models\Network;
@@ -226,7 +227,9 @@ class NetworkMembershipService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $oldStatus = $member->status;
+            $oldStatus = $member->status instanceof MembershipStatus
+                ? $member->status->value
+                : (string) $member->status;
             if ($oldStatus === $newStatus) {
                 return $member->load(['user', 'role']);
             }

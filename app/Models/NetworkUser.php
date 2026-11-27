@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MembershipStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,6 +25,7 @@ class NetworkUser extends Model
             'network_id' => 'integer',
             'user_id' => 'integer',
             'role_id' => 'integer',
+            'status' => MembershipStatus::class,
             'last_event_seq' => 'integer',
         ];
     }
@@ -51,6 +53,6 @@ class NetworkUser extends Model
 
     public function isActive(): bool
     {
-        return $this->status === 'ACTIVE';
+        return $this->status === MembershipStatus::ACTIVE;
     }
 }
