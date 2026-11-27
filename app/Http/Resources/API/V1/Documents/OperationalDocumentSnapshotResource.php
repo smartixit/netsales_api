@@ -2,8 +2,13 @@
 
 namespace App\Http\Resources\API\V1\Documents;
 
+use App\Models\OperationalDocumentSnapshot;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+
+/**
+ * @mixin OperationalDocumentSnapshot
+ */
 
 final class OperationalDocumentSnapshotResource extends JsonResource
 {

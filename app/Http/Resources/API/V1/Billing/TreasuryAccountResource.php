@@ -2,8 +2,13 @@
 
 namespace App\Http\Resources\API\V1\Billing;
 
+use App\Models\TreasuryAccount;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+
+/**
+ * @mixin TreasuryAccount
+ */
 
 class TreasuryAccountResource extends JsonResource
 {

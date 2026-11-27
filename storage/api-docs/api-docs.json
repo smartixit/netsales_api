@@ -912,6 +912,97 @@
                 ]
             }
         },
+        "/api/v1/auth/sessions": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "استعراض جلسات تسجيل الدخول للمستخدم الحالي",
+                "description": "يجلب قائمة جلسات تسجيل الدخول الخاصة بالمستخدم مع دعم التصفية بالحالة والبحث بعنوان IP أو معلومات الجهاز.",
+                "operationId": "e39d9efbfbff299accb6a89f9ac3843a",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "تصفية حسب حالة الجلسة (ACTIVE, EXPIRED, REVOKED)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ACTIVE",
+                                "EXPIRED",
+                                "REVOKED"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث بعنوان IP أو User Agent أو معرف الجهاز",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم جلب قائمة الجلسات بنجاح"
+                    },
+                    "401": {
+                        "description": "غير مصادق عليه"
+                    },
+                    "422": {
+                        "description": "بيانات تصفية غير صالحة"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/sessions/{id}": {
+            "delete": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "إنهاء جلسة محددة للمستخدم الحالي",
+                "description": "إنهاء جلسة محددة للمستخدم المصادق عليه.",
+                "operationId": "0ad95388f6df77e2e7c48f9b4b9a072f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الجلسة المراد إنهاؤها",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم إنهاء الجلسة بنجاح"
+                    },
+                    "401": {
+                        "description": "غير مصادق عليه"
+                    },
+                    "404": {
+                        "description": "لم يتم العثور على الجلسة أو أنها منتهية مسبقاً"
+                    },
+                    "422": {
+                        "description": "لا يمكن إنهاء الجلسة الحالية من هذا المسار"
+                    }
+                },
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/bank-accounts": {
             "get": {
                 "tags": [
@@ -2950,9 +3041,6 @@
                                     "network_logo": {
                                         "type": "string",
                                         "format": "binary"
-                                    },
-                                    "status": {
-                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
@@ -3042,9 +3130,6 @@
                                     "network_logo": {
                                         "type": "string",
                                         "format": "binary"
-                                    },
-                                    "status": {
-                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
@@ -5512,9 +5597,6 @@
                                     "pos_profile_logo": {
                                         "type": "string",
                                         "format": "binary"
-                                    },
-                                    "status": {
-                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
@@ -5609,9 +5691,6 @@
                                     "pos_profile_logo": {
                                         "type": "string",
                                         "format": "binary"
-                                    },
-                                    "status": {
-                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
@@ -7644,31 +7723,6 @@
                 }
             }
         },
-        "/api/v1/sale-invoices/{id}/restore": {
-            "post": {
-                "tags": [
-                    "Sale Invoices"
-                ],
-                "summary": "استعادة فاتورة مبيعات محذوفة مؤقتاً",
-                "description": "استعادة فاتورة مبيعات محذوفة مؤقتاً.",
-                "operationId": "1f709df2e2bf539f04e1a333fdb69cbf",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم استعادة الفاتورة بنجاح"
-                    }
-                }
-            }
-        },
         "/api/v1/sale-invoices/{id}/force": {
             "delete": {
                 "tags": [
@@ -7728,44 +7782,6 @@
                 "responses": {
                     "200": {
                         "description": "تم الحذف المجمع بنجاح"
-                    }
-                }
-            }
-        },
-        "/api/v1/sale-invoices/batch-restore": {
-            "post": {
-                "tags": [
-                    "Sale Invoices"
-                ],
-                "summary": "استعادة مجمعة لفواتير المبيعات",
-                "description": "الاستعادة المجمعة لفواتير المبيعات.",
-                "operationId": "cc06d6dc0215a07d8ac8c7b0ced9ce74",
-                "requestBody": {
-                    "description": "بيانات الطلب",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "ids"
-                                ],
-                                "properties": {
-                                    "ids[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "تمت الاستعادة المجمعة بنجاح"
                     }
                 }
             }
@@ -8178,7 +8194,7 @@
                 ],
                 "summary": "رفع الحظر الأمني (Unban)",
                 "description": "إلغاء ورفع الحظر الأمني واستعادة الحالة الطبيعية للمستخدم أو الجهاز.",
-                "operationId": "20458239ba635d5cafb3d694b23ef84e",
+                "operationId": "464c64f3b4836f903dcd9811715375d6",
                 "parameters": [
                     {
                         "name": "id",
@@ -10745,6 +10761,21 @@
                         "required": false,
                         "schema": {
                             "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "validity_state",
+                        "in": "query",
+                        "description": "حالة السريان مستقلة عن حالة التفعيل",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "EFFECTIVE",
+                                "SCHEDULED",
+                                "EXPIRED",
+                                "DISABLED"
+                            ]
                         }
                     },
                     {

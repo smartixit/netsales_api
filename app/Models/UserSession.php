@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserSessionStatus;
 use App\Traits\ExactDateSerialization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -137,6 +138,19 @@ class UserSession extends Model
     public function isRevoked(): bool
     {
         return $this->revoked_at !== null;
+    }
+
+    public function resolveStatus(): UserSessionStatus
+    {
+        if ($this->revoked_at !== null) {
+            return UserSessionStatus::REVOKED;
+        }
+
+        if ($this->expires_at !== null && now('Asia/Aden')->gte($this->expires_at)) {
+            return UserSessionStatus::EXPIRED;
+        }
+
+        return UserSessionStatus::ACTIVE;
     }
 
     public function revoke(): void
