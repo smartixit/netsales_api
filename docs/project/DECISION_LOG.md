@@ -210,3 +210,12 @@ Valid statuses are strictly:
 - **Session contract:** Session middleware emits stable `SESSION_CREDENTIAL_MISSING`, `SESSION_DEVICE_ID_MISSING`, and generic `SESSION_INVALID` codes. Unknown, expired, revoked, and device-mismatched credentials share the generic terminal code to avoid revealing token existence. Missing credentials are not proof that a stored client session has expired.
 - **Client safety:** The Flutter client terminates only the matching current session generation on `SESSION_INVALID`. Requests from earlier generations cannot terminate a newer login. Background scheduler and FCM completions must not restore local state after their originating session has ended.
 - **Consequence:** Keep the bounded operation and administrative catch-up distinct. Never grant `scheduled_tasks.run_catchup` to operational roles or infer administrative authority from request body fields.
+
+
+## DEC-MEMBERSHIP-VALIDATION-01: Share Network/POS membership request validation
+
+- **Status:** IMPLEMENTED IN DRAFT PR #49; exact-head verification pending after documentation-only updates.
+- **Date:** 2026-11-27
+- **Decision:** Use the same four Laravel FormRequests for Network and POS membership creation, role changes, status changes, and removal. Keep input validation at the HTTP boundary; keep actor authorization, tenant scoping, assignable-role rules, and membership invariants in the existing middleware/services.
+- **Compatibility:** Preserve existing endpoint paths, request field names, response shapes, database schema, and financial behavior. The refactor must not broaden permissions or bypass service-level checks.
+- **Verification boundary:** Laravel CI passed for the code commit `f6fb20852fcc89c201bc6dc81befadc0e1b4e11a`. The current PR HEAD includes subsequent documentation-only commits and must receive an exact-head CI result before merge.
