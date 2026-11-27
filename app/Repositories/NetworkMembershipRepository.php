@@ -5,7 +5,6 @@ namespace App\Repositories;
 use App\Models\NetworkUser;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use LogicException;
 
 /**
