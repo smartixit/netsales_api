@@ -390,6 +390,7 @@ class OperationalReportController extends BaseController
             );
     }
 
+    /** @return array<string, mixed> */
     private function serializePreset(OperationalReportPreset $preset): array
     {
         return [
@@ -403,6 +404,7 @@ class OperationalReportController extends BaseController
         ];
     }
 
+    /** @param array<string, mixed> $filters */
     private function validateProviderFilters(OperationalReportType $type, ?int $posId, array $filters): void
     {
         $errors = new MessageBag;

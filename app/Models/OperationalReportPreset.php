@@ -5,6 +5,20 @@ namespace App\Models;
 use App\Enums\OperationalReportType;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $report_preset_id
+ * @property string $preset_uuid
+ * @property int $user_id
+ * @property int $network_id
+ * @property int|null $pos_id
+ * @property string $scope_key
+ * @property OperationalReportType $report_type
+ * @property string $name
+ * @property int $preset_schema_version
+ * @property int $report_schema_version
+ * @property array<string, mixed> $criteria
+ * @property array<string, mixed> $presentation
+ */
 final class OperationalReportPreset extends Model
 {
     protected $table = 'operational_report_presets';

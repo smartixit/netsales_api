@@ -7,6 +7,7 @@ use App\Models\NetworkWallet;
 use App\Support\DecimalAmount;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 abstract class AbstractOperationalReportProvider implements OperationalReportProvider
@@ -19,26 +20,33 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
 
     abstract protected function exportPermission(): string;
 
+    /** @return list<string> */
     abstract protected function scopes(): array;
 
     abstract protected function posSelection(): string;
 
+    /** @return list<array<string, mixed>> */
     abstract protected function columns(): array;
 
+    /** @return list<array<string, mixed>> */
     abstract protected function metricSlots(): array;
 
+    /** @return list<string> */
     protected function pageProfileIds(): array
     {
         return ['a4-portrait'];
     }
 
+    /** @return list<string> */
     protected function supportedLocaleTags(): array
     {
         return ['ar'];
     }
 
+    /** @return list<array<string, mixed>> */
     abstract protected function summaryCharts(): array;
 
+    /** @return list<string> */
     abstract protected function statusChoices(): array;
 
     protected function statusFilterLabel(): string
@@ -77,6 +85,7 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
         };
     }
 
+    /** @return list<string> */
     protected function saleTypeChoices(): array
     {
         return [];
@@ -130,6 +139,12 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
         ];
     }
 
+    /**
+     * @template TModel of Model
+     * @param Builder<TModel> $query
+     * @param array<string, mixed> $filters
+     * @return Builder<TModel>
+     */
     protected function applyDates(Builder $query, string $column, array $filters): Builder
     {
         return $query
@@ -137,6 +152,12 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
             ->when($filters['to_date'] ?? null, fn (Builder $q, string $date): Builder => $q->where($column, '<=', Carbon::parse($date)->endOfDay()));
     }
 
+    /**
+     * @template TModel of Model
+     * @param Builder<TModel> $query
+     * @param array<string, mixed> $filters
+     * @return CursorPaginator<int, TModel>
+     */
     protected function paginate(Builder $query, array $filters, string $dateColumn, string $key): CursorPaginator
     {
         return $query
@@ -145,6 +166,7 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
             ->cursorPaginate((int) ($filters['per_page'] ?? 25), ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
+    /** @param array<string, mixed> $filters */
     protected function pattern(array $filters): ?string
     {
         $search = trim((string) ($filters['search'] ?? ''));
@@ -204,6 +226,7 @@ abstract class AbstractOperationalReportProvider implements OperationalReportPro
         return DecimalAmount::add($left, $right);
     }
 
+    /** @return array<string, string|int|float> */
     protected function chartPoint(string $label, string|int|float $value, ?string $series = null): array
     {
         return array_filter(['label' => $label, 'value' => $value, 'series' => $series], static fn ($v) => $v !== null);

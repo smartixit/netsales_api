@@ -11,6 +11,11 @@ final class OperationalReportPresetValidator
         private readonly OperationalReportFilterValidator $filters
     ) {}
 
+    /**
+     * @param array<string, mixed> $criteria
+     * @param array<string, mixed> $presentation
+     * @return array<string, array<int, string>>
+     */
     public function validate(
         string $reportType,
         ?int $posId,
