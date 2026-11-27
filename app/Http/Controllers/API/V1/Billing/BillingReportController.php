@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API\V1\Billing;
 use App\Http\Controllers\API\V1\BaseController;
 use App\Services\Billing\BillingAuthorizationService;
 use App\Services\Billing\Reports\BillingReportProviderRegistry;
+use App\Support\CsvValueSanitizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -92,9 +93,7 @@ class BillingReportController extends BaseController
                     if (is_array($value) || is_object($value)) {
                         $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                     }
-                    if (is_string($value) && ! is_numeric($value) && preg_match('/^[=+@\\-]/', $value)) {
-                        $value = "'".$value;
-                    }
+                    $value = CsvValueSanitizer::sanitize($value);
                     $values[] = $value;
                 }
                 fputcsv($stream, $values);

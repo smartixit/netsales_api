@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\API\V1\Reports;
 
+use App\Enums\OperationalReportType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class StoreOperationalReportPresetRequest extends FormRequest
 {
@@ -14,7 +16,7 @@ final class StoreOperationalReportPresetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'report_type' => ['required', 'string', 'in:sales,expenses,network_wallet_statement,pos_wallet_statement,repayments,debt_aging,requests'],
+            'report_type' => ['required', Rule::enum(OperationalReportType::class)],
             'network_id' => ['required', 'integer', 'min:1'],
             'pos_id' => ['nullable', 'integer', 'min:1'],
             'name' => ['required', 'string', 'min:1', 'max:120'],
