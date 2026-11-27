@@ -26,6 +26,25 @@ final class BillingReportProviderRegistry
             ['plan_performance', 'أداء الخطط', 'أداء الخطط والاشتراكات النشطة والقيمة الشهرية والسنوية المكافئة', 'billing_subscriptions', 'ba.network_id', 'joined', 'r.created_at', 'r.billing_subscription_id', 'r.billing_subscription_id,r.billing_account_id,r.plan_id,p.plan_key,p.name as plan_name,r.price_id,bp.billing_interval,bp.interval_count,bp.unit_amount_minor,r.quantity,r.currency_id,r.status,r.current_period_start,r.current_period_end', ['p.name', 'p.plan_key', 'r.status'], [['billing_plans as p', 'p.plan_id', '=', 'r.plan_id'], ['billing_prices as bp', 'bp.price_id', '=', 'r.price_id'], ['billing_accounts as ba', 'ba.billing_account_id', '=', 'r.billing_account_id']], null, null, [['r.status', '=', 'ACTIVE'], ['bp.billing_interval', '!=', 'ONE_TIME'], ['r.deleted_at', 'is null', null]]],
         ];
 
+        /**
+         * @var list<array{
+         *     0: string,
+         *     1: string,
+         *     2: string,
+         *     3: string,
+         *     4: string,
+         *     5: string,
+         *     6: string,
+         *     7: string,
+         *     8: string,
+         *     9: list<string>,
+         *     10: list<array{string, string, string, string}>|null,
+         *     11: string|null,
+         *     12: string|null,
+         *     13: list<array{string, string, mixed}>
+         * }> $configs
+         */
+
         $this->providers = [];
         foreach ($configs as $c) {
             [$key,$label,$description,$table,$scopeColumn,$scopeKind,$date,$keyColumn,$select,$search,$joins,$amount,$currency,$where] = $c;

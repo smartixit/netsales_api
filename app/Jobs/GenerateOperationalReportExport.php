@@ -158,7 +158,7 @@ final class GenerateOperationalReportExport implements ShouldQueue
                 foreach (array_keys($columns) as $field) {
                     $csvRow[] = CsvValueSanitizer::sanitize($values[$field] ?? null);
                 }
-                if (fputcsv($stream, $csvRow) === false) {
+                if (fputcsv($stream, $csvRow) < 1) {
                     fclose($rowStream);
                     fclose($stream);
                     throw new \RuntimeException('REPORT_EXPORT_CSV_ROW_FAILED');

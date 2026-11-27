@@ -5,7 +5,7 @@ namespace App\Services\Reports;
 use App\Contracts\Reports\OperationalReportProvider;
 use App\Models\NetworkWallet;
 use App\Support\DecimalAmount;
-use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;

@@ -48,7 +48,9 @@ final class OperationalReportPresetValidator
             'single_choice' => 'choice',
             'multi_choice' => 'choices',
         ];
-        $filterDefinitions = collect($definition['filters'] ?? [])->keyBy('id');
+        /** @var list<array<string, mixed>> $filterDefinitionRows */
+        $filterDefinitionRows = $definition['filters'] ?? [];
+        $filterDefinitions = collect($filterDefinitionRows)->keyBy('id');
 
         foreach ($typedFilters as $filterId => $typedValue) {
             if (! is_array($typedValue)
@@ -60,7 +62,15 @@ final class OperationalReportPresetValidator
                 continue;
             }
 
+            $filterType = $typedValue['type'];
+            if (! is_string($filterType)) {
+                $errors->add('criteria.filters.'.$filterId.'.type', 'نوع القيمة المحفوظة غير صالح.');
+
+                continue;
+            }
+
             $filterDefinition = $filterDefinitions->get($filterId);
+            /** @var string|null $expectedType */
             $expectedType = $filterDefinition === null
                 ? null
                 : ($expectedTypes[$filterDefinition['kind'] ?? ''] ?? null);
@@ -92,7 +102,7 @@ final class OperationalReportPresetValidator
                 continue;
             }
 
-            $rawFilters[$filterId] = match ($typedValue['type']) {
+            $rawFilters[$filterId] = match ($filterType) {
                 'text', 'integer', 'decimal', 'boolean', 'choice', 'choices' => $value,
                 'date' => is_string($value) ? substr($value, 0, 10) : $value,
                 'date_range' => is_array($value) ? [
@@ -111,7 +121,9 @@ final class OperationalReportPresetValidator
             }
         }
 
-        $columns = collect($definition['columns'] ?? [])->keyBy('id');
+        /** @var list<array<string, mixed>> $columnDefinitions */
+        $columnDefinitions = $definition['columns'] ?? [];
+        $columns = collect($columnDefinitions)->keyBy('id');
         $visible = $presentation['visible_column_ids'] ?? [];
         if (count($visible) !== count(array_unique($visible))) {
             $errors->add('presentation.visible_column_ids', 'لا يمكن تكرار العمود في الإعدادات المحفوظة.');
@@ -156,7 +168,9 @@ final class OperationalReportPresetValidator
                 $version['minor'] ?? -1,
                 $version['patch'] ?? -1,
             ]);
-            $allowed = collect($definition['templates'] ?? [])->contains(
+            /** @var list<array<string, mixed>> $templateDefinitions */
+            $templateDefinitions = $definition['templates'] ?? [];
+            $allowed = collect($templateDefinitions)->contains(
                 fn (array $item): bool => ($item['id'] ?? '').'@'.(string) ($item['version'] ?? '') === $key
             );
             if (! $allowed) {
@@ -164,6 +178,7 @@ final class OperationalReportPresetValidator
             }
         }
 
+        /** @var list<string> $locales */
         $locales = $definition['supported_locale_tags'] ?? [];
         $locale = $presentation['language_tag'] ?? null;
         if ($locale !== null && ! collect($locales)->contains(

@@ -4,7 +4,7 @@ namespace App\Contracts\Reports;
 
 use App\Enums\OperationalReportType;
 use App\Models\User;
-use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Pagination\CursorPaginator;
 
 interface OperationalReportProvider
 {
