@@ -15,10 +15,10 @@ final class BillingReceivablesProvider extends ConfiguredBillingReportProvider
             $q->whereIn('i.billing_account_id', DB::table('billing_accounts')->select('billing_account_id')->where('network_id', $networkId));
         }
         if (! empty($filters['from_date'])) {
-            $q->whereDate('i.issued_on', '>=', $filters['from_date']);
+            $q->whereDate('i.due_on', '>=', $filters['from_date']);
         }
         if (! empty($filters['to_date'])) {
-            $q->whereDate('i.issued_on', '<=', $filters['to_date']);
+            $q->whereDate('i.due_on', '<=', $filters['to_date']);
         }
         if (! empty($filters['status'])) {
             $q->where('i.status', strtoupper((string) $filters['status']));
@@ -26,6 +26,7 @@ final class BillingReceivablesProvider extends ConfiguredBillingReportProvider
         $this->applySearchColumns($q, $filters, ['i.invoice_number', 'i.status']);
         $asOf = now('Asia/Aden')->toDateString();
         $aging = $q->select('i.currency_id', 'c.code as currency_code', 'c.name as currency_name', 'c.decimal_places')
+            ->selectRaw('SUM(CASE WHEN i.due_on IS NULL THEN i.remaining_minor ELSE 0 END) as undated_minor')
             ->selectRaw('SUM(CASE WHEN i.due_on >= ? THEN i.remaining_minor ELSE 0 END) as current_minor', [$asOf])
             ->selectRaw('SUM(CASE WHEN i.due_on < ? AND DATEDIFF(?,i.due_on) BETWEEN 1 AND 30 THEN i.remaining_minor ELSE 0 END) as days_1_30_minor', [$asOf, $asOf])
             ->selectRaw('SUM(CASE WHEN DATEDIFF(?,i.due_on) BETWEEN 31 AND 60 THEN i.remaining_minor ELSE 0 END) as days_31_60_minor', [$asOf])
@@ -36,7 +37,7 @@ final class BillingReceivablesProvider extends ConfiguredBillingReportProvider
 
         return ['record_count' => (int) $aging->sum('invoice_count'), 'aging_by_currency' => $aging->map(static fn ($x) => [
             'currency_id' => (int) $x->currency_id, 'currency_code' => $x->currency_code, 'currency_name' => $x->currency_name, 'decimal_places' => (int) $x->decimal_places, 'invoice_count' => (int) $x->invoice_count,
-            'current_minor' => (int) $x->current_minor, 'days_1_30_minor' => (int) $x->days_1_30_minor,
+            'undated_minor' => (int) $x->undated_minor, 'current_minor' => (int) $x->current_minor, 'days_1_30_minor' => (int) $x->days_1_30_minor,
             'days_31_60_minor' => (int) $x->days_31_60_minor, 'days_61_90_minor' => (int) $x->days_61_90_minor,
             'over_90_minor' => (int) $x->over_90_minor,
         ])->all()];

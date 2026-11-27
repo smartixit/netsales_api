@@ -209,12 +209,13 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             'receivables' => collect($summary['aging_by_currency'] ?? [])->map(
                 fn ($item): array => $bar('receivables_aging_'.$item['currency_code'], 'أعمار الذمم المدينة', (string) $item['currency_code'], [[
                     'label' => 'الذمم المستحقة',
+                    'undated' => (int) $item['undated_minor'],
                     'current' => (int) $item['current_minor'],
                     'days_1_30' => (int) $item['days_1_30_minor'],
                     'days_31_60' => (int) $item['days_31_60_minor'],
                     'days_61_90' => (int) $item['days_61_90_minor'],
                     'over_90' => (int) $item['over_90_minor'],
-                ]], [['key' => 'current', 'label' => 'غير متأخر'], ['key' => 'days_1_30', 'label' => '1–30'], ['key' => 'days_31_60', 'label' => '31–60'], ['key' => 'days_61_90', 'label' => '61–90'], ['key' => 'over_90', 'label' => '+90']])
+                ]], [['key' => 'undated', 'label' => 'تاريخ الاستحقاق غير محدد'], ['key' => 'current', 'label' => 'غير متأخر'], ['key' => 'days_1_30', 'label' => '1–30'], ['key' => 'days_31_60', 'label' => '31–60'], ['key' => 'days_61_90', 'label' => '61–90'], ['key' => 'over_90', 'label' => '+90']])
             )->values()->all(),
             'usage' => collect($summary['amounts_by_currency'] ?? [])->map(
                 fn ($item): array => $bar('usage_amount_'.$item['currency_code'], 'قيمة الاستخدام', (string) $item['currency_code'], [[
