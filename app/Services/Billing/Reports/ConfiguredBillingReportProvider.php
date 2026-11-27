@@ -141,7 +141,10 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         return $query;
     }
 
-    /** @param array<string, mixed> $filters @return CursorPaginator<int, object> */
+    /**
+     * @param array<string, mixed> $filters
+     * @return CursorPaginator<int, object>
+     */
     public function build(?int $networkId, array $filters): CursorPaginator
     {
         $query = $this->query($networkId, $filters);
@@ -153,7 +156,10 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             ->cursorPaginate(min(max((int) ($filters['per_page'] ?? 25), 1), 100), ['*'], 'cursor', $filters['cursor'] ?? null);
     }
 
-    /** @param array<string, mixed> $summary @return list<array<string, mixed>> */
+    /**
+     * @param array<string, mixed> $summary
+     * @return list<array<string, mixed>>
+     */
     public function charts(array $summary): array
     {
         $pie = static function (string $id, string $title, array $items, string $labelKey, string $valueKey): array {
@@ -243,7 +249,10 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         };
     }
 
-    /** @param array<string, mixed> $filters @return iterable<object> */
+    /**
+     * @param array<string, mixed> $filters
+     * @return iterable<object>
+     */
     public function exportRows(?int $networkId, array $filters): iterable
     {
         $query = $this->query($networkId, $filters);
@@ -254,7 +263,10 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
             ->cursor();
     }
 
-    /** @param array<string, mixed> $filters @return array<string, mixed> */
+    /**
+     * @param array<string, mixed> $filters
+     * @return array<string, mixed>
+     */
     public function summary(?int $networkId, array $filters): array
     {
         $query = $this->query($networkId, $filters);
