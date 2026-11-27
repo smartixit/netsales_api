@@ -11,6 +11,24 @@ final class BillingReportProviderRegistry
 
     public function __construct()
     {
+        /**
+         * @var list<array{
+         *     0: string,
+         *     1: string,
+         *     2: string,
+         *     3: string,
+         *     4: string,
+         *     5: string,
+         *     6: string,
+         *     7: string,
+         *     8: string,
+         *     9: list<string>,
+         *     10: list<array{string, string, string, string}>|null,
+         *     11: string|null,
+         *     12: string|null,
+         *     13: list<array{string, string, mixed}>
+         * }> $configs
+         */
         $configs = [
             ['subscriptions', 'الاشتراكات', 'دورة حياة الاشتراكات وحالاتها', 'billing_subscriptions', 'r.billing_account_id', 'account', 'created_at', 'billing_subscription_id', 'r.billing_subscription_id,r.billing_account_id,r.plan_id,r.plan_version_id,r.price_id,r.currency_id,r.status,r.current_period_start,r.current_period_end,r.trial_start,r.trial_end,r.cancel_at_period_end,r.created_at', ['r.status', 'r.billing_subscription_id'], null, null, null, [['r.deleted_at', 'is null', null]]],
             ['trials', 'التجارب', 'حجوزات التجارب وحالات اعتمادها وبدئها وانتهائها', 'billing_trial_redemptions', 'r.billing_account_id', 'account', 'r.reserved_at', 'r.trial_redemption_id', 'r.trial_redemption_id,r.billing_account_id,r.billing_subscription_id,r.trial_policy_id,r.trial_policy_version_id,r.status,r.redemption_scope,r.reserved_at,r.started_at,r.completed_at', ['r.status', 'r.trial_redemption_id'], [['billing_subscriptions as s', 's.billing_subscription_id', '=', 'r.billing_subscription_id']], null, null, [['s.deleted_at', 'is null', null]]],
