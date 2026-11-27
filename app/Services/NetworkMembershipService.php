@@ -31,6 +31,10 @@ class NetworkMembershipService
     /**
      * جلب قائمة أعضاء الشبكة مع أدوارهم وبياناتهم الشخصية.
      */
+    /**
+     * @param array<string, mixed> $filters
+     * @return CursorPaginator<int, NetworkUser>
+     */
     public function getMembers(int $networkId, int $actorId, array $filters = []): CursorPaginator
     {
         $this->authorizeActor($networkId, $actorId, 'network_members.view');
@@ -58,6 +62,7 @@ class NetworkMembershipService
     /**
      * جلب الأدوار التشغيلية المسموح بإسنادها داخل هذا النطاق.
      */
+    /** @return Collection<int, Role> */
     public function getAssignableRoles(int $networkId, int $actorId): Collection
     {
         $this->authorizeActor($networkId, $actorId, 'network_members.view');
@@ -143,7 +148,7 @@ class NetworkMembershipService
                 'old_state' => null,
                 'new_state' => [
                     'role_id' => $roleId,
-                    'status' => $member->status,
+                    'status' => $member->status->value,
                     'reason' => 'إضافة العضوية بواسطة مسؤول الشبكة',
                 ],
                 'created_at' => now('Asia/Aden'),
@@ -227,9 +232,7 @@ class NetworkMembershipService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $oldStatus = $member->status instanceof MembershipStatus
-                ? $member->status->value
-                : (string) $member->status;
+            $oldStatus = $member->status->value;
             if ($oldStatus === $newStatus) {
                 return $member->load(['user', 'role']);
             }
