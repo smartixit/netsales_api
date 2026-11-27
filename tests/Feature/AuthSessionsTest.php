@@ -6,6 +6,7 @@ use App\Enums\UserSessionStatus;
 use App\Enums\UserStatus;
 use App\Models\User;
 use App\Models\UserSession;
+use App\Models\UserDevice;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -34,6 +35,15 @@ class AuthSessionsTest extends TestCase
         $current->expires_at = now('Asia/Aden')->addHours(24);
         $current->setRawToken($currentToken);
         $current->save();
+
+        UserDevice::create([
+            'user_id' => $user->user_id,
+            'device_uuid' => 'DEV-CURRENT-001',
+            'device_name' => 'PHPUnit Test Device',
+            'device_type' => 'ANDROID',
+            'status' => 'ACTIVE',
+            'is_primary' => true,
+        ]);
 
         $other = new UserSession;
         $other->user_id = $user->user_id;
