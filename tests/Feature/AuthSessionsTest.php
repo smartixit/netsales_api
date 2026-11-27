@@ -35,6 +35,11 @@ class AuthSessionsTest extends TestCase
             'status' => UserDeviceStatus::ACTIVE,
         ]);
 
+        $this->assertDatabaseHas('user_devices', [
+            'user_id' => $user->user_id,
+            'device_uuid' => 'DEV-CURRENT-001',
+        ]);
+
         $currentToken = bin2hex(random_bytes(32));
         $current = new UserSession;
         $current->user_id = $user->user_id;
