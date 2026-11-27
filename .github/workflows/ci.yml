@@ -187,6 +187,7 @@ jobs:
           app/Services/Billing/Reports/BillingInvoicesProvider.php
           app/Support/CsvValueSanitizer.php
           tests/Feature/BillingReceivablesReportTest.php
+          tests/Feature/BillingCollectionsReportTest.php
           tests/Unit/OperationalReportPresetRequestTest.php
           tests/Unit/CsvValueSanitizerTest.php
           app/Http/Controllers/API/V1/Reporting/ReportController.php

@@ -150,10 +150,18 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         $query = $this->query($networkId, $filters);
         $query->select($this->config['select']);
 
-        return $query
-            ->orderByDesc($this->config['sort'] ?? $this->config['date'])
-            ->orderByDesc($this->config['key_column'])
-            ->cursorPaginate(min(max((int) ($filters['per_page'] ?? 25), 1), 100), ['*'], 'cursor', $filters['cursor'] ?? null);
+        $sortColumn = $this->config['sort'] ?? $this->config['date'];
+        $query->orderByDesc($sortColumn);
+        if ($sortColumn !== $this->config['key_column']) {
+            $query->orderByDesc($this->config['key_column']);
+        }
+
+        return $query->cursorPaginate(
+            min(max((int) ($filters['per_page'] ?? 25), 1), 100),
+            ['*'],
+            'cursor',
+            $filters['cursor'] ?? null
+        );
     }
 
     /**
@@ -258,9 +266,13 @@ class ConfiguredBillingReportProvider implements BillingReportProvider
         $query = $this->query($networkId, $filters);
         $query->select($this->config['select']);
 
-        return $query->orderByDesc($this->config['sort'] ?? $this->config['date'])
-            ->orderByDesc($this->config['key_column'])
-            ->cursor();
+        $sortColumn = $this->config['sort'] ?? $this->config['date'];
+        $query->orderByDesc($sortColumn);
+        if ($sortColumn !== $this->config['key_column']) {
+            $query->orderByDesc($this->config['key_column']);
+        }
+
+        return $query->cursor();
     }
 
     /**

@@ -47,7 +47,7 @@ final class BillingReportProviderRegistry
             $this->providers[$key] = new $providerClass([
                 'key' => $key, 'label' => $label, 'description' => $description, 'table' => $table,
                 'scope' => ['kind' => $scopeKind, 'column' => $scopeColumn],
-                'date' => $date, 'sort' => $key === 'receivables' ? 'r.issued_on' : $date, 'key_column' => $keyColumn, 'select' => explode(',', $select),
+                'date' => $date, 'sort' => match ($key) { 'receivables' => 'r.issued_on', 'collections' => 'r.payment_id', default => $date }, 'key_column' => $keyColumn, 'select' => explode(',', $select),
                 'search' => $search, 'joins' => $joins ?? [],
                 'amount' => $amount, 'currency' => $currency, 'where' => $where,
                 'status' => str_contains($select, 'r.status') ? 'r.status' : null,
