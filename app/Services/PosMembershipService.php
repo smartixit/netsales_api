@@ -7,8 +7,10 @@ use App\Enums\RoleScope;
 use App\Models\Pos;
 use App\Models\PosMembershipAuditLog;
 use App\Models\PosUser;
+use App\Repositories\PosMembershipRepository;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -19,31 +21,45 @@ use Illuminate\Validation\ValidationException;
 class PosMembershipService
 {
     public function __construct(
-        private TenantPermissionService $tenantPermissions
+        private TenantPermissionService $tenantPermissions,
+        private PosMembershipRepository $membershipRepository
     ) {}
 
     /**
      * جلب قائمة موظفي وعضويات نقطة البيع.
      */
-    public function getMembers(int $posId, int $actorId): Collection
+    /**
+     * @param array<string, mixed> $filters
+     * @return CursorPaginator<int, PosUser>
+     */
+    public function getMembers(int $posId, int $actorId, array $filters = []): CursorPaginator
     {
         $this->authorizeActor($posId, $actorId, 'pos_members.view');
 
         $ownerId = (int) Pos::query()->whereKey($posId)->value('owner_id');
+        $members = $this->membershipRepository->getMembersForPos($posId, $filters);
 
-        return PosUser::where('pos_id', $posId)
-            ->with(['user', 'role'])
-            ->orderBy('id', 'asc')
-            ->get()
-            ->each(fn (PosUser $member) => $member->setAttribute(
-                'is_owner',
-                (int) $member->user_id === $ownerId
-            ));
+        foreach ($members->items() as $member) {
+            $member->setAttribute('is_owner', (int) $member->user_id === $ownerId);
+        }
+
+        return $members;
+    }
+
+    /**
+     * @return array{total:int,active:int,suspended:int,invited:int}
+     */
+    public function getMembersSummary(int $posId, int $actorId): array
+    {
+        $this->authorizeActor($posId, $actorId, 'pos_members.view');
+
+        return $this->membershipRepository->getSummaryForPos($posId);
     }
 
     /**
      * جلب الأدوار التشغيلية المسموح بإسنادها داخل نطاق نقطة البيع.
      */
+    /** @return Collection<int, Role> */
     public function getAssignableRoles(int $posId, int $actorId): Collection
     {
         $this->authorizeActor($posId, $actorId, 'pos_members.view');
@@ -122,7 +138,7 @@ class PosMembershipService
                 'old_state' => null,
                 'new_state' => [
                     'role_id' => $roleId,
-                    'status' => $member->status,
+                    'status' => $member->status->value,
                     'reason' => 'إضافة عضوية بنقطة البيع بواسطة الوكيل',
                 ],
                 'created_at' => now('Asia/Aden'),
@@ -206,7 +222,7 @@ class PosMembershipService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $oldStatus = $member->status;
+            $oldStatus = $member->status->value;
             if ($oldStatus === $newStatus) {
                 return $member->load(['user', 'role']);
             }
@@ -262,7 +278,7 @@ class PosMembershipService
                 'actor_id' => $actorId,
                 'old_state' => [
                     'role_id' => $member->role_id,
-                    'status' => $member->status,
+                    'status' => $member->status->value,
                 ],
                 'new_state' => ['reason' => $reason ?? 'إنهاء العضوية وحذف الارتباط بنقطة البيع'],
                 'created_at' => now('Asia/Aden'),

@@ -7,9 +7,11 @@ use App\Enums\RoleScope;
 use App\Models\Network;
 use App\Models\NetworkMembershipAuditLog;
 use App\Models\NetworkUser;
+use App\Repositories\NetworkMembershipRepository;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\Billing\BillingEntitlementService;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -21,31 +23,45 @@ class NetworkMembershipService
 {
     public function __construct(
         private BillingEntitlementService $billingEntitlements,
-        private TenantPermissionService $tenantPermissions
+        private TenantPermissionService $tenantPermissions,
+        private NetworkMembershipRepository $membershipRepository
     ) {}
 
     /**
      * جلب قائمة أعضاء الشبكة مع أدوارهم وبياناتهم الشخصية.
      */
-    public function getMembers(int $networkId, int $actorId): Collection
+    /**
+     * @param array<string, mixed> $filters
+     * @return CursorPaginator<int, NetworkUser>
+     */
+    public function getMembers(int $networkId, int $actorId, array $filters = []): CursorPaginator
     {
         $this->authorizeActor($networkId, $actorId, 'network_members.view');
 
         $ownerId = (int) Network::query()->whereKey($networkId)->value('owner_id');
+        $members = $this->membershipRepository->getMembersForNetwork($networkId, $filters);
 
-        return NetworkUser::where('network_id', $networkId)
-            ->with(['user', 'role'])
-            ->orderBy('id', 'asc')
-            ->get()
-            ->each(fn (NetworkUser $member) => $member->setAttribute(
-                'is_owner',
-                (int) $member->user_id === $ownerId
-            ));
+        foreach ($members->items() as $member) {
+            $member->setAttribute('is_owner', (int) $member->user_id === $ownerId);
+        }
+
+        return $members;
+    }
+
+    /**
+     * @return array{total:int,active:int,suspended:int,invited:int}
+     */
+    public function getMembersSummary(int $networkId, int $actorId): array
+    {
+        $this->authorizeActor($networkId, $actorId, 'network_members.view');
+
+        return $this->membershipRepository->getSummaryForNetwork($networkId);
     }
 
     /**
      * جلب الأدوار التشغيلية المسموح بإسنادها داخل هذا النطاق.
      */
+    /** @return Collection<int, Role> */
     public function getAssignableRoles(int $networkId, int $actorId): Collection
     {
         $this->authorizeActor($networkId, $actorId, 'network_members.view');
@@ -131,7 +147,7 @@ class NetworkMembershipService
                 'old_state' => null,
                 'new_state' => [
                     'role_id' => $roleId,
-                    'status' => $member->status,
+                    'status' => $member->status->value,
                     'reason' => 'إضافة العضوية بواسطة مسؤول الشبكة',
                 ],
                 'created_at' => now('Asia/Aden'),
@@ -215,7 +231,7 @@ class NetworkMembershipService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $oldStatus = $member->status;
+            $oldStatus = $member->status->value;
             if ($oldStatus === $newStatus) {
                 return $member->load(['user', 'role']);
             }
@@ -276,7 +292,7 @@ class NetworkMembershipService
                 'actor_id' => $actorId,
                 'old_state' => [
                     'role_id' => $member->role_id,
-                    'status' => $member->status,
+                    'status' => $member->status->value,
                 ],
                 'new_state' => ['reason' => $reason ?? 'إنهاء العضوية وحذف الارتباط بالشبكة'],
                 'created_at' => now('Asia/Aden'),

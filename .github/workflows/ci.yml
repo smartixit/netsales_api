@@ -202,6 +202,24 @@ jobs:
           tests/Feature/BillingRevenueRecognitionTest.php
           tests/Feature/BillingCreditNoteSettlementTest.php
           tests/Feature/BillingInvoiceRevenuePostingTest.php
+          app/Enums/MembershipStatus.php
+          app/Models/NetworkUser.php
+          app/Models/PosUser.php
+          app/Models/NetworkMembershipAuditLog.php
+          app/Models/PosMembershipAuditLog.php
+          app/Repositories/NetworkMembershipRepository.php
+          app/Repositories/PosMembershipRepository.php
+          app/Services/NetworkMembershipService.php
+          app/Services/PosMembershipService.php
+          app/Http/Controllers/API/V1/NetworkMembershipController.php
+          app/Http/Controllers/API/V1/PosMembershipController.php
+          app/Http/Requests/API/V1/Membership/IndexMembershipRequest.php
+          app/Http/Requests/API/V1/Membership/RemoveMembershipRequest.php
+          app/Http/Requests/API/V1/Membership/StoreMembershipRequest.php
+          app/Http/Requests/API/V1/Membership/UpdateMembershipRoleRequest.php
+          app/Http/Requests/API/V1/Membership/UpdateMembershipStatusRequest.php
+          app/Http/Resources/API/V1/Membership/WorkspaceMembershipResource.php
+          tests/Feature/OperationalSecurityAndScopedMembershipTest.php
           --no-progress --memory-limit=1G --error-format=table
         continue-on-error: true
 

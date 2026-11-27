@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\MembershipStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property MembershipStatus $status
+ */
 class PosUser extends Model
 {
     protected $table = 'pos_users';
@@ -24,25 +28,30 @@ class PosUser extends Model
             'pos_id' => 'integer',
             'user_id' => 'integer',
             'role_id' => 'integer',
+            'status' => MembershipStatus::class,
             'last_event_seq' => 'integer',
         ];
     }
 
+    /** @return BelongsTo<Pos, $this> */
     public function pos(): BelongsTo
     {
         return $this->belongsTo(Pos::class, 'pos_id', 'pos_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
+    /** @return BelongsTo<Role, $this> */
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id', 'role_id');
     }
 
+    /** @return HasMany<PosMembershipAuditLog, $this> */
     public function auditLogs(): HasMany
     {
         return $this->hasMany(PosMembershipAuditLog::class, 'pos_id', 'pos_id')
@@ -51,6 +60,6 @@ class PosUser extends Model
 
     public function isActive(): bool
     {
-        return $this->status === 'ACTIVE';
+        return $this->status === MembershipStatus::ACTIVE;
     }
 }
