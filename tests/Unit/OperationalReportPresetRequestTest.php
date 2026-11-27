@@ -42,7 +42,7 @@ final class OperationalReportPresetRequestTest extends TestCase
             'network_id' => 1,
             'name' => 'Monthly report',
             'report_schema_version' => 1,
-            'criteria' => ['filters' => []],
+            'criteria' => ['filters' => ['probe' => ['type' => 'text', 'value' => 'valid']]],
             'presentation' => [
                 'include_metrics' => false,
                 'include_charts' => false,
