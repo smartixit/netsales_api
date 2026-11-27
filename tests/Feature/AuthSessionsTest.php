@@ -2,12 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Enums\DeviceType;
-use App\Enums\UserDeviceStatus;
 use App\Enums\UserSessionStatus;
 use App\Enums\UserStatus;
 use App\Models\User;
-use App\Models\UserDevice;
 use App\Models\UserSession;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
@@ -24,20 +21,6 @@ class AuthSessionsTest extends TestCase
             'user_phone_number' => '77'.random_int(1000000, 9999999),
             'user_password' => Hash::make('Secret@123'),
             'status' => UserStatus::ACTIVE->value,
-        ]);
-
-        UserDevice::create([
-            'user_id' => $user->user_id,
-            'device_uuid' => 'DEV-CURRENT-001',
-            'device_name' => 'Test Android Device',
-            'device_type' => DeviceType::ANDROID,
-            'is_primary' => true,
-            'status' => UserDeviceStatus::ACTIVE,
-        ]);
-
-        $this->assertDatabaseHas('user_devices', [
-            'user_id' => $user->user_id,
-            'device_uuid' => 'DEV-CURRENT-001',
         ]);
 
         $currentToken = bin2hex(random_bytes(32));
