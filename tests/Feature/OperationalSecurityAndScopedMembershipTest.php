@@ -808,6 +808,91 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             ->assertJsonValidationErrors(['reason']);
     }
 
+    public function test_membership_lists_support_cursor_pagination_and_server_side_filters_for_both_scopes(): void
+    {
+        for ($index = 1; $index <= 24; $index++) {
+            $networkMember = $this->createUserWithScope(RoleScope::NETWORK, [
+                'role_id' => null,
+                'user_full_name' => 'Network Cursor Member '.$index,
+                'user_phone_number' => '77'.str_pad((string) (8000000 + $index), 7, '0', STR_PAD_LEFT),
+                'user_password' => bcrypt('password'),
+                'status' => UserStatus::ACTIVE,
+            ]);
+            NetworkUser::create([
+                'network_id' => $this->networkA->network_id,
+                'user_id' => $networkMember->user_id,
+                'role_id' => $this->networkMemberRole->role_id,
+                'status' => $index === 7 ? 'SUSPENDED' : 'ACTIVE',
+            ]);
+
+            $posMember = $this->createUserWithScope(RoleScope::POS, [
+                'role_id' => null,
+                'user_full_name' => 'POS Cursor Member '.$index,
+                'user_phone_number' => '71'.str_pad((string) (8000000 + $index), 7, '0', STR_PAD_LEFT),
+                'user_password' => bcrypt('password'),
+                'status' => UserStatus::ACTIVE,
+            ]);
+            PosUser::create([
+                'pos_id' => $this->posA->pos_id,
+                'user_id' => $posMember->user_id,
+                'role_id' => $this->posMemberRole->role_id,
+                'status' => $index === 7 ? 'SUSPENDED' : 'ACTIVE',
+            ]);
+        }
+
+        $networkAuth = $this->createAuthenticatedSession($this->networkOwner);
+        $networkUrl = "/api/v1/networks/{$this->networkA->network_id}/members";
+        $networkFirst = $this->withHeaders($networkAuth['headers'])
+            ->getJson($networkUrl.'?per_page=10')
+            ->assertOk()
+            ->assertJsonCount(10, 'data')
+            ->assertJsonPath('meta.per_page', 10);
+        $networkCursor = $networkFirst->json('next_cursor');
+        $this->assertNotEmpty($networkCursor);
+
+        $networkSecond = $this->withHeaders($networkAuth['headers'])
+            ->getJson($networkUrl.'?per_page=10&cursor='.urlencode($networkCursor))
+            ->assertOk()
+            ->assertJsonCount(10, 'data');
+        $networkIds = array_merge(
+            array_column($networkFirst->json('data'), 'id'),
+            array_column($networkSecond->json('data'), 'id')
+        );
+        $this->assertCount(20, array_unique($networkIds));
+
+        $this->withHeaders($networkAuth['headers'])
+            ->getJson($networkUrl.'?search='.urlencode('Network Cursor Member 7').'&status=SUSPENDED')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.status', 'SUSPENDED');
+
+        $posAuth = $this->createAuthenticatedSession($this->posOwner);
+        $posUrl = "/api/v1/pos/{$this->posA->pos_id}/members";
+        $posFirst = $this->withHeaders($posAuth['headers'])
+            ->getJson($posUrl.'?per_page=10')
+            ->assertOk()
+            ->assertJsonCount(10, 'data')
+            ->assertJsonPath('meta.per_page', 10);
+        $posCursor = $posFirst->json('next_cursor');
+        $this->assertNotEmpty($posCursor);
+
+        $posSecond = $this->withHeaders($posAuth['headers'])
+            ->getJson($posUrl.'?per_page=10&cursor='.urlencode($posCursor))
+            ->assertOk()
+            ->assertJsonCount(10, 'data');
+        $posIds = array_merge(
+            array_column($posFirst->json('data'), 'id'),
+            array_column($posSecond->json('data'), 'id')
+        );
+        $this->assertCount(20, array_unique($posIds));
+
+        $this->withHeaders($posAuth['headers'])
+            ->getJson($posUrl.'?search='.urlencode('POS Cursor Member 7').'&status=SUSPENDED')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.status', 'SUSPENDED');
+    }
+
     public function test_force_delete_never_deletes_a_live_request(): void
     {
         $request = VoucherRequest::query()->create([

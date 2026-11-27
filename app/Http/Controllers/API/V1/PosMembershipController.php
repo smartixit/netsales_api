@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Http\Requests\API\V1\Membership\IndexMembershipRequest;
 use App\Http\Requests\API\V1\Membership\RemoveMembershipRequest;
 use App\Http\Requests\API\V1\Membership\StoreMembershipRequest;
 use App\Http\Requests\API\V1\Membership\UpdateMembershipRoleRequest;
@@ -21,11 +22,11 @@ class PosMembershipController extends BaseController
     /**
      * عرض قائمة أعضاء وموظفي نقطة البيع.
      */
-    public function index(int $posId): JsonResponse
+    public function index(IndexMembershipRequest $request, int $posId): JsonResponse
     {
         try {
             $actorId = (int) $this->currentUserId();
-            $members = $this->membershipService->getMembers($posId, $actorId);
+            $members = $this->membershipService->getMembers($posId, $actorId, $request->validated());
 
             return $this->successResponse('تم استرجاع قائمة أعضاء وموظفي نقطة البيع بنجاح.', $members);
         } catch (ValidationException $e) {

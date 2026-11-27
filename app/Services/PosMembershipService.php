@@ -9,6 +9,7 @@ use App\Models\PosMembershipAuditLog;
 use App\Models\PosUser;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -25,17 +26,48 @@ class PosMembershipService
     /**
      * جلب قائمة موظفي وعضويات نقطة البيع.
      */
-    public function getMembers(int $posId, int $actorId): Collection
+    public function getMembers(int $posId, int $actorId, array $filters = []): CursorPaginator
     {
         $this->authorizeActor($posId, $actorId, 'pos_members.view');
 
         $ownerId = (int) Pos::query()->whereKey($posId)->value('owner_id');
+        $query = PosUser::query()
+            ->where('pos_id', $posId)
+            ->with(['user', 'role']);
 
-        return PosUser::where('pos_id', $posId)
-            ->with(['user', 'role'])
+        if (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (! empty($filters['search'])) {
+            $search = trim($filters['search']);
+            $query->where(function ($membershipQuery) use ($search): void {
+                $membershipQuery
+                    ->whereHas('user', function ($userQuery) use ($search): void {
+                        $userQuery
+                            ->where('user_full_name', 'like', "%{$search}%")
+                            ->orWhere('user_phone_number', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('role', function ($roleQuery) use ($search): void {
+                        $roleQuery
+                            ->where('role_name', 'like', "%{$search}%")
+                            ->orWhere('role_key', 'like', "%{$search}%");
+                    });
+
+                if (ctype_digit($search)) {
+                    $membershipQuery
+                        ->orWhere('id', (int) $search)
+                        ->orWhere('user_id', (int) $search);
+                }
+            });
+        }
+
+        $perPage = min(max(1, (int) ($filters['per_page'] ?? 20)), 50);
+
+        return $query
             ->orderBy('id', 'asc')
-            ->get()
-            ->each(fn (PosUser $member) => $member->setAttribute(
+            ->cursorPaginate($perPage, ['*'], 'cursor', $filters['cursor'] ?? null)
+            ->through(fn (PosUser $member) => $member->setAttribute(
                 'is_owner',
                 (int) $member->user_id === $ownerId
             ));

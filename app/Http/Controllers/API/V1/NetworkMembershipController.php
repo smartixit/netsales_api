@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Http\Requests\API\V1\Membership\IndexMembershipRequest;
 use App\Http\Requests\API\V1\Membership\RemoveMembershipRequest;
 use App\Http\Requests\API\V1\Membership\StoreMembershipRequest;
 use App\Http\Requests\API\V1\Membership\UpdateMembershipRoleRequest;
@@ -21,11 +22,11 @@ class NetworkMembershipController extends BaseController
     /**
      * عرض قائمة أعضاء وموظفي الشبكة.
      */
-    public function index(int $networkId): JsonResponse
+    public function index(IndexMembershipRequest $request, int $networkId): JsonResponse
     {
         try {
             $actorId = (int) $this->currentUserId();
-            $members = $this->membershipService->getMembers($networkId, $actorId);
+            $members = $this->membershipService->getMembers($networkId, $actorId, $request->validated());
 
             return $this->successResponse('تم استرجاع قائمة أعضاء وموظفي الشبكة بنجاح.', $members);
         } catch (ValidationException $e) {
