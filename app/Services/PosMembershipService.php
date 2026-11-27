@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\MembershipStatus;
 use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Models\Pos;
@@ -279,7 +278,7 @@ class PosMembershipService
                 'actor_id' => $actorId,
                 'old_state' => [
                     'role_id' => $member->role_id,
-                    'status' => $member->status,
+                    'status' => $member->status->value,
                 ],
                 'new_state' => ['reason' => $reason ?? 'إنهاء العضوية وحذف الارتباط بنقطة البيع'],
                 'created_at' => now('Asia/Aden'),
