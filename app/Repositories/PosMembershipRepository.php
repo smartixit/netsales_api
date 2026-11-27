@@ -8,9 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use LogicException;
 
 /**
- * Data access for scoped POS memberships.
- *
- * @extends BaseRepository<PosUser>
+ * Data access for scoped membership records.
  */
 class PosMembershipRepository extends BaseRepository
 {
@@ -47,10 +45,10 @@ class PosMembershipRepository extends BaseRepository
             ->first();
 
         return [
-            'total' => (int) ($summary?->total ?? 0),
-            'active' => (int) ($summary?->active ?? 0),
-            'suspended' => (int) ($summary?->suspended ?? 0),
-            'invited' => (int) ($summary?->invited ?? 0),
+            'total' => (int) ($summary?->getAttribute('total') ?? 0),
+            'active' => (int) ($summary?->getAttribute('active') ?? 0),
+            'suspended' => (int) ($summary?->getAttribute('suspended') ?? 0),
+            'invited' => (int) ($summary?->getAttribute('invited') ?? 0),
         ];
     }
 
