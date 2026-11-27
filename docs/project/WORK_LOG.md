@@ -1298,3 +1298,16 @@ This log documents all executed tasks, code changes, and verification command ou
 - **Verification:** No local PHP, Pint, PHPUnit, Dart format, Flutter analyze, or Flutter test command was executed in this environment. Exact-head GitHub Actions is required and pending. Do not merge until both repository PR heads pass their required checks and their diffs are reviewed.
 - **Deployment note:** Backend permission catalog and role grants require the project’s normal permission/action/role seeding process before operational clients receive the new capability.
 - **Status:** Implementation committed to paired branches; validation and review pending.
+
+
+## [2026-11-27] Task: Centralize Network/POS membership request validation
+
+- **Authorized scope:** The user approved the M1/M2 membership and partners re-audit and implementation.
+- **Branch / PR:** `audit/membership-partners-contract-review`, PR #49 (Draft).
+- **Baseline:** API `main` at `fc45218ef0b64eb4b912ccb4c25db33394e5621c`.
+- **Changes:** Added shared FormRequests for creating a membership, changing a member role, changing member status, and removing a membership. Both Network and POS membership controllers now consume the same request validation contracts rather than duplicating inline validation.
+- **Security boundary:** FormRequest `authorize()` does not replace tenant authorization. Route middleware and membership services continue to enforce scope, actor membership, assignable roles, and server-side authorization. No permission or tenant-isolation policy was weakened.
+- **Wire/schema impact:** No endpoint, payload key, response, database schema, or financial behavior changed. Validation rules preserve the prior controller rules and add a bounded optional removal reason.
+- **Tests:** Added feature coverage for invalid membership payloads in both Network and POS scopes, including required phone number, positive role ID, allowed status, and status-required validation on status updates.
+- **Verification:** GitHub Actions Laravel CI run #46039831250 passed on exact PR HEAD `f6fb` (full SHA available from PR #49). The run completed syntax/config validation, Composer audit, Pint, Larastan/PHPStan, and Laravel tests successfully.
+- **Status:** Implemented and CI-verified in Draft PR #49. Not merged; preserve existing server-side authorization and await review/approval.
