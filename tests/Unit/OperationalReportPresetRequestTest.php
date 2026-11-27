@@ -16,7 +16,6 @@ final class OperationalReportPresetRequestTest extends TestCase
             (new StoreOperationalReportPresetRequest())->rules()
         );
 
-        $this->assertTrue($validator->fails());
         $this->assertArrayHasKey('report_type', $validator->errors()->messages());
     }
 
@@ -35,6 +34,7 @@ final class OperationalReportPresetRequestTest extends TestCase
         }
     }
 
+    /** @return array<string, mixed> */
     private function validPayload(string $reportType): array
     {
         return [

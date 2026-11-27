@@ -14,6 +14,7 @@ final class CsvValueSanitizerTest extends TestCase
         $this->assertSame("'".$value, CsvValueSanitizer::sanitize($value));
     }
 
+    /** @return array<string, array{string}> */
     public static function formulaLikeValues(): array
     {
         return [
