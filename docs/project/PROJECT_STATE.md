@@ -367,3 +367,12 @@ Halt at the Milestone 6 completion boundary. Present delivery verification evide
 - **Backend branch:** `fix/qr-linking-single-pos-uuid`; FormRequests use the project's ordinary `rules()` style without `withValidator()`. Controllers, service error keys, OpenAPI request schemas, API contract, and feature assertions are being aligned.
 - **Flutter branch:** `fix/qr-linking-single-pos-uuid`; Create/preview/confirm domain contracts and data requests use required `posUuid` only. The POS scanner captures both internal `posId` and business `posUuid` from the active POS; only the business code is sent over the wire, while internal ID is retained for local active-context and response consistency checks.
 - **Verification:** PENDING. GitHub Actions and exact-head test/analyzer outcomes have not yet been confirmed for the latest branch heads. Do not merge either repository until both PR heads are tested and all checks are reconciled.
+
+
+## Membership validation refactor — 2026-11-27 (Draft PR #49)
+
+- Network and POS membership create/update/remove requests now share four dedicated Laravel FormRequests.
+- Controllers delegate request validation to those classes; tenant authorization, role assignability, membership ownership, and service-level guards remain unchanged.
+- No database migration, API route, response schema, financial behavior, or permission matrix change was made.
+- PR #49 branch: `audit/membership-partners-contract-review`. Code verification passed on commit `f6fb20852fcc89c201bc6dc81befadc0e1b4e11a` in Laravel CI run #46039831250.
+- Documentation was then updated in commit `3821f3d28ca504bb8b8743ffff781f0308b4b155`; exact-head CI for that documentation commit is pending. PR remains Draft and unmerged.
