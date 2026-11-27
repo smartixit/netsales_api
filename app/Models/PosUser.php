@@ -33,21 +33,25 @@ class PosUser extends Model
         ];
     }
 
+    /** @return BelongsTo<Pos, $this> */
     public function pos(): BelongsTo
     {
         return $this->belongsTo(Pos::class, 'pos_id', 'pos_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
+    /** @return BelongsTo<Role, $this> */
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id', 'role_id');
     }
 
+    /** @return HasMany<PosMembershipAuditLog, $this> */
     public function auditLogs(): HasMany
     {
         return $this->hasMany(PosMembershipAuditLog::class, 'pos_id', 'pos_id')
