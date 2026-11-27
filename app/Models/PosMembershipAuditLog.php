@@ -37,16 +37,19 @@ class PosMembershipAuditLog extends Model
         ];
     }
 
+    /** @return BelongsTo<Pos, $this> */
     public function pos(): BelongsTo
     {
         return $this->belongsTo(Pos::class, 'pos_id', 'pos_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id', 'user_id');

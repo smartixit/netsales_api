@@ -58,7 +58,7 @@ trait ApiResponseTrait
     /**
      * Success Response.
      */
-    protected function successResponse(string $message, $data = null, int $statusCode = 200): JsonResponse
+    protected function successResponse(string $message, $data = null, int $statusCode = 200, array $meta = []): JsonResponse
     {
         if ($data instanceof ResourceCollection &&
             ($data->resource instanceof CursorPaginator ||
@@ -69,7 +69,7 @@ trait ApiResponseTrait
                 'success' => true,
                 'message' => $message,
                 'data' => $paginated['data'] ?? [],
-                'meta' => $paginated['meta'] ?? [],
+                'meta' => array_merge($paginated['meta'] ?? [], $meta),
                 'links' => $paginated['links'] ?? [],
                 'next_cursor' => $paginated['meta']['next_cursor'] ?? null,
                 'prev_cursor' => $paginated['meta']['prev_cursor'] ?? null,
@@ -82,12 +82,12 @@ trait ApiResponseTrait
                 'success' => true,
                 'message' => $message,
                 'data' => $data->items(),
-                'meta' => [
+                'meta' => array_merge([
                     'path' => $data->path(),
                     'per_page' => $data->perPage(),
                     'next_cursor' => $data->nextCursor()?->encode(),
                     'prev_cursor' => $data->previousCursor()?->encode(),
-                ],
+                ], $meta),
                 'links' => [
                     'prev' => $data->previousPageUrl(),
                     'next' => $data->nextPageUrl(),

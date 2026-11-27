@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Http\Requests\API\V1\Membership\IndexMembershipRequest;
+use App\Http\Resources\API\V1\Membership\WorkspaceMembershipResource;
+use App\Http\Requests\API\V1\Membership\RemoveMembershipRequest;
+use App\Http\Requests\API\V1\Membership\StoreMembershipRequest;
+use App\Http\Requests\API\V1\Membership\UpdateMembershipRoleRequest;
+use App\Http\Requests\API\V1\Membership\UpdateMembershipStatusRequest;
 use App\Http\Resources\API\V1\RBAC\RoleResource;
 use App\Services\PosMembershipService;
 use Exception;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class PosMembershipController extends BaseController
@@ -18,13 +23,20 @@ class PosMembershipController extends BaseController
     /**
      * عرض قائمة أعضاء وموظفي نقطة البيع.
      */
-    public function index(int $posId): JsonResponse
+    public function index(IndexMembershipRequest $request, int $posId): JsonResponse
     {
         try {
             $actorId = (int) $this->currentUserId();
-            $members = $this->membershipService->getMembers($posId, $actorId);
+            $filters = $request->validated();
+            $members = $this->membershipService->getMembers($posId, $actorId, $filters);
+            $summary = $this->membershipService->getMembersSummary($posId, $actorId);
 
-            return $this->successResponse('تم استرجاع قائمة أعضاء وموظفي نقطة البيع بنجاح.', $members);
+            return $this->successResponse(
+                'تم استرجاع قائمة أعضاء وموظفي نقطة البيع بنجاح.',
+                WorkspaceMembershipResource::collection($members),
+                200,
+                ['summary' => $summary]
+            );
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
@@ -55,14 +67,10 @@ class PosMembershipController extends BaseController
     /**
      * إضافة عضو جديد لنقطة البيع عبر رقم الهاتف وتعيين دور مقيد.
      */
-    public function store(Request $request, int $posId): JsonResponse
+    public function store(StoreMembershipRequest $request, int $posId): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'user_phone_number' => 'required|string|max:20',
-                'role_id' => 'required|integer',
-                'status' => 'nullable|string|in:ACTIVE,SUSPENDED,INVITED',
-            ]);
+            $validated = $request->validated();
 
             $actorId = (int) $this->currentUserId();
             $member = $this->membershipService->addMember(
@@ -84,13 +92,10 @@ class PosMembershipController extends BaseController
     /**
      * تعديل الدور المقيد للعضو بنقطة البيع.
      */
-    public function updateRole(Request $request, int $posId, int $userId): JsonResponse
+    public function updateRole(UpdateMembershipRoleRequest $request, int $posId, int $userId): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'role_id' => 'required|integer',
-                'reason' => 'nullable|string|max:255',
-            ]);
+            $validated = $request->validated();
 
             $actorId = (int) $this->currentUserId();
             $member = $this->membershipService->updateRole(
@@ -112,13 +117,10 @@ class PosMembershipController extends BaseController
     /**
      * تعديل حالة تفعيل عضو نقطة البيع.
      */
-    public function updateStatus(Request $request, int $posId, int $userId): JsonResponse
+    public function updateStatus(UpdateMembershipStatusRequest $request, int $posId, int $userId): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'status' => 'required|string|in:ACTIVE,SUSPENDED,INVITED',
-                'reason' => 'nullable|string|max:255',
-            ]);
+            $validated = $request->validated();
 
             $actorId = (int) $this->currentUserId();
             $member = $this->membershipService->updateStatus(
@@ -140,11 +142,11 @@ class PosMembershipController extends BaseController
     /**
      * حذف عضوية المستخدم من نقطة البيع.
      */
-    public function destroy(Request $request, int $posId, int $userId): JsonResponse
+    public function destroy(RemoveMembershipRequest $request, int $posId, int $userId): JsonResponse
     {
         try {
             $actorId = (int) $this->currentUserId();
-            $reason = $request->input('reason');
+            $reason = $request->validated('reason');
             $this->membershipService->removeMember($posId, $userId, $actorId, $reason);
 
             return $this->successResponse('تم إنهاء وإزالة عضوية المستخدم من نقطة البيع بنجاح.');
