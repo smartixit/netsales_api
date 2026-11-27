@@ -76,6 +76,31 @@ class PosMembershipService
     }
 
     /**
+     * إحصاءات العضويات الكاملة مستقلة عن البحث والفلترة وترقيم الصفحات.
+     *
+     * @return array{total:int,active:int,suspended:int,invited:int}
+     */
+    public function getMembersSummary(int $posId, int $actorId): array
+    {
+        $this->authorizeActor($posId, $actorId, 'pos_members.view');
+
+        $summary = PosUser::query()
+            ->where('pos_id', $posId)
+            ->selectRaw(
+                'COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as active, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as suspended, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as invited',
+                ['ACTIVE', 'SUSPENDED', 'INVITED']
+            )
+            ->first();
+
+        return [
+            'total' => (int) ($summary->total ?? 0),
+            'active' => (int) ($summary->active ?? 0),
+            'suspended' => (int) ($summary->suspended ?? 0),
+            'invited' => (int) ($summary->invited ?? 0),
+        ];
+    }
+
+    /**
      * جلب الأدوار التشغيلية المسموح بإسنادها داخل نطاق نقطة البيع.
      */
     public function getAssignableRoles(int $posId, int $actorId): Collection

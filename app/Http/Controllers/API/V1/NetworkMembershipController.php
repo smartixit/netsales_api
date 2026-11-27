@@ -26,9 +26,16 @@ class NetworkMembershipController extends BaseController
     {
         try {
             $actorId = (int) $this->currentUserId();
-            $members = $this->membershipService->getMembers($networkId, $actorId, $request->validated());
+            $filters = $request->validated();
+            $members = $this->membershipService->getMembers($networkId, $actorId, $filters);
+            $summary = $this->membershipService->getMembersSummary($networkId, $actorId);
 
-            return $this->successResponse('تم استرجاع قائمة أعضاء وموظفي الشبكة بنجاح.', $members);
+            return $this->successResponse(
+                'تم استرجاع قائمة أعضاء وموظفي الشبكة بنجاح.',
+                $members,
+                200,
+                ['summary' => $summary]
+            );
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {

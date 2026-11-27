@@ -26,9 +26,16 @@ class PosMembershipController extends BaseController
     {
         try {
             $actorId = (int) $this->currentUserId();
-            $members = $this->membershipService->getMembers($posId, $actorId, $request->validated());
+            $filters = $request->validated();
+            $members = $this->membershipService->getMembers($posId, $actorId, $filters);
+            $summary = $this->membershipService->getMembersSummary($posId, $actorId);
 
-            return $this->successResponse('تم استرجاع قائمة أعضاء وموظفي نقطة البيع بنجاح.', $members);
+            return $this->successResponse(
+                'تم استرجاع قائمة أعضاء وموظفي نقطة البيع بنجاح.',
+                $members,
+                200,
+                ['summary' => $summary]
+            );
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
