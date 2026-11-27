@@ -169,10 +169,6 @@ final class GenerateOperationalReportExport implements ShouldQueue
             rewind($stream);
             $hashContext = hash_init('sha256');
             $artifactSize = hash_update_stream($hashContext, $stream);
-            if ($artifactSize === false) {
-                fclose($stream);
-                throw new \RuntimeException('REPORT_EXPORT_STREAM_READ_FAILED');
-            }
             $artifactHash = hash_final($hashContext);
 
             rewind($stream);
