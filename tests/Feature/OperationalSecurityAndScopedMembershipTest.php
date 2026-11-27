@@ -846,7 +846,11 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             ->getJson($networkUrl.'?per_page=10')
             ->assertOk()
             ->assertJsonCount(10, 'data')
-            ->assertJsonPath('meta.per_page', 10);
+            ->assertJsonPath('meta.per_page', 10)
+            ->assertJsonPath('meta.summary.total', 25)
+            ->assertJsonPath('meta.summary.active', 24)
+            ->assertJsonPath('meta.summary.suspended', 1)
+            ->assertJsonPath('meta.summary.invited', 0);
         $networkCursor = $networkFirst->json('next_cursor');
         $this->assertNotEmpty($networkCursor);
 
@@ -872,7 +876,11 @@ class OperationalSecurityAndScopedMembershipTest extends TestCase
             ->getJson($posUrl.'?per_page=10')
             ->assertOk()
             ->assertJsonCount(10, 'data')
-            ->assertJsonPath('meta.per_page', 10);
+            ->assertJsonPath('meta.per_page', 10)
+            ->assertJsonPath('meta.summary.total', 25)
+            ->assertJsonPath('meta.summary.active', 24)
+            ->assertJsonPath('meta.summary.suspended', 1)
+            ->assertJsonPath('meta.summary.invited', 0);
         $posCursor = $posFirst->json('next_cursor');
         $this->assertNotEmpty($posCursor);
 
