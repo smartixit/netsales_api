@@ -2,10 +2,12 @@
 
 namespace App\Repositories;
 
+use App\Enums\UserSessionStatus;
 use App\Interfaces\UserSessionRepositoryInterface;
 use App\Models\UserSession;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * مستودع إدارة جلسات المستخدمين (User Session Repository).
@@ -186,6 +188,67 @@ class UserSessionRepository extends BaseRepository implements UserSessionReposit
             ->active()
             ->orderByDesc('last_activity_at')
             ->get();
+    }
+
+    /**
+     * جلب جلسات المستخدم مع دعم الفلترة بالحالة والبحث.
+     */
+    public function getSessionsForUser(
+        int $userId,
+        ?UserSessionStatus $status = null,
+        ?string $search = null
+    ): Collection {
+        $now = Carbon::now('Asia/Aden');
+        $query = $this->model->newQuery()->forUser($userId);
+
+        if ($status === UserSessionStatus::ACTIVE) {
+            $query->active();
+        } elseif ($status === UserSessionStatus::REVOKED) {
+            $query->whereNotNull('revoked_at');
+        } elseif ($status === UserSessionStatus::EXPIRED) {
+            $query->whereNull('revoked_at')
+                ->whereNotNull('expires_at')
+                ->where('expires_at', '<=', $now);
+        }
+
+        if ($search !== null && trim($search) !== '') {
+            $term = addcslashes(trim($search), '%_\\');
+            $pattern = "%{$term}%";
+            $query->where(function ($q) use ($pattern): void {
+                $q->where('ip_address', 'like', $pattern)
+                    ->orWhere('user_agent', 'like', $pattern)
+                    ->orWhere('device_uuid', 'like', $pattern);
+            });
+        }
+
+        return $query
+            ->orderByDesc('last_activity_at')
+            ->orderByDesc('session_id')
+            ->get();
+    }
+
+    /**
+     * إنهاء جلسة محددة يملكها المستخدم بشكل ذري داخل معاملة.
+     */
+    public function terminateUserSession(int $userId, int $sessionId): bool
+    {
+        return (bool) DB::transaction(function () use ($userId, $sessionId): bool {
+            /** @var UserSession|null $session */
+            $session = $this->model->newQuery()
+                ->forUser($userId)
+                ->where('session_id', $sessionId)
+                ->whereNull('revoked_at')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $session) {
+                return false;
+            }
+
+            $session->revoke();
+
+            return true;
+        });
     }
 
     /**

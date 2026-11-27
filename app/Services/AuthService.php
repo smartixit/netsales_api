@@ -11,6 +11,7 @@ use App\Enums\RoleKey;
 use App\Enums\RoleScope;
 use App\Enums\SmsMessageType;
 use App\Enums\UserDeviceStatus;
+use App\Enums\UserSessionStatus;
 use App\Enums\UserStatus;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Requests\Api\V1\Auth\RegisterNetworkRequest;
@@ -1254,5 +1255,36 @@ class AuthService
         }
 
         return $this->userDeviceRepository->disconnectDevice($deviceId, $user->user_id);
+    }
+
+    /**
+     * جلب جلسات المستخدم المصادق عليه مع دعم التصفية بالحالة والبحث.
+     */
+    public function getUserSessions(
+        User $user,
+        ?UserSessionStatus $status = null,
+        ?string $search = null
+    ): Collection {
+        return $this->userSessionRepository->getSessionsForUser(
+            $user->user_id,
+            $status,
+            $search
+        );
+    }
+
+    /**
+     * إنهاء جلسة محددة للمستخدم مع منع إنهاء جلسته الحالية من هذا المسار.
+     *
+     * @throws ValidationException
+     */
+    public function terminateUserSession(User $user, int $sessionId, int $currentSessionId): bool
+    {
+        if ($sessionId === $currentSessionId) {
+            throw ValidationException::withMessages([
+                'session_id' => [__('validation.custom.auth_sessions.cannot_terminate_current')],
+            ]);
+        }
+
+        return $this->userSessionRepository->terminateUserSession($user->user_id, $sessionId);
     }
 }

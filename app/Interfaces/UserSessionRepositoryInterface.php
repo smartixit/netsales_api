@@ -2,6 +2,7 @@
 
 namespace App\Interfaces;
 
+use App\Enums\UserSessionStatus;
 use App\Models\UserSession;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -54,6 +55,22 @@ interface UserSessionRepositoryInterface extends BaseRepositoryInterface
      * @return Collection<int, UserSession>
      */
     public function getActiveSessionsForUser(int $userId): Collection;
+
+    /**
+     * Get sessions for a user with optional status and search filters.
+     *
+     * @return Collection<int, UserSession>
+     */
+    public function getSessionsForUser(
+        int $userId,
+        ?UserSessionStatus $status = null,
+        ?string $search = null
+    ): Collection;
+
+    /**
+     * Terminate a specific session owned by the given user.
+     */
+    public function terminateUserSession(int $userId, int $sessionId): bool;
 
     /**
      * Delete expired or revoked sessions older than cutoff.

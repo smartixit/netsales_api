@@ -19,12 +19,18 @@ class UserSessionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $status = $this->resolveStatus();
+        $currentSessionId = (int) $request->attributes->get('session_id');
+
         return [
             'session_id' => $this->session_id,
             'user_id' => $this->user_id,
             'ip_address' => $this->ip_address,
             'user_agent' => $this->user_agent,
             'device_uuid' => $this->device_uuid,
+            'status' => $status->value,
+            'status_label' => $status->label(),
+            'is_current' => $currentSessionId > 0 && (int) $this->session_id === $currentSessionId,
             'logged_at' => $this->logged_at ? Carbon::parse($this->logged_at)->toDateTimeString() : null,
             'last_activity_at' => $this->last_activity_at ? Carbon::parse($this->last_activity_at)->toDateTimeString() : null,
             'expires_at' => $this->expires_at ? Carbon::parse($this->expires_at)->toDateTimeString() : null,

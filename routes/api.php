@@ -84,6 +84,8 @@ Route::prefix('v1')->group(function () {
             Route::post('toggle-2fa', [AuthController::class, 'toggleTwoFactor'])->name('api.v1.auth.toggle_2fa');
             Route::get('devices', [AuthController::class, 'getDevices'])->name('api.v1.auth.devices');
             Route::delete('devices/{id}', [AuthController::class, 'disconnectDevice'])->whereNumber('id')->name('api.v1.auth.devices.disconnect');
+            Route::get('sessions', [AuthController::class, 'getSessions'])->name('api.v1.auth.sessions');
+            Route::delete('sessions/{id}', [AuthController::class, 'terminateSession'])->whereNumber('id')->name('api.v1.auth.sessions.terminate');
         });
 
     });
