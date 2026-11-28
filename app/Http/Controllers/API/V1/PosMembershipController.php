@@ -81,7 +81,7 @@ class PosMembershipController extends BaseController
     #[OA\Post(
         path: '/api/v1/pos/{posId}/members', summary: 'store', tags: ['Membership'], operationId: 'posmembership_store',
         parameters: [new OA\Parameter(name: 'posId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['user_phone_number', 'role_id'], properties: [new OA\Property(property: 'user_phone_number', type: 'string'), new OA\Property(property: 'role_id', type: 'integer'), new OA\Property(property: 'status', type: 'string')]))),
+                requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['user_phone_number', 'role_id'], properties: [new OA\Property(property: 'user_phone_number', type: 'string', maxLength: 20), new OA\Property(property: 'role_id', type: 'integer', minimum: 1), new OA\Property(property: 'status', type: 'string', enum: ['ACTIVE', 'SUSPENDED', 'INVITED'])]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function store(StoreMembershipRequest $request, int $posId): JsonResponse
