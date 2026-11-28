@@ -21,6 +21,7 @@ use App\Services\Billing\CurrencyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class BillingCatalogController extends BaseController
 {
@@ -29,6 +30,13 @@ class BillingCatalogController extends BaseController
         private BillingCatalogService $catalog
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/currencies',
+        summary: 'عرض العملات المتاحة',
+        tags: ['Platform Billing'],
+        operationId: 'platform_billing_currencies',
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function currencies(): JsonResponse
     {
         return $this->successResponse(
@@ -37,6 +45,14 @@ class BillingCatalogController extends BaseController
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/currencies',
+        summary: 'إنشاء عملة',
+        tags: ['Platform Billing'],
+        operationId: 'platform_billing_storeCurrency',
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function storeCurrency(StoreCurrencyRequest $request): JsonResponse
     {
         try {
@@ -51,6 +67,15 @@ class BillingCatalogController extends BaseController
         }
     }
 
+    #[OA\Put(
+        path: '/api/v1/platform/billing/currencies/{currencyId}',
+        summary: 'تحديث بيانات عملة',
+        tags: ['Platform Billing'],
+        operationId: 'platform_billing_updateCurrency',
+        parameters: [new OA\Parameter(name: 'currencyId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function updateCurrency(UpdateCurrencyRequest $request, int $currencyId): JsonResponse
     {
         try {
@@ -66,6 +91,13 @@ class BillingCatalogController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/products',
+        summary: 'عرض منتجات الفوترة',
+        tags: ['Platform Billing'],
+        operationId: 'platform_billing_products',
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function products(Request $request): JsonResponse
     {
         return $this->successResponse(
@@ -76,6 +108,13 @@ class BillingCatalogController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/plans',
+        summary: 'عرض خطط الاشتراك',
+        tags: ['Platform Billing'],
+        operationId: 'platform_billing_plans',
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function plans(Request $request): JsonResponse
     {
         return $this->successResponse(
@@ -86,6 +125,14 @@ class BillingCatalogController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/plans/{planId}/versions',
+        summary: 'عرض إصدارات خطة',
+        tags: ['Platform Billing'],
+        operationId: 'platform_billing_versions',
+        parameters: [new OA\Parameter(name: 'planId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function versions(Request $request, int $planId): JsonResponse
     {
         return $this->successResponse(
@@ -96,6 +143,14 @@ class BillingCatalogController extends BaseController
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/products',
+        summary: 'إنشاء منتج فوترة',
+        tags: ['Platform Billing'],
+        operationId: 'platform_billing_storeProduct',
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function storeProduct(StoreProductRequest $request): JsonResponse
     {
         try {
@@ -115,6 +170,14 @@ class BillingCatalogController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/plans',
+        summary: 'إنشاء خطة اشتراك',
+        tags: ['Platform Billing'],
+        operationId: 'platform_billing_storePlan',
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function storePlan(StorePlanRequest $request): JsonResponse
     {
         try {
@@ -131,6 +194,15 @@ class BillingCatalogController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/plans/{planId}/versions',
+        summary: 'إنشاء مسودة إصدار خطة',
+        tags: ['Platform Billing'],
+        operationId: 'platform_billing_createDraftVersion',
+        parameters: [new OA\Parameter(name: 'planId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function createDraftVersion(CreateDraftVersionRequest $request, int $planId): JsonResponse
     {
         try {
@@ -152,6 +224,15 @@ class BillingCatalogController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/plan-versions/{versionId}/prices',
+        summary: 'إضافة سعر إلى إصدار خطة',
+        tags: ['Platform Billing'],
+        operationId: 'platform_billing_addPrice',
+        parameters: [new OA\Parameter(name: 'versionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function addPrice(StorePriceRequest $request, int $versionId): JsonResponse
     {
         try {
@@ -168,6 +249,15 @@ class BillingCatalogController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/plan-versions/{versionId}/features',
+        summary: 'إضافة ميزة إلى إصدار خطة',
+        tags: ['Platform Billing'],
+        operationId: 'platform_billing_addFeature',
+        parameters: [new OA\Parameter(name: 'versionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function addFeature(StorePlanFeatureRequest $request, int $versionId): JsonResponse
     {
         try {
@@ -186,6 +276,15 @@ class BillingCatalogController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/plan-versions/{versionId}/publish',
+        summary: 'نشر إصدار خطة',
+        tags: ['Platform Billing'],
+        operationId: 'platform_billing_publishVersion',
+        parameters: [new OA\Parameter(name: 'versionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function publishVersion(int $versionId): JsonResponse
     {
         try {
