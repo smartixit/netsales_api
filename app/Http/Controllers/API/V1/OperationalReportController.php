@@ -301,7 +301,7 @@ class OperationalReportController extends BaseController
 
     #[OA\Put(
         path: '/api/v1/reports/presets/{presetUuid}', summary: 'updatePreset', tags: ['Operational Reports'], operationId: 'operationalreport_updatePreset',
-        parameters: [new OA\Parameter(name: 'presetUuid', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'presetUuid', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', properties: [new OA\Property(property: 'report_type', type: 'string'), new OA\Property(property: 'network_id', type: 'integer'), new OA\Property(property: 'pos_id', type: 'integer'), new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'report_schema_version', type: 'integer'), new OA\Property(property: 'criteria', type: 'object', additionalProperties: true), new OA\Property(property: 'presentation', type: 'object', additionalProperties: true)]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
