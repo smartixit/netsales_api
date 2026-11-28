@@ -34,8 +34,8 @@ class ReportController extends BaseController
 
     #[OA\Post(
         path: '/api/v1/networks/{networkId}/reports/runs', summary: 'storeNetworkRun', tags: ['Report Runs'], operationId: 'report_storeNetworkRun',
-        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'object', required: ['report_key'], properties: [new OA\Property(property: 'report_key', type: 'string'), new OA\Property(property: 'filters', type: 'object')]))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function storeNetworkRun(StoreReportRunRequest $request, int $networkId): JsonResponse
@@ -113,7 +113,7 @@ class ReportController extends BaseController
 
     #[OA\Post(
         path: '/api/v1/platform/reports/runs', summary: 'storePlatformRun', tags: ['Report Runs'], operationId: 'report_storePlatformRun',
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['report_key'], properties: [new OA\Property(property: 'report_key', type: 'string'), new OA\Property(property: 'filters', type: 'object')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function storePlatformRun(StoreReportRunRequest $request): JsonResponse
