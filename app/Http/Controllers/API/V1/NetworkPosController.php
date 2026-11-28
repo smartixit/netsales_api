@@ -551,6 +551,10 @@ class NetworkPosController extends BaseController
     /**
      * Resolve one exact POS business code without exposing a POS directory.
      */
+    #[OA\Get(
+        path: '/api/v1/network-pos/resolve-link-target', summary: 'resolveLinkTarget', tags: ['Network POS'], operationId: 'network_pos_resolveLinkTarget',
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function resolveLinkTarget(ResolveNetworkLinkablePosRequest $request): JsonResponse
     {
         try {
@@ -711,6 +715,11 @@ class NetworkPosController extends BaseController
     /**
      * Read challenge lifecycle state without returning its encrypted payload or identifiers.
      */
+    #[OA\Get(
+        path: '/api/v1/network-pos/challenges/{uuid}', summary: 'challengeStatus', tags: ['Network POS'], operationId: 'network_pos_challengeStatus',
+        parameters: [new OA\Parameter(name: 'uuid', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function challengeStatus(string $uuid): JsonResponse
     {
         try {
@@ -767,6 +776,11 @@ class NetworkPosController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/networks/{networkId}/network-pos/trashed', summary: 'trashedForNetwork', tags: ['Network POS'], operationId: 'network_pos_trashedForNetwork',
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function trashedForNetwork(\Illuminate\Http\Request $request, int $networkId): JsonResponse
     {
         $user = $this->currentUser();
@@ -778,6 +792,11 @@ class NetworkPosController extends BaseController
         return $this->successResponse('تم استرجاع العلاقات المؤرشفة.', NetworkPosResource::collection($links));
     }
 
+    #[OA\Get(
+        path: '/api/v1/pos/{posId}/network-pos/trashed', summary: 'trashedForPos', tags: ['Network POS'], operationId: 'network_pos_trashedForPos',
+        parameters: [new OA\Parameter(name: 'posId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function trashedForPos(Request $request, int $posId): JsonResponse
     {
         $user = $this->currentUser();
@@ -789,6 +808,12 @@ class NetworkPosController extends BaseController
         return $this->successResponse('تم استرجاع العلاقات المؤرشفة.', NetworkPosResource::collection($links));
     }
 
+    #[OA\Post(
+        path: '/api/v1/network-pos/{id}/restore', summary: 'restoreLink', tags: ['Network POS'], operationId: 'network_pos_restoreLink',
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function restoreLink(int $id): JsonResponse
     {
         $link = $this->networkPosService->findByIdWithTrashed($id);
@@ -811,6 +836,11 @@ class NetworkPosController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/network-pos/{id}/agreements', summary: 'agreements', tags: ['Network POS'], operationId: 'network_pos_agreements',
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function agreements(\Illuminate\Http\Request $request, int $id): JsonResponse
     {
         $link = $this->networkPosService->findByIdWithTrashed($id);
@@ -824,6 +854,12 @@ class NetworkPosController extends BaseController
         ));
     }
 
+    #[OA\Post(
+        path: '/api/v1/network-pos/{id}/agreements', summary: 'storeAgreement', tags: ['Network POS'], operationId: 'network_pos_storeAgreement',
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function storeAgreement(StoreNetworkPosAgreementRequest $request, int $id): JsonResponse
     {
         $link = $this->networkPosService->findById($id);
@@ -842,6 +878,12 @@ class NetworkPosController extends BaseController
         }
     }
 
+    #[OA\Put(
+        path: '/api/v1/network-pos/{id}/agreements/{agreementId}', summary: 'updateAgreement', tags: ['Network POS'], operationId: 'network_pos_updateAgreement',
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'agreementId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function updateAgreement(UpdateNetworkPosAgreementRequest $request, int $id, int $agreementId): JsonResponse
     {
         $link = $this->networkPosService->findById($id);
@@ -860,6 +902,12 @@ class NetworkPosController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/network-pos/{id}/agreements/{agreementId}/activate', summary: 'activateAgreement', tags: ['Network POS'], operationId: 'network_pos_activateAgreement',
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'agreementId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function activateAgreement(int $id, int $agreementId): JsonResponse
     {
         $link = $this->networkPosService->findById($id);
@@ -878,6 +926,12 @@ class NetworkPosController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/network-pos/{id}/agreements/{agreementId}/terminate', summary: 'terminateAgreement', tags: ['Network POS'], operationId: 'network_pos_terminateAgreement',
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'agreementId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function terminateAgreement(int $id, int $agreementId): JsonResponse
     {
         $link = $this->networkPosService->findById($id);
@@ -896,6 +950,11 @@ class NetworkPosController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/network-pos/{id}/events', summary: 'relationshipEvents', tags: ['Network POS'], operationId: 'network_pos_relationshipEvents',
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function relationshipEvents(\Illuminate\Http\Request $request, int $id): JsonResponse
     {
         $link = $this->networkPosService->findByIdWithTrashed($id);
