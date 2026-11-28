@@ -26,10 +26,12 @@ use App\Services\Billing\BillingReconciliationService;
 use App\Services\Billing\BillingSubscriptionService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
+use Tests\Concerns\CreatesBillingDunningPolicyDraft;
 use Tests\TestCase;
 
 class BillingSubscriptionPurchaseTest extends TestCase
 {
+    use CreatesBillingDunningPolicyDraft;
     use DatabaseTransactions;
 
     public function test_paid_purchase_creates_a_valid_period_and_keeps_entitlements_locked_until_payment(): void
@@ -93,10 +95,7 @@ class BillingSubscriptionPurchaseTest extends TestCase
             'is_active' => true,
         ]);
 
-        $dunningVersion = BillingDunningPolicyVersion::query()
-            ->where('status', 'DRAFT')
-            ->whereHas('policy', fn ($query) => $query->where('policy_key', 'platform-default'))
-            ->firstOrFail();
+        $dunningVersion = $this->createBillingDunningPolicyDraft($actor);
 
         app(BillingPolicyManagementService::class)->publishDunningVersion(
             (int) $dunningVersion->dunning_policy_version_id,
