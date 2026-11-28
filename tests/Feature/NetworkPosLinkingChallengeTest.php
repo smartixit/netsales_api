@@ -1481,7 +1481,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
         $this->assertTrue($service->delete((int) $deletedLink->network_pos_id));
         $this->assertSame(1, NetworkPos::query()->where('network_id', $this->network->network_id)->count());
 
-        $this->expectException(\\Illuminate\\Validation\\ValidationException::class);
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
         $service->restore((int) $deletedLink->network_pos_id);
     }
 
