@@ -857,7 +857,7 @@ class NetworkPosController extends BaseController
 
     #[OA\Post(
         path: '/api/v1/network-pos/{id}/agreements', summary: 'storeAgreement', tags: ['Network POS'], operationId: 'network_pos_storeAgreement',
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'object', required: ['title', 'terms'], properties: [new OA\Property(property: 'title', type: 'string'), new OA\Property(property: 'reference', type: 'string'), new OA\Property(property: 'terms', type: 'string'), new OA\Property(property: 'starts_at', type: 'string'), new OA\Property(property: 'ends_at', type: 'string')]))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['title', 'terms'], properties: [new OA\Property(property: 'title', type: 'string'), new OA\Property(property: 'reference', type: 'string'), new OA\Property(property: 'terms', type: 'string'), new OA\Property(property: 'starts_at', type: 'string'), new OA\Property(property: 'ends_at', type: 'string')]))],
         requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -881,7 +881,7 @@ class NetworkPosController extends BaseController
 
     #[OA\Put(
         path: '/api/v1/network-pos/{id}/agreements/{agreementId}', summary: 'updateAgreement', tags: ['Network POS'], operationId: 'network_pos_updateAgreement',
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'object', properties: [new OA\Property(property: 'title', type: 'string'), new OA\Property(property: 'reference', type: 'string'), new OA\Property(property: 'terms', type: 'string'), new OA\Property(property: 'starts_at', type: 'string'), new OA\Property(property: 'ends_at', type: 'string')])), new OA\Parameter(name: 'agreementId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))roperties: [new OA\Property(property: 'title', type: 'string'), new OA\Property(property: 'reference', type: 'string'), new OA\Property(property: 'terms', type: 'string'), new OA\Property(property: 'starts_at', type: 'string'), new OA\Property(property: 'ends_at', type: 'string')])), new OA\Parameter(name: 'agreementId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]

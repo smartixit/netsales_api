@@ -102,7 +102,7 @@ class BillingSelfServiceController extends BaseController
         summary: 'Create Account',
         tags: ['Billing'],
         operationId: 'billingselfservice_createAccount',
-        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'object', required: ['currency_id'], properties: [new OA\Property(property: 'currency_id', type: 'integer')]))],
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['currency_id'], properties: [new OA\Property(property: 'currency_id', type: 'integer')]))],
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -139,7 +139,7 @@ class BillingSelfServiceController extends BaseController
         summary: 'Update Account',
         tags: ['Billing'],
         operationId: 'billingselfservice_updateAccount',
-        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'object', required: ['legal_name'], properties: [new OA\Property(property: 'legal_name', type: 'string'), new OA\Property(property: 'billing_email', type: 'string'), new OA\Property(property: 'tax_number', type: 'string'), new OA\Property(property: 'billing_address', type: 'string'), new OA\Property(property: 'payment_terms_days', type: 'integer')]))],
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['legal_name'], properties: [new OA\Property(property: 'legal_name', type: 'string'), new OA\Property(property: 'billing_email', type: 'string'), new OA\Property(property: 'tax_number', type: 'string'), new OA\Property(property: 'billing_address', type: 'string'), new OA\Property(property: 'payment_terms_days', type: 'integer')]))],
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -159,7 +159,7 @@ class BillingSelfServiceController extends BaseController
         summary: 'Store Contact',
         tags: ['Billing'],
         operationId: 'billingselfservice_storeContact',
-        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'object', required: ['name'], properties: [new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'email', type: 'string'), new OA\Property(property: 'phone', type: 'string'), new OA\Property(property: 'is_primary', type: 'boolean'), new OA\Property(property: 'receives_invoices', type: 'boolean')]))],
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['name'], properties: [new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'email', type: 'string'), new OA\Property(property: 'phone', type: 'string'), new OA\Property(property: 'is_primary', type: 'boolean'), new OA\Property(property: 'receives_invoices', type: 'boolean')]))],
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -179,7 +179,7 @@ class BillingSelfServiceController extends BaseController
         summary: 'Update Contact',
         tags: ['Billing'],
         operationId: 'billingselfservice_updateContact',
-        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'object', properties: [new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'email', type: 'string'), new OA\Property(property: 'phone', type: 'string'), new OA\Property(property: 'is_primary', type: 'boolean'), new OA\Property(property: 'receives_invoices', type: 'boolean')])), new OA\Parameter(name: 'contactId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))roperties: [new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'email', type: 'string'), new OA\Property(property: 'phone', type: 'string'), new OA\Property(property: 'is_primary', type: 'boolean'), new OA\Property(property: 'receives_invoices', type: 'boolean')])), new OA\Parameter(name: 'contactId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -320,7 +320,7 @@ class BillingSelfServiceController extends BaseController
         summary: 'Purchase',
         tags: ['Billing'],
         operationId: 'billingselfservice_purchase',
-        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'object', required: ['price_id'], properties: [new OA\Property(property: 'price_id', type: 'integer')]))],
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['price_id'], properties: [new OA\Property(property: 'price_id', type: 'integer')]))],
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -584,7 +584,7 @@ class BillingSelfServiceController extends BaseController
         summary: 'Store Payment',
         tags: ['Billing'],
         operationId: 'billingselfservice_storePayment',
-        parameters: [new OA\Parameter(name: 'invoiceId', in: 'path', required: true, schema: new OA\Schema(type: 'object', required: ['payment_method_id', 'amount_minor', 'idempotency_key'], properties: [new OA\Property(property: 'payment_method_id', type: 'integer'), new OA\Property(property: 'amount_minor', type: 'integer'), new OA\Property(property: 'idempotency_key', type: 'string'), new OA\Property(property: 'external_reference', type: 'string'), new OA\Property(property: 'proof', type: 'string', format: 'binary')]))],
+        parameters: [new OA\Parameter(name: 'invoiceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['payment_method_id', 'amount_minor', 'idempotency_key'], properties: [new OA\Property(property: 'payment_method_id', type: 'integer'), new OA\Property(property: 'amount_minor', type: 'integer'), new OA\Property(property: 'idempotency_key', type: 'string'), new OA\Property(property: 'external_reference', type: 'string'), new OA\Property(property: 'proof', type: 'string', format: 'binary')]))],
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]

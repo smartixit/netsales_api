@@ -374,7 +374,7 @@ class BillingFinanceController extends BaseController
         summary: 'Verify Payment',
         tags: ['Billing'],
         operationId: 'billingfinance_verifyPayment',
-        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'object', required: ['treasury_account_id'], properties: [new OA\Property(property: 'treasury_account_id', type: 'integer'), new OA\Property(property: 'note', type: 'string')]))],
+        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['treasury_account_id'], properties: [new OA\Property(property: 'treasury_account_id', type: 'integer'), new OA\Property(property: 'note', type: 'string')]))],
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -399,7 +399,7 @@ class BillingFinanceController extends BaseController
         summary: 'Reject Payment',
         tags: ['Billing'],
         operationId: 'billingfinance_rejectPayment',
-        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'object', required: ['reason'], properties: [new OA\Property(property: 'reason', type: 'string')]))],
+        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['reason'], properties: [new OA\Property(property: 'reason', type: 'string')]))],
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -423,7 +423,7 @@ class BillingFinanceController extends BaseController
         summary: 'Issue Credit Note',
         tags: ['Billing'],
         operationId: 'billingfinance_issueCreditNote',
-        parameters: [new OA\Parameter(name: 'invoiceId', in: 'path', required: true, schema: new OA\Schema(type: 'object', required: ['idempotency_key', 'reason', 'lines'], properties: [new OA\Property(property: 'idempotency_key', type: 'string'), new OA\Property(property: 'reason', type: 'string'), new OA\Property(property: 'lines', type: 'array', items: new OA\Items(type: 'object'))]))],
+        parameters: [new OA\Parameter(name: 'invoiceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['idempotency_key', 'reason', 'lines'], properties: [new OA\Property(property: 'idempotency_key', type: 'string'), new OA\Property(property: 'reason', type: 'string'), new OA\Property(property: 'lines', type: 'array', items: new OA\Items(type: 'object'))]))],
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -469,7 +469,7 @@ class BillingFinanceController extends BaseController
         summary: 'Refund Payment',
         tags: ['Billing'],
         operationId: 'billingfinance_refundPayment',
-        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'object', required: ['idempotency_key', 'credit_note_id', 'treasury_account_id', 'amount_minor', 'reason'], properties: [new OA\Property(property: 'idempotency_key', type: 'string'), new OA\Property(property: 'credit_note_id', type: 'integer'), new OA\Property(property: 'treasury_account_id', type: 'integer'), new OA\Property(property: 'amount_minor', type: 'integer'), new OA\Property(property: 'reason', type: 'string')]))],
+        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['idempotency_key', 'credit_note_id', 'treasury_account_id', 'amount_minor', 'reason'], properties: [new OA\Property(property: 'idempotency_key', type: 'string'), new OA\Property(property: 'credit_note_id', type: 'integer'), new OA\Property(property: 'treasury_account_id', type: 'integer'), new OA\Property(property: 'amount_minor', type: 'integer'), new OA\Property(property: 'reason', type: 'string')]))],
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
