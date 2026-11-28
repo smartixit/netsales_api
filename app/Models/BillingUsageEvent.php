@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
+/**
+ * @property int $amount_minor
+ */
 class BillingUsageEvent extends Model
 {
     use ExactDateSerialization;
