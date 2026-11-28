@@ -12,6 +12,7 @@ use App\Models\Directorate;
 use App\Models\Governorate;
 use App\Models\Network;
 use App\Models\User;
+use App\Services\Billing\BillingInvoiceService;
 use App\Services\Billing\BillingUsageService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -118,6 +119,17 @@ class BillingUsageServiceTest extends TestCase
         $this->assertSame(200, (int) BillingUsageEvent::query()
             ->where('billing_subscription_id', $subscriptionId)
             ->sum('amount_minor'));
+
+        $invoice = app(BillingInvoiceService::class)->createForSubscription(
+            $this->subscription,
+            null,
+            $this->subscription->current_period_start?->toDateString(),
+            $this->subscription->current_period_end?->toDateString()
+        );
+
+        $this->assertSame(200, (int) $invoice->lines()
+            ->where('line_type', 'METERED_USAGE')
+            ->sum('total_minor'));
     }
 
     public function test_count_meter_counts_events_and_blocks_after_the_configured_count(): void
