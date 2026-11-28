@@ -1,10 +1,10 @@
 <?php
 
-namespace Database\\Seeders;
+namespace Database\Seeders;
 
-use Illuminate\\Database\\Seeder;
-use Illuminate\\Support\\Facades\\DB;
-use Illuminate\\Support\\Facades\\Hash;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 
 class UserSeeder extends Seeder
@@ -43,30 +43,27 @@ class UserSeeder extends Seeder
             ]
         );
 
-        $adminPhone = config('netsales.platform_admin.phone');
-        $adminPassword = config('netsales.platform_admin.password');
+        // $adminPhone = config('netsales.platform_admin.phone');
+        // $adminPassword = config('netsales.platform_admin.password');
 
-        if (! is_string($adminPhone) || trim($adminPhone) === ''
-            || ! is_string($adminPassword) || trim($adminPassword) === '') {
-            throw new RuntimeException(
-                'Platform administrator credentials must be configured before running UserSeeder.'
+        // // Never create or overwrite a platform administrator without an explicitly configured password.
+        // if (is_string($adminPhone) && trim($adminPhone) !== ''
+        //     && is_string($adminPassword) && trim($adminPassword) !== '') {
+            DB::table('users')->updateOrInsert(
+                ['user_phone_number' => '772957881'],
+                [
+                    'role_id' => $superAdminRole->role_id,
+                    'user_full_name' => (string) 'حسام خالد سعيد علي الزريقي',
+                    'user_password' => Hash::make('Hh$2002Hh'),
+                    'user_email' => 'alzuraikyhussam@gmail.com',
+                    'user_profile_logo' => null,
+                    'user_2fa_enabled' => false,
+                    'user_login_attempts' => 0,
+                    'status' => 'ACTIVE',
+                    'updated_at' => now('Asia/Aden'),
+                    'created_at' => now('Asia/Aden'),
+                ]
             );
-        }
-
-        DB::table('users')->updateOrInsert(
-            ['user_phone_number' => trim($adminPhone)],
-            [
-                'role_id' => $superAdminRole->role_id,
-                'user_full_name' => (string) config('netsales.platform_admin.name', 'مسؤول المنصة'),
-                'user_password' => Hash::make($adminPassword),
-                'user_email' => config('netsales.platform_admin.email'),
-                'user_profile_logo' => null,
-                'user_2fa_enabled' => false,
-                'user_login_attempts' => 0,
-                'status' => 'ACTIVE',
-                'updated_at' => now('Asia/Aden'),
-                'created_at' => now('Asia/Aden'),
-            ]
-        );
+        // }
     }
 }
