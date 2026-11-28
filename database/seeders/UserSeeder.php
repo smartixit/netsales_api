@@ -33,7 +33,7 @@ class UserSeeder extends Seeder
                 'user_full_name' => 'النظام الآلي - System Daemon',
                 'user_phone_number' => '000000000',
                 'user_password' => Hash::make('locked_system_daemon_'.config('app.key')),
-                'user_email' => 'system@netsales.local',
+                'user_email' => 'alzuraikyhussam@gmail.com',
                 'user_profile_logo' => null,
                 'user_2fa_enabled' => false,
                 'user_login_attempts' => 0,
@@ -43,19 +43,19 @@ class UserSeeder extends Seeder
             ]
         );
 
-        $adminPhone = config('netsales.platform_admin.phone');
-        $adminPassword = config('netsales.platform_admin.password');
+        // $adminPhone = config('netsales.platform_admin.phone');
+        // $adminPassword = config('netsales.platform_admin.password');
 
-        // Never create or overwrite a platform administrator without an explicitly configured password.
-        if (is_string($adminPhone) && trim($adminPhone) !== ''
-            && is_string($adminPassword) && trim($adminPassword) !== '') {
+        // // Never create or overwrite a platform administrator without an explicitly configured password.
+        // if (is_string($adminPhone) && trim($adminPhone) !== ''
+        //     && is_string($adminPassword) && trim($adminPassword) !== '') {
             DB::table('users')->updateOrInsert(
-                ['user_phone_number' => $adminPhone],
+                ['user_phone_number' => '772957881'],
                 [
                     'role_id' => $superAdminRole->role_id,
-                    'user_full_name' => (string) config('netsales.platform_admin.name'),
-                    'user_password' => Hash::make($adminPassword),
-                    'user_email' => config('netsales.platform_admin.email'),
+                    'user_full_name' => (string) 'حسام خالد سعيد علي الزريقي',
+                    'user_password' => Hash::make('Hh$2002Hh'),
+                    'user_email' => 'alzuraikyhussam@gmail.com',
                     'user_profile_logo' => null,
                     'user_2fa_enabled' => false,
                     'user_login_attempts' => 0,
@@ -64,6 +64,6 @@ class UserSeeder extends Seeder
                     'created_at' => now('Asia/Aden'),
                 ]
             );
-        }
+        // }
     }
 }
