@@ -28,7 +28,7 @@ class BillingPaymentMethodSeeder extends Seeder
             foreach (self::METHODS as $method) {
                 DB::table('billing_payment_methods')->updateOrInsert(
                     ['method_key' => $method['method_key']],
-                    [...$method, 'updated_at' => $now]
+                    [...$method, 'updated_at' => $now, 'created_at' => $now]
                 );
             }
 
@@ -55,7 +55,7 @@ class BillingPaymentMethodSeeder extends Seeder
 
                 DB::table('billing_payment_method_currencies')->updateOrInsert(
                     ['payment_method_id' => $methodId, 'currency_id' => $yerId],
-                    ['is_active' => $method['is_active'], 'updated_at' => $now]
+                    ['is_active' => $method['is_active'], 'updated_at' => $now, 'created_at' => $now]
                 );
             }
         }, 3);
