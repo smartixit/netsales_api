@@ -46,7 +46,7 @@ class NetworkSmsSettingController extends BaseController
      */
     #[OA\Put(
         path: '/api/v1/sms-settings/global', summary: 'updateGlobal', tags: ['SMS Settings'], operationId: 'sms_settings_updateGlobal',
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['enabled'], properties: [new OA\Property(property: 'enabled', type: 'boolean')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function updateGlobal(Request $request): JsonResponse
@@ -95,7 +95,7 @@ class NetworkSmsSettingController extends BaseController
     #[OA\Put(
         path: '/api/v1/sms-settings/networks/{id}', summary: 'update', tags: ['SMS Settings'], operationId: 'sms_settings_update',
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', properties: [new OA\Property(property: 'is_enabled', type: 'boolean'), new OA\Property(property: 'notify_receipt', type: 'boolean'), new OA\Property(property: 'notify_payment', type: 'boolean'), new OA\Property(property: 'notify_pos_withdraw', type: 'boolean'), new OA\Property(property: 'notify_expense', type: 'boolean'), new OA\Property(property: 'notify_sale_invoice', type: 'boolean'), new OA\Property(property: 'notify_voucher_request', type: 'boolean'), new OA\Property(property: 'notify_low_balance', type: 'boolean'), new OA\Property(property: 'notify_daily_summary', type: 'boolean'), new OA\Property(property: 'notify_monthly_summary', type: 'boolean'), new OA\Property(property: 'notify_subscription_expiry', type: 'boolean'), new OA\Property(property: 'use_custom_gateway', type: 'boolean'), new OA\Property(property: 'server_type', type: 'string'), new OA\Property(property: 'base_url', type: 'string'), new OA\Property(property: 'auth_type', type: 'string'), new OA\Property(property: 'api_token', type: 'string'), new OA\Property(property: 'refresh_token', type: 'string'), new OA\Property(property: 'username', type: 'string'), new OA\Property(property: 'password', type: 'string'), new OA\Property(property: 'device_id', type: 'string'), new OA\Property(property: 'sim_number', type: 'integer'), new OA\Property(property: 'skip_phone_validation', type: 'boolean'), new OA\Property(property: 'device_active_within', type: 'integer')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function update(UpdateNetworkSmsSettingRequest $request, int $id): JsonResponse
@@ -117,7 +117,7 @@ class NetworkSmsSettingController extends BaseController
     #[OA\Post(
         path: '/api/v1/sms-settings/networks/{id}/test', summary: 'test', tags: ['SMS Settings'], operationId: 'sms_settings_test',
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['phone_number'], properties: [new OA\Property(property: 'phone_number', type: 'string'), new OA\Property(property: 'message', type: 'string')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function test(TestNetworkSmsRequest $request, int $id): JsonResponse

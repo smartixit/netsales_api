@@ -835,7 +835,6 @@ class NetworkPosController extends BaseController
     #[OA\Post(
         path: '/api/v1/network-pos/{id}/restore', summary: 'restoreLink', tags: ['Network POS'], operationId: 'network_pos_restoreLink',
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function restoreLink(int $id): JsonResponse
@@ -929,7 +928,6 @@ class NetworkPosController extends BaseController
     #[OA\Post(
         path: '/api/v1/network-pos/{id}/agreements/{agreementId}/activate', summary: 'activateAgreement', tags: ['Network POS'], operationId: 'network_pos_activateAgreement',
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'agreementId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function activateAgreement(int $id, int $agreementId): JsonResponse
@@ -953,7 +951,6 @@ class NetworkPosController extends BaseController
     #[OA\Post(
         path: '/api/v1/network-pos/{id}/agreements/{agreementId}/terminate', summary: 'terminateAgreement', tags: ['Network POS'], operationId: 'network_pos_terminateAgreement',
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'agreementId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function terminateAgreement(int $id, int $agreementId): JsonResponse

@@ -244,7 +244,6 @@ class BackupController extends BaseController
         summary: 'فصل حساب Google Drive المرتبط',
         tags: ['Backup'],
         operationId: 'api_v1_backups_drive_disconnect_driveDisconnect',
-        requestBody: new OA\RequestBody(required: false, description: 'بيانات الطلب بصيغة multipart/form-data', content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [
             new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'),
             new OA\Response(response: 401, description: 'الجلسة غير صالحة أو غير مصادق عليه'),
