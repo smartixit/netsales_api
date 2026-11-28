@@ -98,6 +98,7 @@ class BillingMasterDataSeederTest extends TestCase
 
         $this->seed(CurrencySeeder::class);
         $this->seed(BillingMasterDataSeeder::class);
+        $this->seed(BillingLedgerChartSeeder::class);
         $this->seed(BillingPaymentMethodSeeder::class);
 
         $this->assertSame($trialVersionId, DB::table('billing_trial_policies')->where('policy_key', 'netsales-starter-14-day-trial')->value('current_version_id'));
