@@ -24,6 +24,10 @@ class NetworkSmsSettingController extends BaseController
     /**
      * حالة خدمة الرسائل: المفتاح العام وملخص كل شبكة
      */
+    #[OA\Get(
+        path: '/api/v1/sms-settings', summary: 'index', tags: ['SMS Settings'], operationId: 'sms_settings_index',
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function index(): JsonResponse
     {
         try {
@@ -40,6 +44,11 @@ class NetworkSmsSettingController extends BaseController
     /**
      * تبديل المفتاح العام للرسائل (سيّد مطلق يطغى على الشبكات)
      */
+    #[OA\Put(
+        path: '/api/v1/sms-settings/global', summary: 'updateGlobal', tags: ['SMS Settings'], operationId: 'sms_settings_updateGlobal',
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function updateGlobal(Request $request): JsonResponse
     {
         try {
@@ -62,6 +71,11 @@ class NetworkSmsSettingController extends BaseController
     /**
      * جلب تفاصيل إعدادات الرسائل النصية لشبكة محددة (البوابة، الأنواع، والحالة)
      */
+    #[OA\Get(
+        path: '/api/v1/sms-settings/networks/{id}', summary: 'show', tags: ['SMS Settings'], operationId: 'sms_settings_show',
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function show(int $id): JsonResponse
     {
         try {
@@ -78,6 +92,12 @@ class NetworkSmsSettingController extends BaseController
     /**
      * تحديث كامل لإعدادات رسائل الشبكة وبوابتها الخاصة أو العامة
      */
+    #[OA\Put(
+        path: '/api/v1/sms-settings/networks/{id}', summary: 'update', tags: ['SMS Settings'], operationId: 'sms_settings_update',
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function update(UpdateNetworkSmsSettingRequest $request, int $id): JsonResponse
     {
         try {
@@ -94,6 +114,12 @@ class NetworkSmsSettingController extends BaseController
     /**
      * إرسال رسالة نصية تجريبية للتحقق من سلامة ربط بوابة الشبكة
      */
+    #[OA\Post(
+        path: '/api/v1/sms-settings/networks/{id}/test', summary: 'test', tags: ['SMS Settings'], operationId: 'sms_settings_test',
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function test(TestNetworkSmsRequest $request, int $id): JsonResponse
     {
         try {
