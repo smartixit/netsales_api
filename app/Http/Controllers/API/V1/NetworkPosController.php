@@ -133,9 +133,10 @@ class NetworkPosController extends BaseController
      * إنشاء ارتباط جديد بين نقطة بيع وشبكة.
      */
     #[OA\Post(
-        path: '/api/v1/network-pos/challenges/resolve-target',
-        summary: 'ربط نقطة بيع بمزود شبكة',
+        path: '/api/v1/network-pos',
+        summary: 'إنشاء ارتباط نقطة بيع بمزود شبكة',
         tags: ['Network POS'],
+        operationId: 'network_pos_store_link',
         requestBody: new OA\RequestBody(
             required: true,
             description: 'بيانات الطلب',
