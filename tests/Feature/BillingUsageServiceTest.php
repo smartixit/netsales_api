@@ -165,6 +165,44 @@ class BillingUsageServiceTest extends TestCase
             ->count());
     }
 
+    public function test_restricted_trial_mode_only_records_explicitly_allowed_metered_features(): void
+    {
+        DB::table('billing_subscriptions')
+            ->where('billing_subscription_id', $this->subscription->billing_subscription_id)
+            ->update([
+                'status' => 'TRIALING',
+                'trial_policy_snapshot' => json_encode([
+                    'entitlement_mode' => 'RESTRICTED',
+                    'entitlement_config' => ['allowed_features' => []],
+                ], JSON_THROW_ON_ERROR),
+            ]);
+
+        $service = app(BillingUsageService::class);
+        $subscriptionId = (int) $this->subscription->billing_subscription_id;
+
+        try {
+            $service->record($subscriptionId, 'api_calls', '1', 'trial-restricted-denied');
+            $this->fail('A restricted trial must reject a metered feature that is not explicitly allowed.');
+        } catch (ValidationException) {
+            $this->assertSame(0, BillingUsageEvent::query()
+                ->where('billing_subscription_id', $subscriptionId)
+                ->count());
+        }
+
+        DB::table('billing_subscriptions')
+            ->where('billing_subscription_id', $subscriptionId)
+            ->update([
+                'trial_policy_snapshot' => json_encode([
+                    'entitlement_mode' => 'RESTRICTED',
+                    'entitlement_config' => ['allowed_features' => ['api_calls']],
+                ], JSON_THROW_ON_ERROR),
+            ]);
+
+        $event = $service->record($subscriptionId, 'api_calls', '1', 'trial-restricted-allowed');
+
+        $this->assertSame('1.000000', (string) $event->quantity);
+    }
+
     public function test_none_trial_mode_blocks_metered_usage_recording(): void
     {
         DB::table('billing_subscriptions')
