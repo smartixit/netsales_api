@@ -27,6 +27,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use OpenApi\Attributes as OA;
 
 class OperationalReportController extends BaseController
 {
@@ -37,6 +38,10 @@ class OperationalReportController extends BaseController
         protected OperationalReportPresetValidator $presetValidator
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/reports/catalog', summary: 'catalog', tags: ['Operational Reports'], operationId: 'operationalreport_catalog',
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function catalog(OperationalReportCatalogRequest $request): JsonResponse
     {
         $user = $request->user();
@@ -64,6 +69,10 @@ class OperationalReportController extends BaseController
         ]);
     }
 
+    #[OA\Get(
+        path: '/api/v1/reports', summary: 'show', tags: ['Operational Reports'], operationId: 'operationalreport_show',
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function show(OperationalReportRequest $request): JsonResponse
     {
         try {
@@ -96,6 +105,10 @@ class OperationalReportController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/reports/summary', summary: 'summary', tags: ['Operational Reports'], operationId: 'operationalreport_summary',
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function summary(OperationalReportRequest $request): JsonResponse
     {
         try {
@@ -120,6 +133,11 @@ class OperationalReportController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/reports/exports', summary: 'storeExport', tags: ['Operational Reports'], operationId: 'operationalreport_storeExport',
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function storeExport(StoreOperationalReportExportRequest $request): JsonResponse
     {
         try {
@@ -157,6 +175,10 @@ class OperationalReportController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/reports/presets', summary: 'presets', tags: ['Operational Reports'], operationId: 'operationalreport_presets',
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function presets(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -182,6 +204,11 @@ class OperationalReportController extends BaseController
         return $this->successResponse('الإعدادات المحفوظة للتقرير.', $items);
     }
 
+    #[OA\Post(
+        path: '/api/v1/reports/presets', summary: 'storePreset', tags: ['Operational Reports'], operationId: 'operationalreport_storePreset',
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function storePreset(StoreOperationalReportPresetRequest $request): JsonResponse
     {
         $data = $request->validated();
@@ -272,6 +299,12 @@ class OperationalReportController extends BaseController
         return $this->successResponse('تم حفظ إعداد التقرير.', $this->serializePreset($preset), 201);
     }
 
+    #[OA\Put(
+        path: '/api/v1/reports/presets/{presetUuid}', summary: 'updatePreset', tags: ['Operational Reports'], operationId: 'operationalreport_updatePreset',
+        parameters: [new OA\Parameter(name: 'presetUuid', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function updatePreset(StoreOperationalReportPresetRequest $request, string $presetUuid): JsonResponse
     {
         $data = $request->validated();
@@ -354,6 +387,11 @@ class OperationalReportController extends BaseController
         return $this->successResponse('تم تحديث إعداد التقرير.', $this->serializePreset($preset));
     }
 
+    #[OA\Delete(
+        path: '/api/v1/reports/presets/{presetUuid}', summary: 'destroyPreset', tags: ['Operational Reports'], operationId: 'operationalreport_destroyPreset',
+        parameters: [new OA\Parameter(name: 'presetUuid', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function destroyPreset(Request $request, string $presetUuid): JsonResponse
     {
         $data = $request->validate([
@@ -415,6 +453,11 @@ class OperationalReportController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/reports/exports/{exportUuid}', summary: 'exportStatus', tags: ['Operational Reports'], operationId: 'operationalreport_exportStatus',
+        parameters: [new OA\Parameter(name: 'exportUuid', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function exportStatus(Request $request, string $exportUuid): JsonResponse
     {
         $export = OperationalReportExport::query()
@@ -454,6 +497,11 @@ class OperationalReportController extends BaseController
         ]);
     }
 
+    #[OA\Get(
+        path: '/api/v1/reports/exports/{exportUuid}/download', summary: 'download', tags: ['Operational Reports'], operationId: 'operationalreport_download',
+        parameters: [new OA\Parameter(name: 'exportUuid', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function download(Request $request, string $exportUuid): StreamedResponse|JsonResponse
     {
         $export = OperationalReportExport::query()
