@@ -99,7 +99,7 @@ class BillingSelfServiceApiTest extends TestCase
 
         $starterVersion = BillingPlanVersion::query()->create([
             'plan_id' => $starterPlan->plan_id,
-            'version_number' => 1,
+            'version_number' => (int) BillingPlanVersion::query()->where('plan_id', $starterPlan->plan_id)->max('version_number') + 1,
             'status' => 'DRAFT',
             'dunning_policy_version_id' => $dunningDraft->dunning_policy_version_id,
             'created_by' => $platformActor->user_id,
