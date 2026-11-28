@@ -36,6 +36,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
+use OpenApi\Attributes as OA;
 
 class BillingSelfServiceController extends BaseController
 {
@@ -65,6 +66,13 @@ class BillingSelfServiceController extends BaseController
         ], $extra));
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/currencies',
+        summary: 'Currencies',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_currencies',
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function currencies(): JsonResponse
     {
         return $this->successResponse(
@@ -73,6 +81,14 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/networks/{networkId}/billing/accounts',
+        summary: 'Accounts',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_accounts',
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function accounts(int $networkId): JsonResponse
     {
         return $this->successResponse(
@@ -81,6 +97,15 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/networks/{networkId}/billing/accounts',
+        summary: 'Create Account',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_createAccount',
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function createAccount(CreateBillingAccountRequest $request, int $networkId): JsonResponse
     {
         try {
@@ -96,11 +121,28 @@ class BillingSelfServiceController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/accounts/{billingAccountId}',
+        summary: 'Account',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_account',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function account(int $billingAccountId): JsonResponse
     {
         return $this->successResponse('تم استرجاع ملف حساب الفوترة وجهات الاتصال.', new BillingAccountResource($this->self->account($billingAccountId, $this->requireCurrentUser())));
     }
 
+    #[OA\Put(
+        path: '/api/v1/billing/accounts/{billingAccountId}',
+        summary: 'Update Account',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_updateAccount',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function updateAccount(UpdateBillingAccountRequest $request, int $billingAccountId): JsonResponse
     {
         try {
@@ -112,6 +154,15 @@ class BillingSelfServiceController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/billing/accounts/{billingAccountId}/contacts',
+        summary: 'Store Contact',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_storeContact',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function storeContact(StoreBillingAccountContactRequest $request, int $billingAccountId): JsonResponse
     {
         try {
@@ -123,6 +174,15 @@ class BillingSelfServiceController extends BaseController
         }
     }
 
+    #[OA\Put(
+        path: '/api/v1/billing/accounts/{billingAccountId}/contacts/{contactId}',
+        summary: 'Update Contact',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_updateContact',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'contactId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function updateContact(UpdateBillingAccountContactRequest $request, int $billingAccountId, int $contactId): JsonResponse
     {
         try {
@@ -134,6 +194,14 @@ class BillingSelfServiceController extends BaseController
         }
     }
 
+    #[OA\Delete(
+        path: '/api/v1/billing/accounts/{billingAccountId}/contacts/{contactId}',
+        summary: 'Destroy Contact',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_destroyContact',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'contactId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function destroyContact(int $billingAccountId, int $contactId): JsonResponse
     {
         try {
@@ -145,6 +213,14 @@ class BillingSelfServiceController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/accounts/{billingAccountId}/entitlements',
+        summary: 'Entitlements',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_entitlements',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'features', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function entitlements(int $billingAccountId): JsonResponse
     {
         $account = $this->self->account($billingAccountId, $this->requireCurrentUser());
@@ -219,6 +295,14 @@ class BillingSelfServiceController extends BaseController
         ]);
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/accounts/{billingAccountId}/plans',
+        summary: 'Plans',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_plans',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function plans(Request $request, int $billingAccountId): JsonResponse
     {
         return $this->successResponse(
@@ -231,6 +315,15 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/billing/accounts/{billingAccountId}/subscriptions',
+        summary: 'Purchase',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_purchase',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function purchase(PurchaseSubscriptionRequest $request, int $billingAccountId): JsonResponse
     {
         try {
@@ -249,6 +342,14 @@ class BillingSelfServiceController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/accounts/{billingAccountId}/subscriptions',
+        summary: 'Subscriptions',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_subscriptions',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function subscriptions(Request $request, int $billingAccountId): JsonResponse
     {
         return $this->successResponse(
@@ -261,6 +362,14 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/accounts/{billingAccountId}/invoices',
+        summary: 'Invoices',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_invoices',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function invoices(Request $request, int $billingAccountId): JsonResponse
     {
         return $this->successResponse(
@@ -273,6 +382,14 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/invoices/{invoiceId}',
+        summary: 'Invoice',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_invoice',
+        parameters: [new OA\Parameter(name: 'invoiceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function invoice(int $invoiceId): JsonResponse
     {
         return $this->successResponse(
@@ -281,6 +398,14 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/accounts/{billingAccountId}/payments',
+        summary: 'Payments',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_payments',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function payments(Request $request, int $billingAccountId): JsonResponse
     {
         return $this->successResponse(
@@ -293,6 +418,14 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/accounts/{billingAccountId}/statement',
+        summary: 'Statement',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_statement',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'currency_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function statement(Request $request, int $billingAccountId): JsonResponse
     {
         $filters = $request->validate([
@@ -311,6 +444,14 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/accounts/{billingAccountId}/credit-notes',
+        summary: 'Credit Notes',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_creditNotes',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function creditNotes(Request $request, int $billingAccountId): JsonResponse
     {
         return $this->successResponse(
@@ -323,6 +464,14 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/accounts/{billingAccountId}/refunds',
+        summary: 'Refunds',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_refunds',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function refunds(Request $request, int $billingAccountId): JsonResponse
     {
         return $this->successResponse(
@@ -335,6 +484,14 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/subscriptions/{subscriptionId}',
+        summary: 'Subscription',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_subscription',
+        parameters: [new OA\Parameter(name: 'subscriptionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function subscription(int $subscriptionId): JsonResponse
     {
         $actor = $this->requireCurrentUser();
@@ -354,6 +511,14 @@ class BillingSelfServiceController extends BaseController
         ]);
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/subscriptions/{subscriptionId}/usage',
+        summary: 'Usage',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_usage',
+        parameters: [new OA\Parameter(name: 'subscriptionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'cursor', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function usage(Request $request, int $subscriptionId): JsonResponse
     {
         $filters = $request->validate([
@@ -369,6 +534,14 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/subscriptions/{subscriptionId}/events',
+        summary: 'Subscription Events',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_subscriptionEvents',
+        parameters: [new OA\Parameter(name: 'subscriptionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'cursor', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function subscriptionEvents(Request $request, int $subscriptionId): JsonResponse
     {
         $filters = $request->validate([
@@ -388,6 +561,14 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/billing/accounts/{billingAccountId}/payment-methods',
+        summary: 'Payment Methods',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_paymentMethods',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function paymentMethods(int $billingAccountId): JsonResponse
     {
         $account = $this->self->account($billingAccountId, $this->requireCurrentUser());
@@ -398,6 +579,15 @@ class BillingSelfServiceController extends BaseController
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/billing/invoices/{invoiceId}/payments',
+        summary: 'Store Payment',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_storePayment',
+        parameters: [new OA\Parameter(name: 'invoiceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function storePayment(StorePaymentRequest $request, int $invoiceId): JsonResponse
     {
         $actor = $this->requireCurrentUser();
@@ -446,6 +636,15 @@ class BillingSelfServiceController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/billing/subscriptions/{subscriptionId}/cancel',
+        summary: 'Cancel Subscription',
+        tags: ['Billing'],
+        operationId: 'billingselfservice_cancelSubscription',
+        parameters: [new OA\Parameter(name: 'subscriptionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', properties: [new OA\Property(property: 'at_period_end', type: 'boolean')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function cancelSubscription(Request $request, int $subscriptionId): JsonResponse
     {
         try {
