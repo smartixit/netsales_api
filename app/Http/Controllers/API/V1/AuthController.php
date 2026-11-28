@@ -10,6 +10,7 @@ use App\Http\Requests\API\V1\Auth\RequestPasswordResetRequest;
 use App\Http\Requests\API\V1\Auth\ResetPasswordRequest;
 use App\Http\Requests\API\V1\Auth\ToggleTwoFactorRequest;
 use App\Http\Requests\API\V1\Auth\UpdatePasswordRequest;
+use App\Http\Requests\API\V1\Auth\UpdateOwnProfileRequest;
 use App\Http\Requests\API\V1\User\UpdateProfilePictureRequest;
 use App\Http\Requests\API\V1\Auth\VerifyResetOtpRequest;
 use App\Http\Requests\API\V1\Auth\VerifyTwoFactorRequest;
@@ -687,6 +688,50 @@ class AuthController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('فشل تعديل المصادقة الثنائية: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * تحديث بيانات الحساب الشخصي للمستخدم المصادق عليه دون صلاحيات إدارة المستخدمين.
+     */
+    #[OA\Put(
+        path: '/api/v1/auth/profile',
+        summary: 'تحديث بيانات الملف الشخصي للحساب الحالي',
+        security: [['sessionAuth' => []]],
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'user_full_name', type: 'string', example: 'الاسم الكامل'),
+                    new OA\Property(property: 'user_phone_number', type: 'string', example: '772957881'),
+                    new OA\Property(property: 'user_email', type: 'string', nullable: true, example: 'user@example.com'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'تم تحديث الملف الشخصي بنجاح'),
+            new OA\Response(response: 401, description: 'الجلسة غير مصادق عليها'),
+            new OA\Response(response: 422, description: 'بيانات الملف الشخصي غير صالحة أو مكررة'),
+        ]
+    )]
+    public function updateProfile(UpdateOwnProfileRequest $request): JsonResponse
+    {
+        $user = $this->currentUser();
+        if (! $user) {
+            return $this->errorResponse('غير مصادق عليه.', [], 401);
+        }
+
+        try {
+            $updatedUser = $this->userService->updateOwnProfile($user, $request->validated());
+
+            return $this->successResponse('تم تحديث بيانات الملف الشخصي بنجاح.', [
+                'user' => new UserResource($updatedUser),
+            ]);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل تحديث بيانات الملف الشخصي: '.$e->getMessage(), [], 422);
         }
     }
 
