@@ -1,9 +1,9 @@
 <?php
 
-namespace Database\\Seeders;
+namespace Database\Seeders;
 
-use Illuminate\\Database\\Seeder;
-use Illuminate\\Support\\Facades\\DB;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Configures the launch payment methods for the Yemen/YER market.
@@ -38,7 +38,7 @@ class BillingPaymentMethodSeeder extends Seeder
                 ->value('currency_id');
 
             if ($yerId === null) {
-                throw new \\RuntimeException('YER must be seeded and active before billing payment methods.');
+                throw new \RuntimeException('YER must be seeded and active before billing payment methods.');
             }
 
             $methodIds = DB::table('billing_payment_methods')
