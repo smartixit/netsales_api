@@ -174,6 +174,7 @@ class PosMembershipController extends BaseController
     #[OA\Delete(
         path: '/api/v1/pos/{posId}/members/{userId}', summary: 'destroy', tags: ['Membership'], operationId: 'posmembership_destroy',
         parameters: [new OA\Parameter(name: 'posId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', properties: [new OA\Property(property: 'reason', type: 'string')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function destroy(RemoveMembershipRequest $request, int $posId, int $userId): JsonResponse
