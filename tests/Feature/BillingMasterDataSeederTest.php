@@ -14,7 +14,7 @@ class BillingMasterDataSeederTest extends TestCase
 {
     use DatabaseTransactions;
 
-    public function test_launch_reference_data_is_configured_without_unapproved_commercial_prices(): void
+    public function test_launch_catalog_publishes_approved_yer_prices_and_policy_versions(): void
     {
         $this->seed(CurrencySeeder::class);
         $this->seed(BillingMasterDataSeeder::class);
@@ -37,13 +37,48 @@ class BillingMasterDataSeederTest extends TestCase
 
         $plans = DB::table('billing_plans')->where('product_id', $product->product_id)->get();
         $this->assertCount(4, $plans);
-        $this->assertSame(0, DB::table('billing_plan_versions')->count());
-        $this->assertSame(0, DB::table('billing_prices')->count());
+        $this->assertSame(3, DB::table('billing_plan_versions')->where('status', 'PUBLISHED')->count());
+        $this->assertSame(6, DB::table('billing_prices')->count());
+        $this->assertSame(9, DB::table('billing_plan_features')->count());
 
         foreach ($plans as $plan) {
-            $this->assertFalse((bool) $plan->is_active, 'Plans must not be sellable before approved prices exist.');
-            $this->assertNull($plan->current_version_id);
+            if ($plan->plan_key === 'enterprise') {
+                $this->assertFalse((bool) $plan->is_active);
+                $this->assertNull($plan->current_version_id);
+                continue;
+            }
+
+            $this->assertTrue((bool) $plan->is_active);
+            $this->assertNotNull($plan->current_version_id);
         }
+
+        $expectedPrices = [
+            'starter' => ['MONTH' => 3_300_000, 'YEAR' => 33_000_000],
+            'growth' => ['MONTH' => 6_600_000, 'YEAR' => 66_000_000],
+            'business' => ['MONTH' => 12_400_000, 'YEAR' => 124_000_000],
+        ];
+
+        foreach ($expectedPrices as $planKey => $intervals) {
+            $plan = $plans->firstWhere('plan_key', $planKey);
+            $prices = DB::table('billing_prices')
+                ->where('plan_version_id', $plan->current_version_id)
+                ->join('currencies', 'billing_prices.currency_id', '=', 'currencies.currency_id')
+                ->get()
+                ->keyBy('billing_interval');
+
+            $this->assertSame(['MONTH', 'YEAR'], $prices->keys()->sort()->values()->all());
+            foreach ($intervals as $interval => $amountMinor) {
+                $this->assertSame($amountMinor, (int) $prices[$interval]->unit_amount_minor);
+                $this->assertSame('YER', $prices[$interval]->code);
+                $this->assertSame(0, (int) $prices[$interval]->setup_fee_minor);
+                $this->assertTrue((bool) $prices[$interval]->is_active);
+            }
+        }
+
+        $this->assertSame(0, DB::table('billing_prices')
+            ->join('currencies', 'billing_prices.currency_id', '=', 'currencies.currency_id')
+            ->where('currencies.code', '<>', 'YER')
+            ->count());
 
         $trial = DB::table('billing_trial_policies')
             ->join('billing_trial_policy_versions', 'billing_trial_policies.current_version_id', '=', 'billing_trial_policy_versions.trial_policy_version_id')
@@ -105,5 +140,8 @@ class BillingMasterDataSeederTest extends TestCase
         $this->assertSame($dunningVersionId, DB::table('billing_dunning_policies')->where('policy_key', 'platform-default')->value('current_version_id'));
         $this->assertSame(1, DB::table('billing_trial_policy_versions')->count());
         $this->assertSame(1, DB::table('billing_dunning_policy_versions')->count());
+        $this->assertSame(3, DB::table('billing_plan_versions')->count());
+        $this->assertSame(6, DB::table('billing_prices')->count());
+        $this->assertSame(9, DB::table('billing_plan_features')->count());
     }
 }
