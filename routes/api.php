@@ -82,6 +82,9 @@ Route::prefix('v1')->group(function () {
             Route::post('update-password', [AuthController::class, 'updatePassword'])->name('api.v1.auth.update_password');
             Route::post('2fa/request-otp', [AuthController::class, 'requestTwoFactorOtp'])->name('api.v1.auth.2fa.request_otp');
             Route::post('toggle-2fa', [AuthController::class, 'toggleTwoFactor'])->name('api.v1.auth.toggle_2fa');
+            Route::post('profile-picture', [AuthController::class, 'updateProfilePicture'])
+                ->middleware('throttle:api-upload')
+                ->name('api.v1.auth.profile_picture');
             Route::get('devices', [AuthController::class, 'getDevices'])->name('api.v1.auth.devices');
             Route::delete('devices/{id}', [AuthController::class, 'disconnectDevice'])->whereNumber('id')->name('api.v1.auth.devices.disconnect');
             Route::get('sessions', [AuthController::class, 'getSessions'])->name('api.v1.auth.sessions');

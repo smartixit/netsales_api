@@ -10,6 +10,7 @@ use App\Http\Requests\API\V1\Auth\RequestPasswordResetRequest;
 use App\Http\Requests\API\V1\Auth\ResetPasswordRequest;
 use App\Http\Requests\API\V1\Auth\ToggleTwoFactorRequest;
 use App\Http\Requests\API\V1\Auth\UpdatePasswordRequest;
+use App\Http\Requests\API\V1\User\UpdateProfilePictureRequest;
 use App\Http\Requests\API\V1\Auth\VerifyResetOtpRequest;
 use App\Http\Requests\API\V1\Auth\VerifyTwoFactorRequest;
 use App\Http\Resources\API\V1\Network\NetworkResource;
@@ -18,6 +19,7 @@ use App\Http\Resources\API\V1\User\UserDeviceResource;
 use App\Http\Resources\API\V1\User\UserResource;
 use App\Http\Resources\API\V1\User\UserSessionResource;
 use App\Services\AuthService;
+use App\Services\UserService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,6 +36,7 @@ class AuthController extends BaseController
 {
     public function __construct(
         protected AuthService $authService,
+        protected UserService $userService,
     ) {}
 
     /**
@@ -684,6 +687,29 @@ class AuthController extends BaseController
             return $this->validationErrorResponse($e);
         } catch (Exception $e) {
             return $this->errorResponse('فشل تعديل المصادقة الثنائية: '.$e->getMessage(), [], 422);
+        }
+    }
+
+    /**
+     * تحديث الصورة الشخصية للمستخدم المصادق عليه (self-service).
+     */
+    public function updateProfilePicture(UpdateProfilePictureRequest $request): JsonResponse
+    {
+        $user = $this->currentUser();
+        if (! $user) {
+            return $this->errorResponse('غير مصادق عليه.', [], 401);
+        }
+
+        try {
+            $newPath = $this->userService->updateProfilePicture($user->user_id, $request->getProfilePictureFile());
+
+            return $this->successResponse('تم تحديث الصورة الشخصية بنجاح.', [
+                'profile_picture_path' => $newPath,
+            ]);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (Exception $e) {
+            return $this->errorResponse('فشل تحديث الصورة: '.$e->getMessage(), [], 422);
         }
     }
 
