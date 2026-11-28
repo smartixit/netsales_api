@@ -119,18 +119,26 @@ jobs:
           $spec = json_decode(file_get_contents("storage/api-docs/api-docs.json"), true, 512, JSON_THROW_ON_ERROR);
           $methods = ["get", "post", "put", "patch", "delete", "options", "head", "trace"];
           $count = 0;
-          foreach (($spec["paths"] ?? []) as $operations) {
+          $operationIds = [];
+          foreach (($spec["paths"] ?? []) as $path => $operations) {
               foreach ($operations as $method => $operation) {
-                  if (in_array(strtolower($method), $methods, true)) {
-                      $count++;
+                  if (!in_array(strtolower($method), $methods, true)) {
+                      continue;
                   }
+                  $count++;
+                  $operationId = $operation["operationId"] ?? null;
+                  if ($operationId === null || isset($operationIds[$operationId])) {
+                      fwrite(STDERR, "Missing or duplicate OpenAPI operationId: " . ($operationId ?? "<missing>") . "\\n");
+                      exit(1);
+                  }
+                  $operationIds[$operationId] = $path;
               }
           }
           if ($count < 429) {
               fwrite(STDERR, "Expected at least 429 documented API operations; found {$count}.\\n");
               exit(1);
           }
-          echo "OpenAPI operations: {$count} (minimum: 429).\\n";
+          echo "OpenAPI operations: {$count}; unique operationIds: " . count($operationIds) . ".\\n";
           '
 
       - name: Upload generated OpenAPI document
