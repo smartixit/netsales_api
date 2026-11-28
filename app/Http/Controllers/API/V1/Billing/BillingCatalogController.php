@@ -50,7 +50,7 @@ class BillingCatalogController extends BaseController
         summary: 'إنشاء عملة',
         tags: ['Platform Billing'],
         operationId: 'platform_billing_storeCurrency',
-        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['code', 'name', 'decimal_places'], properties: [new OA\Property(property: 'code', type: 'string'), new OA\Property(property: 'numeric_code', type: 'integer'), new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'native_name', type: 'string'), new OA\Property(property: 'symbol', type: 'string'), new OA\Property(property: 'decimal_places', type: 'integer'), new OA\Property(property: 'is_active', type: 'boolean')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function storeCurrency(StoreCurrencyRequest $request): JsonResponse
@@ -72,7 +72,7 @@ class BillingCatalogController extends BaseController
         summary: 'تحديث بيانات عملة',
         tags: ['Platform Billing'],
         operationId: 'platform_billing_updateCurrency',
-        parameters: [new OA\Parameter(name: 'currencyId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'currencyId', in: 'path', required: true, schema: new OA\Schema(type: 'object', properties: [new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'native_name', type: 'string'), new OA\Property(property: 'symbol', type: 'string'), new OA\Property(property: 'is_active', type: 'boolean')]))],
         requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -148,7 +148,7 @@ class BillingCatalogController extends BaseController
         summary: 'إنشاء منتج فوترة',
         tags: ['Platform Billing'],
         operationId: 'platform_billing_storeProduct',
-        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['product_key', 'name'], properties: [new OA\Property(property: 'product_key', type: 'string'), new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'description', type: 'string'), new OA\Property(property: 'is_active', type: 'boolean')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function storeProduct(StoreProductRequest $request): JsonResponse
@@ -175,7 +175,7 @@ class BillingCatalogController extends BaseController
         summary: 'إنشاء خطة اشتراك',
         tags: ['Platform Billing'],
         operationId: 'platform_billing_storePlan',
-        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['product_id', 'plan_key', 'name'], properties: [new OA\Property(property: 'product_id', type: 'integer'), new OA\Property(property: 'plan_key', type: 'string'), new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'description', type: 'string'), new OA\Property(property: 'is_public', type: 'boolean'), new OA\Property(property: 'is_active', type: 'boolean')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function storePlan(StorePlanRequest $request): JsonResponse
@@ -199,7 +199,7 @@ class BillingCatalogController extends BaseController
         summary: 'إنشاء مسودة إصدار خطة',
         tags: ['Platform Billing'],
         operationId: 'platform_billing_createDraftVersion',
-        parameters: [new OA\Parameter(name: 'planId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'planId', in: 'path', required: true, schema: new OA\Schema(type: 'object', properties: [new OA\Property(property: 'trial_policy_version_id', type: 'integer'), new OA\Property(property: 'dunning_policy_version_id', type: 'integer')]))],
         requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -229,7 +229,7 @@ class BillingCatalogController extends BaseController
         summary: 'إضافة سعر إلى إصدار خطة',
         tags: ['Platform Billing'],
         operationId: 'platform_billing_addPrice',
-        parameters: [new OA\Parameter(name: 'versionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'versionId', in: 'path', required: true, schema: new OA\Schema(type: 'object', required: ['currency_id', 'billing_interval', 'unit_amount'], properties: [new OA\Property(property: 'currency_id', type: 'integer'), new OA\Property(property: 'billing_interval', type: 'string'), new OA\Property(property: 'interval_count', type: 'integer'), new OA\Property(property: 'unit_amount', type: 'string'), new OA\Property(property: 'setup_fee', type: 'string'), new OA\Property(property: 'tax_behavior', type: 'string')]))],
         requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -254,7 +254,7 @@ class BillingCatalogController extends BaseController
         summary: 'إضافة ميزة إلى إصدار خطة',
         tags: ['Platform Billing'],
         operationId: 'platform_billing_addFeature',
-        parameters: [new OA\Parameter(name: 'versionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'versionId', in: 'path', required: true, schema: new OA\Schema(type: 'object', required: ['feature_key', 'name', 'feature_type', 'value'], properties: [new OA\Property(property: 'feature_key', type: 'string'), new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'feature_type', type: 'string'), new OA\Property(property: 'value', type: 'string'), new OA\Property(property: 'unit', type: 'string'), new OA\Property(property: 'aggregation', type: 'string'), new OA\Property(property: 'reset_period', type: 'string'), new OA\Property(property: 'overage_behavior', type: 'string'), new OA\Property(property: 'configuration', type: 'object')]))],
         requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
