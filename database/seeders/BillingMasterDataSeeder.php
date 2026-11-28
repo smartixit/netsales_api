@@ -21,7 +21,7 @@ class BillingMasterDataSeeder extends Seeder
             $now = now('Asia/Aden');
             $actorId = DB::table('users')
                 ->join('roles', 'users.role_id', '=', 'roles.role_id')
-                ->where('roles.role_scope', 'PLATFORM')
+                ->where('roles.scope', 'PLATFORM')
                 ->where('roles.role_key', 'SUPER_ADMIN')
                 ->value('users.user_id');
 
