@@ -33,6 +33,7 @@ class CurrencySeeder extends Seeder
                         ...$currency,
                         'is_active' => $currency['code'] === 'YER',
                         'updated_at' => $now,
+                        'created_at' => $now,
                     ]
                 );
             }
