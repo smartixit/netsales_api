@@ -26,11 +26,11 @@ class FileController extends BaseController
      * عرض وتدفق الوسائط العامة المصرح بها (Public Media Stream).
      */
     #[OA\Get(
-        path: '/api/v1/files/signed/{path}',
+        path: '/api/v1/files/{path}',
         summary: 'show',
         tags: ['Files'],
+        parameters: [new OA\Parameter(name: 'path', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
         operationId: 'show_FileController',
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function show(string $path): Response
@@ -46,11 +46,11 @@ class FileController extends BaseController
      * عرض وتدفق الملفات المحمية عبر الروابط المؤقتة الموقعة رقمياً (Cryptographically Signed Ephemeral Stream).
      */
     #[OA\Get(
-        path: '/api/v1/files/signed/{token}',
+        path: '/api/v1/files/signed/{path}',
         summary: 'showSigned',
         tags: ['Files'],
+        parameters: [new OA\Parameter(name: 'path', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
         operationId: 'showSigned_FileController',
-        parameters: [new OA\Parameter(name: 'token', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function showSigned(Request $request, string $path): Response

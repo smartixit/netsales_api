@@ -20,7 +20,7 @@ final class OperationalDocumentSnapshotController extends BaseController
     public function __construct(private readonly OperationalDocumentSnapshotService $snapshots) {}
 
     #[OA\Post(
-        path: '/api/v1/documents/snapshots/{snapshotUuid}/artifact', summary: 'store', tags: ['Document Snapshots'], operationId: 'operationaldocumentsnapshot_store',
+        path: '/api/v1/documents/snapshots', summary: 'store', tags: ['Document Snapshots'], operationId: 'operationaldocumentsnapshot_store',
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -53,8 +53,7 @@ final class OperationalDocumentSnapshotController extends BaseController
     }
 
     #[OA\Post(
-        path: '/api/v1/document-snapshots/{snapshotUuid}/artifact', summary: 'storeArtifact', tags: ['Document Snapshots'], operationId: 'operationaldocumentsnapshot_storeArtifact',
-        parameters: [new OA\Parameter(name: 'snapshotUuid', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        path: '/api/v1/documents/snapshots/{snapshotUuid}/artifact', summary: 'storeArtifact', tags: ['Document Snapshots'], operationId: 'operationaldocumentsnapshot_storeArtifact',
         requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
@@ -84,7 +83,6 @@ final class OperationalDocumentSnapshotController extends BaseController
 
     #[OA\Get(
         path: '/api/v1/documents/snapshots/{snapshotUuid}/download', summary: 'download', tags: ['Document Snapshots'], operationId: 'operationaldocumentsnapshot_download',
-        parameters: [new OA\Parameter(name: 'snapshotUuid', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function download(string $snapshotUuid): StreamedResponse|JsonResponse
