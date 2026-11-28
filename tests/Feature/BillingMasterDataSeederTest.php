@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Database\Seeders\BillingLedgerChartSeeder;
 use Database\Seeders\BillingMasterDataSeeder;
 use Database\Seeders\BillingPaymentMethodSeeder;
 use Database\Seeders\CurrencySeeder;
@@ -16,7 +17,8 @@ class BillingMasterDataSeederTest extends TestCase
     public function test_launch_reference_data_is_configured_without_unapproved_commercial_prices(): void
     {
         $this->seed(CurrencySeeder::class);
-        $this->seed(BillingMasterDataSeeder::class);\n        $this->seed(BillingLedgerChartSeeder::class);
+        $this->seed(BillingMasterDataSeeder::class);
+        $this->seed(BillingLedgerChartSeeder::class);
         $this->seed(BillingPaymentMethodSeeder::class);
 
         $currencies = DB::table('currencies')->get()->keyBy('code');
@@ -74,13 +76,17 @@ class BillingMasterDataSeederTest extends TestCase
         $this->assertFalse((bool) $methods['PAYMENT_GATEWAY']->is_active);
         $this->assertSame(4, DB::table('billing_payment_method_currencies')->where('currency_id', $currencies['YER']->currency_id)->count());
         $this->assertSame(0, DB::table('billing_payment_method_currencies')->where('currency_id', '<>', $currencies['YER']->currency_id)->where('is_active', true)->count());
-        $this->assertSame(8, DB::table('ledger_accounts')->where('currency_id', $currencies['YER']->currency_id)->count());\n        $this->assertSame(8, DB::table('ledger_accounts')->where('is_control_account', true)->count());\n        $this->assertSame(0, DB::table('ledger_accounts')->where('currency_id', '<>', $currencies['YER']->currency_id)->count());\n        $this->assertSame(0, DB::table('treasury_accounts')->count());
+        $this->assertSame(8, DB::table('ledger_accounts')->where('currency_id', $currencies['YER']->currency_id)->count());
+        $this->assertSame(8, DB::table('ledger_accounts')->where('is_control_account', true)->count());
+        $this->assertSame(0, DB::table('ledger_accounts')->where('currency_id', '<>', $currencies['YER']->currency_id)->count());
+        $this->assertSame(0, DB::table('treasury_accounts')->count());
     }
 
     public function test_master_data_seeders_are_idempotent_and_preserve_existing_policy_versions(): void
     {
         $this->seed(CurrencySeeder::class);
         $this->seed(BillingMasterDataSeeder::class);
+        $this->seed(BillingLedgerChartSeeder::class);
         $this->seed(BillingPaymentMethodSeeder::class);
 
         $trialVersionId = DB::table('billing_trial_policies')
