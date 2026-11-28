@@ -1449,4 +1449,40 @@ class NetworkPosLinkingChallengeTest extends TestCase
         }
     }
 
+
+    public function test_restoring_a_deleted_pos_link_rechecks_the_quota_under_the_network_lock(): void
+    {
+        $subscriptionId = (int) DB::table('billing_subscriptions')
+            ->join('billing_accounts', 'billing_accounts.billing_account_id', '=', 'billing_subscriptions.billing_account_id')
+            ->where('billing_accounts.network_id', $this->network->network_id)
+            ->value('billing_subscriptions.billing_subscription_id');
+
+        $planVersionId = (int) DB::table('billing_subscriptions')
+            ->where('billing_subscription_id', $subscriptionId)
+            ->value('plan_version_id');
+
+        DB::table('billing_plan_features')
+            ->where('plan_version_id', $planVersionId)
+            ->where('feature_key', 'max_pos_count')
+            ->update(['value' => '1']);
+
+        $occupiedLink = NetworkPos::query()->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->pos->pos_id,
+            'status' => true,
+        ]);
+        $deletedLink = NetworkPos::query()->create([
+            'network_id' => $this->network->network_id,
+            'pos_id' => $this->otherPos->pos_id,
+            'status' => true,
+        ]);
+
+        $service = app(NetworkPosService::class);
+        $this->assertTrue($service->delete((int) $deletedLink->network_pos_id));
+        $this->assertSame(1, NetworkPos::query()->where('network_id', $this->network->network_id)->count());
+
+        $this->expectException(\\Illuminate\\Validation\\ValidationException::class);
+        $service->restore((int) $deletedLink->network_pos_id);
+    }
+
 }
