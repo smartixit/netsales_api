@@ -110,6 +110,9 @@ jobs:
         id: application-key
         run: php artisan key:generate --force
 
+      - name: Generate and validate OpenAPI documentation
+        run: php artisan l5-swagger:generate
+
       - name: Prepare isolated MySQL schema and reference data
         run: php artisan migrate:fresh --seed --force
 
