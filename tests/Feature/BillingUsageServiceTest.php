@@ -31,6 +31,7 @@ class BillingUsageServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Carbon::setTestNow(Carbon::parse('2026-11-28 12:00:00', 'Asia/Aden'));
 
         $governorate = Governorate::query()->first()
             ?? Governorate::query()->create(['governorate_name' => 'Usage Test Governorate']);
