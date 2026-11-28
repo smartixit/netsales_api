@@ -553,11 +553,31 @@ class NetworkPosController extends BaseController
      * Resolve one exact POS business code without exposing a POS directory.
      */
     #[OA\Post(
-        path: '/api/v1/network-pos/challenges/resolve-target', summary: 'resolveLinkTarget', tags: ['Network POS'], operationId: 'network_pos_resolve_target',
-                requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['network_id', 'pos_uuid'], properties: [new OA\Property(property: 'network_id', type: 'integer', minimum: 1), new OA\Property(property: 'pos_uuid', type: 'string', maxLength: 64, pattern: '^POS-\\d{4}-\\d{5}-[A-F0-9]{4}        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
-    )]
-)]))),
-        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+        path: '/api/v1/network-pos/challenges/resolve-target',
+        summary: 'Resolve exact POS link target',
+        tags: ['Network POS'],
+        operationId: 'network_pos_resolve_target',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    type: 'object',
+                    required: ['network_id', 'pos_uuid'],
+                    properties: [
+                        new OA\Property(property: 'network_id', type: 'integer', minimum: 1),
+                        new OA\Property(property: 'pos_uuid', type: 'string', maxLength: 64, pattern: '^POS-[0-9]{4}-[0-9]{5}-[A-F0-9]{4}$')
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'تم التحقق من نقطة البيع وهي مؤهلة لإرسال دعوة الربط.'),
+            new OA\Response(response: 401, description: 'غير مصادق عليه'),
+            new OA\Response(response: 403, description: 'غير مصرح'),
+            new OA\Response(response: 404, description: 'نقطة البيع أو الشبكة غير موجودة'),
+            new OA\Response(response: 422, description: 'بيانات غير صالحة')
+        ]
     )]
     public function resolveLinkTarget(ResolveNetworkLinkablePosRequest $request): JsonResponse
     {
