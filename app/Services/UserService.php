@@ -383,6 +383,46 @@ class UserService
     }
 
     /**
+     * Update only the authenticated user's own public profile attributes.
+     *
+     * Administrative identity, access, status and credential fields are intentionally
+     * excluded from this self-service operation.
+     *
+     * @param  array{user_full_name?: string, user_phone_number?: string, user_email?: string|null}  $data
+     */
+    public function updateOwnProfile(User $authenticatedUser, array $data): User
+    {
+        return DB::transaction(function () use ($authenticatedUser, $data): User {
+            /** @var User $user */
+            $user = User::query()->lockForUpdate()->findOrFail($authenticatedUser->user_id);
+            $user->ensureActive();
+
+            $updates = [];
+            if (array_key_exists('user_full_name', $data)) {
+                $updates['user_full_name'] = trim($data['user_full_name']);
+            }
+            if (array_key_exists('user_phone_number', $data)) {
+                $updates['user_phone_number'] = trim($data['user_phone_number']);
+            }
+            if (array_key_exists('user_email', $data)) {
+                $email = $data['user_email'];
+                $updates['user_email'] = $email === null || trim($email) === '' ? null : mb_strtolower(trim($email));
+            }
+
+            if ($updates !== []) {
+                $this->userRepository->update($user->user_id, $updates);
+
+                if (array_key_exists('user_phone_number', $updates)) {
+                    $this->networkService->syncPhoneForUser($user->user_id, $updates['user_phone_number']);
+                    $this->posService->syncPhoneForUser($user->user_id, $updates['user_phone_number']);
+                }
+            }
+
+            return $user->fresh(['role', 'permissions']);
+        });
+    }
+
+    /**
      * تحديث الصورة الشخصية للمستخدم فقط.
      */
     public function updateProfilePicture(int $userId, UploadedFile $file): string
