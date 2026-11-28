@@ -30,7 +30,7 @@ use Tests\TestCase;
 
 class BillingSubscriptionPurchaseTest extends TestCase
 {
-    use DatabaseTransactions;
+    use CreatesBillingDunningPolicyDraft;\n    use DatabaseTransactions;
 
     public function test_paid_purchase_creates_a_valid_period_and_keeps_entitlements_locked_until_payment(): void
     {
