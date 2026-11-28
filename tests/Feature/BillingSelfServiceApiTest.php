@@ -10,6 +10,7 @@ use App\Enums\UserStatus;
 use App\Models\BillingAccount;
 use App\Models\BillingDunningPolicyVersion;
 use App\Models\BillingTrialPolicy;
+use App\Models\BillingPlan;
 use App\Models\BillingPlanVersion;
 use App\Models\BillingPrice;
 use App\Models\BillingInvoice;
@@ -26,11 +27,13 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
+use Tests\Concerns\CreatesBillingDunningPolicyDraft;
 use Tests\TestCase;
 
 class BillingSelfServiceApiTest extends TestCase
 {
-    use CreatesBillingDunningPolicyDraft;\n    use DatabaseTransactions;
+    use CreatesBillingDunningPolicyDraft;
+    use DatabaseTransactions;
 
     private User $networkOwner;
 
