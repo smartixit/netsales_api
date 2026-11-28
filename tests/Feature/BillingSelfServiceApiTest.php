@@ -30,7 +30,7 @@ use Tests\TestCase;
 
 class BillingSelfServiceApiTest extends TestCase
 {
-    use DatabaseTransactions;
+    use CreatesBillingDunningPolicyDraft;\n    use DatabaseTransactions;
 
     private User $networkOwner;
 
@@ -84,6 +84,35 @@ class BillingSelfServiceApiTest extends TestCase
         $this->otherOwnerHeaders = $this->createAuthenticatedSession($this->otherNetworkOwner)['headers'];
 
         $this->currency = Currency::query()->where('code', 'YER')->firstOrFail();
+
+        $platformActor = User::query()
+            ->whereHas('role', fn ($query) => $query->where('role_key', RoleKey::SUPER_ADMIN->value))
+            ->firstOrFail();
+        $dunningDraft = $this->createBillingDunningPolicyDraft($platformActor);
+
+        $starterPlan = BillingPlan::query()->where('plan_key', 'starter')->firstOrFail();
+        $starterPlan->is_active = true;
+        $starterPlan->save();
+
+        $starterVersion = BillingPlanVersion::query()->create([
+            'plan_id' => $starterPlan->plan_id,
+            'version_number' => 1,
+            'status' => 'DRAFT',
+            'dunning_policy_version_id' => $dunningDraft->dunning_policy_version_id,
+            'created_by' => $platformActor->user_id,
+        ]);
+
+        BillingPrice::query()->create([
+            'plan_version_id' => $starterVersion->plan_version_id,
+            'currency_id' => $this->currency->currency_id,
+            'billing_interval' => 'MONTH',
+            'interval_count' => 1,
+            'unit_amount_minor' => 1000,
+            'setup_fee_minor' => 0,
+            'tax_behavior' => 'EXCLUSIVE',
+            'dunning_policy_version_id' => $dunningDraft->dunning_policy_version_id,
+            'is_active' => true,
+        ]);
 
         $this->account = BillingAccount::query()->create([
             'network_id' => $this->network->network_id,
