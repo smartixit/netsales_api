@@ -9,7 +9,7 @@ use App\Models\BillingInvoice;
 use App\Models\BillingPayment;
 use App\Models\BillingRevenueRecognitionSchedule;
 use App\Models\BillingSubscription;
-use App\Models\BillingUsageAggregate;
+use App\Models\BillingUsageEvent;
 use App\Models\LedgerJournalEntry;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -438,20 +438,38 @@ class BillingInvoiceService
             return;
         }
 
-        $aggregates = BillingUsageAggregate::query()
+        $usageByMeter = BillingUsageEvent::query()
             ->with('meter')
             ->where('billing_subscription_id', $subscription->billing_subscription_id)
             ->where('period_start', $periodStart)
             ->where('period_end', $periodEnd)
             ->where('amount_minor', '>', 0)
-            ->get();
+            ->get()
+            ->groupBy('meter_id');
 
-        foreach ($aggregates as $aggregate) {
-            $amount = (int) $aggregate->amount_minor;
+        $subscription->loadMissing('planVersion.features');
+
+        foreach ($usageByMeter as $events) {
+            $firstEvent = $events->first();
+            $meter = $firstEvent->meter;
+            if (! $meter) {
+                throw ValidationException::withMessages([
+                    'meter_id' => ['تعذر إصدار بند الاستخدام لأن تعريف العداد المرتبط بالحدث غير موجود.'],
+                ]);
+            }
+
+            $amount = $events->sum(static fn (BillingUsageEvent $event): int => (int) $event->amount_minor);
+            if ($amount <= 0) {
+                continue;
+            }
+
+            $feature = $subscription->planVersion?->features
+                ->firstWhere('feature_key', $meter->meter_key);
+
             $invoice->lines()->create([
                 'currency_id' => $invoice->currency_id,
                 'line_type' => 'METERED_USAGE',
-                'description' => 'استهلاك إضافي: '.$aggregate->meter->name,
+                'description' => 'استهلاك إضافي: '.$meter->name,
                 'quantity' => 1,
                 'unit_amount_minor' => $amount,
                 'subtotal_minor' => $amount,
@@ -459,11 +477,13 @@ class BillingInvoiceService
                 'tax_minor' => 0,
                 'total_minor' => $amount,
                 'source_snapshot' => [
-                    'meter_id' => $aggregate->meter_id,
+                    'meter_id' => $meter->meter_id,
+                    'meter_key' => $meter->meter_key,
                     'period_start' => $periodStart,
                     'period_end' => $periodEnd,
-                    'quantity' => (string) $aggregate->quantity,
-                    'unit' => $aggregate->meter->unit,
+                    'aggregation' => $feature?->aggregation,
+                    'reset_period' => $feature?->reset_period,
+                    'event_count' => $events->count(),
                     'amount_minor' => $amount,
                 ],
             ]);

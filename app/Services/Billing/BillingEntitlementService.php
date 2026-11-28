@@ -253,6 +253,9 @@ class BillingEntitlementService
             throw ValidationException::withMessages(['feature' => ['الميزة غير معرفة كحد موارد في الخطة.']]);
         }
 
+        // Quota checks must honor the same subscription and trial policy as every other entitlement.
+        $this->assertEnabled($subscription, $featureKey);
+
         $limit = filter_var($feature->value, FILTER_VALIDATE_INT);
         if ($limit === false || $limit < -1 || $currentCount < 0 || $requested < 1) {
             throw ValidationException::withMessages(['feature' => ['قيمة حد الموارد غير صالحة.']]);

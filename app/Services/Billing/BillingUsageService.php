@@ -3,17 +3,25 @@
 namespace App\Services\Billing;
 
 use App\Enums\BillingFeatureType;
-use App\Enums\BillingSubscriptionStatus;
 use App\Models\BillingSubscription;
 use App\Models\BillingUsageAggregate;
 use App\Models\BillingUsageEvent;
 use App\Models\BillingUsageMeter;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use OverflowException;
 
 class BillingUsageService
 {
+    private const TIMEZONE = 'Asia/Aden';
+
+    public function __construct(
+        private BillingEntitlementService $entitlements,
+        private BillingUsageAggregationService $aggregation,
+        private BillingUsagePeriodResolver $periods
+    ) {}
+
     public function record(
         int $subscriptionId,
         string $meterKey,
@@ -32,7 +40,15 @@ class BillingUsageService
             throw ValidationException::withMessages(['idempotency_key' => ['مفتاح منع التكرار مطلوب ولا يتجاوز 128 حرفاً.']]);
         }
 
-        return DB::transaction(function () use ($subscriptionId, $meterKey, $quantityMicros, $idempotencyKey, $sourceType, $sourceId, $dimensions): BillingUsageEvent {
+        return DB::transaction(function () use (
+            $subscriptionId,
+            $meterKey,
+            $quantityMicros,
+            $idempotencyKey,
+            $sourceType,
+            $sourceId,
+            $dimensions
+        ): BillingUsageEvent {
             $subscription = BillingSubscription::query()
                 ->with('planVersion.features')
                 ->lockForUpdate()
@@ -62,25 +78,34 @@ class BillingUsageService
                 return $existing;
             }
 
-            $active = in_array($subscription->status, [
-                BillingSubscriptionStatus::ACTIVE,
-                BillingSubscriptionStatus::TRIALING,
-            ], true) && (! $subscription->current_period_end || $subscription->current_period_end->gt(now('Asia/Aden')));
-
-            if (! $active) {
-                throw ValidationException::withMessages([
-                    'subscription_id' => ['لا يمكن تسجيل استهلاك مقاس إلا أثناء اشتراك نشط أو فترة تجربة سارية؛ يوقف الاستهلاك الجديد عند التأخر عن السداد.'],
-                ]);
-            }
-
             $feature = $subscription->planVersion?->features->firstWhere('feature_key', $meterKey);
             if (! $feature || $feature->feature_type !== BillingFeatureType::METERED) {
                 throw ValidationException::withMessages(['feature' => ['العداد غير متضمن كميزة استهلاك مقاس في نسخة الخطة الحالية.']]);
             }
 
-            $periodStart = $subscription->current_period_start?->toDateString();
-            $periodEnd = $subscription->current_period_end?->toDateString();
-            if (! $periodStart || ! $periodEnd) {
+            $this->entitlements->assertEnabled($subscription, $meterKey);
+
+            $aggregation = strtoupper((string) $feature->aggregation);
+            $resetPeriod = strtoupper((string) $feature->reset_period);
+            if (! in_array($aggregation, ['SUM', 'COUNT', 'LAST', 'MAX', 'MIN'], true)
+                || ! in_array($resetPeriod, ['DAY', 'WEEK', 'MONTH', 'YEAR', 'NEVER'], true)) {
+                throw ValidationException::withMessages([
+                    'aggregation' => ['إعدادات تجميع أو تصفير العداد غير صالحة.'],
+                ]);
+            }
+
+            if ($meter->aggregation !== $aggregation || $meter->reset_period !== $resetPeriod) {
+                throw ValidationException::withMessages([
+                    'meter_key' => ['إعداد العداد لا يطابق إعداد الميزة المنشورة.'],
+                ]);
+            }
+
+            $now = CarbonImmutable::now(self::TIMEZONE);
+            $window = $this->periods->resolve($now, $resetPeriod);
+            $billingPeriodStart = $subscription->current_period_start?->toDateString();
+            $billingPeriodEnd = $subscription->current_period_end?->toDateString();
+
+            if (! $billingPeriodStart || ! $billingPeriodEnd) {
                 throw ValidationException::withMessages(['billing_period' => ['فترة فوترة الاشتراك غير محددة.']]);
             }
 
@@ -88,8 +113,8 @@ class BillingUsageService
                 [
                     'billing_subscription_id' => $subscriptionId,
                     'meter_id' => $meter->meter_id,
-                    'period_start' => $periodStart,
-                    'period_end' => $periodEnd,
+                    'period_start' => $window['start'],
+                    'period_end' => $window['end'],
                 ],
                 [
                     'quantity' => '0.000000',
@@ -103,23 +128,35 @@ class BillingUsageService
                 ->findOrFail($aggregate->usage_aggregate_id);
 
             $currentMicros = $this->toMicros((string) $aggregate->quantity);
+            $newMicros = $this->aggregation->aggregate(
+                $currentMicros,
+                $quantityMicros,
+                $aggregation
+            );
+
             $limitValue = trim((string) $feature->value);
             $isUnlimited = $limitValue === '-1';
             $limitMicros = $isUnlimited ? PHP_INT_MAX : $this->toMicros($limitValue);
-            $newMicros = $this->safeAdd($currentMicros, $quantityMicros);
             $behavior = strtoupper((string) $feature->overage_behavior);
 
             if (! in_array($behavior, ['BLOCK', 'TRACK', 'INVOICE'], true)) {
                 throw ValidationException::withMessages(['overage_behavior' => ['سياسة تجاوز الحد غير مدعومة.']]);
             }
+            if ($behavior === 'INVOICE' && ! in_array($aggregation, ['SUM', 'COUNT'], true)) {
+                throw ValidationException::withMessages(['overage_behavior' => ['لا يمكن فوترة تجاوز LAST أو MAX أو MIN؛ استخدم BLOCK أو TRACK.']]);
+            }
 
-            if (! $isUnlimited && $newMicros > $limitMicros && $behavior === 'BLOCK') {
+            $overage = $this->aggregation->overage($currentMicros, $newMicros, $limitMicros);
+            $previousOverage = $isUnlimited ? 0 : $overage['previous'];
+            $newOverage = $isUnlimited ? 0 : $overage['current'];
+            if ($newOverage > 0 && $behavior === 'BLOCK') {
                 throw ValidationException::withMessages([
-                    'quota' => ['تم تجاوز الحد المقاس للاستهلاك في فترة الفوترة الحالية.'],
+                    'quota' => ['تم تجاوز الحد المقاس للاستهلاك في فترة إعادة التصفير الحالية.'],
                 ]);
             }
 
-            if (! $isUnlimited && $newMicros > $limitMicros && $behavior === 'INVOICE') {
+            $eventAmountMinor = 0;
+            if ($newOverage > $previousOverage && $behavior === 'INVOICE') {
                 $configuration = (array) ($feature->configuration ?? []);
                 $overagePrice = collect($configuration['overage_prices'] ?? [])
                     ->first(fn (array $price): bool => (int) ($price['currency_id'] ?? 0) === (int) $subscription->currency_id);
@@ -132,24 +169,18 @@ class BillingUsageService
                     ]);
                 }
 
-                $previousOverage = max(0, $currentMicros - $limitMicros);
-                $newOverage = max(0, $newMicros - $limitMicros);
                 $previousUnits = intdiv($previousOverage, $unitSizeMicros)
                     + (($previousOverage % $unitSizeMicros) > 0 ? 1 : 0);
                 $newUnits = intdiv($newOverage, $unitSizeMicros)
                     + (($newOverage % $unitSizeMicros) > 0 ? 1 : 0);
                 $additionalUnits = $newUnits - $previousUnits;
 
-                if ($unitAmountMinor > 0 && $newUnits > intdiv(PHP_INT_MAX, $unitAmountMinor)) {
+                if ($unitAmountMinor > 0 && $additionalUnits > intdiv(PHP_INT_MAX, $unitAmountMinor)) {
                     throw new OverflowException('رسوم تجاوز الاستخدام تتجاوز السعة الرقمية المسموحة.');
                 }
 
-                $targetAmountMinor = $newUnits * $unitAmountMinor;
-                if ($targetAmountMinor < (int) $aggregate->amount_minor) {
-                    throw ValidationException::withMessages(['amount_minor' => ['لا يمكن خفض إجمالي رسوم التجاوز بعد تسجيل الاستهلاك.']]);
-                }
-
-                $aggregate->amount_minor = $targetAmountMinor;
+                $eventAmountMinor = $additionalUnits * $unitAmountMinor;
+                $aggregate->amount_minor = $this->safeAdd((int) $aggregate->amount_minor, $eventAmountMinor);
             }
 
             $event = BillingUsageEvent::query()->create([
@@ -157,16 +188,17 @@ class BillingUsageService
                 'meter_id' => $meter->meter_id,
                 'idempotency_key' => $idempotencyKey,
                 'quantity' => $this->fromMicros($quantityMicros),
-                'occurred_at' => now('Asia/Aden'),
-                'period_start' => $periodStart,
-                'period_end' => $periodEnd,
+                'amount_minor' => $eventAmountMinor,
+                'occurred_at' => $now,
+                'period_start' => $billingPeriodStart,
+                'period_end' => $billingPeriodEnd,
                 'dimensions' => $dimensions,
                 'source_type' => $sourceType,
                 'source_id' => $sourceId,
             ]);
 
             $aggregate->quantity = $this->fromMicros($newMicros);
-            $aggregate->last_event_at = now('Asia/Aden');
+            $aggregate->last_event_at = $now;
             $aggregate->save();
 
             return $event->load(['subscription', 'meter']);
@@ -190,7 +222,6 @@ class BillingUsageService
         $digits = ltrim($whole.$fraction, '0');
         $digits = $digits === '' ? '0' : $digits;
         $result = filter_var($digits, FILTER_VALIDATE_INT);
-
         if ($result === false) {
             throw new OverflowException('كمية الاستهلاك تتجاوز السعة الرقمية المدعومة.');
         }
@@ -200,7 +231,7 @@ class BillingUsageService
 
     private function fromMicros(int $value): string
     {
-        return intdiv($value, 1000000).'.'.str_pad((string) ($value % 1000000), 6, '0', STR_PAD_LEFT);
+        return intdiv($value, 1_000_000).'.'.str_pad((string) ($value % 1_000_000), 6, '0', STR_PAD_LEFT);
     }
 
     private function safeAdd(int $left, int $right): int

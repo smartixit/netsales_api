@@ -41,6 +41,23 @@ class BillingMasterDataSeederTest extends TestCase
         $this->assertSame(6, DB::table('billing_prices')->count());
         $this->assertSame(9, DB::table('billing_plan_features')->count());
 
+        $expectedLimits = [
+            'starter' => ['max_pos_count' => 2, 'max_voucher_packages' => 5, 'max_network_members' => 2],
+            'growth' => ['max_pos_count' => 5, 'max_voucher_packages' => 15, 'max_network_members' => 5],
+            'business' => ['max_pos_count' => 20, 'max_voucher_packages' => 50, 'max_network_members' => 15],
+        ];
+
+        foreach ($expectedLimits as $planKey => $limits) {
+            $versionId = $plans->firstWhere('plan_key', $planKey)->current_version_id;
+            $actualLimits = DB::table('billing_plan_features')
+                ->where('plan_version_id', $versionId)
+                ->pluck('value', 'feature_key')
+                ->map(static fn ($value): int => (int) $value)
+                ->all();
+
+            $this->assertSame($limits, $actualLimits, "Unexpected resource limits for {$planKey}.");
+        }
+
         foreach ($plans as $plan) {
             if ($plan->plan_key === 'enterprise') {
                 $this->assertFalse((bool) $plan->is_active);

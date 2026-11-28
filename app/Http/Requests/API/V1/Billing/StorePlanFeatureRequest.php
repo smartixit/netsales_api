@@ -6,6 +6,7 @@ use App\Enums\BillingFeatureType;
 use App\Http\Requests\Traits\LoadsCustomValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StorePlanFeatureRequest extends FormRequest
 {
@@ -16,6 +17,23 @@ class StorePlanFeatureRequest extends FormRequest
         return true;
     }
 
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($this->input('feature_type') !== BillingFeatureType::METERED->value
+                || $this->input('overage_behavior', 'BLOCK') !== 'INVOICE') {
+                return;
+            }
+
+            if (! in_array($this->input('aggregation'), ['SUM', 'COUNT'], true)) {
+                $validator->errors()->add(
+                    'overage_behavior',
+                    'الفوترة حسب التجاوز متاحة فقط مع تجميعي SUM وCOUNT.'
+                );
+            }
+        });
+    }
+
     public function rules(): array
     {
         return [
@@ -24,8 +42,8 @@ class StorePlanFeatureRequest extends FormRequest
             'feature_type' => ['required', Rule::enum(BillingFeatureType::class)],
             'value' => ['required'],
             'unit' => ['nullable', 'string', 'max:40'],
-            'aggregation' => ['nullable', 'in:SUM,COUNT,LAST,MAX,MIN'],
-            'reset_period' => ['nullable', 'in:DAY,WEEK,MONTH,YEAR,NEVER'],
+            'aggregation' => ['required_if:feature_type,METERED', 'nullable', 'in:SUM,COUNT,LAST,MAX,MIN', 'prohibited_unless:feature_type,METERED'],
+            'reset_period' => ['required_if:feature_type,METERED', 'nullable', 'in:DAY,WEEK,MONTH,YEAR,NEVER', 'prohibited_unless:feature_type,METERED'],
             'overage_behavior' => ['nullable', 'in:BLOCK,TRACK,INVOICE'],
             'configuration' => ['nullable', 'array'],
             'configuration.overage_prices' => ['required_if:overage_behavior,INVOICE', 'array', 'min:1'],
