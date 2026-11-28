@@ -49,13 +49,17 @@ class BillingMasterDataSeederTest extends TestCase
 
         foreach ($expectedLimits as $planKey => $limits) {
             $versionId = $plans->firstWhere('plan_key', $planKey)->current_version_id;
+            $expected = $limits;
+            ksort($expected);
+
             $actualLimits = DB::table('billing_plan_features')
                 ->where('plan_version_id', $versionId)
                 ->pluck('value', 'feature_key')
                 ->map(static fn ($value): int => (int) $value)
+                ->sortKeys()
                 ->all();
 
-            $this->assertSame($limits, $actualLimits, "Unexpected resource limits for {$planKey}.");
+            $this->assertSame($expected, $actualLimits, "Unexpected resource limits for {$planKey}.");
         }
 
         foreach ($plans as $plan) {
