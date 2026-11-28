@@ -133,6 +133,13 @@ jobs:
           echo "OpenAPI operations: {$count} (minimum: 429).\\n";
           '
 
+      - name: Upload generated OpenAPI document
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: netsales-openapi-document
+          path: storage/api-docs/api-docs.json
+          if-no-files-found: error
+
       - name: Prepare isolated MySQL schema and reference data
         run: php artisan migrate:fresh --seed --force
 
