@@ -133,7 +133,7 @@ class NetworkPosController extends BaseController
      * إنشاء ارتباط جديد بين نقطة بيع وشبكة.
      */
     #[OA\Post(
-        path: '/api/v1/network-pos',
+        path: '/api/v1/network-pos/challenges/resolve-target',
         summary: 'ربط نقطة بيع بمزود شبكة',
         tags: ['Network POS'],
         requestBody: new OA\RequestBody(
@@ -419,7 +419,7 @@ class NetworkPosController extends BaseController
     /**
      * عرض نقاط البيع المرتبطة بشبكة محددة.
      */
-    #[OA\Get(
+    #[OA\Post(
         path: '/api/v1/networks/{id}/pos',
         summary: 'عرض نقاط البيع المرتبطة بشبكة محددة',
         tags: ['Network POS'],
@@ -552,7 +552,7 @@ class NetworkPosController extends BaseController
      * Resolve one exact POS business code without exposing a POS directory.
      */
     #[OA\Get(
-        path: '/api/v1/network-pos/resolve-link-target', summary: 'resolveLinkTarget', tags: ['Network POS'], operationId: 'network_pos_resolveLinkTarget',
+        path: '/api/v1/network-pos/resolve-link-target', summary: 'resolveLinkTarget', tags: ['Network POS'], operationId: 'network_pos_resolve_target',
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function resolveLinkTarget(ResolveNetworkLinkablePosRequest $request): JsonResponse

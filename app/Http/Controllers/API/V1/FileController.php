@@ -26,7 +26,7 @@ class FileController extends BaseController
      * عرض وتدفق الوسائط العامة المصرح بها (Public Media Stream).
      */
     #[OA\Get(
-        path: '/api/v1/files/{id}',
+        path: '/api/v1/files/signed/{path}',
         summary: 'show',
         tags: ['Files'],
         operationId: 'show_FileController',
