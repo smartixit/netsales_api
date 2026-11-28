@@ -94,7 +94,7 @@ class BillingUsageService
                 ]);
             }
 
-            if ($meter->aggregation !== $aggregation || $meter->reset_period !== $resetPeriod) {
+            if ($meter->aggregation !== $aggregation) {
                 throw ValidationException::withMessages([
                     'meter_key' => ['إعداد العداد لا يطابق إعداد الميزة المنشورة.'],
                 ]);

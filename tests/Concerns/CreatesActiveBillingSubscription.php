@@ -113,7 +113,7 @@ trait CreatesActiveBillingSubscription
                 'configuration' => $definition['configuration'] ?? null,
             ]);
 
-            BillingUsageMeter::query()->create([
+            BillingUsageMeter::query()->firstOrCreate(['meter_key' => $feature->feature_key], [
                 'meter_key' => $feature->feature_key,
                 'name' => $feature->name,
                 'unit' => $feature->unit ?? 'unit',

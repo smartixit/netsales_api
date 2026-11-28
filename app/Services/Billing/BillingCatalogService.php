@@ -389,8 +389,7 @@ class BillingCatalogService
                 );
 
                 if ($meter->unit !== ($feature->unit ?? 'unit')
-                    || $meter->aggregation !== $feature->aggregation
-                    || $meter->reset_period !== $feature->reset_period) {
+                    || $meter->aggregation !== $feature->aggregation) {
                     throw ValidationException::withMessages([
                         'feature_key' => ['تعريف العداد مستخدم مسبقاً بوحدة أو طريقة تجميع مختلفة؛ يجب توحيد تعريف العداد عبر الخطط.'],
                     ]);
