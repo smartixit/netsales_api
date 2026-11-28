@@ -298,6 +298,32 @@ class BillingCatalogService
 
             $value = $this->normalizeFeatureValue($type, $data['value'] ?? null);
             $overageBehavior = strtoupper((string) ($data['overage_behavior'] ?? 'BLOCK'));
+            $aggregation = strtoupper((string) ($data['aggregation'] ?? ''));
+            $resetPeriod = strtoupper((string) ($data['reset_period'] ?? ''));
+
+            if ($type === BillingFeatureType::METERED) {
+                if (! in_array($aggregation, ['SUM', 'COUNT', 'LAST', 'MAX', 'MIN'], true)
+                    || ! in_array($resetPeriod, ['DAY', 'WEEK', 'MONTH', 'YEAR', 'NEVER'], true)) {
+                    throw ValidationException::withMessages([
+                        'aggregation' => ['يجب تحديد طريقة تجميع وفترة إعادة تصفير صحيحتين للميزة المقاسة.'],
+                    ]);
+                }
+
+                if ($aggregation === 'COUNT' && $value !== '-1' && ! preg_match('/^\\d+$/', $value)) {
+                    throw ValidationException::withMessages([
+                        'value' => ['حد ميزة COUNT يجب أن يكون عدداً صحيحاً أو -1 لغير المحدود.'],
+                    ]);
+                }
+
+                if ($overageBehavior === 'INVOICE' && ! in_array($aggregation, ['SUM', 'COUNT'], true)) {
+                    throw ValidationException::withMessages([
+                        'overage_behavior' => ['الفوترة حسب التجاوز متاحة حالياً مع تجميعي SUM وCOUNT فقط؛ استخدم BLOCK أو TRACK مع LAST أو MAX أو MIN.'],
+                    ]);
+                }
+            } else {
+                $aggregation = '';
+                $resetPeriod = '';
+            }
 
             if (! in_array($overageBehavior, ['BLOCK', 'TRACK', 'INVOICE'], true)) {
                 throw ValidationException::withMessages([
@@ -343,8 +369,8 @@ class BillingCatalogService
                 'feature_type' => $type,
                 'value' => $value,
                 'unit' => $data['unit'] ?? null,
-                'aggregation' => strtoupper((string) ($data['aggregation'] ?? 'SUM')),
-                'reset_period' => $data['reset_period'] ?? null,
+                'aggregation' => $aggregation !== '' ? $aggregation : null,
+                'reset_period' => $resetPeriod !== '' ? $resetPeriod : null,
                 'overage_behavior' => $overageBehavior,
                 'configuration' => $configuration,
             ]);
@@ -363,7 +389,7 @@ class BillingCatalogService
                 );
 
                 if ($meter->unit !== ($feature->unit ?? 'unit')
-                    || $meter->aggregation !== ($feature->aggregation ?? 'SUM')) {
+                    || $meter->aggregation !== $feature->aggregation) {
                     throw ValidationException::withMessages([
                         'feature_key' => ['تعريف العداد مستخدم مسبقاً بوحدة أو طريقة تجميع مختلفة؛ يجب توحيد تعريف العداد عبر الخطط.'],
                     ]);

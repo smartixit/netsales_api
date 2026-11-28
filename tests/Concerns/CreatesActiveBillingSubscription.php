@@ -13,6 +13,7 @@ use App\Models\BillingPlanVersion;
 use App\Models\BillingPrice;
 use App\Models\BillingProduct;
 use App\Models\BillingSubscription;
+use App\Models\BillingUsageMeter;
 use App\Models\Currency;
 use App\Models\Network;
 use App\Models\User;
@@ -28,12 +29,14 @@ trait CreatesActiveBillingSubscription
      * on downstream entitlement guards, not subscription purchase or settlement.
      *
      * @param  array<string, int>  $resourceLimits
+     * @param  array<string, array{value:string,aggregation:string,reset_period:string,overage_behavior?:string,configuration?:array<string,mixed>,unit?:string}>  $meteredFeatures
      */
     protected function createActiveBillingSubscriptionForNetwork(
         Network $network,
         array $resourceLimits = [],
         ?CarbonImmutable $currentPeriodEnd = null,
-        ?User $actor = null
+        ?User $actor = null,
+        array $meteredFeatures = []
     ): BillingSubscription {
         $actor ??= User::query()->findOrFail($network->owner_id);
         $currency = Currency::query()->where('code', 'YER')->firstOrFail();
@@ -93,6 +96,30 @@ trait CreatesActiveBillingSubscription
                 'aggregation' => null,
                 'reset_period' => null,
                 'overage_behavior' => 'BLOCK',
+            ]);
+        }
+
+        foreach ($meteredFeatures as $featureKey => $definition) {
+            $feature = BillingPlanFeature::query()->create([
+                'plan_version_id' => $version->plan_version_id,
+                'feature_key' => $featureKey,
+                'name' => $featureKey,
+                'feature_type' => BillingFeatureType::METERED,
+                'value' => $definition['value'],
+                'unit' => $definition['unit'] ?? 'unit',
+                'aggregation' => $definition['aggregation'],
+                'reset_period' => $definition['reset_period'],
+                'overage_behavior' => $definition['overage_behavior'] ?? 'BLOCK',
+                'configuration' => $definition['configuration'] ?? null,
+            ]);
+
+            BillingUsageMeter::query()->firstOrCreate(['meter_key' => $feature->feature_key], [
+                'meter_key' => $feature->feature_key,
+                'name' => $feature->name,
+                'unit' => $feature->unit ?? 'unit',
+                'aggregation' => $feature->aggregation,
+                'reset_period' => $feature->reset_period,
+                'is_active' => true,
             ]);
         }
 

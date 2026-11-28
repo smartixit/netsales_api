@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
+/**
+ * @property int $amount_minor
+ */
 class BillingUsageEvent extends Model
 {
     use ExactDateSerialization;
@@ -16,7 +19,7 @@ class BillingUsageEvent extends Model
     protected $primaryKey = 'usage_event_id';
 
     protected $fillable = [
-        'billing_subscription_id', 'meter_id', 'idempotency_key', 'quantity',
+        'billing_subscription_id', 'meter_id', 'idempotency_key', 'quantity', 'amount_minor',
         'occurred_at', 'period_start', 'period_end', 'dimensions', 'source_type', 'source_id',
     ];
 
@@ -24,6 +27,7 @@ class BillingUsageEvent extends Model
     {
         return [
             'quantity' => 'decimal:6',
+            'amount_minor' => 'integer',
             'occurred_at' => 'datetime',
             'period_start' => 'date',
             'period_end' => 'date',

@@ -25,6 +25,7 @@ use App\Http\Resources\API\V1\Billing\BillingUsageAggregateResource;
 use App\Http\Resources\API\V1\Billing\CurrencyResource;
 use App\Http\Resources\API\V1\Billing\PaymentMethodResource;
 use App\Services\Billing\BillingEntitlementService;
+use App\Services\Billing\BillingResourceUsageService;
 use App\Services\Billing\BillingPaymentService;
 use App\Services\Billing\BillingPlatformReadService;
 use App\Services\Billing\BillingSelfService;
@@ -47,6 +48,7 @@ class BillingSelfServiceController extends BaseController
         private BillingPlatformReadService $read,
         private CurrencyService $currencies,
         private BillingEntitlementService $entitlements,
+        private BillingResourceUsageService $resourceUsage,
         private FileUploadService $files
     ) {}
 
@@ -248,6 +250,13 @@ class BillingSelfServiceController extends BaseController
                 'reset_period' => $feature->reset_period,
                 'overage_behavior' => $feature->overage_behavior,
                 'available' => $this->entitlements->allows($subscription, $feature->feature_key),
+                'quota' => $feature->feature_type?->value === 'RESOURCE_LIMIT'
+                    ? $this->resourceUsage->snapshot(
+                        (int) $account->network_id,
+                        $feature->feature_key,
+                        (string) $feature->value
+                    )
+                    : null,
             ])->values() : collect();
 
         $trial = (array) $subscription->trial_policy_snapshot;

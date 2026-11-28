@@ -212,26 +212,46 @@ class NetworkPosService
     public function restore(int $id): ?NetworkPos
     {
         return DB::transaction(function () use ($id): ?NetworkPos {
+            // Discover the tenant key without taking a child lock, then use the same
+            // parent-first lock order as create() to serialize every quota mutation.
+            $candidate = NetworkPos::withTrashed()->find($id);
+            if (! $candidate || ! $candidate->trashed()) {
+                return null;
+            }
+
+            $networkId = (int) $candidate->network_id;
+            $network = Network::withTrashed()->lockForUpdate()->find($networkId);
+            if (! $network || $network->trashed()) {
+                throw ValidationException::withMessages([
+                    'network_pos_id' => ['لا يمكن استعادة العلاقة لأن الشبكة محذوفة أو غير موجودة.'],
+                ]);
+            }
+
             $link = NetworkPos::withTrashed()->lockForUpdate()->find($id);
             if (! $link || ! $link->trashed()) {
                 return null;
             }
-
-            $network = Network::withTrashed()->find($link->network_id);
-            $pos = Pos::withTrashed()->find($link->pos_id);
-            if (! $network || $network->trashed() || ! $pos || $pos->trashed()) {
+            if ((int) $link->network_id !== $networkId) {
                 throw ValidationException::withMessages([
-                    'network_pos_id' => ['لا يمكن استعادة العلاقة لأن الشبكة أو نقطة البيع محذوفة.'],
+                    'network_pos_id' => ['تغير نطاق الارتباط أثناء الاستعادة؛ أعد المحاولة.'],
                 ]);
             }
+
+            $pos = Pos::withTrashed()->find($link->pos_id);
+            if (! $pos || $pos->trashed()) {
+                throw ValidationException::withMessages([
+                    'network_pos_id' => ['لا يمكن استعادة العلاقة لأن نقطة البيع محذوفة أو غير موجودة.'],
+                ]);
+            }
+
             $network->ensureActive();
             $pos->ensureActive();
-            $this->assertPosQuota((int) $link->network_id);
+            $this->assertPosQuota($networkId);
             $link->restore();
             $this->recordLifecycleEvent($link, 'RESTORED');
 
             return $link->load(['network', 'pos']);
-        });
+        }, 3);
     }
 
     public function findByIdWithTrashed(int $id): ?NetworkPos
