@@ -73,7 +73,7 @@ class BillingReportController extends BaseController
         summary: 'Network Show',
         tags: ['Billing'],
         operationId: 'billingreport_networkShow',
-        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'reportType', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'reportType', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'cursor', in: 'query', required: false, schema: new OA\Schema(type: 'string'))] ,
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function networkShow(Request $request, int $networkId, string $reportType): JsonResponse
@@ -93,7 +93,7 @@ class BillingReportController extends BaseController
         summary: 'Network Summary',
         tags: ['Billing'],
         operationId: 'billingreport_networkSummary',
-        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'reportType', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'reportType', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'cursor', in: 'query', required: false, schema: new OA\Schema(type: 'string'))] ,
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function networkSummary(Request $request, int $networkId, string $reportType): JsonResponse
@@ -131,7 +131,7 @@ class BillingReportController extends BaseController
         summary: 'Platform Show',
         tags: ['Billing'],
         operationId: 'billingreport_platformShow',
-        parameters: [new OA\Parameter(name: 'reportType', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'reportType', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'cursor', in: 'query', required: false, schema: new OA\Schema(type: 'string'))] ,
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function platformShow(Request $request, string $reportType): JsonResponse
@@ -179,7 +179,7 @@ class BillingReportController extends BaseController
         summary: 'Network Export Csv',
         tags: ['Billing'],
         operationId: 'billingreport_networkExportCsv',
-        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'reportType', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'reportType', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'cursor', in: 'query', required: false, schema: new OA\Schema(type: 'string'))] ,
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function networkExportCsv(Request $request, int $networkId, string $reportType): mixed
@@ -194,7 +194,7 @@ class BillingReportController extends BaseController
         summary: 'Platform Export Csv',
         tags: ['Billing'],
         operationId: 'billingreport_platformExportCsv',
-        parameters: [new OA\Parameter(name: 'reportType', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'reportType', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'cursor', in: 'query', required: false, schema: new OA\Schema(type: 'string'))] ,
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function platformExportCsv(Request $request, string $reportType): mixed
@@ -209,7 +209,7 @@ class BillingReportController extends BaseController
         summary: 'Platform Summary',
         tags: ['Billing'],
         operationId: 'billingreport_platformSummary',
-        parameters: [new OA\Parameter(name: 'reportType', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'reportType', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'cursor', in: 'query', required: false, schema: new OA\Schema(type: 'string'))] ,
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function platformSummary(Request $request, string $reportType): JsonResponse

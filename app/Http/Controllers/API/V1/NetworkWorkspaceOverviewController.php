@@ -17,7 +17,7 @@ class NetworkWorkspaceOverviewController extends BaseController
 
     #[OA\Get(
         path: '/api/v1/networks/{networkId}/workspace-overview', summary: 'show', tags: ['Network Workspace'], operationId: 'networkworkspaceoverview_show',
-        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'period', in: 'query', required: false, schema: new OA\Schema(type: 'string'))] ,
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function show(NetworkWorkspaceOverviewRequest $request, int $networkId): JsonResponse

@@ -58,7 +58,7 @@ class ReportController extends BaseController
 
     #[OA\Get(
         path: '/api/v1/networks/{networkId}/reports/runs', summary: 'networkRuns', tags: ['Report Runs'], operationId: 'report_networkRuns',
-        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))] ,
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function networkRuns(ReportRunIndexRequest $request, int $networkId): JsonResponse
@@ -135,6 +135,7 @@ class ReportController extends BaseController
 
     #[OA\Get(
         path: '/api/v1/platform/reports/runs', summary: 'platformRuns', tags: ['Report Runs'], operationId: 'report_platformRuns',
+        parameters: [new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))],
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function platformRuns(ReportRunIndexRequest $request): JsonResponse
