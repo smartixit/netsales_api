@@ -46,8 +46,8 @@ class DatabaseSeeder extends Seeder
             $this->command->line('➜ Seeding System Settings...');
             $this->call(SystemSettingSeeder::class);
 
-            // 5. Multi-currency billing foundation
-            $this->command->line('➜ Seeding supported billing currencies...');
+            // 5. Billing reference data: four configured currencies, YER launch only.
+            $this->command->line('➜ Seeding billing currencies (YER launch market)...');
             $this->call(CurrencySeeder::class);
 
             $this->command->line('➜ Seeding billing master data and published policies...');
