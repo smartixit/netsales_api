@@ -231,6 +231,28 @@ class AuthController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/auth/login-to-dashboard',
+        summary: 'تسجيل الدخول إلى لوحة تحكم المنصة',
+        tags: ['Auth'],
+        operationId: 'api_v1_auth_login-to-dashboard_loginToDashboard',
+        requestBody: new OA\RequestBody(required: true, description: 'بيانات الطلب بصيغة multipart/form-data', content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['user_phone_number', 'user_password', 'device_uuid', 'fcm_token'], properties: [
+                new OA\Property(property: 'user_phone_number', type: 'string'),
+                new OA\Property(property: 'user_password', type: 'string'),
+                new OA\Property(property: 'device_uuid', type: 'string'),
+                new OA\Property(property: 'fcm_token', type: 'string'),
+                new OA\Property(property: 'device_name', type: 'string'),
+                new OA\Property(property: 'device_type', type: 'string'),
+                new OA\Property(property: 'app_hash', type: 'string')
+            ]))),
+        responses: [
+            new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'),
+            new OA\Response(response: 401, description: 'الجلسة غير صالحة أو غير مصادق عليه'),
+            new OA\Response(response: 403, description: 'لا توجد صلاحية لتنفيذ العملية'),
+            new OA\Response(response: 404, description: 'المورد غير موجود'),
+            new OA\Response(response: 422, description: 'بيانات الطلب غير صالحة أو تعذر تنفيذ العملية')
+        ]
+    )]
     public function loginToDashboard(LoginRequest $request): JsonResponse
     {
         try {
@@ -822,6 +844,17 @@ class AuthController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/auth/health-check',
+        summary: 'فحص جاهزية خدمة المصادقة',
+        tags: ['Auth'],
+        operationId: 'api_v1_auth_health-check_healthCheck',
+        responses: [
+            new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'),
+            new OA\Response(response: 404, description: 'المورد غير موجود'),
+            new OA\Response(response: 422, description: 'بيانات الطلب غير صالحة أو تعذر تنفيذ العملية')
+        ]
+    )]
     public function healthCheck(Request $request)
     {
         return response()->json([
