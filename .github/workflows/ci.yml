@@ -110,6 +110,44 @@ jobs:
         id: application-key
         run: php artisan key:generate --force
 
+      - name: Generate and validate OpenAPI documentation
+        run: php artisan l5-swagger:generate
+
+      - name: Assert complete OpenAPI operation coverage
+        run: |
+          php -r '
+          $spec = json_decode(file_get_contents("storage/api-docs/api-docs.json"), true, 512, JSON_THROW_ON_ERROR);
+          $methods = ["get", "post", "put", "patch", "delete", "options", "head", "trace"];
+          $count = 0;
+          $operationIds = [];
+          foreach (($spec["paths"] ?? []) as $path => $operations) {
+              foreach ($operations as $method => $operation) {
+                  if (!in_array(strtolower($method), $methods, true)) {
+                      continue;
+                  }
+                  $count++;
+                  $operationId = $operation["operationId"] ?? null;
+                  if ($operationId === null || isset($operationIds[$operationId])) {
+                      fwrite(STDERR, "Missing or duplicate OpenAPI operationId: " . ($operationId ?? "<missing>") . "\\n");
+                      exit(1);
+                  }
+                  $operationIds[$operationId] = $path;
+              }
+          }
+          if ($count < 429) {
+              fwrite(STDERR, "Expected at least 429 documented API operations; found {$count}.\\n");
+              exit(1);
+          }
+          echo "OpenAPI operations: {$count}; unique operationIds: " . count($operationIds) . ".\\n";
+          '
+
+      - name: Upload generated OpenAPI document
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: netsales-openapi-document
+          path: storage/api-docs/api-docs.json
+          if-no-files-found: error
+
       - name: Prepare isolated MySQL schema and reference data
         run: php artisan migrate:fresh --seed --force
 

@@ -35,6 +35,19 @@ class BackupController extends BaseController
     /**
      * حالة وإعدادات النسخ الاحتياطي
      */
+    #[OA\Get(
+        path: '/api/v1/backups/settings',
+        summary: 'عرض إعدادات النسخ الاحتياطي',
+        tags: ['Backup'],
+        operationId: 'api_v1_backups_settings_settings',
+        responses: [
+            new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'),
+            new OA\Response(response: 401, description: 'الجلسة غير صالحة أو غير مصادق عليه'),
+            new OA\Response(response: 403, description: 'لا توجد صلاحية لتنفيذ العملية'),
+            new OA\Response(response: 404, description: 'المورد غير موجود'),
+            new OA\Response(response: 422, description: 'بيانات الطلب غير صالحة أو تعذر تنفيذ العملية')
+        ]
+    )]
     public function settings(): JsonResponse
     {
         try {
@@ -76,6 +89,19 @@ class BackupController extends BaseController
     /**
      * فحص صحة بيئة النسخ الاحتياطي على الخادم
      */
+    #[OA\Get(
+        path: '/api/v1/backups/health',
+        summary: 'فحص صحة خدمة النسخ الاحتياطي',
+        tags: ['Backup'],
+        operationId: 'api_v1_backups_health_health',
+        responses: [
+            new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'),
+            new OA\Response(response: 401, description: 'الجلسة غير صالحة أو غير مصادق عليه'),
+            new OA\Response(response: 403, description: 'لا توجد صلاحية لتنفيذ العملية'),
+            new OA\Response(response: 404, description: 'المورد غير موجود'),
+            new OA\Response(response: 422, description: 'بيانات الطلب غير صالحة أو تعذر تنفيذ العملية')
+        ]
+    )]
     public function health(): JsonResponse
     {
         try {
@@ -115,6 +141,22 @@ class BackupController extends BaseController
     /**
      * بدء المصادقة مع جوجل: توليد رابط التفويض
      */
+    #[OA\Get(
+        path: '/api/v1/backups/drive/auth',
+        summary: 'بدء ربط حساب Google Drive',
+        tags: ['Backup'],
+        operationId: 'api_v1_backups_drive_auth_driveAuth',
+        parameters: [
+            new OA\Parameter(name: 'redirect_uri', in: 'query', required: false, schema: new OA\Schema(type: 'string'))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'),
+            new OA\Response(response: 401, description: 'الجلسة غير صالحة أو غير مصادق عليه'),
+            new OA\Response(response: 403, description: 'لا توجد صلاحية لتنفيذ العملية'),
+            new OA\Response(response: 404, description: 'المورد غير موجود'),
+            new OA\Response(response: 422, description: 'بيانات الطلب غير صالحة أو تعذر تنفيذ العملية')
+        ]
+    )]
     public function driveAuth(Request $request): JsonResponse
     {
         try {
@@ -154,6 +196,23 @@ class BackupController extends BaseController
     /**
      * إتمام المصادقة: تبادل الرمز وحفظ بيانات الاتصال مشفرة
      */
+    #[OA\Post(
+        path: '/api/v1/backups/drive/token',
+        summary: 'إكمال ربط Google Drive باستخدام رمز OAuth',
+        tags: ['Backup'],
+        operationId: 'api_v1_backups_drive_token_driveToken',
+        requestBody: new OA\RequestBody(required: true, description: 'بيانات الطلب بصيغة multipart/form-data', content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['state', 'code'], properties: [
+                new OA\Property(property: 'state', type: 'string'),
+                new OA\Property(property: 'code', type: 'string')
+            ]))),
+        responses: [
+            new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'),
+            new OA\Response(response: 401, description: 'الجلسة غير صالحة أو غير مصادق عليه'),
+            new OA\Response(response: 403, description: 'لا توجد صلاحية لتنفيذ العملية'),
+            new OA\Response(response: 404, description: 'المورد غير موجود'),
+            new OA\Response(response: 422, description: 'بيانات الطلب غير صالحة أو تعذر تنفيذ العملية')
+        ]
+    )]
     public function driveToken(DriveTokenRequest $request): JsonResponse
     {
         try {
@@ -180,6 +239,19 @@ class BackupController extends BaseController
     /**
      * فصل حساب جوجل درايف
      */
+    #[OA\Post(
+        path: '/api/v1/backups/drive/disconnect',
+        summary: 'فصل حساب Google Drive المرتبط',
+        tags: ['Backup'],
+        operationId: 'api_v1_backups_drive_disconnect_driveDisconnect',
+        responses: [
+            new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'),
+            new OA\Response(response: 401, description: 'الجلسة غير صالحة أو غير مصادق عليه'),
+            new OA\Response(response: 403, description: 'لا توجد صلاحية لتنفيذ العملية'),
+            new OA\Response(response: 404, description: 'المورد غير موجود'),
+            new OA\Response(response: 422, description: 'بيانات الطلب غير صالحة أو تعذر تنفيذ العملية')
+        ]
+    )]
     public function driveDisconnect(): JsonResponse
     {
         try {
@@ -197,6 +269,29 @@ class BackupController extends BaseController
     /**
      * تحديث إعدادات النسخ الاحتياطي
      */
+    #[OA\Put(
+        path: '/api/v1/backups/config',
+        summary: 'تحديث إعدادات النسخ الاحتياطي',
+        tags: ['Backup'],
+        operationId: 'api_v1_backups_config_updateConfig',
+        requestBody: new OA\RequestBody(required: true, description: 'بيانات الطلب بصيغة multipart/form-data', content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', properties: [
+                new OA\Property(property: 'enabled', type: 'boolean'),
+                new OA\Property(property: 'schedule_time', type: 'string'),
+                new OA\Property(property: 'retention_count', type: 'integer'),
+                new OA\Property(property: 'include_storage', type: 'boolean'),
+                new OA\Property(property: 'failure_sms', type: 'boolean'),
+                new OA\Property(property: 'client_id', type: 'string'),
+                new OA\Property(property: 'client_secret', type: 'string'),
+                new OA\Property(property: 'folder_name', type: 'string')
+            ]))),
+        responses: [
+            new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'),
+            new OA\Response(response: 401, description: 'الجلسة غير صالحة أو غير مصادق عليه'),
+            new OA\Response(response: 403, description: 'لا توجد صلاحية لتنفيذ العملية'),
+            new OA\Response(response: 404, description: 'المورد غير موجود'),
+            new OA\Response(response: 422, description: 'بيانات الطلب غير صالحة أو تعذر تنفيذ العملية')
+        ]
+    )]
     public function updateConfig(UpdateBackupConfigRequest $request): JsonResponse
     {
         try {
@@ -242,6 +337,20 @@ class BackupController extends BaseController
     /**
      * إنشاء نسخة احتياطية يدوياً الآن
      */
+    #[OA\Post(
+        path: '/api/v1/backups/run',
+        summary: 'بدء نسخة احتياطية يدوية',
+        tags: ['Backup'],
+        operationId: 'api_v1_backups_run_run',
+        requestBody: new OA\RequestBody(required: false, description: 'بيانات الطلب بصيغة multipart/form-data', content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [
+            new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'),
+            new OA\Response(response: 401, description: 'الجلسة غير صالحة أو غير مصادق عليه'),
+            new OA\Response(response: 403, description: 'لا توجد صلاحية لتنفيذ العملية'),
+            new OA\Response(response: 404, description: 'المورد غير موجود'),
+            new OA\Response(response: 422, description: 'بيانات الطلب غير صالحة أو تعذر تنفيذ العملية')
+        ]
+    )]
     public function run(Request $request): JsonResponse
     {
         try {
@@ -267,6 +376,26 @@ class BackupController extends BaseController
     /**
      * سجل النسخ الاحتياطية
      */
+    #[OA\Get(
+        path: '/api/v1/backups',
+        summary: 'عرض سجل مهام النسخ الاحتياطي',
+        tags: ['Backup'],
+        operationId: 'api_v1_backups_index',
+        parameters: [
+            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'backup_type', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'created_by', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'string'))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'),
+            new OA\Response(response: 401, description: 'الجلسة غير صالحة أو غير مصادق عليه'),
+            new OA\Response(response: 403, description: 'لا توجد صلاحية لتنفيذ العملية'),
+            new OA\Response(response: 404, description: 'المورد غير موجود'),
+            new OA\Response(response: 422, description: 'بيانات الطلب غير صالحة أو تعذر تنفيذ العملية')
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         try {
@@ -284,6 +413,22 @@ class BackupController extends BaseController
     /**
      * تفاصيل نسخة محددة
      */
+    #[OA\Get(
+        path: '/api/v1/backups/{id}',
+        summary: 'عرض تفاصيل مهمة النسخ الاحتياطي',
+        tags: ['Backup'],
+        operationId: 'api_v1_backups_id_show',
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'),
+            new OA\Response(response: 401, description: 'الجلسة غير صالحة أو غير مصادق عليه'),
+            new OA\Response(response: 403, description: 'لا توجد صلاحية لتنفيذ العملية'),
+            new OA\Response(response: 404, description: 'المورد غير موجود'),
+            new OA\Response(response: 422, description: 'بيانات الطلب غير صالحة أو تعذر تنفيذ العملية')
+        ]
+    )]
     public function show(int $id): JsonResponse
     {
         try {

@@ -11,6 +11,7 @@ use App\Services\Reporting\ReportRunData;
 use App\Services\Reporting\ReportRunService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class ReportController extends BaseController
 {
@@ -18,6 +19,11 @@ class ReportController extends BaseController
         private ReportRunService $reports
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/networks/{networkId}/reports/catalog', summary: 'networkCatalog', tags: ['Report Runs'], operationId: 'report_networkCatalog',
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function networkCatalog(int $networkId): JsonResponse
     {
         return $this->successResponse(
@@ -26,6 +32,12 @@ class ReportController extends BaseController
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/networks/{networkId}/reports/runs', summary: 'storeNetworkRun', tags: ['Report Runs'], operationId: 'report_storeNetworkRun',
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['report_key'], properties: [new OA\Property(property: 'report_key', type: 'string'), new OA\Property(property: 'filters', type: 'object', additionalProperties: true)]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function storeNetworkRun(StoreReportRunRequest $request, int $networkId): JsonResponse
     {
         $input = $request->validated();
@@ -44,6 +56,11 @@ class ReportController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/networks/{networkId}/reports/runs', summary: 'networkRuns', tags: ['Report Runs'], operationId: 'report_networkRuns',
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))] ,
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function networkRuns(ReportRunIndexRequest $request, int $networkId): JsonResponse
     {
         $filters = $request->validated();
@@ -63,6 +80,11 @@ class ReportController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/networks/{networkId}/reports/runs/{reportRunId}', summary: 'showNetworkRun', tags: ['Report Runs'], operationId: 'report_showNetworkRun',
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'reportRunId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function showNetworkRun(Request $request, int $networkId, int $reportRunId): JsonResponse
     {
         $run = $this->reports->networkRun(
@@ -77,6 +99,10 @@ class ReportController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/reports/catalog', summary: 'platformCatalog', tags: ['Report Runs'], operationId: 'report_platformCatalog',
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function platformCatalog(): JsonResponse
     {
         return $this->successResponse(
@@ -85,6 +111,11 @@ class ReportController extends BaseController
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/reports/runs', summary: 'storePlatformRun', tags: ['Report Runs'], operationId: 'report_storePlatformRun',
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['report_key'], properties: [new OA\Property(property: 'report_key', type: 'string'), new OA\Property(property: 'filters', type: 'object', additionalProperties: true)]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function storePlatformRun(StoreReportRunRequest $request): JsonResponse
     {
         $input = $request->validated();
@@ -102,6 +133,11 @@ class ReportController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/reports/runs', summary: 'platformRuns', tags: ['Report Runs'], operationId: 'report_platformRuns',
+        parameters: [new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function platformRuns(ReportRunIndexRequest $request): JsonResponse
     {
         $filters = $request->validated();
@@ -120,6 +156,11 @@ class ReportController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/reports/runs/{reportRunId}', summary: 'showPlatformRun', tags: ['Report Runs'], operationId: 'report_showPlatformRun',
+        parameters: [new OA\Parameter(name: 'reportRunId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function showPlatformRun(Request $request, int $reportRunId): JsonResponse
     {
         $run = $this->reports->platformRun(

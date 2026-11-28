@@ -13,11 +13,17 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use OpenApi\Attributes as OA;
 
 final class OperationalDocumentSnapshotController extends BaseController
 {
     public function __construct(private readonly OperationalDocumentSnapshotService $snapshots) {}
 
+    #[OA\Post(
+        path: '/api/v1/documents/snapshots', summary: 'store', tags: ['Document Snapshots'], operationId: 'operationaldocumentsnapshot_store',
+                requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['document_type', 'document_id', 'network_id', 'template_id', 'template_version'], properties: [new OA\Property(property: 'document_type', type: 'string', enum: ['sale_invoice', 'expense']), new OA\Property(property: 'document_id', type: 'integer'), new OA\Property(property: 'network_id', type: 'integer'), new OA\Property(property: 'pos_id', type: 'integer'), new OA\Property(property: 'template_id', type: 'string'), new OA\Property(property: 'template_version', type: 'string')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function store(StoreOperationalDocumentSnapshotRequest $request): JsonResponse
     {
         try {
@@ -46,6 +52,12 @@ final class OperationalDocumentSnapshotController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/documents/snapshots/{snapshotUuid}/artifact', summary: 'storeArtifact', tags: ['Document Snapshots'], operationId: 'operationaldocumentsnapshot_storeArtifact',
+        parameters: [new OA\Parameter(name: 'snapshotUuid', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+                requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['artifact'], properties: [new OA\Property(property: 'artifact', type: 'string', format: 'binary')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function storeArtifact(
         StoreOperationalDocumentArtifactRequest $request,
         string $snapshotUuid
@@ -70,6 +82,11 @@ final class OperationalDocumentSnapshotController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/documents/snapshots/{snapshotUuid}/download', summary: 'download', tags: ['Document Snapshots'], operationId: 'operationaldocumentsnapshot_download',
+        parameters: [new OA\Parameter(name: 'snapshotUuid', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function download(string $snapshotUuid): StreamedResponse|JsonResponse
     {
         $snapshot = OperationalDocumentSnapshot::query()

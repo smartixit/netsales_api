@@ -242,6 +242,11 @@ class SecurityController extends BaseController
         }
     }
 
+    #[OA\Delete(
+        path: '/api/v1/security/device-bans/{id}', summary: 'unbanDevice', tags: ['Security'], operationId: 'unbanDevice_SecurityController',
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function unbanDevice(int $id): JsonResponse
     {
         try {

@@ -12,6 +12,7 @@ use App\Services\Billing\BillingPolicyResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class BillingTrialEligibilityController extends BaseController
 {
@@ -20,6 +21,14 @@ class BillingTrialEligibilityController extends BaseController
         private BillingPolicyResolver $policies
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/billing/accounts/{billingAccountId}/prices/{priceId}/trial-eligibility',
+        summary: 'Show',
+        tags: ['Billing'],
+        operationId: 'billingtrialeligibility_show',
+        parameters: [new OA\Parameter(name: 'billingAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'priceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'billing_account_id', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'price_id', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'currency', in: 'query', required: false, schema: new OA\Schema(type: 'number')), new OA\Parameter(name: 'trial', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function show(Request $request, int $billingAccountId, int $priceId): JsonResponse
     {
         $actor = $this->requireCurrentUser();

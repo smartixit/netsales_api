@@ -13,6 +13,7 @@ use App\Services\PosMembershipService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class PosMembershipController extends BaseController
 {
@@ -23,6 +24,11 @@ class PosMembershipController extends BaseController
     /**
      * عرض قائمة أعضاء وموظفي نقطة البيع.
      */
+    #[OA\Get(
+        path: '/api/v1/pos/{posId}/members', summary: 'index', tags: ['Membership'], operationId: 'posmembership_index',
+        parameters: [new OA\Parameter(name: 'posId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'cursor', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function index(IndexMembershipRequest $request, int $posId): JsonResponse
     {
         try {
@@ -47,6 +53,11 @@ class PosMembershipController extends BaseController
     /**
      * عرض الأدوار المسموح بإسنادها إلى أعضاء نقطة البيع.
      */
+    #[OA\Get(
+        path: '/api/v1/pos/{posId}/members/assignable-roles', summary: 'assignableRoles', tags: ['Membership'], operationId: 'posmembership_assignableRoles',
+        parameters: [new OA\Parameter(name: 'posId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function assignableRoles(int $posId): JsonResponse
     {
         try {
@@ -67,6 +78,12 @@ class PosMembershipController extends BaseController
     /**
      * إضافة عضو جديد لنقطة البيع عبر رقم الهاتف وتعيين دور مقيد.
      */
+    #[OA\Post(
+        path: '/api/v1/pos/{posId}/members', summary: 'store', tags: ['Membership'], operationId: 'posmembership_store',
+        parameters: [new OA\Parameter(name: 'posId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+                requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['user_phone_number', 'role_id'], properties: [new OA\Property(property: 'user_phone_number', type: 'string', maxLength: 20), new OA\Property(property: 'role_id', type: 'integer', minimum: 1), new OA\Property(property: 'status', type: 'string', enum: ['ACTIVE', 'SUSPENDED', 'INVITED'])]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function store(StoreMembershipRequest $request, int $posId): JsonResponse
     {
         try {
@@ -92,6 +109,12 @@ class PosMembershipController extends BaseController
     /**
      * تعديل الدور المقيد للعضو بنقطة البيع.
      */
+    #[OA\Put(
+        path: '/api/v1/pos/{posId}/members/{userId}/role', summary: 'updateRole', tags: ['Membership'], operationId: 'posmembership_updateRole',
+        parameters: [new OA\Parameter(name: 'posId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['role_id'], properties: [new OA\Property(property: 'role_id', type: 'integer'), new OA\Property(property: 'reason', type: 'string')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function updateRole(UpdateMembershipRoleRequest $request, int $posId, int $userId): JsonResponse
     {
         try {
@@ -117,6 +140,12 @@ class PosMembershipController extends BaseController
     /**
      * تعديل حالة تفعيل عضو نقطة البيع.
      */
+    #[OA\Put(
+        path: '/api/v1/pos/{posId}/members/{userId}/status', summary: 'updateStatus', tags: ['Membership'], operationId: 'posmembership_updateStatus',
+        parameters: [new OA\Parameter(name: 'posId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['status'], properties: [new OA\Property(property: 'status', type: 'string'), new OA\Property(property: 'reason', type: 'string')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function updateStatus(UpdateMembershipStatusRequest $request, int $posId, int $userId): JsonResponse
     {
         try {
@@ -142,6 +171,12 @@ class PosMembershipController extends BaseController
     /**
      * حذف عضوية المستخدم من نقطة البيع.
      */
+    #[OA\Delete(
+        path: '/api/v1/pos/{posId}/members/{userId}', summary: 'destroy', tags: ['Membership'], operationId: 'posmembership_destroy',
+        parameters: [new OA\Parameter(name: 'posId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', properties: [new OA\Property(property: 'reason', type: 'string')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function destroy(RemoveMembershipRequest $request, int $posId, int $userId): JsonResponse
     {
         try {

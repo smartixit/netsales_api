@@ -35,6 +35,7 @@ use App\Services\Billing\CurrencyExchangeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class BillingFinanceController extends BaseController
 {
@@ -52,6 +53,14 @@ class BillingFinanceController extends BaseController
         private BillingSubscriptionService $subscriptionsService
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/overview',
+        summary: 'Overview',
+        tags: ['Billing'],
+        operationId: 'billingfinance_overview',
+        parameters: [new OA\Parameter(name: 'currency_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function overview(Request $request): JsonResponse
     {
         $request->validate([
@@ -66,6 +75,14 @@ class BillingFinanceController extends BaseController
         return $this->successResponse('تم استرجاع ملخص اشتراكات المنصة والتحصيلات حسب العملة.', $data);
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/reconciliation',
+        summary: 'Reconciliation',
+        tags: ['Billing'],
+        operationId: 'billingfinance_reconciliation',
+        parameters: [new OA\Parameter(name: 'currency_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function reconciliation(Request $request): JsonResponse
     {
         $request->validate([
@@ -79,6 +96,14 @@ class BillingFinanceController extends BaseController
         return $this->successResponse('تم استرجاع مطابقة الأستاذ العام والدفاتر الفرعية لكل عملة.', $result);
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/accounts',
+        summary: 'Accounts',
+        tags: ['Billing'],
+        operationId: 'billingfinance_accounts',
+        parameters: [new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'currency_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function accounts(Request $request): JsonResponse
     {
         return $this->successResponse(
@@ -87,6 +112,14 @@ class BillingFinanceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/subscriptions',
+        summary: 'Subscriptions',
+        tags: ['Billing'],
+        operationId: 'billingfinance_subscriptions',
+        parameters: [new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'billing_account_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'currency_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function subscriptions(Request $request): JsonResponse
     {
         return $this->successResponse(
@@ -97,6 +130,14 @@ class BillingFinanceController extends BaseController
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/accounts',
+        summary: 'Create Account',
+        tags: ['Billing'],
+        operationId: 'billingfinance_createAccount',
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['network_id', 'currency_id'], properties: [new OA\Property(property: 'network_id', type: 'integer'), new OA\Property(property: 'currency_id', type: 'integer')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function createAccount(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -113,6 +154,14 @@ class BillingFinanceController extends BaseController
         return $this->successResponse('تم إنشاء أو استرجاع حساب الفوترة للشبكة.', new BillingAccountResource($account), 201);
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/subscriptions',
+        summary: 'Create Subscription',
+        tags: ['Billing'],
+        operationId: 'billingfinance_createSubscription',
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['billing_account_id', 'price_id'], properties: [new OA\Property(property: 'billing_account_id', type: 'integer'), new OA\Property(property: 'price_id', type: 'integer')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function createSubscription(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -133,6 +182,14 @@ class BillingFinanceController extends BaseController
         ], 201);
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/subscriptions/{subscriptionId}',
+        summary: 'Subscription Details',
+        tags: ['Billing'],
+        operationId: 'billingfinance_subscriptionDetails',
+        parameters: [new OA\Parameter(name: 'subscriptionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function subscriptionDetails(int $subscriptionId): JsonResponse
     {
         $subscription = BillingSubscription::query()
@@ -153,6 +210,15 @@ class BillingFinanceController extends BaseController
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/subscriptions/{subscriptionId}/cancel',
+        summary: 'Cancel Subscription',
+        tags: ['Billing'],
+        operationId: 'billingfinance_cancelSubscription',
+        parameters: [new OA\Parameter(name: 'subscriptionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['cancel_at_period_end', 'reason'], properties: [new OA\Property(property: 'cancel_at_period_end', type: 'boolean'), new OA\Property(property: 'reason', type: 'string')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function cancelSubscription(Request $request, int $subscriptionId): JsonResponse
     {
         $data = $request->validate([
@@ -171,6 +237,14 @@ class BillingFinanceController extends BaseController
         return $this->successResponse('تم تنفيذ إجراء إلغاء الاشتراك وتسجيل سببه في سجل التدقيق.', new BillingSubscriptionResource($subscription));
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/invoices',
+        summary: 'Invoices',
+        tags: ['Billing'],
+        operationId: 'billingfinance_invoices',
+        parameters: [new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'billing_account_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'currency_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function invoices(Request $request): JsonResponse
     {
         return $this->successResponse(
@@ -181,6 +255,14 @@ class BillingFinanceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/payments',
+        summary: 'Payments',
+        tags: ['Billing'],
+        operationId: 'billingfinance_payments',
+        parameters: [new OA\Parameter(name: 'network_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'billing_account_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'invoice_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'currency_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function payments(Request $request): JsonResponse
     {
         return $this->successResponse(
@@ -191,6 +273,14 @@ class BillingFinanceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/journal-entries',
+        summary: 'Journal Entries',
+        tags: ['Billing'],
+        operationId: 'billingfinance_journalEntries',
+        parameters: [new OA\Parameter(name: 'currency_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'source_type', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function journalEntries(Request $request): JsonResponse
     {
         return $this->successResponse(
@@ -201,6 +291,13 @@ class BillingFinanceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/payment-methods',
+        summary: 'Payment Methods',
+        tags: ['Billing'],
+        operationId: 'billingfinance_paymentMethods',
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function paymentMethods(Request $request): JsonResponse
     {
         return $this->successResponse(
@@ -209,6 +306,14 @@ class BillingFinanceController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/treasury-accounts',
+        summary: 'Treasury Accounts',
+        tags: ['Billing'],
+        operationId: 'billingfinance_treasuryAccounts',
+        parameters: [new OA\Parameter(name: 'currency_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function treasuryAccounts(Request $request): JsonResponse
     {
         return $this->successResponse(
@@ -217,6 +322,14 @@ class BillingFinanceController extends BaseController
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/treasury-accounts',
+        summary: 'Store Treasury Account',
+        tags: ['Billing'],
+        operationId: 'billingfinance_storeTreasuryAccount',
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['name', 'account_type', 'currency_id'], properties: [new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'account_type', type: 'string'), new OA\Property(property: 'currency_id', type: 'integer'), new OA\Property(property: 'institution_name', type: 'string'), new OA\Property(property: 'account_reference', type: 'string'), new OA\Property(property: 'status', type: 'string'), new OA\Property(property: 'metadata', type: 'object', additionalProperties: true)]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function storeTreasuryAccount(StoreTreasuryAccountRequest $request): JsonResponse
     {
         try {
@@ -231,6 +344,15 @@ class BillingFinanceController extends BaseController
         }
     }
 
+    #[OA\Patch(
+        path: '/api/v1/platform/billing/treasury-accounts/{treasuryAccountId}/status',
+        summary: 'Set Treasury Status',
+        tags: ['Billing'],
+        operationId: 'billingfinance_setTreasuryStatus',
+        parameters: [new OA\Parameter(name: 'treasuryAccountId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['status'], properties: [new OA\Property(property: 'status', type: 'string')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function setTreasuryStatus(Request $request, int $treasuryAccountId): JsonResponse
     {
         try {
@@ -247,6 +369,15 @@ class BillingFinanceController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/payments/{paymentId}/verify',
+        summary: 'Verify Payment',
+        tags: ['Billing'],
+        operationId: 'billingfinance_verifyPayment',
+        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['treasury_account_id'], properties: [new OA\Property(property: 'treasury_account_id', type: 'integer'), new OA\Property(property: 'note', type: 'string')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function verifyPayment(VerifyPaymentRequest $request, int $paymentId): JsonResponse
     {
         try {
@@ -263,6 +394,15 @@ class BillingFinanceController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/payments/{paymentId}/reject',
+        summary: 'Reject Payment',
+        tags: ['Billing'],
+        operationId: 'billingfinance_rejectPayment',
+        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['reason'], properties: [new OA\Property(property: 'reason', type: 'string')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function rejectPayment(RejectPaymentRequest $request, int $paymentId): JsonResponse
     {
         try {
@@ -278,6 +418,15 @@ class BillingFinanceController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/invoices/{invoiceId}/credit-notes',
+        summary: 'Issue Credit Note',
+        tags: ['Billing'],
+        operationId: 'billingfinance_issueCreditNote',
+        parameters: [new OA\Parameter(name: 'invoiceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['idempotency_key', 'reason', 'lines'], properties: [new OA\Property(property: 'idempotency_key', type: 'string'), new OA\Property(property: 'reason', type: 'string'), new OA\Property(property: 'lines', type: 'array', items: new OA\Items(type: 'object'))]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function issueCreditNote(StoreCreditNoteRequest $request, int $invoiceId): JsonResponse
     {
         try {
@@ -315,6 +464,15 @@ class BillingFinanceController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/payments/{paymentId}/refunds',
+        summary: 'Refund Payment',
+        tags: ['Billing'],
+        operationId: 'billingfinance_refundPayment',
+        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['idempotency_key', 'credit_note_id', 'treasury_account_id', 'amount_minor', 'reason'], properties: [new OA\Property(property: 'idempotency_key', type: 'string'), new OA\Property(property: 'credit_note_id', type: 'integer'), new OA\Property(property: 'treasury_account_id', type: 'integer'), new OA\Property(property: 'amount_minor', type: 'integer'), new OA\Property(property: 'reason', type: 'string')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function refundPayment(StoreRefundRequest $request, int $paymentId): JsonResponse
     {
         try {
@@ -345,6 +503,15 @@ class BillingFinanceController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/invoices/{invoiceId}/void',
+        summary: 'Void Invoice',
+        tags: ['Billing'],
+        operationId: 'billingfinance_voidInvoice',
+        parameters: [new OA\Parameter(name: 'invoiceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['reason'], properties: [new OA\Property(property: 'reason', type: 'string')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function voidInvoice(Request $request, int $invoiceId): JsonResponse
     {
         try {
@@ -361,6 +528,14 @@ class BillingFinanceController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/exchange-rates',
+        summary: 'Exchange Rates',
+        tags: ['Billing'],
+        operationId: 'billingfinance_exchangeRates',
+        parameters: [new OA\Parameter(name: 'base_currency_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'quote_currency_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function exchangeRates(Request $request): JsonResponse
     {
         return $this->successResponse(
@@ -371,6 +546,14 @@ class BillingFinanceController extends BaseController
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/exchange-rates',
+        summary: 'Store Exchange Rate',
+        tags: ['Billing'],
+        operationId: 'billingfinance_storeExchangeRate',
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['base_currency_id', 'quote_currency_id', 'rate_numerator', 'rate_denominator', 'source'], properties: [new OA\Property(property: 'base_currency_id', type: 'integer'), new OA\Property(property: 'quote_currency_id', type: 'integer'), new OA\Property(property: 'rate_numerator', type: 'integer'), new OA\Property(property: 'rate_denominator', type: 'integer'), new OA\Property(property: 'source', type: 'string'), new OA\Property(property: 'expires_at', type: 'string')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function storeExchangeRate(StoreExchangeRateRequest $request): JsonResponse
     {
         try {
@@ -390,6 +573,14 @@ class BillingFinanceController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/platform/billing/conversions',
+        summary: 'Convert Currency',
+        tags: ['Billing'],
+        operationId: 'billingfinance_convertCurrency',
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['exchange_rate_id', 'source_amount_minor', 'source_type', 'source_id'], properties: [new OA\Property(property: 'exchange_rate_id', type: 'integer'), new OA\Property(property: 'source_amount_minor', type: 'integer'), new OA\Property(property: 'fee_amount_minor', type: 'integer'), new OA\Property(property: 'source_type', type: 'string'), new OA\Property(property: 'source_id', type: 'integer')]))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function convertCurrency(StoreCurrencyConversionRequest $request): JsonResponse
     {
         try {
@@ -412,6 +603,14 @@ class BillingFinanceController extends BaseController
         }
     }
 
+    #[OA\Get(
+        path: '/api/v1/platform/billing/conversions',
+        summary: 'Conversions',
+        tags: ['Billing'],
+        operationId: 'billingfinance_conversions',
+        parameters: [new OA\Parameter(name: 'from_currency_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'to_currency_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function conversions(Request $request): JsonResponse
     {
         return $this->successResponse(
