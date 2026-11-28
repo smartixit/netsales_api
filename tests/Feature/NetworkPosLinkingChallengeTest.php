@@ -1466,7 +1466,7 @@ class NetworkPosLinkingChallengeTest extends TestCase
             ->where('feature_key', 'max_pos_count')
             ->update(['value' => '1']);
 
-        $occupiedLink = NetworkPos::query()->create([
+        NetworkPos::query()->create([
             'network_id' => $this->network->network_id,
             'pos_id' => $this->pos->pos_id,
             'status' => true,
