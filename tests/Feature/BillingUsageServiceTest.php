@@ -11,7 +11,6 @@ use App\Models\BillingUsageEvent;
 use App\Models\Directorate;
 use App\Models\Governorate;
 use App\Models\Network;
-use App\Models\User;
 use App\Services\Billing\BillingInvoiceService;
 use App\Services\Billing\BillingUsageService;
 use Carbon\Carbon;
