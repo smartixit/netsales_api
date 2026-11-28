@@ -54,8 +54,8 @@ final class OperationalDocumentSnapshotController extends BaseController
 
     #[OA\Post(
         path: '/api/v1/documents/snapshots/{snapshotUuid}/artifact', summary: 'storeArtifact', tags: ['Document Snapshots'], operationId: 'operationaldocumentsnapshot_storeArtifact',
-        parameters: [new OA\Parameter(name: 'snapshotUuid', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['artifact'], properties: [new OA\Property(property: 'artifact', type: 'string', format: 'binary')]))],
-        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        parameters: [new OA\Parameter(name: 'snapshotUuid', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['artifact'], properties: [new OA\Property(property: 'artifact', type: 'string', format: 'binary')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 201, description: 'تم إنشاء المورد'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function storeArtifact(

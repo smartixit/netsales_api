@@ -72,8 +72,8 @@ class BillingCatalogController extends BaseController
         summary: 'تحديث بيانات عملة',
         tags: ['Platform Billing'],
         operationId: 'platform_billing_updateCurrency',
-        parameters: [new OA\Parameter(name: 'currencyId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))roperties: [new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'native_name', type: 'string'), new OA\Property(property: 'symbol', type: 'string'), new OA\Property(property: 'is_active', type: 'boolean')]))],
-        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        parameters: [new OA\Parameter(name: 'currencyId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', properties: [new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'native_name', type: 'string'), new OA\Property(property: 'symbol', type: 'string'), new OA\Property(property: 'is_active', type: 'boolean')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function updateCurrency(UpdateCurrencyRequest $request, int $currencyId): JsonResponse
@@ -199,8 +199,8 @@ class BillingCatalogController extends BaseController
         summary: 'إنشاء مسودة إصدار خطة',
         tags: ['Platform Billing'],
         operationId: 'platform_billing_createDraftVersion',
-        parameters: [new OA\Parameter(name: 'planId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))roperties: [new OA\Property(property: 'trial_policy_version_id', type: 'integer'), new OA\Property(property: 'dunning_policy_version_id', type: 'integer')]))],
-        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        parameters: [new OA\Parameter(name: 'planId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', properties: [new OA\Property(property: 'trial_policy_version_id', type: 'integer'), new OA\Property(property: 'dunning_policy_version_id', type: 'integer')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function createDraftVersion(CreateDraftVersionRequest $request, int $planId): JsonResponse
@@ -229,8 +229,8 @@ class BillingCatalogController extends BaseController
         summary: 'إضافة سعر إلى إصدار خطة',
         tags: ['Platform Billing'],
         operationId: 'platform_billing_addPrice',
-        parameters: [new OA\Parameter(name: 'versionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['currency_id', 'billing_interval', 'unit_amount'], properties: [new OA\Property(property: 'currency_id', type: 'integer'), new OA\Property(property: 'billing_interval', type: 'string'), new OA\Property(property: 'interval_count', type: 'integer'), new OA\Property(property: 'unit_amount', type: 'string'), new OA\Property(property: 'setup_fee', type: 'string'), new OA\Property(property: 'tax_behavior', type: 'string')]))],
-        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        parameters: [new OA\Parameter(name: 'versionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['currency_id', 'billing_interval', 'unit_amount'], properties: [new OA\Property(property: 'currency_id', type: 'integer'), new OA\Property(property: 'billing_interval', type: 'string'), new OA\Property(property: 'interval_count', type: 'integer'), new OA\Property(property: 'unit_amount', type: 'string'), new OA\Property(property: 'setup_fee', type: 'string'), new OA\Property(property: 'tax_behavior', type: 'string')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function addPrice(StorePriceRequest $request, int $versionId): JsonResponse
@@ -254,8 +254,8 @@ class BillingCatalogController extends BaseController
         summary: 'إضافة ميزة إلى إصدار خطة',
         tags: ['Platform Billing'],
         operationId: 'platform_billing_addFeature',
-        parameters: [new OA\Parameter(name: 'versionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['feature_key', 'name', 'feature_type', 'value'], properties: [new OA\Property(property: 'feature_key', type: 'string'), new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'feature_type', type: 'string'), new OA\Property(property: 'value', type: 'string'), new OA\Property(property: 'unit', type: 'string'), new OA\Property(property: 'aggregation', type: 'string'), new OA\Property(property: 'reset_period', type: 'string'), new OA\Property(property: 'overage_behavior', type: 'string'), new OA\Property(property: 'configuration', type: 'object')]))],
-        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        parameters: [new OA\Parameter(name: 'versionId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['feature_key', 'name', 'feature_type', 'value'], properties: [new OA\Property(property: 'feature_key', type: 'string'), new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'feature_type', type: 'string'), new OA\Property(property: 'value', type: 'string'), new OA\Property(property: 'unit', type: 'string'), new OA\Property(property: 'aggregation', type: 'string'), new OA\Property(property: 'reset_period', type: 'string'), new OA\Property(property: 'overage_behavior', type: 'string'), new OA\Property(property: 'configuration', type: 'object', additionalProperties: true)]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function addFeature(StorePlanFeatureRequest $request, int $versionId): JsonResponse

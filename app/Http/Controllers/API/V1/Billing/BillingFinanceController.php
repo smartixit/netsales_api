@@ -327,7 +327,7 @@ class BillingFinanceController extends BaseController
         summary: 'Store Treasury Account',
         tags: ['Billing'],
         operationId: 'billingfinance_storeTreasuryAccount',
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['name', 'account_type', 'currency_id'], properties: [new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'account_type', type: 'string'), new OA\Property(property: 'currency_id', type: 'integer'), new OA\Property(property: 'institution_name', type: 'string'), new OA\Property(property: 'account_reference', type: 'string'), new OA\Property(property: 'status', type: 'string'), new OA\Property(property: 'metadata', type: 'object')]))),
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['name', 'account_type', 'currency_id'], properties: [new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'account_type', type: 'string'), new OA\Property(property: 'currency_id', type: 'integer'), new OA\Property(property: 'institution_name', type: 'string'), new OA\Property(property: 'account_reference', type: 'string'), new OA\Property(property: 'status', type: 'string'), new OA\Property(property: 'metadata', type: 'object', additionalProperties: true)]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function storeTreasuryAccount(StoreTreasuryAccountRequest $request): JsonResponse
@@ -374,8 +374,8 @@ class BillingFinanceController extends BaseController
         summary: 'Verify Payment',
         tags: ['Billing'],
         operationId: 'billingfinance_verifyPayment',
-        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['treasury_account_id'], properties: [new OA\Property(property: 'treasury_account_id', type: 'integer'), new OA\Property(property: 'note', type: 'string')]))],
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['treasury_account_id'], properties: [new OA\Property(property: 'treasury_account_id', type: 'integer'), new OA\Property(property: 'note', type: 'string')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function verifyPayment(VerifyPaymentRequest $request, int $paymentId): JsonResponse
@@ -399,8 +399,8 @@ class BillingFinanceController extends BaseController
         summary: 'Reject Payment',
         tags: ['Billing'],
         operationId: 'billingfinance_rejectPayment',
-        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['reason'], properties: [new OA\Property(property: 'reason', type: 'string')]))],
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['reason'], properties: [new OA\Property(property: 'reason', type: 'string')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function rejectPayment(RejectPaymentRequest $request, int $paymentId): JsonResponse
@@ -423,8 +423,8 @@ class BillingFinanceController extends BaseController
         summary: 'Issue Credit Note',
         tags: ['Billing'],
         operationId: 'billingfinance_issueCreditNote',
-        parameters: [new OA\Parameter(name: 'invoiceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['idempotency_key', 'reason', 'lines'], properties: [new OA\Property(property: 'idempotency_key', type: 'string'), new OA\Property(property: 'reason', type: 'string'), new OA\Property(property: 'lines', type: 'array', items: new OA\Items(type: 'object'))]))],
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        parameters: [new OA\Parameter(name: 'invoiceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['idempotency_key', 'reason', 'lines'], properties: [new OA\Property(property: 'idempotency_key', type: 'string'), new OA\Property(property: 'reason', type: 'string'), new OA\Property(property: 'lines', type: 'array', items: new OA\Items(type: 'object'))]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function issueCreditNote(StoreCreditNoteRequest $request, int $invoiceId): JsonResponse
@@ -469,8 +469,8 @@ class BillingFinanceController extends BaseController
         summary: 'Refund Payment',
         tags: ['Billing'],
         operationId: 'billingfinance_refundPayment',
-        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))equired: ['idempotency_key', 'credit_note_id', 'treasury_account_id', 'amount_minor', 'reason'], properties: [new OA\Property(property: 'idempotency_key', type: 'string'), new OA\Property(property: 'credit_note_id', type: 'integer'), new OA\Property(property: 'treasury_account_id', type: 'integer'), new OA\Property(property: 'amount_minor', type: 'integer'), new OA\Property(property: 'reason', type: 'string')]))],
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        parameters: [new OA\Parameter(name: 'paymentId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['idempotency_key', 'credit_note_id', 'treasury_account_id', 'amount_minor', 'reason'], properties: [new OA\Property(property: 'idempotency_key', type: 'string'), new OA\Property(property: 'credit_note_id', type: 'integer'), new OA\Property(property: 'treasury_account_id', type: 'integer'), new OA\Property(property: 'amount_minor', type: 'integer'), new OA\Property(property: 'reason', type: 'string')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function refundPayment(StoreRefundRequest $request, int $paymentId): JsonResponse
@@ -551,7 +551,7 @@ class BillingFinanceController extends BaseController
         summary: 'Store Exchange Rate',
         tags: ['Billing'],
         operationId: 'billingfinance_storeExchangeRate',
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['base_currency_id', 'quote_currency_id', 'rate_numerator', 'rate_denominator', 'source'], properties: [new OA\Property(property: 'base_currency_id', type: 'integer'), new OA\Property(property: 'quote_currency_id', type: 'integer'), new OA\Property(property: 'rate_numerator', type: 'integer'), new OA\Property(property: 'rate_denominator', type: 'integer'), new OA\Property(property: 'source', type: 'string'), new OA\Property(property: 'expires_at', type: 'string')]))),
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['base_currency_id', 'quote_currency_id', 'rate_numerator', 'rate_denominator', 'source'], properties: [new OA\Property(property: 'base_currency_id', type: 'integer'), new OA\Property(property: 'quote_currency_id', type: 'integer'), new OA\Property(property: 'rate_numerator', type: 'integer'), new OA\Property(property: 'rate_denominator', type: 'integer'), new OA\Property(property: 'source', type: 'string'), new OA\Property(property: 'expires_at', type: 'string')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function storeExchangeRate(StoreExchangeRateRequest $request): JsonResponse
@@ -578,7 +578,7 @@ class BillingFinanceController extends BaseController
         summary: 'Convert Currency',
         tags: ['Billing'],
         operationId: 'billingfinance_convertCurrency',
-        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['exchange_rate_id', 'source_amount_minor', 'source_type', 'source_id'], properties: [new OA\Property(property: 'exchange_rate_id', type: 'integer'), new OA\Property(property: 'source_amount_minor', type: 'integer'), new OA\Property(property: 'fee_amount_minor', type: 'integer'), new OA\Property(property: 'source_type', type: 'string'), new OA\Property(property: 'source_id', type: 'integer')]))),
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['exchange_rate_id', 'source_amount_minor', 'source_type', 'source_id'], properties: [new OA\Property(property: 'exchange_rate_id', type: 'integer'), new OA\Property(property: 'source_amount_minor', type: 'integer'), new OA\Property(property: 'fee_amount_minor', type: 'integer'), new OA\Property(property: 'source_type', type: 'string'), new OA\Property(property: 'source_id', type: 'integer')]))),
         responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
     )]
     public function convertCurrency(StoreCurrencyConversionRequest $request): JsonResponse
