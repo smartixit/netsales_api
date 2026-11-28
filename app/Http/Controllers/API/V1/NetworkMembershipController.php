@@ -13,6 +13,7 @@ use App\Services\NetworkMembershipService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class NetworkMembershipController extends BaseController
 {
@@ -23,6 +24,14 @@ class NetworkMembershipController extends BaseController
     /**
      * عرض قائمة أعضاء وموظفي الشبكة.
      */
+    #[OA\Get(
+        path: '/api/v1/networks/{networkId}/members',
+        summary: 'index',
+        tags: ['Membership'],
+        operationId: 'index_NetworkMembershipController',
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function index(IndexMembershipRequest $request, int $networkId): JsonResponse
     {
         try {
@@ -47,6 +56,14 @@ class NetworkMembershipController extends BaseController
     /**
      * عرض الأدوار المسموح بإسنادها إلى أعضاء الشبكة.
      */
+    #[OA\Get(
+        path: '/api/v1/networks/{networkId}/members/assignable-roles',
+        summary: 'assignableRoles',
+        tags: ['Membership'],
+        operationId: 'assignableRoles_NetworkMembershipController',
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function assignableRoles(int $networkId): JsonResponse
     {
         try {
@@ -67,6 +84,15 @@ class NetworkMembershipController extends BaseController
     /**
      * إضافة عضو جديد للشبكة عبر رقم الهاتف وتعيين دور مقيد.
      */
+    #[OA\Post(
+        path: '/api/v1/networks/{networkId}/members',
+        summary: 'store',
+        tags: ['Membership'],
+        operationId: 'store_NetworkMembershipController',
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function store(StoreMembershipRequest $request, int $networkId): JsonResponse
     {
         try {
@@ -92,6 +118,15 @@ class NetworkMembershipController extends BaseController
     /**
      * تعديل الدور المقيد للعضو بالشبكة.
      */
+    #[OA\Put(
+        path: '/api/v1/networks/{networkId}/members/{userId}/role',
+        summary: 'updateRole',
+        tags: ['Membership'],
+        operationId: 'updateRole_NetworkMembershipController',
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function updateRole(UpdateMembershipRoleRequest $request, int $networkId, int $userId): JsonResponse
     {
         try {
@@ -117,6 +152,15 @@ class NetworkMembershipController extends BaseController
     /**
      * تعديل حالة تفعيل عضو الشبكة.
      */
+    #[OA\Put(
+        path: '/api/v1/networks/{networkId}/members/{userId}/status',
+        summary: 'updateStatus',
+        tags: ['Membership'],
+        operationId: 'updateStatus_NetworkMembershipController',
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object'))),
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function updateStatus(UpdateMembershipStatusRequest $request, int $networkId, int $userId): JsonResponse
     {
         try {
@@ -142,6 +186,14 @@ class NetworkMembershipController extends BaseController
     /**
      * حذف عضوية المستخدم من الشبكة.
      */
+    #[OA\Delete(
+        path: '/api/v1/networks/{networkId}/members/{userId}',
+        summary: 'destroy',
+        tags: ['Membership'],
+        operationId: 'destroy_NetworkMembershipController',
+        parameters: [new OA\Parameter(name: 'networkId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'تم تنفيذ العملية بنجاح'), new OA\Response(response: 401, description: 'غير مصادق عليه'), new OA\Response(response: 403, description: 'غير مصرح'), new OA\Response(response: 404, description: 'المورد غير موجود'), new OA\Response(response: 422, description: 'بيانات غير صالحة')]
+    )]
     public function destroy(RemoveMembershipRequest $request, int $networkId, int $userId): JsonResponse
     {
         try {
