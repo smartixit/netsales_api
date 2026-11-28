@@ -451,6 +451,10 @@ class BillingInvoiceService
 
         foreach ($usageByMeter as $events) {
             $firstEvent = $events->first();
+            if (! $firstEvent) {
+                continue;
+            }
+
             $meter = $firstEvent->meter;
             if (! $meter) {
                 throw ValidationException::withMessages([
@@ -458,7 +462,10 @@ class BillingInvoiceService
                 ]);
             }
 
-            $amount = $events->sum(static fn (BillingUsageEvent $event): int => (int) $event->amount_minor);
+            $amount = 0;
+            foreach ($events as $event) {
+                $amount = $this->safeAdd($amount, (int) $event->amount_minor);
+            }
             if ($amount <= 0) {
                 continue;
             }
