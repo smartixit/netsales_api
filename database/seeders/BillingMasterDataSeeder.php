@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
 /**
  * Seeds stable Billing product/plan identities and the approved launch policies.
@@ -23,7 +22,7 @@ class BillingMasterDataSeeder extends Seeder
             $actorId = DB::table('users')
                 ->join('roles', 'users.role_id', '=', 'roles.role_id')
                 ->where('roles.role_scope', 'PLATFORM')
-                ->where('roles.role_key', 'PLATFORM_SUPER_ADMIN')
+                ->where('roles.role_key', 'SUPER_ADMIN')
                 ->value('users.user_id');
 
             $productId = DB::table('billing_products')
