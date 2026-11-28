@@ -50,10 +50,10 @@ class DatabaseSeeder extends Seeder
             $this->command->line('➜ Seeding supported billing currencies...');
             $this->call(CurrencySeeder::class);
 
-            $this->command->line('➜ Seeding NetSales launch subscription catalog and trial policy...');
+            $this->command->line('➜ Seeding billing catalog and subscription policies...');
             $this->call(BillingLaunchCatalogSeeder::class);
 
-            $this->command->line('➜ Seeding billing payment methods...');
+            $this->command->line('➜ Seeding Yemen launch payment methods (manual review)...');
             $this->call(BillingPaymentMethodSeeder::class);
         });
 
